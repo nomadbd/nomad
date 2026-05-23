@@ -17,7 +17,7 @@ export default function Home({ products }) {
       {/* Premium Glassmorphic Header */}
       <header className="fixed top-0 w-full z-50 bg-black/30 backdrop-blur-xl border-b border-white/[0.06] px-6 py-5 flex justify-between items-center">
         <h1 className="text-2xl font-black tracking-[0.2em] text-red-500">NOMAD</h1>
-        <span className="text-[10px] tracking-widest bg-red-500/10 text-red-400 px-3 py-1 rounded-full border border-red-500/20 font-bold uppercase">Official Store</span>
+        <span className="text-[10px] tracking-widest bg-red-500/10 text-red-400 px-3 py-1 rounded-full border border-red-500/20 font-bold uppercase">The one.Everywhere.</span>
       </header>
 
       {/* Hero Section */}
