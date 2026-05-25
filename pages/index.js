@@ -33,10 +33,10 @@ export default function Home({ allProducts, siteContent }) {
         option { background-color: #000; color: #fff; }
       `}</style>
 
-      {/* Slim Header */}
-      <header style={{ textAlign: 'center', padding: '40px 20px', position: 'sticky', top: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(15px)', zIndex: 100 }}>
-        <h1 style={{ letterSpacing: '15px', fontSize: '28px', margin: 0, fontWeight: '900' }}>NOMAD</h1>
-        <p style={{ fontSize: '8px', color: '#666', marginTop: '8px', letterSpacing: '5px', textTransform: 'uppercase' }}>{siteContent.header}</p>
+      {/* Ultra Slim Header */}
+      <header style={{ textAlign: 'center', padding: '25px 20px', position: 'sticky', top: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(15px)', zIndex: 100, borderBottom: '1px solid #111' }}>
+        <h1 style={{ letterSpacing: '15px', fontSize: '24px', margin: 0, fontWeight: '900' }}>NOMAD</h1>
+        <p style={{ fontSize: '7px', color: '#555', marginTop: '5px', letterSpacing: '5px', textTransform: 'uppercase' }}>{siteContent.header}</p>
       </header>
 
       {/* Product List */}
@@ -73,7 +73,7 @@ export default function Home({ allProducts, siteContent }) {
 
       {/* Footer */}
       <footer style={{ textAlign: 'center', padding: '80px 20px', borderTop: '1px solid #111' }}>
-        <p style={{ maxWidth: '350px', margin: '0 auto 40px auto', fontSize: '13px', color: '#555', lineHeight: '2' }}>{siteContent.about}</p>
+        <p style={{ maxWidth: '350px', margin: '0 auto 40px auto', fontSize: '12px', color: '#555', lineHeight: '2' }}>{siteContent.about}</p>
         <p style={{ letterSpacing: '6px', fontSize: '9px', color: '#222' }}>{siteContent.footer}</p>
       </footer>
 
@@ -82,9 +82,10 @@ export default function Home({ allProducts, siteContent }) {
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.98)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
           <div style={{ backgroundColor: '#0a0a0a', width: '100%', maxWidth: '400px', padding: '45px 30px', borderRadius: '35px', border: '1px solid #1a1a1a', maxHeight: '90vh', overflowY: 'auto', position: 'relative' }}>
             
+            {/* Optimized Header Area with Cross Button pushed to far right */}
             <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', position: 'relative', marginBottom: '35px' }}>
-              <h2 style={{ fontSize: '11px', letterSpacing: '4px', fontWeight: 'bold', margin: 0 }}>SPECIFICATIONS</h2>
-              <button onClick={() => setIsModalOpen(false)} style={{ position: 'absolute', right: 0, background: 'none', border: 'none', color: '#fff', fontSize: '20px', cursor: 'pointer', lineHeight: 1 }}>&times;</button>
+              <h2 style={{ fontSize: '11px', letterSpacing: '4px', fontWeight: 'bold', margin: 0, color: '#fff' }}>SPECIFICATIONS</h2>
+              <button onClick={() => setIsModalOpen(false)} style={{ position: 'absolute', right: '-10px', background: 'none', border: 'none', color: '#fff', fontSize: '22px', cursor: 'pointer', lineHeight: 1 }}>&times;</button>
             </div>
             
             <form action="/api/order" method="POST" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
