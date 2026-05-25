@@ -33,28 +33,28 @@ export default function Home({ allProducts, siteContent }) {
         option { background-color: #000; color: #fff; }
       `}</style>
 
-      {/* Header */}
-      <header style={{ textAlign: 'center', padding: '60px 20px', position: 'sticky', top: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(15px)', zIndex: 100 }}>
-        <h1 style={{ letterSpacing: '15px', fontSize: '35px', margin: 0, fontWeight: '900' }}>NOMAD</h1>
-        <p style={{ fontSize: '9px', color: '#666', marginTop: '12px', letterSpacing: '5px', textTransform: 'uppercase' }}>{siteContent.header}</p>
+      {/* Slim Header */}
+      <header style={{ textAlign: 'center', padding: '40px 20px', position: 'sticky', top: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(15px)', zIndex: 100 }}>
+        <h1 style={{ letterSpacing: '15px', fontSize: '28px', margin: 0, fontWeight: '900' }}>NOMAD</h1>
+        <p style={{ fontSize: '8px', color: '#666', marginTop: '8px', letterSpacing: '5px', textTransform: 'uppercase' }}>{siteContent.header}</p>
       </header>
 
       {/* Product List */}
       <main style={{ maxWidth: '450px', margin: '0 auto', padding: '20px' }}>
         {products.slice(0, visibleCount).map((product, index) => (
           <div key={index} className="product-card" style={{ marginBottom: '100px', opacity: 0 }}>
-            <div style={{ backgroundColor: '#0a0a0a', borderRadius: '30px', overflow: 'hidden', boxShadow: '0 40px 80px rgba(0,0,0,0.6)' }}>
+            <div style={{ backgroundColor: '#0a0a0a', borderRadius: '30px', overflow: 'hidden' }}>
               <img src={`/products/${product.image}`} alt={product.name} style={{ width: '100%', display: 'block' }} />
             </div>
             
             <div style={{ textAlign: 'center', marginTop: '35px' }}>
-              <h3 style={{ fontSize: '22px', letterSpacing: '3px', fontWeight: '500' }}>{product.name}</h3>
-              <p style={{ fontSize: '13px', color: '#777', lineHeight: '1.8', margin: '18px 0', padding: '0 20px' }}>{product.desc}</p>
+              <h3 style={{ fontSize: '20px', letterSpacing: '3px', fontWeight: '500' }}>{product.name}</h3>
+              <p style={{ fontSize: '12px', color: '#777', lineHeight: '1.8', margin: '18px 0', padding: '0 20px' }}>{product.desc}</p>
               
               <div style={{ display: 'flex', gap: '12px', padding: '0 10px', alignItems: 'stretch' }}>
                 <button 
                   onClick={() => { setSelectedProduct(product.name); setIsModalOpen(true); }}
-                  style={{ flex: 3, backgroundColor: '#fff', color: '#000', border: 'none', padding: '18px 0', borderRadius: '15px', fontWeight: 'bold', letterSpacing: '2px', cursor: 'pointer', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  style={{ flex: 3, backgroundColor: '#fff', color: '#000', border: '1px solid #fff', padding: '18px 0', borderRadius: '15px', fontWeight: 'bold', letterSpacing: '2px', cursor: 'pointer', fontSize: '11px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                 >
                   ORDER NOW
                 </button>
@@ -63,7 +63,7 @@ export default function Home({ allProducts, siteContent }) {
                   target="_blank" rel="noopener noreferrer"
                   style={{ flex: 1, backgroundColor: '#000', border: '1px solid #fff', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '15px' }}
                 >
-                  <svg width="20" height="20" fill="#fff" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L0 24l6.335-1.662c1.72.94 3.659 1.437 5.634 1.437h.005c6.558 0 11.897-5.335 11.9-11.894a11.83 11.83 0 00-3.415-8.411z"/></svg>
+                  <svg width="18" height="18" fill="#fff" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L0 24l6.335-1.662c1.72.94 3.659 1.437 5.634 1.437h.005c6.558 0 11.897-5.335 11.9-11.894a11.83 11.83 0 00-3.415-8.411z"/></svg>
                 </a>
               </div>
             </div>
@@ -72,8 +72,8 @@ export default function Home({ allProducts, siteContent }) {
       </main>
 
       {/* Footer */}
-      <footer style={{ textAlign: 'center', padding: '100px 20px', borderTop: '1px solid #111' }}>
-        <p style={{ maxWidth: '350px', margin: '0 auto 50px auto', fontSize: '13px', color: '#555', lineHeight: '2' }}>{siteContent.about}</p>
+      <footer style={{ textAlign: 'center', padding: '80px 20px', borderTop: '1px solid #111' }}>
+        <p style={{ maxWidth: '350px', margin: '0 auto 40px auto', fontSize: '13px', color: '#555', lineHeight: '2' }}>{siteContent.about}</p>
         <p style={{ letterSpacing: '6px', fontSize: '9px', color: '#222' }}>{siteContent.footer}</p>
       </footer>
 
@@ -82,16 +82,16 @@ export default function Home({ allProducts, siteContent }) {
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.98)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
           <div style={{ backgroundColor: '#0a0a0a', width: '100%', maxWidth: '400px', padding: '45px 30px', borderRadius: '35px', border: '1px solid #1a1a1a', maxHeight: '90vh', overflowY: 'auto', position: 'relative' }}>
             
-            {/* Corner Cross Button */}
-            <button onClick={() => setIsModalOpen(false)} style={{ position: 'absolute', top: '25px', right: '25px', background: 'none', border: 'none', color: '#fff', fontSize: '28px', cursor: 'pointer', lineHeight: 0 }}>&times;</button>
-            
-            <h2 style={{ fontSize: '12px', textAlign: 'center', letterSpacing: '4px', marginBottom: '35px', fontWeight: 'bold' }}>SPECIFICATIONS</h2>
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', position: 'relative', marginBottom: '35px' }}>
+              <h2 style={{ fontSize: '11px', letterSpacing: '4px', fontWeight: 'bold', margin: 0 }}>SPECIFICATIONS</h2>
+              <button onClick={() => setIsModalOpen(false)} style={{ position: 'absolute', right: 0, background: 'none', border: 'none', color: '#fff', fontSize: '20px', cursor: 'pointer', lineHeight: 1 }}>&times;</button>
+            </div>
             
             <form action="/api/order" method="POST" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <input type="hidden" name="product" value={selectedProduct} />
               
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-                <select name="size" required style={{ borderBottom: '1px solid #222' }}>
+                <select name="size" required>
                   <option value="" disabled selected>SIZE</option>
                   <option value="M">M</option>
                   <option value="L">L</option>
@@ -101,11 +101,11 @@ export default function Home({ allProducts, siteContent }) {
               </div>
 
               <input type="text" name="name" placeholder="FULL NAME" required />
-              <input type="tel" name="phone" placeholder="PHONE NUMBER" pattern="[0-9]*" title="Only numbers allowed" required />
+              <input type="tel" name="phone" placeholder="PHONE NUMBER" pattern="[0-9]*" required />
               <textarea name="address" placeholder="SHIPPING ADDRESS" required style={{ minHeight: '60px' }}></textarea>
               
               <div style={{ marginTop: '5px', padding: '18px', backgroundColor: '#050505', borderRadius: '20px', border: '1px solid #111' }}>
-                <p style={{ fontSize: '10px', color: '#444', marginBottom: '15px', letterSpacing: '1px' }}>PAYMENT DETAILS</p>
+                <p style={{ fontSize: '9px', color: '#444', marginBottom: '15px', letterSpacing: '1px' }}>PAYMENT DETAILS</p>
                 
                 <select name="method" required style={{ marginBottom: '15px' }}>
                   <option value="" disabled selected>SELECT GATEWAY</option>
@@ -117,12 +117,12 @@ export default function Home({ allProducts, siteContent }) {
                 </select>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                  <input type="tel" name="payment_no" placeholder="SENDER NO" pattern="[0-9]*" title="Only numbers allowed" required />
-                  <input type="text" name="txn_id" placeholder="TRANSACTION ID (TxID)" required />
+                  <input type="tel" name="payment_no" placeholder="SENDER NO" pattern="[0-9]*" required />
+                  <input type="text" name="txn_id" placeholder="TRANSACTION ID" required />
                 </div>
               </div>
 
-              <button type="submit" style={{ backgroundColor: '#fff', color: '#000', border: 'none', padding: '20px', borderRadius: '18px', fontWeight: '900', cursor: 'pointer', marginTop: '10px', letterSpacing: '3px', fontSize: '12px' }}>
+              <button type="submit" style={{ backgroundColor: '#fff', color: '#000', border: '1px solid #fff', padding: '20px', borderRadius: '18px', fontWeight: '900', cursor: 'pointer', marginTop: '10px', letterSpacing: '3px', fontSize: '11px' }}>
                 RESERVE NOW
               </button>
             </form>
@@ -153,10 +153,12 @@ export async function getStaticProps() {
   const allProducts = images.map(img => {
     const handle = path.parse(img).name;
     const dPath = path.join(dDir, `${handle}.txt`);
+    const defaultDesc = "Crafted for those who command presence. Experience the pinnacle of premium craftsmanship with Nomad's exclusive collection.";
+    
     return {
       name: handle.replace(/[-_]/g, ' ').toUpperCase(),
       image: img,
-      desc: fs.existsSync(dPath) ? fs.readFileSync(dPath, 'utf8').trim() : "Quality Merchandise."
+      desc: fs.existsSync(dPath) ? fs.readFileSync(dPath, 'utf8').trim() : defaultDesc
     };
   });
 
