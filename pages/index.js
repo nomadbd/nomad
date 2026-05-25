@@ -3,7 +3,7 @@ import Head from 'next/head';
 import fs from 'fs';
 import path from 'path';
 
-export default function Home({ allProducts, siteContent }) {
+export default function Home({ allProducts, siteContent, announcement }) {
   const [products, setProducts] = useState([]);
   const [visibleCount, setVisibleCount] = useState(8);
   const [selectedProduct, setSelectedProduct] = useState('');
@@ -29,29 +29,35 @@ export default function Home({ allProducts, siteContent }) {
       
       <Head>
         <title>NOMAD | Premium Clothing Brand</title>
-        <meta name="description" content="Explore Nomad's exclusive premium collection. Crafted for those who command presence." />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="description" content="Explore Nomad's exclusive premium collection." />
       </Head>
 
       <style>{`
-        @keyframes luxuryFade { 
-          0% { opacity: 0; transform: translateY(40px) scale(0.98); filter: blur(5px); } 
-          100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); } 
-        }
+        @keyframes luxuryFade { 0% { opacity: 0; transform: translateY(30px); } 100% { opacity: 1; transform: translateY(0); } }
         .product-card { animation: luxuryFade 1.2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+        .announcement-card { animation: luxuryFade 1s ease-out; }
         input, select, textarea { background: none; border: none; border-bottom: 1px solid #222; color: #fff; padding: 12px; outline: none; font-size: 13px; width: 100%; box-sizing: border-box; }
-        input:focus { border-bottom-color: #fff; }
-        input::placeholder { color: #444; }
         option { background-color: #000; color: #fff; }
       `}</style>
 
-      {/* Header */}
+      {/* Slim Header */}
       <header style={{ textAlign: 'center', padding: '25px 20px', position: 'sticky', top: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(15px)', zIndex: 100, borderBottom: '1px solid #111' }}>
         <h1 style={{ letterSpacing: '15px', fontSize: '24px', margin: 0, fontWeight: '900' }}>NOMAD</h1>
         <p style={{ fontSize: '7px', color: '#555', marginTop: '5px', letterSpacing: '5px', textTransform: 'uppercase' }}>{siteContent.header}</p>
       </header>
 
-      {/* Products */}
+      {/* Dynamic Announcement Card */}
+      {announcement && (
+        <div className="announcement-card" style={{ maxWidth: '410px', margin: '20px auto 10px auto', padding: '0 20px' }}>
+          <div style={{ backgroundColor: '#0a0a0a', border: '1px solid #1a1a1a', padding: '15px 20px', borderRadius: '20px', textAlign: 'center', backdropFilter: 'blur(10px)' }}>
+            <p style={{ fontSize: '10px', letterSpacing: '2px', color: '#fff', margin: 0, lineHeight: '1.6', fontWeight: '300', textTransform: 'uppercase' }}>
+              {announcement}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Product List */}
       <main style={{ maxWidth: '450px', margin: '0 auto', padding: '20px' }}>
         {products.slice(0, visibleCount).map((product, index) => (
           <div key={index} className="product-card" style={{ marginBottom: '100px', opacity: 0 }}>
@@ -72,20 +78,18 @@ export default function Home({ allProducts, siteContent }) {
         ))}
       </main>
 
-      {/* Premium Footer with Socials */}
+      {/* Footer */}
       <footer style={{ textAlign: 'center', padding: '80px 20px', borderTop: '1px solid #111', background: '#050505' }}>
-        <p style={{ maxWidth: '300px', margin: '0 auto 40px auto', fontSize: '11px', color: '#555', lineHeight: '2', letterSpacing: '1px' }}>{siteContent.about}</p>
-        
+        <p style={{ maxWidth: '300px', margin: '0 auto 40px auto', fontSize: '11px', color: '#555', lineHeight: '2' }}>{siteContent.about}</p>
         <div style={{ display: 'flex', justifyContent: 'center', gap: '30px', marginBottom: '40px' }}>
           <a href="https://facebook.com/nomadbysh" target="_blank" rel="noopener noreferrer" style={{ color: '#fff', textDecoration: 'none', fontSize: '10px', letterSpacing: '2px' }}>FACEBOOK</a>
           <a href="mailto:nomadbysh@gmail.com" style={{ color: '#fff', textDecoration: 'none', fontSize: '10px', letterSpacing: '2px' }}>EMAIL</a>
           <a href="https://wa.me/8801521731371" style={{ color: '#fff', textDecoration: 'none', fontSize: '10px', letterSpacing: '2px' }}>WHATSAPP</a>
         </div>
-
         <p style={{ letterSpacing: '6px', fontSize: '8px', color: '#222' }}>{siteContent.footer}</p>
       </footer>
 
-      {/* Modal */}
+      {/* Order Modal (Hidden by default) */}
       {isModalOpen && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.98)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
           <div style={{ backgroundColor: '#0a0a0a', width: '100%', maxWidth: '400px', padding: '45px 30px', borderRadius: '35px', border: '1px solid #1a1a1a', maxHeight: '90vh', overflowY: 'auto', position: 'relative' }}>
@@ -135,17 +139,19 @@ export async function getStaticProps() {
     footer: readTxt('footer.txt', 'NOMAD BY SH | 2026')
   };
 
+  // ঘোষণা নিয়ন্ত্রণের জন্য announcement.txt পড়ুন
+  const announcement = readTxt('announcement.txt', '');
+
   const images = fs.readdirSync(pDir).filter(f => /\.(jpg|jpeg|png|webp)$/i.test(f));
   const allProducts = images.map(img => {
     const handle = path.parse(img).name;
     const dPath = path.join(dDir, `${handle}.txt`);
-    const defaultDesc = "Crafted for those who command presence. Experience the pinnacle of premium craftsmanship with Nomad's exclusive collection.";
     return {
       name: handle.replace(/[-_]/g, ' ').toUpperCase(),
       image: img,
-      desc: fs.existsSync(dPath) ? fs.readFileSync(dPath, 'utf8').trim() : defaultDesc
+      desc: fs.existsSync(dPath) ? fs.readFileSync(dPath, 'utf8').trim() : "Crafted for those who command presence."
     };
   });
 
-  return { props: { allProducts: JSON.parse(JSON.stringify(allProducts)), siteContent }, revalidate: 10 };
+  return { props: { allProducts: JSON.parse(JSON.stringify(allProducts)), siteContent, announcement }, revalidate: 10 };
 }
