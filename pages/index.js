@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Head from 'next/head'; // মেটা ট্যাগের জন্য
 import fs from 'fs';
 import path from 'path';
 
@@ -25,10 +26,28 @@ export default function Home({ allProducts, siteContent }) {
 
   return (
     <div style={{ backgroundColor: '#000', color: '#fff', minHeight: '100vh', fontFamily: 'Inter, sans-serif', margin: 0 }}>
+      
+      {/* SEO Meta Tags for Google Search */}
+      <Head>
+        <title>NOMAD | Premium Clothing Brand</title>
+        <meta name="description" content="Explore Nomad's exclusive premium collection. Crafted for those who command presence with luxury craftsmanship." />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta property="og:title" content="NOMAD - Premium Clothing" />
+        <meta property="og:description" content="Experience the pinnacle of premium craftsmanship." />
+        <meta name="theme-color" content="#000000" />
+      </Head>
+
       <style>{`
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
-        .product-card { animation: fadeIn 0.9s ease-out forwards; }
-        input, select, textarea { background: none; border: none; border-bottom: 1px solid #222; color: #fff; padding: 12px; outline: none; font-size: 13px; width: 100%; box-sizing: border-box; }
+        /* Smooth Fade-in Animation */
+        @keyframes luxuryFade { 
+          0% { opacity: 0; transform: translateY(40px) scale(0.98); filter: blur(5px); } 
+          100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); } 
+        }
+        .product-card { 
+          animation: luxuryFade 1.2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; 
+        }
+        input, select, textarea { background: none; border: none; border-bottom: 1px solid #222; color: #fff; padding: 12px; outline: none; font-size: 13px; width: 100%; box-sizing: border-box; transition: border-color 0.3s; }
+        input:focus { border-bottom-color: #fff; }
         input::placeholder { color: #444; letter-spacing: 1px; }
         option { background-color: #000; color: #fff; }
       `}</style>
@@ -82,7 +101,6 @@ export default function Home({ allProducts, siteContent }) {
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.98)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
           <div style={{ backgroundColor: '#0a0a0a', width: '100%', maxWidth: '400px', padding: '45px 30px', borderRadius: '35px', border: '1px solid #1a1a1a', maxHeight: '90vh', overflowY: 'auto', position: 'relative' }}>
             
-            {/* Optimized Header Area with Cross Button pushed to far right */}
             <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', position: 'relative', marginBottom: '35px' }}>
               <h2 style={{ fontSize: '11px', letterSpacing: '4px', fontWeight: 'bold', margin: 0, color: '#fff' }}>SPECIFICATIONS</h2>
               <button onClick={() => setIsModalOpen(false)} style={{ position: 'absolute', right: '-10px', background: 'none', border: 'none', color: '#fff', fontSize: '22px', cursor: 'pointer', lineHeight: 1 }}>&times;</button>
