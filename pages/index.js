@@ -90,7 +90,7 @@ export default function Home({ allProducts, siteContent }) {
               
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
                 <select name="size" required style={{ background: 'none', border: 'none', borderBottom: '1px solid #222', color: '#fff' }}>
-                  <option value="" disabled selected>SELECT SIZE</option>
+                  <option value="" disabled selected>SIZE</option>
                   <option value="M">MEDIUM (M)</option>
                   <option value="L">LARGE (L)</option>
                   <option value="XL">EXTRA LARGE (XL)</option>
