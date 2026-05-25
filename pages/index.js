@@ -9,6 +9,7 @@ export default function Home({ allProducts, siteContent, announcement }) {
   const [visibleCount, setVisibleCount] = useState(8);
   const [selectedProduct, setSelectedProduct] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isFocused, setIsFocused] = useState(false); // ফোকাস স্টেট
 
   useEffect(() => {
     const shuffled = [...allProducts].sort(() => 0.5 - Math.random());
@@ -21,11 +22,10 @@ export default function Home({ allProducts, siteContent, announcement }) {
         setVisibleCount(prev => prev + 6);
       }
     };
-    window.addEventListener( 'scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // সার্চ লজিক: নাম বা আইডি দিয়ে ফিল্টার হবে
   const filteredProducts = products.filter(product =>
     product.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -35,20 +35,14 @@ export default function Home({ allProducts, siteContent, announcement }) {
       
       <Head>
         <title>NOMAD | Premium Clothing Brand</title>
-        <meta name="description" content="Explore Nomad's exclusive premium collection." />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
 
       <style>{`
-        @keyframes luxuryFade { 
-          0% { opacity: 0; transform: translateY(30px); } 
-          100% { opacity: 1; transform: translateY(0); } 
-        }
+        @keyframes luxuryFade { 0% { opacity: 0; transform: translateY(20px); } 100% { opacity: 1; transform: translateY(0); } }
         .product-card { animation: luxuryFade 1.2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
-        .announcement-card { animation: luxuryFade 1s ease-out; }
-        input, select, textarea { background: none; border: none; border-bottom: 1px solid #222; color: #fff; padding: 12px; outline: none; font-size: 13px; width: 100%; box-sizing: border-box; }
         .search-input::placeholder { color: #444; letter-spacing: 2px; text-transform: uppercase; font-size: 10px; }
-        option { background-color: #000; color: #fff; }
+        input { caret-color: #fff; }
       `}</style>
 
       {/* Header */}
@@ -58,10 +52,17 @@ export default function Home({ allProducts, siteContent, announcement }) {
       </header>
 
       {/* Dynamic Search & Announcement Card */}
-      <div className="announcement-card" style={{ maxWidth: '410px', margin: '20px auto 10px auto', padding: '0 20px' }}>
-        <div style={{ backgroundColor: '#0a0a0a', border: '1px solid #1a1a1a', padding: '20px', borderRadius: '25px', textAlign: 'center' }}>
+      <div style={{ maxWidth: '410px', margin: '20px auto 10px auto', padding: '0 20px' }}>
+        <div style={{ 
+          backgroundColor: '#0a0a0a', 
+          border: isFocused ? '1.5px solid #fff' : '1px solid #1a1a1a', 
+          padding: '20px', 
+          borderRadius: '25px', 
+          textAlign: 'center',
+          transition: 'all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1)' 
+        }}>
           {announcement && !searchQuery && (
-            <p style={{ fontSize: '10px', letterSpacing: '2px', color: '#fff', margin: '0 0 15px 0', textTransform: 'uppercase', fontWeight: '300' }}>
+            <p style={{ fontSize: '11px', letterSpacing: '2px', color: '#fff', margin: '0 0 15px 0', textTransform: 'uppercase', fontWeight: 'bold' }}>
               {announcement}
             </p>
           )}
@@ -69,10 +70,22 @@ export default function Home({ allProducts, siteContent, announcement }) {
           <input 
             type="text" 
             className="search-input"
-            placeholder={announcement ? "OR SEARCH PRODUCT NAME / ID" : "SEARCH PRODUCT NAME / ID"}
+            placeholder="SEARCH PRODUCT"
             value={searchQuery}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
             onChange={(e) => setSearchQuery(e.target.value)}
-            style={{ textAlign: 'center', border: 'none', borderBottom: searchQuery ? '1px solid #333' : 'none', padding: '5px', fontSize: '11px', letterSpacing: '2px', color: '#fff', width: '80%' }} 
+            style={{ 
+              textAlign: 'center', 
+              border: 'none', 
+              background: 'none',
+              padding: '5px', 
+              fontSize: '11px', 
+              letterSpacing: '3px', 
+              color: '#fff', 
+              width: '100%',
+              outline: 'none'
+            }} 
           />
         </div>
       </div>
@@ -98,7 +111,7 @@ export default function Home({ allProducts, siteContent, announcement }) {
             </div>
           ))
         ) : (
-          <p style={{ textAlign: 'center', fontSize: '12px', color: '#444', marginTop: '50px', letterSpacing: '2px' }}>NO PRODUCTS FOUND</p>
+          <p style={{ textAlign: 'center', fontSize: '11px', color: '#333', marginTop: '50px', letterSpacing: '3px' }}>NO RESULTS FOUND</p>
         )}
       </main>
 
