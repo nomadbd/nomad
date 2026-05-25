@@ -8,11 +8,13 @@ export default function Home({ allProducts, siteContent }) {
   const [selectedProduct, setSelectedProduct] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  // প্রডাক্ট র‍্যান্ডমাইজ করা
   useEffect(() => {
     const shuffled = [...allProducts].sort(() => 0.5 - Math.random());
     setProducts(shuffled);
   }, [allProducts]);
 
+  // ইনফিনিট স্ক্রল ডিটেকশন
   useEffect(() => {
     const handleScroll = () => {
       if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 700) {
@@ -30,6 +32,7 @@ export default function Home({ allProducts, siteContent }) {
         .product-card { animation: fadeIn 0.9s ease-out forwards; }
         input, select, textarea { background: none; border: none; border-bottom: 1px solid #222; color: #fff; padding: 12px; outline: none; font-size: 13px; width: 100%; box-sizing: border-box; }
         input::placeholder { color: #444; letter-spacing: 1px; }
+        option { background-color: #000; color: #fff; }
       `}</style>
 
       {/* Header */}
@@ -89,7 +92,7 @@ export default function Home({ allProducts, siteContent }) {
               <input type="hidden" name="product" value={selectedProduct} />
               
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-                <select name="size" required style={{ background: 'none', border: 'none', borderBottom: '1px solid #222', color: '#fff' }}>
+                <select name="size" required>
                   <option value="" disabled selected>SIZE</option>
                   <option value="M">MEDIUM (M)</option>
                   <option value="L">LARGE (L)</option>
@@ -144,7 +147,7 @@ export async function getStaticProps() {
     return {
       name: handle.replace(/[-_]/g, ' ').toUpperCase(),
       image: img,
-      desc: fs.existsSync(dPath) ? fs.readFileSync(dPath, 'utf8').trim() : "Premium Quality."
+      desc: fs.existsSync(dPath) ? fs.readFileSync(dPath, 'utf8').trim() : "Premium Quality Merchandise."
     };
   });
 
