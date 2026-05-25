@@ -10,6 +10,16 @@ export default function Home({ allProducts, siteContent, announcement }) {
   const [selectedProduct, setSelectedProduct] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState('');
+
+  // পেমেন্ট নম্বর সেটআপ
+  const paymentNumbers = {
+    'Bkash': '01521731371',
+    'Nagad': '01521731371',
+    'Rocket': '01521731371',
+    'Upay': '01521731371',
+    'Cellfin': '01521731371'
+  };
 
   useEffect(() => {
     const shuffled = [...allProducts].sort(() => 0.5 - Math.random());
@@ -58,26 +68,15 @@ export default function Home({ allProducts, siteContent, announcement }) {
         <div style={{ 
           backgroundColor: '#0a0a0a', 
           border: isFocused ? '1.5px solid #fff' : '1px solid #1a1a1a', 
-          padding: '20px', 
-          borderRadius: '25px', 
-          textAlign: 'center',
-          transition: 'all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1)' 
+          padding: '20px', borderRadius: '25px', textAlign: 'center',
+          transition: 'all 0.4s' 
         }}>
           {announcement && !searchQuery && (
             <p style={{ fontSize: '11px', letterSpacing: '2px', color: '#fff', margin: '0 0 15px 0', textTransform: 'uppercase', fontWeight: 'bold' }}>
               {announcement}
             </p>
           )}
-          <input 
-            type="text" 
-            className="search-input"
-            placeholder="SEARCH PRODUCT"
-            value={searchQuery}
-            onFocus={() => setIsFocused(true)}
-            onBlur={() => setIsFocused(false)}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            style={{ textAlign: 'center', border: 'none', background: 'none', padding: '5px', fontSize: '11px', letterSpacing: '3px', color: '#fff', width: '100%', outline: 'none' }} 
-          />
+          <input type="text" className="search-input" placeholder="SEARCH PRODUCT" value={searchQuery} onFocus={() => setIsFocused(true)} onBlur={() => setIsFocused(false)} onChange={(e) => setSearchQuery(e.target.value)} style={{ textAlign: 'center', border: 'none', background: 'none', fontSize: '11px', letterSpacing: '3px', color: '#fff', width: '100%', outline: 'none' }} />
         </div>
       </div>
 
@@ -103,7 +102,7 @@ export default function Home({ allProducts, siteContent, announcement }) {
           <div style={{ backgroundColor: '#0a0a0a', width: '100%', maxWidth: '400px', padding: '45px 30px', borderRadius: '35px', border: '1px solid #1a1a1a', maxHeight: '90vh', overflowY: 'auto', position: 'relative' }}>
             <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', position: 'relative', marginBottom: '35px' }}>
               <h2 style={{ fontSize: '11px', letterSpacing: '4px', fontWeight: 'bold', margin: 0 }}>SPECIFICATIONS</h2>
-              <button onClick={() => setIsModalOpen(false)} style={{ position: 'absolute', right: '-10px', background: 'none', border: 'none', color: '#fff', fontSize: '22px', cursor: 'pointer' }}>&times;</button>
+              <button onClick={() => { setIsModalOpen(false); setPaymentMethod(''); }} style={{ position: 'absolute', right: '-10px', background: 'none', border: 'none', color: '#fff', fontSize: '22px', cursor: 'pointer' }}>&times;</button>
             </div>
             <form action="/api/order" method="POST" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <input type="hidden" name="product" value={selectedProduct} />
@@ -114,21 +113,30 @@ export default function Home({ allProducts, siteContent, announcement }) {
               <input type="text" name="name" placeholder="FULL NAME" required />
               <input type="tel" name="phone" placeholder="PHONE NUMBER" pattern="[0-9]*" required />
               <textarea name="address" placeholder="SHIPPING ADDRESS" required style={{ minHeight: '60px' }}></textarea>
+              
               <div style={{ marginTop: '5px', padding: '18px', backgroundColor: '#050505', borderRadius: '20px', border: '1px solid #111' }}>
-                <select name="method" required style={{ marginBottom: '15px' }}>
+                <select name="method" required style={{ marginBottom: '10px' }} onChange={(e) => setPaymentMethod(e.target.value)}>
                   <option value="" disabled selected>SELECT GATEWAY</option>
                   <option value="Bkash">Bkash</option><option value="Nagad">Nagad</option><option value="Rocket">Rocket</option><option value="Upay">Upay</option><option value="Cellfin">Cellfin</option>
                 </select>
+
+                {paymentMethod && (
+                  <div style={{ padding: '10px', marginBottom: '15px', border: '1px dashed #333', borderRadius: '10px', textAlign: 'center' }}>
+                    <p style={{ fontSize: '9px', color: '#777', margin: '0 0 5px 0' }}>SEND MONEY TO:</p>
+                    <p style={{ fontSize: '14px', letterSpacing: '2px', fontWeight: 'bold', color: '#fff', margin: 0 }}>{paymentNumbers[paymentMethod]}</p>
+                  </div>
+                )}
+
                 <input type="tel" name="payment_no" placeholder="SENDER NO" pattern="[0-9]*" required style={{ marginBottom: '15px' }} />
                 <input type="text" name="txn_id" placeholder="TRANSACTION ID" required />
               </div>
-              <button type="submit" style={{ backgroundColor: '#fff', color: '#000', border: '1px solid #fff', padding: '20px', borderRadius: '18px', fontWeight: '900', letterSpacing: '3px', fontSize: '11px' }}>RESERVE NOW</button>
+              <button type="submit" style={{ backgroundColor: '#fff', color: '#000', border: 'none', padding: '20px', borderRadius: '18px', fontWeight: '900', letterSpacing: '3px', fontSize: '11px' }}>RESERVE NOW</button>
             </form>
           </div>
         </div>
       )}
 
-      {/* Restored Footer */}
+      {/* Footer */}
       <footer style={{ textAlign: 'center', padding: '80px 20px', borderTop: '1px solid #111', background: '#050505' }}>
         <p style={{ maxWidth: '300px', margin: '0 auto 40px auto', fontSize: '11px', color: '#555', lineHeight: '2' }}>{siteContent.about}</p>
         <div style={{ display: 'flex', justifyContent: 'center', gap: '30px', marginBottom: '40px' }}>
@@ -138,7 +146,6 @@ export default function Home({ allProducts, siteContent, announcement }) {
         </div>
         <p style={{ letterSpacing: '6px', fontSize: '8px', color: '#222' }}>{siteContent.footer}</p>
       </footer>
-
     </div>
   );
 }
@@ -160,8 +167,8 @@ export async function getStaticProps() {
   };
 
   const announcement = readTxt('announcement.txt', '');
-
   const images = fs.readdirSync(pDir).filter(f => /\.(jpg|jpeg|png|webp)$/i.test(f));
+  
   const allProducts = images.map(img => {
     const handle = path.parse(img).name;
     const dPath = path.join(dDir, `${handle}.txt`);
