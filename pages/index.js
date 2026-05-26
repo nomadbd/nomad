@@ -23,7 +23,9 @@ export default function Home({ allProducts, siteContent, announcement }) {
   };
 
   useEffect(() => {
-    setProducts(allProducts);
+    // প্রডাক্ট র‍্যান্ডমলি সাজানোর জন্য Shuffle লজিক
+    const shuffledProducts = [...allProducts].sort(() => Math.random() - 0.5);
+    setProducts(shuffledProducts);
     
     // অটোমেটিক প্রডাক্ট লিংক হ্যান্ডেলার (URL: ?product=ID)
     if (router.query.product) {
@@ -35,7 +37,7 @@ export default function Home({ allProducts, siteContent, announcement }) {
     }
   }, [allProducts, router.query]);
 
-  // উন্নত সার্চ লজিক (মিল থাকা প্রডাক্টগুলো আগে দেখাবে)
+  // উন্নত সার্চ লজিক
   const filteredProducts = searchQuery.trim() === '' 
     ? products 
     : products
@@ -62,19 +64,16 @@ export default function Home({ allProducts, siteContent, announcement }) {
         .search-input::placeholder { color: #444; letter-spacing: 2px; text-transform: uppercase; font-size: 10px; }
         option { background-color: #000; color: #fff; }
         
-        /* ডেসক্রিপশন গ্রিড লেআউট */
         .desc-container { display: flex; flex-direction: column; gap: 6px; padding: 0 20px; margin: 18px 0; }
         .desc-line { display: grid; grid-template-columns: 85px 15px 1fr; font-size: 12px; color: #777; text-align: left; }
         .desc-para { white-space: pre-line; font-size: 12px; color: #777; line-height: 1.8; margin-top: 15px; text-align: center; }
       `}</style>
 
-      {/* Header */}
       <header style={{ textAlign: 'center', padding: '25px 20px', position: 'sticky', top: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(15px)', zIndex: 100, borderBottom: '1px solid #111' }}>
         <h1 style={{ letterSpacing: '15px', fontSize: '24px', margin: 0, fontWeight: '900' }}>NOMAD</h1>
         <p style={{ fontSize: '7px', color: '#555', marginTop: '5px', letterSpacing: '5px', textTransform: 'uppercase' }}>{siteContent.header}</p>
       </header>
 
-      {/* Search & Announcement */}
       <div style={{ maxWidth: '410px', margin: '20px auto 10px auto', padding: '0 20px' }}>
         <div style={{ 
           backgroundColor: '#0a0a0a', 
@@ -99,7 +98,6 @@ export default function Home({ allProducts, siteContent, announcement }) {
         </div>
       </div>
 
-      {/* Product List */}
       <main style={{ maxWidth: '450px', margin: '0 auto', padding: '20px' }}>
         {filteredProducts.length > 0 ? (
           filteredProducts.slice(0, visibleCount).map((product, index) => (
@@ -110,7 +108,6 @@ export default function Home({ allProducts, siteContent, announcement }) {
               <div style={{ textAlign: 'center', marginTop: '35px' }}>
                 <h3 style={{ fontSize: '20px', letterSpacing: '3px', fontWeight: '500' }}>{product.name}</h3>
                 
-                {/* স্মার্ট ডেসক্রিপশন রেন্ডারিং */}
                 <div className="desc-container">
                   {product.desc.split('\n').map((line, i) => {
                     if (line.includes(':')) {
@@ -141,7 +138,6 @@ export default function Home({ allProducts, siteContent, announcement }) {
         )}
       </main>
 
-      {/* Order Modal */}
       {isModalOpen && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.98)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
           <div style={{ backgroundColor: '#0a0a0a', width: '100%', maxWidth: '400px', padding: '45px 30px', borderRadius: '35px', border: '1px solid #1a1a1a', maxHeight: '90vh', overflowY: 'auto', position: 'relative' }}>
@@ -192,7 +188,6 @@ export default function Home({ allProducts, siteContent, announcement }) {
         </div>
       )}
 
-      {/* Footer */}
       <footer style={{ textAlign: 'center', padding: '80px 20px', background: '#050505', borderTop: '1px solid #111' }}>
         <p style={{ maxWidth: '300px', margin: '0 auto 40px auto', fontSize: '11px', color: '#555', lineHeight: '2' }}>{siteContent.about}</p>
         <div style={{ display: 'flex', justifyContent: 'center', gap: '30px', marginBottom: '40px' }}>
