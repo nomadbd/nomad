@@ -1,4 +1,4 @@
- import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import fs from 'fs';
@@ -37,11 +37,8 @@ export default function Home({ allProducts, siteContent, announcement }) {
   const calculatePrice = (product) => {
     if (!product || !product.priceText) return { original: 0, base: 0, discountAmt: 0, discountPercent: 0, delivery: 0, total: 0 };
     
-    // অ্যানাউন্সমেন্ট ডিসকাউন্ট (সেফ চেক)
     const discMatch = announcement?.match(/(\d+)%/);
     const annDisc = discMatch ? parseInt(discMatch[1]) : 0;
-    
-    // প্রোডাক্টের দাম এবং ডিসকাউন্ট
     const numberOnly = parseInt(product.priceText.replace(/[^0-9]/g, "")) || 0;
     const descDiscMatch = product.desc?.match(/Discount:\s*(\d+)%/i);
     const descDisc = descDiscMatch ? parseInt(descDiscMatch[1]) : 0;
@@ -49,8 +46,6 @@ export default function Home({ allProducts, siteContent, announcement }) {
     const totalDiscountPercent = annDisc + descDisc;
     const discountAmount = Math.floor(numberOnly * totalDiscountPercent / 100);
     const basePrice = numberOnly - discountAmount;
-    
-    // ডেলিভারি চার্জ
     const delMatch = product.desc?.match(/Delivery:\s*(\d+)/i);
     const deliveryCharge = delMatch ? parseInt(delMatch[1]) : 0;
     
@@ -184,6 +179,9 @@ export default function Home({ allProducts, siteContent, announcement }) {
                 <input type="hidden" name="delivery" value={calculatePrice(selectedProduct).delivery} />
                 <input type="hidden" name="total" value={calculatePrice(selectedProduct).total} />
                 <input type="hidden" name="ref" value={selectedProduct.ref || ''} />
+                {/* ডিসকাউন্ট ফিল্ডস */}
+                <input type="hidden" name="discountAmt" value={calculatePrice(selectedProduct).discountAmt} />
+                <input type="hidden" name="discountPercent" value={calculatePrice(selectedProduct).discountPercent} />
 
                 <div style={{ background: '#111', padding: '15px', borderRadius: '15px', margin: '0 0 20px 0', textAlign: 'center' }}>
                     <p style={{ fontSize: '12px', color: '#aaa', textDecoration: 'line-through' }}>Original: ৳{calculatePrice(selectedProduct).original}</p>
