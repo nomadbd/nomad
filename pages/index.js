@@ -32,18 +32,17 @@ export default function Home({ allProducts, siteContent, announcement }) {
       catMap[catName].push(p);
     });
     setCategories(catMap);
-
     if (router.query.product) {
       const target = allProducts.find(p => p.id === router.query.product);
       if (target) { setSelectedProduct({ ...target, ref: router.query.ref || '' }); setModalType('details'); }
     }
   }, [allProducts, router.query]);
 
-  const calculatePrice = (priceText) => {
-    const numberOnly = priceText ? priceText.replace(/[^0-9]/g, "") : "0";
-    const deliveryCharge = 70;
-    let basePrice = parseInt(numberOnly) || 0;
-    if (discountPercent > 0) basePrice = Math.floor(basePrice - (basePrice * discountPercent / 100));
+  const calculatePrice = (product) => {
+    const numberOnly = parseInt(product.priceText.replace(/[^0-9]/g, "")) || 0;
+    let basePrice = discountPercent > 0 ? Math.floor(numberOnly - (numberOnly * discountPercent / 100)) : numberOnly;
+    const delMatch = product.desc.match(/Delivery:\s*(\d+)/i);
+    const deliveryCharge = delMatch ? parseInt(delMatch[1]) : 0;
     return { base: basePrice, delivery: deliveryCharge, total: basePrice + deliveryCharge };
   };
 
@@ -56,7 +55,6 @@ export default function Home({ allProducts, siteContent, announcement }) {
   return (
     <div style={{ backgroundColor: '#000', color: '#fff', minHeight: '100vh', fontFamily: 'Inter, sans-serif', overflowX: 'hidden' }}>
       <Head><title>NOMAD | Premium</title><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/></Head>
-
       <style>{`
         * { box-sizing: border-box; outline: none !important; }
         .scroll-container { display: flex; overflow-x: auto; gap: 20px; padding: 10px 20px; scrollbar-width: none; scroll-snap-type: x mandatory; }
@@ -64,15 +62,15 @@ export default function Home({ allProducts, siteContent, announcement }) {
         .cat-item { min-width: 85vw; scroll-snap-align: center; background: #0a0a0a; border-radius: 40px; border: 1px solid #1a1a1a; overflow: hidden; margin: 0 auto; }
         .btn-style { flex: 1; background: #111; color: #fff; border: 1px solid #333; padding: 16px; border-radius: 15px; font-weight: bold; font-size: 11px; letter-spacing: 1px; cursor: pointer; text-align: center; }
         .input-field { background: #000; border: 1px solid #333; color: #fff; padding: 15px; border-radius: 15px; width: 100%; font-size: 14px; margin-bottom: 12px; }
-        .input-field:focus { border-color: #555; }
         .desc-line { display: grid; grid-template-columns: 85px 15px 1fr; font-size: 12px; color: #777; margin-bottom: 5px; }
       `}</style>
-
+      
+      {/* HEADER & SEARCH SECTION (আগের মতই) */}
       <header style={{ textAlign: 'center', padding: '40px 20px' }}>
         <h1 style={{ letterSpacing: '12px', fontSize: '24px', fontWeight: '900', margin: 0 }}>NOMAD</h1>
         <p style={{ fontSize: '7px', color: '#444', letterSpacing: '4px', marginTop: '8px' }}>{siteContent.header}</p>
       </header>
-
+      
       <div style={{ maxWidth: '400px', margin: '0 auto 30px', padding: '0 20px' }}>
         <div style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '25px', padding: '20px', textAlign: 'center' }}>
           {announcement && !searchQuery && <p style={{ fontSize: '10px', letterSpacing: '2px', color: '#fff', marginBottom: '15px' }}>{announcement}</p>}
@@ -81,6 +79,7 @@ export default function Home({ allProducts, siteContent, announcement }) {
       </div>
 
       <main>
+        {/* প্রোডাক্ট মেইন সেকশন (আগের মতই) */}
         {searchQuery ? (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', padding: '20px' }}>
             {filteredProducts.map((p, i) => (
@@ -91,22 +90,23 @@ export default function Home({ allProducts, siteContent, announcement }) {
             ))}
           </div>
         ) : viewCategory ? (
-          <div style={{ padding: '0 20px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', margin: '20px 0' }}>
-              <span style={{ fontSize: '12px', letterSpacing: '3px' }}>{viewCategory} COLLECTION</span>
-              <span onClick={() => setViewCategory(null)} style={{ fontSize: '10px', color: '#444' }}>BACK</span>
-            </div>
-            {categories[viewCategory].map((p, i) => (
-              <div key={i} style={{ marginBottom: '40px', background: '#0a0a0a', borderRadius: '40px', border: '1px solid #1a1a1a', overflow: 'hidden' }}>
-                <img src={`/products/${p.image}`} style={{ width: '100%' }} />
-                <h3 style={{ textAlign: 'center', fontSize: '18px', margin: '20px 0' }}>{p.name}</h3>
-                <div style={{ display: 'flex', gap: '10px', padding: '0 20px 20px' }}>
-                  <button className="btn-style" onClick={() => { setSelectedProduct(p); setModalType('details'); }}>DETAILS</button>
-                  <button className="btn-style" onClick={() => { setSelectedProduct(p); setModalType('order'); }}>ORDER</button>
+            /* (আপনার ভিউ ক্যাটাগরি কোড) */
+            <div style={{ padding: '0 20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', margin: '20px 0' }}>
+                <span style={{ fontSize: '12px', letterSpacing: '3px' }}>{viewCategory} COLLECTION</span>
+                <span onClick={() => setViewCategory(null)} style={{ fontSize: '10px', color: '#444' }}>BACK</span>
                 </div>
-              </div>
-            ))}
-          </div>
+                {categories[viewCategory].map((p, i) => (
+                <div key={i} style={{ marginBottom: '40px', background: '#0a0a0a', borderRadius: '40px', border: '1px solid #1a1a1a', overflow: 'hidden' }}>
+                    <img src={`/products/${p.image}`} style={{ width: '100%' }} />
+                    <h3 style={{ textAlign: 'center', fontSize: '18px', margin: '20px 0' }}>{p.name}</h3>
+                    <div style={{ display: 'flex', gap: '10px', padding: '0 20px 20px' }}>
+                    <button className="btn-style" onClick={() => { setSelectedProduct(p); setModalType('details'); }}>DETAILS</button>
+                    <button className="btn-style" onClick={() => { setSelectedProduct(p); setModalType('order'); }}>ORDER</button>
+                    </div>
+                </div>
+                ))}
+            </div>
         ) : (
           Object.keys(categories).map(cat => (
             <section key={cat} style={{ marginBottom: '40px' }}>
@@ -133,6 +133,7 @@ export default function Home({ allProducts, siteContent, announcement }) {
         )}
       </main>
 
+      {/* FOOTER (আগের মতই) */}
       <footer style={{ textAlign: 'center', padding: '60px 20px', background: '#050505', borderTop: '1px solid #111' }}>
         <div style={{ display: 'flex', justifyContent: 'center', gap: '25px', marginBottom: '30px' }}>
           <a href="https://facebook.com/nomadbysh" style={{ color: '#fff', textDecoration: 'none', fontSize: '10px' }}>FACEBOOK</a>
@@ -142,6 +143,7 @@ export default function Home({ allProducts, siteContent, announcement }) {
         <p style={{ letterSpacing: '6px', fontSize: '8px', color: '#111' }}>{siteContent.footer}</p>
       </footer>
 
+      {/* MODAL SECTION (নতুন আপডেটেড অর্ডার ফর্ম) */}
       {(selectedProduct && modalType) && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.98)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
           <div style={{ background: '#0a0a0a', width: '100%', maxWidth: '400px', padding: '40px 25px', borderRadius: '40px', border: '1px solid #1a1a1a', maxHeight: '95vh', overflowY: 'auto' }}>
@@ -156,7 +158,7 @@ export default function Home({ allProducts, siteContent, announcement }) {
                     ) : <p key={i} style={{ fontSize: '12px', color: '#666', textAlign: 'center' }}>{line}</p>
                   ))}
                 </div>
-                <p style={{ textAlign: 'center', fontSize: '18px', fontWeight: 'bold' }}>{calculatePrice(selectedProduct.priceText).base} BDT</p>
+                <p style={{ textAlign: 'center', fontSize: '18px', fontWeight: 'bold' }}>{calculatePrice(selectedProduct).base} BDT</p>
                 <button className="btn-style" style={{ width: '100%', marginTop: '25px', padding: '20px' }} onClick={()=>setModalType('order')}>PROCEED TO ORDER</button>
                 <p onClick={closeModal} style={{ textAlign: 'center', color: '#444', fontSize: '11px', marginTop: '20px', letterSpacing: '2px', cursor: 'pointer' }}>CANCEL</p>
               </div>
@@ -165,14 +167,15 @@ export default function Home({ allProducts, siteContent, announcement }) {
                 <h2 style={{ textAlign: 'center', marginBottom: '25px', fontSize: '16px', fontWeight: 'bold' }}>ORDER: {selectedProduct.name}</h2>
                 <input type="hidden" name="product_id" value={selectedProduct.id} />
                 <input type="hidden" name="product_name" value={selectedProduct.name} />
-                <input type="hidden" name="price" value={calculatePrice(selectedProduct.priceText).base} />
-                <input type="hidden" name="delivery" value={calculatePrice(selectedProduct.priceText).delivery} />
-                <input type="hidden" name="total" value={calculatePrice(selectedProduct.priceText).total} />
+                <input type="hidden" name="price" value={calculatePrice(selectedProduct).base} />
+                <input type="hidden" name="delivery" value={calculatePrice(selectedProduct).delivery} />
+                <input type="hidden" name="total" value={calculatePrice(selectedProduct).total} />
                 <input type="hidden" name="ref" value={selectedProduct.ref || ''} />
 
-                <div style={{ fontSize: '13px', margin: '0 0 20px 0', textAlign: 'center', color: '#aaa' }}>
-                    <p>Price: {calculatePrice(selectedProduct.priceText).base} + Delivery: {calculatePrice(selectedProduct.priceText).delivery}</p>
-                    <p style={{ fontWeight: 'bold', fontSize: '16px', color: '#fff' }}>TOTAL: {calculatePrice(selectedProduct.priceText).total}</p>
+                {/* মোট বিল প্রদর্শনী */}
+                <div style={{ background: '#111', padding: '15px', borderRadius: '15px', margin: '0 0 20px 0', textAlign: 'center' }}>
+                    <p style={{ fontSize: '12px', color: '#aaa' }}>Price: ৳{calculatePrice(selectedProduct).base} + Delivery: ৳{calculatePrice(selectedProduct).delivery}</p>
+                    <p style={{ fontWeight: 'bold', fontSize: '18px', color: '#fff' }}>TOTAL: ৳{calculatePrice(selectedProduct).total}</p>
                 </div>
 
                 <div style={{ display: 'flex', gap: '10px' }}>
@@ -189,11 +192,9 @@ export default function Home({ allProducts, siteContent, announcement }) {
                     <option>Bkash</option><option>Nagad</option><option>Rocket</option><option>Upay</option><option>Cellfin</option>
                   </select>
                   {paymentMethod && <p style={{ fontSize: '10px', color: '#666', textAlign: 'center', margin: '10px 0' }}>SEND MONEY TO: {paymentNumbers[paymentMethod]}</p>}
-                  
                   <input type="tel" name="sender_no" placeholder="SENDER NO" required style={{ background: 'none', border: 'none', borderBottom: '1px solid #333', color: '#fff', width: '100%', padding: '10px 0', fontSize: '14px', marginBottom: '10px' }} />
                   <input type="text" name="txn_id" placeholder="TRANSACTION ID" required style={{ background: 'none', border: 'none', borderBottom: '1px solid #333', color: '#fff', width: '100%', padding: '10px 0', fontSize: '14px' }} />
                 </div>
-                
                 <button type="submit" className="btn-style" style={{ width: '100%', padding: '20px' }}>CONFIRM ORDER</button>
                 <p onClick={closeModal} style={{ textAlign: 'center', color: '#444', fontSize: '11px', marginTop: '20px', letterSpacing: '2px', cursor: 'pointer' }}>CANCEL</p>
               </form>
