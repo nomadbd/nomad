@@ -2,8 +2,8 @@ import nodemailer from 'nodemailer';
 
 export default async function handler(req, res) {
   if (req.method === 'POST') {
-    // index.js থেকে আসা ভেরিয়েবল নামগুলোর (sender_no, ref) সাথে মিলিয়ে ডাটা রিসিভ করা হচ্ছে
-    const { product_name, final_price, ref, size, color, name, phone, address, method, sender_no, txn_id } = req.body;
+    // product_id রিসিভ করার জন্য এখানে যোগ করা হয়েছে
+    const { product_id, product_name, final_price, ref, size, color, name, phone, address, method, sender_no, txn_id } = req.body;
 
     const transporter = nodemailer.createTransport({
       service: 'gmail',
@@ -31,6 +31,7 @@ export default async function handler(req, res) {
           <div style="background-color: #fff; padding: 15px; border: 1px solid #ddd; border-radius: 10px;">
             <h3 style="margin-top: 0; font-size: 14px; text-decoration: underline;">PRODUCT DETAILS</h3>
             <p style="margin: 5px 0;"><strong>PRODUCT:</strong> <span style="font-size: 16px; color: #111; font-weight: bold;">${product_name}</span></p>
+            <p style="margin: 5px 0;"><strong>PRODUCT ID:</strong> <span style="font-weight: bold; color: #d00;">${product_id || 'N/A'}</span></p>
             <p style="margin: 5px 0;"><strong>PAYABLE PRICE:</strong> ${final_price}</p>
             <p style="margin: 5px 0;"><strong>SIZE:</strong> ${size} | <strong>COLOR:</strong> ${color}</p>
             <p style="margin: 5px 0; color: #777; font-size: 12px;"><strong>FB REF CODE:</strong> ${ref || 'Direct Site Visit'}</p>
