@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import fs from 'fs';
@@ -18,10 +18,6 @@ export default function Home({ allProducts, siteContent, announcement }) {
     'Bkash': '01521731371', 'Nagad': '01521731371', 'Rocket': '01521731371', 'Upay': '01521731371', 'Cellfin': '01521731371'
   };
 
-  const discountRegex = /(\d+)%/;
-  const discountMatch = announcement.match(discountRegex);
-  const announcementDisc = discountMatch ? parseInt(discountMatch[1]) : 0;
-
   useEffect(() => {
     const shuffled = [...allProducts].sort(() => Math.random() - 0.5);
     setProducts(shuffled);
@@ -39,19 +35,23 @@ export default function Home({ allProducts, siteContent, announcement }) {
   }, [allProducts, router.query]);
 
   const calculatePrice = (product) => {
-    const numberOnly = parseInt(product.priceText.replace(/[^0-9]/g, "")) || 0;
+    if (!product || !product.priceText) return { original: 0, base: 0, discountAmt: 0, discountPercent: 0, delivery: 0, total: 0 };
     
-    // ডেসক্রিপশন থেকে ডিসকাউন্ট বের করা
-    const descDiscMatch = product.desc.match(/Discount:\s*(\d+)%/i);
+    // অ্যানাউন্সমেন্ট ডিসকাউন্ট (সেফ চেক)
+    const discMatch = announcement?.match(/(\d+)%/);
+    const annDisc = discMatch ? parseInt(discMatch[1]) : 0;
+    
+    // প্রোডাক্টের দাম এবং ডিসকাউন্ট
+    const numberOnly = parseInt(product.priceText.replace(/[^0-9]/g, "")) || 0;
+    const descDiscMatch = product.desc?.match(/Discount:\s*(\d+)%/i);
     const descDisc = descDiscMatch ? parseInt(descDiscMatch[1]) : 0;
     
-    // মোট ডিসকাউন্ট পারসেন্ট
-    const totalDiscountPercent = announcementDisc + descDisc;
+    const totalDiscountPercent = annDisc + descDisc;
     const discountAmount = Math.floor(numberOnly * totalDiscountPercent / 100);
     const basePrice = numberOnly - discountAmount;
     
     // ডেলিভারি চার্জ
-    const delMatch = product.desc.match(/Delivery:\s*(\d+)/i);
+    const delMatch = product.desc?.match(/Delivery:\s*(\d+)/i);
     const deliveryCharge = delMatch ? parseInt(delMatch[1]) : 0;
     
     return { 
@@ -185,7 +185,6 @@ export default function Home({ allProducts, siteContent, announcement }) {
                 <input type="hidden" name="total" value={calculatePrice(selectedProduct).total} />
                 <input type="hidden" name="ref" value={selectedProduct.ref || ''} />
 
-                {/* ডিসকাউন্ট এবং মোট বিল প্রদর্শনী */}
                 <div style={{ background: '#111', padding: '15px', borderRadius: '15px', margin: '0 0 20px 0', textAlign: 'center' }}>
                     <p style={{ fontSize: '12px', color: '#aaa', textDecoration: 'line-through' }}>Original: ৳{calculatePrice(selectedProduct).original}</p>
                     <p style={{ fontSize: '13px', color: '#0f0' }}>Discount ({calculatePrice(selectedProduct).discountPercent}%): -৳{calculatePrice(selectedProduct).discountAmt}</p>
