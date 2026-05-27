@@ -11,8 +11,6 @@ export default function Home({ allProducts, siteContent, announcement }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [modalType, setModalType] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isFocused, setIsFocused] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('');
   const [viewCategory, setViewCategory] = useState(null);
 
@@ -37,7 +35,7 @@ export default function Home({ allProducts, siteContent, announcement }) {
 
     if (router.query.product) {
       const target = allProducts.find(p => p.id === router.query.product);
-      if (target) { setSelectedProduct({ ...target, ref: router.query.ref || '' }); setModalType('details'); setIsModalOpen(true); }
+      if (target) { setSelectedProduct({ ...target, ref: router.query.ref || '' }); setModalType('details'); }
     }
   }, [allProducts, router.query]);
 
@@ -48,59 +46,46 @@ export default function Home({ allProducts, siteContent, announcement }) {
     return priceText.replace(numberOnly, discounted);
   };
 
-  const filteredProducts = searchQuery.trim() === '' 
-    ? products 
-    : products.filter(p => p.name.toLowerCase().replace(/-/g, ' ').includes(searchQuery.toLowerCase().replace(/-/g, ' ')));
+  const filteredProducts = searchQuery.trim() === '' ? [] : products.filter(p => 
+    p.name.toLowerCase().replace(/-/g, ' ').includes(searchQuery.toLowerCase().replace(/-/g, ' '))
+  );
+
+  const closeModal = () => { setSelectedProduct(null); setModalType(null); setPaymentMethod(''); };
 
   return (
     <div style={{ backgroundColor: '#000', color: '#fff', minHeight: '100vh', fontFamily: 'Inter, sans-serif', overflowX: 'hidden' }}>
-      <Head>
-        <title>NOMAD | Premium Brand</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-      </Head>
+      <Head><title>NOMAD | Premium</title><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/></Head>
 
       <style>{`
-        * { box-sizing: border-box; }
-        .scroll-container { 
-          display: flex; overflow-x: auto; gap: 20px; padding: 10px 20px; scrollbar-width: none; 
-          scroll-snap-type: x mandatory; justify-content: flex-start;
-        }
+        * { box-sizing: border-box; outline: none !important; }
+        .scroll-container { display: flex; overflow-x: auto; gap: 20px; padding: 10px 20px; scrollbar-width: none; scroll-snap-type: x mandatory; }
         .scroll-container::-webkit-scrollbar { display: none; }
-        .cat-item { 
-          min-width: 85vw; scroll-snap-align: center; background: #0a0a0a; border-radius: 35px; 
-          border: 1px solid #1a1a1a; overflow: hidden; margin: 0 auto;
-        }
-        .btn-flex { display: flex; gap: 10px; padding: 0 20px 20px; }
-        .btn-details { flex: 1; background: #111; color: #fff; border: 1px solid #222; padding: 15px; border-radius: 15px; font-weight: bold; font-size: 11px; letter-spacing: 1px; }
-        .btn-order { flex: 1; background: #fff; color: #000; border: none; padding: 15px; border-radius: 15px; font-weight: bold; font-size: 11px; letter-spacing: 1px; }
+        .cat-item { min-width: 85vw; scroll-snap-align: center; background: #0a0a0a; border-radius: 40px; border: 1px solid #1a1a1a; overflow: hidden; margin: 0 auto; }
+        .btn-details { flex: 1; background: none; color: #fff; border: 1px solid #333; padding: 16px; border-radius: 15px; font-weight: bold; font-size: 11px; letter-spacing: 1px; cursor: pointer; }
+        .btn-order { flex: 1; background: #111; color: #fff; border: none; padding: 16px; border-radius: 15px; font-weight: bold; font-size: 11px; letter-spacing: 1px; cursor: pointer; }
+        .input-field { background: #000; border: 1px solid #333; color: #fff; padding: 15px; border-radius: 15px; width: 100%; font-size: 14px; margin-bottom: 12px; }
+        .input-field:focus { border-color: #555; }
         .desc-line { display: grid; grid-template-columns: 85px 15px 1fr; font-size: 12px; color: #777; margin-bottom: 5px; }
-        .cancel-btn { background: none; border: none; color: #555; font-size: 11px; letter-spacing: 2px; margin-top: 20px; cursor: pointer; text-transform: uppercase; width: 100%; text-align: center; }
       `}</style>
 
-      {/* Header */}
       <header style={{ textAlign: 'center', padding: '40px 20px' }}>
-        <h1 style={{ letterSpacing: '15px', fontSize: '26px', fontWeight: '900', margin: 0 }}>NOMAD</h1>
-        <p style={{ fontSize: '7px', color: '#444', letterSpacing: '5px', marginTop: '8px' }}>{siteContent.header}</p>
+        <h1 style={{ letterSpacing: '12px', fontSize: '24px', fontWeight: '900', margin: 0 }}>NOMAD</h1>
+        <p style={{ fontSize: '7px', color: '#444', letterSpacing: '4px', marginTop: '8px' }}>{siteContent.header}</p>
       </header>
 
-      {/* Search & Announcement (সার্চ এখানেই আছে) */}
+      {/* Search & Announcement (আপনার স্ক্রিনশট অনুযায়ী) */}
       <div style={{ maxWidth: '400px', margin: '0 auto 30px', padding: '0 20px' }}>
-        <div style={{ background: '#0a0a0a', border: isFocused ? '1px solid #fff' : '1px solid #111', borderRadius: '25px', padding: '20px', textAlign: 'center' }}>
-          {announcement && !searchQuery && <p style={{ fontSize: '11px', letterSpacing: '2px', fontWeight: 'bold', marginBottom: '15px' }}>{announcement}</p>}
-          <input 
-            type="text" placeholder="SEARCH PRODUCT" 
-            onFocus={()=>setIsFocused(true)} onBlur={()=>setIsFocused(false)} 
-            onChange={(e)=>setSearchQuery(e.target.value)} 
-            style={{ background: 'none', border: 'none', color: '#fff', textAlign: 'center', width: '100%', outline: 'none', fontSize: '11px', letterSpacing: '2px' }} 
-          />
+        <div style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '25px', padding: '20px', textAlign: 'center' }}>
+          {announcement && !searchQuery && <p style={{ fontSize: '10px', letterSpacing: '2px', color: '#fff', marginBottom: '15px' }}>{announcement}</p>}
+          <input type="text" placeholder="SEARCH PRODUCT" onChange={(e)=>setSearchQuery(e.target.value)} style={{ background: 'none', border: 'none', color: '#fff', textAlign: 'center', width: '100%', fontSize: '11px', letterSpacing: '2px' }} />
         </div>
       </div>
 
       <main>
-        {searchQuery && searchQuery.trim() !== '' ? (
+        {searchQuery ? (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', padding: '20px' }}>
             {filteredProducts.map((p, i) => (
-              <div key={i} onClick={() => { setSelectedProduct(p); setModalType('details'); setIsModalOpen(true); }} style={{ background: '#0a0a0a', padding: '10px', borderRadius: '20px', border: '1px solid #111' }}>
+              <div key={i} onClick={() => { setSelectedProduct(p); setModalType('details'); }} style={{ background: '#0a0a0a', padding: '10px', borderRadius: '20px', border: '1px solid #111' }}>
                 <img src={`/products/${p.image}`} style={{ width: '100%', borderRadius: '15px' }} />
                 <p style={{ fontSize: '10px', textAlign: 'center', marginTop: '10px' }}>{p.name}</p>
               </div>
@@ -108,17 +93,17 @@ export default function Home({ allProducts, siteContent, announcement }) {
           </div>
         ) : viewCategory ? (
           <div style={{ padding: '0 20px' }}>
-             <div style={{ display: 'flex', justifyContent: 'space-between', margin: '20px 0' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', margin: '20px 0' }}>
               <span style={{ fontSize: '12px', letterSpacing: '3px' }}>{viewCategory} COLLECTION</span>
-              <span onClick={() => setViewCategory(null)} style={{ fontSize: '10px', borderBottom: '1px solid #333' }}>BACK</span>
+              <span onClick={() => setViewCategory(null)} style={{ fontSize: '10px', color: '#444' }}>BACK</span>
             </div>
             {categories[viewCategory].map((p, i) => (
-              <div key={i} style={{ marginBottom: '50px', background: '#0a0a0a', borderRadius: '35px', overflow: 'hidden', border: '1px solid #1a1a1a' }}>
+              <div key={i} style={{ marginBottom: '40px', background: '#0a0a0a', borderRadius: '40px', border: '1px solid #1a1a1a', overflow: 'hidden' }}>
                 <img src={`/products/${p.image}`} style={{ width: '100%' }} />
                 <h3 style={{ textAlign: 'center', fontSize: '18px', margin: '20px 0' }}>{p.name}</h3>
-                <div className="btn-flex">
-                  <button className="btn-details" onClick={() => { setSelectedProduct(p); setModalType('details'); setIsModalOpen(true); }}>DETAILS</button>
-                  <button className="btn-order" onClick={() => { setSelectedProduct(p); setModalType('order'); setIsModalOpen(true); }}>ORDER NOW</button>
+                <div style={{ display: 'flex', gap: '10px', padding: '0 20px 20px' }}>
+                  <button className="btn-details" onClick={() => { setSelectedProduct(p); setModalType('details'); }}>DETAILS</button>
+                  <button className="btn-order" onClick={() => { setSelectedProduct(p); setModalType('order'); }}>ORDER NOW</button>
                 </div>
               </div>
             ))}
@@ -127,18 +112,18 @@ export default function Home({ allProducts, siteContent, announcement }) {
           Object.keys(categories).map(cat => (
             <section key={cat} style={{ marginBottom: '40px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0 30px 15px' }}>
-                <span style={{ fontSize: '12px', letterSpacing: '4px', color: '#555' }}>{cat}</span>
-                <span onClick={() => setViewCategory(cat)} style={{ fontSize: '10px', borderBottom: '1px solid #222' }}>SEE MORE</span>
+                <span style={{ fontSize: '12px', letterSpacing: '3px', color: '#666' }}>{cat}</span>
+                <span onClick={() => setViewCategory(cat)} style={{ fontSize: '10px', color: '#fff', borderBottom: '1px solid #333' }}>SEE MORE</span>
               </div>
               <div className="scroll-container">
                 {categories[cat].map((p, i) => (
                   <div key={i} className="cat-item">
-                    <img src={`/products/${p.image}`} style={{ width: '100%', display: 'block' }} />
-                    <div style={{ padding: '25px 0', textAlign: 'center' }}>
-                      <p style={{ fontSize: '16px', letterSpacing: '2px', marginBottom: '20px' }}>{p.name}</p>
-                      <div className="btn-flex">
-                        <button className="btn-details" onClick={() => { setSelectedProduct(p); setModalType('details'); setIsModalOpen(true); }}>DETAILS</button>
-                        <button className="btn-order" onClick={() => { setSelectedProduct(p); setModalType('order'); setIsModalOpen(true); }}>ORDER</button>
+                    <img src={`/products/${p.image}`} style={{ width: '100%' }} />
+                    <div style={{ padding: '25px 20px', textAlign: 'center' }}>
+                      <p style={{ fontSize: '16px', letterSpacing: '1px', marginBottom: '20px' }}>{p.name}</p>
+                      <div style={{ display: 'flex', gap: '10px' }}>
+                        <button className="btn-details" onClick={() => { setSelectedProduct(p); setModalType('details'); }}>DETAILS</button>
+                        <button className="btn-order" onClick={() => { setSelectedProduct(p); setModalType('order'); }}>ORDER</button>
                       </div>
                     </div>
                   </div>
@@ -149,62 +134,65 @@ export default function Home({ allProducts, siteContent, announcement }) {
         )}
       </main>
 
-      {/* Footer */}
-      <footer style={{ textAlign: 'center', padding: '60px 20px', background: '#050505', marginTop: '40px', borderTop: '1px solid #111' }}>
-        <p style={{ fontSize: '11px', color: '#444', lineHeight: '2', marginBottom: '30px' }}>{siteContent.about}</p>
+      {/* Footer (লিংকসহ) */}
+      <footer style={{ textAlign: 'center', padding: '60px 20px', background: '#050505', borderTop: '1px solid #111' }}>
         <div style={{ display: 'flex', justifyContent: 'center', gap: '25px', marginBottom: '30px' }}>
           <a href="https://facebook.com/nomadbysh" style={{ color: '#fff', textDecoration: 'none', fontSize: '10px' }}>FACEBOOK</a>
           <a href="mailto:contact@nomad.com" style={{ color: '#fff', textDecoration: 'none', fontSize: '10px' }}>EMAIL</a>
           <a href="https://wa.me/8801521731371" style={{ color: '#fff', textDecoration: 'none', fontSize: '10px' }}>WHATSAPP</a>
         </div>
-        <p style={{ letterSpacing: '6px', fontSize: '8px', color: '#222' }}>{siteContent.footer}</p>
+        <p style={{ letterSpacing: '6px', fontSize: '8px', color: '#111' }}>{siteContent.footer}</p>
       </footer>
 
-      {/* Modal */}
-      {isModalOpen && selectedProduct && (
+      {/* Modal - Details or Order (আপনার পাঠানো সর্বশেষ ফর্ম অনুযায়ী) */}
+      {(selectedProduct && modalType) && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.98)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-          <div style={{ background: '#0a0a0a', width: '100%', maxWidth: '400px', padding: '40px 25px', borderRadius: '35px', border: '1px solid #1a1a1a', maxHeight: '90vh', overflowY: 'auto' }}>
+          <div style={{ background: '#0a0a0a', width: '100%', maxWidth: '400px', padding: '40px 25px', borderRadius: '40px', border: '1px solid #1a1a1a', maxHeight: '95vh', overflowY: 'auto' }}>
             
             {modalType === 'details' ? (
               <div>
-                <img src={`/products/${selectedProduct.image}`} style={{ width: '100%', borderRadius: '20px' }} />
-                <h2 style={{ textAlign: 'center', margin: '20px 0' }}>{selectedProduct.name}</h2>
+                <img src={`/products/${selectedProduct.image}`} style={{ width: '100%', borderRadius: '25px' }} />
+                <h2 style={{ textAlign: 'center', margin: '25px 0', fontSize: '20px' }}>{selectedProduct.name}</h2>
                 <div style={{ marginBottom: '20px' }}>
                   {selectedProduct.desc.split('\n').map((line, i) => (
                     line.includes(':') ? (
                       <div key={i} className="desc-line"><span>{line.split(':')[0]}</span><span>:</span><span>{line.split(':')[1]}</span></div>
-                    ) : <p key={i} style={{ fontSize: '12px', color: '#777', textAlign: 'center' }}>{line}</p>
+                    ) : <p key={i} style={{ fontSize: '12px', color: '#666', textAlign: 'center' }}>{line}</p>
                   ))}
                 </div>
-                <p style={{ textAlign: 'center', fontSize: '20px', fontWeight: 'bold' }}>{calculatePrice(selectedProduct.priceText)}</p>
-                <button className="btn-order" style={{ width: '100%', marginTop: '20px', padding: '18px' }} onClick={()=>setModalType('order')}>PROCEED TO ORDER</button>
-                <button className="cancel-btn" onClick={()=>setIsModalOpen(false)}>Cancel</button>
+                <p style={{ textAlign: 'center', fontSize: '18px', fontWeight: 'bold' }}>{calculatePrice(selectedProduct.priceText)}</p>
+                <button className="btn-order" style={{ width: '100%', marginTop: '25px', padding: '20px', background: '#fff', color: '#000' }} onClick={()=>setModalType('order')}>PROCEED TO ORDER</button>
+                <p onClick={closeModal} style={{ textAlign: 'center', color: '#444', fontSize: '11px', marginTop: '20px', letterSpacing: '2px', cursor: 'pointer' }}>CANCEL</p>
               </div>
             ) : (
-              <form action="/api/order" method="POST" style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                <h2 style={{ fontSize: '14px', textAlign: 'center', marginBottom: '10px' }}>ORDER: {selectedProduct.name}</h2>
+              <form action="/api/order" method="POST" style={{ display: 'flex', flexDirection: 'column' }}>
+                <h2 style={{ textAlign: 'center', marginBottom: '25px', fontSize: '16px', fontWeight: 'bold' }}>ORDER: {selectedProduct.name}</h2>
                 <input type="hidden" name="product_name" value={selectedProduct.name} />
                 <input type="hidden" name="final_price" value={calculatePrice(selectedProduct.priceText)} />
-                
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                  <select name="size" required style={{ background: '#000', border: '1px solid #222', color: '#fff', padding: '12px', borderRadius: '10px' }}><option value="" disabled selected>SIZE</option><option>M</option><option>L</option><option>XL</option><option>XXL</option></select>
-                  <input type="text" name="color" placeholder="COLOR" required style={{ background: '#000', border: '1px solid #222', color: '#fff', padding: '12px', borderRadius: '10px' }} />
+                <input type="hidden" name="ref" value={selectedProduct.ref || ''} />
+
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <select name="size" required className="input-field" style={{ flex: 1 }}><option value="" disabled selected>SIZE</option><option>M</option><option>L</option><option>XL</option><option>XXL</option></select>
+                  <input type="text" name="color" placeholder="COLOR" required className="input-field" style={{ flex: 1 }} />
                 </div>
-                <input type="text" name="name" placeholder="NAME" required style={{ background: '#000', border: '1px solid #222', color: '#fff', padding: '12px', borderRadius: '10px' }} />
-                <input type="tel" name="phone" placeholder="PHONE" required style={{ background: '#000', border: '1px solid #222', color: '#fff', padding: '12px', borderRadius: '10px' }} />
-                <textarea name="address" placeholder="ADDRESS" required style={{ background: '#000', border: '1px solid #222', color: '#fff', padding: '12px', borderRadius: '10px', minHeight: '60px' }}></textarea>
+                <input type="text" name="name" placeholder="FULL NAME" required className="input-field" />
+                <input type="tel" name="phone" placeholder="PHONE" required className="input-field" />
+                <textarea name="address" placeholder="ADDRESS" required className="input-field" style={{ minHeight: '80px' }}></textarea>
                 
-                <div style={{ background: '#050505', padding: '15px', borderRadius: '15px', border: '1px solid #111' }}>
-                  <select name="method" required onChange={(e)=>setPaymentMethod(e.target.value)} style={{ border: 'none', background: 'none', color: '#fff', width: '100%' }}>
+                {/* পেমেন্ট অংশ - স্ক্রিনশট অনুযায়ী */}
+                <div style={{ background: '#050505', padding: '20px', borderRadius: '25px', border: '1px solid #1a1a1a', marginBottom: '25px' }}>
+                  <select name="method" required className="input-field" style={{ border: 'none', marginBottom: '5px' }} onChange={(e)=>setPaymentMethod(e.target.value)}>
                     <option value="" disabled selected>PAYMENT GATEWAY</option>
-                    <option>Bkash</option><option>Nagad</option><option>Rocket</option>
+                    <option>Bkash</option><option>Nagad</option><option>Rocket</option><option>Upay</option><option>Cellfin</option>
                   </select>
-                  {paymentMethod && <p style={{ fontSize: '10px', color: '#555', marginTop: '10px', textAlign: 'center' }}>SEND MONEY TO: {paymentNumbers[paymentMethod]}</p>}
-                  <input type="text" name="txn_id" placeholder="TRANSACTION ID" required style={{ border: 'none', borderBottom: '1px solid #222', background: 'none', width: '100%', padding: '10px 0', marginTop: '10px', color: '#fff' }} />
+                  {paymentMethod && <p style={{ fontSize: '10px', color: '#666', textAlign: 'center', margin: '10px 0' }}>SEND MONEY TO: {paymentNumbers[paymentMethod]}</p>}
+                  
+                  <input type="tel" name="sender_no" placeholder="SENDER NO" required style={{ background: 'none', border: 'none', borderBottom: '1px solid #333', color: '#fff', width: '100%', padding: '10px 0', fontSize: '14px', marginBottom: '10px' }} />
+                  <input type="text" name="txn_id" placeholder="TRANSACTION ID" required style={{ background: 'none', border: 'none', borderBottom: '1px solid #333', color: '#fff', width: '100%', padding: '10px 0', fontSize: '14px' }} />
                 </div>
                 
-                <button type="submit" className="btn-order" style={{ padding: '20px' }}>CONFIRM ORDER</button>
-                <button type="button" className="cancel-btn" onClick={()=>setIsModalOpen(false)}>Cancel</button>
+                <button type="submit" style={{ background: '#111', color: '#fff', padding: '20px', borderRadius: '15px', border: 'none', fontWeight: 'bold', fontSize: '14px' }}>CONFIRM ORDER</button>
+                <p onClick={closeModal} style={{ textAlign: 'center', color: '#444', fontSize: '11px', marginTop: '20px', letterSpacing: '2px', cursor: 'pointer' }}>CANCEL</p>
               </form>
             )}
           </div>
@@ -229,12 +217,11 @@ export async function getStaticProps() {
     let name = handle.toUpperCase(), desc = "", priceText = "1200 BDT";
     if (fs.existsSync(dPath)) {
       const content = fs.readFileSync(dPath, 'utf8').trim().split('\n');
-      name = content[0];
-      desc = content.slice(1).join('\n');
+      name = content[0]; desc = content.slice(1).join('\n');
       const pLine = content.find(l => l.toLowerCase().includes('price'));
       priceText = pLine ? pLine.trim() : "1200 BDT";
     }
     return { id: handle, name, image: img, desc, priceText };
   });
-  return { props: { allProducts, siteContent: { header: readTxt('header.txt', 'THE ONE. EVERYWHERE.'), about: readTxt('about.txt', ''), footer: readTxt('footer.txt', 'NOMAD BY SH | 2026') }, announcement: readTxt('announcement.txt', '') }, revalidate: 10 };
+  return { props: { allProducts, siteContent: { header: readTxt('header.txt', 'THE ONE. EVERYWHERE.'), footer: readTxt('footer.txt', 'NOMAD BY SH | 2026') }, announcement: readTxt('announcement.txt', '') }, revalidate: 10 };
 }
