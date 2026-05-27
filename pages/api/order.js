@@ -2,22 +2,9 @@ import nodemailer from 'nodemailer';
 
 export default async function handler(req, res) {
   if (req.method === 'POST') {
-    // index.js এর হিডেন ফিল্ডগুলোর নামের সাথে এখানে মিল করা হয়েছে
     const { 
-      product_id, 
-      product_name, 
-      price, 
-      delivery, 
-      total, 
-      ref, 
-      size, 
-      color, 
-      name, 
-      phone, 
-      address, 
-      method, 
-      sender_no, 
-      txn_id 
+      product_id, product_name, price, delivery, total, ref, size, color, 
+      name, phone, address, method, sender_no, txn_id, discountAmt, discountPercent 
     } = req.body;
 
     const transporter = nodemailer.createTransport({
@@ -31,7 +18,6 @@ export default async function handler(req, res) {
     const mailOptions = {
       from: process.env.EMAIL_USER,
       to: process.env.EMAIL_USER, 
-      // ID এবং TOTAL সহ সাবজেক্ট
       subject: `NEW ORDER: ${product_name} [${product_id}] - ৳${total}`,
       html: `
         <div style="font-family: sans-serif; padding: 20px; background-color: #fafafa; border: 1px solid #eee; color: #333; max-width: 600px; margin: auto;">
@@ -48,6 +34,7 @@ export default async function handler(req, res) {
             <h3 style="margin-top: 0; font-size: 14px; text-decoration: underline;">PRODUCT DETAILS</h3>
             <p style="margin: 5px 0;"><strong>PRODUCT:</strong> <span style="font-size: 16px; color: #111; font-weight: bold;">${product_name}</span></p>
             <p style="margin: 5px 0;"><strong>PRODUCT ID:</strong> ${product_id}</p>
+            <p style="margin: 5px 0;"><strong>DISCOUNT:</strong> ${discountPercent}% (-৳${discountAmt})</p>
             <p style="margin: 5px 0;"><strong>PRICE:</strong> ৳${price} + <strong>DELIVERY:</strong> ৳${delivery} = <strong>TOTAL: ৳${total}</strong></p>
             <p style="margin: 5px 0;"><strong>SIZE:</strong> ${size} | <strong>COLOR:</strong> ${color}</p>
             <p style="margin: 5px 0; color: #777; font-size: 12px;"><strong>FB REF CODE:</strong> ${ref || 'Direct Site Visit'}</p>
@@ -72,7 +59,7 @@ export default async function handler(req, res) {
             <div class="space-y-4">
               <div class="text-5xl mb-4">✔</div>
               <h1 class="text-3xl font-black text-white uppercase tracking-tighter">ORDER SUCCESSFUL!</h1>
-              <p class="text-zinc-400 text-sm max-w-sm mx-auto uppercase tracking-widest" style="font-size: 10px;">We have received your order for <strong>${product_name}</strong>. Our team will contact you shortly.</p>
+              <p class="text-zinc-400 text-sm max-w-sm mx-auto uppercase tracking-widest">We have received your order for <strong>${product_name}</strong>.</p>
               <a href="/" class="inline-block mt-6 text-xs bg-white text-black px-10 py-4 rounded-full font-bold hover:bg-zinc-200 transition tracking-widest">BACK TO STORE</a>
             </div>
           </body>
