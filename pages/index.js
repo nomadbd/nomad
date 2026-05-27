@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import fs from 'fs';
@@ -73,7 +73,6 @@ export default function Home({ allProducts, siteContent, announcement }) {
         <p style={{ fontSize: '7px', color: '#444', letterSpacing: '4px', marginTop: '8px' }}>{siteContent.header}</p>
       </header>
 
-      {/* Search & Announcement (আপনার স্ক্রিনশট অনুযায়ী) */}
       <div style={{ maxWidth: '400px', margin: '0 auto 30px', padding: '0 20px' }}>
         <div style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '25px', padding: '20px', textAlign: 'center' }}>
           {announcement && !searchQuery && <p style={{ fontSize: '10px', letterSpacing: '2px', color: '#fff', marginBottom: '15px' }}>{announcement}</p>}
@@ -134,7 +133,6 @@ export default function Home({ allProducts, siteContent, announcement }) {
         )}
       </main>
 
-      {/* Footer (লিংকসহ) */}
       <footer style={{ textAlign: 'center', padding: '60px 20px', background: '#050505', borderTop: '1px solid #111' }}>
         <div style={{ display: 'flex', justifyContent: 'center', gap: '25px', marginBottom: '30px' }}>
           <a href="https://facebook.com/nomadbysh" style={{ color: '#fff', textDecoration: 'none', fontSize: '10px' }}>FACEBOOK</a>
@@ -144,11 +142,9 @@ export default function Home({ allProducts, siteContent, announcement }) {
         <p style={{ letterSpacing: '6px', fontSize: '8px', color: '#111' }}>{siteContent.footer}</p>
       </footer>
 
-      {/* Modal - Details or Order (আপনার পাঠানো সর্বশেষ ফর্ম অনুযায়ী) */}
       {(selectedProduct && modalType) && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.98)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
           <div style={{ background: '#0a0a0a', width: '100%', maxWidth: '400px', padding: '40px 25px', borderRadius: '40px', border: '1px solid #1a1a1a', maxHeight: '95vh', overflowY: 'auto' }}>
-            
             {modalType === 'details' ? (
               <div>
                 <img src={`/products/${selectedProduct.image}`} style={{ width: '100%', borderRadius: '25px' }} />
@@ -168,6 +164,7 @@ export default function Home({ allProducts, siteContent, announcement }) {
               <form action="/api/order" method="POST" style={{ display: 'flex', flexDirection: 'column' }}>
                 <h2 style={{ textAlign: 'center', marginBottom: '25px', fontSize: '16px', fontWeight: 'bold' }}>ORDER: {selectedProduct.name}</h2>
                 <input type="hidden" name="product_name" value={selectedProduct.name} />
+                <input type="hidden" name="product_id" value={selectedProduct.id} />
                 <input type="hidden" name="final_price" value={calculatePrice(selectedProduct.priceText)} />
                 <input type="hidden" name="ref" value={selectedProduct.ref || ''} />
 
@@ -179,7 +176,6 @@ export default function Home({ allProducts, siteContent, announcement }) {
                 <input type="tel" name="phone" placeholder="PHONE" required className="input-field" />
                 <textarea name="address" placeholder="ADDRESS" required className="input-field" style={{ minHeight: '80px' }}></textarea>
                 
-                {/* পেমেন্ট অংশ - স্ক্রিনশট অনুযায়ী */}
                 <div style={{ background: '#050505', padding: '20px', borderRadius: '25px', border: '1px solid #1a1a1a', marginBottom: '25px' }}>
                   <select name="method" required className="input-field" style={{ border: 'none', marginBottom: '5px' }} onChange={(e)=>setPaymentMethod(e.target.value)}>
                     <option value="" disabled selected>PAYMENT GATEWAY</option>
