@@ -6,197 +6,131 @@ import path from 'path';
 
 export default function Home({ allProducts, siteContent, announcement }) {
   const router = useRouter();
-  const [products, setProducts] = useState([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [visibleCount, setVisibleCount] = useState(8);
-  const [selectedProduct, setSelectedProduct] = useState({ id: '', name: '' });
+  const [categories, setCategories] = useState({});
+  const [selectedProduct, setSelectedProduct] = useState({ id: '', name: '', price: '', ref: '' });
+  const [viewCategory, setViewCategory] = useState(null); // See More এর জন্য
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isFocused, setIsFocused] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState('');
-
-  const paymentNumbers = {
-    'Bkash': '01521731371',
-    'Nagad': '01521731371',
-    'Rocket': '01521731371',
-    'Upay': '01521731371',
-    'Cellfin': '01521731371'
-  };
 
   useEffect(() => {
-    // প্রডাক্ট র‍্যান্ডমলি সাজানোর জন্য Shuffle লজিক
-    const shuffledProducts = [...allProducts].sort(() => Math.random() - 0.5);
-    setProducts(shuffledProducts);
-    
-    // অটোমেটিক প্রডাক্ট লিংক হ্যান্ডেলার (URL: ?product=ID)
+    // ক্যাটাগরি অনুযায়ী প্রডাক্ট সাজানো এবং Randomly Shuffle করা
+    const shuffled = [...allProducts].sort(() => Math.random() - 0.5);
+    const catMap = {};
+    shuffled.forEach(p => {
+      const catName = p.name.split(' ')[0]; // নামের প্রথম শব্দ ক্যাটাগরি
+      if (!catMap[catName]) catMap[catName] = [];
+      catMap[catName].push(p);
+    });
+    setCategories(catMap);
+
+    // URL থেকে Product ID এবং FB Ref সংগ্রহ
     if (router.query.product) {
       const target = allProducts.find(p => p.id === router.query.product);
       if (target) {
-        setSelectedProduct({ id: target.id, name: target.name });
+        setSelectedProduct({ 
+          id: target.id, 
+          name: target.name, 
+          price: target.price,
+          ref: router.query.ref || '' 
+        });
         setIsModalOpen(true);
       }
     }
   }, [allProducts, router.query]);
 
-  // উন্নত সার্চ লজিক
-  const filteredProducts = searchQuery.trim() === '' 
-    ? products 
-    : products
-        .filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()))
-        .sort((a, b) => {
-          const aIndex = a.name.toLowerCase().indexOf(searchQuery.toLowerCase());
-          const bIndex = b.name.toLowerCase().indexOf(searchQuery.toLowerCase());
-          return aIndex - bIndex;
-        });
-
   return (
-    <div style={{ backgroundColor: '#000', color: '#fff', minHeight: '100vh', fontFamily: 'Inter, sans-serif', margin: 0 }}>
-      
-      <Head>
-        <title>NOMAD | Premium Clothing Brand</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-      </Head>
+    <div style={{ backgroundColor: '#000', color: '#fff', minHeight: '100vh', fontFamily: 'Inter, sans-serif' }}>
+      <Head><title>NOMAD | Premium Store</title></Head>
 
       <style>{`
-        @keyframes luxuryFade { 0% { opacity: 0; transform: translateY(20px); } 100% { opacity: 1; transform: translateY(0); } }
-        .product-card { animation: luxuryFade 1.2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
-        input, select, textarea { background: none; border: none; border-bottom: 1px solid #222; color: #fff; padding: 12px; outline: none; font-size: 13px; width: 100%; box-sizing: border-box; }
-        input:focus, select:focus, textarea:focus { border-bottom-color: #fff; }
-        .search-input::placeholder { color: #444; letter-spacing: 2px; text-transform: uppercase; font-size: 10px; }
-        option { background-color: #000; color: #fff; }
-        
-        .desc-container { display: flex; flex-direction: column; gap: 6px; padding: 0 20px; margin: 18px 0; }
-        .desc-line { display: grid; grid-template-columns: 85px 15px 1fr; font-size: 12px; color: #777; text-align: left; }
-        .desc-para { white-space: pre-line; font-size: 12px; color: #777; line-height: 1.8; margin-top: 15px; text-align: center; }
+        .scroll-container { display: flex; overflow-x: auto; gap: 15px; padding: 10px 20px; scroll-snap-type: x mandatory; scrollbar-width: none; }
+        .scroll-container::-webkit-scrollbar { display: none; }
+        .product-item { min-width: 280px; scroll-snap-align: start; background: #0a0a0a; border-radius: 20px; padding: 10px; }
+        .cat-title { font-size: 14px; letter-spacing: 4px; margin: 40px 20px 10px; text-transform: uppercase; color: #fff; display: flex; justify-content: space-between; align-items: center; }
+        .see-more { font-size: 10px; color: #777; cursor: pointer; border-bottom: 1px solid #333; }
+        .grid-view { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 20px; }
+        .desc-line { display: grid; grid-template-columns: 80px 10px 1fr; font-size: 11px; color: #777; margin-bottom: 4px; }
       `}</style>
 
-      <header style={{ textAlign: 'center', padding: '25px 20px', position: 'sticky', top: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(15px)', zIndex: 100, borderBottom: '1px solid #111' }}>
-        <h1 style={{ letterSpacing: '15px', fontSize: '24px', margin: 0, fontWeight: '900' }}>NOMAD</h1>
-        <p style={{ fontSize: '7px', color: '#555', marginTop: '5px', letterSpacing: '5px', textTransform: 'uppercase' }}>{siteContent.header}</p>
+      {/* Header & Search */}
+      <header style={{ textAlign: 'center', padding: '30px', borderBottom: '1px solid #111' }}>
+        <h1 style={{ letterSpacing: '15px', fontWeight: '900' }}>NOMAD</h1>
       </header>
 
-      <div style={{ maxWidth: '410px', margin: '20px auto 10px auto', padding: '0 20px' }}>
-        <div style={{ 
-          backgroundColor: '#0a0a0a', 
-          border: isFocused ? '1.5px solid #fff' : '1px solid #1a1a1a', 
-          padding: '20px', borderRadius: '25px', textAlign: 'center', transition: 'all 0.4s' 
-        }}>
-          {announcement && !searchQuery && (
-            <p style={{ fontSize: '11px', letterSpacing: '2px', color: '#fff', margin: '0 0 15px 0', textTransform: 'uppercase', fontWeight: 'bold' }}>
-              {announcement}
-            </p>
-          )}
-          <input 
-            type="text" 
-            className="search-input" 
-            placeholder="SEARCH PRODUCT" 
-            value={searchQuery} 
-            onFocus={() => setIsFocused(true)} 
-            onBlur={() => setIsFocused(false)} 
-            onChange={(e) => setSearchQuery(e.target.value)} 
-            style={{ textAlign: 'center', border: 'none', background: 'none', fontSize: '11px', letterSpacing: '3px', color: '#fff', width: '100%', outline: 'none' }} 
-          />
+      {viewCategory ? (
+        // See More ক্লিক করলে গ্রিড ভিউ
+        <div>
+          <div className="cat-title">
+            <span>{viewCategory} Collection</span>
+            <span className="see-more" onClick={() => setViewCategory(null)}>BACK</span>
+          </div>
+          <div className="grid-view">
+            {categories[viewCategory].map((p, i) => (
+              <div key={i} onClick={() => { setSelectedProduct({...p, ref: ''}); setIsModalOpen(true); }} style={{ cursor: 'pointer' }}>
+                <img src={`/products/${p.image}`} style={{ width: '100%', borderRadius: '15px' }} />
+                <p style={{ fontSize: '10px', textAlign: 'center', marginTop: '10px' }}>{p.name}</p>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
-
-      <main style={{ maxWidth: '450px', margin: '0 auto', padding: '20px' }}>
-        {filteredProducts.length > 0 ? (
-          filteredProducts.slice(0, visibleCount).map((product, index) => (
-            <div key={index} className="product-card" style={{ marginBottom: '100px', opacity: 0 }}>
-              <div style={{ backgroundColor: '#0a0a0a', borderRadius: '30px', overflow: 'hidden' }}>
-                <img src={`/products/${product.image}`} alt={product.name} style={{ width: '100%', display: 'block' }} />
-              </div>
-              <div style={{ textAlign: 'center', marginTop: '35px' }}>
-                <h3 style={{ fontSize: '20px', letterSpacing: '3px', fontWeight: '500' }}>{product.name}</h3>
-                
-                <div className="desc-container">
-                  {product.desc.split('\n').map((line, i) => {
-                    if (line.includes(':')) {
-                      const [label, value] = line.split(':');
-                      return (
-                        <div key={i} className="desc-line">
-                          <span>{label.trim()}</span>
-                          <span>:</span>
-                          <span>{value.trim()}</span>
-                        </div>
-                      );
-                    }
-                    return line.trim() !== "" ? <p key={i} className="desc-para">{line}</p> : null;
-                  })}
+      ) : (
+        // হোম পেজে ক্যাটাগরি অনুযায়ী হরিজন্টাল স্ক্রল
+        Object.keys(categories).map(cat => (
+          <section key={cat}>
+            <div className="cat-title">
+              <span>{cat}</span>
+              <span className="see-more" onClick={() => setViewCategory(cat)}>SEE MORE</span>
+            </div>
+            <div className="scroll-container">
+              {categories[cat].map((p, i) => (
+                <div key={i} className="product-item">
+                  <img src={`/products/${p.image}`} style={{ width: '100%', borderRadius: '15px' }} />
+                  <div style={{ padding: '15px 5px' }}>
+                    <h4 style={{ fontSize: '13px', margin: '0 0 10px 0' }}>{p.name}</h4>
+                    <p style={{ fontSize: '14px', fontWeight: 'bold', color: '#fff' }}>{p.price} BDT</p>
+                    <button 
+                      onClick={() => { setSelectedProduct({...p, ref: ''}); setIsModalOpen(true); }}
+                      style={{ width: '100%', padding: '12px', marginTop: '15px', background: '#fff', border: 'none', borderRadius: '10px', fontWeight: 'bold', fontSize: '10px' }}
+                    >ORDER NOW</button>
+                  </div>
                 </div>
-
-                <button 
-                  onClick={() => { setSelectedProduct({ id: product.id, name: product.name }); setIsModalOpen(true); }} 
-                  style={{ width: '100%', backgroundColor: '#fff', color: '#000', border: 'none', padding: '18px 0', borderRadius: '15px', fontWeight: 'bold', letterSpacing: '2px', cursor: 'pointer', fontSize: '11px' }}
-                >
-                  ORDER NOW
-                </button>
-              </div>
+              ))}
             </div>
-          ))
-        ) : (
-          searchQuery && <p style={{ textAlign: 'center', color: '#333', marginTop: '50px', letterSpacing: '2px', fontSize: '10px' }}>NO MATCHES FOUND</p>
-        )}
-      </main>
+          </section>
+        ))
+      )}
 
+      {/* Order Modal */}
       {isModalOpen && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.98)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-          <div style={{ backgroundColor: '#0a0a0a', width: '100%', maxWidth: '400px', padding: '45px 30px', borderRadius: '35px', border: '1px solid #1a1a1a', maxHeight: '90vh', overflowY: 'auto', position: 'relative' }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.95)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div style={{ background: '#0a0a0a', width: '100%', maxWidth: '400px', padding: '30px', borderRadius: '30px', border: '1px solid #222', maxHeight: '90vh', overflowY: 'auto' }}>
+            <h2 style={{ fontSize: '14px', textAlign: 'center', letterSpacing: '2px' }}>{selectedProduct.name}</h2>
+            <p style={{ textAlign: 'center', color: '#777', fontSize: '12px' }}>Price: {selectedProduct.price} BDT</p>
             
-            <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-              <h2 style={{ fontSize: '11px', letterSpacing: '4px', fontWeight: 'bold', margin: 0, textTransform: 'uppercase' }}>{selectedProduct.name}</h2>
-              <button 
-                onClick={() => { setIsModalOpen(false); setPaymentMethod(''); }} 
-                style={{ position: 'absolute', top: '20px', right: '30px', background: 'none', border: 'none', color: '#fff', fontSize: '22px', cursor: 'pointer' }}
-              >
-                &times;
-              </button>
-            </div>
-
-            <form action="/api/order" method="POST" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              <input type="hidden" name="product_id" value={selectedProduct.id} />
+            <form action="/api/order" method="POST" style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginTop: '20px' }}>
               <input type="hidden" name="product_name" value={selectedProduct.name} />
+              <input type="hidden" name="product_price" value={selectedProduct.price} />
+              <input type="hidden" name="fb_ref" value={selectedProduct.ref} />
+
+              <input type="text" name="name" placeholder="YOUR NAME" required />
+              <input type="tel" name="phone" placeholder="PHONE NUMBER" required />
+              <textarea name="address" placeholder="FULL ADDRESS" required style={{ minHeight: '80px' }}></textarea>
               
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-                <select name="size" required><option value="" disabled selected>SIZE</option><option value="M">M</option><option value="L">L</option><option value="XL">XL</option><option value="XXL">XXL</option></select>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <input type="text" name="size" placeholder="SIZE (M/L/XL)" required />
                 <input type="text" name="color" placeholder="COLOR" required />
               </div>
 
-              <input type="text" name="name" placeholder="FULL NAME" required />
-              <input type="tel" name="phone" placeholder="PHONE NUMBER" required />
-              <textarea name="address" placeholder="SHIPPING ADDRESS" required style={{ minHeight: '60px' }}></textarea>
-
-              <div style={{ padding: '18px', backgroundColor: '#050505', borderRadius: '20px', border: '1px solid #111' }}>
-                <select name="method" required style={{ marginBottom: '10px' }} onChange={(e) => setPaymentMethod(e.target.value)}>
-                  <option value="" disabled selected>SELECT GATEWAY</option>
-                  <option value="Bkash">Bkash</option><option value="Nagad">Nagad</option><option value="Rocket">Rocket</option><option value="Upay">Upay</option><option value="Cellfin">Cellfin</option>
-                </select>
-
-                {paymentMethod && (
-                  <div style={{ padding: '10px', marginBottom: '15px', border: '1px dashed #333', borderRadius: '10px', textAlign: 'center' }}>
-                    <p style={{ fontSize: '9px', color: '#777', margin: '0 0 5px 0' }}>SEND MONEY TO:</p>
-                    <p style={{ fontSize: '14px', letterSpacing: '2px', fontWeight: 'bold', color: '#fff', margin: 0 }}>{paymentNumbers[paymentMethod]}</p>
-                  </div>
-                )}
-
-                <input type="tel" name="payment_no" placeholder="SENDER NO" required style={{ marginBottom: '15px' }} />
+              <div style={{ background: '#050505', padding: '15px', borderRadius: '15px' }}>
+                <p style={{ fontSize: '10px', color: '#555', marginBottom: '10px' }}>PAYMENT (BKASH/NAGAD: 01521731371)</p>
                 <input type="text" name="txn_id" placeholder="TRANSACTION ID" required />
               </div>
 
-              <button type="submit" style={{ backgroundColor: '#fff', color: '#000', border: 'none', padding: '20px', borderRadius: '18px', fontWeight: '900', letterSpacing: '3px', fontSize: '11px' }}>RESERVE NOW</button>
+              <button type="submit" style={{ background: '#fff', color: '#000', padding: '18px', borderRadius: '15px', fontWeight: 'bold' }}>CONFIRM ORDER</button>
+              <button type="button" onClick={() => setIsModalOpen(false)} style={{ color: '#555', background: 'none', border: 'none', marginTop: '10px' }}>CANCEL</button>
             </form>
           </div>
         </div>
       )}
-
-      <footer style={{ textAlign: 'center', padding: '80px 20px', background: '#050505', borderTop: '1px solid #111' }}>
-        <p style={{ maxWidth: '300px', margin: '0 auto 40px auto', fontSize: '11px', color: '#555', lineHeight: '2' }}>{siteContent.about}</p>
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '30px', marginBottom: '40px' }}>
-          <a href="https://facebook.com/nomadbysh" target="_blank" rel="noopener noreferrer" style={{ color: '#fff', textDecoration: 'none', fontSize: '10px', letterSpacing: '2px' }}>FACEBOOK</a>
-          <a href="mailto:nomadbysh@gmail.com" style={{ color: '#fff', textDecoration: 'none', fontSize: '10px', letterSpacing: '2px' }}>EMAIL</a>
-          <a href="https://wa.me/8801521731371" style={{ color: '#fff', textDecoration: 'none', fontSize: '10px', letterSpacing: '2px' }}>WHATSAPP</a>
-        </div>
-        <p style={{ letterSpacing: '6px', fontSize: '8px', color: '#222' }}>{siteContent.footer}</p>
-      </footer>
     </div>
   );
 }
@@ -204,41 +138,20 @@ export default function Home({ allProducts, siteContent, announcement }) {
 export async function getStaticProps() {
   const pDir = path.join(process.cwd(), 'public/products');
   const dDir = path.join(process.cwd(), 'descriptions');
-  const cDir = path.join(process.cwd(), 'content');
-
-  const readTxt = (file, def) => {
-    const fullPath = path.join(cDir, file);
-    return fs.existsSync(fullPath) ? fs.readFileSync(fullPath, 'utf8').trim() : def;
-  };
-
-  const siteContent = {
-    header: readTxt('header.txt', 'THE ONE. EVERYWHERE.'),
-    about: readTxt('about.txt', 'Nomad defines the intersection of luxury and utility.'),
-    footer: readTxt('footer.txt', 'NOMAD BY SH | 2026')
-  };
-
-  const images = fs.readdirSync(pDir).filter(f => /\.(jpg|jpeg|png|webp)$/i.test(f));
+  const images = fs.readdirSync(pDir).filter(f => /\.(jpg|jpeg|png)$/i.test(f));
+  
   const allProducts = images.map(img => {
-    const handle = path.parse(img).name;
-    const dPath = path.join(dDir, `${handle}.txt`);
-    let name = handle.toUpperCase();
-    let desc = "Premium Selection";
-
+    const id = path.parse(img).name;
+    const dPath = path.join(dDir, `${id}.txt`);
+    let name = id, price = "0", desc = "";
     if (fs.existsSync(dPath)) {
-      const content = fs.readFileSync(dPath, 'utf8').trim().split('\n');
-      name = content[0];
-      desc = content.slice(1).join('\n');
+      const lines = fs.readFileSync(dPath, 'utf8').split('\n');
+      name = lines[0];
+      price = lines.find(l => l.includes('Price'))?.split(':')[1]?.trim() || "1200";
+      desc = lines.slice(1).join('\n');
     }
-
-    return { id: handle, name: name.toUpperCase(), image: img, desc: desc };
+    return { id, name, price, image: img, desc };
   });
 
-  return { 
-    props: { 
-      allProducts: JSON.parse(JSON.stringify(allProducts)), 
-      siteContent, 
-      announcement: readTxt('announcement.txt', '') 
-    }, 
-    revalidate: 10 
-  };
+  return { props: { allProducts, siteContent: {}, announcement: "" }, revalidate: 10 };
 }
