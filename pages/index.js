@@ -20,7 +20,7 @@ export default function Home({ allProducts, siteContent, announcement }) {
 
   const discountRegex = /(\d+)%/;
   const discountMatch = announcement.match(discountRegex);
-  const discountPercent = discountMatch ? parseInt(discountMatch[1]) : 0;
+  const announcementDisc = discountMatch ? parseInt(discountMatch[1]) : 0;
 
   useEffect(() => {
     const shuffled = [...allProducts].sort(() => Math.random() - 0.5);
@@ -40,10 +40,28 @@ export default function Home({ allProducts, siteContent, announcement }) {
 
   const calculatePrice = (product) => {
     const numberOnly = parseInt(product.priceText.replace(/[^0-9]/g, "")) || 0;
-    let basePrice = discountPercent > 0 ? Math.floor(numberOnly - (numberOnly * discountPercent / 100)) : numberOnly;
+    
+    // ডেসক্রিপশন থেকে ডিসকাউন্ট বের করা
+    const descDiscMatch = product.desc.match(/Discount:\s*(\d+)%/i);
+    const descDisc = descDiscMatch ? parseInt(descDiscMatch[1]) : 0;
+    
+    // মোট ডিসকাউন্ট পারসেন্ট
+    const totalDiscountPercent = announcementDisc + descDisc;
+    const discountAmount = Math.floor(numberOnly * totalDiscountPercent / 100);
+    const basePrice = numberOnly - discountAmount;
+    
+    // ডেলিভারি চার্জ
     const delMatch = product.desc.match(/Delivery:\s*(\d+)/i);
     const deliveryCharge = delMatch ? parseInt(delMatch[1]) : 0;
-    return { base: basePrice, delivery: deliveryCharge, total: basePrice + deliveryCharge };
+    
+    return { 
+      original: numberOnly,
+      base: basePrice, 
+      discountAmt: discountAmount,
+      discountPercent: totalDiscountPercent,
+      delivery: deliveryCharge, 
+      total: basePrice + deliveryCharge 
+    };
   };
 
   const filteredProducts = searchQuery.trim() === '' ? [] : products.filter(p => 
@@ -65,7 +83,6 @@ export default function Home({ allProducts, siteContent, announcement }) {
         .desc-line { display: grid; grid-template-columns: 85px 15px 1fr; font-size: 12px; color: #777; margin-bottom: 5px; }
       `}</style>
       
-      {/* HEADER & SEARCH SECTION (আগের মতই) */}
       <header style={{ textAlign: 'center', padding: '40px 20px' }}>
         <h1 style={{ letterSpacing: '12px', fontSize: '24px', fontWeight: '900', margin: 0 }}>NOMAD</h1>
         <p style={{ fontSize: '7px', color: '#444', letterSpacing: '4px', marginTop: '8px' }}>{siteContent.header}</p>
@@ -79,7 +96,6 @@ export default function Home({ allProducts, siteContent, announcement }) {
       </div>
 
       <main>
-        {/* প্রোডাক্ট মেইন সেকশন (আগের মতই) */}
         {searchQuery ? (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', padding: '20px' }}>
             {filteredProducts.map((p, i) => (
@@ -90,7 +106,6 @@ export default function Home({ allProducts, siteContent, announcement }) {
             ))}
           </div>
         ) : viewCategory ? (
-            /* (আপনার ভিউ ক্যাটাগরি কোড) */
             <div style={{ padding: '0 20px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', margin: '20px 0' }}>
                 <span style={{ fontSize: '12px', letterSpacing: '3px' }}>{viewCategory} COLLECTION</span>
@@ -133,7 +148,6 @@ export default function Home({ allProducts, siteContent, announcement }) {
         )}
       </main>
 
-      {/* FOOTER (আগের মতই) */}
       <footer style={{ textAlign: 'center', padding: '60px 20px', background: '#050505', borderTop: '1px solid #111' }}>
         <div style={{ display: 'flex', justifyContent: 'center', gap: '25px', marginBottom: '30px' }}>
           <a href="https://facebook.com/nomadbysh" style={{ color: '#fff', textDecoration: 'none', fontSize: '10px' }}>FACEBOOK</a>
@@ -143,7 +157,6 @@ export default function Home({ allProducts, siteContent, announcement }) {
         <p style={{ letterSpacing: '6px', fontSize: '8px', color: '#111' }}>{siteContent.footer}</p>
       </footer>
 
-      {/* MODAL SECTION (নতুন আপডেটেড অর্ডার ফর্ম) */}
       {(selectedProduct && modalType) && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.98)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
           <div style={{ background: '#0a0a0a', width: '100%', maxWidth: '400px', padding: '40px 25px', borderRadius: '40px', border: '1px solid #1a1a1a', maxHeight: '95vh', overflowY: 'auto' }}>
@@ -158,7 +171,7 @@ export default function Home({ allProducts, siteContent, announcement }) {
                     ) : <p key={i} style={{ fontSize: '12px', color: '#666', textAlign: 'center' }}>{line}</p>
                   ))}
                 </div>
-                <p style={{ textAlign: 'center', fontSize: '18px', fontWeight: 'bold' }}>{calculatePrice(selectedProduct).base} BDT</p>
+                <p style={{ textAlign: 'center', fontSize: '18px', fontWeight: 'bold' }}>৳{calculatePrice(selectedProduct).base}</p>
                 <button className="btn-style" style={{ width: '100%', marginTop: '25px', padding: '20px' }} onClick={()=>setModalType('order')}>PROCEED TO ORDER</button>
                 <p onClick={closeModal} style={{ textAlign: 'center', color: '#444', fontSize: '11px', marginTop: '20px', letterSpacing: '2px', cursor: 'pointer' }}>CANCEL</p>
               </div>
@@ -172,10 +185,12 @@ export default function Home({ allProducts, siteContent, announcement }) {
                 <input type="hidden" name="total" value={calculatePrice(selectedProduct).total} />
                 <input type="hidden" name="ref" value={selectedProduct.ref || ''} />
 
-                {/* মোট বিল প্রদর্শনী */}
+                {/* ডিসকাউন্ট এবং মোট বিল প্রদর্শনী */}
                 <div style={{ background: '#111', padding: '15px', borderRadius: '15px', margin: '0 0 20px 0', textAlign: 'center' }}>
-                    <p style={{ fontSize: '12px', color: '#aaa' }}>Price: ৳{calculatePrice(selectedProduct).base} + Delivery: ৳{calculatePrice(selectedProduct).delivery}</p>
-                    <p style={{ fontWeight: 'bold', fontSize: '18px', color: '#fff' }}>TOTAL: ৳{calculatePrice(selectedProduct).total}</p>
+                    <p style={{ fontSize: '12px', color: '#aaa', textDecoration: 'line-through' }}>Original: ৳{calculatePrice(selectedProduct).original}</p>
+                    <p style={{ fontSize: '13px', color: '#0f0' }}>Discount ({calculatePrice(selectedProduct).discountPercent}%): -৳{calculatePrice(selectedProduct).discountAmt}</p>
+                    <p style={{ fontSize: '12px', color: '#aaa' }}>Delivery: ৳{calculatePrice(selectedProduct).delivery}</p>
+                    <p style={{ fontWeight: 'bold', fontSize: '20px', color: '#fff', marginTop: '5px' }}>TOTAL: ৳{calculatePrice(selectedProduct).total}</p>
                 </div>
 
                 <div style={{ display: 'flex', gap: '10px' }}>
