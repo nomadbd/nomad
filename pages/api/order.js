@@ -2,8 +2,7 @@ import nodemailer from 'nodemailer';
 
 export default async function handler(req, res) {
   if (req.method === 'POST') {
-    // product_id রিসিভ করার জন্য এখানে যোগ করা হয়েছে
-    const { product_id, product_name, final_price, ref, size, color, name, phone, address, method, sender_no, txn_id } = req.body;
+    const { product_id, product_name, price, delivery, total, ref, size, color, name, phone, address, method, sender_no, txn_id } = req.body;
 
     const transporter = nodemailer.createTransport({
       service: 'gmail',
@@ -16,7 +15,7 @@ export default async function handler(req, res) {
     const mailOptions = {
       from: process.env.EMAIL_USER,
       to: process.env.EMAIL_USER, 
-      subject: `NEW ORDER: ${product_name || 'Unknown Product'} - ${final_price}`,
+      subject: `NEW ORDER: ${product_name} (#${product_id}) - ৳${total}`,
       html: `
         <div style="font-family: sans-serif; padding: 20px; background-color: #fafafa; border: 1px solid #eee; color: #333; max-width: 600px; margin: auto;">
           <h2 style="color: #000; border-bottom: 2px solid #000; padding-bottom: 10px; text-align: center;">NOMAD - NEW ORDER RECEIVED</h2>
@@ -30,9 +29,10 @@ export default async function handler(req, res) {
 
           <div style="background-color: #fff; padding: 15px; border: 1px solid #ddd; border-radius: 10px;">
             <h3 style="margin-top: 0; font-size: 14px; text-decoration: underline;">PRODUCT DETAILS</h3>
-            <p style="margin: 5px 0;"><strong>PRODUCT:</strong> <span style="font-size: 16px; color: #111; font-weight: bold;">${product_name}</span></p>
-            <p style="margin: 5px 0;"><strong>PRODUCT ID:</strong> <span style="font-weight: bold; color: #d00;">${product_id || 'N/A'}</span></p>
-            <p style="margin: 5px 0;"><strong>PAYABLE PRICE:</strong> ${final_price}</p>
+            <p style="margin: 5px 0;"><strong>PRODUCT:</strong> ${product_name} (#${product_id})</p>
+            <p style="margin: 5px 0;"><strong>BASE PRICE:</strong> ৳${price}</p>
+            <p style="margin: 5px 0;"><strong>DELIVERY CHARGE:</strong> ৳${delivery}</p>
+            <p style="margin: 5px 0; font-size: 18px; font-weight: bold; color: #d00;">TOTAL PAYABLE: ৳${total}</p>
             <p style="margin: 5px 0;"><strong>SIZE:</strong> ${size} | <strong>COLOR:</strong> ${color}</p>
             <p style="margin: 5px 0; color: #777; font-size: 12px;"><strong>FB REF CODE:</strong> ${ref || 'Direct Site Visit'}</p>
           </div>
