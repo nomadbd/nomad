@@ -9,7 +9,7 @@ export default function Home({ allProducts, siteContent, announcement }) {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState({});
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedProduct, setSelectedProduct] = useState({ id: '', name: '', priceText: '', ref: '' });
+  const [selectedProduct, setSelectedProduct] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('');
@@ -24,11 +24,10 @@ export default function Home({ allProducts, siteContent, announcement }) {
   const discountPercent = discountMatch ? parseInt(discountMatch[1]) : 0;
 
   useEffect(() => {
-    const shuffledProducts = [...allProducts].sort(() => Math.random() - 0.5);
-    setProducts(shuffledProducts);
-    
+    const shuffled = [...allProducts].sort(() => Math.random() - 0.5);
+    setProducts(shuffled);
     const catMap = {};
-    shuffledProducts.forEach(p => {
+    shuffled.forEach(p => {
       const catName = p.name.split(' ')[0];
       if (!catMap[catName]) catMap[catName] = [];
       catMap[catName].push(p);
@@ -37,106 +36,101 @@ export default function Home({ allProducts, siteContent, announcement }) {
 
     if (router.query.product) {
       const target = allProducts.find(p => p.id === router.query.product);
-      if (target) {
-        setSelectedProduct({ ...target, ref: router.query.ref || '' });
-        setIsModalOpen(true);
-      }
+      if (target) { setSelectedProduct({ ...target, ref: router.query.ref || '' }); setIsModalOpen(true); }
     }
   }, [allProducts, router.query]);
 
-  // ডেসক্রিপশন থেকে আসা Price 1000 BDT থেকে শুধু সংখ্যা বের করে ডিসকাউন্ট করা
-  const getFinalPriceDisplay = (priceText) => {
+  // প্রাইস লজিক (ইন্টারন্যাশনাল ফরম্যাট ঠিক রেখে)
+  const calculateFinalPrice = (priceText) => {
     const numberOnly = priceText.replace(/[^0-9]/g, "");
-    const originalPrice = parseInt(numberOnly) || 0;
-    if (discountPercent > 0) {
-      const discounted = Math.floor(originalPrice - (originalPrice * discountPercent / 100));
-      return priceText.replace(numberOnly, discounted);
-    }
-    return priceText;
+    if (!numberOnly) return priceText;
+    const discounted = Math.floor(parseInt(numberOnly) - (parseInt(numberOnly) * discountPercent / 100));
+    return priceText.replace(numberOnly, discounted);
   };
 
-  const filteredProducts = searchQuery.trim() === '' 
-    ? [] 
-    : products.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
+  // উন্নত সার্চ লজিক (Case & Hyphen Insensitive)
+  const filteredProducts = searchQuery.trim() === '' ? [] : products.filter(p => 
+    p.name.toLowerCase().replace(/-/g, ' ').includes(searchQuery.toLowerCase().replace(/-/g, ' '))
+  );
 
   return (
     <div style={{ backgroundColor: '#000', color: '#fff', minHeight: '100vh', fontFamily: 'Inter, sans-serif' }}>
-      <Head>
-        <title>NOMAD | Premium Store</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"/>
-      </Head>
+      <Head><title>NOMAD | Premium</title></Head>
 
       <style>{`
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .premium-card { animation: fadeIn 0.8s ease forwards; background: #080808; border-radius: 35px; border: 1px solid #111; overflow: hidden; }
-        .scroll-container { display: flex; overflow-x: auto; gap: 15px; padding: 10px 20px; scrollbar-width: none; scroll-behavior: smooth; }
+        @keyframes luxuryFade { 0% { opacity: 0; transform: translateY(20px); } 100% { opacity: 1; transform: translateY(0); } }
+        .product-card { animation: luxuryFade 1s ease forwards; margin-bottom: 60px; }
+        .scroll-container { display: flex; overflow-x: auto; gap: 20px; padding: 10px 20px; scrollbar-width: none; }
         .scroll-container::-webkit-scrollbar { display: none; }
-        .cat-item { min-width: 85vw; max-width: 320px; }
-        .price-tag { font-size: 16px; letter-spacing: 1px; color: #fff; font-weight: 300; margin-bottom: 15px; }
-        .order-btn { width: 100%; background: #fff; color: #000; border: none; padding: 18px; border-radius: 15px; font-weight: 900; font-size: 11px; letter-spacing: 3px; cursor: pointer; text-transform: uppercase; }
-        .cat-title { font-size: 13px; letter-spacing: 5px; margin: 40px 20px 20px; text-transform: uppercase; display: flex; justify-content: space-between; align-items: center; color: #666; }
-        .see-more { font-size: 10px; border-bottom: 1px solid #333; color: #fff; padding-bottom: 2px; }
-        .search-box { background: #0a0a0a; border: 1px solid #151515; border-radius: 20px; padding: 15px; text-align: center; margin: 20px; transition: 0.3s; }
-        .search-input::placeholder { color: #333; letter-spacing: 2px; font-size: 10px; }
+        .cat-item { min-width: 300px; background: #0a0a0a; border-radius: 30px; border: 1px solid #111; overflow: hidden; cursor: pointer; }
+        .desc-line { display: grid; grid-template-columns: 85px 15px 1fr; font-size: 12px; color: #777; margin-bottom: 5px; }
+        input, select, textarea { background: none; border: none; border-bottom: 1px solid #222; color: #fff; padding: 12px; outline: none; width: 100%; }
       `}</style>
 
       {/* Header */}
-      <header style={{ textAlign: 'center', padding: '40px 20px', borderBottom: '1px solid #0d0d0d' }}>
-        <h1 style={{ letterSpacing: '18px', fontSize: '28px', margin: 0, fontWeight: '900' }}>NOMAD</h1>
-        <p style={{ fontSize: '7px', color: '#444', marginTop: '8px', letterSpacing: '6px' }}>{siteContent.header}</p>
+      <header style={{ textAlign: 'center', padding: '30px', borderBottom: '1px solid #111' }}>
+        <h1 style={{ letterSpacing: '15px', fontSize: '24px', fontWeight: '900' }}>NOMAD</h1>
+        <p style={{ fontSize: '7px', color: '#555', letterSpacing: '5px' }}>{siteContent.header}</p>
       </header>
 
-      {/* Announcement & Search */}
-      <div className="search-box" style={{ borderColor: isFocused ? '#333' : '#151515' }}>
-        {announcement && !searchQuery && <p style={{ fontSize: '10px', letterSpacing: '2px', marginBottom: '12px', fontWeight: 'bold' }}>{announcement}</p>}
-        <input 
-          type="text" className="search-input" placeholder="DISCOVER COLLECTION" 
-          onFocus={() => setIsFocused(true)} onBlur={() => setIsFocused(false)}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          style={{ background: 'none', border: 'none', color: '#fff', textAlign: 'center', width: '100%', outline: 'none', fontSize: '11px', letterSpacing: '2px' }}
-        />
+      {/* Search */}
+      <div style={{ maxWidth: '400px', margin: '20px auto', padding: '0 20px' }}>
+        <div style={{ background: '#0a0a0a', border: isFocused ? '1px solid #fff' : '1px solid #111', borderRadius: '20px', padding: '15px' }}>
+          <input type="text" placeholder="SEARCH PRODUCT" onFocus={()=>setIsFocused(true)} onBlur={()=>setIsFocused(false)} onChange={(e)=>setSearchQuery(e.target.value)} style={{ textAlign: 'center', border: 'none' }} />
+        </div>
       </div>
 
-      <main>
+      <main style={{ maxWidth: '450px', margin: '0 auto' }}>
         {searchQuery ? (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', padding: '20px' }}>
             {filteredProducts.map((p, i) => (
-              <div key={i} className="premium-card" onClick={() => { setSelectedProduct({...p, ref: ''}); setIsModalOpen(true); }} style={{ padding: '10px' }}>
-                <img src={`/products/${p.image}`} style={{ width: '100%', borderRadius: '25px' }} />
-                <p style={{ fontSize: '10px', textAlign: 'center', marginTop: '10px', letterSpacing: '1px' }}>{p.name}</p>
+              <div key={i} onClick={() => { setSelectedProduct(p); setIsModalOpen(true); }} style={{ background: '#0a0a0a', padding: '10px', borderRadius: '15px' }}>
+                <img src={`/products/${p.image}`} style={{ width: '100%', borderRadius: '10px' }} />
+                <p style={{ fontSize: '11px', textAlign: 'center', marginTop: '10px' }}>{p.name}</p>
               </div>
             ))}
           </div>
         ) : viewCategory ? (
-          <div className="premium-card" style={{ margin: '0 20px', border: 'none' }}>
-            <div className="cat-title"><span>{viewCategory} Collection</span><span onClick={() => setViewCategory(null)} className="see-more">BACK</span></div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', paddingBottom: '100px' }}>
-              {categories[viewCategory].map((p, i) => (
-                <div key={i} onClick={() => { setSelectedProduct({...p, ref: ''}); setIsModalOpen(true); }} style={{ background: '#080808', padding: '10px', borderRadius: '25px' }}>
-                  <img src={`/products/${p.image}`} style={{ width: '100%', borderRadius: '18px' }} />
-                  <p style={{ fontSize: '10px', textAlign: 'center', margin: '10px 0 5px' }}>{p.name}</p>
-                  <p style={{ fontSize: '12px', fontWeight: 'bold', textAlign: 'center' }}>{getFinalPriceDisplay(p.priceText)}</p>
-                </div>
-              ))}
+          /* See More View */
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '20px' }}>
+              <span style={{ letterSpacing: '3px', fontSize: '12px' }}>{viewCategory}</span>
+              <span onClick={() => setViewCategory(null)} style={{ fontSize: '10px', borderBottom: '1px solid #333' }}>BACK</span>
             </div>
+            {categories[viewCategory].map((product, index) => (
+              <div key={index} className="product-card" style={{ padding: '0 20px' }}>
+                <img src={`/products/${product.image}`} style={{ width: '100%', borderRadius: '30px' }} />
+                <div style={{ textAlign: 'center', marginTop: '20px' }}>
+                  <h3 style={{ fontSize: '18px', letterSpacing: '2px' }}>{product.name}</h3>
+                  <div style={{ margin: '15px 0' }}>
+                    {product.desc.split('\n').map((line, i) => (
+                      line.includes(':') ? (
+                        <div key={i} className="desc-line"><span>{line.split(':')[0]}</span><span>:</span><span>{line.split(':')[1]}</span></div>
+                      ) : <p key={i} style={{ fontSize: '12px', color: '#777' }}>{line}</p>
+                    ))}
+                  </div>
+                  <p style={{ fontWeight: 'bold', margin: '10px 0' }}>{calculateFinalPrice(product.priceText)}</p>
+                  <button onClick={() => { setSelectedProduct(product); setIsModalOpen(true); }} style={{ width: '100%', background: '#fff', color: '#000', padding: '15px', borderRadius: '12px', fontWeight: 'bold' }}>ORDER NOW</button>
+                </div>
+              </div>
+            ))}
           </div>
         ) : (
+          /* Horizontal Home View */
           Object.keys(categories).map(cat => (
-            <section key={cat} style={{ marginBottom: '20px' }}>
-              <div className="cat-title"><span>{cat}</span><span onClick={() => setViewCategory(cat)} className="see-more">SEE MORE</span></div>
+            <section key={cat}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '20px' }}>
+                <span style={{ letterSpacing: '4px', fontSize: '12px' }}>{cat}</span>
+                <span onClick={() => setViewCategory(cat)} style={{ fontSize: '10px', color: '#555' }}>SEE MORE</span>
+              </div>
               <div className="scroll-container">
                 {categories[cat].map((p, i) => (
-                  <div key={i} className="cat-item">
-                    <div className="premium-card">
-                      <img src={`/products/${p.image}`} style={{ width: '100%', display: 'block' }} />
-                      <div style={{ padding: '25px', textAlign: 'center' }}>
-                        <h3 style={{ fontSize: '16px', letterSpacing: '3px', marginBottom: '10px', fontWeight: '400' }}>{p.name}</h3>
-                        <div className="price-tag">
-                          {getFinalPriceDisplay(p.priceText)}
-                          {discountPercent > 0 && <span style={{ textDecoration: 'line-through', color: '#333', fontSize: '12px', marginLeft: '10px' }}>{p.priceText}</span>}
-                        </div>
-                        <button className="order-btn" onClick={() => { setSelectedProduct({...p, ref: ''}); setIsModalOpen(true); }}>ORDER NOW</button>
-                      </div>
+                  <div key={i} className="cat-item" onClick={() => { setSelectedProduct(p); setIsModalOpen(true); }}>
+                    <img src={`/products/${p.image}`} style={{ width: '100%' }} />
+                    <div style={{ padding: '20px', textAlign: 'center' }}>
+                      <p style={{ fontSize: '14px', letterSpacing: '2px' }}>{p.name}</p>
+                      <p style={{ fontSize: '12px', color: '#555', margin: '10px 0' }}>{calculateFinalPrice(p.priceText)}</p>
+                      <div style={{ background: '#fff', color: '#000', padding: '10px', borderRadius: '8px', fontSize: '10px', fontWeight: 'bold' }}>VIEW DETAILS</div>
                     </div>
                   </div>
                 ))}
@@ -146,47 +140,56 @@ export default function Home({ allProducts, siteContent, announcement }) {
         )}
       </main>
 
-      {/* Footer */}
-      <footer style={{ textAlign: 'center', padding: '80px 20px', background: '#050505', marginTop: '60px' }}>
-        <p style={{ fontSize: '11px', color: '#444', lineHeight: '2', letterSpacing: '1px', marginBottom: '40px' }}>{siteContent.about}</p>
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '30px', marginBottom: '40px' }}>
-          <a href="https://facebook.com/nomadbysh" style={{ color: '#fff', textDecoration: 'none', fontSize: '9px', letterSpacing: '2px' }}>FB</a>
-          <a href="https://wa.me/8801521731371" style={{ color: '#fff', textDecoration: 'none', fontSize: '9px', letterSpacing: '2px' }}>WA</a>
+      {/* Footer (আগের স্টাইল) */}
+      <footer style={{ textAlign: 'center', padding: '60px 20px', background: '#050505', marginTop: '40px' }}>
+        <p style={{ fontSize: '11px', color: '#444', lineHeight: '2' }}>{siteContent.about}</p>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '30px', margin: '30px 0' }}>
+          <a href="https://facebook.com/nomadbysh" style={{ color: '#fff', textDecoration: 'none', fontSize: '10px' }}>FACEBOOK</a>
+          <a href="https://wa.me/8801521731371" style={{ color: '#fff', textDecoration: 'none', fontSize: '10px' }}>WHATSAPP</a>
         </div>
-        <p style={{ letterSpacing: '6px', fontSize: '8px', color: '#1a1a1a' }}>{siteContent.footer}</p>
       </footer>
 
-      {/* Order Modal */}
-      {isModalOpen && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.99)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-          <div style={{ background: '#080808', width: '100%', maxWidth: '400px', padding: '40px 25px', borderRadius: '40px', border: '1px solid #111', maxHeight: '90vh', overflowY: 'auto' }}>
-            <h2 style={{ fontSize: '14px', textAlign: 'center', letterSpacing: '4px', marginBottom: '25px' }}>{selectedProduct.name}</h2>
+      {/* Modal - বড় ছবি + বিস্তারিত ডেসক্রিপশন + অরিজিনাল ফর্ম */}
+      {isModalOpen && selectedProduct && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.98)', zIndex: 9999, overflowY: 'auto', padding: '20px' }}>
+          <div style={{ maxWidth: '400px', margin: '0 auto', background: '#0a0a0a', borderRadius: '30px', padding: '30px', position: 'relative' }}>
+            <button onClick={()=>setIsModalOpen(false)} style={{ position: 'absolute', right: '20px', top: '20px', background: 'none', border: 'none', color: '#fff', fontSize: '24px' }}>&times;</button>
             
-            <form action="/api/order" method="POST" style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+            <img src={`/products/${selectedProduct.image}`} style={{ width: '100%', borderRadius: '20px' }} />
+            <h2 style={{ textAlign: 'center', margin: '20px 0', fontSize: '18px' }}>{selectedProduct.name}</h2>
+            
+            {/* ডেসক্রিপশন অংশ */}
+            <div style={{ marginBottom: '25px' }}>
+              {selectedProduct.desc.split('\n').map((line, i) => (
+                <div key={i} className="desc-line"><span>{line.split(':')[0]}</span><span>:</span><span>{line.split(':')[1]}</span></div>
+              ))}
+            </div>
+
+            <p style={{ textAlign: 'center', fontSize: '20px', fontWeight: 'bold', marginBottom: '20px' }}>{calculateFinalPrice(selectedProduct.priceText)}</p>
+
+            {/* অরিজিনাল ফর্ম সব গেটওয়ে সহ */}
+            <form action="/api/order" method="POST" style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
               <input type="hidden" name="product_name" value={selectedProduct.name} />
-              <input type="hidden" name="final_price" value={getFinalPriceDisplay(selectedProduct.priceText)} />
-              <input type="hidden" name="fb_ref" value={selectedProduct.ref} />
-
+              <input type="hidden" name="final_price" value={calculateFinalPrice(selectedProduct.priceText)} />
+              
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                <select name="size" required style={{ background: '#000', border: '1px solid #111', color: '#fff', padding: '15px', borderRadius: '12px' }}><option value="" disabled selected>SIZE</option><option>M</option><option>L</option><option>XL</option><option>XXL</option></select>
-                <input type="text" name="color" placeholder="COLOR" required style={{ background: '#000', border: '1px solid #111', color: '#fff', padding: '15px', borderRadius: '12px' }} />
+                <select name="size" required><option value="" disabled selected>SIZE</option><option>M</option><option>L</option><option>XL</option><option>XXL</option></select>
+                <input type="text" name="color" placeholder="COLOR" required />
               </div>
+              <input type="text" name="name" placeholder="FULL NAME" required />
+              <input type="tel" name="phone" placeholder="PHONE" required />
+              <textarea name="address" placeholder="ADDRESS" required></textarea>
 
-              <input type="text" name="name" placeholder="YOUR NAME" required style={{ background: '#000', border: '1px solid #111', color: '#fff', padding: '15px', borderRadius: '12px' }} />
-              <input type="tel" name="phone" placeholder="PHONE NUMBER" required style={{ background: '#000', border: '1px solid #111', color: '#fff', padding: '15px', borderRadius: '12px' }} />
-              <textarea name="address" placeholder="SHIPPING ADDRESS" required style={{ background: '#000', border: '1px solid #111', color: '#fff', padding: '15px', borderRadius: '12px', minHeight: '80px' }}></textarea>
-
-              <div style={{ padding: '20px', background: '#000', borderRadius: '15px', border: '1px solid #111' }}>
-                <select name="method" required style={{ width: '100%', background: 'none', color: '#fff', border: 'none', marginBottom: '10px' }} onChange={(e) => setPaymentMethod(e.target.value)}>
-                  <option value="" disabled selected>PAYMENT GATEWAY</option>
-                  <option>Bkash</option><option>Nagad</option>
+              <div style={{ background: '#050505', padding: '15px', borderRadius: '15px' }}>
+                <select name="method" required onChange={(e)=>setPaymentMethod(e.target.value)}>
+                  <option value="" disabled selected>GATEWAY</option>
+                  <option>Bkash</option><option>Nagad</option><option>Rocket</option><option>Upay</option><option>Cellfin</option>
                 </select>
-                {paymentMethod && <p style={{ fontSize: '11px', textAlign: 'center', color: '#555' }}>SEND MONEY TO: {paymentNumbers[paymentMethod]}</p>}
-                <input type="text" name="txn_id" placeholder="TRANSACTION ID" required style={{ width: '100%', background: 'none', border: 'none', borderBottom: '1px solid #111', marginTop: '10px' }} />
+                {paymentMethod && <p style={{ fontSize: '10px', color: '#555', marginTop: '10px' }}>SEND MONEY TO: {paymentNumbers[paymentMethod]}</p>}
+                <input type="tel" name="payment_no" placeholder="SENDER NO" required style={{ marginTop: '10px' }} />
+                <input type="text" name="txn_id" placeholder="TRANSACTION ID" required />
               </div>
-
-              <button type="submit" className="order-btn">CONFIRM ORDER</button>
-              <button type="button" onClick={() => setIsModalOpen(false)} style={{ color: '#333', background: 'none', border: 'none', fontSize: '10px', marginTop: '10px' }}>CANCEL</button>
+              <button type="submit" style={{ background: '#fff', color: '#000', padding: '18px', borderRadius: '12px', fontWeight: 'bold' }}>CONFIRM ORDER</button>
             </form>
           </div>
         </div>
@@ -209,18 +212,17 @@ export async function getStaticProps() {
   const allProducts = images.map(img => {
     const handle = path.parse(img).name;
     const dPath = path.join(dDir, `${handle}.txt`);
-    let name = handle.toUpperCase(), priceText = "Price 1200 BDT";
+    let name = handle.toUpperCase(), desc = "", priceText = "1200 BDT";
 
     if (fs.existsSync(dPath)) {
       const content = fs.readFileSync(dPath, 'utf8').trim().split('\n');
       name = content[0];
+      desc = content.slice(1).join('\n');
       const pLine = content.find(l => l.toLowerCase().includes('price'));
-      // এখানে ডেসক্রিপশন ফাইলে Price 1000 BDT থাকলে সেটিই নেবে
-      priceText = pLine ? pLine.trim() : "Price 1200 BDT";
+      priceText = pLine ? pLine.trim() : "1200 BDT";
     }
-
-    return { id: handle, name, image: img, priceText };
+    return { id: handle, name, image: img, desc, priceText };
   });
 
-  return { props: { allProducts, siteContent: { header: readTxt('header.txt', 'THE ONE. EVERYWHERE.'), about: readTxt('about.txt', 'Luxury Redefined.'), footer: readTxt('footer.txt', 'NOMAD BY SH | 2026') }, announcement: readTxt('announcement.txt', '') }, revalidate: 10 };
+  return { props: { allProducts, siteContent: { header: readTxt('header.txt', 'THE ONE. EVERYWHERE.'), about: readTxt('about.txt', ''), footer: readTxt('footer.txt', '') }, announcement: readTxt('announcement.txt', '') }, revalidate: 10 };
 }
