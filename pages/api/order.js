@@ -2,43 +2,47 @@ import nodemailer from 'nodemailer';
 
 export default async function handler(req, res) {
   if (req.method === 'POST') {
-    const { product_name, final_price, fb_ref, name, phone, address, size, color, txn_id } = req.body;
+    // index.js থেকে পাঠানো নতুন ডাটাগুলো (final_price, fb_ref) সহ রিসিভ করা হচ্ছে
+    const { product_name, final_price, fb_ref, size, color, name, phone, address, method, payment_no, txn_id } = req.body;
 
     const transporter = nodemailer.createTransport({
       service: 'gmail',
-      auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
     });
 
     const mailOptions = {
       from: process.env.EMAIL_USER,
-      to: process.env.EMAIL_USER,
-      subject: `NEW ORDER: ${product_name} - ৳${final_price}`,
+      to: process.env.EMAIL_USER, 
+      // সাবজেক্টে প্রডাক্টের নাম এবং ফাইনাল প্রাইস দেখাবে
+      subject: `NEW ORDER: ${product_name || 'Unknown Product'} - ৳${final_price}`,
       html: `
-        <div style="font-family: Arial, sans-serif; line-height: 1.6; max-width: 600px; color: #333; border: 1px solid #eee; padding: 30px; border-radius: 10px;">
-          <h2 style="color: #000; text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px;">NOMAD BY SH</h2>
+        <div style="font-family: sans-serif; padding: 20px; background-color: #fafafa; border: 1px solid #eee; color: #333; max-width: 600px; margin: auto;">
+          <h2 style="color: #000; border-bottom: 2px solid #000; padding-bottom: 10px; text-align: center;">NOMAD - NEW ORDER RECEIVED</h2>
           
-          <div style="background: #fdfdfd; padding: 20px; border-radius: 10px; margin: 25px 0; border-left: 5px solid #000;">
-            <h4 style="margin: 0 0 10px 0; color: #000;">CUSTOMER SHIPPING INFO</h4>
-            <p style="margin: 3px 0;"><strong>NAME:</strong> ${name}</p>
-            <p style="margin: 3px 0;"><strong>PHONE:</strong> ${phone}</p>
-            <p style="margin: 3px 0;"><strong>ADDRESS:</strong> ${address}</p>
+          <div style="background-color: #fff; padding: 15px; border: 1px solid #ddd; border-radius: 10px; margin-bottom: 20px;">
+            <h3 style="margin-top: 0; font-size: 14px; text-decoration: underline;">CUSTOMER SHIPPING INFO</h3>
+            <p style="margin: 5px 0;"><strong>NAME:</strong> ${name}</p>
+            <p style="margin: 5px 0;"><strong>PHONE:</strong> ${phone}</p>
+            <p style="margin: 5px 0;"><strong>ADDRESS:</strong> ${address}</p>
           </div>
 
-          <div style="padding: 20px; border: 1px dashed #ddd; border-radius: 10px;">
-            <h4 style="margin: 0 0 10px 0; color: #000;">PRODUCT DETAILS</h4>
-            <table style="width: 100%; font-size: 14px;">
-              <tr><td><strong>PRODUCT:</strong></td><td>${product_name}</td></tr>
-              <tr><td><strong>FINAL PRICE:</strong></td><td>৳${final_price}</td></tr>
-              <tr><td><strong>SIZE/COLOR:</strong></td><td>${size} / ${color}</td></tr>
-              <tr><td><strong>REF CODE:</strong></td><td>${fb_ref || 'Direct Site Visit'}</td></tr>
-            </table>
+          <div style="background-color: #fff; padding: 15px; border: 1px solid #ddd; border-radius: 10px;">
+            <h3 style="margin-top: 0; font-size: 14px; text-decoration: underline;">PRODUCT DETAILS</h3>
+            <p style="margin: 5px 0;"><strong>PRODUCT:</strong> <span style="font-size: 16px; color: #111; font-weight: bold;">${product_name}</span></p>
+            <p style="margin: 5px 0;"><strong>PAYABLE PRICE:</strong> ৳${final_price}</p>
+            <p style="margin: 5px 0;"><strong>SIZE:</strong> ${size} | <strong>COLOR:</strong> ${color}</p>
+            <p style="margin: 5px 0; color: #777; font-size: 12px;"><strong>FB REF CODE:</strong> ${fb_ref || 'Direct Site Visit'}</p>
           </div>
 
-          <div style="margin-top: 25px; text-align: center; background: #000; color: #fff; padding: 15px; border-radius: 10px;">
-             <p style="margin: 0;"><strong>TRANSACTION ID:</strong> ${txn_id}</p>
+          <br/>
+          <div style="background-color: #f0f0f0; padding: 15px; border-left: 4px solid #000;">
+            <p style="margin: 0;"><strong>PAYMENT METHOD:</strong> ${method}</p>
+            <p style="margin: 5px 0;"><strong>SENDER NUMBER:</strong> ${payment_no}</p>
+            <p style="margin: 0;"><strong>TRANSACTION ID:</strong> <span style="font-family: monospace; font-weight: bold; color: #000;">${txn_id}</span></p>
           </div>
-          
-          <p style="font-size: 10px; color: #aaa; margin-top: 20px; text-align: center;">This is an automated order notification from NOMAD STORE.</p>
         </div>
       `,
     };
@@ -47,19 +51,20 @@ export default async function handler(req, res) {
       await transporter.sendMail(mailOptions);
       res.status(200).send(`
         <html>
-          <body style="background: #000; color: #fff; display: flex; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif; text-align: center;">
-            <div>
-              <h1 style="font-size: 40px;">✔</h1>
-              <h2>ORDER SUCCESSFUL</h2>
-              <p style="color: #666;">We have received your order. We'll contact you shortly.</p>
-              <a href="/" style="color: #fff; border: 1px solid #fff; padding: 10px 30px; text-decoration: none; border-radius: 50px; display: inline-block; margin-top: 20px;">BACK TO STORE</a>
+          <head><meta charset="UTF-8"><title>Order Successful</title><script src="https://cdn.tailwindcss.com"></script></head>
+          <body class="bg-black text-white flex h-screen items-center justify-center p-6 text-center font-sans">
+            <div class="space-y-4">
+              <div class="text-5xl mb-4">✔</div>
+              <h1 class="text-3xl font-black text-white uppercase tracking-tighter">ORDER SUCCESSFUL!</h1>
+              <p class="text-zinc-400 text-sm max-w-sm mx-auto uppercase tracking-widest" style="font-size: 10px;">We have received your order for <strong>${product_name}</strong>. Our team will contact you shortly.</p>
+              <a href="/" class="inline-block mt-6 text-xs bg-white text-black px-10 py-4 rounded-full font-bold hover:bg-zinc-200 transition tracking-widest">BACK TO STORE</a>
             </div>
           </body>
         </html>
       `);
-    } catch (e) {
-      console.error(e);
-      res.status(500).send('Error sending order. Please contact support.');
+    } catch (error) {
+      console.error(error);
+      res.status(500).send('<h1>Error occurred while sending email.</h1>');
     }
   } else {
     res.status(405).send('Method Not Allowed');
