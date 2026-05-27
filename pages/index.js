@@ -1,4 +1,4 @@
- import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import fs from 'fs';
@@ -40,10 +40,11 @@ export default function Home({ allProducts, siteContent, announcement }) {
   }, [allProducts, router.query]);
 
   const calculatePrice = (priceText) => {
-    const numberOnly = priceText.replace(/[^0-9]/g, "");
-    if (!numberOnly || discountPercent === 0) return priceText;
-    const discounted = Math.floor(parseInt(numberOnly) - (parseInt(numberOnly) * discountPercent / 100));
-    return priceText.replace(numberOnly, discounted);
+    const numberOnly = priceText ? priceText.replace(/[^0-9]/g, "") : "0";
+    const deliveryCharge = 70;
+    let basePrice = parseInt(numberOnly) || 0;
+    if (discountPercent > 0) basePrice = Math.floor(basePrice - (basePrice * discountPercent / 100));
+    return { base: basePrice, delivery: deliveryCharge, total: basePrice + deliveryCharge };
   };
 
   const filteredProducts = searchQuery.trim() === '' ? [] : products.filter(p => 
@@ -61,8 +62,7 @@ export default function Home({ allProducts, siteContent, announcement }) {
         .scroll-container { display: flex; overflow-x: auto; gap: 20px; padding: 10px 20px; scrollbar-width: none; scroll-snap-type: x mandatory; }
         .scroll-container::-webkit-scrollbar { display: none; }
         .cat-item { min-width: 85vw; scroll-snap-align: center; background: #0a0a0a; border-radius: 40px; border: 1px solid #1a1a1a; overflow: hidden; margin: 0 auto; }
-        .btn-details { flex: 1; background: none; color: #fff; border: 1px solid #333; padding: 16px; border-radius: 15px; font-weight: bold; font-size: 11px; letter-spacing: 1px; cursor: pointer; }
-        .btn-order { flex: 1; background: #111; color: #fff; border: none; padding: 16px; border-radius: 15px; font-weight: bold; font-size: 11px; letter-spacing: 1px; cursor: pointer; }
+        .btn-style { flex: 1; background: #111; color: #fff; border: 1px solid #333; padding: 16px; border-radius: 15px; font-weight: bold; font-size: 11px; letter-spacing: 1px; cursor: pointer; text-align: center; }
         .input-field { background: #000; border: 1px solid #333; color: #fff; padding: 15px; border-radius: 15px; width: 100%; font-size: 14px; margin-bottom: 12px; }
         .input-field:focus { border-color: #555; }
         .desc-line { display: grid; grid-template-columns: 85px 15px 1fr; font-size: 12px; color: #777; margin-bottom: 5px; }
@@ -101,8 +101,8 @@ export default function Home({ allProducts, siteContent, announcement }) {
                 <img src={`/products/${p.image}`} style={{ width: '100%' }} />
                 <h3 style={{ textAlign: 'center', fontSize: '18px', margin: '20px 0' }}>{p.name}</h3>
                 <div style={{ display: 'flex', gap: '10px', padding: '0 20px 20px' }}>
-                  <button className="btn-details" onClick={() => { setSelectedProduct(p); setModalType('details'); }}>DETAILS</button>
-                  <button className="btn-order" onClick={() => { setSelectedProduct(p); setModalType('order'); }}>ORDER NOW</button>
+                  <button className="btn-style" onClick={() => { setSelectedProduct(p); setModalType('details'); }}>DETAILS</button>
+                  <button className="btn-style" onClick={() => { setSelectedProduct(p); setModalType('order'); }}>ORDER</button>
                 </div>
               </div>
             ))}
@@ -121,8 +121,8 @@ export default function Home({ allProducts, siteContent, announcement }) {
                     <div style={{ padding: '25px 20px', textAlign: 'center' }}>
                       <p style={{ fontSize: '16px', letterSpacing: '1px', marginBottom: '20px' }}>{p.name}</p>
                       <div style={{ display: 'flex', gap: '10px' }}>
-                        <button className="btn-details" onClick={() => { setSelectedProduct(p); setModalType('details'); }}>DETAILS</button>
-                        <button className="btn-order" onClick={() => { setSelectedProduct(p); setModalType('order'); }}>ORDER</button>
+                        <button className="btn-style" onClick={() => { setSelectedProduct(p); setModalType('details'); }}>DETAILS</button>
+                        <button className="btn-style" onClick={() => { setSelectedProduct(p); setModalType('order'); }}>ORDER</button>
                       </div>
                     </div>
                   </div>
@@ -156,17 +156,24 @@ export default function Home({ allProducts, siteContent, announcement }) {
                     ) : <p key={i} style={{ fontSize: '12px', color: '#666', textAlign: 'center' }}>{line}</p>
                   ))}
                 </div>
-                <p style={{ textAlign: 'center', fontSize: '18px', fontWeight: 'bold' }}>{calculatePrice(selectedProduct.priceText)}</p>
-                <button className="btn-order" style={{ width: '100%', marginTop: '25px', padding: '20px', background: '#fff', color: '#000' }} onClick={()=>setModalType('order')}>PROCEED TO ORDER</button>
+                <p style={{ textAlign: 'center', fontSize: '18px', fontWeight: 'bold' }}>{calculatePrice(selectedProduct.priceText).base} BDT</p>
+                <button className="btn-style" style={{ width: '100%', marginTop: '25px', padding: '20px' }} onClick={()=>setModalType('order')}>PROCEED TO ORDER</button>
                 <p onClick={closeModal} style={{ textAlign: 'center', color: '#444', fontSize: '11px', marginTop: '20px', letterSpacing: '2px', cursor: 'pointer' }}>CANCEL</p>
               </div>
             ) : (
               <form action="/api/order" method="POST" style={{ display: 'flex', flexDirection: 'column' }}>
                 <h2 style={{ textAlign: 'center', marginBottom: '25px', fontSize: '16px', fontWeight: 'bold' }}>ORDER: {selectedProduct.name}</h2>
-                <input type="hidden" name="product_name" value={selectedProduct.name} />
                 <input type="hidden" name="product_id" value={selectedProduct.id} />
-                <input type="hidden" name="final_price" value={calculatePrice(selectedProduct.priceText)} />
+                <input type="hidden" name="product_name" value={selectedProduct.name} />
+                <input type="hidden" name="price" value={calculatePrice(selectedProduct.priceText).base} />
+                <input type="hidden" name="delivery" value={calculatePrice(selectedProduct.priceText).delivery} />
+                <input type="hidden" name="total" value={calculatePrice(selectedProduct.priceText).total} />
                 <input type="hidden" name="ref" value={selectedProduct.ref || ''} />
+
+                <div style={{ fontSize: '13px', margin: '0 0 20px 0', textAlign: 'center', color: '#aaa' }}>
+                    <p>Price: {calculatePrice(selectedProduct.priceText).base} + Delivery: {calculatePrice(selectedProduct.priceText).delivery}</p>
+                    <p style={{ fontWeight: 'bold', fontSize: '16px', color: '#fff' }}>TOTAL: {calculatePrice(selectedProduct.priceText).total}</p>
+                </div>
 
                 <div style={{ display: 'flex', gap: '10px' }}>
                   <select name="size" required className="input-field" style={{ flex: 1 }}><option value="" disabled selected>SIZE</option><option>M</option><option>L</option><option>XL</option><option>XXL</option></select>
@@ -187,7 +194,7 @@ export default function Home({ allProducts, siteContent, announcement }) {
                   <input type="text" name="txn_id" placeholder="TRANSACTION ID" required style={{ background: 'none', border: 'none', borderBottom: '1px solid #333', color: '#fff', width: '100%', padding: '10px 0', fontSize: '14px' }} />
                 </div>
                 
-                <button type="submit" style={{ background: '#111', color: '#fff', padding: '20px', borderRadius: '15px', border: 'none', fontWeight: 'bold', fontSize: '14px' }}>CONFIRM ORDER</button>
+                <button type="submit" className="btn-style" style={{ width: '100%', padding: '20px' }}>CONFIRM ORDER</button>
                 <p onClick={closeModal} style={{ textAlign: 'center', color: '#444', fontSize: '11px', marginTop: '20px', letterSpacing: '2px', cursor: 'pointer' }}>CANCEL</p>
               </form>
             )}
