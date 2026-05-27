@@ -2,8 +2,8 @@ import nodemailer from 'nodemailer';
 
 export default async function handler(req, res) {
   if (req.method === 'POST') {
-    // index.js থেকে পাঠানো নতুন ডাটাগুলো (final_price, fb_ref) সহ রিসিভ করা হচ্ছে
-    const { product_name, final_price, fb_ref, size, color, name, phone, address, method, payment_no, txn_id } = req.body;
+    // index.js থেকে আসা ভেরিয়েবল নামগুলোর (sender_no, ref) সাথে মিলিয়ে ডাটা রিসিভ করা হচ্ছে
+    const { product_name, final_price, ref, size, color, name, phone, address, method, sender_no, txn_id } = req.body;
 
     const transporter = nodemailer.createTransport({
       service: 'gmail',
@@ -16,8 +16,7 @@ export default async function handler(req, res) {
     const mailOptions = {
       from: process.env.EMAIL_USER,
       to: process.env.EMAIL_USER, 
-      // সাবজেক্টে প্রডাক্টের নাম এবং ফাইনাল প্রাইস দেখাবে
-      subject: `NEW ORDER: ${product_name || 'Unknown Product'} - ৳${final_price}`,
+      subject: `NEW ORDER: ${product_name || 'Unknown Product'} - ${final_price}`,
       html: `
         <div style="font-family: sans-serif; padding: 20px; background-color: #fafafa; border: 1px solid #eee; color: #333; max-width: 600px; margin: auto;">
           <h2 style="color: #000; border-bottom: 2px solid #000; padding-bottom: 10px; text-align: center;">NOMAD - NEW ORDER RECEIVED</h2>
@@ -32,15 +31,15 @@ export default async function handler(req, res) {
           <div style="background-color: #fff; padding: 15px; border: 1px solid #ddd; border-radius: 10px;">
             <h3 style="margin-top: 0; font-size: 14px; text-decoration: underline;">PRODUCT DETAILS</h3>
             <p style="margin: 5px 0;"><strong>PRODUCT:</strong> <span style="font-size: 16px; color: #111; font-weight: bold;">${product_name}</span></p>
-            <p style="margin: 5px 0;"><strong>PAYABLE PRICE:</strong> ৳${final_price}</p>
+            <p style="margin: 5px 0;"><strong>PAYABLE PRICE:</strong> ${final_price}</p>
             <p style="margin: 5px 0;"><strong>SIZE:</strong> ${size} | <strong>COLOR:</strong> ${color}</p>
-            <p style="margin: 5px 0; color: #777; font-size: 12px;"><strong>FB REF CODE:</strong> ${fb_ref || 'Direct Site Visit'}</p>
+            <p style="margin: 5px 0; color: #777; font-size: 12px;"><strong>FB REF CODE:</strong> ${ref || 'Direct Site Visit'}</p>
           </div>
 
           <br/>
           <div style="background-color: #f0f0f0; padding: 15px; border-left: 4px solid #000;">
             <p style="margin: 0;"><strong>PAYMENT METHOD:</strong> ${method}</p>
-            <p style="margin: 5px 0;"><strong>SENDER NUMBER:</strong> ${payment_no}</p>
+            <p style="margin: 5px 0;"><strong>SENDER NUMBER:</strong> ${sender_no}</p>
             <p style="margin: 0;"><strong>TRANSACTION ID:</strong> <span style="font-family: monospace; font-weight: bold; color: #000;">${txn_id}</span></p>
           </div>
         </div>
