@@ -31,7 +31,7 @@ export default async function handler(req, res) {
             <h3 style="margin-top: 0; font-size: 14px; text-decoration: underline;">PRODUCT DETAILS</h3>
             <p style="margin: 5px 0;"><strong>PRODUCT:</strong> ${product_name} (#${product_id})</p>
             <p style="margin: 5px 0;"><strong>BASE PRICE:</strong> ৳${price}</p>
-            <p style="margin: 5px 0;"><strong>DELIVERY CHARGE:</strong> ৳${delivery}</p>
+            <p style="margin: 5px 0;"><strong>DELIVERY CHARGE:</strong> ${parseInt(delivery) === 0 ? 'FREE' : '৳'+delivery}</p>
             <p style="margin: 5px 0; font-size: 18px; font-weight: bold; color: #d00;">TOTAL PAYABLE: ৳${total}</p>
             <p style="margin: 5px 0;"><strong>SIZE:</strong> ${size} | <strong>COLOR:</strong> ${color}</p>
             <p style="margin: 5px 0; color: #777; font-size: 12px;"><strong>FB REF CODE:</strong> ${ref || 'Direct Site Visit'}</p>
