@@ -67,7 +67,7 @@ export default function Home({ allProducts, siteContent, announcement }) {
 
   return (
     <div style={{ backgroundColor: '#000', color: '#fff', minHeight: '100vh', fontFamily: 'Inter, sans-serif', overflowX: 'hidden' }}>
-      <Head><title>NOMAD | Premium</title><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/></Head>
+      <Head><title>NOMAD</title><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/></Head>
       <style>{`
         * { box-sizing: border-box; outline: none !important; }
         .scroll-container { display: flex; overflow-x: auto; gap: 20px; padding: 10px 20px; scrollbar-width: none; scroll-snap-type: x mandatory; }
