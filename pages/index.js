@@ -13,50 +13,50 @@ export default function Home({ allProducts, siteContent, announcement }) {
   const [modalType, setModalType] = useState(null);
   const [paymentMethod, setPaymentMethod] = useState('');
   const [viewCategory, setViewCategory] = useState(null);
-  const [zoomedImage, setZoomedImage] = useState(null);
-  const [isFirstLoad, setIsFirstLoad] = useState(true);
 
   const paymentNumbers = {
     'Bkash': '01521731371', 'Nagad': '01521731371', 'Rocket': '01521731371', 'Upay': '01521731371', 'Cellfin': '01521731371'
   };
 
   useEffect(() => {
-    let processedProducts = [...allProducts];
-    if (isFirstLoad) {
-      processedProducts = [...allProducts].reverse();
-      setIsFirstLoad(false);
-    } else {
-      processedProducts = [...allProducts].sort(() => Math.random() - 0.5);
-    }
-    setProducts(processedProducts);
-    
+    const shuffled = [...allProducts].sort(() => Math.random() - 0.5);
+    setProducts(shuffled);
     const catMap = {};
-    processedProducts.forEach(p => {
+    shuffled.forEach(p => {
       const catName = p.name.split(' ')[0];
       if (!catMap[catName]) catMap[catName] = [];
       catMap[catName].push(p);
     });
     setCategories(catMap);
-
     if (router.query.product) {
       const target = allProducts.find(p => p.id === router.query.product);
       if (target) { setSelectedProduct({ ...target, ref: router.query.ref || '' }); setModalType('details'); }
     }
-  }, [allProducts, router.query, isFirstLoad]);
+  }, [allProducts, router.query]);
 
   const calculatePrice = (product) => {
     if (!product || !product.priceText) return { original: 0, base: 0, discountAmt: 0, discountPercent: 0, delivery: 0, total: 0 };
+    
     const discMatch = announcement?.match(/(\d+)%/);
     const annDisc = discMatch ? parseInt(discMatch[1]) : 0;
     const numberOnly = parseInt(product.priceText.replace(/[^0-9]/g, "")) || 0;
     const descDiscMatch = product.desc?.match(/Discount:\s*(\d+)%/i);
     const descDisc = descDiscMatch ? parseInt(descDiscMatch[1]) : 0;
+    
     const totalDiscountPercent = annDisc + descDisc;
     const discountAmount = Math.floor(numberOnly * totalDiscountPercent / 100);
     const basePrice = numberOnly - discountAmount;
     const delMatch = product.desc?.match(/Delivery:\s*(\d+)/i);
     const deliveryCharge = delMatch ? parseInt(delMatch[1]) : 0;
-    return { original: numberOnly, base: basePrice, discountAmt: discountAmount, discountPercent: totalDiscountPercent, delivery: deliveryCharge, total: basePrice + deliveryCharge };
+    
+    return { 
+      original: numberOnly,
+      base: basePrice, 
+      discountAmt: discountAmount,
+      discountPercent: totalDiscountPercent,
+      delivery: deliveryCharge, 
+      total: basePrice + deliveryCharge 
+    };
   };
 
   const filteredProducts = searchQuery.trim() === '' ? [] : products.filter(p => 
@@ -78,13 +78,6 @@ export default function Home({ allProducts, siteContent, announcement }) {
         .desc-line { display: grid; grid-template-columns: 85px 15px 1fr; font-size: 12px; color: #777; margin-bottom: 5px; }
       `}</style>
       
-      {/* জুম ভিউ মোডাল */}
-      {zoomedImage && (
-        <div onClick={() => setZoomedImage(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.98)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-          <img src={`/products/${zoomedImage}`} style={{ width: '100%', borderRadius: '20px' }} />
-        </div>
-      )}
-
       <header style={{ textAlign: 'center', padding: '40px 20px' }}>
         <h1 style={{ letterSpacing: '12px', fontSize: '24px', fontWeight: '900', margin: 0 }}>NOMAD</h1>
         <p style={{ fontSize: '7px', color: '#444', letterSpacing: '4px', marginTop: '8px' }}>{siteContent.header}</p>
@@ -101,30 +94,29 @@ export default function Home({ allProducts, siteContent, announcement }) {
         {searchQuery ? (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', padding: '20px' }}>
             {filteredProducts.map((p, i) => (
-              <div key={i} style={{ background: '#0a0a0a', padding: '10px', borderRadius: '20px', border: '1px solid #111' }}>
-                <img src={`/products/${p.image}`} onClick={() => setZoomedImage(p.image)} style={{ width: '100%', borderRadius: '15px', cursor: 'pointer' }} />
+              <div key={i} onClick={() => { setSelectedProduct(p); setModalType('details'); }} style={{ background: '#0a0a0a', padding: '10px', borderRadius: '20px', border: '1px solid #111' }}>
+                <img src={`/products/${p.image}`} style={{ width: '100%', borderRadius: '15px' }} />
                 <p style={{ fontSize: '10px', textAlign: 'center', marginTop: '10px' }}>{p.name}</p>
-                <button className="btn-style" style={{ width: '100%', marginTop: '5px' }} onClick={() => { setSelectedProduct(p); setModalType('details'); }}>DETAILS</button>
               </div>
             ))}
           </div>
         ) : viewCategory ? (
-          <div style={{ padding: '0 20px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', margin: '20px 0' }}>
-              <span style={{ fontSize: '12px', letterSpacing: '3px' }}>{viewCategory} COLLECTION</span>
-              <span onClick={() => setViewCategory(null)} style={{ fontSize: '10px', color: '#444' }}>BACK</span>
-            </div>
-            {categories[viewCategory].map((p, i) => (
-              <div key={i} style={{ marginBottom: '40px', background: '#0a0a0a', borderRadius: '40px', border: '1px solid #1a1a1a', overflow: 'hidden' }}>
-                <img src={`/products/${p.image}`} onClick={() => setZoomedImage(p.image)} style={{ width: '100%', cursor: 'pointer' }} />
-                <h3 style={{ textAlign: 'center', fontSize: '18px', margin: '20px 0' }}>{p.name}</h3>
-                <div style={{ display: 'flex', gap: '10px', padding: '0 20px 20px' }}>
-                  <button className="btn-style" onClick={() => { setSelectedProduct(p); setModalType('details'); }}>DETAILS</button>
-                  <button className="btn-style" onClick={() => { setSelectedProduct(p); setModalType('order'); }}>ORDER</button>
+            <div style={{ padding: '0 20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', margin: '20px 0' }}>
+                <span style={{ fontSize: '12px', letterSpacing: '3px' }}>{viewCategory} COLLECTION</span>
+                <span onClick={() => setViewCategory(null)} style={{ fontSize: '10px', color: '#444' }}>BACK</span>
                 </div>
-              </div>
-            ))}
-          </div>
+                {categories[viewCategory].map((p, i) => (
+                <div key={i} style={{ marginBottom: '40px', background: '#0a0a0a', borderRadius: '40px', border: '1px solid #1a1a1a', overflow: 'hidden' }}>
+                    <img src={`/products/${p.image}`} style={{ width: '100%' }} />
+                    <h3 style={{ textAlign: 'center', fontSize: '18px', margin: '20px 0' }}>{p.name}</h3>
+                    <div style={{ display: 'flex', gap: '10px', padding: '0 20px 20px' }}>
+                    <button className="btn-style" onClick={() => { setSelectedProduct(p); setModalType('details'); }}>DETAILS</button>
+                    <button className="btn-style" onClick={() => { setSelectedProduct(p); setModalType('order'); }}>ORDER</button>
+                    </div>
+                </div>
+                ))}
+            </div>
         ) : (
           Object.keys(categories).map(cat => (
             <section key={cat} style={{ marginBottom: '40px' }}>
@@ -135,7 +127,7 @@ export default function Home({ allProducts, siteContent, announcement }) {
               <div className="scroll-container">
                 {categories[cat].map((p, i) => (
                   <div key={i} className="cat-item">
-                    <img src={`/products/${p.image}`} onClick={() => setZoomedImage(p.image)} style={{ width: '100%', cursor: 'pointer' }} />
+                    <img src={`/products/${p.image}`} style={{ width: '100%' }} />
                     <div style={{ padding: '25px 20px', textAlign: 'center' }}>
                       <p style={{ fontSize: '16px', letterSpacing: '1px', marginBottom: '20px' }}>{p.name}</p>
                       <div style={{ display: 'flex', gap: '10px' }}>
@@ -160,7 +152,6 @@ export default function Home({ allProducts, siteContent, announcement }) {
         <p style={{ letterSpacing: '6px', fontSize: '8px', color: '#111' }}>{siteContent.footer}</p>
       </footer>
 
-      {/* মোডাল উইন্ডো (Details & Order) */}
       {(selectedProduct && modalType) && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.98)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
           <div style={{ background: '#0a0a0a', width: '100%', maxWidth: '400px', padding: '40px 25px', borderRadius: '40px', border: '1px solid #1a1a1a', maxHeight: '95vh', overflowY: 'auto' }}>
@@ -188,6 +179,7 @@ export default function Home({ allProducts, siteContent, announcement }) {
                 <input type="hidden" name="delivery" value={calculatePrice(selectedProduct).delivery} />
                 <input type="hidden" name="total" value={calculatePrice(selectedProduct).total} />
                 <input type="hidden" name="ref" value={selectedProduct.ref || ''} />
+                {/* ডিসকাউন্ট ফিল্ডস */}
                 <input type="hidden" name="discountAmt" value={calculatePrice(selectedProduct).discountAmt} />
                 <input type="hidden" name="discountPercent" value={calculatePrice(selectedProduct).discountPercent} />
 
