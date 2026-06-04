@@ -2,9 +2,9 @@ import nodemailer from 'nodemailer';
 
 export default async function handler(req, res) {
   if (req.method === 'POST') {
+    // এখন 'cartItems' একটি অ্যারে হিসেবে আসবে
     const { 
-      product_id, product_name, price, delivery, total, ref, size, color, 
-      name, phone, address, method, sender_no, txn_id, discountAmt, discountPercent 
+      cartItems, name, phone, address, method, sender_no, txn_id, total, ref 
     } = req.body;
 
     const transporter = nodemailer.createTransport({
@@ -15,10 +15,18 @@ export default async function handler(req, res) {
       },
     });
 
+    // কার্টের প্রোডাক্টগুলো ইমেইলের জন্য লুপ করে সাজানো
+    const productListHtml = cartItems.map(item => `
+      <div style="margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px;">
+        <p style="margin: 0;"><strong>${item.name}</strong></p>
+        <p style="margin: 0; font-size: 12px; color: #555;">Size: ${item.size} | Color: ${item.color} | Price: ৳${item.base}</p>
+      </div>
+    `).join('');
+
     const mailOptions = {
       from: process.env.EMAIL_USER,
       to: process.env.EMAIL_USER, 
-      subject: `NEW ORDER: ${product_name} [${product_id}] - ৳${total}`,
+      subject: `NEW CART ORDER: ৳${total}`,
       html: `
         <div style="font-family: sans-serif; padding: 20px; background-color: #fafafa; border: 1px solid #eee; color: #333; max-width: 600px; margin: auto;">
           <h2 style="color: #000; border-bottom: 2px solid #000; padding-bottom: 10px; text-align: center;">NOMAD - NEW ORDER RECEIVED</h2>
@@ -31,12 +39,9 @@ export default async function handler(req, res) {
           </div>
 
           <div style="background-color: #fff; padding: 15px; border: 1px solid #ddd; border-radius: 10px;">
-            <h3 style="margin-top: 0; font-size: 14px; text-decoration: underline;">PRODUCT DETAILS</h3>
-            <p style="margin: 5px 0;"><strong>PRODUCT:</strong> <span style="font-size: 16px; color: #111; font-weight: bold;">${product_name}</span></p>
-            <p style="margin: 5px 0;"><strong>PRODUCT ID:</strong> ${product_id}</p>
-            <p style="margin: 5px 0;"><strong>DISCOUNT:</strong> ${discountPercent}% (-৳${discountAmt})</p>
-            <p style="margin: 5px 0;"><strong>PRICE:</strong> ৳${price} + <strong>DELIVERY:</strong> ৳${delivery} = <strong>TOTAL: ৳${total}</strong></p>
-            <p style="margin: 5px 0;"><strong>SIZE:</strong> ${size} | <strong>COLOR:</strong> ${color}</p>
+            <h3 style="margin-top: 0; font-size: 14px; text-decoration: underline;">ORDER ITEMS</h3>
+            ${productListHtml}
+            <p style="margin-top: 10px; font-size: 18px; font-weight: bold;">TOTAL: ৳${total}</p>
             <p style="margin: 5px 0; color: #777; font-size: 12px;"><strong>FB REF CODE:</strong> ${ref || 'Direct Site Visit'}</p>
           </div>
 
@@ -44,7 +49,7 @@ export default async function handler(req, res) {
           <div style="background-color: #f0f0f0; padding: 15px; border-left: 4px solid #000;">
             <p style="margin: 0;"><strong>PAYMENT METHOD:</strong> ${method}</p>
             <p style="margin: 5px 0;"><strong>SENDER NUMBER:</strong> ${sender_no}</p>
-            <p style="margin: 0;"><strong>TRANSACTION ID:</strong> <span style="font-family: monospace; font-weight: bold; color: #000;">${txn_id}</span></p>
+            <p style="margin: 0;"><strong>TRANSACTION ID:</strong> ${txn_id}</p>
           </div>
         </div>
       `,
@@ -54,20 +59,19 @@ export default async function handler(req, res) {
       await transporter.sendMail(mailOptions);
       res.status(200).send(`
         <html>
-          <head><meta charset="UTF-8"><title>Order Successful</title><script src="https://cdn.tailwindcss.com"></script></head>
+          <head><meta charset="UTF-8"><script src="https://cdn.tailwindcss.com"></script></head>
           <body class="bg-black text-white flex h-screen items-center justify-center p-6 text-center font-sans">
-            <div class="space-y-4">
-              <div class="text-5xl mb-4">✔</div>
-              <h1 class="text-3xl font-black text-white uppercase tracking-tighter">ORDER SUCCESSFUL!</h1>
-              <p class="text-zinc-400 text-sm max-w-sm mx-auto uppercase tracking-widest">We have received your order for <strong>${product_name}</strong>.</p>
-              <a href="/" class="inline-block mt-6 text-xs bg-white text-black px-10 py-4 rounded-full font-bold hover:bg-zinc-200 transition tracking-widest">BACK TO STORE</a>
+            <div>
+              <h1 class="text-3xl font-black mb-4">ORDER SUCCESSFUL!</h1>
+              <p class="text-zinc-400">We have received your cart order.</p>
+              <a href="/" class="block mt-6 bg-white text-black px-10 py-4 rounded-full font-bold">BACK TO STORE</a>
             </div>
           </body>
         </html>
       `);
     } catch (error) {
       console.error(error);
-      res.status(500).send('<h1>Error occurred while sending email.</h1>');
+      res.status(500).send('<h1>Error occurred.</h1>');
     }
   } else {
     res.status(405).send('Method Not Allowed');
