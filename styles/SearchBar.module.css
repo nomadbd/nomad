@@ -1,0 +1,4 @@
+.container { max-width: 400px; margin: 0 auto 30px; padding: 0 20px; }
+.box { background: #0a0a0a; border: 1px solid #1a1a1a; border-radius: 25px; padding: 20px; text-align: center; }
+.announcement { font-size: 10px; letter-spacing: 2px; color: #fff; margin-bottom: 15px; }
+.input { background: none; border: none; color: #fff; text-align: center; width: 100%; font-size: 11px; letter-spacing: 2px; }
