@@ -1,3 +1,4 @@
+import styles from '@/styles/SearchBar.module.css';
 export default function SearchBar({ announcement, searchQuery, setSearchQuery }) {
   return (
     <div style={{ maxWidth: '400px', margin: '0 auto 30px', padding: '0 20px' }}>
