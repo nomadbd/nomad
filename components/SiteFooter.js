@@ -1,3 +1,6 @@
+import styles from '@/styles/Footer.module.css';
+
+
 export default function SiteFooter({ footer }) {
   return (
     <footer style={{ textAlign: 'center', padding: '60px 20px', background: '#050505', borderTop: '1px solid #111' }}>
