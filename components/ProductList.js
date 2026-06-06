@@ -1,4 +1,3 @@
-
 import styles from '@/styles/ProductList.module.css';
 
 export default function ProductList({ categories, viewCategory, setViewCategory, setSelectedProduct, setModalType, searchQuery, filteredProducts }) {
