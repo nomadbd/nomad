@@ -1,3 +1,5 @@
+import styles from '@/styles/Header.module.css';
+
 export default function SiteHeader({ header }) {
   return (
     <header style={{ textAlign: 'center', padding: '40px 20px' }}>
