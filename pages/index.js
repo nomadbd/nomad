@@ -72,7 +72,7 @@ export async function getStaticProps() {
       const content = fs.readFileSync(dPath, 'utf8').trim().split('\n');
       name = content[0]; desc = content.slice(1).join('\n');
       const pLine = content.find(l => l.toLowerCase().includes('price'));
-      priceText = pLine ? pLine.trim() : "1200 BDT";
+      priceText = pLine ? pLine.trim() : "N/A";
     }
     return { id: handle, name, image: img, desc, priceText };
   });
