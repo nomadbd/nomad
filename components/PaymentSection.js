@@ -1,9 +1,9 @@
-import styles from '@/styles/ProductModal.module.css';
+import styles from '@/styles/PaymentSection.module.css';
 
 export default function PaymentSection({ paymentMethod, setPaymentMethod }) {
   const paymentNumbers = {
-    'Bkash': '01521731371', 'Nagad': '01521731371', 
-    'Rocket': '01521731371', 'Upay': '01521731371', 'Cellfin': '01521731371'
+    'Bkash': '01521731371', 'Nagad': '01521731371', 'Rocket': '01521731371', 
+    'Upay': '01521731371', 'Cellfin': '01521731371'
   };
 
   return (
