@@ -40,12 +40,12 @@
   outline: none;
 }
 
-/* ভুল ইনপুটের জন্য লাল বর্ডার */
-.inputField:invalid:not(:placeholder-shown) {
+/* একমাত্র যখন ইউজার ইনপুট দেবেন এবং সেটি ভুল হবে, তখনই লাল হবে */
+.inputField:user-invalid {
   border: 1px solid #ff4d4d !important;
 }
 
-/* ফোকাস অবস্থায় বর্ডারের রঙ পরিবর্তনের জন্য (ঐচ্ছিক) */
+/* ফোকাস অবস্থায় বর্ডারের রঙ */
 .inputField:focus {
   border: 1px solid #555;
 }
