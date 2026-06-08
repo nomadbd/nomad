@@ -19,7 +19,6 @@ export default function ProductModal({ selectedProduct, modalType, setModalType,
         ) : (
           <form action="/api/order" method="POST" style={{ display: 'flex', flexDirection: 'column' }}>
             <h2 style={{ textAlign: 'center', marginBottom: '20px', fontSize: '16px' }}>ORDER: {selectedProduct.name}</h2>
-
             <input type="hidden" name="product_id" value={selectedProduct.id} />
             <input type="hidden" name="product_name" value={selectedProduct.name} />
             <input type="hidden" name="total" value={calculatePrice(selectedProduct).total} />
@@ -29,14 +28,12 @@ export default function ProductModal({ selectedProduct, modalType, setModalType,
             
             <div style={{ display: 'flex', gap: '10px' }}>
               <select name="size" required className={styles.inputField} style={{ flex: 1 }}>
-                <option value="">SELECT SIZE</option>
-                <option value="S">S</option><option value="M">M</option><option value="L">L</option><option value="XL">XL</option>
+                <option value="">SELECT SIZE</option><option value="S">S</option><option value="M">M</option><option value="L">L</option><option value="XL">XL</option>
               </select>
               <input type="text" name="color" placeholder="COLOR" required className={styles.inputField} style={{ flex: 1 }} />
             </div>
 
             <textarea name="address" placeholder="FULL ADDRESS" required className={styles.inputField} style={{ height: '80px' }}></textarea>
-
             <PaymentSection paymentMethod={paymentMethod} setPaymentMethod={setPaymentMethod} />
 
             <button type="submit" className="btn-style" style={{ width: '100%', padding: '20px', marginTop: '10px' }}>CONFIRM ORDER</button>
