@@ -1,3 +1,21 @@
-.container { background: #050505; padding: 20px; border-radius: 25px; border: 1px solid #1a1a1a; margin-bottom: 25px; }
-.inputField { background: none; border: none; border-bottom: 1px solid #333; color: #fff; width: 100%; padding: 10px 0; font-size: 14px; margin-bottom: 10px; }
-.info { font-size: 10px; color: #666; text-align: center; margin: 10px 0; }
+.container { display: flex; flex-direction: column; width: 100%; }
+
+.inputField { 
+  background: #0a0a0a; border: 1px solid #333; color: #fff; 
+  padding: 16px; border-radius: 12px; width: 100%; font-size: 14px; 
+  margin-bottom: 12px; transition: all 0.3s ease; outline: none;
+}
+
+/* ফোকাস করলে গ্লো ইফেক্ট */
+.inputField:focus { border: 1px solid #777; }
+
+/* ভুল ইনপুট হলে লাল বর্ডার (সাবমিট করার পর কাজ করবে) */
+.inputField:invalid:not(:placeholder-shown) {
+  border: 1px solid #ff4d4d;
+  box-shadow: 0 0 5px rgba(255, 77, 77, 0.2);
+}
+
+.info {
+  font-size: 12px; color: #ffcc00; margin-bottom: 12px; 
+  text-align: center; letter-spacing: 1px;
+}
