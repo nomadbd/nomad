@@ -5,7 +5,8 @@ import PaymentSection from '@/components/PaymentSection';
 export default function ProductModal({ selectedProduct, modalType, setModalType, closeModal, calculatePrice, paymentMethod, setPaymentMethod }) {
   if (!selectedProduct) return null;
 
-  // ক্যালকুলেশন লজিক: নিশ্চিত করা হচ্ছে যেন কোনো ভ্যালু 'undefined' না হয়
+  // ক্যালকুলেশন লজিক: 
+  // calculatePrice ফাংশনটি যেন সঠিকভাবে ডিসকাউন্ট ও ডেলিভারি ক্যালকুলেট করে
   const priceData = calculatePrice ? calculatePrice(selectedProduct) : { base: 0, total: 0, delivery: 0, discount: 0, discountAmount: 0 };
 
   return (
@@ -16,7 +17,16 @@ export default function ProductModal({ selectedProduct, modalType, setModalType,
             <img src={`/products/${selectedProduct.image}`} style={{ width: '100%', borderRadius: '20px' }} />
             <h2 style={{ textAlign: 'center', margin: '20px 0', fontSize: '18px', color: '#fff' }}>{selectedProduct.name}</h2>
             <p style={{ textAlign: 'center', fontSize: '18px', fontWeight: 'bold', color: '#fff' }}>৳{priceData.base}</p>
-            <p style={{ color: '#aaa', fontSize: '14px', marginTop: '15px', textAlign: 'center', whiteSpace: 'pre-line' }}>{selectedProduct.description}</p>
+            
+            {/* ডেসক্রিপশন রেন্ডারিং */}
+            <div style={{ color: '#ccc', fontSize: '14px', marginTop: '15px', textAlign: 'left', lineHeight: '1.6' }}>
+              {selectedProduct.description ? (
+                <p style={{ whiteSpace: 'pre-line' }}>{selectedProduct.description}</p>
+              ) : (
+                <p>No description available.</p>
+              )}
+            </div>
+
             <button className="btn-style" style={{ width: '100%', marginTop: '20px', padding: '15px' }} onClick={() => setModalType('order')}>PROCEED TO ORDER</button>
             <p onClick={closeModal} style={{ textAlign: 'center', cursor: 'pointer', marginTop: '15px', color: '#777' }}>CANCEL</p>
           </div>
@@ -24,7 +34,7 @@ export default function ProductModal({ selectedProduct, modalType, setModalType,
           <form action="/api/order" method="POST" className={styles.container}>
             <h2 style={{ textAlign: 'center', marginBottom: '20px', fontSize: '16px', color: '#fff' }}>ORDER: {selectedProduct.name}</h2>
             
-            {/* হিডেন ইনপুটসমূহ (ইমেইল হ্যান্ডলারের সাথে মিল রেখে) */}
+            {/* হিডেন ফিল্ডস: ইমেইল হ্যান্ডলারে ডাটা পাঠানোর জন্য */}
             <input type="hidden" name="product_id" value={selectedProduct.id} />
             <input type="hidden" name="product_name" value={selectedProduct.name} />
             <input type="hidden" name="price" value={priceData.base} />
@@ -33,6 +43,7 @@ export default function ProductModal({ selectedProduct, modalType, setModalType,
             <input type="hidden" name="discountPercent" value={priceData.discount} />
             <input type="hidden" name="discountAmt" value={priceData.discountAmount} />
 
+            {/* হিসাবের সামারি */}
             <div className={styles.priceSummary}>
               <p>Price: ৳{priceData.base}</p>
               <p>Delivery: ৳{priceData.delivery}</p>
@@ -41,6 +52,7 @@ export default function ProductModal({ selectedProduct, modalType, setModalType,
               <p style={{ fontWeight: 'bold' }}>Total: ৳{priceData.total}</p>
             </div>
 
+            {/* ইনপুট ফিল্ডসমূহ */}
             <input type="text" name="name" placeholder="FULL NAME" required className={styles.inputField} />
             <input type="tel" name="phone" placeholder="PHONE (01XXXXXXXXX)" required pattern="01[0-9]{9}" className={styles.inputField} />
             
