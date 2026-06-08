@@ -6,11 +6,13 @@
   padding: 14px; border-radius: 12px; width: 100%; 
   font-size: 14px; margin-bottom: 15px; outline: none; transition: 0.3s;
 }
-
 .inputField:focus { border: 1px solid #777; }
+.inputField:invalid:not(:placeholder-shown) { border: 1px solid #ff4d4d !important; }
 
-/* এটি লাল বর্ডার পুরোপুরি বন্ধ করে দিবে */
-.inputField:invalid { box-shadow: none; border: 1px solid #333; }
-
+.priceSummary { 
+  background: #111; padding: 15px; border-radius: 12px; 
+  margin-bottom: 20px; text-align: center; font-size: 13px; 
+  color: #aaa; border: 1px solid #222;
+}
 .info { font-size: 12px; color: #ffcc00; margin-bottom: 10px; text-align: center; }
 .container { display: flex; flex-direction: column; }
