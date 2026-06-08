@@ -18,15 +18,14 @@ export default function ProductModal({
   useEffect(() => {
     const loadProductData = async () => {
       try {
-        // ডিসকাউন্ট লোড (announcement.txt)
+        // ডিসকাউন্ট লোড
         const discountRes = await fetch('/content/announcement.txt');
         const discountText = await discountRes.text();
-        
         let discountPercent = 0;
         const match = discountText.match(/(\d+)%/i);
         if (match) discountPercent = parseInt(match[1]);
 
-        // প্রোডাক্ট ডেটা লোড (descriptions/1.txt)
+        // প্রোডাক্ট ডেটা লোড
         const descRes = await fetch(`/descriptions/${selectedProduct.id}.txt`);
         const text = await descRes.text();
 
@@ -60,7 +59,6 @@ export default function ProductModal({
 
         setProductInfo(info);
         setDescription(lines.slice(7).join('\n') || text);
-
         setPriceData({ base: basePrice, delivery, discount: discountPercent, discountAmount, total });
 
       } catch (error) {
@@ -76,7 +74,7 @@ export default function ProductModal({
     <div className={styles.overlay}>
       <div className={styles.modal}>
         
-        {/* ================== DETAILS MODE ================== */}
+        {/* DETAILS MODE */}
         {modalType === 'details' ? (
           <div>
             <img 
@@ -85,18 +83,17 @@ export default function ProductModal({
               style={{ width: '100%', borderRadius: '20px', objectFit: 'cover' }} 
             />
             
-            <h2 style={{ textAlign: 'center', margin: '20px 0', fontSize: '18px', color: '#fff' }}>
+            <h2 style={{ textAlign: 'center', margin: '20px 0 10px', fontSize: '18px', color: '#fff' }}>
               {selectedProduct.name}
             </h2>
             
-            <p style={{ textAlign: 'center', fontSize: '18px', fontWeight: 'bold', color: '#fff' }}>
+            <p style={{ textAlign: 'center', fontSize: '18px', fontWeight: 'bold', color: '#fff', marginBottom: '20px' }}>
               ৳{priceData.base}
             </p>
 
             <div style={{ 
               color: '#ccc', 
               fontSize: '14px', 
-              marginTop: '15px', 
               lineHeight: '1.7', 
               whiteSpace: 'pre-line',
               padding: '0 8px'
@@ -106,7 +103,7 @@ export default function ProductModal({
 
             <button 
               className="btn-style" 
-              style={{ width: '100%', marginTop: '25px', padding: '15px' }} 
+              style={{ width: '100%', marginTop: '30px', padding: '15px' }} 
               onClick={() => setModalType('order')}
             >
               PROCEED TO ORDER
@@ -118,13 +115,13 @@ export default function ProductModal({
           </div>
         ) : (
 
-          /* ================== ORDER MODE ================== */
+          /* ORDER MODE */
           <form action="/api/order" method="POST" className={styles.container}>
             <h2 style={{ textAlign: 'center', marginBottom: '20px', fontSize: '16px', color: '#fff' }}>
               ORDER: {selectedProduct.name}
             </h2>
 
-            {/* Hidden Fields for API */}
+            {/* Hidden Fields */}
             <input type="hidden" name="product_id" value={selectedProduct.id} />
             <input type="hidden" name="product_name" value={selectedProduct.name} />
             <input type="hidden" name="price" value={priceData.base} />
@@ -141,10 +138,10 @@ export default function ProductModal({
                 <p style={{ color: '#ff4d4d' }}>Discount ({priceData.discount}%): -৳{priceData.discountAmount}</p>
               )}
               <hr style={{ border: '0.5px solid #333', margin: '10px 0' }} />
-              <p style={{ fontWeight: 'bold', fontSize: '16px' }}>Total: ৳{priceData.total}</p>
+              <p style={{ fontWeight: 'bold', fontSize: '16px', color: '#fff' }}>Total: ৳{priceData.total}</p>
             </div>
 
-            {/* Customer Info */}
+            {/* Customer Details */}
             <input type="text" name="name" placeholder="FULL NAME" required className={styles.inputField} />
             <input type="tel" name="phone" placeholder="PHONE (01XXXXXXXXX)" required pattern="01[0-9]{9}" className={styles.inputField} />
 
@@ -174,7 +171,7 @@ export default function ProductModal({
               CONFIRM ORDER
             </button>
 
-            <p onClick={closeModal} style={{ textAlign: 'center', cursor: 'pointer', marginTop: '10px', color: '#777' }}>
+            <p onClick={closeModal} style={{ textAlign: 'center', cursor: 'pointer', marginTop: '12px', color: '#777' }}>
               CANCEL
             </p>
           </form>
