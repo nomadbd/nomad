@@ -1,19 +1,19 @@
 .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px; }
 .modal { background: #0a0a0a; width: 100%; max-width: 400px; padding: 30px 20px; border-radius: 30px; border: 1px solid #1a1a1a; max-height: 90vh; overflow-y: auto; }
 
-/* ইনপুট স্টাইল - ভারসাম্য বজায় রাখতে সব একই ক্লাস */
 .inputField { 
   background: #000; border: 1px solid #333; color: #fff; 
   padding: 14px; border-radius: 12px; width: 100%; 
   font-size: 14px; margin-bottom: 15px; outline: none; transition: 0.3s;
 }
 
-/* ফোকাস করলে বর্ডার */
-.inputField:focus { border: 1px solid #555; }
+.inputField:focus { border: 1px solid #777; }
 
-/* শুধু ভুল ইনপুটে লাল হবে, শুরুতে হবে না */
+/* এটি নিশ্চিত করে যে ভুল তথ্য দিলেই লাল হবে */
 .inputField:invalid:not(:placeholder-shown) { border: 1px solid #ff4d4d !important; }
 
-/* পেমেন্ট সেকশন টেক্সট */
+/* সিলেক্টের ক্ষেত্রে ডিফল্ট ভ্যালিডেশন আটকানো */
+select.inputField:invalid { border: 1px solid #333; }
+
 .info { font-size: 12px; color: #ffcc00; margin-bottom: 10px; text-align: center; }
 .container { display: flex; flex-direction: column; }
