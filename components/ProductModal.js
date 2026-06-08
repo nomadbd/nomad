@@ -10,34 +10,33 @@ export default function ProductModal({ selectedProduct, modalType, setModalType,
       <div className={styles.modal}>
         {modalType === 'details' ? (
           <div>
-            <img src={`/products/${selectedProduct.image}`} style={{ width: '100%', borderRadius: '25px' }} />
-            <h2 style={{ textAlign: 'center', margin: '25px 0', fontSize: '20px' }}>{selectedProduct.name}</h2>
-            <p style={{ textAlign: 'center', fontSize: '18px', fontWeight: 'bold' }}>৳{calculatePrice(selectedProduct).base}</p>
-            <button className="btn-style" style={{ width: '100%', marginTop: '25px', padding: '20px' }} onClick={() => setModalType('order')}>PROCEED TO ORDER</button>
-            <p onClick={closeModal} style={{ textAlign: 'center', cursor: 'pointer', marginTop: '20px' }}>CANCEL</p>
+            <img src={`/products/${selectedProduct.image}`} style={{ width: '100%', borderRadius: '20px' }} />
+            <h2 style={{ textAlign: 'center', margin: '20px 0', fontSize: '18px', color: '#fff' }}>{selectedProduct.name}</h2>
+            <p style={{ textAlign: 'center', fontSize: '18px', fontWeight: 'bold', color: '#fff' }}>৳{calculatePrice(selectedProduct).base}</p>
+            <button className="btn-style" style={{ width: '100%', marginTop: '20px', padding: '15px' }} onClick={() => setModalType('order')}>PROCEED TO ORDER</button>
+            <p onClick={closeModal} style={{ textAlign: 'center', cursor: 'pointer', marginTop: '15px', color: '#777' }}>CANCEL</p>
           </div>
         ) : (
-          <form action="/api/order" method="POST" style={{ display: 'flex', flexDirection: 'column' }}>
-            <h2 style={{ textAlign: 'center', marginBottom: '20px', fontSize: '16px' }}>ORDER: {selectedProduct.name}</h2>
+          <form action="/api/order" method="POST" className={styles.container}>
+            <h2 style={{ textAlign: 'center', marginBottom: '20px', fontSize: '16px', color: '#fff' }}>ORDER: {selectedProduct.name}</h2>
             <input type="hidden" name="product_id" value={selectedProduct.id} />
-            <input type="hidden" name="product_name" value={selectedProduct.name} />
-            <input type="hidden" name="total" value={calculatePrice(selectedProduct).total} />
-
             <input type="text" name="name" placeholder="FULL NAME" required className={styles.inputField} />
             <input type="tel" name="phone" placeholder="PHONE (01XXXXXXXXX)" required pattern="01[0-9]{9}" className={styles.inputField} />
             
             <div style={{ display: 'flex', gap: '10px' }}>
               <select name="size" required className={styles.inputField} style={{ flex: 1 }}>
-                <option value="">SELECT SIZE</option><option value="S">S</option><option value="M">M</option><option value="L">L</option><option value="XL">XL</option>
+                <option value="" disabled selected>SELECT SIZE</option>
+                <option value="S">S</option><option value="M">M</option><option value="L">L</option><option value="XL">XL</option>
               </select>
               <input type="text" name="color" placeholder="COLOR" required className={styles.inputField} style={{ flex: 1 }} />
             </div>
 
-            <textarea name="address" placeholder="FULL ADDRESS" required className={styles.inputField} style={{ height: '80px' }}></textarea>
+            <textarea name="address" placeholder="FULL ADDRESS" required className={styles.inputField} style={{ height: '60px' }}></textarea>
+            
             <PaymentSection paymentMethod={paymentMethod} setPaymentMethod={setPaymentMethod} />
 
-            <button type="submit" className="btn-style" style={{ width: '100%', padding: '20px', marginTop: '10px' }}>CONFIRM ORDER</button>
-            <p onClick={closeModal} style={{ textAlign: 'center', cursor: 'pointer', marginTop: '15px' }}>CANCEL</p>
+            <button type="submit" className="btn-style" style={{ width: '100%', padding: '15px' }}>CONFIRM ORDER</button>
+            <p onClick={closeModal} style={{ textAlign: 'center', cursor: 'pointer', marginTop: '10px', color: '#777' }}>CANCEL</p>
           </form>
         )}
       </div>
