@@ -1,5 +1,73 @@
-.overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px; }
-.modal { background: #0a0a0a; width: 100%; max-width: 400px; padding: 40px 25px; border-radius: 40px; border: 1px solid #1a1a1a; max-height: 95vh; overflow-y: auto; }
-.descLine { display: grid; grid-template-columns: 85px 15px 1fr; font-size: 12px; color: #777; margin-bottom: 5px; }
-.inputField { background: #000; border: 1px solid #333; color: #fff; padding: 15px; border-radius: 15px; width: 100%; font-size: 14px; margin-bottom: 12px; }
-.priceSummary { background: #111; padding: 15px; border-radius: 15px; margin-bottom: 20px; text-align: center; font-size: 13px; color: #aaa; }
+.overlay { 
+  position: fixed; 
+  inset: 0; 
+  background: rgba(0,0,0,0.98); 
+  z-index: 9999; 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  padding: 20px; 
+}
+
+.modal { 
+  background: #0a0a0a; 
+  width: 100%; 
+  max-width: 400px; 
+  padding: 40px 25px; 
+  border-radius: 40px; 
+  border: 1px solid #1a1a1a; 
+  max-height: 95vh; 
+  overflow-y: auto; 
+}
+
+.descLine { 
+  display: grid; 
+  grid-template-columns: 85px 15px 1fr; 
+  font-size: 12px; 
+  color: #777; 
+  margin-bottom: 5px; 
+}
+
+.inputField { 
+  background: #000; 
+  border: 1px solid #333; 
+  color: #fff; 
+  padding: 15px; 
+  border-radius: 15px; 
+  width: 100%; 
+  font-size: 14px; 
+  margin-bottom: 12px; 
+  outline: none;
+}
+
+/* ভুল ইনপুটের জন্য লাল বর্ডার */
+.inputField:invalid:not(:placeholder-shown) {
+  border: 1px solid #ff4d4d !important;
+}
+
+/* ফোকাস অবস্থায় বর্ডারের রঙ পরিবর্তনের জন্য (ঐচ্ছিক) */
+.inputField:focus {
+  border: 1px solid #555;
+}
+
+.priceSummary { 
+  background: #111; 
+  padding: 15px; 
+  border-radius: 15px; 
+  margin-bottom: 20px; 
+  text-align: center; 
+  font-size: 13px; 
+  color: #aaa; 
+}
+
+.info {
+  font-size: 12px;
+  color: #ffcc00;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+}
