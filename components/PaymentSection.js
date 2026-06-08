@@ -8,7 +8,7 @@ export default function PaymentSection({ paymentMethod, setPaymentMethod }) {
   return (
     <div className={styles.container}>
       <select name="method" required className={styles.inputField} value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}>
-        <option value="" disabled selected>PAYMENT GATEWAY</option>
+        <option value="" disabled selected hidden>PAYMENT GATEWAY</option>
         <option value="Bkash">Bkash</option><option value="Nagad">Nagad</option>
         <option value="Rocket">Rocket</option><option value="Upay">Upay</option><option value="Cellfin">Cellfin</option>
       </select>
