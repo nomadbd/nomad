@@ -11,7 +11,7 @@ export default function ProductModal({
   if (!selectedProduct) return null;
 
   const [priceData, setPriceData] = useState({ base: 0, delivery: 60, discount: 0, discountAmount: 0, total: 0 });
-  const [description, setDescription] = useState("");
+  const [description, setDescription] = useState("Loading description...");
   const [productInfo, setProductInfo] = useState({});
   const [paymentMethod, setPaymentMethod] = useState("");
 
@@ -19,17 +19,26 @@ export default function ProductModal({
     const loadProductData = async () => {
       try {
         // ডিসকাউন্ট লোড
-        const discountRes = await fetch('/content/announcement.txt');
-        const discountText = await discountRes.text();
         let discountPercent = 0;
-        const match = discountText.match(/(\d+)%/i);
-        if (match) discountPercent = parseInt(match[1]);
+        try {
+          const res = await fetch('/content/announcement.txt');
+          if (res.ok) {
+            const text = await res.text();
+            const match = text.match(/(\d+)%/i);
+            if (match) discountPercent = parseInt(match[1]);
+          }
+        } catch (e) { console.log("Discount load failed"); }
 
-        // প্রোডাক্ট ডেটা লোড
-        const descRes = await fetch(`/descriptions/${selectedProduct.id}.txt`);
-        const text = await descRes.text();
+        // প্রোডাক্ট ডেসক্রিপশন লোড
+        let rawText = "Description not available.";
+        try {
+          const res = await fetch(`/descriptions/${selectedProduct.id}.txt`);
+          if (res.ok) {
+            rawText = await res.text();
+          }
+        } catch (e) { console.log("Description load failed"); }
 
-        const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+        const lines = rawText.split('\n').map(l => l.trim()).filter(Boolean);
         const info = {};
 
         lines.forEach(line => {
@@ -58,12 +67,12 @@ export default function ProductModal({
         const total = basePrice + delivery - discountAmount;
 
         setProductInfo(info);
-        setDescription(lines.slice(7).join('\n') || text);
+        setDescription(rawText);
         setPriceData({ base: basePrice, delivery, discount: discountPercent, discountAmount, total });
 
       } catch (error) {
-        console.error("Error loading data:", error);
-        setDescription("Failed to load product details.");
+        console.error(error);
+        setDescription("Failed to load data.");
       }
     };
 
@@ -73,8 +82,7 @@ export default function ProductModal({
   return (
     <div className={styles.overlay}>
       <div className={styles.modal}>
-        
-        {/* DETAILS MODE */}
+        {/* Details Mode */}
         {modalType === 'details' ? (
           <div>
             <img 
@@ -91,13 +99,7 @@ export default function ProductModal({
               ৳{priceData.base}
             </p>
 
-            <div style={{ 
-              color: '#ccc', 
-              fontSize: '14px', 
-              lineHeight: '1.7', 
-              whiteSpace: 'pre-line',
-              padding: '0 8px'
-            }}>
+            <div style={{ color: '#ccc', fontSize: '14px', lineHeight: '1.7', whiteSpace: 'pre-line', padding: '0 8px' }}>
               {description}
             </div>
 
@@ -114,14 +116,12 @@ export default function ProductModal({
             </p>
           </div>
         ) : (
-
-          /* ORDER MODE */
+          /* Order Form Mode */
           <form action="/api/order" method="POST" className={styles.container}>
             <h2 style={{ textAlign: 'center', marginBottom: '20px', fontSize: '16px', color: '#fff' }}>
               ORDER: {selectedProduct.name}
             </h2>
 
-            {/* Hidden Fields */}
             <input type="hidden" name="product_id" value={selectedProduct.id} />
             <input type="hidden" name="product_name" value={selectedProduct.name} />
             <input type="hidden" name="price" value={priceData.base} />
@@ -130,44 +130,30 @@ export default function ProductModal({
             <input type="hidden" name="discountPercent" value={priceData.discount} />
             <input type="hidden" name="discountAmt" value={priceData.discountAmount} />
 
-            {/* Price Summary */}
             <div className={styles.priceSummary}>
               <p>Price: ৳{priceData.base}</p>
               <p>Delivery: ৳{priceData.delivery}</p>
-              {priceData.discount > 0 && (
-                <p style={{ color: '#ff4d4d' }}>Discount ({priceData.discount}%): -৳{priceData.discountAmount}</p>
-              )}
+              {priceData.discount > 0 && <p style={{color: '#ff4d4d'}}>Discount ({priceData.discount}%): -৳{priceData.discountAmount}</p>}
               <hr style={{ border: '0.5px solid #333', margin: '10px 0' }} />
               <p style={{ fontWeight: 'bold', fontSize: '16px', color: '#fff' }}>Total: ৳{priceData.total}</p>
             </div>
 
-            {/* Customer Details */}
             <input type="text" name="name" placeholder="FULL NAME" required className={styles.inputField} />
             <input type="tel" name="phone" placeholder="PHONE (01XXXXXXXXX)" required pattern="01[0-9]{9}" className={styles.inputField} />
 
             <div style={{ display: 'flex', gap: '10px' }}>
               <select name="size" required className={styles.inputField} style={{ flex: 1 }}>
                 <option value="" disabled selected hidden>SELECT SIZE</option>
-                {productInfo.sizes?.split(',').map(s => (
-                  <option key={s} value={s.trim()}>{s.trim()}</option>
-                ))}
+                {productInfo.sizes?.split(',').map(s => <option key={s} value={s.trim()}>{s.trim()}</option>)}
               </select>
               <input type="text" name="color" placeholder="COLOR" required className={styles.inputField} style={{ flex: 1 }} />
             </div>
 
             <textarea name="address" placeholder="FULL ADDRESS" required className={styles.inputField} style={{ height: '70px' }} />
 
-            {/* Payment Section */}
-            <PaymentSection 
-              paymentMethod={paymentMethod} 
-              setPaymentMethod={setPaymentMethod} 
-            />
+            <PaymentSection paymentMethod={paymentMethod} setPaymentMethod={setPaymentMethod} />
 
-            <button 
-              type="submit" 
-              className="btn-style" 
-              style={{ width: '100%', padding: '15px', marginTop: '8px' }}
-            >
+            <button type="submit" className="btn-style" style={{ width: '100%', padding: '15px', marginTop: '8px' }}>
               CONFIRM ORDER
             </button>
 
