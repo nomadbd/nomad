@@ -20,12 +20,13 @@ export default function ProductModal({ selectedProduct, modalType, setModalType,
           <form action="/api/order" method="POST" className={styles.container}>
             <h2 style={{ textAlign: 'center', marginBottom: '20px', fontSize: '16px', color: '#fff' }}>ORDER: {selectedProduct.name}</h2>
             <input type="hidden" name="product_id" value={selectedProduct.id} />
+            
             <input type="text" name="name" placeholder="FULL NAME" required className={styles.inputField} />
             <input type="tel" name="phone" placeholder="PHONE (01XXXXXXXXX)" required pattern="01[0-9]{9}" className={styles.inputField} />
             
             <div style={{ display: 'flex', gap: '10px' }}>
               <select name="size" required className={styles.inputField} style={{ flex: 1 }}>
-                <option value="" disabled selected>SELECT SIZE</option>
+                <option value="" disabled selected hidden>SELECT SIZE</option>
                 <option value="S">S</option><option value="M">M</option><option value="L">L</option><option value="XL">XL</option>
               </select>
               <input type="text" name="color" placeholder="COLOR" required className={styles.inputField} style={{ flex: 1 }} />
