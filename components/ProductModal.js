@@ -5,12 +5,8 @@ import PaymentSection from '@/components/PaymentSection';
 export default function ProductModal({ selectedProduct, modalType, setModalType, closeModal, calculatePrice, paymentMethod, setPaymentMethod }) {
   if (!selectedProduct) return null;
 
-  // ক্যালকুলেশন লজিক (ডিসকাউন্ট সহ)
-  const price = parseInt(selectedProduct.price || 0);
-  const delivery = parseInt(selectedProduct.delivery || 0);
-  const discount = selectedProduct.discount || 0; // মেইন ফাইল থেকে আসা ডিসকাউন্ট
-  const discountAmount = (price * discount) / 100;
-  const total = (price - discountAmount) + delivery;
+  // ক্যালকুলেশন লজিক: নিশ্চিত করা হচ্ছে যেন কোনো ভ্যালু 'undefined' না হয়
+  const priceData = calculatePrice ? calculatePrice(selectedProduct) : { base: 0, total: 0, delivery: 0, discount: 0, discountAmount: 0 };
 
   return (
     <div className={styles.overlay}>
@@ -19,26 +15,49 @@ export default function ProductModal({ selectedProduct, modalType, setModalType,
           <div>
             <img src={`/products/${selectedProduct.image}`} style={{ width: '100%', borderRadius: '20px' }} />
             <h2 style={{ textAlign: 'center', margin: '20px 0', fontSize: '18px', color: '#fff' }}>{selectedProduct.name}</h2>
-            <p style={{ textAlign: 'center', fontSize: '18px', fontWeight: 'bold' }}>৳{price}</p>
-            {/* ডেসক্রিপশন এখন ফাইল থেকে আসবে */}
-            <p style={{ color: '#aaa', fontSize: '14px', marginTop: '15px', whiteSpace: 'pre-line' }}>{selectedProduct.description}</p>
-            <button className="btn-style" style={{ width: '100%', marginTop: '20px' }} onClick={() => setModalType('order')}>PROCEED TO ORDER</button>
-            <p onClick={closeModal} style={{ textAlign: 'center', cursor: 'pointer', marginTop: '15px' }}>CANCEL</p>
+            <p style={{ textAlign: 'center', fontSize: '18px', fontWeight: 'bold', color: '#fff' }}>৳{priceData.base}</p>
+            <p style={{ color: '#aaa', fontSize: '14px', marginTop: '15px', textAlign: 'center', whiteSpace: 'pre-line' }}>{selectedProduct.description}</p>
+            <button className="btn-style" style={{ width: '100%', marginTop: '20px', padding: '15px' }} onClick={() => setModalType('order')}>PROCEED TO ORDER</button>
+            <p onClick={closeModal} style={{ textAlign: 'center', cursor: 'pointer', marginTop: '15px', color: '#777' }}>CANCEL</p>
           </div>
         ) : (
           <form action="/api/order" method="POST" className={styles.container}>
-            <div className={styles.priceSummary}>
-              <p>Price: ৳{price}</p>
-              {discount > 0 && <p style={{color: '#ff4d4d'}}>Discount ({discount}%): -৳{discountAmount}</p>}
-              <p>Delivery: ৳{delivery}</p>
-              <hr style={{ border: '0.5px solid #333' }} />
-              <p style={{ fontWeight: 'bold' }}>Total: ৳{total}</p>
-            </div>
+            <h2 style={{ textAlign: 'center', marginBottom: '20px', fontSize: '16px', color: '#fff' }}>ORDER: {selectedProduct.name}</h2>
             
-            <input type="hidden" name="total" value={total} />
-            {/* বাকি ইনপুট ফিল্ডগুলো এখানে আগের মতোই থাকবে */}
+            {/* হিডেন ইনপুটসমূহ (ইমেইল হ্যান্ডলারের সাথে মিল রেখে) */}
+            <input type="hidden" name="product_id" value={selectedProduct.id} />
+            <input type="hidden" name="product_name" value={selectedProduct.name} />
+            <input type="hidden" name="price" value={priceData.base} />
+            <input type="hidden" name="delivery" value={priceData.delivery} />
+            <input type="hidden" name="total" value={priceData.total} />
+            <input type="hidden" name="discountPercent" value={priceData.discount} />
+            <input type="hidden" name="discountAmt" value={priceData.discountAmount} />
+
+            <div className={styles.priceSummary}>
+              <p>Price: ৳{priceData.base}</p>
+              <p>Delivery: ৳{priceData.delivery}</p>
+              {priceData.discount > 0 && <p style={{color: '#ff4d4d'}}>Discount ({priceData.discount}%): -৳{priceData.discountAmount}</p>}
+              <hr style={{ border: '0.5px solid #333', margin: '10px 0' }} />
+              <p style={{ fontWeight: 'bold' }}>Total: ৳{priceData.total}</p>
+            </div>
+
+            <input type="text" name="name" placeholder="FULL NAME" required className={styles.inputField} />
+            <input type="tel" name="phone" placeholder="PHONE (01XXXXXXXXX)" required pattern="01[0-9]{9}" className={styles.inputField} />
+            
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <select name="size" required className={styles.inputField} style={{ flex: 1 }}>
+                <option value="" disabled selected hidden>SELECT SIZE</option>
+                {selectedProduct.sizes?.split(',').map(s => <option key={s} value={s.trim()}>{s.trim()}</option>)}
+              </select>
+              <input type="text" name="color" placeholder="COLOR" required className={styles.inputField} style={{ flex: 1 }} />
+            </div>
+
+            <textarea name="address" placeholder="FULL ADDRESS" required className={styles.inputField} style={{ height: '60px' }}></textarea>
+            
             <PaymentSection paymentMethod={paymentMethod} setPaymentMethod={setPaymentMethod} />
-            <button type="submit" className="btn-style">CONFIRM ORDER</button>
+
+            <button type="submit" className="btn-style" style={{ width: '100%', padding: '15px' }}>CONFIRM ORDER</button>
+            <p onClick={closeModal} style={{ textAlign: 'center', cursor: 'pointer', marginTop: '10px', color: '#777' }}>CANCEL</p>
           </form>
         )}
       </div>
