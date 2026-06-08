@@ -9,11 +9,8 @@
 
 .inputField:focus { border: 1px solid #777; }
 
-/* এটি নিশ্চিত করে যে ভুল তথ্য দিলেই লাল হবে */
-.inputField:invalid:not(:placeholder-shown) { border: 1px solid #ff4d4d !important; }
-
-/* সিলেক্টের ক্ষেত্রে ডিফল্ট ভ্যালিডেশন আটকানো */
-select.inputField:invalid { border: 1px solid #333; }
+/* এটি লাল বর্ডার পুরোপুরি বন্ধ করে দিবে */
+.inputField:invalid { box-shadow: none; border: 1px solid #333; }
 
 .info { font-size: 12px; color: #ffcc00; margin-bottom: 10px; text-align: center; }
 .container { display: flex; flex-direction: column; }
