@@ -1,22 +1,8 @@
-/* ওভারলে এবং মোডাল */
 .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px; }
 .modal { background: #0a0a0a; width: 100%; max-width: 400px; padding: 40px 25px; border-radius: 40px; border: 1px solid #1a1a1a; max-height: 95vh; overflow-y: auto; }
-
-/* ইনপুট এবং সিলেক্ট ফিল্ডের প্রিমিয়াম স্টাইল */
-.inputField { 
-  background: #0a0a0a; border: 1px solid #333; color: #fff; 
-  padding: 16px; border-radius: 12px; width: 100%; font-size: 14px; 
-  margin-bottom: 12px; transition: all 0.3s ease; outline: none;
-}
-.inputField:focus { border: 1px solid #777; }
-
-/* ভুল ইনপুট হলে লাল বর্ডার */
-.inputField:invalid:not(:placeholder-shown) {
-  border: 1px solid #ff4d4d;
-  box-shadow: 0 0 5px rgba(255, 77, 77, 0.2);
-}
-
-/* পেমেন্ট ইনফো */
-.info { font-size: 12px; color: #ffcc00; margin-bottom: 12px; text-align: center; letter-spacing: 1px; }
-.container { display: flex; flex-direction: column; width: 100%; }
 .descLine { display: grid; grid-template-columns: 85px 15px 1fr; font-size: 12px; color: #777; margin-bottom: 5px; }
+
+/* মেইন ইনপুট স্টাইল */
+.inputField { background: #0a0a0a; border: 1px solid #333; color: #fff; padding: 16px; border-radius: 12px; width: 100%; font-size: 14px; margin-bottom: 12px; outline: none; transition: 0.3s; }
+.inputField:focus { border: 1px solid #777; }
+.inputField:invalid:not(:placeholder-shown) { border: 1px solid #ff4d4d; }
