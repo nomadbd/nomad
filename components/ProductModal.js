@@ -13,11 +13,12 @@ export default function ProductModal({
   const [priceData, setPriceData] = useState({ base: 0, delivery: 60, discount: 0, discountAmount: 0, total: 0 });
   const [description, setDescription] = useState("");
   const [productInfo, setProductInfo] = useState({});
+  const [paymentMethod, setPaymentMethod] = useState("");
 
   useEffect(() => {
     const loadProductData = async () => {
       try {
-        // ================== ডিসকাউন্ট লোড ==================
+        // ডিসকাউন্ট লোড (announcement.txt)
         const discountRes = await fetch('/content/announcement.txt');
         const discountText = await discountRes.text();
         
@@ -25,30 +26,27 @@ export default function ProductModal({
         const match = discountText.match(/(\d+)%/i);
         if (match) discountPercent = parseInt(match[1]);
 
-        // ================== প্রোডাক্ট ডেসক্রিপশন + ডাটা লোড ==================
+        // প্রোডাক্ট ডেটা লোড (descriptions/1.txt)
         const descRes = await fetch(`/descriptions/${selectedProduct.id}.txt`);
         const text = await descRes.text();
 
-        const lines = text.split('\n').map(line => line.trim()).filter(Boolean);
+        const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
         const info = {};
 
         lines.forEach(line => {
           if (line.includes(':')) {
-            const [key, ...value] = line.split(':');
+            const [key, ...val] = line.split(':');
             const cleanKey = key.trim().toLowerCase();
-            const cleanValue = value.join(':').trim();
-            
+            const cleanValue = val.join(':').trim();
+
             info[cleanKey] = cleanValue;
 
-            // Price বের করা
             if (cleanKey.includes('price')) {
               info.basePrice = parseInt(cleanValue.replace(/[^0-9]/g, '')) || 0;
             }
-            // Delivery বের করা
             if (cleanKey.includes('delivery')) {
               info.delivery = parseInt(cleanValue.replace(/[^0-9]/g, '')) || 60;
             }
-            // Size বের করা
             if (cleanKey.includes('size')) {
               info.sizes = cleanValue;
             }
@@ -57,23 +55,16 @@ export default function ProductModal({
 
         const basePrice = info.basePrice || selectedProduct.price || 700;
         const delivery = info.delivery || 60;
-
         const discountAmount = Math.round((basePrice * discountPercent) / 100);
         const total = basePrice + delivery - discountAmount;
 
         setProductInfo(info);
-        setDescription(lines.slice(7).join('\n') || text); // শেষের ডেসক্রিপশন অংশ
+        setDescription(lines.slice(7).join('\n') || text);
 
-        setPriceData({
-          base: basePrice,
-          delivery: delivery,
-          discount: discountPercent,
-          discountAmount: discountAmount,
-          total: total
-        });
+        setPriceData({ base: basePrice, delivery, discount: discountPercent, discountAmount, total });
 
       } catch (error) {
-        console.error("Error loading product data:", error);
+        console.error("Error loading data:", error);
         setDescription("Failed to load product details.");
       }
     };
@@ -85,6 +76,7 @@ export default function ProductModal({
     <div className={styles.overlay}>
       <div className={styles.modal}>
         
+        {/* ================== DETAILS MODE ================== */}
         {modalType === 'details' ? (
           <div>
             <img 
@@ -94,14 +86,21 @@ export default function ProductModal({
             />
             
             <h2 style={{ textAlign: 'center', margin: '20px 0', fontSize: '18px', color: '#fff' }}>
-              {selectedProduct.name || productInfo['t-shirt'] || 'Product'}
+              {selectedProduct.name}
             </h2>
             
             <p style={{ textAlign: 'center', fontSize: '18px', fontWeight: 'bold', color: '#fff' }}>
               ৳{priceData.base}
             </p>
 
-            <div style={{ color: '#ccc', fontSize: '14px', marginTop: '15px', lineHeight: '1.7', whiteSpace: 'pre-line' }}>
+            <div style={{ 
+              color: '#ccc', 
+              fontSize: '14px', 
+              marginTop: '15px', 
+              lineHeight: '1.7', 
+              whiteSpace: 'pre-line',
+              padding: '0 8px'
+            }}>
               {description}
             </div>
 
@@ -118,12 +117,14 @@ export default function ProductModal({
             </p>
           </div>
         ) : (
+
+          /* ================== ORDER MODE ================== */
           <form action="/api/order" method="POST" className={styles.container}>
             <h2 style={{ textAlign: 'center', marginBottom: '20px', fontSize: '16px', color: '#fff' }}>
               ORDER: {selectedProduct.name}
             </h2>
 
-            {/* Hidden Fields */}
+            {/* Hidden Fields for API */}
             <input type="hidden" name="product_id" value={selectedProduct.id} />
             <input type="hidden" name="product_name" value={selectedProduct.name} />
             <input type="hidden" name="price" value={priceData.base} />
@@ -143,9 +144,8 @@ export default function ProductModal({
               <p style={{ fontWeight: 'bold', fontSize: '16px' }}>Total: ৳{priceData.total}</p>
             </div>
 
-            {/* Form Fields */}
+            {/* Customer Info */}
             <input type="text" name="name" placeholder="FULL NAME" required className={styles.inputField} />
-            
             <input type="tel" name="phone" placeholder="PHONE (01XXXXXXXXX)" required pattern="01[0-9]{9}" className={styles.inputField} />
 
             <div style={{ display: 'flex', gap: '10px' }}>
@@ -160,9 +160,17 @@ export default function ProductModal({
 
             <textarea name="address" placeholder="FULL ADDRESS" required className={styles.inputField} style={{ height: '70px' }} />
 
-            <PaymentSection paymentMethod={null} setPaymentMethod={() => {}} />
+            {/* Payment Section */}
+            <PaymentSection 
+              paymentMethod={paymentMethod} 
+              setPaymentMethod={setPaymentMethod} 
+            />
 
-            <button type="submit" className="btn-style" style={{ width: '100%', padding: '15px', marginTop: '10px' }}>
+            <button 
+              type="submit" 
+              className="btn-style" 
+              style={{ width: '100%', padding: '15px', marginTop: '8px' }}
+            >
               CONFIRM ORDER
             </button>
 
