@@ -24,33 +24,20 @@ export default function ProductModal({ selectedProduct, modalType, setModalType,
             <input type="hidden" name="product_name" value={selectedProduct.name} />
             <input type="hidden" name="total" value={calculatePrice(selectedProduct).total} />
 
-            {/* গ্রাহকের তথ্য */}
             <input type="text" name="name" placeholder="FULL NAME" required className={styles.inputField} />
+            <input type="tel" name="phone" placeholder="PHONE (01XXXXXXXXX)" required pattern="01[0-9]{9}" className={styles.inputField} />
             
-            {/* মোবাইল নাম্বারের ভ্যালিডেশন: ১১ ডিজিট নিশ্চিত করা */}
-            <input 
-              type="tel" name="phone" placeholder="PHONE (01XXXXXXXXX)" 
-              required pattern="01[0-9]{9}" title="১১ ডিজিটের সঠিক মোবাইল নাম্বার দিন"
-              className={styles.inputField} 
-            />
-
-            {/* সাইজ ও কালার সিলেকশন */}
             <div style={{ display: 'flex', gap: '10px' }}>
               <select name="size" required className={styles.inputField} style={{ flex: 1 }}>
                 <option value="">SELECT SIZE</option>
-                <option value="S">S</option><option value="M">M</option>
-                <option value="L">L</option><option value="XL">XL</option>
+                <option value="S">S</option><option value="M">M</option><option value="L">L</option><option value="XL">XL</option>
               </select>
               <input type="text" name="color" placeholder="COLOR" required className={styles.inputField} style={{ flex: 1 }} />
             </div>
 
-            <textarea name="address" placeholder="FULL ADDRESS" required className={styles.inputField}></textarea>
+            <textarea name="address" placeholder="FULL ADDRESS" required className={styles.inputField} style={{ height: '80px' }}></textarea>
 
-            {/* পেমেন্ট সেকশন (এখন আর paymentNumbers পাস করার দরকার নেই) */}
-            <PaymentSection 
-              paymentMethod={paymentMethod} 
-              setPaymentMethod={setPaymentMethod} 
-            />
+            <PaymentSection paymentMethod={paymentMethod} setPaymentMethod={setPaymentMethod} />
 
             <button type="submit" className="btn-style" style={{ width: '100%', padding: '20px', marginTop: '10px' }}>CONFIRM ORDER</button>
             <p onClick={closeModal} style={{ textAlign: 'center', cursor: 'pointer', marginTop: '15px' }}>CANCEL</p>
