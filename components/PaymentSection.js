@@ -33,3 +33,4 @@ export default function PaymentSection({ paymentMethod, setPaymentMethod }) {
     </div>
   );
 }
+ 
