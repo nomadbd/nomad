@@ -19,22 +19,16 @@ import { useUIState } from '@/hooks/useUIState';
 export default function Home({ allProducts, siteContent, announcement }) {
   const router = useRouter();
 
-  // লজিক ও স্টেট ম্যানেজমেন্ট (কাস্টম হুক থেকে)
   const { products, categories, selectedProduct, setSelectedProduct, setModalType, modalType } = useProductData(allProducts, router.query);
   const { calculatePrice } = usePriceCalculator(announcement);
   const { searchQuery, setSearchQuery, filteredProducts } = useSearchLogic(products);
-  const { paymentMethod, setPaymentMethod, viewCategory, setViewCategory, openDetails, openOrder, closeModal } = useUIState(setSelectedProduct, setModalType);
-
-  const paymentNumbers = {
-    'Bkash': '01521731371', 'Nagad': '01521731371', 'Rocket': '01521731371', 'Upay': '01521731371', 'Cellfin': '01521731371'
-  };
+  const { paymentMethod, setPaymentMethod, viewCategory, setViewCategory, closeModal } = useUIState(setSelectedProduct, setModalType);
 
   return (
     <div style={{ backgroundColor: '#000', color: '#fff', minHeight: '100vh', fontFamily: 'Inter, sans-serif', overflowX: 'hidden' }}>
       <Head><title>NOMAD</title><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/></Head>
 
       <SiteHeader header={siteContent.header} />
-
       <SearchBar announcement={announcement} searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
 
       <ProductList 
@@ -47,14 +41,13 @@ export default function Home({ allProducts, siteContent, announcement }) {
 
       <ProductModal 
         selectedProduct={selectedProduct} modalType={modalType} setModalType={setModalType} 
-        closeModal={closeModal} calculatePrice={calculatePrice} paymentNumbers={paymentNumbers} 
+        closeModal={closeModal} calculatePrice={calculatePrice} 
         paymentMethod={paymentMethod} setPaymentMethod={setPaymentMethod} 
       />
     </div>
   );
 }
 
-// getStaticProps আগের মতোই থাকবে
 export async function getStaticProps() {
   const pDir = path.join(process.cwd(), 'public/products');
   const dDir = path.join(process.cwd(), 'descriptions');
