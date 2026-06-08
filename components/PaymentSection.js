@@ -15,8 +15,8 @@ export default function PaymentSection({ paymentMethod, setPaymentMethod }) {
 
       {paymentMethod && <p className={styles.info}>SEND MONEY TO: {paymentNumbers[paymentMethod]}</p>}
 
-      <input type="tel" name="sender_no" placeholder="SENDER NO (11 Digits)" required pattern="01[0-9]{9}" className={styles.inputField} />
-      <input type="text" name="txn_id" placeholder="TRANSACTION ID" required minLength="6" className={styles.inputField} />
+      <input type="tel" name="sender_no" placeholder="SENDER NO (11 Digits)" required className={styles.inputField} />
+      <input type="text" name="txn_id" placeholder="TRANSACTION ID" required className={styles.inputField} />
     </div>
   );
 }
