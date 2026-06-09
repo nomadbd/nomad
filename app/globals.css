@@ -7,3 +7,10 @@ body {
   color: #ededed;
   font-family: 'Inter', sans-serif;
 }
+
+/* এই অংশটুকু যোগ করুন */
+img {
+  max-width: 100%;
+  height: auto;
+  object-fit: cover;
+}
