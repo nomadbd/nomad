@@ -19,7 +19,7 @@ export default function ProductModal({
   useEffect(() => {
     const loadProductData = async () => {
       try {
-        // ডিসকাউন্ট লোড
+        // ডিসকাউন্ট
         let discountPercent = 0;
         try {
           const res = await fetch('/content/announcement.txt');
@@ -30,7 +30,7 @@ export default function ProductModal({
           }
         } catch (e) {}
 
-        // প্রোডাক্ট ডেসক্রিপশন লোড
+        // ডেসক্রিপশন ফাইল লোড
         let rawText = "Description not available.";
         try {
           const res = await fetch(`/descriptions/${selectedProduct.id}.txt`);
@@ -41,18 +41,18 @@ export default function ProductModal({
 
         const lines = rawText.split('\n').map(l => l.trim()).filter(Boolean);
 
+        // প্রথম লাইন = প্রোডাক্ট নাম
         let extractedName = selectedProduct.name;
+        if (lines.length > 0) {
+          extractedName = lines[0].replace(/^\d+\s*/, '').trim();
+        }
+
+        // বাকি সব লাইন ডেসক্রিপশন হিসেবে রাখা
+        const descriptionBody = lines.slice(1).join('\n');
+
+        // অতিরিক্ত তথ্য পার্সিং (সাইজ, প্রাইস ইত্যাদি)
         const info = {};
-        let descriptionBody = "";
-
         lines.forEach(line => {
-          // প্রথম লাইন থেকে প্রোডাক্ট নাম বের করা
-          if (!extractedName || extractedName === selectedProduct.name) {
-            const nameMatch = line.match(/^\d+\s+(.+)$/);
-            if (nameMatch) extractedName = nameMatch[1].trim();
-          }
-
-          // কী-ভ্যালু পার্সিং
           if (line.includes(':')) {
             const [keyPart, ...valuePart] = line.split(':');
             const key = keyPart.replace(/^\d+\s*/, '').trim().toLowerCase();
@@ -69,8 +69,6 @@ export default function ProductModal({
             if (key.includes('size')) {
               info.sizes = value;
             }
-          } else {
-            descriptionBody += line + "\n";
           }
         });
 
