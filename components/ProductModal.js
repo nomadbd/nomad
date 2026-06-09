@@ -10,89 +10,80 @@ export default function ProductModal({
 }) {
   if (!selectedProduct) return null;
 
-  const [priceData, setPriceData] = useState({ base: 0, delivery: 60, discount: 0, discountAmount: 0, total: 0 });
+  const [priceData, setPriceData] = useState({ base: 700, delivery: 60, discount: 0, discountAmount: 0, total: 760 });
   const [fullDescription, setFullDescription] = useState("Loading description...");
-  const [productName, setProductName] = useState(selectedProduct.name || "Product");
+  const [productName, setProductName] = useState(selectedProduct.name || "T-Shirt");
   const [productInfo, setProductInfo] = useState({});
   const [paymentMethod, setPaymentMethod] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    let isMounted = true;
-
-    const loadProductData = async () => {
+    const loadData = async () => {
       try {
-        setIsLoading(true);
-
         // ডিসকাউন্ট
-        let discountPercent = 0;
+        let discount = 0;
         try {
           const res = await fetch('/content/announcement.txt');
           if (res.ok) {
-            const text = await res.text();
-            const match = text.match(/(\d+)%/i);
-            if (match) discountPercent = parseInt(match[1]);
+            const txt = await res.text();
+            const m = txt.match(/(\d+)%/);
+            if (m) discount = parseInt(m[1]);
           }
-        } catch (e) {}
+        } catch {}
 
-        // ডেসক্রিপশন
-        let rawText = "Description not available.";
+        // ডেসক্রিপশন ফাইল
+        let text = "Description not available.";
         try {
           const res = await fetch(`/descriptions/${selectedProduct.id}.txt`);
           if (res.ok) {
-            rawText = await res.text();
+            text = await res.text();
           }
-        } catch (e) {}
+        } catch {}
 
-        const lines = rawText.split('\n').map(l => l.trim()).filter(Boolean);
+        const lines = text.split('\n').map(l => l.trim()).filter(l => l);
 
-        // প্রথম লাইন = প্রোডাক্ট নাম
-        let extractedName = selectedProduct.name || "Product";
+        // প্রথম লাইন = নাম
+        let name = selectedProduct.name || "T-Shirt";
         if (lines.length > 0) {
-          extractedName = lines[0].replace(/^\d+\s*/, '').trim();
+          name = lines[0].replace(/^\d+\s*/, '').trim();
         }
 
-        const descriptionBody = lines.slice(1).join('\n');
+        // বাকি সব ডেসক্রিপশন
+        const desc = lines.slice(1).join('\n');
 
-        // অন্যান্য তথ্য
-        const info = {};
+        // প্রাইস ও অন্যান্য তথ্য
+        let basePrice = selectedProduct.price || 700;
+        let delivery = 60;
+        let sizes = "";
+
         lines.forEach(line => {
-          if (line.includes(':')) {
-            const [keyPart, ...valuePart] = line.split(':');
-            const key = keyPart.replace(/^\d+\s*/, '').trim().toLowerCase();
-            const value = valuePart.join(':').trim();
-
-            if (key.includes('price')) info.basePrice = parseInt(value.replace(/[^0-9]/g, '')) || 0;
-            if (key.includes('delivery')) info.delivery = parseInt(value.replace(/[^0-9]/g, '')) || 60;
-            if (key.includes('size')) info.sizes = value;
+          if (line.toLowerCase().includes('price')) {
+            const num = parseInt(line.replace(/[^0-9]/g, ''));
+            if (num) basePrice = num;
+          }
+          if (line.toLowerCase().includes('delivery')) {
+            const num = parseInt(line.replace(/[^0-9]/g, ''));
+            if (num) delivery = num;
+          }
+          if (line.toLowerCase().includes('size')) {
+            sizes = line.split(':')[1] || "";
           }
         });
 
-        const basePrice = info.basePrice || selectedProduct.price || 700;
-        const delivery = info.delivery || 60;
-        const discountAmount = Math.round((basePrice * discountPercent) / 100);
-        const total = basePrice + delivery - discountAmount;
+        const discountAmt = Math.round((basePrice * discount) / 100);
+        const total = basePrice + delivery - discountAmt;
 
-        if (isMounted) {
-          setProductName(extractedName);
-          setFullDescription(descriptionBody.trim() || rawText);
-          setProductInfo(info);
-          setPriceData({ base: basePrice, delivery, discount: discountPercent, discountAmount, total });
-        }
+        setProductName(name);
+        setFullDescription(desc || text);
+        setProductInfo({ sizes });
+        setPriceData({ base: basePrice, delivery, discount, discountAmount: discountAmt, total });
 
-      } catch (error) {
-        console.error("Modal Load Error:", error);
-        if (isMounted) {
-          setFullDescription("Failed to load product details.");
-        }
-      } finally {
-        if (isMounted) setIsLoading(false);
+      } catch (err) {
+        console.error(err);
+        setFullDescription("Failed to load details.");
       }
     };
 
-    loadProductData();
-
-    return () => { isMounted = false; };
+    loadData();
   }, [selectedProduct]);
 
   return (
@@ -150,7 +141,7 @@ export default function ProductModal({
               <p>Delivery: ৳{priceData.delivery}</p>
               {priceData.discount > 0 && <p style={{color: '#ff4d4d'}}>Discount ({priceData.discount}%): -৳{priceData.discountAmount}</p>}
               <hr style={{ border: '0.5px solid #333', margin: '10px 0' }} />
-              <p style={{ fontWeight: 'bold', fontSize: '16px', color: '#fff' }}>Total: ৳{priceData.total}</p>
+              <p style={{ fontWeight: 'bold', color: '#fff' }}>Total: ৳{priceData.total}</p>
             </div>
 
             <input type="text" name="name" placeholder="FULL NAME" required className={styles.inputField} />
