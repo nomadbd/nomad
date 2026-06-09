@@ -12,16 +12,12 @@ export default function ProductModal({
 
   const [priceData, setPriceData] = useState({ base: 0, delivery: 60, discount: 0, discountAmount: 0, total: 0 });
   const [description, setDescription] = useState("Loading description...");
+  const [productName, setProductName] = useState(selectedProduct.name);
   const [productInfo, setProductInfo] = useState({});
   const [paymentMethod, setPaymentMethod] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
   useEffect(() => {
     const loadProductData = async () => {
-      setLoading(true);
-      setError(null);
-      
       try {
         // ডিসকাউন্ট লোড
         let discountPercent = 0;
@@ -32,9 +28,7 @@ export default function ProductModal({
             const match = text.match(/(\d+)%/i);
             if (match) discountPercent = parseInt(match[1]);
           }
-        } catch (e) {
-          console.log("Announcement.txt not loaded");
-        }
+        } catch (e) {}
 
         // প্রোডাক্ট ডেসক্রিপশন লোড
         let rawText = "Description not available.";
@@ -43,14 +37,17 @@ export default function ProductModal({
           if (res.ok) {
             rawText = await res.text();
           }
-        } catch (e) {
-          console.log("Description file not loaded");
-        }
+        } catch (e) {}
 
         const lines = rawText.split('\n').map(l => l.trim()).filter(Boolean);
-        const info = {};
 
-        lines.forEach(line => {
+        // প্রথম লাইন = প্রোডাক্ট নাম
+        const extractedName = lines[0] || selectedProduct.name;
+        
+        const info = {};
+        let descText = "";
+
+        lines.forEach((line, index) => {
           if (line.includes(':')) {
             const [key, ...val] = line.split(':');
             const cleanKey = key.trim().toLowerCase();
@@ -67,6 +64,8 @@ export default function ProductModal({
             if (cleanKey.includes('size')) {
               info.sizes = cleanValue;
             }
+          } else if (index > 0) {
+            descText += line + "\n";
           }
         });
 
@@ -75,16 +74,14 @@ export default function ProductModal({
         const discountAmount = Math.round((basePrice * discountPercent) / 100);
         const total = basePrice + delivery - discountAmount;
 
+        setProductName(extractedName);
         setProductInfo(info);
-        setDescription(rawText);
+        setDescription(descText.trim() || rawText);
         setPriceData({ base: basePrice, delivery, discount: discountPercent, discountAmount, total });
 
-      } catch (err) {
-        console.error("ProductModal Error:", err);
-        setError("Failed to load product data");
-        setDescription("Failed to load product data");
-      } finally {
-        setLoading(false);
+      } catch (error) {
+        console.error(error);
+        setDescription("Failed to load data.");
       }
     };
 
@@ -99,12 +96,12 @@ export default function ProductModal({
           <div>
             <img 
               src={`/products/${selectedProduct.image || selectedProduct.id + '.jpg'}`} 
-              alt={selectedProduct.name}
+              alt={productName}
               style={{ width: '100%', borderRadius: '20px', objectFit: 'cover' }} 
             />
             
             <h2 style={{ textAlign: 'center', margin: '20px 0 10px', fontSize: '18px', color: '#fff' }}>
-              {selectedProduct.name}
+              {productName}
             </h2>
             
             <p style={{ textAlign: 'center', fontSize: '18px', fontWeight: 'bold', color: '#fff', marginBottom: '20px' }}>
@@ -130,11 +127,11 @@ export default function ProductModal({
         ) : (
           <form action="/api/order" method="POST" className={styles.container}>
             <h2 style={{ textAlign: 'center', marginBottom: '20px', fontSize: '16px', color: '#fff' }}>
-              ORDER: {selectedProduct.name}
+              ORDER: {productName}
             </h2>
 
             <input type="hidden" name="product_id" value={selectedProduct.id} />
-            <input type="hidden" name="product_name" value={selectedProduct.name} />
+            <input type="hidden" name="product_name" value={productName} />
             <input type="hidden" name="price" value={priceData.base} />
             <input type="hidden" name="delivery" value={priceData.delivery} />
             <input type="hidden" name="total" value={priceData.total} />
