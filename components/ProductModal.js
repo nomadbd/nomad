@@ -100,14 +100,8 @@ export default function ProductModal({
               ৳{priceData.base}
             </p>
 
-            {/* Improved Description */}
-            <div style={{ 
-              color: '#ccc', 
-              fontSize: '14.5px', 
-              lineHeight: '1.85', 
-              whiteSpace: 'pre-line',
-              padding: '0 10px'
-            }}>
+            {/* Description - CSS Class ব্যবহার করা হয়েছে */}
+            <div className={styles.description}>
               {description}
             </div>
 
