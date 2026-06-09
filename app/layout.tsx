@@ -1,16 +1,21 @@
 import './globals.css';
-import Footer from '@/components/Footer'; // ফুটার ফাইলটি ইমপোর্ট করা হলো
+import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({ 
+  children 
+}: { 
+  children: React.ReactNode 
+}) {
   return (
-    <html lang="en">
+    <html lang="bn">
       <body className="bg-black text-white antialiased">
-        {/* মেইন কন্টেন্ট */}
+        <Navbar />   {/* ← এখানে Navbar যোগ করুন */}
+
         <main className="min-h-screen">
           {children}
         </main>
-        
-        {/* সব পেজের নিচে ফুটার */}
+
         <Footer />
       </body>
     </html>
