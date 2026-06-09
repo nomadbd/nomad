@@ -27,7 +27,7 @@ export default function ProductModal({
             const match = text.match(/(\d+)%/i);
             if (match) discountPercent = parseInt(match[1]);
           }
-        } catch (e) { console.log("Discount load failed"); }
+        } catch (e) {}
 
         // প্রোডাক্ট ডেসক্রিপশন লোড
         let rawText = "Description not available.";
@@ -36,7 +36,7 @@ export default function ProductModal({
           if (res.ok) {
             rawText = await res.text();
           }
-        } catch (e) { console.log("Description load failed"); }
+        } catch (e) {}
 
         const lines = rawText.split('\n').map(l => l.trim()).filter(Boolean);
         const info = {};
@@ -82,7 +82,8 @@ export default function ProductModal({
   return (
     <div className={styles.overlay}>
       <div className={styles.modal}>
-        {/* Details Mode */}
+        
+        {/* ================== DETAILS MODE ================== */}
         {modalType === 'details' ? (
           <div>
             <img 
@@ -99,7 +100,14 @@ export default function ProductModal({
               ৳{priceData.base}
             </p>
 
-            <div style={{ color: '#ccc', fontSize: '14px', lineHeight: '1.7', whiteSpace: 'pre-line', padding: '0 8px' }}>
+            {/* Improved Description */}
+            <div style={{ 
+              color: '#ccc', 
+              fontSize: '14.5px', 
+              lineHeight: '1.85', 
+              whiteSpace: 'pre-line',
+              padding: '0 10px'
+            }}>
               {description}
             </div>
 
@@ -116,12 +124,14 @@ export default function ProductModal({
             </p>
           </div>
         ) : (
-          /* Order Form Mode */
+
+          /* ================== ORDER MODE ================== */
           <form action="/api/order" method="POST" className={styles.container}>
             <h2 style={{ textAlign: 'center', marginBottom: '20px', fontSize: '16px', color: '#fff' }}>
               ORDER: {selectedProduct.name}
             </h2>
 
+            {/* Hidden Fields */}
             <input type="hidden" name="product_id" value={selectedProduct.id} />
             <input type="hidden" name="product_name" value={selectedProduct.name} />
             <input type="hidden" name="price" value={priceData.base} />
@@ -130,21 +140,27 @@ export default function ProductModal({
             <input type="hidden" name="discountPercent" value={priceData.discount} />
             <input type="hidden" name="discountAmt" value={priceData.discountAmount} />
 
+            {/* Price Summary */}
             <div className={styles.priceSummary}>
               <p>Price: ৳{priceData.base}</p>
               <p>Delivery: ৳{priceData.delivery}</p>
-              {priceData.discount > 0 && <p style={{color: '#ff4d4d'}}>Discount ({priceData.discount}%): -৳{priceData.discountAmount}</p>}
+              {priceData.discount > 0 && (
+                <p style={{ color: '#ff4d4d' }}>Discount ({priceData.discount}%): -৳{priceData.discountAmount}</p>
+              )}
               <hr style={{ border: '0.5px solid #333', margin: '10px 0' }} />
               <p style={{ fontWeight: 'bold', fontSize: '16px', color: '#fff' }}>Total: ৳{priceData.total}</p>
             </div>
 
+            {/* Form Fields */}
             <input type="text" name="name" placeholder="FULL NAME" required className={styles.inputField} />
             <input type="tel" name="phone" placeholder="PHONE (01XXXXXXXXX)" required pattern="01[0-9]{9}" className={styles.inputField} />
 
             <div style={{ display: 'flex', gap: '10px' }}>
               <select name="size" required className={styles.inputField} style={{ flex: 1 }}>
                 <option value="" disabled selected hidden>SELECT SIZE</option>
-                {productInfo.sizes?.split(',').map(s => <option key={s} value={s.trim()}>{s.trim()}</option>)}
+                {productInfo.sizes?.split(',').map(s => (
+                  <option key={s} value={s.trim()}>{s.trim()}</option>
+                ))}
               </select>
               <input type="text" name="color" placeholder="COLOR" required className={styles.inputField} style={{ flex: 1 }} />
             </div>
