@@ -1,2 +1,0 @@
-# nomad
-The one. Everywhere.
