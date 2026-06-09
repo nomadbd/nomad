@@ -11,7 +11,7 @@ export default function ProductModal({
   if (!selectedProduct) return null;
 
   const [priceData, setPriceData] = useState({ base: 0, delivery: 60, discount: 0, discountAmount: 0, total: 0 });
-  const [description, setDescription] = useState("Loading description...");
+  const [fullDescription, setFullDescription] = useState("Loading...");
   const [productName, setProductName] = useState(selectedProduct.name);
   const [productInfo, setProductInfo] = useState({});
   const [paymentMethod, setPaymentMethod] = useState("");
@@ -41,31 +41,36 @@ export default function ProductModal({
 
         const lines = rawText.split('\n').map(l => l.trim()).filter(Boolean);
 
-        // প্রথম লাইন = প্রোডাক্ট নাম
-        const extractedName = lines[0] || selectedProduct.name;
-        
+        let extractedName = selectedProduct.name;
         const info = {};
-        let descText = "";
+        let descriptionBody = "";
 
-        lines.forEach((line, index) => {
+        lines.forEach(line => {
+          // প্রথম লাইন থেকে প্রোডাক্ট নাম বের করা
+          if (!extractedName || extractedName === selectedProduct.name) {
+            const nameMatch = line.match(/^\d+\s+(.+)$/);
+            if (nameMatch) extractedName = nameMatch[1].trim();
+          }
+
+          // কী-ভ্যালু পার্সিং
           if (line.includes(':')) {
-            const [key, ...val] = line.split(':');
-            const cleanKey = key.trim().toLowerCase();
-            const cleanValue = val.join(':').trim();
+            const [keyPart, ...valuePart] = line.split(':');
+            const key = keyPart.replace(/^\d+\s*/, '').trim().toLowerCase();
+            const value = valuePart.join(':').trim();
 
-            info[cleanKey] = cleanValue;
+            info[key] = value;
 
-            if (cleanKey.includes('price')) {
-              info.basePrice = parseInt(cleanValue.replace(/[^0-9]/g, '')) || 0;
+            if (key.includes('price')) {
+              info.basePrice = parseInt(value.replace(/[^0-9]/g, '')) || 0;
             }
-            if (cleanKey.includes('delivery')) {
-              info.delivery = parseInt(cleanValue.replace(/[^0-9]/g, '')) || 60;
+            if (key.includes('delivery')) {
+              info.delivery = parseInt(value.replace(/[^0-9]/g, '')) || 60;
             }
-            if (cleanKey.includes('size')) {
-              info.sizes = cleanValue;
+            if (key.includes('size')) {
+              info.sizes = value;
             }
-          } else if (index > 0) {
-            descText += line + "\n";
+          } else {
+            descriptionBody += line + "\n";
           }
         });
 
@@ -76,12 +81,12 @@ export default function ProductModal({
 
         setProductName(extractedName);
         setProductInfo(info);
-        setDescription(descText.trim() || rawText);
+        setFullDescription(descriptionBody.trim() || rawText);
         setPriceData({ base: basePrice, delivery, discount: discountPercent, discountAmount, total });
 
       } catch (error) {
         console.error(error);
-        setDescription("Failed to load data.");
+        setFullDescription("Failed to load description.");
       }
     };
 
@@ -109,7 +114,7 @@ export default function ProductModal({
             </p>
 
             <div className={styles.description}>
-              {description}
+              {fullDescription}
             </div>
 
             <button 
@@ -152,9 +157,7 @@ export default function ProductModal({
             <div style={{ display: 'flex', gap: '10px' }}>
               <select name="size" required className={styles.inputField} style={{ flex: 1 }}>
                 <option value="" disabled selected hidden>SELECT SIZE</option>
-                {productInfo.sizes?.split(',').map(s => (
-                  <option key={s} value={s.trim()}>{s.trim()}</option>
-                ))}
+                {productInfo.sizes?.split(',').map(s => <option key={s} value={s.trim()}>{s.trim()}</option>)}
               </select>
               <input type="text" name="color" placeholder="COLOR" required className={styles.inputField} style={{ flex: 1 }} />
             </div>
