@@ -5,32 +5,35 @@ import ProductCard from '@/components/ProductCard';
 
 export default function Home() {
   const productsDir = path.join(process.cwd(), 'data', 'products');
+  const imagesDir = path.join(process.cwd(), 'public', 'images');
+  
+  // প্রোডাক্ট ফাইল রিড করা
   const files = fs.readdirSync(productsDir).filter(file => file.endsWith('.txt'));
+  const imageFiles = fs.readdirSync(imagesDir);
 
   const products = files.map(file => {
     const content = fs.readFileSync(path.join(productsDir, file), 'utf-8');
     const lines = content.split('\n');
-    
-    // ইমেজ এক্সটেনশন খোঁজা (jpg বা jpeg সাপোর্ট করার জন্য)
     const baseName = file.replace('.txt', '');
-    const imagePath = `/images/${baseName}.jpg`; // প্রয়োজনে .jpeg চেক করার লজিক এখানে যোগ করা যায়
     
+    // ফাইলের নামের সাথে মিল রেখে ছবি খুঁজে বের করা (যেকোনো ফরম্যাট: jpg, jpeg, png)
+    const matchedImage = imageFiles.find(img => img.startsWith(baseName)) || 'default.jpg';
+
     return {
       id: baseName,
-      title: lines[0].replace('প্রোডাক্টের নাম: ', ''),
-      price: lines[1].replace('দাম: ', ''),
-      image: imagePath 
+      title: lines[0].replace('প্রোডাক্টের নাম: ', '').trim(),
+      price: lines[1].replace('দাম: ', '').trim(),
+      image: `/images/${matchedImage}`
     };
   });
 
   return (
     <main className="min-h-screen bg-black text-white">
       <Navbar />
-      <section className="px-4 py-10 md:px-10 md:py-20">
-        <h2 className="text-3xl md:text-5xl font-extralight mb-8 md:mb-12">Collection</h2>
+      <section className="px-6 py-12 md:px-20 md:py-24">
+        <h2 className="text-4xl md:text-6xl font-extralight mb-16 tracking-tighter">Collection</h2>
         
-        {/* মোবাইলে ১ কলাম, ট্যাবলেটে ২, বড় স্ক্রিনে ৩ */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-12">
           {products.map((p) => (
             <ProductCard key={p.id} title={p.title} price={p.price} image={p.image} />
           ))}
