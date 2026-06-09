@@ -11,14 +11,19 @@ export default function ProductModal({
   if (!selectedProduct) return null;
 
   const [priceData, setPriceData] = useState({ base: 0, delivery: 60, discount: 0, discountAmount: 0, total: 0 });
-  const [fullDescription, setFullDescription] = useState("Loading...");
-  const [productName, setProductName] = useState(selectedProduct.name);
+  const [fullDescription, setFullDescription] = useState("Loading description...");
+  const [productName, setProductName] = useState(selectedProduct.name || "Product");
   const [productInfo, setProductInfo] = useState({});
   const [paymentMethod, setPaymentMethod] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
+
     const loadProductData = async () => {
       try {
+        setIsLoading(true);
+
         // ডিসকাউন্ট
         let discountPercent = 0;
         try {
@@ -30,7 +35,7 @@ export default function ProductModal({
           }
         } catch (e) {}
 
-        // ডেসক্রিপশন ফাইল লোড
+        // ডেসক্রিপশন
         let rawText = "Description not available.";
         try {
           const res = await fetch(`/descriptions/${selectedProduct.id}.txt`);
@@ -42,15 +47,14 @@ export default function ProductModal({
         const lines = rawText.split('\n').map(l => l.trim()).filter(Boolean);
 
         // প্রথম লাইন = প্রোডাক্ট নাম
-        let extractedName = selectedProduct.name;
+        let extractedName = selectedProduct.name || "Product";
         if (lines.length > 0) {
           extractedName = lines[0].replace(/^\d+\s*/, '').trim();
         }
 
-        // বাকি সব লাইন ডেসক্রিপশন হিসেবে রাখা
         const descriptionBody = lines.slice(1).join('\n');
 
-        // অতিরিক্ত তথ্য পার্সিং (সাইজ, প্রাইস ইত্যাদি)
+        // অন্যান্য তথ্য
         const info = {};
         lines.forEach(line => {
           if (line.includes(':')) {
@@ -58,17 +62,9 @@ export default function ProductModal({
             const key = keyPart.replace(/^\d+\s*/, '').trim().toLowerCase();
             const value = valuePart.join(':').trim();
 
-            info[key] = value;
-
-            if (key.includes('price')) {
-              info.basePrice = parseInt(value.replace(/[^0-9]/g, '')) || 0;
-            }
-            if (key.includes('delivery')) {
-              info.delivery = parseInt(value.replace(/[^0-9]/g, '')) || 60;
-            }
-            if (key.includes('size')) {
-              info.sizes = value;
-            }
+            if (key.includes('price')) info.basePrice = parseInt(value.replace(/[^0-9]/g, '')) || 0;
+            if (key.includes('delivery')) info.delivery = parseInt(value.replace(/[^0-9]/g, '')) || 60;
+            if (key.includes('size')) info.sizes = value;
           }
         });
 
@@ -77,18 +73,26 @@ export default function ProductModal({
         const discountAmount = Math.round((basePrice * discountPercent) / 100);
         const total = basePrice + delivery - discountAmount;
 
-        setProductName(extractedName);
-        setProductInfo(info);
-        setFullDescription(descriptionBody.trim() || rawText);
-        setPriceData({ base: basePrice, delivery, discount: discountPercent, discountAmount, total });
+        if (isMounted) {
+          setProductName(extractedName);
+          setFullDescription(descriptionBody.trim() || rawText);
+          setProductInfo(info);
+          setPriceData({ base: basePrice, delivery, discount: discountPercent, discountAmount, total });
+        }
 
       } catch (error) {
-        console.error(error);
-        setFullDescription("Failed to load description.");
+        console.error("Modal Load Error:", error);
+        if (isMounted) {
+          setFullDescription("Failed to load product details.");
+        }
+      } finally {
+        if (isMounted) setIsLoading(false);
       }
     };
 
     loadProductData();
+
+    return () => { isMounted = false; };
   }, [selectedProduct]);
 
   return (
