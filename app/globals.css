@@ -1,13 +1,26 @@
 @tailwind base;
 @tailwind components;
-@tailwind utilities;body {
+@tailwind utilities;
+
+body {
   background-color: #050505;
   color: #ededed;
   font-family: 'Inter', sans-serif;
-}/* এই অংশটুকু যোগ করুন */
+  margin: 0;
+  padding: 0;
+}
+
+/* ইমেজের জন্য স্ট্যান্ডার্ড স্টাইল */
 img {
   max-width: 100%;
   height: auto;
-  object-fit: cover;
+  display: block;
 }
 
+/* মোবাইল রেসপন্সিভনেস এবং সেন্টার করার জন্য */
+main {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
