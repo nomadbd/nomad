@@ -1,5 +1,9 @@
-Product name : T Shirt
+Product name : Nomad Signature Style
+Category     : T shirt
 Fabric       : 180 GSM combad cotton
 Price        : 1000
 Delivery charge : 100 BDT
+Discount        : 10%
+
+This is official tee. It's premium & comfortable for daily uses.
 
