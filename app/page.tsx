@@ -1,18 +1,14 @@
-// app/page.tsx (আপডেট)
-'use client'; // Client component হিসেবে স্টেট হ্যান্ডেল করতে হবে
-import { useState } from 'react';
-import ProductCard from '@/components/ProductCard';
-import ProductModal from '@/components/ProductModal';
-
-// ... (আপনার আগের fs এবং path লজিক এখানে রাখুন)
+// Path: app/page.tsx
+import fs from 'fs';
+import path from 'path';
+import ProductList from '@/components/ProductList';
 
 export default function Home() {
-  const [selectedProduct, setSelectedProduct] = useState(null);
+  const productsDir = path.join(process.cwd(), 'data', 'products');
+  const files = fs.existsSync(productsDir) ? fs.readdirSync(productsDir) : [];
 
-  // আপনার ম্যাপিং লজিকের ভেতরে 'bio' এবং 'fullDetails' যোগ করুন
   const products = files.map(file => {
     const content = fs.readFileSync(path.join(productsDir, file), 'utf-8');
-    // এখন ফাইল থেকে Name, Price, Bio, Details ট্র্যাক করা হচ্ছে
     const getVal = (key: string) => content.match(new RegExp(`${key}: (.*)`))?.[1] || '';
     
     return {
@@ -20,28 +16,15 @@ export default function Home() {
       title: getVal('Name'),
       price: getVal('Price'),
       bio: getVal('Bio'),
-      fullDetails: content.split('Details:')[1]?.trim(), // Details-এর পরের সবটুকু তথ্য
-      image: `/images/${matchedImage}`
+      fullDetails: content.split('Details:')[1]?.trim(),
+      image: `/images/${file.replace('.txt', '.jpg')}`
     };
   });
 
   return (
-    <div className="p-4 md:p-10 max-w-7xl mx-auto">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {products.map((p) => (
-          <ProductCard 
-            key={p.id} 
-            {...p} 
-            onDetailsClick={() => setSelectedProduct(p)} 
-          />
-        ))}
-      </div>
-      
-      {/* মোডাল রেন্ডার */}
-      <ProductModal 
-        product={selectedProduct} 
-        onClose={() => setSelectedProduct(null)} 
-      />
-    </div>
+    <main className="p-4 md:p-10 max-w-7xl mx-auto">
+      <h2 className="text-2xl font-light mb-8 text-white">Latest Collection</h2>
+      <ProductList initialProducts={products} />
+    </main>
   );
 }
