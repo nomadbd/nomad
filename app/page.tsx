@@ -5,19 +5,30 @@ import ProductList from '@/components/ProductList';
 
 export default function Home() {
   const productsDir = path.join(process.cwd(), 'data', 'products');
+  const imagesDir = path.join(process.cwd(), 'public', 'images');
+  
   const files = fs.existsSync(productsDir) ? fs.readdirSync(productsDir) : [];
+  const allImages = fs.existsSync(imagesDir) ? fs.readdirSync(imagesDir) : [];
 
   const products = files.map(file => {
     const content = fs.readFileSync(path.join(productsDir, file), 'utf-8');
     const getVal = (key: string) => content.match(new RegExp(`${key}: (.*)`))?.[1] || '';
     
+    const baseName = file.replace('.txt', '');
+    
+    // যেকোনো এক্সটেনশন খুঁজে বের করার লজিক
+    const matchedImage = allImages.find(img => {
+      const fileNameWithoutExt = path.parse(img).name;
+      return fileNameWithoutExt === baseName;
+    });
+
     return {
-      id: file.replace('.txt', ''),
+      id: baseName,
       title: getVal('Name'),
       price: getVal('Price'),
       bio: getVal('Bio'),
       fullDetails: content.split('Details:')[1]?.trim(),
-      image: `/images/${file.replace('.txt', '.jpg')}`
+      image: matchedImage ? `/images/${matchedImage}` : '/default.jpg'
     };
   });
 
