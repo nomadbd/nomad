@@ -10,17 +10,15 @@ body {
   padding: 0;
 }
 
-/* ইমেজের জন্য স্ট্যান্ডার্ড স্টাইল */
 img {
   max-width: 100%;
   height: auto;
   display: block;
 }
 
-/* মোবাইল রেসপন্সিভনেস এবং সেন্টার করার জন্য */
 main {
   width: 100%;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  /* align-items: center;  <-- এটি সরিয়ে ফেলুন, কারণ এটি নেভিগেশন বারের লেআউটে সমস্যা করছে */
 }
