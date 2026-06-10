@@ -1,14 +1,11 @@
 export default function Navbar() {
   return (
-    <nav className="w-full bg-[#050505] border-b border-zinc-800 py-8">
-      <div className="flex flex-col items-center justify-center">
-        {/* লোগো: মার্জিত এবং সেন্টারড */}
-        <h1 className="text-4xl font-bold tracking-widest text-white uppercase">
-          NOMAD
+    <nav style={{ width: '100%', display: 'flex', justifyContent: 'center', padding: '32px 0', borderBottom: '1px solid #333', background: '#000' }}>
+      <div style={{ textAlign: 'center', width: '100%' }}>
+        <h1 style={{ fontSize: '2.25rem', fontWeight: '900', margin: 0, padding: 0 }}>
+          N O M A D
         </h1>
-        
-        {/* স্লোগান: ছোট এবং মার্জিত */}
-        <p className="text-zinc-500 italic text-sm mt-2 tracking-wider">
+        <p style={{ color: '#71717a', fontStyle: 'italic', fontSize: '0.875rem', marginTop: '4px' }}>
           The one. Everywhere.
         </p>
       </div>
