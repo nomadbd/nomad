@@ -15,12 +15,7 @@ export default function Home() {
     const getVal = (key: string) => content.match(new RegExp(`${key}: (.*)`))?.[1] || '';
     
     const baseName = file.replace('.txt', '');
-    
-    // যেকোনো এক্সটেনশন খুঁজে বের করার লজিক
-    const matchedImage = allImages.find(img => {
-      const fileNameWithoutExt = path.parse(img).name;
-      return fileNameWithoutExt === baseName;
-    });
+    const matchedImage = allImages.find(img => path.parse(img).name === baseName);
 
     return {
       id: baseName,
@@ -28,7 +23,7 @@ export default function Home() {
       price: getVal('Price'),
       bio: getVal('Bio'),
       fullDetails: content.split('Details:')[1]?.trim(),
-      image: matchedImage ? `/images/${matchedImage}` : '/default.jpg'
+      image: matchedImage ? `/images/${matchedImage}` : null
     };
   });
 
