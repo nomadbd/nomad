@@ -1,20 +1,20 @@
 // app/layout.tsx 
-
 import './globals.css';
-import Navbar from '@/components/Navbar'; // Navbar ইমপোর্ট করা হলো
+import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <body className="bg-black text-white antialiased">
-        <Navbar /> {/*Navbar এখানে থাকবে */}
-        
+        <Navbar />
+
         <main className="min-h-screen">
           {children}
         </main>
-        
-        <Footer />
+
+        {/* আমরা এখানে একটি কী (key) যোগ করছি যা রিয়্যাক্টকে বাধ্য করবে নতুন করে রেন্ডার করতে */}
+        <Footer key="footer-v1" /> 
       </body>
     </html>
   );
