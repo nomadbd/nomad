@@ -11,7 +11,7 @@ export default function Footer() {
       <div style={{ maxWidth: '400px', margin: '0 auto', padding: '0 20px' }}>
         
         <p style={{ color: '#71717a', fontSize: '14px', lineHeight: '1.6', marginBottom: '40px' }}>
-          Nomad embodies the spirit of the modern explorer, blending urban aesthetics with unmatched comfort. Each piece is crafted to redefine your daily style with simplicity and quality.
+          At Nomad, we craft essentials for your modern journey.
         </p>
 
         <div style={{ display: 'flex', justifyContent: 'center', gap: '30px', marginBottom: '40px' }}>
