@@ -1,3 +1,5 @@
+// app/layout.tsx 
+
 import './globals.css';
 import Navbar from '@/components/Navbar'; // Navbar ইমপোর্ট করা হলো
 import Footer from '@/components/Footer';
