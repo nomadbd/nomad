@@ -1,28 +1,26 @@
 export default function Footer() {
   return (
-    <footer className="border-t border-zinc-900 bg-[#050505] py-16 px-6 text-center">
-      <div className="max-w-md mx-auto">
+    <footer style={{ 
+      width: '100%', 
+      backgroundColor: '#050505', 
+      paddingTop: '64px', 
+      paddingBottom: '64px', 
+      textAlign: 'center',
+      borderTop: '1px solid #18181b'
+    }}>
+      <div style={{ maxWidth: '400px', margin: '0 auto', padding: '0 20px' }}>
         
-        {/* ২ বাক্যের ডেসক্রিপশন */}
-        <p className="text-zinc-500 text-sm leading-relaxed mb-10">
+        <p style={{ color: '#71717a', fontSize: '14px', lineHeight: '1.6', marginBottom: '40px' }}>
           Nomad embodies the spirit of the modern explorer, blending urban aesthetics with unmatched comfort. Each piece is crafted to redefine your daily style with simplicity and quality.
         </p>
 
-        {/* লিঙ্কগুলো - আলাদা আলাদা এবং সাদা */}
-        <div className="flex justify-center items-center gap-10 mb-10">
-          <a href="https://facebook.com/nomadbysh" target="_blank" className="text-white hover:text-zinc-400 uppercase tracking-widest text-xs transition-colors">
-            Facebook
-          </a>
-          <a href="mailto:nomadbysh@gmail.com" className="text-white hover:text-zinc-400 uppercase tracking-widest text-xs transition-colors">
-            Email
-          </a>
-          <a href="https://wa.me/8801521731371" target="_blank" className="text-white hover:text-zinc-400 uppercase tracking-widest text-xs transition-colors">
-            WhatsApp
-          </a>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '30px', marginBottom: '40px' }}>
+          <a href="https://facebook.com/nomadbysh" target="_blank" style={{ color: '#ffffff', textDecoration: 'none', fontSize: '12px', letterSpacing: '2px', textTransform: 'uppercase' }}>Facebook</a>
+          <a href="mailto:nomadbysh@gmail.com" style={{ color: '#ffffff', textDecoration: 'none', fontSize: '12px', letterSpacing: '2px', textTransform: 'uppercase' }}>Email</a>
+          <a href="https://wa.me/8801521731371" target="_blank" style={{ color: '#ffffff', textDecoration: 'none', fontSize: '12px', letterSpacing: '2px', textTransform: 'uppercase' }}>WhatsApp</a>
         </div>
 
-        {/* কপিরাইট */}
-        <p className="text-zinc-700 text-[10px] uppercase tracking-[0.2em]">
+        <p style={{ color: '#3f3f46', fontSize: '10px', letterSpacing: '2px', textTransform: 'uppercase' }}>
           © 2026 Nomad by SH
         </p>
       </div>
