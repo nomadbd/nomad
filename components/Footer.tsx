@@ -1,51 +1,30 @@
 export default function Footer() {
   return (
-    <footer className="border-t border-zinc-800 bg-[#050505] py-24 px-6">
-      <div className="max-w-2xl mx-auto text-center">
+    <footer className="border-t border-zinc-900 bg-[#050505] py-16 px-6 text-center">
+      <div className="max-w-md mx-auto">
         
-        {/* Brand Name */}
-        <div className="mb-8">
-          <h2 className="text-white text-3xl tracking-[-0.02em] font-light">
-            NOMAD
-          </h2>
-        </div>
-
-        {/* Premium Description */}
-        <p className="text-zinc-400 text-[15px] leading-relaxed max-w-md mx-auto mb-14">
-          Nomad embodies the spirit of the modern explorer — 
-          blending refined urban aesthetics with exceptional comfort. 
-          Timeless pieces crafted for those who value simplicity and quality.
+        {/* ২ বাক্যের ডেসক্রিপশন */}
+        <p className="text-zinc-500 text-sm leading-relaxed mb-10">
+          Nomad embodies the spirit of the modern explorer, blending urban aesthetics with unmatched comfort. Each piece is crafted to redefine your daily style with simplicity and quality.
         </p>
 
-        {/* Links */}
-        <div className="flex justify-center items-center gap-12 mb-16">
-          <a 
-            href="https://facebook.com/nomadbysh" 
-            target="_blank"
-            className="text-white hover:text-zinc-300 text-sm tracking-[0.125em] uppercase transition-all duration-300"
-          >
+        {/* লিঙ্কগুলো - আলাদা আলাদা এবং সাদা */}
+        <div className="flex justify-center items-center gap-10 mb-10">
+          <a href="https://facebook.com/nomadbysh" target="_blank" className="text-white hover:text-zinc-400 uppercase tracking-widest text-xs transition-colors">
             Facebook
           </a>
-          <a 
-            href="mailto:nomadbysh@gmail.com" 
-            className="text-white hover:text-zinc-300 text-sm tracking-[0.125em] uppercase transition-all duration-300"
-          >
+          <a href="mailto:nomadbysh@gmail.com" className="text-white hover:text-zinc-400 uppercase tracking-widest text-xs transition-colors">
             Email
           </a>
-          <a 
-            href="https://wa.me/8801521731371" 
-            target="_blank"
-            className="text-white hover:text-zinc-300 text-sm tracking-[0.125em] uppercase transition-all duration-300"
-          >
+          <a href="https://wa.me/8801521731371" target="_blank" className="text-white hover:text-zinc-400 uppercase tracking-widest text-xs transition-colors">
             WhatsApp
           </a>
         </div>
 
-        {/* Copyright */}
-        <p className="text-zinc-700 text-xs tracking-[0.125em] uppercase">
-          © {new Date().getFullYear()} Nomad by SH. All Rights Reserved.
+        {/* কপিরাইট */}
+        <p className="text-zinc-700 text-[10px] uppercase tracking-[0.2em]">
+          © 2026 Nomad by SH
         </p>
-
       </div>
     </footer>
   );
