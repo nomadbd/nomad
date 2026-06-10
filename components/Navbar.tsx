@@ -1,11 +1,11 @@
 export default function Navbar() {
   return (
-    <nav className="sticky top-0 z-50 bg-black border-b border-zinc-900 py-8 w-full flex justify-center">
-      <div className="flex flex-col items-center justify-center text-center">
-        <h1 className="text-4xl font-black">
+    <nav style={{ width: '100%', display: 'flex', justifyContent: 'center', padding: '32px 0', borderBottom: '1px solid #333', background: '#000' }}>
+      <div style={{ textAlign: 'center', width: '100%' }}>
+        <h1 style={{ fontSize: '2.25rem', fontWeight: '900', margin: 0, padding: 0 }}>
           N O M A D
         </h1>
-        <p className="text-zinc-500 italic text-sm mt-1">
+        <p style={{ color: '#71717a', fontStyle: 'italic', fontSize: '0.875rem', marginTop: '4px' }}>
           The one. Everywhere.
         </p>
       </div>
