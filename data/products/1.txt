@@ -1,9 +1,10 @@
-Product name : Nomad Signature Style
-Category     : T shirt
-Fabric       : 180 GSM combad cotton
-Price        : 1000
-Delivery charge : 100 BDT
-Discount        : 10%
-
-This is official tee. It's premium & comfortable for daily uses.
-
+Name: Nomad Signature Style
+Price: 1500
+Bio: Minimalist design crafted for comfort and daily wear.
+Details: 
+- Material: 100% Premium Cotton
+- Fit: Oversized/Regular
+- Color: Carbon Black
+- Care: Machine wash cold
+- Story: Designed for the urban traveler who values simplicity.
+- Origin: Handcrafted in Bangladesh.
