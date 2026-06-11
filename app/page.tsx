@@ -1,13 +1,12 @@
 // Path: app/page.tsx
 import fs from 'fs';
 import path from 'path';
-import ProductList from '@/components/ProductList';
+import ProductCard from '@/components/ProductCard';
 
 export default function Home() {
   const productsDir = path.join(process.cwd(), 'data', 'products');
   const imagesDir = path.join(process.cwd(), 'public', 'images');
 
-  // শুধুমাত্র .txt ফাইলগুলো ফিল্টার করা হচ্ছে
   const files = fs.existsSync(productsDir) 
     ? fs.readdirSync(productsDir).filter(file => file.endsWith('.txt')) 
     : [];
@@ -31,13 +30,22 @@ export default function Home() {
         image: matchedImage ? `/images/${matchedImage}` : null
       };
     })
-    // গুরুত্বপূর্ণ: যদি Title অথবা Price খালি থাকে, তবে সেই প্রডাক্টটি বাদ পড়বে
     .filter(p => p.title !== '' && p.price !== '');
 
   return (
-    <main className="p-4 md:p-10 max-w-7xl mx-auto">
-      <h2 className="text-2xl font-light mb-8 text-white">Latest Collection</h2>
-      <ProductList initialProducts={products} />
+    <main className="p-4 md:p-10 max-w-lg mx-auto">
+      <h2 className="text-2xl font-light mb-8 text-white text-center">Nomad Feed</h2>
+      
+      {products.map((product) => (
+        <ProductCard 
+          key={product.id} 
+          title={product.title}
+          price={product.price}
+          bio={product.bio}
+          fullDetails={product.fullDetails}
+          image={product.image}
+        />
+      ))}
     </main>
   );
 }
