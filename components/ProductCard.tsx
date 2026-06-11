@@ -17,7 +17,7 @@ export default function ProductCard({ title, price, bio, image, details }: any) 
         <div className="text-zinc-300 text-sm leading-relaxed">
           {isExpanded ? (
             <div className="mt-2 mb-4">
-              <div className="grid grid-cols-[80px_1fr] gap-x-2 gap-y-1">
+              <div className="grid grid-cols-[auto_1fr] gap-x-2 gap-y-1">
                 {detailsArray.map(([key, value], index) => (
                   <div key={index} className="contents">
                     <span className="font-semibold text-zinc-400 break-words">
@@ -57,10 +57,10 @@ export default function ProductCard({ title, price, bio, image, details }: any) 
 
         <div className="flex items-center justify-between border-t border-zinc-800 pt-4">
           <span className="text-white font-bold text-lg">Price: {price || 0} BDT</span>
-          <button className="border border-white text-white px-5 py-2 text-xs font-bold transition hover:bg-white hover:text-black rounded">
-  ORDER NOW
-</button>
-
+          
+          <button className="border border-white text-white px-4 py-1.5 text-[10px] tracking-widest font-bold uppercase transition-all duration-300 hover:bg-white hover:text-black">
+            ORDER NOW
+          </button>
         </div>
       </div>
     </div>
