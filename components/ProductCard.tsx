@@ -19,7 +19,6 @@ export default function ProductCard({ title, price, bio, image, fullDetails }: a
         
         <p className="text-zinc-300 text-sm mt-2 leading-relaxed">
           {isExpanded ? fullDetails : bio}
-          
           {fullDetails && (
             <span 
               onClick={() => setIsExpanded(!isExpanded)}
@@ -31,16 +30,16 @@ export default function ProductCard({ title, price, bio, image, fullDetails }: a
           )}
         </p>
 
-        {/* প্রাইস এবং অর্ডার বাটন সেকশন */}
-        <div className="mt-4 pt-4 border-t border-zinc-800 flex items-center justify-between">
+        {/* প্রাইস এবং বাটন সেকশন */}
+        <div className="mt-4 pt-4 border-t border-zinc-800 flex items-center justify-between flex-nowrap">
           
-          <span className="text-white font-bold text-lg whitespace-nowrap">
+          <span className="text-white font-bold text-lg whitespace-nowrap shrink-0">
             Price : {price} BDT
           </span>
           
-          {/* অর্ডার বাটন: শুধুমাত্র সাদা বর্ডার, কোন ব্যাকগ্রাউন্ড কালার নেই */}
+          {/* অর্ডার বাটন: বর্ডার আছে, ব্যাকগ্রাউন্ড নেই */}
           <button 
-            className="border border-white text-white px-5 py-2 text-xs font-bold transition hover:bg-white hover:text-black rounded-lg"
+            className="border border-white text-white px-3 py-1 text-xs font-bold transition hover:bg-white hover:text-black rounded"
           >
             ORDER NOW
           </button>
