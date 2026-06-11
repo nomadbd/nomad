@@ -7,16 +7,14 @@ export default function ProductCard({ title, price, bio, image, fullDetails }: a
   const [isExpanded, setIsExpanded] = useState(false);
 
   return (
-    <div className="bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-800 mb-6 w-full">
-      {/* ইমেজ সেকশন */}
+    <div className="bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-800 mb-6 w-full max-w-sm mx-auto">
       {image && (
         <div className="aspect-square w-full">
           <img src={image} alt={title} className="w-full h-full object-cover" />
         </div>
       )}
 
-      {/* টেক্সট সেকশন */}
-      <div className="p-5">
+      <div className="p-4">
         <h3 className="text-lg font-bold text-white">{title}</h3>
         
         <p className="text-zinc-300 text-sm mt-2 leading-relaxed">
@@ -32,19 +30,14 @@ export default function ProductCard({ title, price, bio, image, fullDetails }: a
         </p>
 
         {/* প্রাইস এবং বাটন সেকশন */}
-        <div className="mt-6 pt-4 border-t border-zinc-800 flex items-center w-full">
+        <div className="mt-4 pt-4 border-t border-zinc-800 flex items-center justify-between gap-2">
           
-          {/* প্রাইস: বামে থাকবে */}
-          <span className="text-white font-bold text-lg whitespace-nowrap">
-            Price : {price} BDT
+          <span className="text-white font-bold text-sm whitespace-nowrap">
+            Price: {price} BDT
           </span>
           
-          {/* মাঝখানের গ্যাপ */}
-          <div className="flex-grow"></div>
-          
-          {/* অর্ডার বাটন: শুধুমাত্র সাদা আউটলাইন বর্ডার */}
           <button 
-            className="border border-white text-white px-5 py-2 text-xs font-bold transition hover:bg-white hover:text-black rounded"
+            className="border border-white text-white px-3 py-1 text-[10px] font-bold transition hover:bg-white hover:text-black rounded shrink-0"
           >
             ORDER NOW
           </button>
