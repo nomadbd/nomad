@@ -30,16 +30,17 @@ export default function ProductCard({ title, price, bio, image, fullDetails }: a
           )}
         </p>
 
-        {/* প্রাইস এবং বাটন সেকশন */}
-        <div className="mt-4 pt-4 border-t border-zinc-800 flex items-center justify-between flex-nowrap">
+        {/* প্রাইস এবং অর্ডার বাটন সেকশন */}
+        <div className="mt-4 pt-4 border-t border-zinc-800 flex items-center justify-between w-full">
           
-          <span className="text-white font-bold text-lg whitespace-nowrap shrink-0">
+          {/* বামে প্রাইস */}
+          <span className="text-white font-bold text-lg whitespace-nowrap">
             Price : {price} BDT
           </span>
           
-          {/* অর্ডার বাটন: বর্ডার আছে, ব্যাকগ্রাউন্ড নেই */}
+          {/* ডানে বাটন */}
           <button 
-            className="border border-white text-white px-3 py-1 text-xs font-bold transition hover:bg-white hover:text-black rounded"
+            className="border border-white text-white px-4 py-1.5 text-xs font-bold transition hover:bg-white hover:text-black rounded-md"
           >
             ORDER NOW
           </button>
