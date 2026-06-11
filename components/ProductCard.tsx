@@ -1,4 +1,5 @@
-'use client';
+// Path: components/ProductCard.tsx
+'use client'; 
 
 import { useState } from 'react';
 
@@ -20,10 +21,11 @@ export default function ProductCard({ title, price, bio, image, fullDetails }: a
         <p className="text-zinc-300 text-sm mt-2 leading-relaxed">
           {isExpanded ? fullDetails : bio}
           
+          {/* ধূসর রঙের 'See more/less' টেক্সট */}
           {fullDetails && (
             <span 
               onClick={() => setIsExpanded(!isExpanded)}
-              className="text-zinc-500 cursor-pointer ml-1 select-none"
+              className="text-zinc-500 hover:text-zinc-400 cursor-pointer ml-1 select-none font-medium transition"
             >
               {isExpanded ? ' See less' : '...See more'}
             </span>
