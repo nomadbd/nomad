@@ -33,9 +33,8 @@ export default function Home() {
     .filter(p => p.title !== '' && p.price !== '');
 
   return (
-    // 'max-w-lg' সরিয়ে দিয়েছি যাতে কার্ড পুরো স্ক্রিন জুড়ে থাকে
-    <main className="w-full">
-      <h2 className="text-2xl font-light mb-8 text-white text-center p-4">Nomad Feed</h2>
+    <main className="p-4 md:p-10 max-w-lg mx-auto">
+      <h2 className="text-2xl font-light mb-8 text-white text-center">Nomad Feed</h2>
 
       {products.map((product) => (
         <ProductCard 
@@ -50,3 +49,4 @@ export default function Home() {
     </main>
   );
 }
+
