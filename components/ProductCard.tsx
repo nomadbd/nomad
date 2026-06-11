@@ -7,7 +7,7 @@ export default function ProductCard({ title, price, bio, image, fullDetails }: a
   const [isExpanded, setIsExpanded] = useState(false);
 
   return (
-    <div className="bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-800 mb-6 w-full max-w-lg mx-auto">
+    <div className="bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-800 mb-6 w-full">
       {/* ইমেজ সেকশন */}
       {image && (
         <div className="aspect-square w-full">
@@ -31,7 +31,7 @@ export default function ProductCard({ title, price, bio, image, fullDetails }: a
           )}
         </p>
 
-        {/* প্রাইস এবং বাটন সেকশন - এখানে নিশ্চিত গ্যাপ দেওয়া হয়েছে */}
+        {/* প্রাইস এবং বাটন সেকশন */}
         <div className="mt-6 pt-4 border-t border-zinc-800 flex items-center w-full">
           
           {/* প্রাইস: বামে থাকবে */}
@@ -39,12 +39,12 @@ export default function ProductCard({ title, price, bio, image, fullDetails }: a
             Price : {price} BDT
           </span>
           
-          {/* এই খালি div-টি মাঝখানের গ্যাপ তৈরি করবে (Spacer) */}
+          {/* মাঝখানের গ্যাপ */}
           <div className="flex-grow"></div>
           
-          {/* বাটন: ডানে থাকবে */}
+          {/* অর্ডার বাটন: শুধুমাত্র সাদা আউটলাইন বর্ডার */}
           <button 
-            className="border-2 border-white text-white px-5 py-2 text-xs font-bold transition hover:bg-white hover:text-black rounded"
+            className="border border-white text-white px-5 py-2 text-xs font-bold transition hover:bg-white hover:text-black rounded"
           >
             ORDER NOW
           </button>
