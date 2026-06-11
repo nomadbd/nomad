@@ -31,8 +31,8 @@ export default function ProductCard({ title, price, bio, image, fullDetails }: a
           )}
         </p>
 
-        {/* প্রাইস এবং বাটন সেকশন - পাশাপাশি গ্যাপ সহ */}
-        <div className="mt-4 pt-4 border-t border-zinc-700 flex flex-nowrap items-center justify-between gap-4 w-full min-w-0">
+        {/* প্রাইস এবং বাটন সেকশন - পাশাপাশি বড় গ্যাপ সহ */}
+        <div className="mt-4 pt-4 border-t border-zinc-700 flex flex-nowrap items-center gap-8 w-full">
           <span className="text-white font-bold text-lg flex-shrink-0">
             Price: {price} BDT
           </span>
