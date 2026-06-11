@@ -17,7 +17,6 @@ export default function ProductCard({ title, price, bio, image, details }: any) 
         <div className="text-zinc-300 text-sm leading-relaxed">
           {isExpanded ? (
             <div className="mt-2 mb-4">
-              {/* এখানে grid-cols-[80px_1fr] ব্যবহার করা হয়েছে যাতে লেবেল সব সময় ৮০ পিক্সেল জায়গা নেয় */}
               <div className="grid grid-cols-[80px_1fr] gap-x-2 gap-y-1">
                 {detailsArray.map(([key, value], index) => (
                   <div key={index} className="contents">
@@ -35,10 +34,10 @@ export default function ProductCard({ title, price, bio, image, details }: any) 
           ) : (
             <p className="mb-4">
               {bio}{' '}
-              {/* এখানে text-zinc-500 দেওয়া হয়েছে ধূসর করার জন্য */}
               <span 
                 onClick={() => setIsExpanded(true)} 
-                className="text-zinc-500 cursor-pointer font-medium hover:text-white ml-1"
+                style={{ color: '#71717a', cursor: 'pointer', fontWeight: 500 }}
+                className="hover:text-white ml-1"
               >
                 ...See more
               </span>
@@ -48,7 +47,8 @@ export default function ProductCard({ title, price, bio, image, details }: any) 
           {isExpanded && (
             <span 
               onClick={() => setIsExpanded(false)} 
-              className="text-zinc-500 cursor-pointer font-medium hover:text-white block mt-2 mb-4"
+              style={{ color: '#71717a', cursor: 'pointer', fontWeight: 500 }}
+              className="hover:text-white block mt-2 mb-4"
             >
               See less
             </span>
