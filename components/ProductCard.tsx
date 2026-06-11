@@ -6,40 +6,33 @@ export default function ProductCard({ title, price, bio, image, fullDetails }: a
   const [isExpanded, setIsExpanded] = useState(false);
 
   return (
-    <div className="bg-zinc-900 border-b border-zinc-800 w-full overflow-hidden">
-      {image && (
-        <div className="w-full">
-          <img src={image} alt={title} className="w-full object-cover" />
-        </div>
-      )}
+    <div className="bg-zinc-900 border-b border-zinc-800 w-full">
+      {image && <img src={image} alt={title} className="w-full object-cover" />}
 
       <div className="p-4">
         <h3 className="text-xl font-bold text-white mb-2">{title}</h3>
 
         <div className="text-zinc-300 text-sm leading-relaxed">
           {isExpanded ? (
-            <div className="space-y-2 mt-2 mb-4">
+            <div className="grid grid-cols-[auto_1fr] gap-x-2 gap-y-1 mt-2 mb-4">
               {fullDetails.split('\n').map((line: string, index: number) => {
-                // হাইফেন বা ড্যাশ থাকলে তা সরিয়ে ফেলা হচ্ছে
-                const cleanLine = line.replace(/^[-–]\s*/, ''); 
-                const parts = cleanLine.split(':');
-                const label = parts[0];
-                const value = parts.slice(1).join(':');
+                // হাইফেন সরিয়ে ফেলা হচ্ছে
+                const cleanLine = line.replace(/^[-–]\s*/, '').trim();
+                if (!cleanLine) return null;
 
-                return (
-                  <div key={index} className="flex items-start">
-                    {value ? (
-                      <>
-                        <span className="font-semibold text-zinc-400 w-24 shrink-0">
-                          {label.trim()}
-                        </span>
-                        <span className="text-white">: {value.trim()}</span>
-                      </>
-                    ) : (
-                      <span className="text-white font-medium">{cleanLine}</span>
-                    )}
-                  </div>
-                );
+                const colonIndex = cleanLine.indexOf(':');
+                
+                if (colonIndex !== -1) {
+                  const label = cleanLine.substring(0, colonIndex);
+                  const value = cleanLine.substring(colonIndex + 1);
+                  return (
+                    <>
+                      <span className="font-semibold text-zinc-400">{label}</span>
+                      <span className="text-white">: {value.trim()}</span>
+                    </>
+                  );
+                }
+                return <span key={index} className="col-span-2 text-white font-medium">{cleanLine}</span>;
               })}
             </div>
           ) : (
