@@ -6,13 +6,8 @@ import { useState } from 'react';
 export default function ProductCard({ title, price, bio, image, fullDetails }: any) {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  // অর্ডার বাটনের ক্লিক হ্যান্ডলার
-  const handleOrder = () => {
-    window.location.href = `https://wa.me/8801521731371?text=Order: ${title}`;
-  };
-
   return (
-    <div className="bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-800 mb-6 w-full">
+    <div className="bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-800 mb-6 w-full max-w-lg mx-auto">
       {image && (
         <div className="aspect-square w-full">
           <img src={image} alt={title} className="w-full h-full object-cover" />
@@ -36,16 +31,15 @@ export default function ProductCard({ title, price, bio, image, fullDetails }: a
           )}
         </p>
 
-        {/* প্রাইস এবং বাটন সেকশন */}
+        {/* প্রাইস এবং অর্ডার বাটন সেকশন */}
         <div className="mt-4 pt-4 border-t border-zinc-800 flex justify-between items-center">
-          <span className="text-lg font-bold text-white whitespace-nowrap">
+          <span className="text-lg font-bold text-white">
             Price : {price} BDT
           </span>
           
-          {/* এখানে 'button' ব্যবহার করেছি এবং সরাসরি স্টাইল দিয়েছি */}
+          {/* বাটন স্টাইল: হোয়াইট বর্ডার বক্স এবং মার্জিন বামে */}
           <button 
-            onClick={handleOrder}
-            className="text-white border border-white px-5 py-2 rounded-lg text-xs font-bold hover:bg-white hover:text-black transition whitespace-nowrap ml-4"
+            className="border border-white text-white px-4 py-1.5 rounded text-xs font-medium hover:bg-white hover:text-black transition ml-auto"
           >
             ORDER NOW
           </button>
