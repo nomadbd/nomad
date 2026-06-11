@@ -5,6 +5,12 @@ import { useState } from 'react';
 export default function ProductCard({ title, price, bio, image, fullDetails }: any) {
   const [isExpanded, setIsExpanded] = useState(false);
 
+  // এটি আপনার টেক্সট ফাইলের প্রতিটি লাইনকে আলাদা করে দেখাবে
+  const formattedDetails = fullDetails
+    .replace(/^Details:\s*\n/i, '') // 'Details:' লাইনটি সরিয়ে দিবে
+    .split('\n')
+    .filter((line: string) => line.trim() !== ''); // খালি লাইনগুলো সরিয়ে দিবে
+
   return (
     <div className="bg-zinc-900 border-b border-zinc-800 w-full overflow-hidden">
       {image && <img src={image} alt={title} className="w-full object-cover" />}
@@ -14,9 +20,13 @@ export default function ProductCard({ title, price, bio, image, fullDetails }: a
 
         <div className="text-zinc-300 text-sm leading-relaxed">
           {isExpanded ? (
-            <div className="mt-2 mb-4 whitespace-pre-line">
-              {/* এখানে হুবহু আপনার টেক্সট ফাইলের ফরম্যাট দেখাবে */}
-              {fullDetails.replace(/^Details:\s*\n/i, '')}
+            <div className="mt-2 mb-4">
+              {/* প্রতিটি লাইন আলাদা প্যারাগ্রাফে দেখাবে */}
+              {formattedDetails.map((line: string, index: number) => (
+                <p key={index} className="block mb-1">
+                  {line}
+                </p>
+              ))}
             </div>
           ) : (
             <p className="mb-4">
