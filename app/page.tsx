@@ -7,30 +7,30 @@ export default function Home() {
   const productsDir = path.join(process.cwd(), 'data', 'products');
   const imagesDir = path.join(process.cwd(), 'public', 'images');
 
+  // ১. এখন .json ফাইল খুঁজবে
   const files = fs.existsSync(productsDir) 
-    ? fs.readdirSync(productsDir).filter(file => file.endsWith('.txt')) 
+    ? fs.readdirSync(productsDir).filter(file => file.endsWith('.json')) 
     : [];
 
   const allImages = fs.existsSync(imagesDir) ? fs.readdirSync(imagesDir) : [];
 
-  const products = files
-    .map(file => {
+  const products = files.map(file => {
+      // ২. JSON ফাইল রিড করে পার্স করা হচ্ছে
       const content = fs.readFileSync(path.join(productsDir, file), 'utf-8');
-      const getVal = (key: string) => content.match(new RegExp(`${key}: (.*)`))?.[1]?.trim() || '';
+      const data = JSON.parse(content);
 
       const baseName = path.parse(file).name;
       const matchedImage = allImages.find(img => path.parse(img).name === baseName);
 
       return {
         id: baseName,
-        title: getVal('Name'),
-        price: getVal('Price'),
-        bio: getVal('Bio'),
-        fullDetails: content.split('Details:')[1]?.trim(),
+        title: data.name,
+        price: data.price,
+        bio: data.bio,
+        details: data.details, // এখানে এখন JSON Object যাচ্ছে
         image: matchedImage ? `/images/${matchedImage}` : null
       };
-    })
-    .filter(p => p.title !== '' && p.price !== '');
+    });
 
   return (
     <main className="p-4 md:p-10 max-w-lg mx-auto">
@@ -42,11 +42,10 @@ export default function Home() {
           title={product.title}
           price={product.price}
           bio={product.bio}
-          fullDetails={product.fullDetails}
+          details={product.details} // এখানে JSON Object পাস করা হচ্ছে
           image={product.image}
         />
       ))}
     </main>
   );
 }
-
