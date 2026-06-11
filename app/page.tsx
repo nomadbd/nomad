@@ -10,7 +10,7 @@ export default function Home() {
   const files = fs.existsSync(productsDir) 
     ? fs.readdirSync(productsDir).filter(file => file.endsWith('.txt')) 
     : [];
-    
+
   const allImages = fs.existsSync(imagesDir) ? fs.readdirSync(imagesDir) : [];
 
   const products = files
@@ -33,9 +33,10 @@ export default function Home() {
     .filter(p => p.title !== '' && p.price !== '');
 
   return (
-    <main className="p-4 md:p-10 max-w-lg mx-auto">
+    // 'w-full' যোগ করা হয়েছে যাতে এটি মোবাইল স্ক্রিনে সবটুকু জায়গা নিতে পারে
+    <main className="w-full px-4 py-8 md:max-w-lg mx-auto">
       <h2 className="text-2xl font-light mb-8 text-white text-center">Nomad Feed</h2>
-      
+
       {products.map((product) => (
         <ProductCard 
           key={product.id} 
