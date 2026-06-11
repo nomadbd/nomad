@@ -5,45 +5,11 @@ import { useState } from 'react';
 export default function ProductCard({ title, price, bio, image, fullDetails }: any) {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  // ডিটেইলস সেকশনটি টেবিল ফরম্যাটে সাজানো হয়েছে যেন কোলন সবসময় সোজাসুজি থাকে
-  const renderDetails = () => {
-    if (!fullDetails) return null;
-
-    return (
-      <div className="table w-full mt-2 mb-4 border-collapse">
-        {fullDetails.split('\n').map((line: string, index: number) => {
-          if (line.trim().toLowerCase() === 'details:') return null;
-          const cleanLine = line.replace(/^[-–\s]+/, '').trim();
-          if (!cleanLine) return null;
-
-          const colonIndex = cleanLine.indexOf(':');
-
-          if (colonIndex !== -1) {
-            const label = cleanLine.substring(0, colonIndex).trim();
-            const value = cleanLine.substring(colonIndex + 1).trim();
-
-            return (
-              <div key={index} className="table-row">
-                <div className="table-cell font-semibold text-zinc-400 pr-2 align-top whitespace-nowrap">
-                  {label}
-                </div>
-                <div className="table-cell text-white align-top">
-                  <span className="pr-1">:</span>{value}
-                </div>
-              </div>
-            );
-          }
-          return (
-            <div key={index} className="table-row">
-              <div className="table-cell text-white font-medium pt-2" colSpan={2}>
-                {cleanLine}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    );
-  };
+  // এটি আপনার টেক্সট ফাইলের প্রতিটি লাইনকে আলাদা করে দেখাবে
+  const formattedDetails = fullDetails
+    .replace(/^Details:\s*\n/i, '') // 'Details:' লাইনটি সরিয়ে দিবে
+    .split('\n')
+    .filter((line: string) => line.trim() !== ''); // খালি লাইনগুলো সরিয়ে দিবে
 
   return (
     <div className="bg-zinc-900 border-b border-zinc-800 w-full overflow-hidden">
@@ -54,7 +20,14 @@ export default function ProductCard({ title, price, bio, image, fullDetails }: a
 
         <div className="text-zinc-300 text-sm leading-relaxed">
           {isExpanded ? (
-            <div>{renderDetails()}</div>
+            <div className="mt-2 mb-4">
+              {/* প্রতিটি লাইন আলাদা প্যারাগ্রাফে দেখাবে */}
+              {formattedDetails.map((line: string, index: number) => (
+                <p key={index} className="block mb-1">
+                  {line}
+                </p>
+              ))}
+            </div>
           ) : (
             <p className="mb-4">
               {bio}{' '}
