@@ -1,11 +1,13 @@
-// components/ProductCard.tsx
+// Path: components/ProductCard.tsx
+'use client'; 
+
 import { useState } from 'react';
 
 export default function ProductCard({ title, price, bio, image, fullDetails }: any) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   return (
-    <div className="bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-800 mb-6">
+    <div className="bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-800 mb-6 w-full max-w-lg mx-auto">
       {/* ইমেজ */}
       {image && (
         <div className="aspect-square w-full">
@@ -16,18 +18,23 @@ export default function ProductCard({ title, price, bio, image, fullDetails }: a
       {/* কন্টেন্ট */}
       <div className="p-4 text-white">
         <h3 className="text-lg font-bold">{title}</h3>
-        <p className="text-zinc-300 text-sm mt-2">
+        
+        {/* বায়ো এবং বিস্তারিত সেকশন */}
+        <p className="text-zinc-300 text-sm mt-2 leading-relaxed">
           {isExpanded ? fullDetails : bio}
           
-          {/* See more বাটন */}
-          <button 
-            onClick={() => setIsExpanded(!isExpanded)}
-            className="text-zinc-500 hover:text-white font-bold ml-1"
-          >
-            {isExpanded ? ' See less' : '...See more'}
-          </button>
+          {/* See more/less বাটন */}
+          {fullDetails && (
+            <button 
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="text-zinc-500 hover:text-white font-bold ml-1 transition"
+            >
+              {isExpanded ? ' See less' : '...See more'}
+            </button>
+          )}
         </p>
 
+        {/* প্রাইস এবং অর্ডার বাটন */}
         <div className="mt-4 pt-4 border-t border-zinc-800 flex justify-between items-center">
           <span className="font-bold text-lg">{price} BDT</span>
           <a 
