@@ -1,10 +1,11 @@
 Name: Nomad Signature Style
 Price: 1500
 Bio: Minimalist design crafted for comfort and daily wear.
+
 Details: 
-Material: 100% Premium Cotton
-Fit: Oversized/Regular
-Color: Carbon Black
-Care: Machine wash cold
-Story: Designed for the urban traveler who values simplicity.
-Origin: Handcrafted in Bangladesh.
+Material : 100% Premium Cotton
+Fit      : Oversized/Regular
+Color    : Carbon Black
+Care     : Machine wash cold
+Origin   : Bangladesh
+Story    : Designed for the urban    traveler who values simplicity.
