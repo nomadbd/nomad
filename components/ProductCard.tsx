@@ -2,14 +2,8 @@
 
 import { useState } from 'react';
 
-export default function ProductCard({ title, price, bio, image, fullDetails }: any) {
+export default function ProductCard({ title, price, bio, image, details }: any) {
   const [isExpanded, setIsExpanded] = useState(false);
-
-  // এটি আপনার টেক্সট ফাইলের প্রতিটি লাইনকে আলাদা করে দেখাবে
-  const formattedDetails = fullDetails
-    .replace(/^Details:\s*\n/i, '') // 'Details:' লাইনটি সরিয়ে দিবে
-    .split('\n')
-    .filter((line: string) => line.trim() !== ''); // খালি লাইনগুলো সরিয়ে দিবে
 
   return (
     <div className="bg-zinc-900 border-b border-zinc-800 w-full overflow-hidden">
@@ -21,12 +15,19 @@ export default function ProductCard({ title, price, bio, image, fullDetails }: a
         <div className="text-zinc-300 text-sm leading-relaxed">
           {isExpanded ? (
             <div className="mt-2 mb-4">
-              {/* প্রতিটি লাইন আলাদা প্যারাগ্রাফে দেখাবে */}
-              {formattedDetails.map((line: string, index: number) => (
-                <p key={index} className="block mb-1">
-                  {line}
-                </p>
-              ))}
+              {/* নিখুঁতভাবে এলাইন করার জন্য টেবিল লেআউট */}
+              <div className="table w-full border-collapse">
+                {Object.entries(details).map(([key, value]: [string, any], index) => (
+                  <div key={index} className="table-row">
+                    <div className="table-cell font-semibold text-zinc-400 pr-4 py-0.5 align-top whitespace-nowrap">
+                      {key}
+                    </div>
+                    <div className="table-cell text-white align-top py-0.5">
+                      <span className="pr-2">:</span>{value}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           ) : (
             <p className="mb-4">
@@ -45,7 +46,7 @@ export default function ProductCard({ title, price, bio, image, fullDetails }: a
             <span 
               onClick={() => setIsExpanded(false)}
               style={{ color: '#71717a' }}
-              className="cursor-pointer font-medium hover:text-white block mb-4"
+              className="cursor-pointer font-medium hover:text-white block mt-2 mb-4"
             >
               See less
             </span>
