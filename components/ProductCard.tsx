@@ -6,7 +6,8 @@ export default function ProductCard({ title, price, bio, image, fullDetails }: a
   const [isExpanded, setIsExpanded] = useState(false);
 
   return (
-    <div className="bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-800 mb-6 w-full max-w-lg mx-auto">
+    <div className="bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-800 mb-6 w-full">
+
       {/* ইমেজ সেকশন */}
       {image && (
         <div className="aspect-square w-full">
