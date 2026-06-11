@@ -5,7 +5,6 @@ import { useState } from 'react';
 export default function ProductCard({ title, price, bio, image, details }: any) {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  // ডিটেইলস ফরম্যাটিং লজিক
   const detailsArray = details && typeof details === 'object' ? Object.entries(details) : [];
 
   return (
@@ -18,15 +17,16 @@ export default function ProductCard({ title, price, bio, image, details }: any) 
         <div className="text-zinc-300 text-sm leading-relaxed">
           {isExpanded ? (
             <div className="mt-2 mb-4">
-              {/* Grid Layout ব্যবহার করা হয়েছে যেন সব কোলন একদম সোজা লাইনে থাকে */}
-              <div className="grid grid-cols-[auto_1fr] gap-x-2 gap-y-1">
+              {/* এখানে grid-cols-[80px_1fr] ব্যবহার করা হয়েছে যাতে লেবেল সব সময় ৮০ পিক্সেল জায়গা নেয় */}
+              <div className="grid grid-cols-[80px_1fr] gap-x-2 gap-y-1">
                 {detailsArray.map(([key, value], index) => (
                   <div key={index} className="contents">
-                    <span className="font-semibold text-zinc-400 whitespace-nowrap">
+                    <span className="font-semibold text-zinc-400 break-words">
                       {key}
                     </span>
-                    <span className="text-white">
-                      : {String(value)}
+                    <span className="text-white flex">
+                      <span className="mr-1">:</span>
+                      <span className="break-words">{String(value)}</span>
                     </span>
                   </div>
                 ))}
@@ -35,6 +35,7 @@ export default function ProductCard({ title, price, bio, image, details }: any) 
           ) : (
             <p className="mb-4">
               {bio}{' '}
+              {/* এখানে text-zinc-500 দেওয়া হয়েছে ধূসর করার জন্য */}
               <span 
                 onClick={() => setIsExpanded(true)} 
                 className="text-zinc-500 cursor-pointer font-medium hover:text-white ml-1"
