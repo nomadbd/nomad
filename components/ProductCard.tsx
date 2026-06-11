@@ -32,17 +32,20 @@ export default function ProductCard({ title, price, bio, image, fullDetails }: a
         </p>
 
         {/* প্রাইস এবং অর্ডার বাটন সেকশন */}
-        <div className="mt-4 pt-4 border-t border-zinc-800 flex justify-between items-center">
-          <span className="text-lg font-bold text-white">
+        <div className="mt-4 pt-4 border-t border-zinc-800 flex items-center justify-between">
+          {/* প্রাইস লেবেল */}
+          <span className="text-lg font-bold text-white whitespace-nowrap">
             Price : {price} BDT
           </span>
           
-          {/* বাটন স্টাইল: হোয়াইট বর্ডার বক্স এবং মার্জিন বামে */}
-          <button 
-            className="border border-white text-white px-4 py-1.5 rounded text-xs font-medium hover:bg-white hover:text-black transition ml-auto"
-          >
-            ORDER NOW
-          </button>
+          {/* অর্ডার বাটন - মিনিমাল বর্ডার স্টাইল */}
+          <div className="ml-4">
+            <button 
+              className="border border-white text-white px-4 py-1.5 rounded-md text-xs font-bold hover:bg-white hover:text-black transition"
+            >
+              ORDER NOW
+            </button>
+          </div>
         </div>
       </div>
     </div>
