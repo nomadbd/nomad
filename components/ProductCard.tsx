@@ -14,25 +14,28 @@ export default function ProductCard({ title, price, bio, image, fullDetails }: a
 
         <div className="text-zinc-300 text-sm leading-relaxed">
           {isExpanded ? (
-            <div className="grid grid-cols-[auto_1fr] gap-x-2 gap-y-1 mt-2 mb-4">
+            <div className="mt-2 mb-4">
               {fullDetails.split('\n').map((line: string, index: number) => {
-                // হাইফেন সরিয়ে ফেলা হচ্ছে
                 const cleanLine = line.replace(/^[-–]\s*/, '').trim();
                 if (!cleanLine) return null;
 
                 const colonIndex = cleanLine.indexOf(':');
                 
+                // যদি কোলন পাওয়া যায়, তবে এলাইনমেন্ট নিশ্চিত করা হচ্ছে
                 if (colonIndex !== -1) {
-                  const label = cleanLine.substring(0, colonIndex);
-                  const value = cleanLine.substring(colonIndex + 1);
+                  const label = cleanLine.substring(0, colonIndex).trim();
+                  const value = cleanLine.substring(colonIndex + 1).trim();
                   return (
-                    <>
-                      <span className="font-semibold text-zinc-400">{label}</span>
-                      <span className="text-white">: {value.trim()}</span>
-                    </>
+                    <div key={index} className="flex gap-2">
+                      {/* w-20 বা w-24 দিয়ে কোলনগুলোকে এক লাইনে রাখা হয়েছে */}
+                      <span className="font-semibold text-zinc-400 w-20 shrink-0">
+                        {label}
+                      </span>
+                      <span className="text-white">:{' '} {value}</span>
+                    </div>
                   );
                 }
-                return <span key={index} className="col-span-2 text-white font-medium">{cleanLine}</span>;
+                return <p key={index} className="text-white font-medium my-1">{cleanLine}</p>;
               })}
             </div>
           ) : (
