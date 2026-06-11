@@ -23,8 +23,8 @@ export default function ProductCard({ title, price, bio, image, fullDetails }: a
           {fullDetails && (
             <span 
               onClick={() => setIsExpanded(!isExpanded)}
-              style={{ color: '#a1a1aa', cursor: 'pointer', marginLeft: '4px' }}
-              className="font-medium hover:text-white transition"
+              style={{ color: '#a1a1aa', cursor: 'pointer' }}
+              className="ml-1 font-medium hover:text-white transition"
             >
               {isExpanded ? ' See less' : '...See more'}
             </span>
@@ -32,20 +32,17 @@ export default function ProductCard({ title, price, bio, image, fullDetails }: a
         </p>
 
         {/* প্রাইস এবং অর্ডার বাটন সেকশন */}
-        <div className="mt-4 pt-4 border-t border-zinc-800 flex items-center justify-between">
-          {/* প্রাইস লেবেল */}
-          <span className="text-lg font-bold text-white whitespace-nowrap">
+        <div className="mt-4 pt-4 border-t border-zinc-800 flex justify-between items-center">
+          <span className="text-lg font-bold text-white">
             Price : {price} BDT
           </span>
           
-          {/* অর্ডার বাটন - মিনিমাল বর্ডার স্টাইল */}
-          <div className="ml-4">
-            <button 
-              className="border border-white text-white px-4 py-1.5 rounded-md text-xs font-bold hover:bg-white hover:text-black transition"
-            >
-              ORDER NOW
-            </button>
-          </div>
+          {/* অর্ডার বাটন - আউটলাইন স্টাইল */}
+          <button 
+            className="border border-white text-white px-4 py-1.5 text-xs font-bold transition hover:bg-white hover:text-black rounded"
+          >
+            ORDER NOW
+          </button>
         </div>
       </div>
     </div>
