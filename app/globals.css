@@ -14,19 +14,20 @@ body {
   margin: 0;
   padding: 0;
   width: 100%;
-  overflow-x: hidden; 
+  overflow-x: hidden; /* হরিজন্টাল স্ক্রলবার যেন না আসে */
 }
 
+/* ইমেজ স্টাইল */
 img {
   max-width: 100%;
   height: auto;
   display: block;
 }
 
-/* সংশোধন: main থেকে display: flex সরিয়ে দেওয়া হয়েছে */
-/* এটি কার্ডের ভেতরকার লেআউটকে বাধা দেবে না */
+/* মেইন কন্টেইনারের জন্য ফ্লেক্সবক্স */
 main {
   width: 100%;
-  padding-left: 1rem;
-  padding-right: 1rem;
+  display: flex;
+  flex-direction: column;
 }
+
