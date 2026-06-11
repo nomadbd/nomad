@@ -13,8 +13,9 @@ export default function ProductCard({ title, price, bio, image, fullDetails }: a
         <h3 className="text-xl font-bold text-white">{title}</h3>
 
         <div className="text-zinc-300 text-sm mt-2 leading-relaxed">
+          {/* যদি বিস্তারিত মোড অন থাকে */}
           {isExpanded ? (
-            <div className="space-y-1 mt-2">
+            <div className="space-y-1">
               {fullDetails.split('\n').map((line: string, index: number) => (
                 <div key={index} className="flex">
                   {line.includes(':') ? (
@@ -29,16 +30,29 @@ export default function ProductCard({ title, price, bio, image, fullDetails }: a
               ))}
             </div>
           ) : (
-            <p>{bio}</p>
+            /* যদি বিস্তারিত মোড অফ থাকে: বায়োর শেষে See more */
+            <p>
+              {bio}{' '}
+              <span 
+                onClick={() => setIsExpanded(true)}
+                style={{ color: '#71717a' }}
+                className="cursor-pointer font-medium hover:text-white"
+              >
+                ...See more
+              </span>
+            </p>
           )}
 
-          <span 
-            onClick={() => setIsExpanded(!isExpanded)}
-            style={{ color: '#71717a' }}
-            className="cursor-pointer font-medium hover:text-white transition block mt-3"
-          >
-            {isExpanded ? 'See less' : '...See more'}
-          </span>
+          {/* বিস্তারিত মোড অন থাকলে নিচে See less */}
+          {isExpanded && (
+            <span 
+              onClick={() => setIsExpanded(false)}
+              style={{ color: '#71717a' }}
+              className="cursor-pointer font-medium hover:text-white block mt-2"
+            >
+              See less
+            </span>
+          )}
         </div>
 
         <div className="mt-4 flex items-center justify-between w-full">
