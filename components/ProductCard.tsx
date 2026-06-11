@@ -32,14 +32,15 @@ export default function ProductCard({ title, price, bio, image, fullDetails }: a
         </p>
 
         {/* প্রাইস এবং অর্ডার বাটন সেকশন */}
-        <div className="mt-4 pt-4 border-t border-zinc-800 flex justify-between items-center">
-          <span className="text-lg font-bold text-white">
+        <div className="mt-4 pt-4 border-t border-zinc-800 flex items-center justify-between">
+          
+          <span className="text-white font-bold text-lg whitespace-nowrap">
             Price : {price} BDT
           </span>
           
-          {/* অর্ডার বাটন - আউটলাইন স্টাইল */}
+          {/* অর্ডার বাটন: শুধুমাত্র সাদা বর্ডার, কোন ব্যাকগ্রাউন্ড কালার নেই */}
           <button 
-            className="border border-white text-white px-4 py-1.5 text-xs font-bold transition hover:bg-white hover:text-black rounded"
+            className="border border-white text-white px-5 py-2 text-xs font-bold transition hover:bg-white hover:text-black rounded-lg"
           >
             ORDER NOW
           </button>
