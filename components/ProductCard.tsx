@@ -21,7 +21,7 @@ export default function ProductCard({ title, price, bio, image, fullDetails }: a
           {fullDetails && (
             <span 
               onClick={() => setIsExpanded(!isExpanded)}
-              className="ml-1 text-zinc-400 cursor-pointer font-medium hover:text-white transition"
+              className="ml-1 text-zinc-700 cursor-pointer font-medium hover:text-white transition"
             >
               {isExpanded ? ' See less' : '...See more'}
             </span>
@@ -29,7 +29,7 @@ export default function ProductCard({ title, price, bio, image, fullDetails }: a
         </p>
 
         {/* প্রাইস এবং বাটন সেকশন */}
-        <div className="mt-4 pt-4 border-t border-zinc-800 flex items-center justify-between gap-2">
+        <div className="mt-4 pt-4 border-t border-zinc-800 flex items-center justify-between gap-5">
           
           <span className="text-white font-bold text-sm whitespace-nowrap">
             Price: {price} BDT
