@@ -24,8 +24,8 @@ export default function ProductCard({ title, price, bio, image, fullDetails }: a
           {fullDetails && (
             <span 
               onClick={() => setIsExpanded(!isExpanded)}
-              style={{ color: '#71717a' }}
-              className="cursor-pointer ml-1 select-none font-medium hover:text-zinc-400 transition"
+              style={{ color: '#a1a1aa' }} // এখানে রঙ আরও উজ্জ্বল করে দিলাম
+              className="cursor-pointer ml-1 select-none font-medium hover:text-white transition"
             >
               {isExpanded ? ' See less' : '...See more'}
             </span>
@@ -34,13 +34,13 @@ export default function ProductCard({ title, price, bio, image, fullDetails }: a
 
         {/* প্রাইস এবং অর্ডার বাটন সেকশন */}
         <div className="mt-4 pt-4 border-t border-zinc-800 flex justify-between items-center">
-          <span className="text-lg font-bold text-white whitespace-nowrap">
+          <span className="text-lg font-bold text-white">
             Price : {price} BDT
           </span>
           
           <a 
             href={`https://wa.me/8801521731371?text=Order: ${title}`} 
-            className="text-white border border-white px-5 py-2 rounded-lg text-xs font-bold hover:bg-white hover:text-black transition whitespace-nowrap ml-4"
+            className="inline-block text-white border border-white px-5 py-2 rounded-lg text-xs font-bold hover:bg-white hover:text-black transition"
           >
             ORDER NOW
           </a>
