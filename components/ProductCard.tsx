@@ -5,30 +5,6 @@ import { useState } from 'react';
 export default function ProductCard({ title, price, bio, image, fullDetails }: any) {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const renderDetails = () => {
-    if (!fullDetails) return null;
-
-    return fullDetails.split('\n').map((line: string, index: number) => {
-      // 'Details:' লাইনটি স্কিপ করা
-      if (line.trim().toLowerCase() === 'details:') return null;
-      
-      const cleanLine = line.replace(/^[-–\s]+/, '').trim();
-      if (!cleanLine) return null;
-
-      if (cleanLine.includes(':')) {
-        const [label, ...valueParts] = cleanLine.split(':');
-        return (
-          <div key={index} className="grid grid-cols-[80px_1fr] gap-x-2 items-start">
-            <span className="font-semibold text-zinc-400 break-words">{label.trim()}</span>
-            <span className="text-white">:<span className="ml-2">{valueParts.join(':').trim()}</span></span>
-          </div>
-        );
-      }
-      
-      return <p key={index} className="text-white font-medium my-1 col-span-2">{cleanLine}</p>;
-    });
-  };
-
   return (
     <div className="bg-zinc-900 border-b border-zinc-800 w-full overflow-hidden">
       {image && <img src={image} alt={title} className="w-full object-cover" />}
@@ -38,7 +14,10 @@ export default function ProductCard({ title, price, bio, image, fullDetails }: a
 
         <div className="text-zinc-300 text-sm leading-relaxed">
           {isExpanded ? (
-            <div className="mt-2 mb-4 space-y-1">{renderDetails()}</div>
+            <div className="mt-2 mb-4 whitespace-pre-line">
+              {/* এখানে হুবহু আপনার টেক্সট ফাইলের ফরম্যাট দেখাবে */}
+              {fullDetails.replace(/^Details:\s*\n/i, '')}
+            </div>
           ) : (
             <p className="mb-4">
               {bio}{' '}
