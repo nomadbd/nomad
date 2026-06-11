@@ -1,27 +1,41 @@
-// Path: components/ProductCard.tsx
-export default function ProductCard({ title, price, bio, image, onDetailsClick }: any) {
+// components/ProductCard.tsx
+import { useState } from 'react';
+
+export default function ProductCard({ title, price, bio, image, fullDetails }: any) {
+  const [isExpanded, setIsExpanded] = useState(false);
+
   return (
-    <div className="bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-800 flex flex-col h-full">
+    <div className="bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-800 mb-6">
+      {/* ইমেজ */}
       {image && (
-        <div className="aspect-square w-full overflow-hidden">
+        <div className="aspect-square w-full">
           <img src={image} alt={title} className="w-full h-full object-cover" />
         </div>
       )}
-      <div className="p-4 flex flex-col flex-grow">
-        <h3 className="text-sm font-medium text-white truncate">{title}</h3>
-        {bio && <p className="text-zinc-500 text-[10px] mt-1 line-clamp-2">{bio}</p>}
-        
-        {/* প্রাইস এবং বাটন পাশাপাশি করার জন্য flex-between */}
-        <div className="flex items-center justify-between mt-auto pt-4">
-          <span className="text-white text-sm font-bold">{price} BDT</span>
+
+      {/* কন্টেন্ট */}
+      <div className="p-4 text-white">
+        <h3 className="text-lg font-bold">{title}</h3>
+        <p className="text-zinc-300 text-sm mt-2">
+          {isExpanded ? fullDetails : bio}
           
-          {/* মিনিমাল আউটলাইন বাটন */}
+          {/* See more বাটন */}
           <button 
-            onClick={onDetailsClick}
-            className="text-white border border-zinc-600 text-[10px] font-bold px-4 py-1.5 rounded-full hover:bg-zinc-800 transition"
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="text-zinc-500 hover:text-white font-bold ml-1"
           >
-            DETAILS
+            {isExpanded ? ' See less' : '...See more'}
           </button>
+        </p>
+
+        <div className="mt-4 pt-4 border-t border-zinc-800 flex justify-between items-center">
+          <span className="font-bold text-lg">{price} BDT</span>
+          <a 
+            href={`https://wa.me/8801521731371?text=Order: ${title}`} 
+            className="bg-white text-black px-6 py-2 rounded-full text-xs font-bold hover:bg-zinc-200 transition"
+          >
+            ORDER NOW
+          </a>
         </div>
       </div>
     </div>
