@@ -1,6 +1,6 @@
 // Path: components/ProductCard.tsx
-'use client'; 
 
+'use client'; 
 import { useState } from 'react';
 
 export default function ProductCard({ title, price, bio, image, fullDetails }: any) {
@@ -17,22 +17,20 @@ export default function ProductCard({ title, price, bio, image, fullDetails }: a
       <div className="p-4 text-white">
         <h3 className="text-lg font-bold">{title}</h3>
         
-        {/* বায়ো এবং বিস্তারিত */}
         <p className="text-zinc-300 text-sm mt-2 leading-relaxed">
           {isExpanded ? fullDetails : bio}
           
-          {/* ধূসর রঙের 'See more/less' টেক্সট */}
           {fullDetails && (
             <span 
               onClick={() => setIsExpanded(!isExpanded)}
-              className="text-zinc-500 hover:text-zinc-400 cursor-pointer ml-1 select-none font-medium transition"
+              style={{ color: '#71717a' }} // সরাসরি জিংক-৫০০ এর কোড, যা অবশ্যই ধূসর দেখাবে
+              className="cursor-pointer ml-1 select-none font-medium hover:text-zinc-400 transition"
             >
               {isExpanded ? ' See less' : '...See more'}
             </span>
           )}
         </p>
 
-        {/* প্রাইস এবং অর্ডার বাটন */}
         <div className="mt-4 pt-4 border-t border-zinc-800 flex justify-between items-center">
           <span className="text-lg font-bold text-white">{price} BDT</span>
           <a 
