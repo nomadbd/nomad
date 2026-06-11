@@ -5,7 +5,7 @@ import { useState } from 'react';
 export default function ProductCard({ title, price, bio, image, details }: any) {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  // ডেটা না থাকলে যেন কোড এরর না দেয়
+  // ডিটেইলস ফরম্যাটিং লজিক
   const detailsArray = details && typeof details === 'object' ? Object.entries(details) : [];
 
   return (
@@ -18,15 +18,16 @@ export default function ProductCard({ title, price, bio, image, details }: any) 
         <div className="text-zinc-300 text-sm leading-relaxed">
           {isExpanded ? (
             <div className="mt-2 mb-4">
-              <div className="table w-full border-collapse">
+              {/* Grid Layout ব্যবহার করা হয়েছে যেন সব কোলন একদম সোজা লাইনে থাকে */}
+              <div className="grid grid-cols-[auto_1fr] gap-x-2 gap-y-1">
                 {detailsArray.map(([key, value], index) => (
-                  <div key={index} className="table-row">
-                    <div className="table-cell font-semibold text-zinc-400 pr-4 py-0.5 align-top whitespace-nowrap">
+                  <div key={index} className="contents">
+                    <span className="font-semibold text-zinc-400 whitespace-nowrap">
                       {key}
-                    </div>
-                    <div className="table-cell text-white align-top py-0.5">
-                      <span className="pr-2">:</span>{String(value)}
-                    </div>
+                    </span>
+                    <span className="text-white">
+                      : {String(value)}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -34,14 +35,20 @@ export default function ProductCard({ title, price, bio, image, details }: any) 
           ) : (
             <p className="mb-4">
               {bio}{' '}
-              <span onClick={() => setIsExpanded(true)} className="text-zinc-500 cursor-pointer font-medium hover:text-white ml-1">
+              <span 
+                onClick={() => setIsExpanded(true)} 
+                className="text-zinc-500 cursor-pointer font-medium hover:text-white ml-1"
+              >
                 ...See more
               </span>
             </p>
           )}
 
           {isExpanded && (
-            <span onClick={() => setIsExpanded(false)} className="text-zinc-500 cursor-pointer font-medium hover:text-white block mt-2 mb-4">
+            <span 
+              onClick={() => setIsExpanded(false)} 
+              className="text-zinc-500 cursor-pointer font-medium hover:text-white block mt-2 mb-4"
+            >
               See less
             </span>
           )}
