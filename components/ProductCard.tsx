@@ -58,8 +58,9 @@ export default function ProductCard({ title, price, bio, image, details }: any) 
         <div className="flex items-center justify-between border-t border-zinc-800 pt-4">
           <span className="text-white font-bold text-lg">Price: {price || 0} BDT</span>
           <button className="border border-white text-white px-5 py-2 text-xs font-bold transition hover:bg-white hover:text-black rounded">
-            ORDER NOW
-          </button>
+  ORDER NOW
+</button>
+
         </div>
       </div>
     </div>
