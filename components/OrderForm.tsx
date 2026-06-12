@@ -5,7 +5,6 @@ export default function OrderForm({ product, onClose }: { product: any; onClose:
   const [loading, setLoading] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('');
 
-  // ক্যালকুলেশন: ডেলিভারি চার্জ এবং ভ্যাট যুক্ত করা হয়েছে
   const price = parseFloat(product.price) || 0;
   const delivery = parseFloat(product.deliveryCharge) || 0;
   const vat = parseFloat(product.vat) || 0;
@@ -39,7 +38,7 @@ export default function OrderForm({ product, onClose }: { product: any; onClose:
           <p className="font-bold text-white text-lg">{product.title}</p>
           <div className="flex justify-between"><span>Price:</span> <span>৳{price}</span></div>
           <div className="flex justify-between"><span>Delivery:</span> <span>৳{delivery}</span></div>
-          <div className="flex justify-between font-bold text-white mt-2 border-t border-zinc-800 pt-2">
+          <div className="flex justify-between font-bold text-white mt-2 border-t border-zinc-800 pt-2 text-lg">
             <span>Total:</span> <span>৳{total}</span>
           </div>
         </div>
@@ -47,26 +46,21 @@ export default function OrderForm({ product, onClose }: { product: any; onClose:
         <div className="space-y-4">
           <input name="name" required placeholder="FULL NAME" className="w-full bg-zinc-900 border border-zinc-800 p-3 rounded-lg text-white outline-none" />
           <input name="phone" required placeholder="PHONE (01XXXXXXXXX)" className="w-full bg-zinc-900 border border-zinc-800 p-3 rounded-lg text-white outline-none" />
-
           <div className="flex gap-2">
             <select name="size" className="w-1/2 bg-zinc-900 border border-zinc-800 p-3 rounded-lg text-white outline-none">
               <option>SIZE</option><option>M</option><option>L</option><option>XL</option>
             </select>
             <input name="color" placeholder="COLOR" className="w-1/2 bg-zinc-900 border border-zinc-800 p-3 rounded-lg text-white outline-none" />
           </div>
-
           <textarea name="address" required placeholder="FULL ADDRESS" className="w-full bg-zinc-900 border border-zinc-800 p-3 rounded-lg text-white h-20 outline-none" />
-
           <select onChange={(e) => setPaymentMethod(e.target.value)} className="w-full bg-zinc-900 border border-zinc-800 p-3 rounded-lg text-white outline-none">
             <option value="">PAYMENT GATEWAY</option>
             <option value="Bkash">Bkash</option>
             <option value="Nagad">Nagad</option>
           </select>
-
           <input name="transactionId" required placeholder="TRANSACTION ID" className="w-full bg-zinc-900 border border-zinc-800 p-3 rounded-lg text-white outline-none" />
         </div>
-
-        <button disabled={loading} className="w-full mt-6 bg-white text-black font-bold py-3 rounded-lg">
+        <button disabled={loading} className="w-full mt-6 bg-white text-black font-bold py-3 rounded-lg hover:bg-zinc-200 transition">
           {loading ? 'Processing...' : 'CONFIRM ORDER'}
         </button>
       </form>
