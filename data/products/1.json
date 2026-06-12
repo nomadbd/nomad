@@ -1,6 +1,8 @@
-{
+ {
   "name": "Nomad Signature Style",
   "price": 1500,
+  "deliveryCharge": 100,
+  "vat": 0,
   "bio": "Minimalist design crafted for comfort and daily wear.",
   "id": 1,
   "category": "T shirt",
