@@ -2,57 +2,69 @@
 import { useState } from 'react';
 
 export default function OrderForm({ product, onClose }: { product: any; onClose: () => void }) {
+  const [selectedMethod, setSelectedMethod] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const handleSubmit = async (e: any) => {
+    e.preventDefault();
+    setLoading(true);
+    const formData = new FormData(e.target);
+    const data = Object.fromEntries(formData);
+    
+    // প্রোডাক্ট আইডি এবং ক্যাটাগরি গ্রাহককে না দেখিয়ে ইমেইলে পাঠানো হচ্ছে
+    await fetch('/api/contact', {
+      method: 'POST',
+      body: JSON.stringify({ ...data, ...product, paymentMethod: selectedMethod }),
+      headers: { 'Content-Type': 'application/json' }
+    });
+    setLoading(false);
+    alert("আপনার অর্ডার সফল হয়েছে!");
+    onClose();
+  };
+
   return (
-    // 'fixed inset-0 bg-black' দিয়ে ব্যাকগ্রাউন্ড সম্পূর্ণ ব্লক করা হয়েছে
-    <div className="fixed inset-0 bg-black z-[100] overflow-y-auto">
-      <div className="min-h-screen p-6 md:p-10 max-w-xl mx-auto">
-        
-        {/* হেডার */}
-        <div className="flex justify-between items-center mb-10">
-          <h2 className="text-white text-3xl font-bold tracking-tighter">CHECKOUT</h2>
-          <button onClick={onClose} className="text-zinc-500 hover:text-white uppercase text-xs tracking-widest font-bold">Close</button>
+    <div className="fixed inset-0 bg-black z-[100] flex justify-center overflow-y-auto p-4">
+      <div className="w-full max-w-lg bg-black text-white p-6">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-xl font-bold">{product.title}</h2>
+          <button onClick={onClose} className="text-zinc-500">CLOSE</button>
         </div>
+        <p className="text-2xl font-bold mb-8">{product.price} BDT</p>
 
-        {/* প্রোডাক্ট প্রিভিউ */}
-        <div className="mb-10 border-b border-zinc-800 pb-8">
-          <h3 className="text-white text-xl font-medium">{product.title}</h3>
-          <p className="text-zinc-500 text-sm mt-1">Product ID: {product.id}</p>
-          <p className="text-white text-2xl font-bold mt-4">{product.price} BDT</p>
-        </div>
-
-        <form className="space-y-6">
-          {/* পার্সোনাল ডিটেইলস */}
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* গ্রাহকের তথ্য */}
           <div className="space-y-4">
-            <input name="name" required placeholder="Full Name" className="w-full bg-transparent border-b border-zinc-700 py-3 text-white focus:border-white outline-none transition" />
-            <input name="phone" required placeholder="Mobile Number" className="w-full bg-transparent border-b border-zinc-700 py-3 text-white focus:border-white outline-none transition" />
-            <textarea name="address" required placeholder="Delivery Address" className="w-full bg-transparent border-b border-zinc-700 py-3 text-white focus:border-white outline-none transition h-20" />
+            <input name="name" required placeholder="Full Name" className="w-full bg-transparent border-b border-zinc-800 pb-2 outline-none" />
+            <input name="phone" required placeholder="Mobile Number (Sender)" className="w-full bg-transparent border-b border-zinc-800 pb-2 outline-none" />
+            <textarea name="address" required placeholder="Delivery Address" className="w-full bg-transparent border-b border-zinc-800 pb-2 outline-none h-20" />
           </div>
 
           {/* প্রডাক্ট ডিটেইলস */}
-          <div className="grid grid-cols-2 gap-6">
-            <select name="size" className="bg-transparent border-b border-zinc-700 py-3 text-white outline-none">
-              <option value="">Size</option><option>M</option><option>L</option><option>XL</option>
-            </select>
-            <input name="color" placeholder="Color" className="bg-transparent border-b border-zinc-700 py-3 text-white outline-none" />
+          <div className="grid grid-cols-2 gap-4">
+            <input name="size" placeholder="Size" className="bg-transparent border-b border-zinc-800 pb-2 outline-none" />
+            <input name="color" placeholder="Color" className="bg-transparent border-b border-zinc-800 pb-2 outline-none" />
           </div>
 
-          {/* পেমেন্ট গেটওয়ে */}
-          <div className="pt-8">
-            <p className="text-zinc-400 text-xs uppercase tracking-widest mb-4">Select Payment Method</p>
-            <div className="grid grid-cols-4 gap-2 mb-6">
+          {/* পেমেন্ট সেকশন */}
+          <div>
+            <p className="text-xs text-zinc-500 mb-2">SELECT PAYMENT METHOD</p>
+            <div className="grid grid-cols-4 gap-2 mb-4">
               {['Bkash', 'Nagad', 'Rocket', 'Upay'].map(m => (
-                <div key={m} className="border border-zinc-700 p-2 text-center text-xs text-white cursor-pointer hover:border-white">{m}</div>
+                <button type="button" key={m} onClick={() => setSelectedMethod(m)} 
+                  className={`py-2 text-xs border ${selectedMethod === m ? 'border-white' : 'border-zinc-800'}`}>
+                  {m}
+                </button>
               ))}
             </div>
-            <p className="text-zinc-500 text-sm mb-4">Send Money to: <span className="text-white font-bold">01521731371</span></p>
-            <input name="transactionId" required placeholder="Transaction ID" className="w-full bg-transparent border-b border-zinc-700 py-3 text-white focus:border-white outline-none" />
+            {selectedMethod && (
+              <div className="bg-zinc-900 p-3 text-sm">
+                <p>Please send money to: <span className="font-bold">01521731371</span></p>
+                <input name="transactionId" required placeholder="Transaction ID" className="w-full bg-transparent border-b border-zinc-700 mt-2 outline-none" />
+              </div>
+            )}
           </div>
 
-          <button className="w-full bg-white text-black py-4 font-bold uppercase tracking-widest hover:bg-zinc-200 transition">
-            Confirm Order
-          </button>
+          <button className="w-full bg-white text-black py-4 font-bold uppercase tracking-widest">Confirm Order</button>
         </form>
       </div>
     </div>
