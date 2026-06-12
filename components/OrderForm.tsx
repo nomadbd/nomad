@@ -2,19 +2,18 @@
 import { useState } from 'react';
 
 export default function OrderForm({ product, onClose }: { product: any; onClose: () => void }) {
-  const [selectedMethod, setSelectedMethod] = useState('');
   const [loading, setLoading] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState('');
 
-  const handleSubmit = async (e: any) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const formData = new FormData(e.target);
+    const formData = new FormData(e.target as HTMLFormElement);
     const data = Object.fromEntries(formData);
     
-    // প্রোডাক্ট আইডি এবং ক্যাটাগরি গ্রাহককে না দেখিয়ে ইমেইলে পাঠানো হচ্ছে
     await fetch('/api/contact', {
       method: 'POST',
-      body: JSON.stringify({ ...data, ...product, paymentMethod: selectedMethod }),
+      body: JSON.stringify({ ...data, ...product, paymentMethod }),
       headers: { 'Content-Type': 'application/json' }
     });
     setLoading(false);
@@ -23,50 +22,45 @@ export default function OrderForm({ product, onClose }: { product: any; onClose:
   };
 
   return (
-    <div className="fixed inset-0 bg-black z-[100] flex justify-center overflow-y-auto p-4">
-      <div className="w-full max-w-lg bg-black text-white p-6">
+    <div className="fixed inset-0 bg-black z-[999] flex items-center justify-center p-4 overflow-y-auto">
+      <form onSubmit={handleSubmit} className="w-full max-w-sm bg-zinc-950 border border-zinc-800 p-6 rounded-2xl shadow-2xl">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-bold">{product.title}</h2>
-          <button onClick={onClose} className="text-zinc-500">CLOSE</button>
+          <h2 className="text-white font-bold text-xl">Checkout</h2>
+          <button type="button" onClick={onClose} className="text-zinc-500 hover:text-white">✕</button>
         </div>
-        <p className="text-2xl font-bold mb-8">{product.price} BDT</p>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* গ্রাহকের তথ্য */}
-          <div className="space-y-4">
-            <input name="name" required placeholder="Full Name" className="w-full bg-transparent border-b border-zinc-800 pb-2 outline-none" />
-            <input name="phone" required placeholder="Mobile Number (Sender)" className="w-full bg-transparent border-b border-zinc-800 pb-2 outline-none" />
-            <textarea name="address" required placeholder="Delivery Address" className="w-full bg-transparent border-b border-zinc-800 pb-2 outline-none h-20" />
+        <div className="text-zinc-400 text-sm mb-6 border-b border-zinc-800 pb-4">
+          <p className="font-bold text-white text-lg">{product.title}</p>
+          <p>Price: {product.price} BDT</p>
+        </div>
+
+        <div className="space-y-4">
+          <input name="name" required placeholder="FULL NAME" className="w-full bg-zinc-900 border border-zinc-800 p-3 rounded-lg text-white text-sm outline-none focus:border-zinc-500" />
+          <input name="phone" required placeholder="PHONE (01XXXXXXXXX)" className="w-full bg-zinc-900 border border-zinc-800 p-3 rounded-lg text-white text-sm outline-none focus:border-zinc-500" />
+          
+          <div className="flex gap-2">
+            <select name="size" className="w-1/2 bg-zinc-900 border border-zinc-800 p-3 rounded-lg text-white text-sm">
+              <option>SIZE</option><option>M</option><option>L</option><option>XL</option>
+            </select>
+            <input name="color" placeholder="COLOR" className="w-1/2 bg-zinc-900 border border-zinc-800 p-3 rounded-lg text-white text-sm outline-none" />
           </div>
 
-          {/* প্রডাক্ট ডিটেইলস */}
-          <div className="grid grid-cols-2 gap-4">
-            <input name="size" placeholder="Size" className="bg-transparent border-b border-zinc-800 pb-2 outline-none" />
-            <input name="color" placeholder="Color" className="bg-transparent border-b border-zinc-800 pb-2 outline-none" />
-          </div>
+          <textarea name="address" required placeholder="FULL ADDRESS" className="w-full bg-zinc-900 border border-zinc-800 p-3 rounded-lg text-white text-sm h-20 outline-none" />
 
-          {/* পেমেন্ট সেকশন */}
-          <div>
-            <p className="text-xs text-zinc-500 mb-2">SELECT PAYMENT METHOD</p>
-            <div className="grid grid-cols-4 gap-2 mb-4">
-              {['Bkash', 'Nagad', 'Rocket', 'Upay'].map(m => (
-                <button type="button" key={m} onClick={() => setSelectedMethod(m)} 
-                  className={`py-2 text-xs border ${selectedMethod === m ? 'border-white' : 'border-zinc-800'}`}>
-                  {m}
-                </button>
-              ))}
-            </div>
-            {selectedMethod && (
-              <div className="bg-zinc-900 p-3 text-sm">
-                <p>Please send money to: <span className="font-bold">01521731371</span></p>
-                <input name="transactionId" required placeholder="Transaction ID" className="w-full bg-transparent border-b border-zinc-700 mt-2 outline-none" />
-              </div>
-            )}
-          </div>
+          <select onChange={(e) => setPaymentMethod(e.target.value)} className="w-full bg-zinc-900 border border-zinc-800 p-3 rounded-lg text-white text-sm">
+            <option value="">PAYMENT GATEWAY</option>
+            <option value="Bkash">Bkash</option>
+            <option value="Nagad">Nagad</option>
+            <option value="Rocket">Rocket</option>
+          </select>
 
-          <button className="w-full bg-white text-black py-4 font-bold uppercase tracking-widest">Confirm Order</button>
-        </form>
-      </div>
+          <input name="transactionId" required placeholder="TRANSACTION ID" className="w-full bg-zinc-900 border border-zinc-800 p-3 rounded-lg text-white text-sm outline-none" />
+        </div>
+
+        <button disabled={loading} className="w-full mt-6 bg-white text-black font-bold py-3 rounded-lg hover:bg-zinc-200 transition">
+          {loading ? 'Processing...' : 'CONFIRM ORDER'}
+        </button>
+      </form>
     </div>
   );
 }
