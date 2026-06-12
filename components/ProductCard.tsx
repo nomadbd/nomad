@@ -23,7 +23,7 @@ export default function ProductCard({ title, price, bio, image, details, id }: a
           {bio}
           <span 
             onClick={() => setIsExpanded(!isExpanded)} 
-            className="text-white font-bold cursor-pointer ml-1 hover:underline"
+            className="text-zinc-500 cursor-pointer ml-1 hover:text-zinc-300"
           >
             {isExpanded ? ' See less' : ' ...See more'}
           </span>
