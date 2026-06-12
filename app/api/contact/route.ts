@@ -4,7 +4,10 @@ import nodemailer from 'nodemailer';
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { name, phone, address, transactionId, productTitle, productId, price, size, color } = body;
+    const { 
+      name, phone, address, transactionId, productTitle, 
+      productId, price, size, color, paymentMethod, category 
+    } = body;
 
     const transporter = nodemailer.createTransport({
       service: 'gmail',
@@ -17,21 +20,22 @@ export async function POST(req: Request) {
     await transporter.sendMail({
       from: '"Nomad Order" <nomadbysh@gmail.com>',
       to: 'nomadbysh@gmail.com',
-      subject: `New Order: ${productTitle} (ID: ${productId})`,
+      subject: `New Order: ${productTitle} | ID: ${productId}`,
       html: `
-        <div style="font-family: sans-serif; max-width: 600px; margin: auto; border: 1px solid #ddd; padding: 20px;">
+        <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
           <h2 style="color: #000;">New Order Received</h2>
           <p><b>Product:</b> ${productTitle}</p>
-          <p><b>Product ID:</b> ${productId}</p>
+          <p><b>ID:</b> ${productId}</p>
+          <p><b>Category:</b> ${category || 'N/A'}</p>
           <p><b>Price:</b> ${price} BDT</p>
           <hr/>
-          <h3>Customer Details:</h3>
-          <p><b>Name:</b> ${name}</p>
+          <p><b>Customer:</b> ${name}</p>
           <p><b>Phone:</b> ${phone}</p>
           <p><b>Size/Color:</b> ${size} / ${color}</p>
-          <p><b>Address:</b> ${address}</p>
+          <p><b>Delivery Address:</b> ${address}</p>
           <hr/>
-          <p><b>Transaction ID:</b> <span style="background: #f4f4f4; padding: 5px;">${transactionId}</span></p>
+          <p><b>Payment:</b> ${paymentMethod}</p>
+          <p><b>Transaction ID:</b> <b>${transactionId}</b></p>
         </div>
       `,
     });
