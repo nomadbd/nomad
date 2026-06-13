@@ -6,7 +6,6 @@ const App: React.FC = () => {
     <div className="min-h-screen bg-black">
       <Header />
       <main className="p-8">
-        
       </main>
     </div>
   );
