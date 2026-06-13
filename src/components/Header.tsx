@@ -30,15 +30,16 @@ const Header: React.FC<HeaderProps> = ({ onSearchOpen }) => {
   stroke-linecap="round" 
   stroke-linejoin="round"
 >
-  <path d="m8 11 2 2 4-4"/>
+  <path d="m21 21-4.34-4.34"/>
   <circle cx="11" cy="11" r="8"/>
-  <path d="m21 21-4.3-4.3"/>
 </svg>
+
 
         </button>
 
         {/* মেইল আইকন - আগের বোল্ড ভার্সন */}
         <a href="mailto:nomadbysh@gmail.com" style={{ display: 'block' }}>
+
           <svg 
   width="24" 
   height="24" 
@@ -49,10 +50,10 @@ const Header: React.FC<HeaderProps> = ({ onSearchOpen }) => {
   stroke-linecap="round" 
   stroke-linejoin="round"
 >
-  <path d="M22 13V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v12c0 1.1.9 2 2 2h8"/>
-  <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
-  <path d="m16 19 2 2 4-4"/>
+  <path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7"/>
+  <rect x="2" y="4" width="20" height="16" rx="2"/>
 </svg>
+
 
         </a>
 
@@ -64,20 +65,18 @@ const Header: React.FC<HeaderProps> = ({ onSearchOpen }) => {
   style={{ display: 'block', lineHeight: 0 }}
 >
   <svg 
-    width="22" 
-    height="22" 
-    viewBox="0 0 24 24" 
-    fill="none" 
-    stroke="white" 
-    strokeWidth="2" 
-    strokeLinecap="round" 
-    strokeLinejoin="round"
-  >
-    <path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719" />
-    <path d="M8 12h.01" />
-    <path d="M12 12h.01" />
-    <path d="M16 12h.01" />
-  </svg>
+  width="24" 
+  height="24" 
+  viewBox="0 0 24 24" 
+  fill="none" 
+  stroke="white" 
+  stroke-width="2" 
+  stroke-linecap="round" 
+  stroke-linejoin="round"
+>
+  <path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"/>
+</svg>
+
 </a>
 
 
