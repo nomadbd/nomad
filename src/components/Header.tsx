@@ -8,7 +8,7 @@ const Header: React.FC = () => {
     justifyContent: 'center',
     transition: 'opacity 0.2s ease-in-out',
     cursor: 'pointer',
-    width: '32px', // ক্লিকেবল এরিয়া বাড়ানোর জন্য
+    width: '32px', // ক্লিকেবল এরিয়া বাড়ানো হয়েছে
     height: '32px'
   };
 
@@ -46,7 +46,7 @@ const Header: React.FC = () => {
           </svg>
         </a>
 
-        {/* WhatsApp SVG - Fixed Roundness and Refined */}
+        {/* WhatsApp SVG - Standard Icon with Rounded Body and Tail */}
         <a 
           href="https://wa.me/8801521731371" 
           target="_blank" 
@@ -55,22 +55,12 @@ const Header: React.FC = () => {
           onMouseOver={(e) => e.currentTarget.style.opacity = '0.7'}
           onMouseOut={(e) => e.currentTarget.style.opacity = '1'}
         >
-          {/* এই SVG-তে আমরা circle ব্যবহার করেছি নিখুঁত গোলাকার অংশের জন্য */}
+          {/* এই SVG-তে আমরা একটি সার্কেল এবং একটি পাথ ব্যবহার করেছি যাতে এটি সম্পূর্ণ WhatsApp আইকন হয় */}
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            {/* নিখুঁত গোলাকার ব্যাকগ্রাউন্ড সার্কেল */}
-            <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="1.8" fill="none" />
-            
-            {/* WhatsApp মেসেজ টেইল এবং ভেতরের আইকনের সিম্বলিক রিপ্রেজেন্টেশন */}
-            <path 
-              d="M7.83 17.17L6.5 21l3.83-1.33A8.35 8.35 0 0 0 12 20.35a8.35 8.35 0 1 0-4.17-15.68"
-              stroke="white" 
-              strokeWidth="1.8" 
-              strokeLinecap="round" 
-              strokeLinejoin="round" 
-              fill="none" 
-            />
-            {/* বিকল্প: আপনি চাইলে simple circle এবং tail ব্যবহার করতে পারেন, 
-               এখানে আমি classic vector Look রাখার জন্য optimized shape ব্যবহার করেছি */}
+            {/* নিখুঁত গোলাকার বডি */}
+            <circle cx="12" cy="11.5" r="9" stroke="white" strokeWidth="1.8" />
+            {/* নিচের দিকের টেইল (Tail) */}
+            <path d="M12 21.5l-3.5-3.5" stroke="white" strokeWidth="1.8" />
           </svg>
         </a>
       </div>
