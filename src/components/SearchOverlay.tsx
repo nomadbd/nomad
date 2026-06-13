@@ -13,7 +13,6 @@ const SearchOverlay: React.FC<Props> = ({ isOpen, onClose }) => {
       position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
       backgroundColor: 'black', zIndex: 1000, padding: '20px', boxSizing: 'border-box'
     }}>
-      {/* হেডার এরিয়া: সার্চ ইনপুট এবং ক্লোজ বাটন */}
       <div style={{ 
         display: 'flex', justifyContent: 'space-between', alignItems: 'center', 
         marginBottom: '40px', borderBottom: '1px solid rgba(255, 255, 255, 0.2)', paddingBottom: '10px'
@@ -27,24 +26,25 @@ const SearchOverlay: React.FC<Props> = ({ isOpen, onClose }) => {
           }}
           autoFocus
         />
-        
-        {/* SVG ক্লোজ বাটন */}
-        <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+
+        <button 
+          onClick={onClose} 
+          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+          aria-label="Close search"
+        >
           <svg 
-  width="24" 
-  height="24" 
-  viewBox="0 0 24 24" 
-  fill="none" 
-  stroke="white" 
-  stroke-width="2" 
-  stroke-linecap="round" 
-  stroke-linejoin="round"
->
-  <path d="M18 6 6 18"/>
-  <path d="m6 6 12 12"/>
-</svg>
-
-
+            width="24" 
+            height="24" 
+            viewBox="0 0 24 24" 
+            fill="none" 
+            stroke="white" 
+            strokeWidth="2" 
+            strokeLinecap="round" 
+            strokeLinejoin="round"
+          >
+            <path d="M18 6 6 18"/>
+            <path d="m6 6 12 12"/>
+          </svg>
         </button>
       </div>
     </div>
