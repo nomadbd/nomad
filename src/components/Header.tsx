@@ -16,14 +16,13 @@ const Header: React.FC = () => {
         boxSizing: 'border-box'
       }}
     >
-      {/* ফন্ট ফ্যামিলি এবং টেক্সট ফরম্যাট আপডেট করা হয়েছে */}
       <div style={{ 
         fontSize: '32px', 
-        fontWeight: '700', // প্রিমিয়াম লুকের জন্য ফন্ট ওয়েট একটু কমানো হয়েছে
+        fontWeight: '700', // এটিই টেক্সটকে বোল্ড রাখবে
         color: 'white', 
-        textTransform: 'uppercase', // প্রিমিয়াম ব্র্যান্ডের জন্য এটিই আদর্শ
-        fontFamily: "'Playfair Display', serif", // ক্লাসিক লাক্সারি Serif ফন্ট
-        letterSpacing: '2px' // অক্ষরগুলোর মাঝে ফাঁকা দিলে আভিজাত্য বাড়ে
+        // textTransform সরানো হয়েছে, যাতে আপনি কোডে যেভাবে লিখবেন সেভাবেই দেখাবে
+        fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif", 
+        letterSpacing: '2px' 
       }}>
         NOMAD
       </div>
