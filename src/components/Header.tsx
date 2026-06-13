@@ -24,7 +24,7 @@ const Header: React.FC = () => {
         fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif", 
         letterSpacing: '2px' 
       }}>
-        NOMAD
+        𝙽𝙾𝙼𝙰𝙳
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'row', gap: '20px' }}>
