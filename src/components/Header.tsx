@@ -18,13 +18,13 @@ const Header: React.FC = () => {
     >
       <div style={{ 
         fontSize: '32px', 
-        fontWeight: '700', // এটিই টেক্সটকে বোল্ড রাখবে
+        fontWeight: '700', 
         color: 'white', 
-        // textTransform সরানো হয়েছে, যাতে আপনি কোডে যেভাবে লিখবেন সেভাবেই দেখাবে
-        fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif", 
+        // সিস্টেম ডিফল্ট ফন্ট স্ট্যাক যা সব ডিভাইসে দ্রুত কাজ করে
+        fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif", 
         letterSpacing: '2px' 
       }}>
-        𝙽𝙾𝙼𝙰𝙳
+        NOMAD
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'row', gap: '20px' }}>
