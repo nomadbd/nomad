@@ -4,12 +4,10 @@ import { Mail, MessageCircle } from 'lucide-react';
 const Header: React.FC = () => {
   return (
     <header className="flex items-center justify-between px-8 py-6 bg-black border-b border-white/10">
-      {/* লোগো - প্রিমিয়াম টাইপোগ্রাফি */}
       <div className="text-2xl font-black tracking-tighter text-white uppercase italic">
         nomad
       </div>
 
-      {/* আইকন সেকশন - মিনিমাল এবং সাদা */}
       <div className="flex items-center gap-6">
         <a 
           href="mailto:nomadbysh@gmail.com" 
