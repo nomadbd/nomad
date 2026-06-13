@@ -1,5 +1,4 @@
-
-import React from 'react';
+Import React from 'react';
 
 const Header: React.FC = () => {
   return (
@@ -41,4 +40,3 @@ const Header: React.FC = () => {
 };
 
 export default Header;
-
