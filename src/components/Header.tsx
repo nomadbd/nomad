@@ -15,7 +15,7 @@ const Header: React.FC = () => {
         boxSizing: 'border-box'
       }}
     >
-      <div style={{ fontSize: '24px', fontWeight: '900', color: 'white', textTransform: 'uppercase', fontStyle: 'italic', flexShrink: 1, overflow: 'hidden' }}>
+      <div style={{ fontSize: '24px', fontWeight: '900', color: 'white', textTransform: 'uppercase', flexShrink: 1, overflow: 'hidden' }}>
         nomad
       </div>
 
