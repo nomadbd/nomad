@@ -39,10 +39,21 @@ const Header: React.FC<HeaderProps> = ({ onSearchOpen }) => {
 
         {/* মেইল আইকন - আগের বোল্ড ভার্সন */}
         <a href="mailto:nomadbysh@gmail.com" style={{ display: 'block' }}>
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-            <polyline points="22,6 12,13 2,6" />
-          </svg>
+          <svg 
+  width="24" 
+  height="24" 
+  viewBox="0 0 24 24" 
+  fill="none" 
+  stroke="currentColor" 
+  stroke-width="2" 
+  stroke-linecap="round" 
+  stroke-linejoin="round"
+>
+  <path d="M22 13V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v12c0 1.1.9 2 2 2h8"/>
+  <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+  <path d="m16 19 2 2 4-4"/>
+</svg>
+
         </a>
 
         {/* হোয়াটসঅ্যাপ আইকন - আগের বোল্ড ভার্সন */}
