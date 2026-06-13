@@ -20,11 +20,10 @@ const Header: React.FC = () => {
         fontSize: '32px', 
         fontWeight: '700', 
         color: 'white', 
-        // সিস্টেম ডিফল্ট ফন্ট স্ট্যাক যা সব ডিভাইসে দ্রুত কাজ করে
-        fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif", 
         letterSpacing: '2px' 
+        // fontFamily সরানো হয়েছে
       }}>
-        NOMAD
+        𝙽𝙾𝙼𝙰𝙳
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'row', gap: '20px' }}>
