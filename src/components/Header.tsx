@@ -19,19 +19,21 @@ const Header: React.FC = () => {
         nomad
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'row', gap: '15px', flexShrink: 0 }}>
-        {/* Mail SVG - Bolded */}
-        <a href="mailto:nomadbysh@gmail.com" style={{ display: 'block' }}>
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-            <polyline points="22,6 12,13 2,6" />
+      <div style={{ display: 'flex', flexDirection: 'row', gap: '18px', flexShrink: 0 }}>
+        {/* Mail SVG - Refined */}
+        <a href="mailto:nomadbysh@gmail.com" style={{ display: 'block', lineHeight: 0 }}>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="2" y="5" width="20" height="14" rx="2" ry="2" />
+            <polyline points="2 5 12 12 22 5" />
           </svg>
         </a>
 
-        {/* WhatsApp SVG - Bolded */}
-        <a href="https://wa.me/8801521731371" target="_blank" rel="noopener noreferrer" style={{ display: 'block' }}>
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8.5 8.5v.5z" />
+        {/* WhatsApp SVG - Refined */}
+        <a href="https://wa.me/8801521731371" target="_blank" rel="noopener noreferrer" style={{ display: 'block', lineHeight: 0 }}>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 11.5a8.5 8.5 0 1 1-8.5-8.5" />
+            <path d="M21 11.5L16 16.5" />
+            <path d="M21 11.5V16.5" />
           </svg>
         </a>
       </div>
