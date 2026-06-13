@@ -23,7 +23,7 @@ const Header: React.FC = () => {
         letterSpacing: '2px' 
         // fontFamily সরানো হয়েছে
       }}>
-        𝙽𝙾𝙼𝙰𝙳
+        NOMAD
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'row', gap: '20px' }}>
