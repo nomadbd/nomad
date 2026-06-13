@@ -3,15 +3,9 @@ import Header from './components/Header';
 
 const App: React.FC = () => {
   return (
-    <div className="min-h-screen bg-black">
-      {/* 
-        এখানে Header কম্পোনেন্ট লোড হচ্ছে। 
-        কোনো বাড়তি লাইব্রেরি বা ফন্ট এখানে নেই, 
-        তাই এটি চোখের পলকে লোড হবে। 
-      */}
+    <div style={{ minHeight: '100vh', backgroundColor: 'black' }}>
       <Header />
-      
-      <main className="p-8">
+      <main style={{ padding: '32px' }}>
         {/* আপনার মূল কন্টেন্ট এখানে থাকবে */}
       </main>
     </div>
