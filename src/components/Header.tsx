@@ -3,27 +3,29 @@ import { Mail, MessageCircle } from 'lucide-react';
 
 const Header: React.FC = () => {
   return (
-    <header className="flex items-center justify-between px-8 py-6 bg-white border-b border-gray-100">
-      <div className="text-2xl font-bold tracking-tighter text-gray-900 uppercase">
+    <header className="flex items-center justify-between px-8 py-6 bg-black border-b border-white/10">
+      {/* লোগো - প্রিমিয়াম টাইপোগ্রাফি */}
+      <div className="text-2xl font-black tracking-tighter text-white uppercase italic">
         nomad
       </div>
-      
-      <div className="flex items-center gap-4">
+
+      {/* আইকন সেকশন - মিনিমাল এবং সাদা */}
+      <div className="flex items-center gap-6">
         <a 
           href="mailto:nomadbysh@gmail.com" 
-          className="p-2 transition-all border border-gray-200 rounded-full hover:bg-gray-50 text-gray-600 hover:text-black"
+          className="text-white/60 transition-all duration-300 hover:text-white hover:scale-110"
           aria-label="Email"
         >
-          <Mail size={20} />
+          <Mail size={22} strokeWidth={1.5} />
         </a>
         <a 
           href="https://wa.me/8801521731371" 
           target="_blank" 
           rel="noopener noreferrer"
-          className="p-2 transition-all border border-gray-200 rounded-full hover:bg-gray-50 text-gray-600 hover:text-green-600"
+          className="text-white/60 transition-all duration-300 hover:text-white hover:scale-110"
           aria-label="WhatsApp"
         >
-          <MessageCircle size={20} />
+          <MessageCircle size={22} strokeWidth={1.5} />
         </a>
       </div>
     </header>
