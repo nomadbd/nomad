@@ -30,15 +30,28 @@ const Header: React.FC<HeaderProps> = ({ onSearchOpen }) => {
           </svg>
         </button>
 
-        {/* মেইল আইকন */}
-        <a href="mailto:nomadbysh@gmail.com" style={{ display: 'block', lineHeight: 0 }} aria-label="Email">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7"/>
-            <rect x="2" y="4" width="20" height="16" rx="2"/>
+        {/* কার্ট আইকন (Mail এর জায়গায় বসানো হয়েছে) */}
+        <button 
+          onClick={() => console.log("Cart clicked!")} 
+          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'block', lineHeight: 0 }}
+          aria-label="Cart"
+        >
+          <svg 
+            width="24" 
+            height="24" 
+            viewBox="0 0 24 24" 
+            fill="none" 
+            stroke="white" 
+            strokeWidth="2" 
+            strokeLinecap="round" 
+            strokeLinejoin="round"
+          >
+            <path d="M2.048 18.566A2 2 0 0 0 4 21h16a2 2 0 0 0 1.952-2.434l-2-9A2 2 0 0 0 18 8H6a2 2 0 0 0-1.952 1.566z"/>
+            <path d="M8 11V6a4 4 0 0 1 8 0v5"/>
           </svg>
-        </a>
+        </button>
 
-        {/* প্রোফাইল আইকন (WhatsApp এর জায়গায় বসানো হয়েছে) */}
+        {/* প্রোফাইল আইকন */}
         <button 
           onClick={() => console.log("Profile clicked!")} 
           style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'block', lineHeight: 0 }}
