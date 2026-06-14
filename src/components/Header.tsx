@@ -39,24 +39,20 @@ const Header: React.FC<HeaderProps> = ({ onSearchOpen }) => {
         </a>
 
         {/* হোয়াটসঅ্যাপ আইকন - ২২ পিক্সেল সাইজ */}
- <button 
-  onClick={() => console.log("Profile clicked!")} 
-  
->
+ <button style="background: none; border: none; cursor: pointer; padding: 0;">
   <svg 
-  width="24" 
-  height="24" 
-  viewBox="0 0 24 24" 
-  fill="none" 
-  stroke="white" 
-  stroke-width="2" 
-  stroke-linecap="round" 
-  stroke-linejoin="round"
->
-  <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
-  <circle cx="12" cy="7" r="4"/>
-</svg>
-
+    width="24" 
+    height="24" 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="white" 
+    stroke-width="2" 
+    stroke-linecap="round" 
+    stroke-linejoin="round"
+  >
+    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
+    <circle cx="12" cy="7" r="4"/>
+  </svg>
 </button>
 
       </div>
