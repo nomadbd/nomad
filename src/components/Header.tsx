@@ -39,17 +39,27 @@ const Header: React.FC<HeaderProps> = ({ onSearchOpen }) => {
         </a>
 
         {/* হোয়াটসঅ্যাপ আইকন - ২২ পিক্সেল সাইজ */}
-        <a 
-          href="https://wa.me/8801521731371" 
-          target="_blank" 
-          rel="noopener noreferrer" 
-          style={{ display: 'block', lineHeight: 0 }}
-          aria-label="WhatsApp"
-        >
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"/>
-          </svg>
-        </a>
+ <button 
+  onClick={() => console.log("Profile clicked!")} 
+  className="p-2 hover:bg-gray-100 rounded-full transition-all"
+>
+  <svg 
+    xmlns="http://www.w3.org/2000/svg" 
+    width="24" 
+    height="24" 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    stroke-width="2" 
+    stroke-linecap="round" 
+    stroke-linejoin="round" 
+    className="lucide lucide-user"
+  >
+    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
+    <circle cx="12" cy="7" r="4"/>
+  </svg>
+</button>
+
       </div>
     </header>
   );
