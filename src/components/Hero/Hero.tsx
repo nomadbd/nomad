@@ -1,19 +1,28 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { heroContent } from './heroData';
 
 const Hero: React.FC = () => {
+  const [currentImage, setCurrentImage] = useState<string>('');
+
+  useEffect(() => {
+    if (heroContent.type === 'image' && heroContent.images?.length > 0) {
+      const randomIndex = Math.floor(Math.random() * heroContent.images.length);
+      setCurrentImage(heroContent.images[randomIndex]);
+    }
+  }, []);
+
   return (
-    <section id="hero" style={{ height: '100vh', width: '100%', position: 'relative', overflow: 'hidden' }}>
-      {heroContent.type === 'image' ? (
+    <section id="hero" style={{ height: '100svh', width: '100%', position: 'relative', overflow: 'hidden' }}>
+      {heroContent.type === 'image' && currentImage ? (
         <a href={heroContent.ctaLink} style={{ display: 'block', height: '100%', width: '100%' }}>
           <img 
-            src={heroContent.imageUrl} 
+            src={currentImage} 
             alt="Banner" 
             style={{ 
               width: '100%', 
               height: '100%', 
-              objectFit: 'cover',        // ছোট/বড় ছবিকে টেনে স্ক্রিন ফিল করবে
-              objectPosition: 'center',  // সব সময় ছবির মাঝের অংশ দেখাবে
+              objectFit: 'cover', 
+              objectPosition: 'center', 
               display: 'block' 
             }} 
           />
