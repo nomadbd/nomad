@@ -12,9 +12,10 @@ const Hero: React.FC = () => {
             style={{ 
               width: '100%', 
               height: '100%', 
-              objectFit: 'cover',        // ছোট/বড় ছবিকে টেনে স্ক্রিন ফিল করবে
+              objectFit: 'contain',        // পুরো ছবিটি স্ক্রিনে দেখাবে, কাটবে না
               objectPosition: 'center',  // সব সময় ছবির মাঝের অংশ দেখাবে
-              display: 'block' 
+              display: 'block',
+              backgroundColor: '#000'    // প্রয়োজন হলে কালো ব্যাকগ্রাউন্ড দেবে
             }} 
           />
           <h1 style={{ position: 'absolute', bottom: '10%', left: '5%', color: 'white', margin: 0 }}>
