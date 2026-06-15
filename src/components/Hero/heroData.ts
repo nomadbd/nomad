@@ -1,6 +1,6 @@
 export const heroContent = {
   type: 'image', // 'image' অথবা 'article'
-  title: 'Nomad Collections',
+  title: '',
   ctaLink: '#products',
   ctaText: 'এখনই কিনুন',
   
