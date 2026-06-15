@@ -1,16 +1,24 @@
-// heroData.ts
 export const heroContent = {
-  // যদি ছবি দেখাতে চান তাহলে type: 'image', অন্যথায় 'article'
-  type: 'image', 
-  title: '',
+  type: 'image', // 'image' অথবা 'article'
+  title: 'Nomad Collections',
   ctaLink: '#products',
+  ctaText: 'এখনই কিনুন',
   
-  // ছবির তালিকা (একাধিক ছবি থাকলে র‍্যান্ডম আসবে)
   images: [
     '/images/hero-banner.jpg',
-    // '/images/hero-banner1.jpg' // নতুন ছবি যোগ করতে পারেন
   ],
   
-  // ছবির পরিবর্তে যা দেখাবে (যদি type: 'article' হয়)
-  articleBody: 'আমাদের নতুন কালেকশন এখন লাইভ। প্রিমিয়াম কোয়ালিটি এবং সেরা ডিজাইন যা আপনাকে করবে অনন্য।'
+  articleBody: 'আমাদের নতুন কালেকশন এখন লাইভ। প্রিমিয়াম কোয়ালিটি এবং সেরা ডিজাইন যা আপনাকে করবে অনন্য।',
+
+  // ডিজাইন কন্ট্রোল (এখান থেকে পরিবর্তন করবেন)
+  styles: {
+    backgroundColor: '#1a1a1a',
+    titleColor: '#ffffff',
+    textColor: '#cccccc',
+    titleFontSize: '3.5rem',
+    textFontSize: '1.2rem',
+    buttonBg: '#ffffff',
+    buttonColor: '#000000',
+    padding: '40px'
+  }
 };
