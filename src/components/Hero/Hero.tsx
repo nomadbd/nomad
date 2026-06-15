@@ -12,7 +12,7 @@ const Hero: React.FC = () => {
   }, []);
 
   return (
-    <section id="hero" style={{ height: '100svh', width: '100%', position: 'relative', overflow: 'hidden' }}>
+    <section id="hero" style={{ height: '100vh', width: '100%', position: 'relative', overflow: 'hidden' }}>
       
       {/* ইমেজ মোড */}
       {heroContent.type === 'image' && currentImage ? (
