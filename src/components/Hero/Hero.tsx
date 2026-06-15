@@ -3,15 +3,7 @@ import { heroContent } from './heroData';
 
 const Hero: React.FC = () => {
   return (
-    <section 
-      id="hero" 
-      style={{ 
-        height: '100svh', // মোবাইলে নেভিগেশন বার জনিত সমস্যা সমাধান করবে
-        width: '100%', 
-        position: 'relative', 
-        overflow: 'hidden' 
-      }}
-    >
+    <section id="hero" style={{ height: '100vh', width: '100%', position: 'relative', overflow: 'hidden' }}>
       {heroContent.type === 'image' ? (
         <a href={heroContent.ctaLink} style={{ display: 'block', height: '100%', width: '100%' }}>
           <img 
@@ -20,8 +12,8 @@ const Hero: React.FC = () => {
             style={{ 
               width: '100%', 
               height: '100%', 
-              objectFit: 'cover',        // ডানে-বামে গ্যাপ থাকবে না
-              objectPosition: 'center',  // ফোকাস পয়েন্ট মাঝখানে রাখবে
+              objectFit: 'cover',        // ছোট/বড় ছবিকে টেনে স্ক্রিন ফিল করবে
+              objectPosition: 'center',  // সব সময় ছবির মাঝের অংশ দেখাবে
               display: 'block' 
             }} 
           />
