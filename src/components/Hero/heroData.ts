@@ -1,7 +1,16 @@
+// heroData.ts
 export const heroContent = {
-  type: 'image', // অথবা 'article'
-  title: '',
-  imageUrl: '/images/hero-banner.jpg', // public ফোল্ডারের পাথ
-  ctaLink: '#products', 
-  articleBody: 'আমাদের নতুন কালেকশন এখন লাইভ। প্রিমিয়াম কোয়ালিটি, সেরা ডিজাইন।'
+  // যদি ছবি দেখাতে চান তাহলে type: 'image', অন্যথায় 'article'
+  type: 'image', 
+  title: 'Nomad Collections',
+  ctaLink: '#products',
+  
+  // ছবির তালিকা (একাধিক ছবি থাকলে র‍্যান্ডম আসবে)
+  images: [
+    '/images/hero-banner.jpg',
+    // '/images/hero-banner1.jpg' // নতুন ছবি যোগ করতে পারেন
+  ],
+  
+  // ছবির পরিবর্তে যা দেখাবে (যদি type: 'article' হয়)
+  articleBody: 'আমাদের নতুন কালেকশন এখন লাইভ। প্রিমিয়াম কোয়ালিটি এবং সেরা ডিজাইন যা আপনাকে করবে অনন্য।'
 };
