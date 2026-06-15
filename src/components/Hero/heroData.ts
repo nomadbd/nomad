@@ -2,7 +2,7 @@
 export const heroContent = {
   // যদি ছবি দেখাতে চান তাহলে type: 'image', অন্যথায় 'article'
   type: 'image', 
-  title: 'Nomad Collections',
+  title: '',
   ctaLink: '#products',
   
   // ছবির তালিকা (একাধিক ছবি থাকলে র‍্যান্ডম আসবে)
