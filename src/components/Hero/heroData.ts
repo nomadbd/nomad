@@ -1,14 +1,14 @@
 export const heroContent = {
   type: 'image', // 'image' অথবা 'article'
   title: '',
-  ctaLink: '#products',
-  ctaText: 'এখনই কিনুন',
+  ctaLink: '',
+  ctaText: '',
   
   images: [
     '/images/hero-banner.jpg',
   ],
   
-  articleBody: 'আমাদের নতুন কালেকশন এখন লাইভ। প্রিমিয়াম কোয়ালিটি এবং সেরা ডিজাইন যা আপনাকে করবে অনন্য।',
+  articleBody: ' ',
 
   // ডিজাইন কন্ট্রোল (এখান থেকে পরিবর্তন করবেন)
   styles: {
