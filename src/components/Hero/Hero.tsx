@@ -3,7 +3,7 @@ import { heroContent } from './heroData';
 
 const Hero: React.FC = () => {
   return (
-    <section id="hero" style={{ height: '100vh', width: '100%', position: 'relative', overflow: 'hidden' }}>
+    <section id="hero" style={{ height: '100svh', width: '100%', position: 'relative', overflow: 'hidden' }}>
       {heroContent.type === 'image' ? (
         <a href={heroContent.ctaLink} style={{ display: 'block', height: '100%', width: '100%' }}>
           <img 
