@@ -1,22 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import SearchOverlay from './SearchOverlay'; // সার্চ ওভারলে ইমপোর্ট করা হলো
-import AuthForm from './auth/AuthForm'; // AuthForm ইমপোর্ট করা হলো
+import SearchOverlay from './SearchOverlay'; 
+import AuthForm from './auth/AuthForm'; 
 
 const Header: React.FC = () => {
   const [show, setShow] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
 
-  // সার্চ এবং প্রোফাইল ফর্ম ওপেন/ক্লোজ করার স্টেট
+  // স্টেটগুলো নিশ্চিতভাবে false রাখা হলো যেন প্রথমে পেজ কালো না হয়
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
 
   const controlHeader = () => {
     if (typeof window !== 'undefined') {
       if (window.scrollY > lastScrollY && window.scrollY > 100) {
-        // নিচে স্ক্রল করলে হেডার লুকিয়ে যাবে
         setShow(false);
       } else {
-        // ওপরে স্ক্রল করলে হেডার দেখা যাবে
         setShow(true);
       }
       setLastScrollY(window.scrollY);
@@ -47,9 +45,9 @@ const Header: React.FC = () => {
         </div>
 
         <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
-          {/* সার্চ আইকন */}
+          {/* সার্চ বাটন */}
           <button 
-            onClick={() => setIsSearchOpen(true)} // এখানে ক্লিক করলে সার্চ ওপেন হবে
+            onClick={() => setIsSearchOpen(true)} 
             style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
             aria-label="Search"
           >
@@ -59,7 +57,7 @@ const Header: React.FC = () => {
             </svg>
           </button>
 
-          {/* কার্ট আইকন */}
+          {/* কার্ট বাটন */}
           <button 
             onClick={() => console.log("Cart clicked!")} 
             style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'block', lineHeight: 0 }}
@@ -71,9 +69,9 @@ const Header: React.FC = () => {
             </svg>
           </button>
 
-          {/* প্রোফাইল আইকন */}
+          {/* প্রোফাইল বাটন */}
           <button 
-            onClick={() => setIsAuthOpen(true)} // এখানে ক্লিক করলে প্রোফাইল ফর্ম ওপেন হবে
+            onClick={() => setIsAuthOpen(true)} 
             style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'block', lineHeight: 0 }}
             aria-label="Profile"
           >
@@ -85,22 +83,22 @@ const Header: React.FC = () => {
         </div>
       </header>
 
-      {/* সার্চ ওভারলে কম্পোনেন্ট */}
+      {/* সার্চ ওভারলে */}
       <SearchOverlay 
         isOpen={isSearchOpen} 
         onClose={() => setIsSearchOpen(false)} 
       />
 
-      {/* প্রিমিয়াম ব্লার ব্যাকগ্রাউন্ডসহ AuthForm পপ-আপ ওভারলে */}
-      {isAuthOpen && (
+      {/* পপ-আপ ওভারলে (শুধুমাত্র true হলেই স্ক্রিনে আসবে) */}
+      {isAuthOpen === true && (
         <div style={{
           position: 'fixed',
           top: 0,
           left: 0,
-          width: '100%',
+          width: '100vw',
           height: '100vh',
-          backgroundColor: 'rgba(0, 0, 0, 0.7)', // পেছনের অংশ হালকা অন্ধকার দেখাবে
-          backdropFilter: 'blur(8px)', // প্রিমিয়াম অ্যাপল-স্টাইল ব্লার ইফেক্ট
+          backgroundColor: 'rgba(0, 0, 0, 0.75)', 
+          backdropFilter: 'blur(8px)',
           WebkitBackdropFilter: 'blur(8px)',
           zIndex: 9999,
           display: 'flex',
@@ -109,17 +107,16 @@ const Header: React.FC = () => {
           padding: '20px',
           boxSizing: 'border-box'
         }}>
-          {/* এই কার্ডের ভেতর ফর্মটি থাকবে, যা ফর্মের ব্যাকগ্রাউন্ড সাদা রাখবে */}
           <div style={{ 
             position: 'relative', 
             width: '100%', 
             maxWidth: '400px', 
             backgroundColor: '#ffffff', 
             borderRadius: '12px',
-            boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
             overflow: 'hidden'
           }}>
-            {/* ফর্মটি বন্ধ করার ক্লোজ (✕) বাটন */}
+            {/* ক্লোজ বাটন */}
             <button 
               onClick={() => setIsAuthOpen(false)}
               style={{
@@ -135,7 +132,6 @@ const Header: React.FC = () => {
                 padding: '5px',
                 lineHeight: 1
               }}
-              aria-label="Close Form"
             >
               ✕
             </button>
