@@ -31,6 +31,20 @@ export default function AuthForm() {
     setLoading(false);
   };
 
+  const handleForgotPassword = async () => {
+    if (!email) {
+      setMessage('Please enter your email to reset password');
+      return;
+    }
+    setLoading(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: 'https://nomadbd.vercel.app/reset-password',
+    });
+    if (error) setMessage(`Error: ${error.message}`);
+    else setMessage('Reset link sent! Check your email.');
+    setLoading(false);
+  };
+
   const inputStyle: React.CSSProperties = {
     width: '100%', padding: '12px 0', backgroundColor: 'transparent',
     border: 'none', borderBottom: '1px solid #ffffff', fontSize: '15px',
@@ -41,37 +55,26 @@ export default function AuthForm() {
     <div style={{ width: '100%', maxWidth: '320px', color: '#ffffff', fontFamily: 'sans-serif' }}>
       <h2 style={{ letterSpacing: '6px', marginBottom: '50px', fontWeight: '200', textAlign: 'center' }}>NOMAD</h2>
       <form onSubmit={handleAuth}>
-        <input 
-          type="text" 
-          placeholder="Email or Username" 
-          value={email} 
-          onChange={(e) => setEmail(e.target.value)} 
-          required 
-          style={inputStyle} 
-        />
+        <input type="text" placeholder="Email or Username" value={email} onChange={(e) => setEmail(e.target.value)} required style={inputStyle} />
         {isSignUp && (
-          <input 
-            type="text" 
-            placeholder="Username (optional)" 
-            value={username} 
-            onChange={(e) => setUsername(e.target.value)} 
-            style={inputStyle} 
-          />
+          <input type="text" placeholder="Username (optional)" value={username} onChange={(e) => setUsername(e.target.value)} style={inputStyle} />
         )}
-        <input 
-          type="password" 
-          placeholder="Password" 
-          value={password} 
-          onChange={(e) => setPassword(e.target.value)} 
-          required 
-          style={inputStyle} 
-        />
+        <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required style={inputStyle} />
         
         <button type="submit" disabled={loading} style={{ width: '100%', padding: '14px', backgroundColor: '#fff', color: '#000', border: 'none', cursor: 'pointer', marginTop: '10px', fontSize: '12px', letterSpacing: '2px', fontWeight: 'bold' }}>
           {loading ? 'WAIT...' : isSignUp ? 'SIGN UP' : 'SIGN IN'}
         </button>
       </form>
-      {message && <p style={{ fontSize: '11px', textAlign: 'center', marginTop: '15px', color: '#aaa' }}>{message}</p>}
+      
+      {/* Forgot Password Link */}
+      {!isSignUp && (
+        <p onClick={handleForgotPassword} style={{ textAlign: 'center', fontSize: '10px', cursor: 'pointer', marginTop: '15px', color: '#aaa', letterSpacing: '1px' }}>
+          FORGOT PASSWORD?
+        </p>
+      )}
+
+      {message && <p style={{ fontSize: '11px', textAlign: 'center', marginTop: '15px', color: message.startsWith('Error') ? '#ff6b6b' : '#aaa' }}>{message}</p>}
+      
       <p onClick={() => setIsSignUp(!isSignUp)} style={{ textAlign: 'center', fontSize: '11px', cursor: 'pointer', marginTop: '30px', letterSpacing: '1px', color: '#777' }}>
         {isSignUp ? 'ALREADY HAVE AN ACCOUNT? SIGN IN' : "DON'T HAVE AN ACCOUNT? SIGN UP"}
       </p>
