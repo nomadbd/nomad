@@ -1,40 +1,45 @@
 import React, { useState } from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'; // রাউটিং ইমপোর্ট
 import Header from './components/Header';
 import SearchOverlay from './components/SearchOverlay';
-import Hero from './components/Hero/Hero'; // Hero কম্পোনেন্ট ইমপোর্ট করা হলো
-import AuthOverlay from './components/auth/AuthOverlay'; // AuthOverlay ইমপোর্ট করা হলো
+import Hero from './components/Hero/Hero';
+import AuthOverlay from './components/auth/AuthOverlay';
+import Profile from './pages/Profile'; // প্রোফাইল পেজ ইমপোর্ট
 
 const App: React.FC = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [isAuthOpen, setIsAuthOpen] = useState(false); // প্রোফাইল ওপেন করার স্টেট
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: 'black', color: 'white' }}>
-      {/* হেডার যেখানে সার্চ এবং প্রোফাইল আইকন আছে */}
-      <Header 
-        onSearchOpen={() => setIsSearchOpen(true)} 
-        onAuthOpen={() => setIsAuthOpen(true)} // প্রোফাইল ক্লিকের হ্যান্ডলার পাস করা হলো
-      />
+    <Router>
+      <div style={{ minHeight: '100vh', backgroundColor: 'black', color: 'white' }}>
+        <Header 
+          onSearchOpen={() => setIsSearchOpen(true)} 
+          onAuthOpen={() => setIsAuthOpen(true)} 
+        />
 
-      {/* সার্চ ওভারলে কম্পোনেন্ট */}
-      <SearchOverlay 
-        isOpen={isSearchOpen} 
-        onClose={() => setIsSearchOpen(false)} 
-      />
+        <SearchOverlay 
+          isOpen={isSearchOpen} 
+          onClose={() => setIsSearchOpen(false)} 
+        />
 
-      {/* অথরাইজেশন ওভারলে (সাইন আপ/লগইন ফর্ম) */}
-      <AuthOverlay 
-        isOpen={isAuthOpen} 
-        onClose={() => setIsAuthOpen(false)} 
-      />
+        <AuthOverlay 
+          isOpen={isAuthOpen} 
+          onClose={() => setIsAuthOpen(false)} 
+        />
 
-      {/* হিরো ব্যানার সেকশন */}
-      <Hero />
-
-      <main style={{ padding: '32px' }}>
-        {/* আপনার অন্যান্য কন্টেন্ট এখানে থাকবে */}
-      </main>
-    </div>
+        {/* রাউটিং কনফিগারেশন */}
+        <Routes>
+          <Route path="/" element={
+            <>
+              <Hero />
+              <main style={{ padding: '32px' }}></main>
+            </>
+          } />
+          <Route path="/profile" element={<Profile />} />
+        </Routes>
+      </div>
+    </Router>
   );
 };
 
