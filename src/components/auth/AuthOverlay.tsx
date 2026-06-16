@@ -12,14 +12,15 @@ const AuthOverlay: React.FC<Props> = ({ isOpen, onClose }) => {
   return (
     <div style={{
       position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
-      backgroundColor: '#e0e0e0', zIndex: 9999, display: 'flex', 
+      backgroundColor: '#262626', // ডার্ক গ্রে ওভারলে
+      zIndex: 9999, display: 'flex', 
       justifyContent: 'center', alignItems: 'center'
     }}>
       <button 
         onClick={onClose} 
         style={{
           position: 'absolute', top: '40px', right: '40px', 
-          background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer'
+          background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', color: '#ffffff'
         }}
       >
         ✕
