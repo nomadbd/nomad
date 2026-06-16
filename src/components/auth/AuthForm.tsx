@@ -5,42 +5,55 @@ export default function AuthForm() {
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    // ... আপনার আগের লজিক কোড এখানে থাকবে ...
+    setMessage('');
+
+    if (isSignUp) {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { data: { full_name: fullName } },
+      });
+      if (error) setMessage(`Error: ${error.message}`);
+      else setMessage('Registration successful! Please check your email.');
+    } else {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) setMessage(`Error: ${error.message}`);
+      else setMessage(`Welcome back!`);
+    }
     setLoading(false);
   };
 
+  // প্রিমিয়াম স্টাইল
   const inputStyle: React.CSSProperties = {
-    width: '100%',
-    padding: '15px 0',
-    backgroundColor: 'transparent',
-    border: 'none',
-    borderBottom: '1px solid #a0a0a0',
-    fontSize: '16px',
-    color: '#333',
-    outline: 'none',
-    marginBottom: '20px',
+    width: '100%', padding: '12px 0', backgroundColor: 'transparent',
+    border: 'none', borderBottom: '1px solid #333', fontSize: '16px',
+    marginBottom: '20px', outline: 'none'
   };
 
   return (
-    <div style={{ width: '100%', textAlign: 'center', fontFamily: '"Inter", sans-serif' }}>
-      <h1 style={{ letterSpacing: '4px', marginBottom: '40px', fontWeight: '300', color: '#111' }}>NOMAD</h1>
-      
-      <form onSubmit={handleAuth} style={{ maxWidth: '320px', margin: '0 auto' }}>
-        <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} style={inputStyle} required />
-        <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} style={inputStyle} required />
+    <div style={{ width: '100%', maxWidth: '350px', padding: '40px', backgroundColor: '#f4f4f4' }}>
+      <h2 style={{ textAlign: 'center', letterSpacing: '3px', marginBottom: '40px', fontWeight: '300' }}>NOMAD</h2>
+      <form onSubmit={handleAuth}>
+        {isSignUp && (
+          <input type="text" placeholder="Full Name" value={fullName} onChange={(e) => setFullName(e.target.value)} required style={inputStyle} />
+        )}
+        <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required style={inputStyle} />
+        <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required style={inputStyle} />
         
-        <button type="submit" style={{ width: '100%', padding: '15px', marginTop: '20px', backgroundColor: '#111', color: '#fff', border: 'none', cursor: 'pointer', letterSpacing: '2px', textTransform: 'uppercase', fontSize: '12px' }}>
-          {loading ? 'Processing...' : isSignUp ? 'Create Account' : 'Sign In'}
+        <button type="submit" disabled={loading} style={{ width: '100%', padding: '15px', backgroundColor: '#000', color: '#fff', border: 'none', cursor: 'pointer', marginTop: '10px' }}>
+          {loading ? 'Processing...' : isSignUp ? 'SIGN UP' : 'SIGN IN'}
         </button>
       </form>
-
-      <p onClick={() => setIsSignUp(!isSignUp)} style={{ marginTop: '30px', fontSize: '12px', color: '#666', cursor: 'pointer', letterSpacing: '1px' }}>
-        {isSignUp ? 'Already a member? Sign In' : 'Create an account'}
+      {message && <p style={{ fontSize: '12px', textAlign: 'center', color: message.startsWith('Error') ? 'red' : 'green' }}>{message}</p>}
+      <p onClick={() => setIsSignUp(!isSignUp)} style={{ textAlign: 'center', fontSize: '12px', cursor: 'pointer', marginTop: '20px', textDecoration: 'underline' }}>
+        {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}
       </p>
     </div>
   );
