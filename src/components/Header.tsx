@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import SearchOverlay from './SearchOverlay'; 
-import AuthForm from './auth/AuthForm'; 
 
-const Header: React.FC = () => {
+interface HeaderProps {
+  onSearchOpen: () => void;
+  onProfileOpen: () => void; // প্রোফাইল ওপেন করার প্রপ্স
+}
+
+const Header: React.FC<HeaderProps> = ({ onSearchOpen, onProfileOpen }) => {
   const [show, setShow] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
-
-  // স্টেটগুলো নিশ্চিতভাবে false রাখা হলো যেন প্রথমে পেজ কালো না হয়
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [isAuthOpen, setIsAuthOpen] = useState(false);
 
   const controlHeader = () => {
     if (typeof window !== 'undefined') {
@@ -31,115 +30,56 @@ const Header: React.FC = () => {
   }, [lastScrollY]);
 
   return (
-    <>
-      <header 
-        style={{ 
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center', 
-          padding: '16px 20px', backgroundColor: 'black', 
-          borderBottom: '1px solid rgba(255, 255, 255, 0.1)', width: '100%', boxSizing: 'border-box',
-          position: 'fixed', top: show ? '0' : '-80px', transition: 'top 0.3s ease', zIndex: 1000
-        }}
-      >
-        <div style={{ fontSize: '24px', fontWeight: '900', color: 'white', textTransform: 'uppercase' }}>
-          nomad
-        </div>
+    <header 
+      style={{ 
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center', 
+        padding: '16px 20px', backgroundColor: 'black', 
+        borderBottom: '1px solid rgba(255, 255, 255, 0.1)', width: '100%', boxSizing: 'border-box',
+        position: 'fixed', top: show ? '0' : '-80px', transition: 'top 0.3s ease', zIndex: 1000
+      }}
+    >
+      <div style={{ fontSize: '24px', fontWeight: '900', color: 'white', textTransform: 'uppercase' }}>
+        nomad
+      </div>
 
-        <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
-          {/* সার্চ বাটন */}
-          <button 
-            onClick={() => setIsSearchOpen(true)} 
-            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-            aria-label="Search"
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="m21 21-4.34-4.34"/>
-              <circle cx="11" cy="11" r="8"/>
-            </svg>
-          </button>
+      <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+        {/* সার্চ আইকন */}
+        <button 
+          onClick={onSearchOpen} 
+          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+          aria-label="Search"
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="m21 21-4.34-4.34"/>
+            <circle cx="11" cy="11" r="8"/>
+          </svg>
+        </button>
 
-          {/* কার্ট বাটন */}
-          <button 
-            onClick={() => console.log("Cart clicked!")} 
-            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'block', lineHeight: 0 }}
-            aria-label="Cart"
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M2.048 18.566A2 2 0 0 0 4 21h16a2 2 0 0 0 1.952-2.434l-2-9A2 2 0 0 0 18 8H6a2 2 0 0 0-1.952 1.566z"/>
-              <path d="M8 11V6a4 4 0 0 1 8 0v5"/>
-            </svg>
-          </button>
+        {/* কার্ট আইকন */}
+        <button 
+          onClick={() => console.log("Cart clicked!")} 
+          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'block', lineHeight: 0 }}
+          aria-label="Cart"
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M2.048 18.566A2 2 0 0 0 4 21h16a2 2 0 0 0 1.952-2.434l-2-9A2 2 0 0 0 18 8H6a2 2 0 0 0-1.952 1.566z"/>
+            <path d="M8 11V6a4 4 0 0 1 8 0v5"/>
+          </svg>
+        </button>
 
-          {/* প্রোফাইল বাটন */}
-          <button 
-            onClick={() => setIsAuthOpen(true)} 
-            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'block', lineHeight: 0 }}
-            aria-label="Profile"
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
-              <circle cx="12" cy="7" r="4"/>
-            </svg>
-          </button>
-        </div>
-      </header>
-
-      {/* সার্চ ওভারলে */}
-      <SearchOverlay 
-        isOpen={isSearchOpen} 
-        onClose={() => setIsSearchOpen(false)} 
-      />
-
-      {/* পপ-আপ ওভারলে (শুধুমাত্র true হলেই স্ক্রিনে আসবে) */}
-      {isAuthOpen === true && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100vw',
-          height: '100vh',
-          backgroundColor: 'rgba(0, 0, 0, 0.75)', 
-          backdropFilter: 'blur(8px)',
-          WebkitBackdropFilter: 'blur(8px)',
-          zIndex: 9999,
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          padding: '20px',
-          boxSizing: 'border-box'
-        }}>
-          <div style={{ 
-            position: 'relative', 
-            width: '100%', 
-            maxWidth: '400px', 
-            backgroundColor: '#ffffff', 
-            borderRadius: '12px',
-            boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
-            overflow: 'hidden'
-          }}>
-            {/* ক্লোজ বাটন */}
-            <button 
-              onClick={() => setIsAuthOpen(false)}
-              style={{
-                position: 'absolute',
-                top: '15px',
-                right: '20px',
-                background: 'none',
-                border: 'none',
-                color: '#333333',
-                fontSize: '22px',
-                cursor: 'pointer',
-                zIndex: 10000,
-                padding: '5px',
-                lineHeight: 1
-              }}
-            >
-              ✕
-            </button>
-            <AuthForm />
-          </div>
-        </div>
-      )}
-    </>
+        {/* প্রোফাইল আইকন */}
+        <button 
+          onClick={onProfileOpen} // এখানে প্রপ্স ফাংশনটি কল করা হলো
+          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'block', lineHeight: 0 }}
+          aria-label="Profile"
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+        </button>
+      </div>
+    </header>
   );
 };
 
