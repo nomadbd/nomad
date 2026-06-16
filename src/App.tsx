@@ -1,32 +1,20 @@
 import React, { useState } from 'react';
 import Header from './components/Header';
 import SearchOverlay from './components/SearchOverlay';
-import AuthOverlay from './components/auth/AuthOverlay'; // নতুন স্বাধীন ওভারলে ইমপোর্ট
-import Hero from './components/Hero/Hero'; 
+import Hero from './components/Hero/Hero'; // Hero কম্পোনেন্ট ইমপোর্ট করা হলো
 
 const App: React.FC = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [isAuthOpen, setIsAuthOpen] = useState(false); // প্রোফাইলের জন্য স্টেট
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: 'white', color: 'white' }}>
-      
-      {/* হেডার */}
-      <Header 
-        onSearchOpen={() => setIsSearchOpen(true)} 
-        onProfileOpen={() => setIsAuthOpen(true)} 
-      />
+    <div style={{ minHeight: '100vh', backgroundColor: 'black', color: 'white' }}>
+      {/* হেডার যেখানে সার্চ আইকন আছে */}
+      <Header onSearchOpen={() => setIsSearchOpen(true)} />
 
       {/* সার্চ ওভারলে কম্পোনেন্ট */}
       <SearchOverlay 
         isOpen={isSearchOpen} 
         onClose={() => setIsSearchOpen(false)} 
-      />
-
-      {/* প্রোফাইল অথেনটিকেশন ওভারলে কম্পোনেন্ট */}
-      <AuthOverlay 
-        isOpen={isAuthOpen} 
-        onClose={() => setIsAuthOpen(false)} 
       />
 
       {/* হিরো ব্যানার সেকশন */}
