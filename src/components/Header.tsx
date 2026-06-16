@@ -1,86 +1,22 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import SearchOverlay from './SearchOverlay';
+import AuthModal from './auth/AuthModal'; // একটি Wrapper বা মডাল কম্পোনেন্ট
 
-interface HeaderProps {
-  onSearchOpen: () => void;
-  onProfileOpen: () => void; // প্রোফাইল ওপেন করার প্রপ্স
-}
-
-const Header: React.FC<HeaderProps> = ({ onSearchOpen, onProfileOpen }) => {
-  const [show, setShow] = useState(true);
-  const [lastScrollY, setLastScrollY] = useState(0);
-
-  const controlHeader = () => {
-    if (typeof window !== 'undefined') {
-      if (window.scrollY > lastScrollY && window.scrollY > 100) {
-        setShow(false);
-      } else {
-        setShow(true);
-      }
-      setLastScrollY(window.scrollY);
-    }
-  };
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      window.addEventListener('scroll', controlHeader);
-      return () => {
-        window.removeEventListener('scroll', controlHeader);
-      };
-    }
-  }, [lastScrollY]);
+const Header: React.FC = () => {
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
 
   return (
-    <header 
-      style={{ 
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center', 
-        padding: '16px 20px', backgroundColor: 'black', 
-        borderBottom: '1px solid rgba(255, 255, 255, 0.1)', width: '100%', boxSizing: 'border-box',
-        position: 'fixed', top: show ? '0' : '-80px', transition: 'top 0.3s ease', zIndex: 1000
-      }}
-    >
-      <div style={{ fontSize: '24px', fontWeight: '900', color: 'white', textTransform: 'uppercase' }}>
-        nomad
-      </div>
+    <>
+      <header style={{ /* আপনার হেডার স্টাইল */ }}>
+         {/* আইকনগুলো এখানে ক্লিক হ্যান্ডেলারসহ */}
+         <button onClick={() => setIsSearchOpen(true)}>Search</button>
+         <button onClick={() => setIsAuthOpen(true)}>Profile</button>
+      </header>
 
-      <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
-        {/* সার্চ আইকন */}
-        <button 
-          onClick={onSearchOpen} 
-          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-          aria-label="Search"
-        >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="m21 21-4.34-4.34"/>
-            <circle cx="11" cy="11" r="8"/>
-          </svg>
-        </button>
-
-        {/* কার্ট আইকন */}
-        <button 
-          onClick={() => console.log("Cart clicked!")} 
-          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'block', lineHeight: 0 }}
-          aria-label="Cart"
-        >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M2.048 18.566A2 2 0 0 0 4 21h16a2 2 0 0 0 1.952-2.434l-2-9A2 2 0 0 0 18 8H6a2 2 0 0 0-1.952 1.566z"/>
-            <path d="M8 11V6a4 4 0 0 1 8 0v5"/>
-          </svg>
-        </button>
-
-        {/* প্রোফাইল আইকন */}
-        <button 
-          onClick={onProfileOpen} // এখানে প্রপ্স ফাংশনটি কল করা হলো
-          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'block', lineHeight: 0 }}
-          aria-label="Profile"
-        >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
-            <circle cx="12" cy="7" r="4"/>
-          </svg>
-        </button>
-      </div>
-    </header>
+      {/* এগুলো সরাসরি এখানেই থাকবে, App.tsx এ যাওয়ার দরকার নেই */}
+      <SearchOverlay isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
+      <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
+    </>
   );
 };
-
-export default Header;
