@@ -24,13 +24,16 @@ export default function AuthForm() {
 
     if (view === 'signup') {
       const finalUsername = username || email.split('@')[0];
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email, password, options: { data: { username: finalUsername } }
       });
+
       if (error) {
         setIsError(true);
         setMessage(getFriendlyMessage(error.message));
-      } else {
+      } else if (data.user) {
+        // ডাটাবেসে প্রোফাইল তৈরি
+        await supabase.from('profiles').insert([{ id: data.user.id, username: finalUsername }]);
         setMessage('Account created! Please check your email.');
       }
     } else {
@@ -69,9 +72,8 @@ export default function AuthForm() {
   return (
     <div style={{ width: '100%', maxWidth: '320px', color: '#ffffff', fontFamily: 'sans-serif' }}>
       <h2 style={{ letterSpacing: '6px', marginBottom: '50px', fontWeight: '200', textAlign: 'center' }}>NOMAD</h2>
-      
+
       <form onSubmit={view === 'forgot' ? handleForgotPassword : handleAuth}>
-        {/* আপডেট করা প্লেসহোল্ডার লজিক */}
         <input 
           type="text" 
           placeholder={view === 'signup' ? "Email" : "Email or Username"} 
@@ -80,15 +82,15 @@ export default function AuthForm() {
           required 
           style={inputStyle} 
         />
-        
+
         {(view === 'login' || view === 'signup') && (
           <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required style={inputStyle} />
         )}
 
         {view === 'signup' && (
-          <input type="text" placeholder="Choose a Username" value={username} onChange={(e) => setUsername(e.target.value)} required style={inputStyle} />
+          <input type="text" placeholder="Choose a Username (Optional)" value={username} onChange={(e) => setUsername(e.target.value)} style={inputStyle} />
         )}
-        
+
         <button type="submit" disabled={loading} style={{ width: '100%', padding: '14px', backgroundColor: '#fff', color: '#000', border: 'none', cursor: 'pointer', marginTop: '10px', fontSize: '12px', letterSpacing: '2px', fontWeight: 'bold' }}>
           {loading ? 'PROCESSING...' : view === 'login' ? 'SIGN IN' : view === 'signup' ? 'SIGN UP' : 'SEND LINK'}
         </button>
@@ -100,7 +102,7 @@ export default function AuthForm() {
           <span onClick={() => setView('signup')} style={{ cursor: 'pointer', color: '#777' }}>SIGN UP</span>
         </div>
       )}
-      
+
       {(view === 'signup' || view === 'forgot') && (
         <p onClick={() => setView('login')} style={{ textAlign: 'center', fontSize: '10px', cursor: 'pointer', marginTop: '30px', letterSpacing: '1px', color: '#fff' }}>
           BACK TO LOGIN
@@ -108,12 +110,7 @@ export default function AuthForm() {
       )}
 
       {message && (
-        <p style={{ 
-          fontSize: '11px', textAlign: 'center', marginTop: '20px', 
-          color: isError ? '#ff4d4d' : '#ffffff', 
-          fontWeight: isError ? 'bold' : 'normal',
-          letterSpacing: '0.5px' 
-        }}>
+        <p style={{ fontSize: '11px', textAlign: 'center', marginTop: '20px', color: isError ? '#ff4d4d' : '#ffffff', fontWeight: isError ? 'bold' : 'normal', letterSpacing: '0.5px' }}>
           {message}
         </p>
       )}
