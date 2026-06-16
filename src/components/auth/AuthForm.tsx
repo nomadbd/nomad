@@ -71,14 +71,22 @@ export default function AuthForm() {
       <h2 style={{ letterSpacing: '6px', marginBottom: '50px', fontWeight: '200', textAlign: 'center' }}>NOMAD</h2>
       
       <form onSubmit={view === 'forgot' ? handleForgotPassword : handleAuth}>
-        <input type="text" placeholder="Email or Username" value={email} onChange={(e) => setEmail(e.target.value)} required style={inputStyle} />
+        {/* আপডেট করা প্লেসহোল্ডার লজিক */}
+        <input 
+          type="text" 
+          placeholder={view === 'signup' ? "Email" : "Email or Username"} 
+          value={email} 
+          onChange={(e) => setEmail(e.target.value)} 
+          required 
+          style={inputStyle} 
+        />
         
         {(view === 'login' || view === 'signup') && (
           <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required style={inputStyle} />
         )}
 
         {view === 'signup' && (
-          <input type="text" placeholder="Username" value={username} onChange={(e) => setUsername(e.target.value)} style={inputStyle} />
+          <input type="text" placeholder="Choose a Username" value={username} onChange={(e) => setUsername(e.target.value)} required style={inputStyle} />
         )}
         
         <button type="submit" disabled={loading} style={{ width: '100%', padding: '14px', backgroundColor: '#fff', color: '#000', border: 'none', cursor: 'pointer', marginTop: '10px', fontSize: '12px', letterSpacing: '2px', fontWeight: 'bold' }}>
@@ -99,7 +107,6 @@ export default function AuthForm() {
         </p>
       )}
 
-      {/* আপডেট করা লাল রঙের মেসেজ */}
       {message && (
         <p style={{ 
           fontSize: '11px', textAlign: 'center', marginTop: '20px', 
