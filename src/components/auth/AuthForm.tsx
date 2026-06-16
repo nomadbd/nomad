@@ -15,9 +15,7 @@ export default function AuthForm() {
     setMessage('');
 
     if (isSignUp) {
-      // অটো ইউজারনেম জেনারেশন: ইমেইলের @ এর আগের অংশ
       const finalUsername = username || email.split('@')[0];
-      
       const { error } = await supabase.auth.signUp({
         email,
         password,
@@ -43,11 +41,31 @@ export default function AuthForm() {
     <div style={{ width: '100%', maxWidth: '320px', color: '#ffffff', fontFamily: 'sans-serif' }}>
       <h2 style={{ letterSpacing: '6px', marginBottom: '50px', fontWeight: '200', textAlign: 'center' }}>NOMAD</h2>
       <form onSubmit={handleAuth}>
-        <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required style={inputStyle} />
+        <input 
+          type="text" 
+          placeholder="Email or Username" 
+          value={email} 
+          onChange={(e) => setEmail(e.target.value)} 
+          required 
+          style={inputStyle} 
+        />
         {isSignUp && (
-          <input type="text" placeholder="Username (optional)" value={username} onChange={(e) => setUsername(e.target.value)} style={inputStyle} />
+          <input 
+            type="text" 
+            placeholder="Username (optional)" 
+            value={username} 
+            onChange={(e) => setUsername(e.target.value)} 
+            style={inputStyle} 
+          />
         )}
-        <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required style={inputStyle} />
+        <input 
+          type="password" 
+          placeholder="Password" 
+          value={password} 
+          onChange={(e) => setPassword(e.target.value)} 
+          required 
+          style={inputStyle} 
+        />
         
         <button type="submit" disabled={loading} style={{ width: '100%', padding: '14px', backgroundColor: '#fff', color: '#000', border: 'none', cursor: 'pointer', marginTop: '10px', fontSize: '12px', letterSpacing: '2px', fontWeight: 'bold' }}>
           {loading ? 'WAIT...' : isSignUp ? 'SIGN UP' : 'SIGN IN'}
