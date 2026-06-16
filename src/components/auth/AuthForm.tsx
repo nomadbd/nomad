@@ -50,38 +50,35 @@ export default function AuthForm() {
     <div style={{ width: '100%', maxWidth: '320px', color: '#ffffff', fontFamily: 'sans-serif' }}>
       <h2 style={{ letterSpacing: '6px', marginBottom: '50px', fontWeight: '200', textAlign: 'center' }}>NOMAD</h2>
       
-      {/* ভিউ অনুযায়ী ফর্ম রেন্ডার হবে */}
       <form onSubmit={view === 'forgot' ? handleForgotPassword : handleAuth}>
-        
-        {/* ইমেইল ফিল্ড সব ভিউতেই থাকবে */}
         <input type="text" placeholder="Email or Username" value={email} onChange={(e) => setEmail(e.target.value)} required style={inputStyle} />
         
-        {/* পাসওয়ার্ড ফিল্ড শুধু লগইন ও সাইনআপ ভিউতে দেখাবে */}
         {(view === 'login' || view === 'signup') && (
           <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required style={inputStyle} />
         )}
 
-        {/* ইউজারনেম ফিল্ড শুধু সাইনআপ ভিউতে */}
         {view === 'signup' && (
           <input type="text" placeholder="Username" value={username} onChange={(e) => setUsername(e.target.value)} style={inputStyle} />
         )}
         
         <button type="submit" disabled={loading} style={{ width: '100%', padding: '14px', backgroundColor: '#fff', color: '#000', border: 'none', cursor: 'pointer', marginTop: '10px', fontSize: '12px', letterSpacing: '2px', fontWeight: 'bold' }}>
-          {loading ? 'WAIT...' : view === 'login' ? 'SIGN IN' : view === 'signup' ? 'SIGN UP' : 'SEND RESET LINK'}
+          {loading ? 'WAIT...' : view === 'login' ? 'SIGN IN' : view === 'signup' ? 'SIGN UP' : 'SEND LINK'}
         </button>
       </form>
 
-      {/* নেভিগেশন টেক্সট */}
-      <div style={{ marginTop: '30px', textAlign: 'center', fontSize: '11px', color: '#777' }}>
-        {view === 'login' && (
-          <>
-            <p onClick={() => setView('forgot')} style={{ cursor: 'pointer', marginBottom: '15px' }}>FORGOT PASSWORD?</p>
-            <p onClick={() => setView('signup')} style={{ cursor: 'pointer' }}>DON'T HAVE AN ACCOUNT? SIGN UP</p>
-          </>
-        )}
-        {view === 'signup' && <p onClick={() => setView('login')} style={{ cursor: 'pointer' }}>ALREADY HAVE AN ACCOUNT? SIGN IN</p>}
-        {view === 'forgot' && <p onClick={() => setView('login')} style={{ cursor: 'pointer' }}>BACK TO LOGIN</p>}
-      </div>
+      {/* একই লাইনে Forgot Password এবং Sign Up */}
+      {view === 'login' && (
+        <div style={{ marginTop: '30px', display: 'flex', justifyContent: 'space-between', fontSize: '10px', letterSpacing: '1px' }}>
+          <span onClick={() => setView('forgot')} style={{ cursor: 'pointer', color: '#777' }}>FORGOT PASSWORD?</span>
+          <span onClick={() => setView('signup')} style={{ cursor: 'pointer', color: '#fff' }}>SIGN UP</span>
+        </div>
+      )}
+      
+      {(view === 'signup' || view === 'forgot') && (
+        <p onClick={() => setView('login')} style={{ textAlign: 'center', fontSize: '10px', cursor: 'pointer', marginTop: '30px', letterSpacing: '1px', color: '#fff' }}>
+          BACK TO LOGIN
+        </p>
+      )}
 
       {message && <p style={{ fontSize: '11px', textAlign: 'center', marginTop: '15px', color: '#aaa' }}>{message}</p>}
     </div>
