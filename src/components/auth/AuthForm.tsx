@@ -66,11 +66,11 @@ export default function AuthForm() {
         </button>
       </form>
 
-      {/* একই লাইনে Forgot Password এবং Sign Up */}
+      {/* আপডেট করা ডিজাইন: কেন্দ্রে এবং কাছাকাছি লিঙ্ক */}
       {view === 'login' && (
-        <div style={{ marginTop: '30px', display: 'flex', justifyContent: 'space-between', fontSize: '10px', letterSpacing: '1px' }}>
+        <div style={{ marginTop: '30px', display: 'flex', justifyContent: 'center', gap: '20px', fontSize: '10px', letterSpacing: '1px' }}>
           <span onClick={() => setView('forgot')} style={{ cursor: 'pointer', color: '#777' }}>FORGOT PASSWORD?</span>
-          <span onClick={() => setView('signup')} style={{ cursor: 'pointer', color: '#fff' }}>SIGN UP</span>
+          <span onClick={() => setView('signup')} style={{ cursor: 'pointer', color: '#777' }}>SIGN UP</span>
         </div>
       )}
       
