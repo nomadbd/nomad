@@ -1,21 +1,12 @@
-import React, { useState } from 'react';
+import React from 'react';
 import Header from './components/Header';
-import SearchOverlay from './components/SearchOverlay';
 import Hero from './components/Hero/Hero'; // Hero কম্পোনেন্ট ইমপোর্ট করা হলো
 
 const App: React.FC = () => {
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
-
   return (
     <div style={{ minHeight: '100vh', backgroundColor: 'black', color: 'white' }}>
-      {/* হেডার যেখানে সার্চ আইকন আছে */}
-      <Header onSearchOpen={() => setIsSearchOpen(true)} />
-
-      {/* সার্চ ওভারলে কম্পোনেন্ট */}
-      <SearchOverlay 
-        isOpen={isSearchOpen} 
-        onClose={() => setIsSearchOpen(false)} 
-      />
+      {/* হেডার এখন নিজেই সার্চ এবং প্রোফাইল ওভারলে হ্যান্ডেল করবে */}
+      <Header />
 
       {/* হিরো ব্যানার সেকশন */}
       <Hero />
