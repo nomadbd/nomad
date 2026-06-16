@@ -17,23 +17,20 @@ const AuthOverlay: React.FC<Props> = ({ isOpen, onClose }) => {
       justifyContent: 'center', alignItems: 'center',
       padding: '20px', overflowY: 'auto'
     }}>
-      
       <div style={{ width: '100%', maxWidth: '320px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <AuthForm />
         
         <button 
           onClick={onClose} 
           style={{
-            marginTop: '40px',
-            background: 'none', border: 'none', fontSize: '11px', 
-            cursor: 'pointer', color: '#555', letterSpacing: '2px', 
-            textTransform: 'uppercase'
+            marginTop: '20px', background: 'none', border: 'none', 
+            fontSize: '11px', cursor: 'pointer', color: '#555', 
+            letterSpacing: '2px', textTransform: 'uppercase'
           }}
         >
           Cancel
         </button>
       </div>
-
     </div>
   );
 };
