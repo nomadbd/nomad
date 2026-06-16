@@ -9,6 +9,13 @@ export default function AuthForm() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
 
+  // ইউজার-ফ্রেন্ডলি মেসেজ দেখানোর ফাংশন
+  const getFriendlyMessage = (errorMsg: string) => {
+    if (errorMsg.includes('Invalid login credentials')) return 'Incorrect email or password.';
+    if (errorMsg.includes('User already registered')) return 'This email is already in use.';
+    return errorMsg;
+  };
+
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -19,11 +26,11 @@ export default function AuthForm() {
       const { error } = await supabase.auth.signUp({
         email, password, options: { data: { username: finalUsername } }
       });
-      if (error) setMessage(`Error: ${error.message}`);
-      else setMessage('Check your email to confirm!');
+      if (error) setMessage(getFriendlyMessage(error.message));
+      else setMessage('Account created! Please check your email to confirm.');
     } else {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) setMessage(`Error: ${error.message}`);
+      if (error) setMessage(getFriendlyMessage(error.message));
       else setMessage('Welcome back!');
     }
     setLoading(false);
@@ -35,8 +42,8 @@ export default function AuthForm() {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: 'https://nomadbd.vercel.app/reset-password',
     });
-    if (error) setMessage(`Error: ${error.message}`);
-    else setMessage('Reset link sent! Check your email.');
+    if (error) setMessage(getFriendlyMessage(error.message));
+    else setMessage('Reset link sent! Please check your email.');
     setLoading(false);
   };
 
@@ -62,11 +69,10 @@ export default function AuthForm() {
         )}
         
         <button type="submit" disabled={loading} style={{ width: '100%', padding: '14px', backgroundColor: '#fff', color: '#000', border: 'none', cursor: 'pointer', marginTop: '10px', fontSize: '12px', letterSpacing: '2px', fontWeight: 'bold' }}>
-          {loading ? 'WAIT...' : view === 'login' ? 'SIGN IN' : view === 'signup' ? 'SIGN UP' : 'SEND LINK'}
+          {loading ? 'PROCESSING...' : view === 'login' ? 'SIGN IN' : view === 'signup' ? 'SIGN UP' : 'SEND RESET LINK'}
         </button>
       </form>
 
-      {/* আপডেট করা ডিজাইন: কেন্দ্রে এবং কাছাকাছি লিঙ্ক */}
       {view === 'login' && (
         <div style={{ marginTop: '30px', display: 'flex', justifyContent: 'center', gap: '20px', fontSize: '10px', letterSpacing: '1px' }}>
           <span onClick={() => setView('forgot')} style={{ cursor: 'pointer', color: '#777' }}>FORGOT PASSWORD?</span>
@@ -80,7 +86,7 @@ export default function AuthForm() {
         </p>
       )}
 
-      {message && <p style={{ fontSize: '11px', textAlign: 'center', marginTop: '15px', color: '#aaa' }}>{message}</p>}
+      {message && <p style={{ fontSize: '11px', textAlign: 'center', marginTop: '15px', color: '#aaa', maxWidth: '100%' }}>{message}</p>}
     </div>
   );
 }
