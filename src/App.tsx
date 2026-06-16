@@ -1,22 +1,42 @@
 import React, { useState } from 'react';
-import SearchOverlay from './SearchOverlay';
-import AuthModal from './auth/AuthModal'; // একটি Wrapper বা মডাল কম্পোনেন্ট
+import Header from './components/Header';
+import SearchOverlay from './components/SearchOverlay';
+import AuthOverlay from './components/auth/AuthOverlay'; // নতুন স্বাধীন ওভারলে ইমপোর্ট
+import Hero from './components/Hero/Hero'; 
 
-const Header: React.FC = () => {
+const App: React.FC = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [isAuthOpen, setIsAuthOpen] = useState(false); // প্রোফাইলের জন্য স্টেট
 
   return (
-    <>
-      <header style={{ /* আপনার হেডার স্টাইল */ }}>
-         {/* আইকনগুলো এখানে ক্লিক হ্যান্ডেলারসহ */}
-         <button onClick={() => setIsSearchOpen(true)}>Search</button>
-         <button onClick={() => setIsAuthOpen(true)}>Profile</button>
-      </header>
+    <div style={{ minHeight: '100vh', backgroundColor: 'black', color: 'white' }}>
+      
+      {/* হেডার */}
+      <Header 
+        onSearchOpen={() => setIsSearchOpen(true)} 
+        onProfileOpen={() => setIsAuthOpen(true)} 
+      />
 
-      {/* এগুলো সরাসরি এখানেই থাকবে, App.tsx এ যাওয়ার দরকার নেই */}
-      <SearchOverlay isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
-      <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
-    </>
+      {/* সার্চ ওভারলে কম্পোনেন্ট */}
+      <SearchOverlay 
+        isOpen={isSearchOpen} 
+        onClose={() => setIsSearchOpen(false)} 
+      />
+
+      {/* প্রোফাইল অথেনটিকেশন ওভারলে কম্পোনেন্ট */}
+      <AuthOverlay 
+        isOpen={isAuthOpen} 
+        onClose={() => setIsAuthOpen(false)} 
+      />
+
+      {/* হিরো ব্যানার সেকশন */}
+      <Hero />
+
+      <main style={{ padding: '32px' }}>
+        {/* আপনার অন্যান্য কন্টেন্ট এখানে থাকবে */}
+      </main>
+    </div>
   );
 };
+
+export default App;
