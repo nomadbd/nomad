@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import SearchOverlay from './SearchOverlay'; // সার্চ ওভারলে এখানে ইমপোর্ট করা হলো
+import SearchOverlay from './SearchOverlay'; // সার্চ ওভারলে ইমপোর্ট করা হলো
 import AuthForm from './auth/AuthForm'; // AuthForm ইমপোর্ট করা হলো
 
 const Header: React.FC = () => {
   const [show, setShow] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
-  
-  // সার্চ এবং প্রোফাইল ওপেন/ক্লোজ করার স্টেট
+
+  // সার্চ এবং প্রোফাইল ফর্ম ওপেন/ক্লোজ করার স্টেট
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
 
@@ -49,7 +49,7 @@ const Header: React.FC = () => {
         <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
           {/* সার্চ আইকন */}
           <button 
-            onClick={() => setIsSearchOpen(true)} // এখানেই সার্চ ওপেন হবে
+            onClick={() => setIsSearchOpen(true)} // এখানে ক্লিক করলে সার্চ ওপেন হবে
             style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
             aria-label="Search"
           >
@@ -73,7 +73,7 @@ const Header: React.FC = () => {
 
           {/* প্রোফাইল আইকন */}
           <button 
-            onClick={() => setIsAuthOpen(true)} // এখানেই প্রোফাইল ফর্ম ওপেন হবে
+            onClick={() => setIsAuthOpen(true)} // এখানে ক্লিক করলে প্রোফাইল ফর্ম ওপেন হবে
             style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'block', lineHeight: 0 }}
             aria-label="Profile"
           >
@@ -99,29 +99,41 @@ const Header: React.FC = () => {
           left: 0,
           width: '100%',
           height: '100vh',
-          backgroundColor: 'rgba(0, 0, 0, 0.75)',
-          backdropFilter: 'blur(8px)',
+          backgroundColor: 'rgba(0, 0, 0, 0.7)', // পেছনের অংশ হালকা অন্ধকার দেখাবে
+          backdropFilter: 'blur(8px)', // প্রিমিয়াম অ্যাপল-স্টাইল ব্লার ইফেক্ট
           WebkitBackdropFilter: 'blur(8px)',
           zIndex: 9999,
           display: 'flex',
           justifyContent: 'center',
-          alignItems: 'center'
+          alignItems: 'center',
+          padding: '20px',
+          boxSizing: 'border-box'
         }}>
-          <div style={{ position: 'relative', width: '100%', maxWidth: '400px' }}>
-            {/* ফর্মটি বন্ধ করার ক্লোজ বাটন */}
+          {/* এই কার্ডের ভেতর ফর্মটি থাকবে, যা ফর্মের ব্যাকগ্রাউন্ড সাদা রাখবে */}
+          <div style={{ 
+            position: 'relative', 
+            width: '100%', 
+            maxWidth: '400px', 
+            backgroundColor: '#ffffff', 
+            borderRadius: '12px',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
+            overflow: 'hidden'
+          }}>
+            {/* ফর্মটি বন্ধ করার ক্লোজ (✕) বাটন */}
             <button 
               onClick={() => setIsAuthOpen(false)}
               style={{
                 position: 'absolute',
-                top: '12px',
-                right: '24px',
-                background: 'transparent',
+                top: '15px',
+                right: '20px',
+                background: 'none',
                 border: 'none',
-                color: '#666',
+                color: '#333333',
                 fontSize: '22px',
                 cursor: 'pointer',
                 zIndex: 10000,
-                padding: '5px'
+                padding: '5px',
+                lineHeight: 1
               }}
               aria-label="Close Form"
             >
