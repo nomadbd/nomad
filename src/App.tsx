@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { supabase } from './supabaseClient'; // আপনার সুপাবেস ক্লায়েন্ট
+import { supabase } from './supabaseClient';
 import Header from './components/Header';
 import SearchOverlay from './components/SearchOverlay';
 import Hero from './components/Hero/Hero';
@@ -10,21 +10,24 @@ import Profile from './pages/Profile';
 const App: React.FC = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
-  const [session, setSession] = useState<any>(null); // সেশন ট্র্যাক করার স্টেট
+  const [session, setSession] = useState<any>(null);
+  const [loading, setLoading] = useState(true); // নতুন লোডিং স্টেট
 
   useEffect(() => {
-    // অ্যাপ চালু হওয়ার সময় সেশন চেক করা
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
+      setLoading(false); // চেক শেষ হলে লোডিং বন্ধ
     });
 
-    // সেশন পরিবর্তন (লগইন/লগআউট) হলে আপডেট করা
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
+      setLoading(false);
     });
 
     return () => subscription.unsubscribe();
   }, []);
+
+  if (loading) return <div style={{backgroundColor: 'black', height: '100vh', color: 'white', display: 'flex', justifyContent: 'center', alignItems: 'center'}}>Loading...</div>;
 
   return (
     <Router>
@@ -32,7 +35,6 @@ const App: React.FC = () => {
         <Header 
           onSearchOpen={() => setIsSearchOpen(true)} 
           onAuthOpen={() => {
-            // যদি আগে থেকেই লগইন থাকে, প্রোফাইলে পাঠাও। না থাকলে ফর্ম খোলো।
             if (session) {
               window.location.href = '/profile';
             } else {
@@ -58,7 +60,7 @@ const App: React.FC = () => {
               <main style={{ padding: '32px' }}></main>
             </>
           } />
-          {/* প্রোটেক্টেড রুট: সেশন থাকলে প্রোফাইল, না থাকলে হোম */}
+          {/* সেশন থাকলে প্রোফাইল, না থাকলে হোম */}
           <Route path="/profile" element={session ? <Profile /> : <Navigate to="/" />} />
         </Routes>
       </div>
