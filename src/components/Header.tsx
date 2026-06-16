@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 
 interface HeaderProps {
   onSearchOpen: () => void;
+  onAuthOpen: () => void; // নতুন প্রপস যুক্ত করা হলো
 }
 
-const Header: React.FC<HeaderProps> = ({ onSearchOpen }) => {
+const Header: React.FC<HeaderProps> = ({ onSearchOpen, onAuthOpen }) => {
   const [show, setShow] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
 
@@ -70,7 +71,7 @@ const Header: React.FC<HeaderProps> = ({ onSearchOpen }) => {
 
         {/* প্রোফাইল আইকন */}
         <button 
-          onClick={() => console.log("Profile clicked!")} 
+          onClick={onAuthOpen} // এখানে কনসোল লগের পরিবর্তে onAuthOpen ফাংশনটি দেওয়া হলো
           style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'block', lineHeight: 0 }}
           aria-label="Profile"
         >
