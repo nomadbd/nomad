@@ -1,21 +1,44 @@
-import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'; // রাউটিং ইমপোর্ট
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { supabase } from './supabaseClient'; // আপনার সুপাবেস ক্লায়েন্ট
 import Header from './components/Header';
 import SearchOverlay from './components/SearchOverlay';
 import Hero from './components/Hero/Hero';
 import AuthOverlay from './components/auth/AuthOverlay';
-import Profile from './pages/Profile'; // প্রোফাইল পেজ ইমপোর্ট
+import Profile from './pages/Profile';
 
 const App: React.FC = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [session, setSession] = useState<any>(null); // সেশন ট্র্যাক করার স্টেট
+
+  useEffect(() => {
+    // অ্যাপ চালু হওয়ার সময় সেশন চেক করা
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+
+    // সেশন পরিবর্তন (লগইন/লগআউট) হলে আপডেট করা
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   return (
     <Router>
       <div style={{ minHeight: '100vh', backgroundColor: 'black', color: 'white' }}>
         <Header 
           onSearchOpen={() => setIsSearchOpen(true)} 
-          onAuthOpen={() => setIsAuthOpen(true)} 
+          onAuthOpen={() => {
+            // যদি আগে থেকেই লগইন থাকে, প্রোফাইলে পাঠাও। না থাকলে ফর্ম খোলো।
+            if (session) {
+              window.location.href = '/profile';
+            } else {
+              setIsAuthOpen(true);
+            }
+          }} 
         />
 
         <SearchOverlay 
@@ -28,7 +51,6 @@ const App: React.FC = () => {
           onClose={() => setIsAuthOpen(false)} 
         />
 
-        {/* রাউটিং কনফিগারেশন */}
         <Routes>
           <Route path="/" element={
             <>
@@ -36,7 +58,8 @@ const App: React.FC = () => {
               <main style={{ padding: '32px' }}></main>
             </>
           } />
-          <Route path="/profile" element={<Profile />} />
+          {/* প্রোটেক্টেড রুট: সেশন থাকলে প্রোফাইল, না থাকলে হোম */}
+          <Route path="/profile" element={session ? <Profile /> : <Navigate to="/" />} />
         </Routes>
       </div>
     </Router>
