@@ -9,7 +9,7 @@ const App: React.FC = () => {
   const [isAuthOpen, setIsAuthOpen] = useState(false); // প্রোফাইলের জন্য স্টেট
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: 'black', color: 'white' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: 'white', color: 'white' }}>
       
       {/* হেডার */}
       <Header 
