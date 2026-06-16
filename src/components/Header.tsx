@@ -2,18 +2,19 @@ import React, { useState, useEffect } from 'react';
 
 interface HeaderProps {
   onSearchOpen: () => void;
-  onProfileOpen: () => void; // এটি যুক্ত হলো
 }
 
-const Header: React.FC<HeaderProps> = ({ onSearchOpen, onProfileOpen }) => {
+const Header: React.FC<HeaderProps> = ({ onSearchOpen }) => {
   const [show, setShow] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
 
   const controlHeader = () => {
     if (typeof window !== 'undefined') {
       if (window.scrollY > lastScrollY && window.scrollY > 100) {
+        // নিচে স্ক্রল করলে হেডার লুকিয়ে যাবে
         setShow(false);
       } else {
+        // ওপরে স্ক্রল করলে হেডার দেখা যাবে
         setShow(true);
       }
       setLastScrollY(window.scrollY);
@@ -69,7 +70,7 @@ const Header: React.FC<HeaderProps> = ({ onSearchOpen, onProfileOpen }) => {
 
         {/* প্রোফাইল আইকন */}
         <button 
-          onClick={onProfileOpen} // ক্লিকের লজিক এখানে যুক্ত হলো
+          onClick={() => console.log("Profile clicked!")} 
           style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'block', lineHeight: 0 }}
           aria-label="Profile"
         >
