@@ -36,7 +36,6 @@ export default function Profile() {
     fetchUserData();
   };
 
-  // স্টাইল কনস্ট্যান্টস
   const inputStyle = { width: '100%', padding: '12px', background: '#111', border: '1px solid #333', color: '#fff', marginBottom: '15px', outline: 'none' };
   const buttonStyle = { width: '100%', padding: '12px', background: '#fff', color: '#000', border: 'none', cursor: 'pointer', marginBottom: '15px' };
   const ghostButtonStyle = { width: '100%', padding: '12px', background: 'transparent', border: '1px solid #333', color: '#fff', cursor: 'pointer', marginBottom: '15px' };
@@ -58,9 +57,6 @@ export default function Profile() {
             <p style={{ fontSize: '16px', marginBottom: '20px' }}>{profile?.name || ''}</p>
             <p style={{ fontSize: '10px', color: '#777', margin: '0 0 5px 0' }}>EMAIL</p>
             <p style={{ fontSize: '16px', marginBottom: '40px' }}>{profile?.email || ''}</p>
-            
-            {/* প্রোফাইল পেজে সাইন আউট */}
-            <button onClick={handleSignOut} style={ghostButtonStyle}>SIGN OUT</button>
           </>
         ) : (
           <>
@@ -69,8 +65,6 @@ export default function Profile() {
             <input type="password" onChange={(e) => setNewPassword(e.target.value)} placeholder="NEW PASSWORD" style={inputStyle} />
             <button onClick={handleUpdate} style={buttonStyle}>SAVE CHANGES</button>
             <button onClick={() => setView('profile')} style={ghostButtonStyle}>BACK</button>
-            
-            {/* সেটিংস পেজে সাইন আউট */}
             <button onClick={handleSignOut} style={{ ...ghostButtonStyle, borderColor: '#550000', color: '#ff4444' }}>SIGN OUT</button>
           </>
         )}
