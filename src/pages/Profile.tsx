@@ -16,7 +16,6 @@ export default function Profile() {
       const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single();
       setProfile({ ...prof, email: user.email });
       setNewName(prof?.name || '');
-      // এখানে setNewEmail খালি রাখছি যাতে প্লেসহোল্ডার কাজ করে
       setNewEmail(''); 
     }
   };
@@ -35,10 +34,10 @@ export default function Profile() {
   };
 
   const handleUpdate = async () => {
-    const { error: profileError } = await supabase.from('profiles').update({ name: newName }).eq('id', profile.id);
-    if (profileError) { alert("Error: " + profileError.message); return; }
-
-    // যদি নতুন ইমেইল টাইপ করা হয় তবেই আপডেট হবে
+    if (newName) {
+        await supabase.from('profiles').update({ name: newName }).eq('id', profile.id);
+    }
+    
     if (newEmail && newEmail !== profile.email) {
       const { error: emailError } = await supabase.auth.updateUser({ email: newEmail });
       if (emailError) { alert("Email Update Error: " + emailError.message); return; }
@@ -75,7 +74,16 @@ export default function Profile() {
 
             <div style={{ marginBottom: '25px' }}>
               <p style={{ fontSize: '8px', color: '#555', letterSpacing: '2px', marginBottom: '5px' }}>NAME</p>
-              <p style={{ fontSize: '16px', fontWeight: '300', color: '#fff' }}>{profile?.name || 'No name'}</p>
+              {profile?.name ? (
+                <p style={{ fontSize: '16px', fontWeight: '300', color: '#fff' }}>{profile.name}</p>
+              ) : (
+                <p 
+                  style={{ fontSize: '16px', fontWeight: '300', color: '#555', cursor: 'pointer', borderBottom: '1px dotted #555', display: 'inline-block' }} 
+                  onClick={() => setView('settings')}
+                >
+                  Add display name
+                </p>
+              )}
             </div>
 
             <div style={{ marginBottom: '25px' }}>
@@ -95,10 +103,12 @@ export default function Profile() {
               placeholder={profile?.email} 
               onChange={(e) => setNewEmail(e.target.value)} 
               style={inputStyle} 
+              onFocus={(e) => e.target.style.borderBottom = '1px solid #fff'} 
+              onBlur={(e) => e.target.style.borderBottom = '1px solid #333'} 
             />
             
             <p style={{ fontSize: '8px', color: '#555', letterSpacing: '2px', marginBottom: '5px' }}>NEW PASSWORD</p>
-            <input type="password" placeholder="••••••••" onChange={(e) => setNewPassword(e.target.value)} style={inputStyle} />
+            <input type="password" placeholder="••••••••" onChange={(e) => setNewPassword(e.target.value)} style={inputStyle} onFocus={(e) => e.target.style.borderBottom = '1px solid #fff'} onBlur={(e) => e.target.style.borderBottom = '1px solid #333'} />
             
             <div style={{ marginTop: '20px' }}>
               <button onClick={handleUpdate} style={{ ...navButtonStyle, color: '#fff', fontWeight: '600' }}>SAVE CHANGES</button>
