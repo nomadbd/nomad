@@ -18,19 +18,14 @@ export default function Profile() {
     }
   };
 
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    window.location.href = '/';
-  };
+  const handleSignOut = async () => { await supabase.auth.signOut(); window.location.href = '/'; };
 
   const handleDeleteAccount = async () => {
-    if (window.confirm("ARE YOU SURE? This action cannot be undone.")) {
+    if (window.confirm("ARE YOU SURE? THIS ACTION CANNOT BE UNDONE.")) {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        // ১. প্রোফাইল টেবিল থেকে ডাটা ডিলিট
         await supabase.from('profiles').delete().eq('id', user.id);
-        // ২. ইউজার ডিলিট (নোট: Supabase-এ ইউজার ডিলিট করার জন্য Admin API প্রয়োজন হতে পারে, এটি ক্লায়েন্ট সাইড লজিক)
-        const { error } = await supabase.auth.admin?.deleteUser(user.id) || await supabase.auth.signOut();
+        await supabase.auth.signOut();
         window.location.href = '/';
       }
     }
@@ -39,46 +34,49 @@ export default function Profile() {
   const handleUpdate = async () => {
     const { error: profileError } = await supabase.from('profiles').update({ name: newName }).eq('id', profile.id);
     if (profileError) { alert("Error: " + profileError.message); return; }
-    if (newPassword) {
-      const { error: passwordError } = await supabase.auth.updateUser({ password: newPassword });
-      if (passwordError) { alert("Error: " + passwordError.message); return; }
-    }
+    if (newPassword) await supabase.auth.updateUser({ password: newPassword });
     alert("PROFILE UPDATED!");
     setView('profile');
     fetchUserData();
   };
 
-  // প্রিমিয়াম মিনিমাল স্টাইল
-  const inputStyle = { width: '100%', padding: '14px', background: '#0a0a0a', border: '1px solid #222', color: '#fff', marginBottom: '15px', outline: 'none', borderRadius: '4px' };
-  const primaryButtonStyle = { width: '100%', padding: '14px', background: '#fff', color: '#000', border: 'none', cursor: 'pointer', marginBottom: '15px', fontWeight: 'bold' };
-  const secondaryButtonStyle = { width: '100%', padding: '14px', background: 'transparent', border: '1px solid #333', color: '#fff', cursor: 'pointer', marginBottom: '15px' };
-  const dangerButtonStyle = { width: '100%', padding: '14px', background: 'transparent', border: '1px solid #550000', color: '#ff4444', cursor: 'pointer', marginTop: '40px', fontSize: '12px', letterSpacing: '1px' };
+  // প্রিমিয়াম মিনিমাল স্টাইল (আন্ডারলাইন ফোকাসড)
+  const inputStyle = { width: '100%', padding: '12px 0', background: 'transparent', border: 'none', borderBottom: '1px solid #222', color: '#fff', marginBottom: '30px', outline: 'none', fontSize: '16px', letterSpacing: '0.5px' };
+  const actionButtonStyle = { background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', marginBottom: '20px', fontSize: '14px', letterSpacing: '2px', display: 'block', width: '100%', textAlign: 'left', padding: '10px 0' };
+  const dangerButtonStyle = { background: 'transparent', border: 'none', color: '#550000', cursor: 'pointer', marginTop: '60px', fontSize: '10px', letterSpacing: '2px', textTransform: 'uppercase' as const };
 
   return (
-    <div style={{ backgroundColor: '#000', minHeight: '100vh', color: '#fff', padding: '20px', fontFamily: 'sans-serif' }}>
-      <div style={{ height: '60px' }}></div> 
+    <div style={{ backgroundColor: '#000', minHeight: '100vh', color: '#fff', padding: '40px 20px', fontFamily: "'Inter', sans-serif" }}>
       <div style={{ maxWidth: '400px', margin: 'auto' }}>
+        
         {view === 'profile' ? (
           <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
-              <h2 style={{ letterSpacing: '8px', fontWeight: '200', margin: 0 }}>PROFILE</h2>
-              <svg onClick={() => setView('settings')} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" cursor="pointer"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15..."></path></svg>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '60px' }}>
+              <h2 style={{ letterSpacing: '6px', fontWeight: '100', fontSize: '20px', margin: 0 }}>PROFILE</h2>
+              <div onClick={() => setView('settings')} style={{ cursor: 'pointer', opacity: 0.6 }}>SETTINGS</div>
             </div>
-            <p style={{ fontSize: '10px', color: '#777', margin: '0 0 5px 0' }}>NAME</p>
-            <p style={{ fontSize: '16px', marginBottom: '20px' }}>{profile?.name || ''}</p>
-            <p style={{ fontSize: '10px', color: '#777', margin: '0 0 5px 0' }}>EMAIL</p>
-            <p style={{ fontSize: '16px', marginBottom: '40px' }}>{profile?.email || ''}</p>
+
+            <div style={{ marginBottom: '40px' }}>
+              <p style={{ fontSize: '10px', color: '#444', letterSpacing: '2px', marginBottom: '10px' }}>NAME</p>
+              <p style={{ fontSize: '18px', fontWeight: '300' }}>{profile?.name || 'No name'}</p>
+            </div>
+
+            <div>
+              <p style={{ fontSize: '10px', color: '#444', letterSpacing: '2px', marginBottom: '10px' }}>EMAIL</p>
+              <p style={{ fontSize: '18px', fontWeight: '300' }}>{profile?.email || ''}</p>
+            </div>
           </>
         ) : (
           <>
-            <h3 style={{ fontWeight: '200', letterSpacing: '2px', fontSize: '14px', marginBottom: '30px' }}>SETTINGS</h3>
-            <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="NAME" style={inputStyle} />
-            <input type="password" onChange={(e) => setNewPassword(e.target.value)} placeholder="NEW PASSWORD" style={inputStyle} />
-            <button onClick={handleUpdate} style={primaryButtonStyle}>SAVE CHANGES</button>
-            <button onClick={() => setView('profile')} style={secondaryButtonStyle}>BACK</button>
-            <button onClick={handleSignOut} style={secondaryButtonStyle}>SIGN OUT</button>
+            <h2 style={{ fontWeight: '100', letterSpacing: '6px', fontSize: '20px', marginBottom: '60px' }}>SETTINGS</h2>
             
-            {/* প্রিমিয়াম ডিজাইনে ডিলিট বাটন নিচে আলাদা রাখা হয়েছে */}
+            <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="NAME" style={inputStyle} onFocus={(e) => e.target.style.borderBottom = '1px solid #fff'} onBlur={(e) => e.target.style.borderBottom = '1px solid #222'} />
+            <input type="password" onChange={(e) => setNewPassword(e.target.value)} placeholder="NEW PASSWORD" style={inputStyle} onFocus={(e) => e.target.style.borderBottom = '1px solid #fff'} onBlur={(e) => e.target.style.borderBottom = '1px solid #222'} />
+            
+            <button onClick={handleUpdate} style={{ ...actionButtonStyle, fontWeight: 'bold' }}>SAVE CHANGES</button>
+            <button onClick={() => setView('profile')} style={actionButtonStyle}>BACK</button>
+            <button onClick={handleSignOut} style={actionButtonStyle}>SIGN OUT</button>
+            
             <button onClick={handleDeleteAccount} style={dangerButtonStyle}>DELETE ACCOUNT</button>
           </>
         )}
