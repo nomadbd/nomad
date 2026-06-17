@@ -5,7 +5,7 @@ export default function Profile() {
   const [view, setView] = useState<'profile' | 'settings'>('profile');
   const [profile, setProfile] = useState<any>(null);
   const [orders, setOrders] = useState<any[]>([]);
-  
+
   const [newName, setNewName] = useState('');
   const [newPassword, setNewPassword] = useState('');
 
@@ -21,12 +21,9 @@ export default function Profile() {
   };
 
   const handleUpdate = async () => {
-    // নাম আপডেট
     await supabase.from('profiles').update({ name: newName }).eq('id', profile.id);
-    // পাসওয়ার্ড আপডেট
     if (newPassword) await supabase.auth.updateUser({ password: newPassword });
-    
-    alert("Profile Updated Successfully!");
+    alert("PROFILE UPDATED!");
     setView('profile');
     fetchUserData();
   };
@@ -37,11 +34,9 @@ export default function Profile() {
   };
 
   return (
-    <div style={{ backgroundColor: '#000', minHeight: '100vh', color: '#fff', padding: '20px', fontFamily: 'sans-serif' }}>
-      
-      {/* হেডার (প্রোফাইল মোডে থাকলে দেখাবে) */}
+    <div style={{ backgroundColor: '#000', minHeight: '100vh', color: '#fff', padding: '40px 20px', fontFamily: 'sans-serif' }}>
       {view === 'profile' && (
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px', position: 'relative', zIndex: 10 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px', maxWidth: '400px', margin: '0 auto 40px auto' }}>
           <h2 style={{ letterSpacing: '8px', fontWeight: '200', margin: 0 }}>PROFILE</h2>
           <svg onClick={() => setView('settings')} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1" cursor="pointer">
             <circle cx="12" cy="12" r="3"></circle>
@@ -50,32 +45,31 @@ export default function Profile() {
         </div>
       )}
 
-      {/* সেটিংস ক্লোজ বাটন */}
       {view === 'settings' && (
-        <div style={{ textAlign: 'right', marginBottom: '20px' }}>
+        <div style={{ textAlign: 'right', maxWidth: '400px', margin: '0 auto 20px auto' }}>
           <span onClick={() => setView('profile')} style={{ cursor: 'pointer', letterSpacing: '2px', fontSize: '12px' }}>CLOSE</span>
         </div>
       )}
 
-      {view === 'profile' ? (
-        <div style={{ maxWidth: '400px', margin: 'auto' }}>
-          <p style={{ fontSize: '10px', color: '#777' }}>NAME</p>
-          <p style={{ fontSize: '16px', marginBottom: '20px' }}>{profile?.name || 'Set your name'}</p>
-          <p style={{ fontSize: '10px', color: '#777' }}>EMAIL</p>
-          <p style={{ fontSize: '16px', marginBottom: '40px' }}>{profile?.email}</p>
-          
-          {/* অর্ডার হিস্ট্রি সেকশন একই থাকবে... */}
-        </div>
-      ) : (
-        <div style={{ maxWidth: '400px', margin: 'auto' }}>
-          <h3 style={{ fontWeight: '200' }}>SETTINGS</h3>
-          <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="New Name" style={{ width: '100%', padding: '12px', background: '#222', border: '1px solid #444', color: '#fff', marginBottom: '15px' }} />
-          <input type="password" onChange={(e) => setNewPassword(e.target.value)} placeholder="New Password" style={{ width: '100%', padding: '12px', background: '#222', border: '1px solid #444', color: '#fff', marginBottom: '20px' }} />
-          
-          <button onClick={handleUpdate} style={{ width: '100%', padding: '12px', background: '#fff', border: 'none', cursor: 'pointer', marginBottom: '20px' }}>SAVE CHANGES</button>
-          <button onClick={handleSignOut} style={{ width: '100%', padding: '12px', background: 'transparent', border: '1px solid #444', color: '#777', cursor: 'pointer' }}>SIGN OUT</button>
-        </div>
-      )}
+      <div style={{ maxWidth: '400px', margin: 'auto' }}>
+        {view === 'profile' ? (
+          <>
+            <p style={{ fontSize: '10px', color: '#777', margin: '0 0 5px 0' }}>NAME</p>
+            <p style={{ fontSize: '16px', marginBottom: '20px' }}>{profile?.name || 'SET YOUR NAME'}</p>
+            <p style={{ fontSize: '10px', color: '#777', margin: '0 0 5px 0' }}>EMAIL</p>
+            <p style={{ fontSize: '16px', marginBottom: '40px' }}>{profile?.email}</p>
+            {/* অর্ডার হিস্ট্রি সেকশন একই থাকবে */}
+          </>
+        ) : (
+          <>
+            <h3 style={{ fontWeight: '200', letterSpacing: '2px', fontSize: '14px', marginBottom: '30px' }}>SETTINGS</h3>
+            <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="NEW NAME" style={{ width: '100%', padding: '12px', background: '#111', border: '1px solid #333', color: '#fff', marginBottom: '15px' }} />
+            <input type="password" onChange={(e) => setNewPassword(e.target.value)} placeholder="NEW PASSWORD" style={{ width: '100%', padding: '12px', background: '#111', border: '1px solid #333', color: '#fff', marginBottom: '25px' }} />
+            <button onClick={handleUpdate} style={{ width: '100%', padding: '12px', background: '#fff', color: '#000', border: 'none', cursor: 'pointer', marginBottom: '20px' }}>SAVE CHANGES</button>
+            <button onClick={handleSignOut} style={{ width: '100%', padding: '12px', background: 'transparent', border: '1px solid #333', color: '#777', cursor: 'pointer' }}>SIGN OUT</button>
+          </>
+        )}
+      </div>
     </div>
   );
 }
