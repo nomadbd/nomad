@@ -13,17 +13,18 @@ export default function Profile() {
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
       const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single();
-      // এখানে ইমেইল এবং নাম নিশ্চিত করা হয়েছে
-      setProfile({ ...prof, email: user.email });
-      setNewName(prof?.name || ''); 
+      if (prof) {
+        setProfile({ ...prof, email: user.email });
+        setNewName(prof?.full_name || ''); // ডাটাবেসের সঠিক কলামের নাম 'full_name'
+      }
     }
   };
 
   const handleUpdate = async () => {
-    // ১. নাম আপডেট করার লজিক
+    // সঠিক কলামের নাম 'full_name' ব্যবহার করে আপডেট করা হচ্ছে
     const { error: profileError } = await supabase
       .from('profiles')
-      .update({ name: newName }) 
+      .update({ full_name: newName }) 
       .eq('id', profile.id);
 
     if (profileError) {
@@ -31,7 +32,6 @@ export default function Profile() {
       return;
     }
 
-    // ২. পাসওয়ার্ড আপডেট করার লজিক
     if (newPassword) {
       const { error: passwordError } = await supabase.auth.updateUser({ password: newPassword });
       if (passwordError) {
@@ -53,15 +53,15 @@ export default function Profile() {
           <>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
               <h2 style={{ letterSpacing: '8px', fontWeight: '200', margin: 0 }}>PROFILE</h2>
-              <svg onClick={() => setView('settings')} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1" cursor="pointer">
-                <circle cx="12" cy="12" r="3"></circle>
-                <path d="M19.4 15... (আপনার আগের SVG)"></path>
+              {/* প্রপার সেটিংস আইকন */}
+              <svg onClick={() => setView('settings')} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" cursor="pointer">
+                <path d="M12 15a3 3 0 100-6 3 3 0 000 6z" />
+                <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z" />
               </svg>
             </div>
 
-            {/* নামের ক্ষেত্রে খালি থাকলে ফাঁকা দেখাবে */}
             <p style={{ fontSize: '10px', color: '#777', margin: '0 0 5px 0' }}>NAME</p>
-            <p style={{ fontSize: '16px', marginBottom: '20px' }}>{profile?.name || ''}</p>
+            <p style={{ fontSize: '16px', marginBottom: '20px' }}>{profile?.full_name || ''}</p>
             
             <p style={{ fontSize: '10px', color: '#777', margin: '0 0 5px 0' }}>EMAIL</p>
             <p style={{ fontSize: '16px', marginBottom: '40px' }}>{profile?.email || ''}</p>
@@ -69,7 +69,7 @@ export default function Profile() {
         ) : (
           <>
             <h3 style={{ fontWeight: '200', letterSpacing: '2px', fontSize: '14px', marginBottom: '30px' }}>SETTINGS</h3>
-            <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="NAME" style={{ width: '100%', padding: '12px', background: '#111', border: '1px solid #333', color: '#fff', marginBottom: '15px' }} />
+            <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="NEW NAME" style={{ width: '100%', padding: '12px', background: '#111', border: '1px solid #333', color: '#fff', marginBottom: '15px' }} />
             <input type="password" onChange={(e) => setNewPassword(e.target.value)} placeholder="NEW PASSWORD" style={{ width: '100%', padding: '12px', background: '#111', border: '1px solid #333', color: '#fff', marginBottom: '25px' }} />
             <button onClick={handleUpdate} style={{ width: '100%', padding: '12px', background: '#fff', color: '#000', border: 'none', cursor: 'pointer', marginBottom: '15px' }}>SAVE CHANGES</button>
             <button onClick={() => setView('profile')} style={{ width: '100%', padding: '12px', background: 'transparent', border: '1px solid #333', color: '#fff', cursor: 'pointer' }}>BACK</button>
