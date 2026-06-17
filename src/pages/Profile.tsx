@@ -12,25 +12,36 @@ export default function Profile() {
   const fetchUserData = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
+      // 'profiles' টেবিল থেকে ডেটা ফেচ করা হচ্ছে
       const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+      
       if (prof) {
-        setProfile({ ...prof, email: user.email });
+        // এখানে ইমেইল এবং ফুল নেম সেট করা হচ্ছে
+        setProfile({ 
+          email: user.email, 
+          full_name: prof.full_name 
+        });
         setNewName(prof.full_name || ''); 
       }
     }
   };
 
   const handleUpdate = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    // নাম আপডেট করার লজিক
     const { error: profileError } = await supabase
       .from('profiles')
       .update({ full_name: newName }) 
-      .eq('id', profile.id);
+      .eq('id', user.id);
 
     if (profileError) {
       alert("Error updating profile: " + profileError.message);
       return;
     }
 
+    // পাসওয়ার্ড আপডেট লজিক
     if (newPassword) {
       const { error: passwordError } = await supabase.auth.updateUser({ password: newPassword });
       if (passwordError) {
@@ -64,10 +75,10 @@ export default function Profile() {
             </div>
 
             <p style={{ fontSize: '10px', color: '#777', margin: '0 0 5px 0' }}>NAME</p>
-            <p style={{ fontSize: '16px', marginBottom: '20px' }}>{profile?.full_name || 'SET YOUR NAME'}</p>
+            <p style={{ fontSize: '16px', marginBottom: '20px' }}>{profile?.full_name || 'N/A'}</p>
             
             <p style={{ fontSize: '10px', color: '#777', margin: '0 0 5px 0' }}>EMAIL</p>
-            <p style={{ fontSize: '16px', marginBottom: '40px' }}>{profile?.email || ''}</p>
+            <p style={{ fontSize: '16px', marginBottom: '40px' }}>{profile?.email || 'N/A'}</p>
           </>
         ) : (
           <>
