@@ -15,7 +15,7 @@ export default function Profile() {
     if (user) {
       const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single();
       setProfile({ ...prof, email: user.email });
-      setNewName(prof?.name || ''); 
+      setNewName(prof?.name || '');
       setNewEmail(user.email || '');
     }
   };
@@ -42,7 +42,7 @@ export default function Profile() {
     if (newEmail !== profile.email) {
       const { error: emailError } = await supabase.auth.updateUser({ email: newEmail });
       if (emailError) { alert("Email Update Error: " + emailError.message); return; }
-      else { alert("Check your new email for confirmation link."); }
+      else { alert("A confirmation link has been sent to your new email."); }
     }
 
     // পাসওয়ার্ড আপডেট
@@ -51,13 +51,13 @@ export default function Profile() {
       if (passwordError) { alert("Password Update Error: " + passwordError.message); return; }
     }
 
-    alert("PROFILE UPDATED!");
+    alert("PROFILE UPDATED SUCCESSFULLY!");
     setView('profile');
     fetchUserData();
   };
 
-  const inputStyle = { width: '100%', padding: '8px 0', background: 'transparent', border: 'none', borderBottom: '1px solid #222', color: '#fff', marginBottom: '15px', outline: 'none', fontSize: '15px' };
-  const navButtonStyle = { background: 'transparent', border: 'none', color: '#aaa', cursor: 'pointer', marginBottom: '10px', fontSize: '13px', letterSpacing: '1px', display: 'block', width: '100%', textAlign: 'left', padding: '5px 0' };
+  const inputStyle = { width: '100%', padding: '8px 0', background: 'transparent', border: 'none', borderBottom: '1px solid #222', color: '#fff', marginBottom: '20px', outline: 'none', fontSize: '15px' };
+  const navButtonStyle = { background: 'transparent', border: 'none', color: '#aaa', cursor: 'pointer', marginBottom: '15px', fontSize: '13px', letterSpacing: '1px', display: 'block', width: '100%', textAlign: 'left', padding: '5px 0' };
   const dangerButtonStyle = { background: 'transparent', border: 'none', color: '#ff4444', cursor: 'pointer', marginTop: '30px', fontSize: '11px', letterSpacing: '2px', textTransform: 'uppercase' as const, display: 'block', width: '100%', textAlign: 'left', fontWeight: 'bold' };
 
   return (
@@ -91,8 +91,8 @@ export default function Profile() {
             <p style={{ fontSize: '8px', color: '#555', letterSpacing: '2px', marginBottom: '5px' }}>NAME</p>
             <input value={newName} onChange={(e) => setNewName(e.target.value)} style={inputStyle} onFocus={(e) => e.target.style.borderBottom = '1px solid #fff'} onBlur={(e) => e.target.style.borderBottom = '1px solid #222'} />
             
-            <p style={{ fontSize: '8px', color: '#555', letterSpacing: '2px', marginBottom: '5px' }}>EMAIL</p>
-            <input value={newEmail} onChange={(e) => setNewEmail(e.target.value)} style={inputStyle} onFocus={(e) => e.target.style.borderBottom = '1px solid #fff'} onBlur={(e) => e.target.style.borderBottom = '1px solid #222'} />
+            <p style={{ fontSize: '8px', color: '#555', letterSpacing: '2px', marginBottom: '5px' }}>EMAIL ADDRESS</p>
+            <input value={newEmail} onChange={(e) => setNewEmail(e.target.value)} placeholder={profile?.email} style={inputStyle} onFocus={(e) => e.target.style.borderBottom = '1px solid #fff'} onBlur={(e) => e.target.style.borderBottom = '1px solid #222'} />
             
             <p style={{ fontSize: '8px', color: '#555', letterSpacing: '2px', marginBottom: '5px' }}>NEW PASSWORD</p>
             <input type="password" onChange={(e) => setNewPassword(e.target.value)} placeholder="••••••••" style={inputStyle} onFocus={(e) => e.target.style.borderBottom = '1px solid #fff'} onBlur={(e) => e.target.style.borderBottom = '1px solid #222'} />
