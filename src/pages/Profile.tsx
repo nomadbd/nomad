@@ -7,9 +7,7 @@ export default function Profile() {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // নতুন স্টেট ফর সেটিংস
   const [newName, setNewName] = useState('');
-  const [newEmail, setNewEmail] = useState('');
 
   useEffect(() => {
     fetchUserData();
@@ -18,13 +16,10 @@ export default function Profile() {
   const fetchUserData = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
-      // প্রোফাইল ডাটা ফেচ
       const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single();
       setProfile({ ...prof, email: user.email });
       setNewName(prof?.name || '');
-      setNewEmail(user.email || '');
 
-      // অর্ডার হিস্ট্রি ফেচ (যেখানে ক্রিয়েটেড এট ৩ মাসের মধ্যে)
       const { data: orderData } = await supabase
         .from('orders')
         .select('*')
@@ -59,8 +54,7 @@ export default function Profile() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minHeight: '100vh', color: '#ffffff', fontFamily: 'sans-serif', backgroundColor: '#000000', padding: '40px 20px' }}>
-      
-      {/* হেডার এরিয়া */}
+
       <div style={{ textAlign: 'center', maxWidth: '400px', width: '100%' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
           <h2 style={{ letterSpacing: '8px', fontWeight: '200', margin: 0 }}>PROFILE</h2>
@@ -75,7 +69,6 @@ export default function Profile() {
 
         {view === 'profile' ? (
           <>
-            {/* প্রোফাইল তথ্য */}
             <div style={{ textAlign: 'left', marginBottom: '40px' }}>
               <p style={{ fontSize: '10px', color: '#777', margin: '0 0 5px 0' }}>NAME</p>
               <p style={{ fontSize: '16px', marginBottom: '20px' }}>{profile?.name || 'Set your name'}</p>
@@ -83,28 +76,34 @@ export default function Profile() {
               <p style={{ fontSize: '16px' }}>{profile?.email}</p>
             </div>
 
-            {/* অর্ডার হিস্ট্রি */}
+            {/* আপডেট করা অর্ডার হিস্ট্রি সেকশন */}
             <div style={{ textAlign: 'left', borderTop: '1px solid #333', paddingTop: '20px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <p style={{ fontSize: '10px', letterSpacing: '2px', color: '#777' }}>ORDER HISTORY</p>
                 {orders.length > 0 && <button onClick={handleClearHistory} style={{ background: 'none', border: 'none', color: '#555', cursor: 'pointer', fontSize: '10px' }}>CLEAR</button>}
               </div>
-              
-              {orders.map(order => (
-                <div key={order.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', fontSize: '12px', borderBottom: '1px solid #222' }}>
-                  <span>{order.product_name}</span>
-                  <span style={{ color: order.status === 'Delivered' ? '#fff' : '#888' }}>{order.status}</span>
+
+              {orders.length > 0 ? (
+                orders.map(order => (
+                  <div key={order.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', fontSize: '12px', borderBottom: '1px solid #222' }}>
+                    <span>{order.product_name}</span>
+                    <span style={{ color: order.status === 'Delivered' ? '#fff' : '#888' }}>{order.status}</span>
+                  </div>
+                ))
+              ) : (
+                <div style={{ textAlign: 'center', padding: '40px 0' }}>
+                  <p style={{ fontSize: '12px', color: '#555', marginBottom: '20px' }}>Your order history is empty.</p>
+                  <a href="/" style={{ fontSize: '10px', letterSpacing: '2px', color: '#fff', textDecoration: 'none', border: '1px solid #333', padding: '10px 20px' }}>
+                    DISCOVER NOMAD
+                  </a>
                 </div>
-              ))}
-              {orders.length === 0 && <p style={{ color: '#444', fontSize: '12px', marginTop: '10px' }}>No orders found.</p>}
+              )}
             </div>
 
             <p style={{ fontSize: '9px', color: '#444', marginTop: '30px', textAlign: 'center' }}>Your data is automatically cleared every 90 days for privacy.</p>
-
             <button onClick={handleSignOut} style={{ marginTop: '40px', background: 'none', border: '1px solid #333', color: '#fff', padding: '10px 20px', cursor: 'pointer', fontSize: '10px' }}>SIGN OUT</button>
           </>
         ) : (
-          /* সেটিংস ফর্ম */
           <div style={{ textAlign: 'left' }}>
             <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Name" style={{ width: '100%', padding: '10px', background: '#111', border: '1px solid #333', color: '#fff', marginBottom: '10px' }} />
             <button onClick={handleUpdateProfile} style={{ width: '100%', padding: '10px', background: '#fff', color: '#000', border: 'none', cursor: 'pointer' }}>SAVE CHANGES</button>
