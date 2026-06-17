@@ -16,7 +16,8 @@ export default function Profile() {
       const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single();
       setProfile({ ...prof, email: user.email });
       setNewName(prof?.name || '');
-      setNewEmail(user.email || ''); // ইমেইল স্টেটে সেট করা হয়েছে
+      // এখানে setNewEmail খালি রাখছি যাতে প্লেসহোল্ডার কাজ করে
+      setNewEmail(''); 
     }
   };
 
@@ -37,7 +38,8 @@ export default function Profile() {
     const { error: profileError } = await supabase.from('profiles').update({ name: newName }).eq('id', profile.id);
     if (profileError) { alert("Error: " + profileError.message); return; }
 
-    if (newEmail !== profile.email) {
+    // যদি নতুন ইমেইল টাইপ করা হয় তবেই আপডেট হবে
+    if (newEmail && newEmail !== profile.email) {
       const { error: emailError } = await supabase.auth.updateUser({ email: newEmail });
       if (emailError) { alert("Email Update Error: " + emailError.message); return; }
       else { alert("A confirmation link has been sent to your new email."); }
@@ -53,7 +55,6 @@ export default function Profile() {
     fetchUserData();
   };
 
-  // স্টাইলস
   const inputStyle = { width: '100%', padding: '10px 0', background: 'transparent', border: 'none', borderBottom: '1px solid #333', color: '#fff', marginBottom: '20px', outline: 'none', fontSize: '15px' };
   const navButtonStyle = { background: 'transparent', border: 'none', color: '#aaa', cursor: 'pointer', marginBottom: '15px', fontSize: '13px', letterSpacing: '1px', display: 'block', width: '100%', textAlign: 'left', padding: '5px 0' };
   const dangerButtonStyle = { background: 'transparent', border: 'none', color: '#ff4444', cursor: 'pointer', marginTop: '30px', fontSize: '11px', letterSpacing: '2px', textTransform: 'uppercase' as const, display: 'block', width: '100%', textAlign: 'left', fontWeight: 'bold' };
@@ -87,13 +88,17 @@ export default function Profile() {
             <h2 style={{ fontWeight: '100', letterSpacing: '4px', fontSize: '18px', marginBottom: '40px' }}>SETTINGS</h2>
             
             <p style={{ fontSize: '8px', color: '#555', letterSpacing: '2px', marginBottom: '5px' }}>NAME</p>
-            <input value={newName} onChange={(e) => setNewName(e.target.value)} style={inputStyle} onFocus={(e) => e.target.style.borderBottom = '1px solid #fff'} onBlur={(e) => e.target.style.borderBottom = '1px solid #333'} />
+            <input value={newName} onChange={(e) => setNewName(e.target.value)} style={inputStyle} />
             
             <p style={{ fontSize: '8px', color: '#555', letterSpacing: '2px', marginBottom: '5px' }}>EMAIL ADDRESS</p>
-            <input value={newEmail} onChange={(e) => setNewEmail(e.target.value)} style={inputStyle} onFocus={(e) => e.target.style.borderBottom = '1px solid #fff'} onBlur={(e) => e.target.style.borderBottom = '1px solid #333'} />
+            <input 
+              placeholder={profile?.email} 
+              onChange={(e) => setNewEmail(e.target.value)} 
+              style={inputStyle} 
+            />
             
             <p style={{ fontSize: '8px', color: '#555', letterSpacing: '2px', marginBottom: '5px' }}>NEW PASSWORD</p>
-            <input type="password" onChange={(e) => setNewPassword(e.target.value)} placeholder="••••••••" style={inputStyle} onFocus={(e) => e.target.style.borderBottom = '1px solid #fff'} onBlur={(e) => e.target.style.borderBottom = '1px solid #333'} />
+            <input type="password" placeholder="••••••••" onChange={(e) => setNewPassword(e.target.value)} style={inputStyle} />
             
             <div style={{ marginTop: '20px' }}>
               <button onClick={handleUpdate} style={{ ...navButtonStyle, color: '#fff', fontWeight: '600' }}>SAVE CHANGES</button>
