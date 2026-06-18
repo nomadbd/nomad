@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { supabase } from '../../supabaseClient';
-import { Toast } from '../Toast'; // আপনার নতুন Toast কম্পোনেন্টটি ইমপোর্ট করুন
+import { Toast } from '../Toast'; // আপনার তৈরি করা টোস্ট কম্পোনেন্ট
 
 export default function AuthForm() {
   const [view, setView] = useState<'login' | 'signup' | 'forgot'>('login');
@@ -43,7 +43,7 @@ export default function AuthForm() {
     }
 
     if (error) {
-      // এখানে error.message ব্যবহার করা হয়েছে যা {} এর সমস্যা সমাধান করবে
+      // এখানে সরাসরি error.message ব্যবহার করা হয়েছে যাতে {} না দেখায়
       showToast(error.message.toUpperCase(), '#ff4d4d');
     }
     setLoading(false);
@@ -52,7 +52,7 @@ export default function AuthForm() {
   return (
     <div style={{ width: '100%', maxWidth: '320px', color: '#ffffff', fontFamily: 'sans-serif', margin: 'auto', paddingTop: '100px' }}>
       
-      {/* Toast কম্পোনেন্টটি এখানে যোগ করা হয়েছে */}
+      {/* টোস্ট কম্পোনেন্টটি এখানে যোগ করা হয়েছে */}
       {toast && <Toast message={toast.message} color={toast.color} />}
 
       <h2 style={{ letterSpacing: '6px', marginBottom: '50px', fontWeight: '200', textAlign: 'center' }}>NOMAD</h2>
