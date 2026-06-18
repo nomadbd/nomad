@@ -1,18 +1,12 @@
 import React, { useState } from 'react';
 import { supabase } from '../../supabaseClient';
-import { Toast } from '../Toast'; 
 
 export default function AuthForm() {
   const [view, setView] = useState<'login' | 'signup' | 'forgot'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [toast, setToast] = useState<{ message: string; color: string } | null>(null);
-
-  const showToast = (message: string, color: string = '#fff') => {
-    setToast({ message, color });
-    setTimeout(() => setToast(null), 3000);
-  };
+  const [message, setMessage] = useState<{ text: string; isError: boolean } | null>(null);
 
   const inputStyle: React.CSSProperties = {
     width: '100%', padding: '12px 0', backgroundColor: 'transparent', 
@@ -23,6 +17,7 @@ export default function AuthForm() {
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setMessage(null);
 
     let error: any = null;
 
@@ -30,7 +25,7 @@ export default function AuthForm() {
       if (view === 'signup') {
         const { error: signUpError } = await supabase.auth.signUp({ email, password });
         error = signUpError;
-        if (!error) showToast('CHECK YOUR EMAIL TO CONFIRM!', '#4dff4d');
+        if (!error) setMessage({ text: 'CHECK YOUR EMAIL TO CONFIRM!', isError: false });
       } else if (view === 'login') {
         const { error: loginError } = await supabase.auth.signInWithPassword({ email, password });
         error = loginError;
@@ -40,27 +35,25 @@ export default function AuthForm() {
           redirectTo: `${window.location.origin}/update-password`,
         });
         error = resetError;
-        if (!error) showToast('PASSWORD RESET LINK SENT!', '#4dff4d');
+        if (!error) setMessage({ text: 'PASSWORD RESET LINK SENT!', isError: false });
       }
     } catch (err) {
-      console.error("Unexpected Auth Error:", err);
+      console.error("Caught unexpected error:", err);
       error = { message: "AN UNEXPECTED ERROR OCCURRED" };
     }
 
     if (error) {
-      // কনসোলে চেক করার জন্য
-      console.log("Supabase Error Object:", error);
+      // কনসোলে এররটি বিস্তারিত দেখাবে, ব্রাউজারে F12 চেপে দেখুন
+      console.error("Supabase Auth Error:", error);
       
-      // এখানে সরাসরি error না দেখিয়ে error.message নিশ্চিত করা হয়েছে
-      const msg = error.message || JSON.stringify(error);
-      showToast(msg.toUpperCase(), '#ff4d4d');
+      const errorMessage = (typeof error.message === 'string' ? error.message : JSON.stringify(error));
+      setMessage({ text: errorMessage.toUpperCase(), isError: true });
     }
     setLoading(false);
   };
 
   return (
     <div style={{ width: '100%', maxWidth: '320px', color: '#ffffff', fontFamily: 'sans-serif', margin: 'auto', paddingTop: '100px' }}>
-      {toast && <Toast message={toast.message} color={toast.color} />}
       <h2 style={{ letterSpacing: '6px', marginBottom: '50px', fontWeight: '200', textAlign: 'center' }}>NOMAD</h2>
 
       <form onSubmit={handleAuth}>
@@ -73,14 +66,20 @@ export default function AuthForm() {
         </button>
       </form>
 
+      {message && (
+        <div style={{ textAlign: 'center', marginTop: '25px', color: message.isError ? '#ff4d4d' : '#4dff4d', fontSize: '10px', letterSpacing: '1px', textTransform: 'uppercase' }}>
+          {message.text}
+        </div>
+      )}
+
       <div style={{ textAlign: 'center', marginTop: '20px', fontSize: '10px', cursor: 'pointer', letterSpacing: '1px' }}>
         {view === 'login' && (
           <>
-            <p onClick={() => { setView('signup'); }}>NEED AN ACCOUNT? SIGN UP</p>
-            <p onClick={() => { setView('forgot'); }} style={{ marginTop: '10px' }}>FORGOT PASSWORD?</p>
+            <p onClick={() => { setView('signup'); setMessage(null); }}>NEED AN ACCOUNT? SIGN UP</p>
+            <p onClick={() => { setView('forgot'); setMessage(null); }} style={{ marginTop: '10px' }}>FORGOT PASSWORD?</p>
           </>
         )}
-        {view !== 'login' && <p onClick={() => { setView('login'); }}>BACK TO LOGIN</p>}
+        {view !== 'login' && <p onClick={() => { setView('login'); setMessage(null); }}>BACK TO LOGIN</p>}
       </div>
     </div>
   );
