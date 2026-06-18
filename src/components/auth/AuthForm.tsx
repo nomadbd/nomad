@@ -19,7 +19,7 @@ export default function AuthForm() {
     setLoading(true);
     setMessage(null);
 
-    let error: any = null;
+    let error = null;
 
     if (view === 'signup') {
       const { error: signUpError } = await supabase.auth.signUp({ email, password });
@@ -38,11 +38,8 @@ export default function AuthForm() {
     }
 
     if (error) {
-      // যদি error একটি অবজেক্ট হয়, তাহলে সেটিকে স্ট্রিং এ রূপান্তর করছি
-      const errorMsg = error.message ? error.message : JSON.stringify(error);
-      setMessage({ text: errorMsg.toUpperCase(), isError: true });
+      setMessage({ text: error.message.toUpperCase(), isError: true });
     }
-    
     setLoading(false);
   };
 
@@ -60,6 +57,7 @@ export default function AuthForm() {
         </button>
       </form>
 
+      {/* মেসেজ সেকশন */}
       {message && (
         <div style={{ textAlign: 'center', marginTop: '25px', color: message.isError ? '#ff4d4d' : '#4dff4d', fontSize: '10px', letterSpacing: '1px', textTransform: 'uppercase' }}>
           {message.text}
