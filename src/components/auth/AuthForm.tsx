@@ -19,26 +19,34 @@ export default function AuthForm() {
     setLoading(true);
     setMessage(null);
 
-    let error = null;
+    let error: any = null;
 
-    if (view === 'signup') {
-      const { error: signUpError } = await supabase.auth.signUp({ email, password });
-      error = signUpError;
-      if (!error) setMessage({ text: 'CHECK YOUR EMAIL TO CONFIRM!', isError: false });
-    } else if (view === 'login') {
-      const { error: loginError } = await supabase.auth.signInWithPassword({ email, password });
-      error = loginError;
-      if (!error) window.location.href = '/profile';
-    } else if (view === 'forgot') {
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/update-password`,
-      });
-      error = resetError;
-      if (!error) setMessage({ text: 'PASSWORD RESET LINK SENT!', isError: false });
+    try {
+      if (view === 'signup') {
+        const { error: signUpError } = await supabase.auth.signUp({ email, password });
+        error = signUpError;
+        if (!error) setMessage({ text: 'CHECK YOUR EMAIL TO CONFIRM!', isError: false });
+      } else if (view === 'login') {
+        const { error: loginError } = await supabase.auth.signInWithPassword({ email, password });
+        error = loginError;
+        if (!error) window.location.href = '/profile';
+      } else if (view === 'forgot') {
+        const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/update-password`,
+        });
+        error = resetError;
+        if (!error) setMessage({ text: 'PASSWORD RESET LINK SENT!', isError: false });
+      }
+    } catch (err) {
+      error = err;
     }
 
     if (error) {
-      setMessage({ text: error.message.toUpperCase(), isError: true });
+      // এই লাইনটি ব্রাউজারের কনসোলে সমস্যার আসল কারণ দেখাবে (F12 চেপে কনসোল চেক করুন)
+      console.error("Auth Error Details:", error);
+      
+      const errorMessage = error.message || "An unknown error occurred";
+      setMessage({ text: errorMessage.toUpperCase(), isError: true });
     }
     setLoading(false);
   };
@@ -57,7 +65,6 @@ export default function AuthForm() {
         </button>
       </form>
 
-      {/* মেসেজ সেকশন */}
       {message && (
         <div style={{ textAlign: 'center', marginTop: '25px', color: message.isError ? '#ff4d4d' : '#4dff4d', fontSize: '10px', letterSpacing: '1px', textTransform: 'uppercase' }}>
           {message.text}
