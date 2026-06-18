@@ -38,15 +38,18 @@ export default function AuthForm() {
         if (!error) setMessage({ text: 'PASSWORD RESET LINK SENT!', isError: false });
       }
     } catch (err) {
-      console.error("Caught unexpected error:", err);
-      error = { message: "AN UNEXPECTED ERROR OCCURRED" };
+      console.error("Unexpected error:", err);
+      setMessage({ text: "AN UNEXPECTED ERROR OCCURRED", isError: true });
+      setLoading(false);
+      return;
     }
 
     if (error) {
-      // কনসোলে এররটি বিস্তারিত দেখাবে, ব্রাউজারে F12 চেপে দেখুন
-      console.error("Supabase Auth Error:", error);
+      // কনসোলে এররটি লগ করবে যাতে আপনি F12 চেপে আসল কারণ দেখতে পারেন
+      console.error("Supabase Error:", error);
       
-      const errorMessage = (typeof error.message === 'string' ? error.message : JSON.stringify(error));
+      // এররটি স্ট্রিং এ রূপান্তর করা হয়েছে যাতে {} না দেখায়
+      const errorMessage = typeof error.message === 'string' ? error.message : "AN ERROR OCCURRED";
       setMessage({ text: errorMessage.toUpperCase(), isError: true });
     }
     setLoading(false);
