@@ -19,38 +19,26 @@ export default function AuthForm() {
     setLoading(true);
     setMessage(null);
 
-    let error: any = null;
+    let error = null;
 
-    try {
-      if (view === 'signup') {
-        const { error: signUpError } = await supabase.auth.signUp({ email, password });
-        error = signUpError;
-        if (!error) setMessage({ text: 'CHECK YOUR EMAIL TO CONFIRM!', isError: false });
-      } else if (view === 'login') {
-        const { error: loginError } = await supabase.auth.signInWithPassword({ email, password });
-        error = loginError;
-        if (!error) window.location.href = '/profile';
-      } else if (view === 'forgot') {
-        const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: `${window.location.origin}/update-password`,
-        });
-        error = resetError;
-        if (!error) setMessage({ text: 'PASSWORD RESET LINK SENT!', isError: false });
-      }
-    } catch (err) {
-      console.error("Unexpected error:", err);
-      setMessage({ text: "AN UNEXPECTED ERROR OCCURRED", isError: true });
-      setLoading(false);
-      return;
+    if (view === 'signup') {
+      const { error: signUpError } = await supabase.auth.signUp({ email, password });
+      error = signUpError;
+      if (!error) setMessage({ text: 'CHECK YOUR EMAIL TO CONFIRM!', isError: false });
+    } else if (view === 'login') {
+      const { error: loginError } = await supabase.auth.signInWithPassword({ email, password });
+      error = loginError;
+      if (!error) window.location.href = '/profile';
+    } else if (view === 'forgot') {
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/update-password`,
+      });
+      error = resetError;
+      if (!error) setMessage({ text: 'PASSWORD RESET LINK SENT!', isError: false });
     }
 
     if (error) {
-      // কনসোলে এররটি লগ করবে যাতে আপনি F12 চেপে আসল কারণ দেখতে পারেন
-      console.error("Supabase Error:", error);
-      
-      // এররটি স্ট্রিং এ রূপান্তর করা হয়েছে যাতে {} না দেখায়
-      const errorMessage = typeof error.message === 'string' ? error.message : "AN ERROR OCCURRED";
-      setMessage({ text: errorMessage.toUpperCase(), isError: true });
+      setMessage({ text: error.message.toUpperCase(), isError: true });
     }
     setLoading(false);
   };
@@ -69,6 +57,7 @@ export default function AuthForm() {
         </button>
       </form>
 
+      {/* মেসেজ সেকশন */}
       {message && (
         <div style={{ textAlign: 'center', marginTop: '25px', color: message.isError ? '#ff4d4d' : '#4dff4d', fontSize: '10px', letterSpacing: '1px', textTransform: 'uppercase' }}>
           {message.text}
