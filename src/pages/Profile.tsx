@@ -1,7 +1,5 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../supabaseClient';
-import { Toast } from '../components/Toast';
-import { ConfirmModal } from '../components/ConfirmModal';
 
 export default function Profile() {
   const [view, setView] = useState<'profile' | 'settings'>('profile');
@@ -9,60 +7,62 @@ export default function Profile() {
   const [newName, setNewName] = useState('');
   const [newEmail, setNewEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
-  const [toast, setToast] = useState<{ message: string; color: string } | null>(null);
-  const [showConfirm, setShowConfirm] = useState(false);
 
   useEffect(() => { fetchUserData(); }, []);
-
-  const showToast = (message: string, color: string = '#fff') => {
-    setToast({ message, color });
-    setTimeout(() => setToast(null), 3000);
-  };
 
   const fetchUserData = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
       const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+      // এখানে নাম এবং ইমেইল দুটোই সেট করা হচ্ছে
       setProfile({ ...prof, email: user.email });
       setNewName(prof?.name || '');
+      setNewEmail(''); // ইমেইল ফিল্ডটি খালি রাখা হয়েছে যেন প্লেসহোল্ডার হিসেবে বর্তমান ইমেইল দেখায়
     }
   };
 
   const handleSignOut = async () => { await supabase.auth.signOut(); window.location.href = '/'; };
 
-  const handleDeleteAccount = () => setShowConfirm(true);
-
-  const confirmDelete = async () => {
-    setShowConfirm(false);
-    const { error } = await supabase.rpc('delete_user');
-    if (error) {
-      showToast(error.message || "Error deleting account", "#ff4444");
-    } else {
-      await supabase.auth.signOut();
-      window.location.href = '/';
+  const handleDeleteAccount = async () => {
+    if (window.confirm("ARE YOU SURE? THIS ACTION CANNOT BE UNDONE.")) {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.from('profiles').delete().eq('id', user.id);
+        await supabase.auth.signOut();
+        window.location.href = '/';
+      }
     }
   };
 
   const handleUpdate = async () => {
     try {
+      // ১. নাম আপডেট
       if (newName !== profile?.name) {
         const { error: profileError } = await supabase.from('profiles').update({ name: newName }).eq('id', profile.id);
         if (profileError) throw profileError;
       }
+
+      // ২. ইমেইল আপডেট
       if (newEmail && newEmail !== profile?.email) {
         const { error: emailError } = await supabase.auth.updateUser({ email: newEmail });
         if (emailError) throw emailError;
-        showToast("Confirmation link sent to new email.");
+        alert("A confirmation link has been sent to your new email.");
       }
+
+      // ৩. পাসওয়ার্ড আপডেট
       if (newPassword) {
         const { error: passwordError } = await supabase.auth.updateUser({ password: newPassword });
         if (passwordError) throw passwordError;
       }
-      showToast("Profile updated successfully!", "#2ecc71");
+
+      alert("PROFILE UPDATED SUCCESSFULLY!");
+
+      // আপডেট শেষে ডাটা পুনরায় ফেচ করে প্রোফাইল স্টেট আপডেট করা
       await fetchUserData();
       setView('profile');
+
     } catch (error: any) {
-      showToast(error?.message || "An unexpected error occurred", "#ff4444");
+      alert("Update Error: " + error.message);
     }
   };
 
@@ -72,11 +72,8 @@ export default function Profile() {
 
   return (
     <div style={{ backgroundColor: '#000', minHeight: '100vh', color: '#fff', padding: '40px 20px', fontFamily: "'Inter', sans-serif" }}>
-      
-      {toast && <Toast message={toast.message} color={toast.color} />}
-      {showConfirm && <ConfirmModal onConfirm={confirmDelete} onCancel={() => setShowConfirm(false)} />}
-
       <div style={{ maxWidth: '400px', margin: 'auto' }}>
+
         {view === 'profile' ? (
           <>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
@@ -104,17 +101,22 @@ export default function Profile() {
         ) : (
           <>
             <h2 style={{ fontWeight: '100', letterSpacing: '4px', fontSize: '18px', marginBottom: '40px' }}>SETTINGS</h2>
+
             <p style={{ fontSize: '8px', color: '#555', letterSpacing: '2px', marginBottom: '5px' }}>NAME</p>
             <input value={newName} onChange={(e) => setNewName(e.target.value)} style={inputStyle} />
+
             <p style={{ fontSize: '8px', color: '#555', letterSpacing: '2px', marginBottom: '5px' }}>EMAIL ADDRESS</p>
             <input placeholder={profile?.email} onChange={(e) => setNewEmail(e.target.value)} style={inputStyle} />
+
             <p style={{ fontSize: '8px', color: '#555', letterSpacing: '2px', marginBottom: '5px' }}>NEW PASSWORD</p>
             <input type="password" placeholder="••••••••" onChange={(e) => setNewPassword(e.target.value)} style={inputStyle} />
+
             <div style={{ marginTop: '20px' }}>
               <button onClick={handleUpdate} style={{ ...navButtonStyle, color: '#fff', fontWeight: '600' }}>SAVE CHANGES</button>
               <button onClick={() => setView('profile')} style={navButtonStyle}>BACK</button>
               <button onClick={handleSignOut} style={navButtonStyle}>SIGN OUT</button>
             </div>
+
             <button onClick={handleDeleteAccount} style={dangerButtonStyle}>DELETE ACCOUNT</button>
           </>
         )}
