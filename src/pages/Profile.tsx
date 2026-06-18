@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../supabaseClient';
+import { Toast } from '../components/Toast';
+import { ConfirmModal } from '../components/ConfirmModal';
 
 export default function Profile() {
   const [view, setView] = useState<'profile' | 'settings'>('profile');
@@ -8,6 +10,7 @@ export default function Profile() {
   const [newEmail, setNewEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [toast, setToast] = useState<{ message: string; color: string } | null>(null);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   useEffect(() => { fetchUserData(); }, []);
 
@@ -27,16 +30,16 @@ export default function Profile() {
 
   const handleSignOut = async () => { await supabase.auth.signOut(); window.location.href = '/'; };
 
-  const handleDeleteAccount = async () => {
-    if (window.confirm("ARE YOU SURE? THIS ACTION CANNOT BE UNDONE.")) {
-      const { error } = await supabase.rpc('delete_user');
-      if (error) {
-        showToast("Error deleting account: " + error.message, "#ff4444");
-      } else {
-        await supabase.auth.signOut();
-        showToast("Account deleted successfully.");
-        window.location.href = '/';
-      }
+  const handleDeleteAccount = () => setShowConfirm(true);
+
+  const confirmDelete = async () => {
+    setShowConfirm(false);
+    const { error } = await supabase.rpc('delete_user');
+    if (error) {
+      showToast("Error deleting account: " + error.message, "#ff4444");
+    } else {
+      await supabase.auth.signOut();
+      window.location.href = '/';
     }
   };
 
@@ -69,11 +72,10 @@ export default function Profile() {
 
   return (
     <div style={{ backgroundColor: '#000', minHeight: '100vh', color: '#fff', padding: '40px 20px', fontFamily: "'Inter', sans-serif" }}>
-      {toast && (
-        <div style={{ position: 'fixed', top: '20px', right: '20px', background: '#111', color: '#fff', padding: '15px 25px', borderRadius: '5px', borderLeft: `5px solid ${toast.color}`, zIndex: 9999, fontSize: '12px', letterSpacing: '1px' }}>
-          {toast.message}
-        </div>
-      )}
+      
+      {/* নতুন কম্পোনেন্টগুলো এখানে যোগ করা হয়েছে */}
+      {toast && <Toast message={toast.message} color={toast.color} />}
+      {showConfirm && <ConfirmModal onConfirm={confirmDelete} onCancel={() => setShowConfirm(false)} />}
 
       <div style={{ maxWidth: '400px', margin: 'auto' }}>
         {view === 'profile' ? (
@@ -85,6 +87,7 @@ export default function Profile() {
                 <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
               </svg>
             </div>
+
             <div style={{ marginBottom: '25px' }}>
               <p style={{ fontSize: '8px', color: '#555', letterSpacing: '2px', marginBottom: '5px' }}>NAME</p>
               {profile?.name ? (
@@ -93,6 +96,7 @@ export default function Profile() {
                 <p style={{ fontSize: '16px', fontWeight: '300', color: '#555', cursor: 'pointer', borderBottom: '1px dotted #555', display: 'inline-block' }} onClick={() => setView('settings')}>Add display name</p>
               )}
             </div>
+
             <div style={{ marginBottom: '25px' }}>
               <p style={{ fontSize: '8px', color: '#555', letterSpacing: '2px', marginBottom: '5px' }}>EMAIL</p>
               <p style={{ fontSize: '16px', fontWeight: '300', color: '#fff' }}>{profile?.email || ''}</p>
