@@ -1,4 +1,4 @@
-Import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { supabase } from '../supabaseClient';
 
 export default function Profile() {
@@ -22,10 +22,14 @@ export default function Profile() {
       const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single();
       setProfile({ ...prof, email: user.email });
       setNewName(prof?.name || '');
+      setNewEmail(''); // ইমেইল ফিল্ড রিসেট করা
     }
   };
 
-  const handleSignOut = async () => { await supabase.auth.signOut(); window.location.href = '/'; };
+  const handleSignOut = async () => { 
+    await supabase.auth.signOut(); 
+    window.location.href = '/'; 
+  };
 
   const handleDeleteAccount = async () => {
     if (window.confirm("ARE YOU SURE? THIS ACTION CANNOT BE UNDONE.")) {
@@ -42,15 +46,18 @@ export default function Profile() {
 
   const handleUpdate = async () => {
     try {
+      // ১. নাম আপডেট
       if (newName !== profile?.name) {
         const { error: profileError } = await supabase.from('profiles').update({ name: newName }).eq('id', profile.id);
         if (profileError) throw profileError;
       }
+      // ২. ইমেইল আপডেট
       if (newEmail && newEmail !== profile?.email) {
         const { error: emailError } = await supabase.auth.updateUser({ email: newEmail });
         if (emailError) throw emailError;
         showToast("Confirmation link sent to new email.");
       }
+      // ৩. পাসওয়ার্ড আপডেট
       if (newPassword) {
         const { error: passwordError } = await supabase.auth.updateUser({ password: newPassword });
         if (passwordError) throw passwordError;
