@@ -36,7 +36,7 @@ export default function Profile() {
     setShowConfirm(false);
     const { error } = await supabase.rpc('delete_user');
     if (error) {
-      showToast("Error deleting account: " + error.message, "#ff4444");
+      showToast(error.message || "Error deleting account", "#ff4444");
     } else {
       await supabase.auth.signOut();
       window.location.href = '/';
@@ -62,7 +62,7 @@ export default function Profile() {
       await fetchUserData();
       setView('profile');
     } catch (error: any) {
-      showToast("Update Error: " + error.message, "#ff4444");
+      showToast(error?.message || "An unexpected error occurred", "#ff4444");
     }
   };
 
@@ -73,7 +73,6 @@ export default function Profile() {
   return (
     <div style={{ backgroundColor: '#000', minHeight: '100vh', color: '#fff', padding: '40px 20px', fontFamily: "'Inter', sans-serif" }}>
       
-      {/* নতুন কম্পোনেন্টগুলো এখানে যোগ করা হয়েছে */}
       {toast && <Toast message={toast.message} color={toast.color} />}
       {showConfirm && <ConfirmModal onConfirm={confirmDelete} onCancel={() => setShowConfirm(false)} />}
 
