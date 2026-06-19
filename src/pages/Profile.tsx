@@ -4,6 +4,7 @@ import { supabase } from '../supabaseClient';
 export default function Profile() {
   const [view, setView] = useState<'profile' | 'settings'>('profile');
   const [profile, setProfile] = useState<any>(null);
+  const [orders, setOrders] = useState<any[]>([]); // অর্ডার ডেটার জন্য নতুন স্টেট
   const [newName, setNewName] = useState('');
   const [newEmail, setNewEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -24,6 +25,15 @@ export default function Profile() {
       setProfile({ ...prof, email: user.email });
       setNewName(prof?.name || '');
       setNewEmail('');
+
+      // ইউজারের অর্ডারগুলো নিয়ে আসা
+      const { data: userOrders } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+      
+      if (userOrders) setOrders(userOrders);
     }
   };
 
@@ -90,7 +100,6 @@ export default function Profile() {
           <>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
               <h2 style={{ letterSpacing: '4px', fontWeight: '100', fontSize: '18px', margin: 0 }}>PROFILE</h2>
-              {/* সেটিংস আইকন ঠিকভাবে পজিশন করা হয়েছে */}
               <svg onClick={() => setView('settings')} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" cursor="pointer" style={{ display: 'block' }}>
                 <circle cx="12" cy="12" r="3"></circle>
                 <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
@@ -104,10 +113,22 @@ export default function Profile() {
                 <p style={{ fontSize: '16px', fontWeight: '300', color: '#555', cursor: 'pointer', borderBottom: '1px dotted #555', display: 'inline-block' }} onClick={() => setView('settings')}>Add display name</p>
               )}
             </div>
-            <div style={{ marginBottom: '25px' }}>
+            <div style={{ marginBottom: '40px' }}>
               <p style={{ fontSize: '8px', color: '#555', letterSpacing: '2px', marginBottom: '5px' }}>EMAIL</p>
               <p style={{ fontSize: '16px', fontWeight: '300', color: '#fff' }}>{profile?.email || ''}</p>
             </div>
+
+            {/* অর্ডার হিস্ট্রি সেকশন */}
+            <h3 style={{ fontSize: '10px', letterSpacing: '2px', color: '#555', marginBottom: '20px', borderBottom: '1px solid #333', paddingBottom: '10px' }}>MY ORDERS</h3>
+            {orders.length > 0 ? orders.map((order) => (
+              <div key={order.id} style={{ padding: '15px 0', borderBottom: '1px solid #222' }}>
+                <p style={{ fontSize: '14px', margin: '0 0 5px 0' }}>{order.product_name}</p>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#888' }}>
+                  <span>{order.status}</span>
+                  <span>{new Date(order.estimated_delivery).toLocaleDateString()}</span>
+                </div>
+              </div>
+            )) : <p style={{ fontSize: '12px', color: '#444' }}>No orders found.</p>}
           </>
         ) : (
           <>
