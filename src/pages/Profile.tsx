@@ -8,6 +8,7 @@ export default function Profile() {
   const [newEmail, setNewEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [toast, setToast] = useState<{ message: string; color: string } | null>(null);
+  const [showConfirm, setShowConfirm] = useState(false); // কনফার্মেশন মডালের জন্য
 
   useEffect(() => { fetchUserData(); }, []);
 
@@ -22,42 +23,34 @@ export default function Profile() {
       const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single();
       setProfile({ ...prof, email: user.email });
       setNewName(prof?.name || '');
-      setNewEmail(''); // ইমেইল ফিল্ড রিসেট করা
+      setNewEmail('');
     }
   };
 
-  const handleSignOut = async () => { 
-    await supabase.auth.signOut(); 
-    window.location.href = '/'; 
-  };
+  const handleSignOut = async () => { await supabase.auth.signOut(); window.location.href = '/'; };
 
   const handleDeleteAccount = async () => {
-    if (window.confirm("ARE YOU SURE? THIS ACTION CANNOT BE UNDONE.")) {
-      const { error } = await supabase.rpc('delete_user');
-      if (error) {
-        showToast("Error deleting account: " + error.message, "#ff4444");
-      } else {
-        await supabase.auth.signOut();
-        showToast("Account deleted successfully.");
-        window.location.href = '/';
-      }
+    setShowConfirm(false);
+    const { error } = await supabase.rpc('delete_user');
+    if (error) {
+      showToast("Error: " + error.message, "#ff4444");
+    } else {
+      await supabase.auth.signOut();
+      window.location.href = '/';
     }
   };
 
   const handleUpdate = async () => {
     try {
-      // ১. নাম আপডেট
       if (newName !== profile?.name) {
         const { error: profileError } = await supabase.from('profiles').update({ name: newName }).eq('id', profile.id);
         if (profileError) throw profileError;
       }
-      // ২. ইমেইল আপডেট
       if (newEmail && newEmail !== profile?.email) {
         const { error: emailError } = await supabase.auth.updateUser({ email: newEmail });
         if (emailError) throw emailError;
-        showToast("Confirmation link sent to new email.");
+        showToast("Check your new email to confirm.", "#3498db");
       }
-      // ৩. পাসওয়ার্ড আপডেট
       if (newPassword) {
         const { error: passwordError } = await supabase.auth.updateUser({ password: newPassword });
         if (passwordError) throw passwordError;
@@ -76,9 +69,21 @@ export default function Profile() {
 
   return (
     <div style={{ backgroundColor: '#000', minHeight: '100vh', color: '#fff', padding: '40px 20px', fontFamily: "'Inter', sans-serif" }}>
+      {/* Toast Notification */}
       {toast && (
-        <div style={{ position: 'fixed', top: '20px', right: '20px', background: '#111', color: '#fff', padding: '15px 25px', borderRadius: '5px', borderLeft: `5px solid ${toast.color}`, zIndex: 9999, fontSize: '12px', letterSpacing: '1px' }}>
+        <div style={{ position: 'fixed', top: '20px', right: '20px', background: '#111', color: '#fff', padding: '15px 25px', borderRadius: '5px', borderLeft: `5px solid ${toast.color}`, zIndex: 9999, fontSize: '12px', letterSpacing: '1px', transition: 'all 0.3s ease', boxShadow: '0 4px 12px rgba(0,0,0,0.5)' }}>
           {toast.message}
+        </div>
+      )}
+
+      {/* Custom Confirmation Modal */}
+      {showConfirm && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000 }}>
+          <div style={{ background: '#111', padding: '30px', borderRadius: '10px', textAlign: 'center', border: '1px solid #333', maxWidth: '300px' }}>
+            <p style={{ marginBottom: '20px', fontSize: '14px' }}>Are you sure you want to delete your account?</p>
+            <button onClick={handleDeleteAccount} style={{ background: '#ff4444', border: 'none', padding: '10px 20px', color: '#fff', marginRight: '10px', cursor: 'pointer' }}>Yes</button>
+            <button onClick={() => setShowConfirm(false)} style={{ background: 'transparent', border: '1px solid #555', padding: '10px 20px', color: '#fff', cursor: 'pointer' }}>No</button>
+          </div>
         </div>
       )}
 
@@ -89,7 +94,6 @@ export default function Profile() {
               <h2 style={{ letterSpacing: '4px', fontWeight: '100', fontSize: '18px', margin: 0 }}>PROFILE</h2>
               <svg onClick={() => setView('settings')} width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" cursor="pointer">
                 <circle cx="12" cy="12" r="3"></circle>
-                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
               </svg>
             </div>
             <div style={{ marginBottom: '25px' }}>
@@ -119,7 +123,7 @@ export default function Profile() {
               <button onClick={() => setView('profile')} style={navButtonStyle}>BACK</button>
               <button onClick={handleSignOut} style={navButtonStyle}>SIGN OUT</button>
             </div>
-            <button onClick={handleDeleteAccount} style={dangerButtonStyle}>DELETE ACCOUNT</button>
+            <button onClick={() => setShowConfirm(true)} style={dangerButtonStyle}>DELETE ACCOUNT</button>
           </>
         )}
       </div>
