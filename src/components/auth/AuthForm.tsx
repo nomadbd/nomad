@@ -12,12 +12,11 @@ export default function AuthForm() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // রিকভারি মোড চেক করার উন্নত লজিক
+    // URL থেকে রিকভারি টোকেন ডিটেক্ট করা
     const checkRecoveryMode = () => {
       const params = new URLSearchParams(window.location.search);
       const hash = window.location.hash;
 
-      // URL-এ type=recovery থাকলে আপডেট ভিউতে সেট করবে
       if (params.get('type') === 'recovery' || hash.includes('type=recovery')) {
         setView('update');
       }
@@ -25,7 +24,7 @@ export default function AuthForm() {
 
     checkRecoveryMode();
 
-    // Supabase সেশন লিসেনার
+    // Supabase রিকভারি ইভেন্ট লিসেনার
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'PASSWORD_RECOVERY') {
         setView('update');
@@ -87,34 +86,14 @@ export default function AuthForm() {
 
       <form onSubmit={handleAuth}>
         {view !== 'update' && (
-          <input 
-            type="email" 
-            placeholder="EMAIL" 
-            value={email} 
-            onChange={(e) => setEmail(e.target.value)} 
-            required 
-            style={inputStyle} 
-            autoComplete="email" 
-          />
+          <input type="email" placeholder="EMAIL" value={email} onChange={(e) => setEmail(e.target.value)} required style={inputStyle} autoComplete="email" />
         )}
 
         {view !== 'forgot' && (
-          <input 
-            type="password" 
-            placeholder={view === 'update' ? "NEW PASSWORD" : "PASSWORD"} 
-            value={password} 
-            onChange={(e) => setPassword(e.target.value)} 
-            required 
-            style={inputStyle} 
-            autoComplete={view === 'update' ? "new-password" : "current-password"} 
-          />
+          <input type="password" placeholder={view === 'update' ? "NEW PASSWORD" : "PASSWORD"} value={password} onChange={(e) => setPassword(e.target.value)} required style={inputStyle} autoComplete={view === 'update' ? "new-password" : "current-password"} />
         )}
 
-        <button 
-          type="submit" 
-          disabled={loading} 
-          style={{ width: '100%', padding: '14px', backgroundColor: '#fff', color: '#000', border: 'none', cursor: 'pointer', fontSize: '10px', letterSpacing: '2px' }}
-        >
+        <button type="submit" disabled={loading} style={{ width: '100%', padding: '14px', backgroundColor: '#fff', color: '#000', border: 'none', cursor: 'pointer', fontSize: '10px', letterSpacing: '2px' }}>
           {loading ? 'PROCESSING...' : view === 'login' ? 'SIGN IN' : view === 'signup' ? 'SIGN UP' : view === 'update' ? 'UPDATE PASSWORD' : 'SEND RESET LINK'}
         </button>
       </form>
