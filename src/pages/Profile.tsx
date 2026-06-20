@@ -95,7 +95,7 @@ export default function Profile() {
                 ) : (
                   <>
                     <p style={{ margin: 0, color: '#fff' }}>PROFILE</p>
-                    <p style={{ fontSize: '12px', color: '#aaa', cursor: 'pointer', margin: '4px 0 0 0', letterSpacing: '1px' }} onClick={() => setView('settings')}>Add your name</p>
+                    <p style={{ fontSize: '13px', fontWeight: '500', color: '#aaa', cursor: 'pointer', margin: '4px 0 0 0', letterSpacing: '1px' }} onClick={() => setView('settings')}>Add your name</p>
                   </>
                 )}
               </div>
@@ -103,18 +103,18 @@ export default function Profile() {
             </div>
 
             <div style={{ marginBottom: '20px' }}>
-              <p style={{ fontSize: '9px', color: '#666', letterSpacing: '2px', marginBottom: '6px' }}>EMAIL</p>
+              <p style={{ fontSize: '13px', fontWeight: '500', color: '#aaa', letterSpacing: '2px', marginBottom: '6px' }}>EMAIL</p>
               <p style={{ fontSize: '15px', fontWeight: '500', margin: '0', color: '#fff' }}>{profile?.email || ''}</p>
             </div>
           </>
         ) : (
           <>
             <h2 style={{ fontWeight: '500', letterSpacing: '4px', fontSize: '18px', marginBottom: '40px' }}>SETTINGS</h2>
-            <p style={{ fontSize: '9px', color: '#666', letterSpacing: '2px', marginBottom: '5px' }}>NAME</p>
+            <p style={{ fontSize: '10px', color: '#888', letterSpacing: '2px', marginBottom: '5px' }}>NAME</p>
             <input value={newName} onChange={(e) => setNewName(e.target.value)} style={inputStyle} />
-            <p style={{ fontSize: '9px', color: '#666', letterSpacing: '2px', marginBottom: '5px' }}>EMAIL ADDRESS</p>
+            <p style={{ fontSize: '10px', color: '#888', letterSpacing: '2px', marginBottom: '5px' }}>EMAIL ADDRESS</p>
             <input placeholder={profile?.email} onChange={(e) => setNewEmail(e.target.value)} style={inputStyle} />
-            <p style={{ fontSize: '9px', color: '#666', letterSpacing: '2px', marginBottom: '5px' }}>NEW PASSWORD</p>
+            <p style={{ fontSize: '10px', color: '#888', letterSpacing: '2px', marginBottom: '5px' }}>NEW PASSWORD</p>
             <input type="password" placeholder="••••••••" onChange={(e) => setNewPassword(e.target.value)} style={inputStyle} />
             <div style={{ marginTop: '20px' }}>
               <button onClick={handleUpdate} style={{ ...navButtonStyle, color: '#fff', fontWeight: '600' }}>SAVE CHANGES</button>
@@ -123,7 +123,7 @@ export default function Profile() {
             </div>
             <button onClick={() => setShowConfirm(true)} style={dangerButtonStyle}>DELETE ACCOUNT</button>
           </>
-        )} 
+        )}
       </div>
     </div>
   );
