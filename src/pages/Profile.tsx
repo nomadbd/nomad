@@ -85,26 +85,27 @@ export default function Profile() {
         </div>
       )}
 
-      {/* এখানে maxWidth সরিয়ে দেওয়া হয়েছে যাতে এটি পুরো স্ক্রিন দখল করে */}
       <div style={{ width: '100%' }}>
         {view === 'profile' ? (
           <>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
-              <h2 style={{ letterSpacing: '4px', fontWeight: '100', fontSize: '18px', margin: 0 }}>PROFILE</h2>
+              <h2 style={{ letterSpacing: '4px', fontWeight: '100', fontSize: '18px', margin: 0 }}>
+                {profile?.name || 'PROFILE'}
+              </h2>
               <svg onClick={() => setView('settings')} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" cursor="pointer" style={{ display: 'block' }}>
                 <circle cx="12" cy="12" r="3"></circle>
                 <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
               </svg>
             </div>
-            <div style={{ marginBottom: '25px' }}>
-              <p style={{ fontSize: '8px', color: '#555', letterSpacing: '2px', marginBottom: '5px' }}>NAME</p>
-              {profile?.name ? (
-                <p style={{ fontSize: '16px', fontWeight: '300', color: '#fff' }}>{profile.name}</p>
-              ) : (
-                <p style={{ fontSize: '16px', fontWeight: '300', color: '#555', cursor: 'pointer', borderBottom: '1px dotted #555', display: 'inline-block' }} onClick={() => setView('settings')}>Add display name</p>
-              )}
-            </div>
-            <div style={{ marginBottom: '25px' }}>
+            
+            {/* যদি নাম না থাকে তবে এখানে ক্লিক করে আপডেট করার সুযোগ */}
+            {!profile?.name && (
+              <div style={{ marginBottom: '15px' }}>
+                <p style={{ fontSize: '12px', color: '#888', cursor: 'pointer', textDecoration: 'underline' }} onClick={() => setView('settings')}>Add your name</p>
+              </div>
+            )}
+
+            <div style={{ marginBottom: '20px' }}>
               <p style={{ fontSize: '8px', color: '#555', letterSpacing: '2px', marginBottom: '5px' }}>EMAIL</p>
               <p style={{ fontSize: '16px', fontWeight: '300', color: '#fff' }}>{profile?.email || ''}</p>
             </div>
