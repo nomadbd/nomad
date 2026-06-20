@@ -4,6 +4,7 @@ import { supabase } from '../supabaseClient';
 export default function Profile() {
   const [view, setView] = useState<'profile' | 'settings'>('profile');
   const [profile, setProfile] = useState<any>(null);
+  const [loading, setLoading] = useState(true); // লোডিং স্টেট
   const [newName, setNewName] = useState('');
   const [newEmail, setNewEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -12,19 +13,30 @@ export default function Profile() {
 
   useEffect(() => { fetchUserData(); }, []);
 
+  // Skeleton UI কম্পোনেন্ট
+  const Skeleton = () => (
+    <div style={{ opacity: 0.3, width: '100%', marginTop: '20px' }}>
+      <div style={{ height: '24px', width: '40%', background: '#333', marginBottom: '25px', borderRadius: '4px' }}></div>
+      <div style={{ height: '13px', width: '20%', background: '#333', marginBottom: '10px', borderRadius: '4px' }}></div>
+      <div style={{ height: '18px', width: '60%', background: '#333', borderRadius: '4px' }}></div>
+    </div>
+  );
+
   const showToast = (message: string, color: string = '#fff') => {
     setToast({ message, color });
     setTimeout(() => setToast(null), 3000);
   };
 
   const fetchUserData = async () => {
+    setLoading(true);
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
       const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single();
       setProfile({ ...prof, email: user.email });
-      setNewName(''); // Placeholder ব্যবহারের জন্য এটি খালি রাখা হয়েছে
+      setNewName('');
       setNewEmail('');
     }
+    setLoading(false);
   };
 
   const handleSignOut = async () => { await supabase.auth.signOut(); window.location.href = '/'; };
@@ -42,7 +54,6 @@ export default function Profile() {
 
   const handleUpdate = async () => {
     try {
-      // যদি newName এ কিছু লেখা থাকে, তবেই আপডেট হবে
       if (newName && newName !== profile?.name) {
         const { error: profileError } = await supabase.from('profiles').update({ name: newName }).eq('id', profile.id);
         if (profileError) throw profileError;
@@ -88,26 +99,29 @@ export default function Profile() {
 
       <div style={{ width: '100%' }}>
         {view === 'profile' ? (
-          <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px' }}>
-              <div style={{ fontSize: '18px', fontWeight: '500', letterSpacing: '2px' }}>
-                {profile?.name ? (
-                  <p style={{ margin: 0, color: '#fff' }}>{profile.name}</p>
-                ) : (
-                  <>
-                    <p style={{ margin: 0, color: '#fff' }}>PROFILE</p>
-                    <p style={{ fontSize: '13px', fontWeight: '500', color: '#aaa', cursor: 'pointer', margin: '4px 0 0 0', letterSpacing: '1px' }} onClick={() => setView('settings')}>Add your name</p>
-                  </>
-                )}
+          loading ? (
+            <Skeleton />
+          ) : (
+            <>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px' }}>
+                <div style={{ fontSize: '18px', fontWeight: '500', letterSpacing: '2px' }}>
+                  {profile?.name ? (
+                    <p style={{ margin: 0, color: '#fff' }}>{profile.name}</p>
+                  ) : (
+                    <>
+                      <p style={{ margin: 0, color: '#fff' }}>PROFILE</p>
+                      <p style={{ fontSize: '13px', fontWeight: '500', color: '#aaa', cursor: 'pointer', margin: '4px 0 0 0', letterSpacing: '1px' }} onClick={() => setView('settings')}>Add your name</p>
+                    </>
+                  )}
+                </div>
+                <svg onClick={() => setView('settings')} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" cursor="pointer"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
               </div>
-              <svg onClick={() => setView('settings')} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" cursor="pointer"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-            </div>
-
-            <div style={{ marginBottom: '20px' }}>
-              <p style={{ fontSize: '13px', fontWeight: '500', color: '#aaa', letterSpacing: '2px', marginBottom: '6px' }}>EMAIL</p>
-              <p style={{ fontSize: '15px', fontWeight: '500', margin: '0', color: '#fff' }}>{profile?.email || ''}</p>
-            </div>
-          </>
+              <div style={{ marginBottom: '20px' }}>
+                <p style={{ fontSize: '13px', fontWeight: '500', color: '#aaa', letterSpacing: '2px', marginBottom: '6px' }}>EMAIL</p>
+                <p style={{ fontSize: '15px', fontWeight: '500', margin: '0', color: '#fff' }}>{profile?.email || ''}</p>
+              </div>
+            </>
+          )
         ) : (
           <>
             <h2 style={{ fontWeight: '500', letterSpacing: '4px', fontSize: '18px', marginBottom: '40px' }}>SETTINGS</h2>
