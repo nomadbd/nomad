@@ -10,20 +10,24 @@ export default function AuthForm() {
   const [message, setMessage] = useState<{ text: string; isError: boolean } | null>(null);
   const location = useLocation();
 
-  // রিসেট লিঙ্ক থেকে টোকেন চেক করার উন্নত লজিক
+  // আপডেট করা ইফেক্ট: সরাসরি সুপাবেজের অথ ইভেন্ট লিসেনার ব্যবহার করা
   useEffect(() => {
-    const checkRecovery = () => {
-      const hash = window.location.hash;
-      const params = new URLSearchParams(window.location.search);
-      
-      // হ্যাশ অথবা কুয়েরি প্যারামিটার যেখানেই 'recovery' থাকুক, 'update' ভিউ সেট করবে
-      if (hash.includes('type=recovery') || params.get('type') === 'recovery') {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') {
         setView('update');
       }
-    };
+    });
 
-    checkRecovery();
-  }, [location]);
+    // প্রাথমিক চেক: যদি সরাসরি লিঙ্কে ইউজার আসে
+    const hash = window.location.hash;
+    if (hash.includes('type=recovery')) {
+      setView('update');
+    }
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
   const inputStyle: React.CSSProperties = {
     width: '100%', padding: '12px 0', backgroundColor: 'transparent', 
