@@ -6,15 +6,12 @@ import SearchOverlay from './components/SearchOverlay';
 import Hero from './components/Hero/Hero';
 import AuthOverlay from './components/auth/AuthOverlay';
 import Profile from './pages/Profile';
-import AuthForm from './components/auth/AuthForm'; // AuthForm ইমপোর্ট নিশ্চিত করুন
+import AuthForm from './components/auth/AuthForm';
 
-// হেডার ও রাউটিং হ্যান্ডেল করার জন্য একটি সাব-কম্পোনেন্ট
 const AppContent = ({ session, setIsSearchOpen, setIsAuthOpen }: any) => {
   const location = useLocation();
 
-  // প্রোফাইল, ফরগট বা আপডেট পাসওয়ার্ড পেজ ছাড়া অন্য সব পেজে হেডার দেখাবে
-  const showHeader = location.pathname !== '/profile' && 
-                     location.pathname !== '/update-password';
+  const showHeader = !['/profile', '/update-password'].includes(location.pathname);
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: 'black', color: 'white' }}>
@@ -38,10 +35,14 @@ const AppContent = ({ session, setIsSearchOpen, setIsAuthOpen }: any) => {
             <main style={{ padding: '32px' }}></main>
           </>
         } />
+
         <Route path="/profile" element={session ? <Profile /> : <Navigate to="/" />} />
 
-        {/* পাসওয়ার্ড আপডেটের জন্য রাউট */}
-        <Route path="/update-password" element={<AuthForm />} />
+        {/* Password Update Route - এখানে পরিবর্তন করেছি */}
+        <Route 
+          path="/update-password" 
+          element={<AuthForm isRecoveryPage={true} />} 
+        />
       </Routes>
     </div>
   );
