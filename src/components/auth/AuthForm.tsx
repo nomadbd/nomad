@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { supabase } from '../../supabaseClient';
 
 export default function AuthForm() {
@@ -7,14 +8,14 @@ export default function AuthForm() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ text: string; isError: boolean } | null>(null);
+  const location = useLocation();
 
-  // ইউআরএল চেক করে 'update' মোড সক্রিয় করা
+  // রিসেট লিঙ্ক থেকে টোকেন চেক করা
   useEffect(() => {
-    const hash = window.location.hash;
-    if (hash && hash.includes('type=recovery')) {
+    if (location.hash && location.hash.includes('type=recovery')) {
       setView('update');
     }
-  }, []);
+  }, [location]);
 
   const inputStyle: React.CSSProperties = {
     width: '100%', padding: '12px 0', backgroundColor: 'transparent', 
@@ -47,7 +48,7 @@ export default function AuthForm() {
       const { error: updateError } = await supabase.auth.updateUser({ password: password });
       error = updateError;
       if (!error) {
-        setMessage({ text: 'PASSWORD UPDATED! REDIRECTING...', isError: false });
+        setMessage({ text: 'PASSWORD UPDATED SUCCESSFULLY!', isError: false });
         setTimeout(() => window.location.href = '/profile', 2000);
       }
     }
@@ -63,18 +64,16 @@ export default function AuthForm() {
       <h2 style={{ letterSpacing: '6px', marginBottom: '50px', fontWeight: '200', textAlign: 'center' }}>NOMAD</h2>
 
       <form onSubmit={handleAuth}>
-        {/* ইমেইল ইনপুট শুধুমাত্র লগইন/সাইনআপ/ফরগট এর সময় দেখাবে */}
         {view !== 'update' && (
           <input type="email" placeholder="EMAIL" value={email} onChange={(e) => setEmail(e.target.value)} required style={inputStyle} autoComplete="email" />
         )}
         
-        {/* পাসওয়ার্ড ইনপুট */}
         {view !== 'forgot' && (
           <input type="password" placeholder={view === 'update' ? "NEW PASSWORD" : "PASSWORD"} value={password} onChange={(e) => setPassword(e.target.value)} required style={inputStyle} autoComplete={view === 'update' ? "new-password" : "current-password"} />
         )}
 
         <button type="submit" disabled={loading} style={{ width: '100%', padding: '14px', backgroundColor: '#fff', color: '#000', border: 'none', cursor: 'pointer', fontSize: '10px', letterSpacing: '2px' }}>
-          {loading ? 'PROCESSING...' : view === 'login' ? 'SIGN IN' : view === 'signup' ? 'SIGN UP' : view === 'forgot' ? 'SEND RESET LINK' : 'UPDATE PASSWORD'}
+          {loading ? 'PROCESSING...' : view === 'login' ? 'SIGN IN' : view === 'signup' ? 'SIGN UP' : view === 'update' ? 'UPDATE PASSWORD' : 'SEND RESET LINK'}
         </button>
       </form>
 
