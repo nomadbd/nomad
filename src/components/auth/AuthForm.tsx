@@ -10,7 +10,7 @@ export default function AuthForm({ isRecoveryPage = false }) {
   const [message, setMessage] = useState<{ text: string; isError: boolean } | null>(null);
   const location = useLocation();
 
-  // Recovery Link Handling - সবচেয়ে গুরুত্বপূর্ণ অংশ
+  // Recovery Link Handling
   useEffect(() => {
     if (isRecoveryPage) {
       setView('update');
@@ -30,7 +30,6 @@ export default function AuthForm({ isRecoveryPage = false }) {
       setPassword('');
       setMessage(null);
 
-      // URL পরিষ্কার করা
       setTimeout(() => {
         window.history.replaceState({}, document.title, window.location.pathname);
       }, 500);
@@ -38,9 +37,14 @@ export default function AuthForm({ isRecoveryPage = false }) {
   }, [isRecoveryPage]);
 
   const inputStyle: React.CSSProperties = {
-    width: '100%', padding: '12px 0', backgroundColor: 'transparent', 
-    border: 'none', borderBottom: '1px solid #ffffff', 
-    color: '#ffffff', marginBottom: '20px', outline: 'none',
+    width: '100%', 
+    padding: '12px 0', 
+    backgroundColor: 'transparent', 
+    border: 'none', 
+    borderBottom: '1px solid #ffffff', 
+    color: '#ffffff', 
+    marginBottom: '20px', 
+    outline: 'none',
   };
 
   const handleAuth = async (e: React.FormEvent) => {
@@ -80,8 +84,24 @@ export default function AuthForm({ isRecoveryPage = false }) {
   };
 
   return (
-    <div style={{ width: '100%', maxWidth: '320px', color: '#ffffff', fontFamily: 'sans-serif', margin: 'auto', paddingTop: '100px' }}>
-      <h2 style={{ letterSpacing: '6px', marginBottom: '50px', fontWeight: '200', textAlign: 'center' }}>NOMAD</h2>
+    <div style={{ 
+      width: '100%', 
+      maxWidth: '320px',                    // ← সব ফর্মের জন্য একই width
+      color: '#ffffff', 
+      fontFamily: 'sans-serif', 
+      margin: 'auto', 
+      paddingTop: isRecoveryPage ? '130px' : '100px',   // শুধু update পেজে একটু বেশি padding
+      paddingLeft: '20px',
+      paddingRight: '20px',
+      boxSizing: 'border-box'
+    }}>
+      
+      <h2 style={{ 
+        letterSpacing: '6px', 
+        marginBottom: '50px', 
+        fontWeight: '200', 
+        textAlign: 'center' 
+      }}>NOMAD</h2>
 
       <form onSubmit={handleAuth}>
         {view !== 'update' && (
@@ -112,8 +132,15 @@ export default function AuthForm({ isRecoveryPage = false }) {
           type="submit" 
           disabled={loading} 
           style={{ 
-            width: '100%', padding: '14px', backgroundColor: '#fff', color: '#000', 
-            border: 'none', cursor: 'pointer', fontSize: '10px', letterSpacing: '2px' 
+            width: '100%', 
+            padding: '14px', 
+            backgroundColor: '#fff', 
+            color: '#000', 
+            border: 'none', 
+            cursor: 'pointer', 
+            fontSize: '10px', 
+            letterSpacing: '2px',
+            marginTop: isRecoveryPage ? '40px' : '10px'   // update এর জন্য একটু বেশি স্পেস
           }}
         >
           {loading ? 'PROCESSING...' : 
@@ -125,9 +152,12 @@ export default function AuthForm({ isRecoveryPage = false }) {
 
       {message && (
         <div style={{ 
-          textAlign: 'center', marginTop: '25px', 
+          textAlign: 'center', 
+          marginTop: '25px', 
           color: message.isError ? '#ff4d4d' : '#4dff4d', 
-          fontSize: '10px', letterSpacing: '1px', textTransform: 'uppercase' 
+          fontSize: '10px', 
+          letterSpacing: '1px', 
+          textTransform: 'uppercase' 
         }}>
           {message.text}
         </div>
