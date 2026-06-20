@@ -11,49 +11,63 @@ export default function AuthForm() {
   const location = useLocation();
 
   useEffect(() => {
-    // URL-এ recovery টাইপ আছে কি না তা দেখা
-    if (window.location.hash.includes('type=recovery')) {
+    // URL থেকে রিকভারি টোকেন চেক করার জন্য শক্তিশালী লজিক
+    const hash = window.location.hash;
+    const search = window.location.search;
+    
+    if (hash.includes('type=recovery') || search.includes('type=recovery')) {
       setView('update');
     }
   }, [location]);
-
-  const inputStyle: React.CSSProperties = {
-    width: '100%', padding: '12px 0', backgroundColor: 'transparent', 
-    border: 'none', borderBottom: '1px solid #ffffff', 
-    color: '#ffffff', marginBottom: '20px', outline: 'none',
-  };
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setMessage(null);
 
+    let error = null;
+
     try {
-      if (view === 'login') {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-        window.location.href = '/profile';
-      } else if (view === 'signup') {
-        const { error } = await supabase.auth.signUp({ email, password });
-        if (error) throw error;
-        setMessage({ text: 'CHECK YOUR EMAIL!', isError: false });
-      } else if (view === 'forgot') {
-        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      if (view === 'signup') {
+        const { error: signUpError } = await supabase.auth.signUp({ email, password });
+        error = signUpError;
+        if (!error) setMessage({ text: 'CHECK YOUR EMAIL TO CONFIRM!', isError: false });
+      } 
+      else if (view === 'login') {
+        const { error: loginError } = await supabase.auth.signInWithPassword({ email, password });
+        error = loginError;
+        if (!error) window.location.href = '/profile';
+      } 
+      else if (view === 'forgot') {
+        const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
           redirectTo: `${window.location.origin}/update-password`,
         });
-        if (error) throw error;
-        setMessage({ text: 'LINK SENT!', isError: false });
-      } else if (view === 'update') {
-        const { error } = await supabase.auth.updateUser({ password: password });
-        if (error) throw error;
-        setMessage({ text: 'SUCCESS!', isError: false });
-        setTimeout(() => window.location.href = '/profile', 2000);
+        error = resetError;
+        if (!error) setMessage({ text: 'PASSWORD RESET LINK SENT!', isError: false });
+      } 
+      else if (view === 'update') {
+        // পাসওয়ার্ড আপডেটের সময় সেশন চেক করা
+        const { error: updateError } = await supabase.auth.updateUser({ password: password });
+        error = updateError;
+        if (!error) {
+          setMessage({ text: 'PASSWORD UPDATED SUCCESSFULLY!', isError: false });
+          setTimeout(() => window.location.href = '/profile', 1500);
+        }
       }
-    } catch (err: any) {
-      setMessage({ text: err.message.toUpperCase(), isError: true });
-    } finally {
-      setLoading(false);
+    } catch (e: any) {
+      error = e;
     }
+
+    if (error) {
+      setMessage({ text: error.message.toUpperCase(), isError: true });
+    }
+    setLoading(false);
+  };
+
+  const inputStyle: React.CSSProperties = {
+    width: '100%', padding: '12px 0', backgroundColor: 'transparent', 
+    border: 'none', borderBottom: '1px solid #ffffff', 
+    color: '#ffffff', marginBottom: '20px', outline: 'none',
   };
 
   return (
@@ -67,10 +81,18 @@ export default function AuthForm() {
           <input type="password" placeholder={view === 'update' ? "NEW PASSWORD" : "PASSWORD"} value={password} onChange={(e) => setPassword(e.target.value)} required style={inputStyle} />
         )}
         <button type="submit" disabled={loading} style={{ width: '100%', padding: '14px', backgroundColor: '#fff', color: '#000', border: 'none', cursor: 'pointer', fontSize: '10px', letterSpacing: '2px' }}>
-          {loading ? '...' : view.toUpperCase()}
+          {loading ? 'PROCESSING...' : view === 'login' ? 'SIGN IN' : view === 'signup' ? 'SIGN UP' : view === 'update' ? 'UPDATE PASSWORD' : 'SEND RESET LINK'}
         </button>
       </form>
-      {message && <p style={{ color: message.isError ? 'red' : 'green', textAlign: 'center', fontSize: '10px' }}>{message.text}</p>}
+      {message && <div style={{ textAlign: 'center', marginTop: '25px', color: message.isError ? '#ff4d4d' : '#4dff4d', fontSize: '10px' }}>{message.text}</div>}
+      
+      {view !== 'update' && (
+        <div style={{ textAlign: 'center', marginTop: '20px', fontSize: '10px', cursor: 'pointer' }}>
+          {view === 'login' && <p onClick={() => setView('signup')}>NEED AN ACCOUNT? SIGN UP</p>}
+          {view === 'login' && <p onClick={() => setView('forgot')}>FORGOT PASSWORD?</p>}
+          {view !== 'login' && <p onClick={() => setView('login')}>BACK TO LOGIN</p>}
+        </div>
+      )}
     </div>
   );
 }
