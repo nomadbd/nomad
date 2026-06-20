@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { supabase } from '../../supabaseClient';
 
 export default function AuthForm() {
@@ -8,31 +8,22 @@ export default function AuthForm() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ text: string; isError: boolean } | null>(null);
-  
-  const navigate = useNavigate();
+  const location = useLocation();
 
+  // রিসেট লিঙ্ক থেকে টোকেন চেক করার উন্নত লজিক
   useEffect(() => {
-    // URL থেকে রিকভারি টোকেন ডিটেক্ট করা
-    const checkRecoveryMode = () => {
-      const params = new URLSearchParams(window.location.search);
+    const checkRecovery = () => {
       const hash = window.location.hash;
+      const params = new URLSearchParams(window.location.search);
 
-      if (params.get('type') === 'recovery' || hash.includes('type=recovery')) {
+      // হ্যাশ অথবা কুয়েরি প্যারামিটার যেখানেই 'recovery' থাকুক, 'update' ভিউ সেট করবে
+      if (hash.includes('type=recovery') || params.get('type') === 'recovery') {
         setView('update');
       }
     };
 
-    checkRecoveryMode();
-
-    // Supabase রিকভারি ইভেন্ট লিসেনার
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY') {
-        setView('update');
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
+    checkRecovery();
+  }, [location]);
 
   const inputStyle: React.CSSProperties = {
     width: '100%', padding: '12px 0', backgroundColor: 'transparent', 
@@ -45,33 +36,29 @@ export default function AuthForm() {
     setLoading(true);
     setMessage(null);
 
-    let error: any = null;
+    let error = null;
 
-    try {
-      if (view === 'signup') {
-        const { error: signUpError } = await supabase.auth.signUp({ email, password });
-        error = signUpError;
-        if (!error) setMessage({ text: 'CHECK YOUR EMAIL TO CONFIRM!', isError: false });
-      } else if (view === 'login') {
-        const { error: loginError } = await supabase.auth.signInWithPassword({ email, password });
-        error = loginError;
-        if (!error) navigate('/profile');
-      } else if (view === 'forgot') {
-        const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: `${window.location.origin}/update-password`,
-        });
-        error = resetError;
-        if (!error) setMessage({ text: 'PASSWORD RESET LINK SENT!', isError: false });
-      } else if (view === 'update') {
-        const { error: updateError } = await supabase.auth.updateUser({ password: password });
-        error = updateError;
-        if (!error) {
-          setMessage({ text: 'PASSWORD UPDATED SUCCESSFULLY!', isError: false });
-          setTimeout(() => navigate('/profile'), 2000);
-        }
+    if (view === 'signup') {
+      const { error: signUpError } = await supabase.auth.signUp({ email, password });
+      error = signUpError;
+      if (!error) setMessage({ text: 'CHECK YOUR EMAIL TO CONFIRM!', isError: false });
+    } else if (view === 'login') {
+      const { error: loginError } = await supabase.auth.signInWithPassword({ email, password });
+      error = loginError;
+      if (!error) window.location.href = '/profile';
+    } else if (view === 'forgot') {
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/update-password`,
+      });
+      error = resetError;
+      if (!error) setMessage({ text: 'PASSWORD RESET LINK SENT!', isError: false });
+    } else if (view === 'update') {
+      const { error: updateError } = await supabase.auth.updateUser({ password: password });
+      error = updateError;
+      if (!error) {
+        setMessage({ text: 'PASSWORD UPDATED SUCCESSFULLY!', isError: false });
+        setTimeout(() => window.location.href = '/profile', 2000);
       }
-    } catch (err: any) {
-      error = err;
     }
 
     if (error) {
