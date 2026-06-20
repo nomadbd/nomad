@@ -123,7 +123,7 @@ export default function Profile() {
             </div>
             <button onClick={() => setShowConfirm(true)} style={dangerButtonStyle}>DELETE ACCOUNT</button>
           </>
-        )}
+        )} 
       </div>
     </div>
   );
