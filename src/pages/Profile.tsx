@@ -23,7 +23,7 @@ export default function Profile() {
 
   const showToast = (message: string, color: string = '#fff') => {
     setToast({ message, color });
-    setTimeout(() => setToast(null), 4000); // সময় সামান্য বাড়ানো হলো পড়ার সুবিধার্থে
+    setTimeout(() => setToast(null), 4000);
   };
 
   const fetchUserData = async () => {
@@ -56,30 +56,24 @@ export default function Profile() {
       let emailChanged = false;
       let otherChanges = false;
 
-      // ১. নাম আপডেট
       if (newName && newName !== profile?.name) {
         const { error: profileError } = await supabase.from('profiles').update({ name: newName }).eq('id', profile.id);
         if (profileError) throw profileError;
         otherChanges = true;
       }
-
-      // ২. ইমেইল আপডেট
       if (newEmail && newEmail !== profile?.email) {
         const { error: emailError } = await supabase.auth.updateUser({ email: newEmail });
         if (emailError) throw emailError;
         emailChanged = true;
       }
-
-      // ৩. পাসওয়ার্ড আপডেট
       if (newPassword) {
         const { error: passwordError } = await supabase.auth.updateUser({ password: newPassword });
         if (passwordError) throw passwordError;
         otherChanges = true;
       }
 
-      // ৪. স্মার্ট মেসেজ লজিক
       if (emailChanged) {
-        showToast("Check your new email inbox to verify the change.", "#3498db");
+        showToast("Check your new email inbox to verify.", "#3498db");
       } else if (otherChanges) {
         showToast("Profile updated successfully!", "#2ecc71");
       }
@@ -92,20 +86,19 @@ export default function Profile() {
   };
 
   const inputStyle = { width: '100%', padding: '10px 0', background: 'transparent', border: 'none', borderBottom: '1px solid #333', color: '#fff', marginBottom: '20px', outline: 'none', fontSize: '15px' };
-  const navButtonStyle = { background: 'transparent', border: 'none', color: '#aaa', cursor: 'pointer', marginBottom: '15px', fontSize: '13px', letterSpacing: '1px', display: 'block', width: '100%', textAlign: 'left', padding: '5px 0' };
-  const dangerButtonStyle = { background: 'transparent', border: 'none', color: '#ff4444', cursor: 'pointer', marginTop: '30px', fontSize: '11px', letterSpacing: '2px', textTransform: 'uppercase' as const, display: 'block', width: '100%', textAlign: 'left', fontWeight: 'bold' };
+  const navButtonStyle = { background: 'transparent', border: 'none', color: '#aaa', cursor: 'pointer', fontSize: '13px', letterSpacing: '1px', width: '100%', textAlign: 'left', padding: '5px 0' };
+  const saveButtonStyle = { background: 'transparent', border: '1px solid #fff', color: '#fff', cursor: 'pointer', fontSize: '13px', letterSpacing: '1px', width: '100%', padding: '10px', borderRadius: '6px', textAlign: 'center', fontWeight: '600' };
+  const dangerButtonStyle = { background: 'transparent', border: 'none', color: '#ff4444', cursor: 'pointer', fontSize: '11px', letterSpacing: '2px', textTransform: 'uppercase' as const, width: '100%', textAlign: 'left', fontWeight: 'bold' };
 
   return (
     <div style={{ backgroundColor: '#000', minHeight: '100vh', color: '#fff', padding: '40px 20px', fontFamily: "'Inter', sans-serif", width: '100%', boxSizing: 'border-box', overflowX: 'hidden' }}>
       
-      {/* Toast Notification */}
       {toast && (
         <div style={{ position: 'fixed', top: '20px', right: '20px', background: '#111', color: '#fff', padding: '15px 25px', borderRadius: '5px', borderLeft: `5px solid ${toast.color}`, zIndex: 9999, fontSize: '12px', letterSpacing: '1px', boxShadow: '0 4px 12px rgba(0,0,0,0.5)' }}>
           {toast.message}
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
       {showConfirm && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000 }}>
           <div style={{ background: '#111', padding: '30px', borderRadius: '10px', textAlign: 'center', border: '1px solid #333', maxWidth: '300px' }}>
@@ -121,17 +114,8 @@ export default function Profile() {
           loading ? <Skeleton /> : (
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
               <div style={{ width: '100%' }}>
-                {profile?.name ? (
-                  <>
-                    <p style={{ margin: '0', fontSize: '22px', fontWeight: '600', color: '#fff', letterSpacing: '1px' }}>{profile.name}</p>
-                    <p style={{ margin: '5px 0 0 0', fontSize: '14px', color: '#666', letterSpacing: '0.5px' }}>{profile.email}</p>
-                  </>
-                ) : (
-                  <>
-                    <p style={{ margin: 0, fontSize: '22px', fontWeight: '600', color: '#fff', letterSpacing: '1px' }}>PROFILE</p>
-                    <p style={{ fontSize: '13px', fontWeight: '500', color: '#aaa', cursor: 'pointer', margin: '8px 0 0 0', letterSpacing: '1px' }} onClick={() => setView('settings')}>Add your name</p>
-                  </>
-                )}
+                <p style={{ margin: '0', fontSize: '22px', fontWeight: '600', color: '#fff', letterSpacing: '1px' }}>{profile?.name || "PROFILE"}</p>
+                <p style={{ margin: '5px 0 0 0', fontSize: '14px', color: '#666', letterSpacing: '0.5px' }}>{profile?.email}</p>
               </div>
               <svg onClick={() => setView('settings')} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" cursor="pointer"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
             </div>
@@ -150,11 +134,11 @@ export default function Profile() {
             <p style={{ fontSize: '10px', color: '#888', letterSpacing: '2px', marginBottom: '5px' }}>NEW PASSWORD</p>
             <input type="password" placeholder="••••••••" onChange={(e) => setNewPassword(e.target.value)} style={inputStyle} />
             
-            <div style={{ marginTop: '20px' }}>
-              <button onClick={handleUpdate} style={{ ...navButtonStyle, color: '#fff', fontWeight: '600' }}>SAVE CHANGES</button>
+            <div style={{ marginTop: '30px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <button onClick={handleUpdate} style={saveButtonStyle}>SAVE CHANGES</button>
               <button onClick={handleSignOut} style={navButtonStyle}>SIGN OUT</button>
+              <button onClick={() => setShowConfirm(true)} style={dangerButtonStyle}>DELETE ACCOUNT</button>
             </div>
-            <button onClick={() => setShowConfirm(true)} style={dangerButtonStyle}>DELETE ACCOUNT</button>
           </>
         )}
       </div>
