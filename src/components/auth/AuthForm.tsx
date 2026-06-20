@@ -1,13 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { supabase } from '../../supabaseClient';
 
 export default function AuthForm() {
-  const [view, setView] = useState<'login' | 'signup' | 'forgot' | 'verify' | 'update'>('login');
+  const [view, setView] = useState<'login' | 'signup' | 'forgot' | 'update'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ text: string; isError: boolean } | null>(null);
+  const location = useLocation();
+
+  // রিসেট লিঙ্ক থেকে টোকেন চেক করার উন্নত লজিক
+  useEffect(() => {
+    const checkRecovery = () => {
+      const hash = window.location.hash;
+      const params = new URLSearchParams(window.location.search);
+
+      // হ্যাশ অথবা কুয়েরি প্যারামিটার যেখানেই 'recovery' থাকুক, 'update' ভিউ সেট করবে
+      if (hash.includes('type=recovery') || params.get('type') === 'recovery') {
+        setView('update');
+      }
+    };
+
+    checkRecovery();
+  }, [location]);
 
   const inputStyle: React.CSSProperties = {
     width: '100%', padding: '12px 0', backgroundColor: 'transparent', 
@@ -22,38 +38,32 @@ export default function AuthForm() {
 
     let error = null;
 
-    try {
-      if (view === 'login') {
-        const { error: loginError } = await supabase.auth.signInWithPassword({ email, password });
-        error = loginError;
-        if (!error) window.location.href = '/profile';
-      } else if (view === 'signup') {
-        const { error: signUpError } = await supabase.auth.signUp({ email, password });
-        error = signUpError;
-        if (!error) setMessage({ text: 'CHECK YOUR EMAIL TO CONFIRM!', isError: false });
-      } else if (view === 'forgot') {
-        // OTP পাঠানোর লজিক
-        const { error: otpError } = await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: false } });
-        error = otpError;
-        if (!error) setView('verify');
-      } else if (view === 'verify') {
-        // OTP ভেরিফাই করার লজিক
-        const { error: vError } = await supabase.auth.verifyOtp({ email, token: otp, type: 'email' });
-        error = vError;
-        if (!error) setView('update');
-      } else if (view === 'update') {
-        const { error: updateError } = await supabase.auth.updateUser({ password: password });
-        error = updateError;
-        if (!error) {
-          setMessage({ text: 'PASSWORD UPDATED!', isError: false });
-          setTimeout(() => window.location.href = '/profile', 2000);
-        }
+    if (view === 'signup') {
+      const { error: signUpError } = await supabase.auth.signUp({ email, password });
+      error = signUpError;
+      if (!error) setMessage({ text: 'CHECK YOUR EMAIL TO CONFIRM!', isError: false });
+    } else if (view === 'login') {
+      const { error: loginError } = await supabase.auth.signInWithPassword({ email, password });
+      error = loginError;
+      if (!error) window.location.href = '/profile';
+    } else if (view === 'forgot') {
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/update-password`,
+      });
+      error = resetError;
+      if (!error) setMessage({ text: 'PASSWORD RESET LINK SENT!', isError: false });
+    } else if (view === 'update') {
+      const { error: updateError } = await supabase.auth.updateUser({ password: password });
+      error = updateError;
+      if (!error) {
+        setMessage({ text: 'PASSWORD UPDATED SUCCESSFULLY!', isError: false });
+        setTimeout(() => window.location.href = '/profile', 2000);
       }
-    } catch (err: any) {
-      error = err;
     }
 
-    if (error) setMessage({ text: error.message.toUpperCase(), isError: true });
+    if (error) {
+      setMessage({ text: error.message.toUpperCase(), isError: true });
+    }
     setLoading(false);
   };
 
@@ -62,20 +72,16 @@ export default function AuthForm() {
       <h2 style={{ letterSpacing: '6px', marginBottom: '50px', fontWeight: '200', textAlign: 'center' }}>NOMAD</h2>
 
       <form onSubmit={handleAuth}>
-        {view !== 'update' && view !== 'verify' && (
+        {view !== 'update' && (
           <input type="email" placeholder="EMAIL" value={email} onChange={(e) => setEmail(e.target.value)} required style={inputStyle} autoComplete="email" />
         )}
-        
-        {view === 'verify' && (
-          <input type="text" placeholder="ENTER 6-DIGIT CODE" value={otp} onChange={(e) => setOtp(e.target.value)} required style={inputStyle} />
-        )}
 
-        {(view === 'login' || view === 'signup' || view === 'update') && (
+        {view !== 'forgot' && (
           <input type="password" placeholder={view === 'update' ? "NEW PASSWORD" : "PASSWORD"} value={password} onChange={(e) => setPassword(e.target.value)} required style={inputStyle} autoComplete={view === 'update' ? "new-password" : "current-password"} />
         )}
 
         <button type="submit" disabled={loading} style={{ width: '100%', padding: '14px', backgroundColor: '#fff', color: '#000', border: 'none', cursor: 'pointer', fontSize: '10px', letterSpacing: '2px' }}>
-          {loading ? 'PROCESSING...' : view === 'login' ? 'SIGN IN' : view === 'signup' ? 'SIGN UP' : view === 'verify' ? 'VERIFY CODE' : view === 'update' ? 'UPDATE PASSWORD' : 'SEND CODE'}
+          {loading ? 'PROCESSING...' : view === 'login' ? 'SIGN IN' : view === 'signup' ? 'SIGN UP' : view === 'update' ? 'UPDATE PASSWORD' : 'SEND RESET LINK'}
         </button>
       </form>
 
@@ -85,7 +91,7 @@ export default function AuthForm() {
         </div>
       )}
 
-      {view !== 'update' && view !== 'verify' && (
+      {view !== 'update' && (
         <div style={{ textAlign: 'center', marginTop: '20px', fontSize: '10px', cursor: 'pointer', letterSpacing: '1px' }}>
           {view === 'login' && (
             <>
