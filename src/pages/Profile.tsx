@@ -85,9 +85,9 @@ export default function Profile() {
       color: '#fff', 
       padding: '40px 20px', 
       fontFamily: "'Inter', sans-serif",
-      width: '100vw',
-      boxSizing: 'border-box',
-      overflowX: 'hidden'
+      width: '100%',             // এখানে 100% ব্যবহার করা হয়েছে
+      boxSizing: 'border-box',   // এটি প্যাডিংকে প্রস্থের ভেতরে রাখবে
+      overflowX: 'hidden'        // ডানে-বামে স্ক্রলবার আসা বন্ধ করবে
     }}>
       {toast && (
         <div style={{ position: 'fixed', top: '20px', right: '20px', background: '#111', color: '#fff', padding: '15px 25px', borderRadius: '5px', borderLeft: `5px solid ${toast.color}`, zIndex: 9999, fontSize: '12px', letterSpacing: '1px', transition: 'all 0.3s ease', boxShadow: '0 4px 12px rgba(0,0,0,0.5)' }}>
