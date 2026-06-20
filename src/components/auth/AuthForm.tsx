@@ -7,8 +7,10 @@ export default function AuthForm() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ text: string; isError: boolean } | null>(null);
+  
+  // ভেরিফিকেশন লেয়ারের জন্য নতুন স্টেট
+  const [isVerified, setIsVerified] = useState(false);
 
-  // শুধুমাত্র অথ ইভেন্ট লিসেনার থাকবে। কোনো অটো-রিডাইরেক্ট কোড নেই।
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'PASSWORD_RECOVERY') {
@@ -49,7 +51,6 @@ export default function AuthForm() {
       error = resetError;
       if (!error) setMessage({ text: 'PASSWORD RESET LINK SENT!', isError: false });
     } else if (view === 'update') {
-      // এই বাটন ক্লিক করার পরেই সুপাবেজ ভ্যালিডেশন চেক করবে, আগে নয়।
       const { error: updateError } = await supabase.auth.updateUser({ password: password });
       error = updateError;
       if (!error) {
@@ -68,19 +69,34 @@ export default function AuthForm() {
     <div style={{ width: '100%', maxWidth: '320px', color: '#ffffff', fontFamily: 'sans-serif', margin: 'auto', paddingTop: '100px' }}>
       <h2 style={{ letterSpacing: '6px', marginBottom: '50px', fontWeight: '200', textAlign: 'center' }}>NOMAD</h2>
 
-      <form onSubmit={handleAuth}>
-        {view !== 'update' && (
-          <input type="email" placeholder="EMAIL" value={email} onChange={(e) => setEmail(e.target.value)} required style={inputStyle} autoComplete="email" />
-        )}
+      {/* পাসওয়ার্ড আপডেট মোড এবং ভেরিফিকেশন হ্যান্ডলিং */}
+      {view === 'update' && !isVerified ? (
+        <div style={{ textAlign: 'center' }}>
+          <p style={{ fontSize: '12px', marginBottom: '20px' }}>PLEASE CONFIRM TO RESET YOUR PASSWORD</p>
+          <button 
+            onClick={() => setIsVerified(true)} 
+            style={{ width: '100%', padding: '14px', backgroundColor: '#fff', color: '#000', border: 'none', cursor: 'pointer', fontSize: '10px', letterSpacing: '2px' }}
+          >
+            CONFIRM AND PROCEED
+          </button>
+        </div>
+      ) : (
+        <form onSubmit={handleAuth}>
+          {view !== 'update' && (
+            <input type="email" placeholder="EMAIL" value={email} onChange={(e) => setEmail(e.target.value)} required style={inputStyle} autoComplete="email" />
+          )}
 
-        {view !== 'forgot' && (
-          <input type="password" placeholder={view === 'update' ? "NEW PASSWORD" : "PASSWORD"} value={password} onChange={(e) => setPassword(e.target.value)} required style={inputStyle} autoComplete={view === 'update' ? "new-password" : "current-password"} />
-        )}
+          {(view === 'update' ? isVerified : view !== 'forgot') && (
+            <input type="password" placeholder={view === 'update' ? "NEW PASSWORD" : "PASSWORD"} value={password} onChange={(e) => setPassword(e.target.value)} required style={inputStyle} autoComplete={view === 'update' ? "new-password" : "current-password"} />
+          )}
 
-        <button type="submit" disabled={loading} style={{ width: '100%', padding: '14px', backgroundColor: '#fff', color: '#000', border: 'none', cursor: 'pointer', fontSize: '10px', letterSpacing: '2px' }}>
-          {loading ? 'PROCESSING...' : view === 'login' ? 'SIGN IN' : view === 'signup' ? 'SIGN UP' : view === 'update' ? 'UPDATE PASSWORD' : 'SEND RESET LINK'}
-        </button>
-      </form>
+          {view !== 'update' || isVerified ? (
+            <button type="submit" disabled={loading} style={{ width: '100%', padding: '14px', backgroundColor: '#fff', color: '#000', border: 'none', cursor: 'pointer', fontSize: '10px', letterSpacing: '2px' }}>
+              {loading ? 'PROCESSING...' : view === 'login' ? 'SIGN IN' : view === 'signup' ? 'SIGN UP' : view === 'update' ? 'UPDATE PASSWORD' : 'SEND RESET LINK'}
+            </button>
+          ) : null}
+        </form>
+      )}
 
       {message && (
         <div style={{ textAlign: 'center', marginTop: '25px', color: message.isError ? '#ff4d4d' : '#4dff4d', fontSize: '10px', letterSpacing: '1px', textTransform: 'uppercase' }}>
