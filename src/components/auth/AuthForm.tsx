@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
 import { supabase } from '../../supabaseClient';
 
 export default function AuthForm() {
@@ -8,21 +7,14 @@ export default function AuthForm() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ text: string; isError: boolean } | null>(null);
-  const location = useLocation();
 
-  // আপডেট করা ইফেক্ট: সরাসরি সুপাবেজের অথ ইভেন্ট লিসেনার ব্যবহার করা
+  // শুধুমাত্র অথ ইভেন্ট লিসেনার থাকবে। কোনো অটো-রিডাইরেক্ট কোড নেই।
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'PASSWORD_RECOVERY') {
         setView('update');
       }
     });
-
-    // প্রাথমিক চেক: যদি সরাসরি লিঙ্কে ইউজার আসে
-    const hash = window.location.hash;
-    if (hash.includes('type=recovery')) {
-      setView('update');
-    }
 
     return () => {
       subscription.unsubscribe();
@@ -57,6 +49,7 @@ export default function AuthForm() {
       error = resetError;
       if (!error) setMessage({ text: 'PASSWORD RESET LINK SENT!', isError: false });
     } else if (view === 'update') {
+      // এই বাটন ক্লিক করার পরেই সুপাবেজ ভ্যালিডেশন চেক করবে, আগে নয়।
       const { error: updateError } = await supabase.auth.updateUser({ password: password });
       error = updateError;
       if (!error) {
