@@ -85,8 +85,9 @@ export default function Profile() {
       color: '#fff', 
       padding: '40px 20px', 
       fontFamily: "'Inter', sans-serif",
-      width: '100%',
-      boxSizing: 'border-box' // এটিই মূল সমাধান, যা স্ক্রলবার বা বাড়তি প্রশস্ততা রোধ করবে
+      width: '100vw',           // ভিউপোর্টের সমান প্রস্থ নিশ্চিত করা
+      boxSizing: 'border-box',   // প্যাডিং যেন প্রস্থের ভেতরে থাকে
+      overflowX: 'hidden'        // ডানে-বামে স্ক্রলবার বন্ধ করা
     }}>
       {toast && (
         <div style={{ position: 'fixed', top: '20px', right: '20px', background: '#111', color: '#fff', padding: '15px 25px', borderRadius: '5px', borderLeft: `5px solid ${toast.color}`, zIndex: 9999, fontSize: '12px', letterSpacing: '1px', transition: 'all 0.3s ease', boxShadow: '0 4px 12px rgba(0,0,0,0.5)' }}>
