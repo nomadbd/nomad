@@ -23,7 +23,7 @@ export default function Profile() {
       const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single();
       setProfile({ ...prof, email: user.email });
       setNewName(prof?.name || '');
-      setNewEmail(user.email || ''); // ইমেইল ফিল্ডে ডিফল্ট ইমেইল সেট করা হয়েছে
+      setNewEmail(user.email || ''); // এখানে ইউজারের ইমেইলটি সেট করা হলো
     }
   };
 
