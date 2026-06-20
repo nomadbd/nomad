@@ -61,11 +61,13 @@ export default function Profile() {
         if (profileError) throw profileError;
         otherChanges = true;
       }
+
       if (newEmail && newEmail !== profile?.email) {
         const { error: emailError } = await supabase.auth.updateUser({ email: newEmail });
         if (emailError) throw emailError;
         emailChanged = true;
       }
+
       if (newPassword) {
         const { error: passwordError } = await supabase.auth.updateUser({ password: newPassword });
         if (passwordError) throw passwordError;
@@ -73,7 +75,7 @@ export default function Profile() {
       }
 
       if (emailChanged) {
-        showToast("Check your new email inbox to verify.", "#3498db");
+        showToast("Check your new email inbox to verify the change.", "#3498db");
       } else if (otherChanges) {
         showToast("Profile updated successfully!", "#2ecc71");
       }
@@ -86,9 +88,8 @@ export default function Profile() {
   };
 
   const inputStyle = { width: '100%', padding: '10px 0', background: 'transparent', border: 'none', borderBottom: '1px solid #333', color: '#fff', marginBottom: '20px', outline: 'none', fontSize: '15px' };
-  const navButtonStyle = { background: 'transparent', border: 'none', color: '#aaa', cursor: 'pointer', fontSize: '13px', letterSpacing: '1px', width: '100%', textAlign: 'left', padding: '5px 0' };
-  const saveButtonStyle = { background: 'transparent', border: '1px solid #fff', color: '#fff', cursor: 'pointer', fontSize: '13px', letterSpacing: '1px', width: '100%', padding: '10px', borderRadius: '6px', textAlign: 'center', fontWeight: '600' };
-  const dangerButtonStyle = { background: 'transparent', border: 'none', color: '#ff4444', cursor: 'pointer', fontSize: '11px', letterSpacing: '2px', textTransform: 'uppercase' as const, width: '100%', textAlign: 'left', fontWeight: 'bold' };
+  const navButtonStyle = { background: 'transparent', border: 'none', color: '#aaa', cursor: 'pointer', fontSize: '13px', letterSpacing: '1px', display: 'block', width: '100%', textAlign: 'left', padding: '5px 0' };
+  const dangerButtonStyle = { background: 'transparent', border: 'none', color: '#ff4444', cursor: 'pointer', fontSize: '11px', letterSpacing: '2px', textTransform: 'uppercase' as const, display: 'block', width: '100%', textAlign: 'left', fontWeight: 'bold' };
 
   return (
     <div style={{ backgroundColor: '#000', minHeight: '100vh', color: '#fff', padding: '40px 20px', fontFamily: "'Inter', sans-serif", width: '100%', boxSizing: 'border-box', overflowX: 'hidden' }}>
@@ -114,8 +115,17 @@ export default function Profile() {
           loading ? <Skeleton /> : (
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
               <div style={{ width: '100%' }}>
-                <p style={{ margin: '0', fontSize: '22px', fontWeight: '600', color: '#fff', letterSpacing: '1px' }}>{profile?.name || "PROFILE"}</p>
-                <p style={{ margin: '5px 0 0 0', fontSize: '14px', color: '#666', letterSpacing: '0.5px' }}>{profile?.email}</p>
+                {profile?.name ? (
+                  <>
+                    <p style={{ margin: '0', fontSize: '22px', fontWeight: '600', color: '#fff', letterSpacing: '1px' }}>{profile.name}</p>
+                    <p style={{ margin: '5px 0 0 0', fontSize: '14px', color: '#666', letterSpacing: '0.5px' }}>{profile.email}</p>
+                  </>
+                ) : (
+                  <>
+                    <p style={{ margin: 0, fontSize: '22px', fontWeight: '600', color: '#fff', letterSpacing: '1px' }}>PROFILE</p>
+                    <p style={{ fontSize: '13px', fontWeight: '500', color: '#aaa', cursor: 'pointer', margin: '8px 0 0 0', letterSpacing: '1px' }} onClick={() => setView('settings')}>Add your name</p>
+                  </>
+                )}
               </div>
               <svg onClick={() => setView('settings')} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" cursor="pointer"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
             </div>
@@ -134,8 +144,9 @@ export default function Profile() {
             <p style={{ fontSize: '10px', color: '#888', letterSpacing: '2px', marginBottom: '5px' }}>NEW PASSWORD</p>
             <input type="password" placeholder="••••••••" onChange={(e) => setNewPassword(e.target.value)} style={inputStyle} />
             
-            <div style={{ marginTop: '30px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              <button onClick={handleUpdate} style={saveButtonStyle}>SAVE CHANGES</button>
+            {/* বাটন কন্টেইনার - সব বাটন সমান গ্যাপে */}
+            <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <button onClick={handleUpdate} style={{ ...navButtonStyle, color: '#fff', fontWeight: '600' }}>SAVE CHANGES</button>
               <button onClick={handleSignOut} style={navButtonStyle}>SIGN OUT</button>
               <button onClick={() => setShowConfirm(true)} style={dangerButtonStyle}>DELETE ACCOUNT</button>
             </div>
