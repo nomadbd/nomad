@@ -1,12 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 
 export default function AuthForm() {
-  const [view, setView] = useState<'login' | 'signup' | 'forgot'>('login');
+  const [view, setView] = useState<'login' | 'signup' | 'forgot' | 'update'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ text: string; isError: boolean } | null>(null);
+
+  // ইউআরএল চেক করে 'update' মোড সক্রিয় করা
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash && hash.includes('type=recovery')) {
+      setView('update');
+    }
+  }, []);
 
   const inputStyle: React.CSSProperties = {
     width: '100%', padding: '12px 0', backgroundColor: 'transparent', 
@@ -35,6 +43,13 @@ export default function AuthForm() {
       });
       error = resetError;
       if (!error) setMessage({ text: 'PASSWORD RESET LINK SENT!', isError: false });
+    } else if (view === 'update') {
+      const { error: updateError } = await supabase.auth.updateUser({ password: password });
+      error = updateError;
+      if (!error) {
+        setMessage({ text: 'PASSWORD UPDATED! REDIRECTING...', isError: false });
+        setTimeout(() => window.location.href = '/profile', 2000);
+      }
     }
 
     if (error) {
@@ -48,31 +63,38 @@ export default function AuthForm() {
       <h2 style={{ letterSpacing: '6px', marginBottom: '50px', fontWeight: '200', textAlign: 'center' }}>NOMAD</h2>
 
       <form onSubmit={handleAuth}>
-        <input type="email" placeholder="EMAIL" value={email} onChange={(e) => setEmail(e.target.value)} required style={inputStyle} autoComplete="email" />
-        {view !== 'forgot' && (
-          <input type="password" placeholder="PASSWORD" value={password} onChange={(e) => setPassword(e.target.value)} required style={inputStyle} autoComplete="current-password" />
+        {/* ইমেইল ইনপুট শুধুমাত্র লগইন/সাইনআপ/ফরগট এর সময় দেখাবে */}
+        {view !== 'update' && (
+          <input type="email" placeholder="EMAIL" value={email} onChange={(e) => setEmail(e.target.value)} required style={inputStyle} autoComplete="email" />
         )}
+        
+        {/* পাসওয়ার্ড ইনপুট */}
+        {view !== 'forgot' && (
+          <input type="password" placeholder={view === 'update' ? "NEW PASSWORD" : "PASSWORD"} value={password} onChange={(e) => setPassword(e.target.value)} required style={inputStyle} autoComplete={view === 'update' ? "new-password" : "current-password"} />
+        )}
+
         <button type="submit" disabled={loading} style={{ width: '100%', padding: '14px', backgroundColor: '#fff', color: '#000', border: 'none', cursor: 'pointer', fontSize: '10px', letterSpacing: '2px' }}>
-          {loading ? 'PROCESSING...' : view === 'login' ? 'SIGN IN' : view === 'signup' ? 'SIGN UP' : 'SEND RESET LINK'}
+          {loading ? 'PROCESSING...' : view === 'login' ? 'SIGN IN' : view === 'signup' ? 'SIGN UP' : view === 'forgot' ? 'SEND RESET LINK' : 'UPDATE PASSWORD'}
         </button>
       </form>
 
-      {/* মেসেজ সেকশন */}
       {message && (
         <div style={{ textAlign: 'center', marginTop: '25px', color: message.isError ? '#ff4d4d' : '#4dff4d', fontSize: '10px', letterSpacing: '1px', textTransform: 'uppercase' }}>
           {message.text}
         </div>
       )}
 
-      <div style={{ textAlign: 'center', marginTop: '20px', fontSize: '10px', cursor: 'pointer', letterSpacing: '1px' }}>
-        {view === 'login' && (
-          <>
-            <p onClick={() => { setView('signup'); setMessage(null); }}>NEED AN ACCOUNT? SIGN UP</p>
-            <p onClick={() => { setView('forgot'); setMessage(null); }} style={{ marginTop: '10px' }}>FORGOT PASSWORD?</p>
-          </>
-        )}
-        {view !== 'login' && <p onClick={() => { setView('login'); setMessage(null); }}>BACK TO LOGIN</p>}
-      </div>
+      {view !== 'update' && (
+        <div style={{ textAlign: 'center', marginTop: '20px', fontSize: '10px', cursor: 'pointer', letterSpacing: '1px' }}>
+          {view === 'login' && (
+            <>
+              <p onClick={() => { setView('signup'); setMessage(null); }}>NEED AN ACCOUNT? SIGN UP</p>
+              <p onClick={() => { setView('forgot'); setMessage(null); }} style={{ marginTop: '10px' }}>FORGOT PASSWORD?</p>
+            </>
+          )}
+          {view !== 'login' && <p onClick={() => { setView('login'); setMessage(null); }}>BACK TO LOGIN</p>}
+        </div>
+      )}
     </div>
   );
 }
