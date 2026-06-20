@@ -85,9 +85,9 @@ export default function Profile() {
       color: '#fff', 
       padding: '40px 20px', 
       fontFamily: "'Inter', sans-serif",
-      width: '100vw',           // ভিউপোর্টের সমান প্রস্থ নিশ্চিত করা
-      boxSizing: 'border-box',   // প্যাডিং যেন প্রস্থের ভেতরে থাকে
-      overflowX: 'hidden'        // ডানে-বামে স্ক্রলবার বন্ধ করা
+      width: '100vw',
+      boxSizing: 'border-box',
+      overflowX: 'hidden'
     }}>
       {toast && (
         <div style={{ position: 'fixed', top: '20px', right: '20px', background: '#111', color: '#fff', padding: '15px 25px', borderRadius: '5px', borderLeft: `5px solid ${toast.color}`, zIndex: 9999, fontSize: '12px', letterSpacing: '1px', transition: 'all 0.3s ease', boxShadow: '0 4px 12px rgba(0,0,0,0.5)' }}>
@@ -131,7 +131,11 @@ export default function Profile() {
           )
         ) : (
           <>
-            <h2 style={{ fontWeight: '500', letterSpacing: '4px', fontSize: '18px', marginBottom: '40px' }}>SETTINGS</h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
+              <h2 style={{ fontWeight: '500', letterSpacing: '4px', fontSize: '18px', margin: 0 }}>SETTINGS</h2>
+              <svg onClick={() => setView('profile')} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" cursor="pointer"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </div>
+            
             <p style={{ fontSize: '10px', color: '#888', letterSpacing: '2px', marginBottom: '5px' }}>NAME</p>
             <input placeholder={profile?.name} onChange={(e) => setNewName(e.target.value)} style={inputStyle} />
             <p style={{ fontSize: '10px', color: '#888', letterSpacing: '2px', marginBottom: '5px' }}>EMAIL ADDRESS</p>
@@ -140,7 +144,6 @@ export default function Profile() {
             <input type="password" placeholder="••••••••" onChange={(e) => setNewPassword(e.target.value)} style={inputStyle} />
             <div style={{ marginTop: '20px' }}>
               <button onClick={handleUpdate} style={{ ...navButtonStyle, color: '#fff', fontWeight: '600' }}>SAVE CHANGES</button>
-              <button onClick={() => setView('profile')} style={navButtonStyle}>BACK</button>
               <button onClick={handleSignOut} style={navButtonStyle}>SIGN OUT</button>
             </div>
             <button onClick={() => setShowConfirm(true)} style={dangerButtonStyle}>DELETE ACCOUNT</button>
