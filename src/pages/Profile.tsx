@@ -22,7 +22,7 @@ export default function Profile() {
     if (user) {
       const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single();
       setProfile({ ...prof, email: user.email });
-      setNewName(prof?.name || '');
+      setNewName(''); // Placeholder ব্যবহারের জন্য এটি খালি রাখা হয়েছে
       setNewEmail('');
     }
   };
@@ -42,7 +42,8 @@ export default function Profile() {
 
   const handleUpdate = async () => {
     try {
-      if (newName !== profile?.name) {
+      // যদি newName এ কিছু লেখা থাকে, তবেই আপডেট হবে
+      if (newName && newName !== profile?.name) {
         const { error: profileError } = await supabase.from('profiles').update({ name: newName }).eq('id', profile.id);
         if (profileError) throw profileError;
       }
@@ -111,7 +112,7 @@ export default function Profile() {
           <>
             <h2 style={{ fontWeight: '500', letterSpacing: '4px', fontSize: '18px', marginBottom: '40px' }}>SETTINGS</h2>
             <p style={{ fontSize: '10px', color: '#888', letterSpacing: '2px', marginBottom: '5px' }}>NAME</p>
-            <input value={newName} onChange={(e) => setNewName(e.target.value)} style={inputStyle} />
+            <input placeholder={profile?.name} onChange={(e) => setNewName(e.target.value)} style={inputStyle} />
             <p style={{ fontSize: '10px', color: '#888', letterSpacing: '2px', marginBottom: '5px' }}>EMAIL ADDRESS</p>
             <input placeholder={profile?.email} onChange={(e) => setNewEmail(e.target.value)} style={inputStyle} />
             <p style={{ fontSize: '10px', color: '#888', letterSpacing: '2px', marginBottom: '5px' }}>NEW PASSWORD</p>
