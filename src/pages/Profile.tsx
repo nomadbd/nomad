@@ -23,7 +23,7 @@ export default function Profile() {
       const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single();
       setProfile({ ...prof, email: user.email });
       setNewName(prof?.name || '');
-      setNewEmail(user.email || ''); // এখানে ইউজারের ইমেইলটি সেট করা হলো
+      setNewEmail(user.email || '');
     }
   };
 
@@ -111,9 +111,9 @@ export default function Profile() {
           <>
             <h2 style={{ fontWeight: '500', letterSpacing: '4px', fontSize: '18px', marginBottom: '40px' }}>SETTINGS</h2>
             <p style={{ fontSize: '10px', color: '#888', letterSpacing: '2px', marginBottom: '5px' }}>NAME</p>
-            <input value={newName} onChange={(e) => setNewName(e.target.value)} style={inputStyle} />
+            <input value={newName} onChange={(e) => setNewName(e.target.value)} onFocus={(e) => e.target.select()} style={inputStyle} />
             <p style={{ fontSize: '10px', color: '#888', letterSpacing: '2px', marginBottom: '5px' }}>EMAIL ADDRESS</p>
-            <input value={newEmail} onChange={(e) => setNewEmail(e.target.value)} style={inputStyle} />
+            <input value={newEmail} onChange={(e) => setNewEmail(e.target.value)} onFocus={(e) => e.target.select()} style={inputStyle} />
             <p style={{ fontSize: '10px', color: '#888', letterSpacing: '2px', marginBottom: '5px' }}>NEW PASSWORD</p>
             <input type="password" placeholder="••••••••" onChange={(e) => setNewPassword(e.target.value)} style={inputStyle} />
             <div style={{ marginTop: '20px' }}>
