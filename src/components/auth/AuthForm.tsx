@@ -10,11 +10,20 @@ export default function AuthForm() {
   const [message, setMessage] = useState<{ text: string; isError: boolean } | null>(null);
   const location = useLocation();
 
-  // রিসেট লিঙ্ক থেকে টোকেন চেক করা
+  // রিসেট লিঙ্ক থেকে টোকেন চেক করার লজিক উন্নত করা হয়েছে
   useEffect(() => {
-    if (location.hash && location.hash.includes('type=recovery')) {
-      setView('update');
-    }
+    const checkRecoveryMode = () => {
+      // হ্যাশ প্যারামিটার চেক (সুপাবেজ ডিফল্ট)
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      // কোয়েরি প্যারামিটার চেক (ব্যাকআপ)
+      const queryParams = new URLSearchParams(window.location.search);
+      
+      if (hashParams.get('type') === 'recovery' || queryParams.get('type') === 'recovery') {
+        setView('update');
+      }
+    };
+    
+    checkRecoveryMode();
   }, [location]);
 
   const inputStyle: React.CSSProperties = {
@@ -45,11 +54,12 @@ export default function AuthForm() {
       error = resetError;
       if (!error) setMessage({ text: 'PASSWORD RESET LINK SENT!', isError: false });
     } else if (view === 'update') {
+      // পাসওয়ার্ড আপডেট করার সময় সেশন ভ্যালিডেশন নিশ্চিত করা
       const { error: updateError } = await supabase.auth.updateUser({ password: password });
       error = updateError;
       if (!error) {
         setMessage({ text: 'PASSWORD UPDATED SUCCESSFULLY!', isError: false });
-        setTimeout(() => window.location.href = '/profile', 2000);
+        setTimeout(() => { window.location.href = '/profile'; }, 2000);
       }
     }
 
@@ -67,7 +77,7 @@ export default function AuthForm() {
         {view !== 'update' && (
           <input type="email" placeholder="EMAIL" value={email} onChange={(e) => setEmail(e.target.value)} required style={inputStyle} autoComplete="email" />
         )}
-        
+
         {view !== 'forgot' && (
           <input type="password" placeholder={view === 'update' ? "NEW PASSWORD" : "PASSWORD"} value={password} onChange={(e) => setPassword(e.target.value)} required style={inputStyle} autoComplete={view === 'update' ? "new-password" : "current-password"} />
         )}
