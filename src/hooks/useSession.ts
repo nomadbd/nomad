@@ -7,18 +7,31 @@ export const useSession = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    // Initial session check
+    const getInitialSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
       setSession(session);
       setLoading(false);
-    });
+    };
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    getInitialSession();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('Auth Event:', event); // ডিবাগের জন্য (পরে রিমুভ করতে পারো)
+      
       setSession(session);
-      setLoading(false);
+      
+      // শুধুমাত্র প্রথমবার loading false করো
+      if (loading) {
+        setLoading(false);
+      }
     });
 
-    return () => subscription.unsubscribe();
-  }, []);
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [loading]);   // ← loading dependency যোগ করা হয়েছে
 
   return { session, loading };
 };
