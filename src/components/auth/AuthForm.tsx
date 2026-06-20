@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { supabase } from '../../supabaseClient';
 
-export default function AuthForm() {
+export default function AuthForm({ isRecoveryPage = false }) {
   const [view, setView] = useState<'login' | 'signup' | 'forgot' | 'update'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -10,20 +10,32 @@ export default function AuthForm() {
   const [message, setMessage] = useState<{ text: string; isError: boolean } | null>(null);
   const location = useLocation();
 
-  // রিসেট লিঙ্ক থেকে টোকেন চেক করার উন্নত লজিক
+  // Recovery Link Handling - সবচেয়ে গুরুত্বপূর্ণ অংশ
   useEffect(() => {
-    const checkRecovery = () => {
-      const hash = window.location.hash;
-      const params = new URLSearchParams(window.location.search);
+    if (isRecoveryPage) {
+      setView('update');
+      setEmail('');
+      setPassword('');
+      setMessage(null);
+      return;
+    }
 
-      // হ্যাশ অথবা কুয়েরি প্যারামিটার যেখানেই 'recovery' থাকুক, 'update' ভিউ সেট করবে
-      if (hash.includes('type=recovery') || params.get('type') === 'recovery') {
-        setView('update');
-      }
-    };
+    // মডাল থেকে আসলে hash চেক
+    const hash = window.location.hash;
+    const params = new URLSearchParams(window.location.search);
 
-    checkRecovery();
-  }, [location]);
+    if (hash.includes('type=recovery') || params.get('type') === 'recovery') {
+      setView('update');
+      setEmail('');
+      setPassword('');
+      setMessage(null);
+
+      // URL পরিষ্কার করা
+      setTimeout(() => {
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }, 500);
+    }
+  }, [isRecoveryPage]);
 
   const inputStyle: React.CSSProperties = {
     width: '100%', padding: '12px 0', backgroundColor: 'transparent', 
@@ -73,20 +85,50 @@ export default function AuthForm() {
 
       <form onSubmit={handleAuth}>
         {view !== 'update' && (
-          <input type="email" placeholder="EMAIL" value={email} onChange={(e) => setEmail(e.target.value)} required style={inputStyle} autoComplete="email" />
+          <input 
+            type="email" 
+            placeholder="EMAIL" 
+            value={email} 
+            onChange={(e) => setEmail(e.target.value)} 
+            required 
+            style={inputStyle} 
+            autoComplete="email" 
+          />
         )}
 
         {view !== 'forgot' && (
-          <input type="password" placeholder={view === 'update' ? "NEW PASSWORD" : "PASSWORD"} value={password} onChange={(e) => setPassword(e.target.value)} required style={inputStyle} autoComplete={view === 'update' ? "new-password" : "current-password"} />
+          <input 
+            type="password" 
+            placeholder={view === 'update' ? "NEW PASSWORD" : "PASSWORD"} 
+            value={password} 
+            onChange={(e) => setPassword(e.target.value)} 
+            required 
+            style={inputStyle} 
+            autoComplete={view === 'update' ? "new-password" : "current-password"} 
+          />
         )}
 
-        <button type="submit" disabled={loading} style={{ width: '100%', padding: '14px', backgroundColor: '#fff', color: '#000', border: 'none', cursor: 'pointer', fontSize: '10px', letterSpacing: '2px' }}>
-          {loading ? 'PROCESSING...' : view === 'login' ? 'SIGN IN' : view === 'signup' ? 'SIGN UP' : view === 'update' ? 'UPDATE PASSWORD' : 'SEND RESET LINK'}
+        <button 
+          type="submit" 
+          disabled={loading} 
+          style={{ 
+            width: '100%', padding: '14px', backgroundColor: '#fff', color: '#000', 
+            border: 'none', cursor: 'pointer', fontSize: '10px', letterSpacing: '2px' 
+          }}
+        >
+          {loading ? 'PROCESSING...' : 
+           view === 'login' ? 'SIGN IN' : 
+           view === 'signup' ? 'SIGN UP' : 
+           view === 'update' ? 'UPDATE PASSWORD' : 'SEND RESET LINK'}
         </button>
       </form>
 
       {message && (
-        <div style={{ textAlign: 'center', marginTop: '25px', color: message.isError ? '#ff4d4d' : '#4dff4d', fontSize: '10px', letterSpacing: '1px', textTransform: 'uppercase' }}>
+        <div style={{ 
+          textAlign: 'center', marginTop: '25px', 
+          color: message.isError ? '#ff4d4d' : '#4dff4d', 
+          fontSize: '10px', letterSpacing: '1px', textTransform: 'uppercase' 
+        }}>
           {message.text}
         </div>
       )}
