@@ -6,15 +6,19 @@ import SearchOverlay from './components/SearchOverlay';
 import Hero from './components/Hero/Hero';
 import AuthOverlay from './components/auth/AuthOverlay';
 import Profile from './pages/Profile';
+import AuthForm from './components/auth/AuthForm'; // AuthForm ইমপোর্ট নিশ্চিত করুন
 
 // হেডার ও রাউটিং হ্যান্ডেল করার জন্য একটি সাব-কম্পোনেন্ট
 const AppContent = ({ session, setIsSearchOpen, setIsAuthOpen }: any) => {
   const location = useLocation();
 
+  // প্রোফাইল, ফরগট বা আপডেট পাসওয়ার্ড পেজ ছাড়া অন্য সব পেজে হেডার দেখাবে
+  const showHeader = location.pathname !== '/profile' && 
+                     location.pathname !== '/update-password';
+
   return (
     <div style={{ minHeight: '100vh', backgroundColor: 'black', color: 'white' }}>
-      {/* প্রোফাইল পেজ ছাড়া অন্য সব পেজে হেডার দেখাবে */}
-      {location.pathname !== '/profile' && (
+      {showHeader && (
         <Header 
           onSearchOpen={() => setIsSearchOpen(true)} 
           onAuthOpen={() => {
@@ -35,6 +39,9 @@ const AppContent = ({ session, setIsSearchOpen, setIsAuthOpen }: any) => {
           </>
         } />
         <Route path="/profile" element={session ? <Profile /> : <Navigate to="/" />} />
+        
+        {/* পাসওয়ার্ড আপডেটের জন্য রাউট */}
+        <Route path="/update-password" element={<AuthForm />} />
       </Routes>
     </div>
   );
@@ -54,7 +61,7 @@ const App: React.FC = () => {
         setIsSearchOpen={setIsSearchOpen} 
         setIsAuthOpen={setIsAuthOpen} 
       />
-      
+
       <SearchOverlay 
         isOpen={isSearchOpen} 
         onClose={() => setIsSearchOpen(false)} 
