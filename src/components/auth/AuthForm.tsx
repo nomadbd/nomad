@@ -10,11 +10,19 @@ export default function AuthForm() {
   const [message, setMessage] = useState<{ text: string; isError: boolean } | null>(null);
   const location = useLocation();
 
-  // রিসেট লিঙ্ক থেকে টোকেন চেক করা
+  // রিসেট লিঙ্ক থেকে টোকেন চেক করার উন্নত লজিক
   useEffect(() => {
-    if (location.hash && location.hash.includes('type=recovery')) {
-      setView('update');
-    }
+    const checkRecovery = () => {
+      const hash = window.location.hash;
+      const params = new URLSearchParams(window.location.search);
+      
+      // হ্যাশ অথবা কুয়েরি প্যারামিটার যেখানেই 'recovery' থাকুক, 'update' ভিউ সেট করবে
+      if (hash.includes('type=recovery') || params.get('type') === 'recovery') {
+        setView('update');
+      }
+    };
+
+    checkRecovery();
   }, [location]);
 
   const inputStyle: React.CSSProperties = {
