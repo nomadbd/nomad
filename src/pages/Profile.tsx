@@ -89,13 +89,13 @@ export default function Profile() {
         {view === 'profile' ? (
           <>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px' }}>
-              <div style={{ fontSize: '18px', fontWeight: '100', letterSpacing: '4px' }}>
+              <div style={{ fontSize: '18px', fontWeight: '500', letterSpacing: '2px' }}>
                 {profile?.name ? (
-                  <p style={{ margin: 0 }}>{profile.name}</p>
+                  <p style={{ margin: 0, color: '#fff' }}>{profile.name}</p>
                 ) : (
                   <>
-                    <p style={{ margin: 0 }}>PROFILE</p>
-                    <p style={{ fontSize: '10px', color: '#555', cursor: 'pointer', margin: '2px 0 0 0', letterSpacing: '1px' }} onClick={() => setView('settings')}>Add your name</p>
+                    <p style={{ margin: 0, color: '#fff' }}>PROFILE</p>
+                    <p style={{ fontSize: '12px', color: '#aaa', cursor: 'pointer', margin: '4px 0 0 0', letterSpacing: '1px' }} onClick={() => setView('settings')}>Add your name</p>
                   </>
                 )}
               </div>
@@ -103,18 +103,18 @@ export default function Profile() {
             </div>
 
             <div style={{ marginBottom: '20px' }}>
-              <p style={{ fontSize: '8px', color: '#555', letterSpacing: '2px', marginBottom: '5px' }}>EMAIL</p>
-              <p style={{ fontSize: '16px', fontWeight: '300', margin: '0' }}>{profile?.email || ''}</p>
+              <p style={{ fontSize: '9px', color: '#666', letterSpacing: '2px', marginBottom: '6px' }}>EMAIL</p>
+              <p style={{ fontSize: '15px', fontWeight: '500', margin: '0', color: '#fff' }}>{profile?.email || ''}</p>
             </div>
           </>
         ) : (
           <>
-            <h2 style={{ fontWeight: '100', letterSpacing: '4px', fontSize: '18px', marginBottom: '40px' }}>SETTINGS</h2>
-            <p style={{ fontSize: '8px', color: '#555', letterSpacing: '2px', marginBottom: '5px' }}>NAME</p>
+            <h2 style={{ fontWeight: '500', letterSpacing: '4px', fontSize: '18px', marginBottom: '40px' }}>SETTINGS</h2>
+            <p style={{ fontSize: '9px', color: '#666', letterSpacing: '2px', marginBottom: '5px' }}>NAME</p>
             <input value={newName} onChange={(e) => setNewName(e.target.value)} style={inputStyle} />
-            <p style={{ fontSize: '8px', color: '#555', letterSpacing: '2px', marginBottom: '5px' }}>EMAIL ADDRESS</p>
+            <p style={{ fontSize: '9px', color: '#666', letterSpacing: '2px', marginBottom: '5px' }}>EMAIL ADDRESS</p>
             <input placeholder={profile?.email} onChange={(e) => setNewEmail(e.target.value)} style={inputStyle} />
-            <p style={{ fontSize: '8px', color: '#555', letterSpacing: '2px', marginBottom: '5px' }}>NEW PASSWORD</p>
+            <p style={{ fontSize: '9px', color: '#666', letterSpacing: '2px', marginBottom: '5px' }}>NEW PASSWORD</p>
             <input type="password" placeholder="••••••••" onChange={(e) => setNewPassword(e.target.value)} style={inputStyle} />
             <div style={{ marginTop: '20px' }}>
               <button onClick={handleUpdate} style={{ ...navButtonStyle, color: '#fff', fontWeight: '600' }}>SAVE CHANGES</button>
