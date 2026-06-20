@@ -79,7 +79,15 @@ export default function Profile() {
   const dangerButtonStyle = { background: 'transparent', border: 'none', color: '#ff4444', cursor: 'pointer', marginTop: '30px', fontSize: '11px', letterSpacing: '2px', textTransform: 'uppercase' as const, display: 'block', width: '100%', textAlign: 'left', fontWeight: 'bold' };
 
   return (
-    <div style={{ backgroundColor: '#000', minHeight: '100vh', color: '#fff', padding: '40px 20px', fontFamily: "'Inter', sans-serif" }}>
+    <div style={{ 
+      backgroundColor: '#000', 
+      minHeight: '100vh', 
+      color: '#fff', 
+      padding: '40px 20px', 
+      fontFamily: "'Inter', sans-serif",
+      width: '100%',
+      boxSizing: 'border-box' // এটিই মূল সমাধান, যা স্ক্রলবার বা বাড়তি প্রশস্ততা রোধ করবে
+    }}>
       {toast && (
         <div style={{ position: 'fixed', top: '20px', right: '20px', background: '#111', color: '#fff', padding: '15px 25px', borderRadius: '5px', borderLeft: `5px solid ${toast.color}`, zIndex: 9999, fontSize: '12px', letterSpacing: '1px', transition: 'all 0.3s ease', boxShadow: '0 4px 12px rgba(0,0,0,0.5)' }}>
           {toast.message}
