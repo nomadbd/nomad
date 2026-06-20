@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../supabaseClient';
 
 export default function AuthForm() {
@@ -9,21 +9,25 @@ export default function AuthForm() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ text: string; isError: boolean } | null>(null);
   
-  const location = useLocation();
   const navigate = useNavigate();
 
-  // Supabase Auth লিসেনার - টোকেন বা সেশন পরিবর্তনের সাথে সাথে আপডেট হবে
   useEffect(() => {
+    // URL হ্যাশ থেকে রিকভারি মোড ডিটেক্ট করা
+    const handleRecoveryMode = () => {
+      const hash = window.location.hash;
+      if (hash && hash.includes('type=recovery')) {
+        setView('update');
+      }
+    };
+
+    handleRecoveryMode();
+
+    // Supabase সেশন লিসেনার
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'PASSWORD_RECOVERY') {
         setView('update');
       }
     });
-
-    // ইনিশিয়াল চেক (URL হ্যাশে recovery থাকলে)
-    if (window.location.hash.includes('type=recovery')) {
-      setView('update');
-    }
 
     return () => subscription.unsubscribe();
   }, []);
