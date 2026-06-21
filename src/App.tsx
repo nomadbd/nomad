@@ -10,6 +10,10 @@ import AuthForm from './components/auth/AuthForm';
 // প্রোডাক্ট লিস্ট কম্পোনেন্টটি ইম্পোর্ট করা হলো
 import ProductList from './components/ProductList';
 
+// ⚡ কার্ট সিস্টেমের জন্য নতুন ইম্পোর্টসমূহ যুক্ত করা হলো
+import { CartProvider } from './context/CartContext';
+import CartOverlay from './components/CartOverlay';
+
 const AppContent = ({ session, setIsSearchOpen, setIsAuthOpen }: any) => {
   const location = useLocation();
 
@@ -49,6 +53,9 @@ const AppContent = ({ session, setIsSearchOpen, setIsAuthOpen }: any) => {
           element={<AuthForm isRecoveryPage={true} />} 
         />
       </Routes>
+
+      {/* ⚡ নতুন ওয়ান-পেজ কার্ট ওভারলে এখানে যুক্ত করা হলো */}
+      <CartOverlay session={session} />
     </div>
   );
 };
@@ -61,23 +68,26 @@ const App: React.FC = () => {
   if (loading) return null;
 
   return (
-    <Router>
-      <AppContent 
-        session={session} 
-        setIsSearchOpen={setIsSearchOpen} 
-        setIsAuthOpen={setIsAuthOpen} 
-      />
+    // ⚡ পুরো অ্যাপে কার্ট স্টেট শেয়ার করার জন্য CartProvider দিয়ে মুড়ে দেওয়া হলো
+    <CartProvider>
+      <Router>
+        <AppContent 
+          session={session} 
+          setIsSearchOpen={setIsSearchOpen} 
+          setIsAuthOpen={setIsAuthOpen} 
+        />
 
-      <SearchOverlay 
-        isOpen={isSearchOpen} 
-        onClose={() => setIsSearchOpen(false)} 
-      />
+        <SearchOverlay 
+          isOpen={isSearchOpen} 
+          onClose={() => setIsSearchOpen(false)} 
+        />
 
-      <AuthOverlay 
-        isOpen={isAuthOpen} 
-        onClose={() => setIsAuthOpen(false)} 
-      />
-    </Router>
+        <AuthOverlay 
+          isOpen={isAuthOpen} 
+          onClose={() => setIsAuthOpen(false)} 
+        />
+      </Router>
+    </CartProvider>
   );
 };
 
