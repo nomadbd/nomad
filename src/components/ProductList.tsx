@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../supabaseClient';
+import { useCart } from '../context/CartContext'; // ⚡ নতুন কার্ট কনটেক্সট ইম্পোর্ট করা হলো
 
 // ১. TypeScript Interface - আপনার কলামগুলোর টাইপ নির্দিষ্ট করা
 interface Product {
@@ -16,6 +17,9 @@ interface Product {
 export default function ProductList() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  
+  // ⚡ কার্টে প্রোডাক্ট যুক্ত করার গ্লোবাল ফাংশনটি নিয়ে আসা হলো
+  const { addToCart } = useCart();
 
   // ২. ডাটাবেজ থেকে প্রোডাক্ট ফেচ করা
   const fetchProducts = async () => {
@@ -55,7 +59,7 @@ export default function ProductList() {
     }}>
       {products.map((product) => (
         <div key={product.id} style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-          
+
           {/* প্রোডাক্ট ইমেজ কন্টেইনার */}
           <div style={{ 
             width: '100%', 
@@ -74,7 +78,7 @@ export default function ProductList() {
             ) : (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#333', fontSize: '11px' }}>NO IMAGE</div>
             )}
-            
+
             {/* স্টক শেষ হয়ে গেলে আউট অফ স্টক ট্যাগ */}
             {product.stock_quantity <= 0 && (
               <div style={{ position: 'absolute', top: '10px', left: '10px', background: '#ff4444', color: '#fff', padding: '4px 8px', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px' }}>
@@ -94,14 +98,15 @@ export default function ProductList() {
             <p style={{ fontSize: '13px', color: '#aaa', margin: '0 0 15px 0', lineHeight: '1.4', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
               {product.description}
             </p>
-            
+
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto' }}>
               <span style={{ fontSize: '16px', fontWeight: '600', color: '#fff' }}>
                 ৳{product.price}
               </span>
-              
+
               <button 
                 disabled={product.stock_quantity <= 0}
+                onClick={() => addToCart(product)} // ⚡ এখানে ক্লিক করলে প্রোডাক্টটি কার্ট গ্লোবাল স্টেটে যুক্ত হবে
                 style={{
                   background: 'transparent',
                   border: '1px solid #333',
