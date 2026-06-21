@@ -1,21 +1,23 @@
 import React, { useState, useEffect } from 'react';
+import { useCart } from '../context/CartContext'; // ⚡ নতুন কার্ট কনটেক্সট ইম্পোর্ট করা হলো
 
 interface HeaderProps {
   onSearchOpen: () => void;
-  onAuthOpen: () => void; // নতুন প্রপস যুক্ত করা হলো
+  onAuthOpen: () => void;
 }
 
 const Header: React.FC<HeaderProps> = ({ onSearchOpen, onAuthOpen }) => {
   const [show, setShow] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+  
+  // ⚡ কার্ট ওপেন করার ফাংশন এবং কার্টের প্রোডাক্ট লিস্ট নিয়ে আসা হলো
+  const { setIsCartOpen, cartItems } = useCart();
 
   const controlHeader = () => {
     if (typeof window !== 'undefined') {
       if (window.scrollY > lastScrollY && window.scrollY > 100) {
-        // নিচে স্ক্রল করলে হেডার লুকিয়ে যাবে
         setShow(false);
       } else {
-        // ওপরে স্ক্রল করলে হেডার দেখা যাবে
         setShow(true);
       }
       setLastScrollY(window.scrollY);
@@ -59,19 +61,32 @@ const Header: React.FC<HeaderProps> = ({ onSearchOpen, onAuthOpen }) => {
 
         {/* কার্ট আইকন */}
         <button 
-          onClick={() => console.log("Cart clicked!")} 
-          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'block', lineHeight: 0 }}
+          onClick={() => setIsCartOpen(true)} // ⚡ কনসোল লগের পরিবর্তে কার্ট ওপেন করার লজিক দেওয়া হলো
+          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'block', lineHeight: 0, position: 'relative' }} // পজিশন রিলেটিভ করা হলো কাউন্টারের জন্য
           aria-label="Cart"
         >
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M2.048 18.566A2 2 0 0 0 4 21h16a2 2 0 0 0 1.952-2.434l-2-9A2 2 0 0 0 18 8H6a2 2 0 0 0-1.952 1.566z"/>
             <path d="M8 11V6a4 4 0 0 1 8 0v5"/>
           </svg>
+
+          {/* ⚡ কার্টে প্রোডাক্ট থাকলে এই ছোট্ট মিনিমাল ডটটি সংখ্যার সাথে দেখাবে */}
+          {cartItems.length > 0 && (
+            <span style={{
+              position: 'absolute', top: '-6px', right: '-6px',
+              backgroundColor: 'white', color: 'black', borderRadius: '50%',
+              width: '15px', height: '15px', display: 'flex',
+              alignItems: 'center', justifyContent: 'center',
+              fontSize: '10px', fontWeight: 'bold', fontFamily: 'monospace'
+            }}>
+              {cartItems.length}
+            </span>
+          )}
         </button>
 
         {/* প্রোফাইল আইকন */}
         <button 
-          onClick={onAuthOpen} // এখানে কনসোল লগের পরিবর্তে onAuthOpen ফাংশনটি দেওয়া হলো
+          onClick={onAuthOpen} 
           style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'block', lineHeight: 0 }}
           aria-label="Profile"
         >
