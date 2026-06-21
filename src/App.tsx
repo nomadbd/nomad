@@ -7,6 +7,8 @@ import Hero from './components/Hero/Hero';
 import AuthOverlay from './components/auth/AuthOverlay';
 import Profile from './pages/Profile';
 import AuthForm from './components/auth/AuthForm';
+// প্রোডাক্ট লিস্ট কম্পোনেন্টটি ইম্পোর্ট করা হলো
+import ProductList from './components/ProductList';
 
 const AppContent = ({ session, setIsSearchOpen, setIsAuthOpen }: any) => {
   const location = useLocation();
@@ -32,7 +34,10 @@ const AppContent = ({ session, setIsSearchOpen, setIsAuthOpen }: any) => {
         <Route path="/" element={
           <>
             <Hero />
-            <main style={{ padding: '32px' }}></main>
+            {/* মেইন ট্যাগের ভেতরে প্রোডাক্ট লিস্ট বসানো হলো */}
+            <main style={{ padding: '32px' }}>
+              <ProductList />
+            </main>
           </>
         } />
 
