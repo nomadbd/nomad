@@ -3,18 +3,23 @@ import { useCart } from '../context/CartContext';
 
 const CartOverlay = () => {
   const { cartItems, isCartOpen, setIsCartOpen, incrementQuantity, decrementQuantity } = useCart();
+  
+  // সিলেক্ট করা আইটেমগুলোর আইডি ট্র্যাক করার স্টেট
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
+  // কার্টে কোনো নতুন প্রোডাক্ট ঢুকলে সেটি ডিফল্টভাবে সিলেক্টেড থাকবে
   useEffect(() => {
     setSelectedIds(cartItems.map(item => item.id));
   }, [cartItems]);
 
   if (!isCartOpen) return null;
 
+  // শুধুমাত্র সিলেক্টেড আইটেমগুলোর সাবটোটাল হিসাব করার লজিক
   const subtotal = cartItems
     .filter(item => selectedIds.includes(item.id))
     .reduce((acc, item) => acc + item.price * item.quantity, 0);
 
+  // চেকবক্স অন/অফ করার লজিক
   const toggleSelect = (id: string) => {
     if (selectedIds.includes(id)) {
       setSelectedIds(selectedIds.filter(itemId => itemId !== id));
@@ -27,6 +32,7 @@ const CartOverlay = () => {
     <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0, 0, 0, 0.96)', zIndex: 2000, overflowY: 'auto', padding: '40px 20px', boxSizing: 'border-box' }}>
       <div style={{ maxWidth: '500px', margin: '0 auto', position: 'relative' }}>
         
+        {/* বন্ধ করার ক্রস বাটন */}
         <button onClick={() => setIsCartOpen(false)} style={{ position: 'absolute', top: '-10px', right: '0', background: 'none', border: 'none', color: 'white', fontSize: '32px', cursor: 'pointer' }}>
           &times;
         </button>
@@ -47,38 +53,44 @@ const CartOverlay = () => {
               {cartItems.map((item) => {
                 const isSelected = selectedIds.includes(item.id);
                 return (
-                  <div key={item.id} style={{ display: 'flex', gap: '20px', alignItems: 'flex-start', borderBottom: '1px solid #111', paddingBottom: '20px', opacity: isSelected ? 1 : 0.4, transition: 'opacity 0.2s' }}>
+                  /* 🛠️ ফিক্সড: আনসিলেক্ট করলেও পুরো রো ঝাপসা (opacity: 0.4) হবে না, রিড্যাবিলিটি ঠিক থাকবে */
+                  <div key={item.id} style={{ display: 'flex', gap: '20px', alignItems: 'flex-start', borderBottom: '1px solid #111', paddingBottom: '20px', transition: 'all 0.2s ease' }}>
                     
+                    {/* প্রোডাক্ট ইমেজ */}
                     <img src={item.image_url} alt={item.name} style={{ width: '75px', height: '90px', objectFit: 'cover', border: '1px solid #1a1a1a' }} />
                     
+                    {/* তথ্য ও কন্ট্রোল এরিয়া */}
                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
                       
+                      {/* লাইন ১: প্রোডাক্টের নাম এবং একদম ডান পাশে গোল স্পষ্ট চেকবক্স */}
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 'normal', color: 'white', letterSpacing: '0.5px' }}>
                           {item.name}
                         </h4>
                         
-                        {/* 🟢 ফিক্সড চেকবক্স: আনচেক থাকলেও বর্ডার সুন্দরভাবে দেখা যাবে */}
+                        {/* 🛠️ ফিক্সড চেকবক্স: ২ পিক্সেল সলিড বর্ডার ও ব্যাকগ্রাউন্ড কালার দিয়ে আনসিলেক্টেড অবস্থাতেও স্পষ্ট করা হয়েছে */}
                         <div 
                           onClick={() => toggleSelect(item.id)}
                           style={{
-                            width: '22px',
-                            height: '22px',
+                            width: '20px',
+                            height: '20px',
                             borderRadius: '50%',
-                            border: isSelected ? '1px solid #10b981' : '1px solid rgba(255, 255, 255, 0.35)',
-                            backgroundColor: isSelected ? '#10b981' : 'transparent',
+                            border: isSelected ? '2px solid #10b981' : '2px solid #555',
+                            backgroundColor: isSelected ? '#10b981' : '#141414',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                             cursor: 'pointer',
-                            transition: 'all 0.2s ease',
-                            userSelect: 'none'
+                            transition: 'all 0.15s ease',
+                            userSelect: 'none',
+                            boxShadow: '0 0 5px rgba(0,0,0,0.5)'
                           }}
                         >
                           {isSelected && <span style={{ color: 'white', fontSize: '11px', fontWeight: 'bold' }}>✓</span>}
                         </div>
                       </div>
 
+                      {/* লাইন ২: একক মূল্য এবং ডান পাশে মোট মূল্য */}
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <p style={{ margin: 0, color: '#888', fontSize: '14px' }}>৳{item.price}</p>
                         <div style={{ color: 'white', fontSize: '15px', fontFamily: 'monospace' }}>
@@ -86,10 +98,13 @@ const CartOverlay = () => {
                         </div>
                       </div>
                       
+                      {/* লাইন ৩: প্লাস-মাইনাস স্টিপার বাটন */}
                       <div style={{ display: 'flex', alignItems: 'center', gap: '18px', marginTop: '4px' }}>
                         <button 
                           onClick={() => decrementQuantity(item.id)} 
-                          style={{ background: 'none', border: 'none', color: '#666', cursor: 'pointer', fontSize: '16px', padding: '0 5px' }}
+                          style={{ background: 'none', border: 'none', color: '#666', cursor: 'pointer', fontSize: '16px', padding: '0 5px', transition: 'color 0.2s' }}
+                          onMouseOver={(e) => (e.currentTarget.style.color = 'white')}
+                          onMouseOut={(e) => (e.currentTarget.style.color = '#666')}
                         >
                           —
                         </button>
@@ -98,7 +113,9 @@ const CartOverlay = () => {
                         </span>
                         <button 
                           onClick={() => incrementQuantity(item.id)} 
-                          style={{ background: 'none', border: 'none', color: '#666', cursor: 'pointer', fontSize: '16px', padding: '0 5px' }}
+                          style={{ background: 'none', border: 'none', color: '#666', cursor: 'pointer', fontSize: '16px', padding: '0 5px', transition: 'color 0.2s' }}
+                          onMouseOver={(e) => (e.currentTarget.style.color = 'white')}
+                          onMouseOut={(e) => (e.currentTarget.style.color = '#666')}
                         >
                           +
                         </button>
@@ -109,6 +126,7 @@ const CartOverlay = () => {
                 );
               })}
 
+              {/* সাবটোটাল এবং চেকআউট সেকশন */}
               <div style={{ marginTop: '10px', padding: '10px 0' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '25px', fontSize: '15px', letterSpacing: '0.5px' }}>
                   <span style={{ color: '#777' }}>Subtotal</span>
@@ -127,8 +145,12 @@ const CartOverlay = () => {
                     letterSpacing: '2px', 
                     cursor: selectedIds.length > 0 ? 'pointer' : 'not-allowed', 
                     fontSize: '12px', 
-                    textTransform: 'uppercase'
+                    textTransform: 'uppercase', 
+                    transition: 'opacity 0.2s' 
                   }}
+                  onMouseOver={(e) => { if(selectedIds.length > 0) e.currentTarget.style.opacity = '0.9'; }}
+                  onMouseOut={(e) => { e.currentTarget.style.opacity = '1'; }}
+                  onClick={() => alert("Proceeding to Checkout with " + selectedIds.length + " items.")}
                 >
                   PROCEED TO CHECKOUT ({selectedIds.length})
                 </button>
