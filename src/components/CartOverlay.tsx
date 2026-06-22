@@ -1,4 +1,4 @@
- import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react'; // ✅ ফিক্সড: 'Import' এর বদলে 'import' করা হয়েছে
 import { useCart } from '../context/CartContext';
 import { supabase } from '../supabaseClient';
 
@@ -10,12 +10,12 @@ const CartOverlay = ({ session }: { session: any }) => {
   useEffect(() => {
     const fetchLiveStatus = async () => {
       const savedOrderId = localStorage.getItem('nomad_guest_order_id');
-      
+
       if (!savedOrderId || !isCartOpen) {
         setOrderStatus(null);
         return;
       }
-      
+
       const { data, error } = await supabase
         .from('orders')
         .select('status')
