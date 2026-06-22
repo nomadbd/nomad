@@ -14,6 +14,7 @@ interface CartContextType {
   isCartOpen: boolean;
   setIsCartOpen: (isOpen: boolean) => void;
   addToCart: (item: Omit<CartItem, 'quantity'>) => Promise<void>;
+  incrementQuantity: (id: string) => Promise<void>;
   decrementQuantity: (id: string) => Promise<void>;
   clearCart: () => Promise<void>;
 }
@@ -61,32 +62,49 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     loadCart();
   }, [userId]);
 
-  // ➕ প্রোডাক্ট যোগ করা বা পরিমাণ ১ বাড়ানো
+  // 🛒 মেইন পেজের বাটন: ক্লিক করলে শুধু ১ম বার আইটেম যুক্ত হবে, বারবার ক্লিকে কোয়ান্টিটি বাড়বে না
   const addToCart = async (product: Omit<CartItem, 'quantity'>) => {
     let updatedCart = [...cartItems];
     const existingItemIndex = updatedCart.findIndex((item) => item.id === product.id);
-    let newQuantity = 1;
 
+    // অলরেডি কার্টে থাকলে কোয়ান্টিটি আর বাড়বে না, ফাংশন এখানেই স্টপ হবে
     if (existingItemIndex > -1) {
-      newQuantity = updatedCart[existingItemIndex].quantity + 1;
-      updatedCart[existingItemIndex].quantity = newQuantity;
-    } else {
-      updatedCart.push({ ...product, quantity: 1 });
+      return;
     }
 
+    // কার্টে না থাকলে একদম ফ্রেশ ১টি কোয়ান্টিটি নিয়ে যুক্ত হবে
+    updatedCart.push({ ...product, quantity: 1 });
     setCartItems(updatedCart);
 
     if (userId) {
       await supabase.from('cart_items').upsert({
         user_id: userId, product_id: product.id, name: product.name,
-        price: product.price, image_url: product.image_url, quantity: newQuantity
+        price: product.price, image_url: product.image_url, quantity: 1
       }, { onConflict: 'user_id,product_id' });
     } else {
       localStorage.setItem('nomad_guest_cart', JSON.stringify(updatedCart));
     }
   };
 
-  // ➖ পরিমাণ ১ কমানো (১ এর নিচে নামলে অটো রিমুভ)
+  // ➕ কার্টের ভেতরের বাটন: ক্লিক করলে পরিমাণ ১ করে বাড়বে
+  const incrementQuantity = async (id: string) => {
+    let updatedCart = [...cartItems];
+    const existingItemIndex = updatedCart.findIndex((item) => item.id === id);
+
+    if (existingItemIndex > -1) {
+      const newQuantity = updatedCart[existingItemIndex].quantity + 1;
+      updatedCart[existingItemIndex].quantity = newQuantity;
+      setCartItems(updatedCart);
+
+      if (userId) {
+        await supabase.from('cart_items').update({ quantity: newQuantity }).eq('user_id', userId).eq('product_id', id);
+      } else {
+        localStorage.setItem('nomad_guest_cart', JSON.stringify(updatedCart));
+      }
+    }
+  };
+
+  // ➖ কার্টের ভেতরের বাটন: ক্লিক করলে পরিমাণ কমবে (১ থেকে মাইনাস করলে অটো রিমুভ)
   const decrementQuantity = async (id: string) => {
     let updatedCart = [...cartItems];
     const existingItemIndex = updatedCart.findIndex((item) => item.id === id);
@@ -95,7 +113,6 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const currentQty = updatedCart[existingItemIndex].quantity;
 
       if (currentQty > 1) {
-        // পরিমাণ ১ কমবে
         const newQuantity = currentQty - 1;
         updatedCart[existingItemIndex].quantity = newQuantity;
         setCartItems(updatedCart);
@@ -106,7 +123,6 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
           localStorage.setItem('nomad_guest_cart', JSON.stringify(updatedCart));
         }
       } else {
-        // ১ থাকা অবস্থায় মাইনাস চাপলে সম্পূর্ণ রিমুভ হবে
         updatedCart = updatedCart.filter((item) => item.id !== id);
         setCartItems(updatedCart);
 
@@ -129,7 +145,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <CartContext.Provider value={{ cartItems, isCartOpen, setIsCartOpen, addToCart, decrementQuantity, clearCart }}>
+    <CartContext.Provider value={{ cartItems, isCartOpen, setIsCartOpen, addToCart, incrementQuantity, decrementQuantity, clearCart }}>
       {children}
     </CartContext.Provider>
   );
