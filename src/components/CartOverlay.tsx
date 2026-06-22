@@ -2,24 +2,24 @@ import React, { useState, useEffect } from 'react';
 import { useCart } from '../context/CartContext';
 
 const CartOverlay = () => {
-  const { cartItems, isCartOpen, setIsCartOpen, addToCart, decrementQuantity } = useCart();
+  const { cartItems, isCartOpen, setIsCartOpen, incrementQuantity, decrementQuantity } = useCart();
   
-  // সিলেক্ট করা আইটেমের আইডি ট্র্যাক করার স্টেট
+  // সিলেক্ট করা আইটেমগুলোর আইডি ট্র্যাক করার স্টেট
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
-  // কার্টে নতুন কোনো প্রোডাক্ট আসলেই সেটি ডিফল্টভাবে সিলেক্টেড থাকবে
+  // কার্টে কোনো নতুন প্রোডাক্ট ঢুকলে সেটি ডিফল্টভাবে সিলেক্টেড থাকবে
   useEffect(() => {
     setSelectedIds(cartItems.map(item => item.id));
   }, [cartItems]);
 
   if (!isCartOpen) return null;
 
-  // শুধু সিলেক্ট করা আইটেমগুলোর সাবটোটাল হিসাব করা
+  // শুধুমাত্র সিলেক্টেড আইটেমগুলোর সাবটোটাল হিসাব করার লজিক
   const subtotal = cartItems
     .filter(item => selectedIds.includes(item.id))
     .reduce((acc, item) => acc + item.price * item.quantity, 0);
 
-  // চেকবক্স অন/অফ লজিক
+  // চেকবক্স অন/অফ করার লজিক
   const toggleSelect = (id: string) => {
     if (selectedIds.includes(id)) {
       setSelectedIds(selectedIds.filter(itemId => itemId !== id));
@@ -32,7 +32,7 @@ const CartOverlay = () => {
     <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0, 0, 0, 0.96)', zIndex: 2000, overflowY: 'auto', padding: '40px 20px', boxSizing: 'border-box' }}>
       <div style={{ maxWidth: '500px', margin: '0 auto', position: 'relative' }}>
         
-        {/* ক্লোজ বাটন */}
+        {/* বন্ধ করার ক্রস বাটন */}
         <button onClick={() => setIsCartOpen(false)} style={{ position: 'absolute', top: '-10px', right: '0', background: 'none', border: 'none', color: 'white', fontSize: '32px', cursor: 'pointer' }}>
           &times;
         </button>
@@ -53,21 +53,21 @@ const CartOverlay = () => {
               {cartItems.map((item) => {
                 const isSelected = selectedIds.includes(item.id);
                 return (
-                  <div key={item.id} style={{ display: 'flex', gap: '20px', alignItems: 'flex-start', borderBottom: '1px solid #111', paddingBottom: '20px', opacity: isSelected ? 1 : 0.5, transition: 'opacity 0.2s' }}>
+                  <div key={item.id} style={{ display: 'flex', gap: '20px', alignItems: 'flex-start', borderBottom: '1px solid #111', paddingBottom: '20px', opacity: isSelected ? 1 : 0.4, transition: 'opacity 0.2s' }}>
                     
                     {/* প্রোডাক্ট ইমেজ */}
                     <img src={item.image_url} alt={item.name} style={{ width: '75px', height: '90px', objectFit: 'cover', border: '1px solid #1a1a1a' }} />
                     
-                    {/* প্রোডাক্ট ইনফরমেশন কন্টেইনার */}
+                    {/* তথ্য ও কন্ট্রোল এরিয়া */}
                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
                       
-                      {/* 🛒 ১ম লাইন: প্রোডাক্টের নাম এবং একদম ডান পাশে গোল সবুজ চেকবক্স */}
+                      {/* 🟢 লাইন ১: প্রোডাক্টের নাম এবং একদম ডান পাশে গোল সবুজ চেকবক্স */}
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 'normal', color: 'white', letterSpacing: '0.5px' }}>
                           {item.name}
                         </h4>
                         
-                        {/* 🟢 রাউন্ডেড গ্রীন চেকবক্স */}
+                        {/* রাউন্ডেড গ্রীন চেকবক্স (ক্লিক করলে সবুজ হবে, ভেতরে টিক চিহ্ন আসবে) */}
                         <div 
                           onClick={() => toggleSelect(item.id)}
                           style={{
@@ -88,7 +88,7 @@ const CartOverlay = () => {
                         </div>
                       </div>
 
-                      {/* ২য় লাইন: একক মূল্য এবং ডান পাশে মোট মূল্য */}
+                      {/* লাইন ২: একক মূল্য এবং ডান পাশে মোট মূল্য */}
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <p style={{ margin: 0, color: '#888', fontSize: '14px' }}>৳{item.price}</p>
                         <div style={{ color: 'white', fontSize: '15px', fontFamily: 'monospace' }}>
@@ -96,7 +96,7 @@ const CartOverlay = () => {
                         </div>
                       </div>
                       
-                      {/* ৩য় লাইন: প্লাস-মাইনাস কুয়ান্টিটি কন্ট্রোলার */}
+                      {/* লাইন ৩: প্লাস-মাইনাস স্টিপার বাটন */}
                       <div style={{ display: 'flex', alignItems: 'center', gap: '18px', marginTop: '4px' }}>
                         <button 
                           onClick={() => decrementQuantity(item.id)} 
@@ -110,7 +110,7 @@ const CartOverlay = () => {
                           {item.quantity}
                         </span>
                         <button 
-                          onClick={() => addToCart({ id: item.id, name: item.name, price: item.price, image_url: item.image_url })} 
+                          onClick={() => incrementQuantity(item.id)} 
                           style={{ background: 'none', border: 'none', color: '#666', cursor: 'pointer', fontSize: '16px', padding: '0 5px', transition: 'color 0.2s' }}
                           onMouseOver={(e) => (e.currentTarget.style.color = 'white')}
                           onMouseOut={(e) => (e.currentTarget.style.color = '#666')}
@@ -148,6 +148,7 @@ const CartOverlay = () => {
                   }}
                   onMouseOver={(e) => { if(selectedIds.length > 0) e.currentTarget.style.opacity = '0.9'; }}
                   onMouseOut={(e) => { e.currentTarget.style.opacity = '1'; }}
+                  onClick={() => alert("Proceeding to Checkout with " + selectedIds.length + " items.")}
                 >
                   PROCEED TO CHECKOUT ({selectedIds.length})
                 </button>
