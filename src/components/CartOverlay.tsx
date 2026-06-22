@@ -140,26 +140,41 @@ const CartOverlay = () => {
                   <span style={{ color: 'white', fontWeight: 'bold' }}>৳{subtotal}</span>
                 </div>
 
-                {/* ⚡ আপডেটেড প্রিমিয়াম এবং মিনিমাল চেকআউট বাটন */}
-                <button 
-                  disabled={selectedIds.length === 0}
-                  style={{ 
-                    width: '100%', 
-                    padding: '14px', // সামান্য স্লিক থিকনেস
-                    backgroundColor: selectedIds.length > 0 ? 'white' : '#161616', // ডিজেবল্ড অবস্থায় ক্লাসি ডার্ক গ্রে
-                    color: selectedIds.length > 0 ? 'black' : '#444', 
-                    border: selectedIds.length > 0 ? 'none' : '1px solid #222', 
-                    fontWeight: '600', // ভারী হেভি ফন্টের বদলে প্রফেশনাল স্লিকনেস
-                    letterSpacing: '3px', // অক্ষরের মাঝে লাক্সারি দূরত্ব
-                    cursor: selectedIds.length > 0 ? 'pointer' : 'not-allowed', 
-                    fontSize: '11px', // ওভারঅল মার্জিত সাইজ
-                    textTransform: 'uppercase',
-                    transition: 'all 0.25s ease-in-out', // স্মুথ হোভার/স্টেট ট্রানজিশন
-                    outline: 'none'
-                  }}
-                >
-                  PROCEED TO CHECKOUT ({selectedIds.length})
-                </button>
+{/* ⚡ আল্ট্রা-লাক্সারি লাইট বর্ডার ও হোয়াইট ফন্ট বাটন */}
+<button 
+  disabled={selectedIds.length === 0}
+  style={{ 
+    width: '100%', 
+    padding: '15px', 
+    background: 'transparent', // সলিড সাদার বদলে সম্পূর্ণ ট্রান্সপারেন্ট
+    color: selectedIds.length > 0 ? 'white' : '#555', // একটিভ হলে সাদা ফন্ট, ডিজেবল হলে ডার্ক গ্রে
+    border: selectedIds.length > 0 ? '1px solid rgba(255, 255, 255, 0.8)' : '1px solid #222', // হালকা ফাইন বর্ডার
+    fontWeight: '600', 
+    letterSpacing: '3px', 
+    cursor: selectedIds.length > 0 ? 'pointer' : 'not-allowed', 
+    fontSize: '11px', 
+    textTransform: 'uppercase',
+    transition: 'all 0.25s ease-in-out',
+    outline: 'none',
+    // হালকা একটি হোভার বা প্রেসড ইফেক্ট (মোবাইলের জন্য)
+    opacity: selectedIds.length > 0 ? 1 : 0.5
+  }}
+  // একটিভ অবস্থায় বাটনে চাপ দিলে ব্যাকগ্রাউন্ড সামান্য ইনভার্ট হওয়ার ফিল দেওয়ার জন্য (ঐচ্ছিক)
+  onMouseEnter={(e) => {
+    if(selectedIds.length > 0) {
+      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+    }
+  }}
+  onMouseLeave={(e) => {
+    if(selectedIds.length > 0) {
+      e.currentTarget.style.background = 'transparent';
+    }
+  }}
+>
+  PROCEED TO CHECKOUT ({selectedIds.length})
+</button>
+
+    
               </div>
             </div>
           )}
