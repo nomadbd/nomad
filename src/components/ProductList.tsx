@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../supabaseClient';
 import { useCart } from '../context/CartContext'; 
 
-// ১. TypeScript Interface
 interface Product {
   id: string | number;
   name: string;
@@ -19,7 +18,7 @@ interface ButtonProps {
   disabled: boolean;
 }
 
-// 🛒 ২. ইনলাইন বাটন কম্পোনেন্ট (সংরক্ষিত ও অপরিবর্তিত)
+// 🛒 ২. ইনলাইন বাটন কম্পোনেন্ট
 const AddToCartInlineButton: React.FC<ButtonProps> = ({ product, disabled }) => {
   const { cartItems, addToCart, setIsCartOpen } = useCart();
   const [isPressed, setIsPressed] = useState(false);
@@ -74,12 +73,10 @@ const AddToCartInlineButton: React.FC<ButtonProps> = ({ product, disabled }) => 
 };
 
 
-// 📦 ৩. প্রধান প্রোডাক্ট লিস্ট কম্পোনেন্ট (শোরুম ও ইন-লাইন গ্রিড সিস্টেমে আপগ্রেড করা)
+// 📦 ৩. প্রধান প্রোডাক্টリスト কম্পোনেন্ট
 export default function ProductList() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  
-  // 🔄 প্রতিটি ক্যাটাগরির এক্সপ্যান্ডেড স্টেট আলাদাভাবে ট্র্যাক করার জন্য অবজেক্ট স্টেট
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
 
   const fetchProducts = async () => {
@@ -102,17 +99,15 @@ export default function ProductList() {
   }, []);
 
   if (loading) {
-    return <p style={{ color: '#555', fontSize: '13px', letterSpacing: '1px', padding: '40px' }}>LOADING শোরুম...</p>;
+    return <p style={{ color: '#555', fontSize: '13px', letterSpacing: '1px', padding: '40px' }}>LOADING PRODUCTS...</p>;
   }
 
   if (products.length === 0) {
     return <p style={{ color: '#555', fontSize: '13px', letterSpacing: '1px', padding: '40px' }}>NO PRODUCTS AVAILABLE.</p>;
   }
 
-  // 🗂️ ডাইনামিকালি ইউনিক ক্যাটাগরি লিস্ট তৈরি করা
   const categories = Array.from(new Set(products.map(p => p.category)));
 
-  // সি-মোর বাটন টগল ফাংশন
   const toggleCategoryExpand = (category: string) => {
     setExpandedCategories(prev => ({
       ...prev,
@@ -121,28 +116,32 @@ export default function ProductList() {
   };
 
   return (
-    <div style={{ backgroundColor: '#000', width: '100%', boxSizing: 'border-box', padding: '20px 0' }}>
+    <div style={{ backgroundColor: '#000', width: '100%', boxSizing: 'border-box' }}>
       {categories.map((category) => {
-        // এই নির্দিষ্ট ক্যাটাগরির প্রোডাক্টগুলো ফিল্টার করা
         const categoryProducts = products.filter(p => p.category === category);
         const isExpanded = !!expandedCategories[category];
 
         return (
-          <div key={category} style={{ marginBottom: '70px', padding: '0px 20px' }}>
+          // 📱 মোবাইল ও ডেক্সটপের রেসপনসিভ প্যাডিং ক্লাস অ্যাড করা হয়েছে
+          <div key={category} className="showroom-section" style={{ marginBottom: '60px' }}>
             
-            {/* 👑 ক্যাটাগরি হেডার এবং "SEE MORE" কন্ট্রোল বাটন */}
+            {/* 👑 হেডার সেকশন */}
             <div style={{ 
               display: 'flex', 
               justifyContent: 'space-between', 
-              alignItems: 'baseline', 
-              marginBottom: '25px',
+              alignItems: 'center', 
+              marginBottom: '20px',
               borderBottom: '1px solid #141414',
-              paddingBottom: '12px'
+              paddingBottom: '12px',
+              // বাটনের টেক্সট সমান রাখতে দুই পাশে সামান্য সেফ-প্যাডিং
+              paddingLeft: '15px',
+              paddingRight: '15px'
             }}>
               <h3 style={{ margin: 0, fontSize: '13px', letterSpacing: '3px', color: '#b3b3b3', textTransform: 'uppercase', fontFamily: 'monospace' }}>
                 {category}
               </h3>
               
+              {/* 🎯 ফিক্সড উইথ ও ক্লিন বোতাম (কোনো অতিরিক্ত তীর বা মাইনাস চিহ্ন নেই, কোনো ঝাঁকুনি হবে না) */}
               <button 
                 onClick={() => toggleCategoryExpand(category)}
                 style={{ 
@@ -154,33 +153,35 @@ export default function ProductList() {
                   cursor: 'pointer', 
                   textTransform: 'uppercase', 
                   opacity: 0.7, 
-                  transition: 'opacity 0.2s' 
+                  transition: 'opacity 0.2s',
+                  width: '100px',        // 💡 ফিক্সড উইথ যা টেক্সট পরিবর্তনের সময় লেআউট শিফট আটকাবে
+                  textAlign: 'right',
+                  fontFamily: 'monospace'
                 }}
                 onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
                 onMouseLeave={(e) => e.currentTarget.style.opacity = '0.7'}
               >
-                {isExpanded ? 'VIEW LESS —' : 'SEE MORE ↗'}
+                {isExpanded ? 'SEE LESS' : 'SEE MORE'}
               </button>
             </div>
 
-            {/* ⚡ প্রোডাক্ট কন্টেইনার: স্টেট অনুযায়ী ডাইনামিক লেআউট সুইচ */}
+            {/* ⚡ প্রোডাক্ট কন্টেইনার */}
             <div 
               className="showroom-row-container"
               style={
                 isExpanded 
                   ? {
-                      // 🔳 SEE MORE ক্লিক করলে: লাক্সারি ডেক্সটপ গ্রিড লেআউট (অন্যান্য ক্যাটাগরি নিচে নেমে যাবে)
                       display: 'grid',
                       gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
-                      gap: '50px 30px',
+                      gap: '40px 20px',
+                      padding: '0 15px'
                     }
                   : {
-                      // ↔️ ডিফল্ট অবস্থা: ডানে থেকে বামে আল্ট্রা-স্মুথ স্ক্রল করা রো (Row)
                       display: 'flex', 
                       overflowX: 'auto', 
                       scrollSnapType: 'x mandatory', 
                       scrollBehavior: 'smooth',
-                      gap: '30px',
+                      gap: '15px', // মোবাইলে কার্ডের মাঝের গ্যাপ কিছুটা কমানো হয়েছে যাতে ফুল স্ক্রিন ফিল আসে
                       WebkitOverflowScrolling: 'touch',
                       paddingBottom: '10px'
                     }
@@ -198,7 +199,7 @@ export default function ProductList() {
                     width: '100%' 
                   }}
                 >
-                  {/* প্রোডাক্ট ইমেজ কন্টেইনার (প্রিমিয়াম ৩:৪ রেশিও) */}
+                  {/* ইমেজ কন্টেইনার */}
                   <div style={{ 
                     width: '100%', 
                     aspectRatio: '3/4', 
@@ -224,9 +225,8 @@ export default function ProductList() {
                     )}
                   </div>
 
-                  {/* প্রোডাক্ট ডিটেইলস সেকশন */}
-                  <div style={{ marginTop: '15px', display: 'flex', flexDirection: 'column', flex: 1 }}>
-                    {/* আপডেটেড লাক্সারি সফট অফ-হোয়াইট কালার (#e5e5e5) */}
+                  {/* প্রোডাক্ট ইনফো (ডাইনামিক টেক্সট অ্যালাইনমেন্ট সেফটিসহ) */}
+                  <div style={{ marginTop: '15px', padding: '0 15px', display: 'flex', flexDirection: 'column', flex: 1 }}>
                     <h3 style={{ fontSize: '14px', fontWeight: 'normal', color: '#e5e5e5', margin: '0 0 6px 0', letterSpacing: '0.5px' }}>
                       {product.name}
                     </h3>
@@ -235,7 +235,7 @@ export default function ProductList() {
                       {product.description}
                     </p>
 
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', paddingBottom: '5px' }}>
                       <span style={{ fontSize: '15px', fontWeight: '500', color: '#fff', fontFamily: 'monospace' }}>
                         ৳{product.price}
                       </span>
@@ -255,22 +255,30 @@ export default function ProductList() {
         );
       })}
 
-      {/* 🎨 রেসপনসিভ রেঞ্জ ও স্ক্রলবার হাইড করার গ্লোবাল সিএসএস */}
+      {/* 🎨 রেসপনসিভ ও পিওর ফুল-উইথ স্ক্রিন হ্যান্ডলিং সিএসএস */}
       <style>{`
-        /* 📱 মোবাইলের জন্য ডিফল্ট (১টি প্রডাক্ট ফুল স্ক্রিন সোয়াইপ) */
+        /* 📱 মোবাইলের জন্য ডিফল্ট সেটিংস (পুরো স্ক্রিন কভার করবে) */
+        .showroom-section {
+          padding: 0 0px; 
+        }
         .showroom-card-item {
-          min-width: 100%;
+          min-width: 100vw; /* স্ক্রিনের পুরো চওড়া অংশ নেবে */
+          padding: 0 15px;  /* দুই পাশে শোরুম স্ট্যান্ডার্ড বর্ডার গ্যাপ */
         }
 
-        /* 💻 ডেক্সটপের জন্য (কোল্যাপ্সড অবস্থায় একের পর এক প্রডাক্ট ডানে সাজানো থাকবে) */
+        /* 💻 ডেক্সটপের জন্য রেসপনসিভ লেআউট */
         @media (min-width: 768px) {
+          .showroom-section {
+            padding: 0 25px; /* ডেক্সটপে দুই পাশে সুন্দর স্পেস */
+          }
           .showroom-card-item {
-            min-width: 280px; 
-            max-width: 300px;
+            min-width: 290px; 
+            max-width: 310px;
+            padding: 0;
           }
         }
 
-        /* প্রিমিয়াম শোরুম লুকের জন্য ব্রাউজার স্ক্রলবার হাইড করা */
+        /* স্ক্রলবার হাইড রাখার গ্লোবাল কোড */
         .showroom-row-container::-webkit-scrollbar {
           display: none;
         }
