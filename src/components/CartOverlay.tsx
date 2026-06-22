@@ -42,7 +42,7 @@ const CartOverlay = () => {
         </h2>
 
         <div>
-          {/* 💡 টেক্সট কালার আপডেট: সাদার কাছাকাছি উজ্জ্বল ধূসর (#b3b3b3) */}
+          {/* উজ্জ্বল ধূসর টেক্সট কালার (#b3b3b3) */}
           <h3 style={{ fontSize: '12px', letterSpacing: '1px', color: '#b3b3b3', marginBottom: '25px', textTransform: 'uppercase' }}>
             Cart Items ({cartItems.length})
           </h3>
@@ -62,13 +62,22 @@ const CartOverlay = () => {
                     {/* তথ্য ও কন্ট্রোল এরিয়া */}
                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '16px' }}>
                       
-                      {/* 🛍️ লাইন ১: প্রোডাক্টের নাম এবং গোল চেকবক্স */}
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 'normal', color: 'white', letterSpacing: '0.5px' }}>
+                      {/* লাইন ১: প্রোডাক্টের নাম এবং গোল চেকবক্স (বড় নাম হ্যান্ডেল করার জন্য আপডেটেড) */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <h4 style={{ 
+                          margin: 0, 
+                          fontSize: '15px', 
+                          fontWeight: 'normal', 
+                          color: 'white', 
+                          letterSpacing: '0.5px',
+                          paddingRight: '15px',   // চেকবক্স থেকে নিরাপদ দূরত্ব
+                          lineHeight: '1.4',      // ২ লাইনে গেলে দেখতে পরিচ্ছন্ন লাগবে
+                          wordBreak: 'break-word' // বড় নাম হলে স্ক্রিন না ভেঙে নিচে নামবে
+                        }}>
                           {item.name}
                         </h4>
                         
-                        {/* রাউন্ডেড চেকবক্স */}
+                        {/* রাউন্ডেড চেকবক্স (স্পষ্ট আনসিলেক্টড বর্ডার ও সাইজ প্রটেকশন সহ) */}
                         <div 
                           onClick={() => toggleSelect(item.id)}
                           style={{
@@ -82,17 +91,18 @@ const CartOverlay = () => {
                             justifyContent: 'center',
                             cursor: 'pointer',
                             transition: 'all 0.15s ease',
-                            userSelect: 'none'
+                            userSelect: 'none',
+                            flexShrink: 0 // নাম বড় হলেও চেকবক্স কখনো চ্যাপ্টা হবে না
                           }}
                         >
                           {isSelected && <span style={{ color: 'white', fontSize: '11px', fontWeight: 'bold' }}>✓</span>}
                         </div>
                       </div>
 
-                      {/* 💎 লাইন ২: প্লাস-মাইনাস বাটন (বামে) এবং টোটাল প্রাইস (ডানে) */}
+                      {/* লাইন ২: প্লাস-মাইনাস বাটন (বামে) এবং একমাত্র উজ্জ্বল মোট মূল্য (ডানে) */}
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         
-                        {/* প্লাস-মাইনাস স্টিপার (বাটনগুলো এখন আরও উজ্জ্বল ধূসর) */}
+                        {/* প্লাস-মাইনাস স্টিপার (উজ্জ্বল ধূসর বাটন) */}
                         <div style={{ display: 'flex', alignItems: 'center', gap: '18px' }}>
                           <button 
                             onClick={() => decrementQuantity(item.id)} 
@@ -111,7 +121,7 @@ const CartOverlay = () => {
                           </button>
                         </div>
 
-                        {/* একমাত্র ব্রাইট টোটাল প্রাইস */}
+                        {/* প্রোডাক্টের টোটাল প্রাইস */}
                         <div style={{ color: 'white', fontSize: '15px', fontFamily: 'monospace', fontWeight: '500' }}>
                           ৳{item.price * item.quantity}
                         </div>
@@ -126,7 +136,6 @@ const CartOverlay = () => {
               {/* সাবটোটাল এবং চেকআউট সেকশন */}
               <div style={{ marginTop: '10px', padding: '10px 0' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '25px', fontSize: '15px', letterSpacing: '0.5px' }}>
-                  {/* 💡 সাবটোটাল টেক্সট কালার উজ্জ্বল ধূসর করা হয়েছে */}
                   <span style={{ color: '#b3b3b3' }}>Subtotal</span>
                   <span style={{ color: 'white', fontWeight: 'bold' }}>৳{subtotal}</span>
                 </div>
