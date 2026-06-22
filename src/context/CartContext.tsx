@@ -1,112 +1,143 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { supabase } from '../supabaseClient';
 
-interface Product {
-  id: string | number;
+// কার্ট আইটেমের ইন্টারফেস
+export interface CartItem {
+  id: string; // এটি মূলত product_id হিসেবে কাজ করবে
   name: string;
-  description: string;
   price: number;
   image_url: string;
-  category: string;
-  stock_quantity: number;
-  created_at: string;
-}
-
-interface CartItem extends Product {
   quantity: number;
 }
 
 interface CartContextType {
   cartItems: CartItem[];
-  isCartOpen: boolean; // ⚡ নতুন যুক্ত হলো
-  setIsCartOpen: (isOpen: boolean) => void; // ⚡ নতুন যুক্ত হলো
-  addToCart: (product: Product) => void;
-  removeFromCart: (id: string | number) => void;
-  updateQuantity: (id: string | number, quantity: number) => void;
-  clearCart: () => void;
-  cartCount: number;
-  cartTotal: number;
+  isCartOpen: boolean;
+  setIsCartOpen: (isOpen: boolean) => void;
+  addToCart: (item: Omit<CartItem, 'quantity'>) => Promise<void>;
+  removeFromCart: (id: string) => Promise<void>;
+  clearCart: () => Promise<void>;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [cartItems, setCartItems] = useState<CartItem[]>(() => {
-    const savedCart = localStorage.getItem('cart');
-    return savedCart ? JSON.parse(savedCart) : [];
-  });
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
 
-  // ⚡ কার্ট ওপেন/বন্ধ রাখার জন্য গ্লোবাল স্টেট
-  const [isCartOpen, setIsCartOpen] = useState<boolean>(false);
-
+  // ১. ইউজার লগইন আছেন কি না তা ট্র্যাক করা
   useEffect(() => {
-    localStorage.setItem('cart', JSON.stringify(cartItems));
-  }, [cartItems]);
-
-  const addToCart = (product: Product) => {
-    setCartItems((prevItems) => {
-      const existingItem = prevItems.find((item) => item.id === product.id);
-
-      if (existingItem) {
-        if (existingItem.quantity >= product.stock_quantity) {
-          alert('দুঃখিত! এই প্রোডাক্টটি আর স্টকে নেই।');
-          return prevItems;
-        }
-        return prevItems.map((item) =>
-          item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
-        );
-      }
-
-      return [...prevItems, { ...product, quantity: 1 }];
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUserId(session?.user?.id || null);
     });
-    
-    // 🔥 অপশনাল: প্রোডাক্ট কার্টে নিলেই যদি অটোমেটিক কার্ট ওপেন করতে চান, তবে নিচের লাইনটি রাখুন:
-    setIsCartOpen(true); 
-  };
 
-  const removeFromCart = (id: string | number) => {
-    setCartItems((prevItems) => prevItems.filter((item) => item.id !== id));
-  };
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUserId(session?.user?.id || null);
+    });
 
-  const updateQuantity = (id: string | number, quantity: number) => {
-    if (quantity <= 0) {
-      removeFromCart(id);
-      return;
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // ২. ইউজার স্ট্যাটাসের ওপর ভিত্তি করে কার্ট লোড করা
+  useEffect(() => {
+    const loadCart = async () => {
+      if (userId) {
+        // 🔐 ইউজার লগইন থাকলে: সুপাবেজ থেকে কার্ট আনা হবে
+        const { data, error } = await supabase
+          .from('cart_items')
+          .select('product_id, name, price, image_url, quantity')
+          .eq('user_id', userId);
+
+        if (data && !error) {
+          const formattedItems: CartItem[] = data.map((item) => ({
+            id: item.product_id,
+            name: item.name,
+            price: Number(item.price),
+            image_url: item.image_url,
+            quantity: item.quantity,
+          }));
+          setCartItems(formattedItems);
+        }
+      } else {
+        // 🌐 গেস্ট ইউজার হলে: লোকাল স্টোরেজ থেকে কার্ট আনা হবে
+        const localCart = localStorage.getItem('nomad_guest_cart');
+        setCartItems(localCart ? JSON.parse(localCart) : []);
+      }
+    };
+
+    loadCart();
+  }, [userId]);
+
+  // ৩. কার্টে প্রোডাক্ট যোগ করা (Add to Cart)
+  const addToCart = async (product: Omit<CartItem, 'quantity'>) => {
+    let updatedCart = [...cartItems];
+    const existingItemIndex = updatedCart.findIndex((item) => item.id === product.id);
+    let newQuantity = 1;
+
+    if (existingItemIndex > -1) {
+      newQuantity = updatedCart[existingItemIndex].quantity + 1;
+      updatedCart[existingItemIndex].quantity = newQuantity;
+    } else {
+      updatedCart.push({ ...product, quantity: 1 });
     }
-    setCartItems((prevItems) =>
-      prevItems.map((item) => (item.id === id ? { ...item, quantity } : item))
-    );
+
+    // স্টেট আপডেট
+    setCartItems(updatedCart);
+
+    if (userId) {
+      // 🔒 ডাটাবেজে সিঙ্ক (লগইন ইউজার)
+      await supabase.from('cart_items').upsert({
+        user_id: userId,
+        product_id: product.id,
+        name: product.name,
+        price: product.price,
+        image_url: product.image_url,
+        quantity: newQuantity
+      }, { onConflict: 'user_id,product_id' });
+    } else {
+      // 🌐 লোকাল স্টোরেজে সিঙ্ক (গেস্ট)
+      localStorage.setItem('nomad_guest_cart', JSON.stringify(updatedCart));
+    }
   };
 
-  const clearCart = () => {
+  // ৪. কার্ট থেকে প্রোডাক্ট মুছে ফেলা (Remove from Cart)
+  const removeFromCart = async (id: string) => {
+    const updatedCart = cartItems.filter((item) => item.id !== id);
+    setCartItems(updatedCart);
+
+    if (userId) {
+      // 🔒 ডাটাবেজ থেকে ডিলিট
+      await supabase
+        .from('cart_items')
+        .delete()
+        .eq('user_id', userId)
+        .eq('product_id', id);
+    } else {
+      // 🌐 লোকাল স্টোরেজ থেকে ডিলিট
+      localStorage.setItem('nomad_guest_cart', JSON.stringify(updatedCart));
+    }
+  };
+
+  // ৫. পুরো কার্ট খালি করা (Checkout সফল হওয়ার পর ব্যবহারের জন্য)
+  const clearCart = async () => {
     setCartItems([]);
+    if (userId) {
+      await supabase.from('cart_items').delete().eq('user_id', userId);
+    } else {
+      localStorage.removeItem('nomad_guest_cart');
+    }
   };
-
-  const cartCount = cartItems.reduce((total, item) => total + item.quantity, 0);
-  const cartTotal = cartItems.reduce((total, item) => total + item.price * item.quantity, 0);
 
   return (
-    <CartContext.Provider
-      value={{
-        cartItems,
-        isCartOpen, // ⚡ পাস করা হলো
-        setIsCartOpen, // ⚡ পাস করা হলো
-        addToCart,
-        removeFromCart,
-        updateQuantity,
-        clearCart,
-        cartCount,
-        cartTotal,
-      }}
-    >
+    <CardContext.Provider value={{ cartItems, isCartOpen, setIsCartOpen, addToCart, removeFromCart, clearCart }}>
       {children}
-    </CartContext.Provider>
+    </CardContext.Provider>
   );
 };
 
 export const useCart = () => {
   const context = useContext(CartContext);
-  if (!context) {
-    throw new Error('useCart অবশ্যই একটি CartProvider এর ভেতরে ব্যবহার করতে হবে');
-  }
+  if (!context) throw new Error('useCart must be used within a CartProvider');
   return context;
 };
