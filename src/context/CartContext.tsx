@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 
 export interface CartItem {
-  id: string; 
+  id: string; // মূলত product_id হিসেবে কাজ করবে
   name: string;
   price: number;
   image_url: string;
@@ -24,28 +24,24 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
-  
-  // 📱 মোবাইলে লাইভ স্ট্যাটাস দেখার জন্য স্টেট
-  const [mobileLog, setMobileLog] = useState<string>("সিস্টেম চালু হচ্ছে...");
 
+  // ১. ইউজারের লগইন সেশন ট্র্যাক করা
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUserId(session?.user?.id || null);
-      setMobileLog(`শুরুর সেশন চেক: ${session?.user?.id ? "লগইন আছেন ✅" : "গেস্ট মোড 🌐"}`);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUserId(session?.user?.id || null);
-      setMobileLog(`লগইন স্টেট পরিবর্তন: ${session?.user?.id ? "লগইন হয়েছেন ✅" : "লগআউট 🌐"}`);
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
+  // ২. ইউজার অনুযায়ী সুপাবেজ বা লোকাল স্টোরেজ থেকে কার্ট ডাটা আনা
   useEffect(() => {
     const loadCart = async () => {
       if (userId) {
-        setMobileLog("সুপাবেজ থেকে কার্ট ডাটা আনা হচ্ছে...");
         const { data, error } = await supabase
           .from('cart_items')
           .select('product_id, name, price, image_url, quantity')
@@ -60,20 +56,17 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
             quantity: item.quantity,
           }));
           setCartItems(formattedItems);
-          setMobileLog(`সুপাবেজ থেকে ${formattedItems.length}টি প্রোডাক্ট লোড হয়েছে।`);
-        } else if (error) {
-          setMobileLog(`কার্ট লোড এরর: ${error.message}`);
         }
       } else {
         const localCart = localStorage.getItem('nomad_guest_cart');
         setCartItems(localCart ? JSON.parse(localCart) : []);
-        setMobileLog("লোকাল স্টোরেজ (গেস্ট মোড) থেকে কার্ট লোড হয়েছে।");
       }
     };
 
     loadCart();
   }, [userId]);
 
+  // ৩. কার্টে প্রোডাক্ট যোগ করা (Upsert/Save)
   const addToCart = async (product: Omit<CartItem, 'quantity'>) => {
     let updatedCart = [...cartItems];
     const existingItemIndex = updatedCart.findIndex((item) => item.id === product.id);
@@ -89,8 +82,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setCartItems(updatedCart);
 
     if (userId) {
-      setMobileLog("সুপাবেজে ডাটা পাঠানোর চেষ্টা করা হচ্ছে...");
-      const { error } = await supabase.from('cart_items').upsert({
+      await supabase.from('cart_items').upsert({
         user_id: userId,
         product_id: product.id,
         name: product.name,
@@ -98,18 +90,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         image_url: product.image_url,
         quantity: newQuantity
       }, { onConflict: 'user_id,product_id' });
-
-      if (error) {
-        setMobileLog(`❌ সুপাবেজ এরর: ${error.message} (${error.details || 'No details'})`);
-      } else {
-        setMobileLog("🎉 সুপাবেজে সফলভাবে সেভ হয়েছে!");
-      }
     } else {
-      setMobileLog("⚠️ লগইন নেই! লোকাল স্টোরেজে সেভ হলো।");
       localStorage.setItem('nomad_guest_cart', JSON.stringify(updatedCart));
     }
   };
 
+  // ৪. কার্ট থেকে প্রোডাক্ট রিমুভ করা
   const removeFromCart = async (id: string) => {
     const updatedCart = cartItems.filter((item) => item.id !== id);
     setCartItems(updatedCart);
@@ -125,6 +111,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // ৫. পুরো কার্ট খালি করা
   const clearCart = async () => {
     setCartItems([]);
     if (userId) {
@@ -137,25 +124,6 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   return (
     <CartContext.Provider value={{ cartItems, isCartOpen, setIsCartOpen, addToCart, removeFromCart, clearCart }}>
       {children}
-
-      {/* 📱 মোবাইল লাইভ কনসোল প্যানেল (টেস্টিং শেষ হলে এই অংশটুকু ডিলিট করে দেব) */}
-      <div style={{
-        position: 'fixed',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        backgroundColor: '#000000',
-        color: '#00ff00',
-        padding: '12px',
-        fontSize: '11px',
-        fontFamily: 'monospace',
-        zIndex: 99999,
-        borderTop: '2px solid #222',
-        textAlign: 'center',
-        opacity: 0.9
-      }}>
-        <span style={{ color: '#888' }}>[NOMAD DEBUGGER]:</span> {mobileLog}
-      </div>
     </CartContext.Provider>
   );
 };
