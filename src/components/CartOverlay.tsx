@@ -3,7 +3,7 @@ import { useCart } from '../context/CartContext';
 
 const CartOverlay = () => {
   const { cartItems, isCartOpen, setIsCartOpen, incrementQuantity, decrementQuantity } = useCart();
-  
+
   // সিলেক্ট করা আইটেমগুলোর আইডি ট্র্যাক করার স্টেট
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
@@ -31,7 +31,7 @@ const CartOverlay = () => {
   return (
     <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0, 0, 0, 0.96)', zIndex: 2000, overflowY: 'auto', padding: '40px 20px', boxSizing: 'border-box' }}>
       <div style={{ maxWidth: '500px', margin: '0 auto', position: 'relative' }}>
-        
+
         {/* বন্ধ করার ক্রস বাটন */}
         <button onClick={() => setIsCartOpen(false)} style={{ position: 'absolute', top: '-10px', right: '0', background: 'none', border: 'none', color: 'white', fontSize: '32px', cursor: 'pointer' }}>
           &times;
@@ -55,14 +55,14 @@ const CartOverlay = () => {
                 const isSelected = selectedIds.includes(item.id);
                 return (
                   <div key={item.id} style={{ display: 'flex', gap: '20px', alignItems: 'center', borderBottom: '1px solid #1a1a1a', paddingBottom: '20px' }}>
-                    
+
                     {/* প্রোডাক্ট ইমেজ */}
                     <img src={item.image_url} alt={item.name} style={{ width: '75px', height: '90px', objectFit: 'cover', border: '1px solid #1a1a1a' }} />
-                    
+
                     {/* তথ্য ও কন্ট্রোল এরিয়া */}
                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                      
-                      {/* লাইন ১: প্রোডাক্টের নাম এবং গোল চেকবক্স (বড় নাম হ্যান্ডেল করার জন্য আপডেটেড) */}
+
+                      {/* লাইন ১: প্রোডাক্টের নাম এবং গোল চেকবক্স */}
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                         <h4 style={{ 
                           margin: 0, 
@@ -70,14 +70,14 @@ const CartOverlay = () => {
                           fontWeight: 'normal', 
                           color: 'white', 
                           letterSpacing: '0.5px',
-                          paddingRight: '15px',   // চেকবক্স থেকে নিরাপদ দূরত্ব
-                          lineHeight: '1.4',      // ২ লাইনে গেলে দেখতে পরিচ্ছন্ন লাগবে
-                          wordBreak: 'break-word' // বড় নাম হলে স্ক্রিন না ভেঙে নিচে নামবে
+                          paddingRight: '15px',   
+                          lineHeight: '1.4',      
+                          wordBreak: 'break-word' 
                         }}>
                           {item.name}
                         </h4>
-                        
-                        {/* রাউন্ডেড চেকবক্স (স্পষ্ট আনসিলেক্টড বর্ডার ও সাইজ প্রটেকশন সহ) */}
+
+                        {/* রাউন্ডেড চেকবক্স */}
                         <div 
                           onClick={() => toggleSelect(item.id)}
                           style={{
@@ -92,17 +92,17 @@ const CartOverlay = () => {
                             cursor: 'pointer',
                             transition: 'all 0.15s ease',
                             userSelect: 'none',
-                            flexShrink: 0 // নাম বড় হলেও চেকবক্স কখনো চ্যাপ্টা হবে না
+                            flexShrink: 0 
                           }}
                         >
                           {isSelected && <span style={{ color: 'white', fontSize: '11px', fontWeight: 'bold' }}>✓</span>}
                         </div>
                       </div>
 
-                      {/* লাইন ২: প্লাস-মাইনাস বাটন (বামে) এবং একমাত্র উজ্জ্বল মোট মূল্য (ডানে) */}
+                      {/* line ২: প্লাস-মাইনাস বাটন এবং মূল্য */}
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        
-                        {/* প্লাস-মাইনাস স্টিপার (উজ্জ্বল ধূসর বাটন) */}
+
+                        {/* প্লাস-মাইনাস স্টিপার */}
                         <div style={{ display: 'flex', alignItems: 'center', gap: '18px' }}>
                           <button 
                             onClick={() => decrementQuantity(item.id)} 
@@ -139,20 +139,23 @@ const CartOverlay = () => {
                   <span style={{ color: '#b3b3b3' }}>Subtotal</span>
                   <span style={{ color: 'white', fontWeight: 'bold' }}>৳{subtotal}</span>
                 </div>
-                
+
+                {/* ⚡ আপডেটেড প্রিমিয়াম এবং মিনিমাল চেকআউট বাটন */}
                 <button 
                   disabled={selectedIds.length === 0}
                   style={{ 
                     width: '100%', 
-                    padding: '16px', 
-                    backgroundColor: selectedIds.length > 0 ? 'white' : '#222', 
-                    color: selectedIds.length > 0 ? 'black' : '#555', 
-                    border: 'none', 
-                    fontWeight: 'bold', 
-                    letterSpacing: '2px', 
+                    padding: '14px', // সামান্য স্লিক থিকনেস
+                    backgroundColor: selectedIds.length > 0 ? 'white' : '#161616', // ডিজেবল্ড অবস্থায় ক্লাসি ডার্ক গ্রে
+                    color: selectedIds.length > 0 ? 'black' : '#444', 
+                    border: selectedIds.length > 0 ? 'none' : '1px solid #222', 
+                    fontWeight: '600', // ভারী হেভি ফন্টের বদলে প্রফেশনাল স্লিকনেস
+                    letterSpacing: '3px', // অক্ষরের মাঝে লাক্সারি দূরত্ব
                     cursor: selectedIds.length > 0 ? 'pointer' : 'not-allowed', 
-                    fontSize: '12px', 
-                    textTransform: 'uppercase'
+                    fontSize: '11px', // ওভারঅল মার্জিত সাইজ
+                    textTransform: 'uppercase',
+                    transition: 'all 0.25s ease-in-out', // স্মুথ হোভার/স্টেট ট্রানজিশন
+                    outline: 'none'
                   }}
                 >
                   PROCEED TO CHECKOUT ({selectedIds.length})
