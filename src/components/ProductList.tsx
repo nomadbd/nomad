@@ -18,7 +18,7 @@ interface ButtonProps {
   disabled: boolean;
 }
 
-// 🛒 ২. ইনলাইন বাটন কম্পোনেন্ট
+// 🛒 ২. ইনলাইন বাটন কম্পোনেন্ট (অপরিবর্তিত)
 const AddToCartInlineButton: React.FC<ButtonProps> = ({ product, disabled }) => {
   const { cartItems, addToCart, setIsCartOpen } = useCart();
   const [isPressed, setIsPressed] = useState(false);
@@ -73,7 +73,7 @@ const AddToCartInlineButton: React.FC<ButtonProps> = ({ product, disabled }) => 
 };
 
 
-// 📦 ৩. প্রধান প্রোডাক্টリスト কম্পোনেন্ট
+// 📦 ৩. প্রধান প্রোডাক্ট লিস্ট কম্পোনেন্ট
 export default function ProductList() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -116,14 +116,13 @@ export default function ProductList() {
   };
 
   return (
-    <div style={{ backgroundColor: '#000', width: '100%', boxSizing: 'border-box' }}>
+    <div style={{ backgroundColor: '#000', width: '100%', boxSizing: 'border-box', overflowX: 'hidden' }}>
       {categories.map((category) => {
         const categoryProducts = products.filter(p => p.category === category);
         const isExpanded = !!expandedCategories[category];
 
         return (
-          // 📱 মোবাইল ও ডেক্সটপের রেসপনসিভ প্যাডিং ক্লাস অ্যাড করা হয়েছে
-          <div key={category} className="showroom-section" style={{ marginBottom: '60px' }}>
+          <div key={category} className="showroom-section" style={{ marginBottom: '50px' }}>
             
             {/* 👑 হেডার সেকশন */}
             <div style={{ 
@@ -133,7 +132,6 @@ export default function ProductList() {
               marginBottom: '20px',
               borderBottom: '1px solid #141414',
               paddingBottom: '12px',
-              // বাটনের টেক্সট সমান রাখতে দুই পাশে সামান্য সেফ-প্যাডিং
               paddingLeft: '15px',
               paddingRight: '15px'
             }}>
@@ -141,7 +139,6 @@ export default function ProductList() {
                 {category}
               </h3>
               
-              {/* 🎯 ফিক্সড উইথ ও ক্লিন বোতাম (কোনো অতিরিক্ত তীর বা মাইনাস চিহ্ন নেই, কোনো ঝাঁকুনি হবে না) */}
               <button 
                 onClick={() => toggleCategoryExpand(category)}
                 style={{ 
@@ -154,7 +151,7 @@ export default function ProductList() {
                   textTransform: 'uppercase', 
                   opacity: 0.7, 
                   transition: 'opacity 0.2s',
-                  width: '100px',        // 💡 ফিক্সড উইথ যা টেক্সট পরিবর্তনের সময় লেআউট শিফট আটকাবে
+                  width: '100px',        
                   textAlign: 'right',
                   fontFamily: 'monospace'
                 }}
@@ -165,41 +162,39 @@ export default function ProductList() {
               </button>
             </div>
 
-            {/* ⚡ প্রোডাক্ট কন্টেইনার */}
+            {/* ⚡ প্রোডাক্ট কন্টেইনার (লেআউট শিফট এবং জুম সমস্যা স্থায়ীভাবে দূর করতে আপডেট করা হয়েছে) */}
             <div 
               className="showroom-row-container"
               style={
                 isExpanded 
                   ? {
-                      display: 'grid',
-                      gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
-                      gap: '40px 20px',
-                      padding: '0 15px'
+                      display: 'flex',
+                      flexWrap: 'wrap', // গ্রিডের বদলে ফ্লেক্স-র‌্যাপ ব্যবহার করা হয়েছে যাতে কার্ডের সাইজ সবসময় ফিক্সড থাকে
+                      gap: '40px 0px',   
+                      width: '100%'
                     }
                   : {
                       display: 'flex', 
                       overflowX: 'auto', 
                       scrollSnapType: 'x mandatory', 
                       scrollBehavior: 'smooth',
-                      gap: '15px', // মোবাইলে কার্ডের মাঝের গ্যাপ কিছুটা কমানো হয়েছে যাতে ফুল স্ক্রিন ফিল আসে
                       WebkitOverflowScrolling: 'touch',
-                      paddingBottom: '10px'
+                      width: '100%'
                     }
               }
             >
               {categoryProducts.map((product) => (
                 <div 
                   key={product.id} 
-                  className={isExpanded ? "" : "showroom-card-item"}
+                  className="showroom-card-item"
                   style={{ 
                     scrollSnapAlign: 'start',
                     boxSizing: 'border-box',
                     display: 'flex', 
-                    flexDirection: 'column', 
-                    width: '100%' 
+                    flexDirection: 'column'
                   }}
                 >
-                  {/* ইমেজ কন্টেইনার */}
+                  {/* ইমেজ কন্টেইনার (বামে ফাঁকা জায়গা দূর করতে উইথ 100% লকড) */}
                   <div style={{ 
                     width: '100%', 
                     aspectRatio: '3/4', 
@@ -212,7 +207,7 @@ export default function ProductList() {
                       <img 
                         src={product.image_url} 
                         alt={product.name} 
-                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
                       />
                     ) : (
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#333', fontSize: '11px' }}>NO IMAGE</div>
@@ -225,8 +220,8 @@ export default function ProductList() {
                     )}
                   </div>
 
-                  {/* প্রোডাক্ট ইনফো (ডাইনামিক টেক্সট অ্যালাইনমেন্ট সেফটিসহ) */}
-                  <div style={{ marginTop: '15px', padding: '0 15px', display: 'flex', flexDirection: 'column', flex: 1 }}>
+                  {/* প্রোডাক্ট ইনফো */}
+                  <div style={{ marginTop: '15px', padding: '0 5px', display: 'flex', flexDirection: 'column', flex: 1 }}>
                     <h3 style={{ fontSize: '14px', fontWeight: 'normal', color: '#e5e5e5', margin: '0 0 6px 0', letterSpacing: '0.5px' }}>
                       {product.name}
                     </h3>
@@ -255,30 +250,34 @@ export default function ProductList() {
         );
       })}
 
-      {/* 🎨 রেসপনসিভ ও পিওর ফুল-উইথ স্ক্রিন হ্যান্ডলিং সিএসএস */}
+      {/* 🎨 পিওর ফুল-উইথ ও জিরো-ঝাঁকুনি সিএসএস লজিক */}
       <style>{`
-        /* 📱 মোবাইলের জন্য ডিফল্ট সেটিংস (পুরো স্ক্রিন কভার করবে) */
         .showroom-section {
           padding: 0 0px; 
         }
+
+        /* 📱 মোবাইলের জন্য নিখুঁত ফুল-উইথ সেটিংস (উভয় স্টেটেই ইমেজ সাইজ হুবহু ১টি কার্ডের সমান থাকবে) */
         .showroom-card-item {
-          min-width: 100vw; /* স্ক্রিনের পুরো চওড়া অংশ নেবে */
-          padding: 0 15px;  /* দুই পাশে শোরুম স্ট্যান্ডার্ড বর্ডার গ্যাপ */
+          width: 100vw;
+          min-width: 100vw;
+          max-width: 100vw;
+          padding: 0 15px; /* ভিউপোর্ট এর দুই পাশে ১.৫ রেম লাক্সারি বর্ডার গ্যাপ */
         }
 
-        /* 💻 ডেক্সটপের জন্য রেসপনসিভ লেআউট */
+        /* 💻 ডেক্সটপের জন্য রেসপনসিভ সাইজিং */
         @media (min-width: 768px) {
           .showroom-section {
-            padding: 0 25px; /* ডেক্সটপে দুই পাশে সুন্দর স্পেস */
+            padding: 0 15px; 
           }
           .showroom-card-item {
-            min-width: 290px; 
-            max-width: 310px;
-            padding: 0;
+            width: 300px;
+            min-width: 300px;
+            max-width: 300px;
+            padding: 0 10px;
           }
         }
 
-        /* স্ক্রলবার হাইড রাখার গ্লোবাল কোড */
+        /* আল্ট্রা-স্মুথ ইউআই এর জন্য কাস্টম স্ক্রলবার হাইড */
         .showroom-row-container::-webkit-scrollbar {
           display: none;
         }
