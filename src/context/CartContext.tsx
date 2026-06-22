@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 
 export interface CartItem {
-  id: string; // মূলত product_id হিসেবে কাজ করবে
+  id: string;
   name: string;
   price: number;
   image_url: string;
@@ -14,7 +14,7 @@ interface CartContextType {
   isCartOpen: boolean;
   setIsCartOpen: (isOpen: boolean) => void;
   addToCart: (item: Omit<CartItem, 'quantity'>) => Promise<void>;
-  removeFromCart: (id: string) => Promise<void>;
+  decrementQuantity: (id: string) => Promise<void>;
   clearCart: () => Promise<void>;
 }
 
@@ -25,20 +25,16 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
 
-  // ১. ইউজারের লগইন সেশন ট্র্যাক করা
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUserId(session?.user?.id || null);
     });
-
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUserId(session?.user?.id || null);
     });
-
     return () => subscription.unsubscribe();
   }, []);
 
-  // ২. ইউজার অনুযায়ী সুপাবেজ বা লোকাল স্টোরেজ থেকে কার্ট ডাটা আনা
   useEffect(() => {
     const loadCart = async () => {
       if (userId) {
@@ -62,11 +58,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setCartItems(localCart ? JSON.parse(localCart) : []);
       }
     };
-
     loadCart();
   }, [userId]);
 
-  // ৩. কার্টে প্রোডাক্ট যোগ করা (Upsert/Save)
+  // ➕ প্রোডাক্ট যোগ করা বা পরিমাণ ১ বাড়ানো
   const addToCart = async (product: Omit<CartItem, 'quantity'>) => {
     let updatedCart = [...cartItems];
     const existingItemIndex = updatedCart.findIndex((item) => item.id === product.id);
@@ -83,35 +78,47 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     if (userId) {
       await supabase.from('cart_items').upsert({
-        user_id: userId,
-        product_id: product.id,
-        name: product.name,
-        price: product.price,
-        image_url: product.image_url,
-        quantity: newQuantity
+        user_id: userId, product_id: product.id, name: product.name,
+        price: product.price, image_url: product.image_url, quantity: newQuantity
       }, { onConflict: 'user_id,product_id' });
     } else {
       localStorage.setItem('nomad_guest_cart', JSON.stringify(updatedCart));
     }
   };
 
-  // ৪. কার্ট থেকে প্রোডাক্ট রিমুভ করা
-  const removeFromCart = async (id: string) => {
-    const updatedCart = cartItems.filter((item) => item.id !== id);
-    setCartItems(updatedCart);
+  // ➖ পরিমাণ ১ কমানো (১ এর নিচে নামলে অটো রিমুভ)
+  const decrementQuantity = async (id: string) => {
+    let updatedCart = [...cartItems];
+    const existingItemIndex = updatedCart.findIndex((item) => item.id === id);
 
-    if (userId) {
-      await supabase
-        .from('cart_items')
-        .delete()
-        .eq('user_id', userId)
-        .eq('product_id', id);
-    } else {
-      localStorage.setItem('nomad_guest_cart', JSON.stringify(updatedCart));
+    if (existingItemIndex > -1) {
+      const currentQty = updatedCart[existingItemIndex].quantity;
+
+      if (currentQty > 1) {
+        // পরিমাণ ১ কমবে
+        const newQuantity = currentQty - 1;
+        updatedCart[existingItemIndex].quantity = newQuantity;
+        setCartItems(updatedCart);
+
+        if (userId) {
+          await supabase.from('cart_items').update({ quantity: newQuantity }).eq('user_id', userId).eq('product_id', id);
+        } else {
+          localStorage.setItem('nomad_guest_cart', JSON.stringify(updatedCart));
+        }
+      } else {
+        // ১ থাকা অবস্থায় মাইনাস চাপলে সম্পূর্ণ রিমুভ হবে
+        updatedCart = updatedCart.filter((item) => item.id !== id);
+        setCartItems(updatedCart);
+
+        if (userId) {
+          await supabase.from('cart_items').delete().eq('user_id', userId).eq('product_id', id);
+        } else {
+          localStorage.setItem('nomad_guest_cart', JSON.stringify(updatedCart));
+        }
+      }
     }
   };
 
-  // ৫. পুরো কার্ট খালি করা
   const clearCart = async () => {
     setCartItems([]);
     if (userId) {
@@ -122,7 +129,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <CartContext.Provider value={{ cartItems, isCartOpen, setIsCartOpen, addToCart, removeFromCart, clearCart }}>
+    <CartContext.Provider value={{ cartItems, isCartOpen, setIsCartOpen, addToCart, decrementQuantity, clearCart }}>
       {children}
     </CartContext.Provider>
   );
