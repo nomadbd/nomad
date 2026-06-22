@@ -116,7 +116,8 @@ export default function ProductList() {
   };
 
   return (
-    <div style={{ backgroundColor: '#000', width: '100%', boxSizing: 'border-box', overflowX: 'hidden' }}>
+    // 🌍 মেইন গ্লোবাল বডি বা রুট প্যাডিং ব্রেক করার জন্য প্যারেন্ট র্যাপার
+    <div style={{ backgroundColor: '#000', width: '100%', boxSizing: 'border-box' }}>
       {categories.map((category) => {
         const categoryProducts = products.filter(p => p.category === category);
         const isExpanded = !!expandedCategories[category];
@@ -162,15 +163,14 @@ export default function ProductList() {
               </button>
             </div>
 
-            {/* ⚡ প্রোডাক্ট কন্টেইনার (লেআউট শিফট এবং জুম সমস্যা স্থায়ীভাবে দূর করতে আপডেট করা হয়েছে) */}
+            {/* ⚡ প্রোডাক্ট কন্টেইনার (উভয় ভিউতেই ফ্লেক্স লেআউট ব্যবহার করে সাইজ লক করা হয়েছে) */}
             <div 
               className="showroom-row-container"
               style={
                 isExpanded 
                   ? {
                       display: 'flex',
-                      flexWrap: 'wrap', // গ্রিডের বদলে ফ্লেক্স-র‌্যাপ ব্যবহার করা হয়েছে যাতে কার্ডের সাইজ সবসময় ফিক্সড থাকে
-                      gap: '40px 0px',   
+                      flexWrap: 'wrap', 
                       width: '100%'
                     }
                   : {
@@ -194,7 +194,7 @@ export default function ProductList() {
                     flexDirection: 'column'
                   }}
                 >
-                  {/* ইমেজ কন্টেইনার (বামে ফাঁকা জায়গা দূর করতে উইথ 100% লকড) */}
+                  {/* ইমেজ কন্টেইনার */}
                   <div style={{ 
                     width: '100%', 
                     aspectRatio: '3/4', 
@@ -250,34 +250,39 @@ export default function ProductList() {
         );
       })}
 
-      {/* 🎨 পিওর ফুল-উইথ ও জিরো-ঝাঁকুনি সিএসএস লজিক */}
+      {/* 🎨 রেসপনসিভ ও জিরো-ঝাঁকুনি সিএসএস ইঞ্জেকশন */}
       <style>{`
-        .showroom-section {
-          padding: 0 0px; 
+        /* 📱 মোবাইলের জন্য নিখুঁত ফুল-উইথ ও প্যারেন্ট ব্রেকার লজিক */
+        @media (max-width: 767px) {
+          .showroom-section {
+            margin-left: calc(-50vw + 50%);
+            margin-right: calc(-50vw + 50%);
+            width: 100vw;
+            padding: 0 0px;
+          }
+          .showroom-card-item {
+            width: 100vw !important;
+            min-width: 100vw !important;
+            max-width: 100vw !important;
+            padding: 0 15px !important; /* দুই পাশে ফাইনাল আল্ট্রা-ক্লিন ভিজ্যুয়াল বর্ডার স্পেস */
+          }
         }
 
-        /* 📱 মোবাইলের জন্য নিখুঁত ফুল-উইথ সেটিংস (উভয় স্টেটেই ইমেজ সাইজ হুবহু ১টি কার্ডের সমান থাকবে) */
-        .showroom-card-item {
-          width: 100vw;
-          min-width: 100vw;
-          max-width: 100vw;
-          padding: 0 15px; /* ভিউপোর্ট এর দুই পাশে ১.৫ রেম লাক্সারি বর্ডার গ্যাপ */
-        }
-
-        /* 💻 ডেক্সটপের জন্য রেসপনসিভ সাইজিং */
+        /* 💻 ডেক্সটপ লাক্সারি প্রিমিয়াম গ্রিড ভিউ */
         @media (min-width: 768px) {
           .showroom-section {
             padding: 0 15px; 
           }
           .showroom-card-item {
-            width: 300px;
-            min-width: 300px;
-            max-width: 300px;
-            padding: 0 10px;
+            width: 25%; /* ডেক্সটপে প্রতি লাইনে ৪টি করে কার্ড সাজাবে */
+            min-width: 280px;
+            max-width: 340px;
+            padding: 0 12px;
+            margin-bottom: 30px;
           }
         }
 
-        /* আল্ট্রা-স্মুথ ইউআই এর জন্য কাস্টম স্ক্রলবার হাইড */
+        /* স্ক্রলবার হাইড রাখার গ্লোবাল কোড */
         .showroom-row-container::-webkit-scrollbar {
           display: none;
         }
