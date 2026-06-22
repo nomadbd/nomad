@@ -4,10 +4,10 @@ import { useCart } from '../context/CartContext';
 const CartOverlay = () => {
   const { cartItems, isCartOpen, setIsCartOpen, addToCart, decrementQuantity } = useCart();
   
-  // সিলেক্ট করা আইটেমের আইডি রাখার স্টেট
+  // সিলেক্ট করা আইটেমের আইডি ট্র্যাক করার স্টেট
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
-  // ডিফল্টভাবে সব আইটেম সিলেক্টেড থাকবে
+  // কার্টে নতুন কোনো প্রোডাক্ট আসলেই সেটি ডিফল্টভাবে সিলেক্টেড থাকবে
   useEffect(() => {
     setSelectedIds(cartItems.map(item => item.id));
   }, [cartItems]);
@@ -19,6 +19,7 @@ const CartOverlay = () => {
     .filter(item => selectedIds.includes(item.id))
     .reduce((acc, item) => acc + item.price * item.quantity, 0);
 
+  // চেকবক্স অন/অফ লজিক
   const toggleSelect = (id: string) => {
     if (selectedIds.includes(id)) {
       setSelectedIds(selectedIds.filter(itemId => itemId !== id));
@@ -28,63 +29,133 @@ const CartOverlay = () => {
   };
 
   return (
-    <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'black', zIndex: 2000, overflowY: 'auto', padding: '40px 20px' }}>
-      <div style={{ maxWidth: '500px', margin: '0 auto' }}>
+    <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0, 0, 0, 0.96)', zIndex: 2000, overflowY: 'auto', padding: '40px 20px', boxSizing: 'border-box' }}>
+      <div style={{ maxWidth: '500px', margin: '0 auto', position: 'relative' }}>
         
-        <button onClick={() => setIsCartOpen(false)} style={{ position: 'absolute', top: '20px', right: '20px', background: 'none', border: 'none', color: 'white', fontSize: '28px', cursor: 'pointer' }}>&times;</button>
-        <h2 style={{ color: 'white', textAlign: 'center', letterSpacing: '3px', marginBottom: '40px' }}>NOMAD BAG</h2>
+        {/* ক্লোজ বাটন */}
+        <button onClick={() => setIsCartOpen(false)} style={{ position: 'absolute', top: '-10px', right: '0', background: 'none', border: 'none', color: 'white', fontSize: '32px', cursor: 'pointer' }}>
+          &times;
+        </button>
 
-        {cartItems.length === 0 ? (
-          <p style={{ color: '#555', textAlign: 'center' }}>YOUR BAG IS EMPTY</p>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '25px' }}>
-            {cartItems.map((item) => {
-              const isSelected = selectedIds.includes(item.id);
-              return (
-                <div key={item.id} style={{ display: 'flex', gap: '15px', alignItems: 'center', opacity: isSelected ? 1 : 0.4 }}>
-                  
-                  {/* 💎 প্রিমিয়াম সিলেকশন বক্স */}
-                  <div 
-                    onClick={() => toggleSelect(item.id)}
-                    style={{ width: '18px', height: '18px', border: '1px solid white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                  >
-                    {isSelected && <div style={{ width: '8px', height: '8px', backgroundColor: 'white' }} />}
-                  </div>
+        <h2 style={{ fontSize: '20px', letterSpacing: '2px', textAlign: 'center', marginBottom: '35px', fontFamily: 'monospace', color: 'white' }}>
+          NOMAD BAG
+        </h2>
 
-                  <img src={item.image_url} alt={item.name} style={{ width: '60px', height: '70px', objectFit: 'cover' }} />
-                  
-                  <div style={{ flex: 1, color: 'white' }}>
-                    <div style={{ fontSize: '14px' }}>{item.name}</div>
-                    <div style={{ fontSize: '12px', color: '#888' }}>৳{item.price}</div>
+        <div>
+          <h3 style={{ fontSize: '12px', letterSpacing: '1px', color: '#555', marginBottom: '25px', textTransform: 'uppercase' }}>
+            Cart Items ({cartItems.length})
+          </h3>
+
+          {cartItems.length === 0 ? (
+            <p style={{ textAlign: 'center', color: '#555', padding: '40px 0', fontSize: '14px', letterSpacing: '1px' }}>YOUR BAG IS EMPTY</p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
+              {cartItems.map((item) => {
+                const isSelected = selectedIds.includes(item.id);
+                return (
+                  <div key={item.id} style={{ display: 'flex', gap: '20px', alignItems: 'flex-start', borderBottom: '1px solid #111', paddingBottom: '20px', opacity: isSelected ? 1 : 0.5, transition: 'opacity 0.2s' }}>
                     
-                    {/* প্লাস-মাইনাস বাটন */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginTop: '5px' }}>
-                      <button onClick={() => decrementQuantity(item.id)} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}>—</button>
-                      <span>{item.quantity}</span>
-                      <button onClick={() => addToCart({ id: item.id, name: item.name, price: item.price, image_url: item.image_url })} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}>+</button>
+                    {/* প্রোডাক্ট ইমেজ */}
+                    <img src={item.image_url} alt={item.name} style={{ width: '75px', height: '90px', objectFit: 'cover', border: '1px solid #1a1a1a' }} />
+                    
+                    {/* প্রোডাক্ট ইনফরমেশন কন্টেইনার */}
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      
+                      {/* 🛒 ১ম লাইন: প্রোডাক্টের নাম এবং একদম ডান পাশে গোল সবুজ চেকবক্স */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 'normal', color: 'white', letterSpacing: '0.5px' }}>
+                          {item.name}
+                        </h4>
+                        
+                        {/* 🟢 রাউন্ডেড গ্রীন চেকবক্স */}
+                        <div 
+                          onClick={() => toggleSelect(item.id)}
+                          style={{
+                            width: '20px',
+                            height: '20px',
+                            borderRadius: '50%',
+                            border: isSelected ? '1px solid #10b981' : '1px solid #444',
+                            backgroundColor: isSelected ? '#10b981' : 'transparent',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease',
+                            userSelect: 'none'
+                          }}
+                        >
+                          {isSelected && <span style={{ color: 'white', fontSize: '11px', fontWeight: 'bold' }}>✓</span>}
+                        </div>
+                      </div>
+
+                      {/* ২য় লাইন: একক মূল্য এবং ডান পাশে মোট মূল্য */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <p style={{ margin: 0, color: '#888', fontSize: '14px' }}>৳{item.price}</p>
+                        <div style={{ color: 'white', fontSize: '15px', fontFamily: 'monospace' }}>
+                          ৳{item.price * item.quantity}
+                        </div>
+                      </div>
+                      
+                      {/* ৩য় লাইন: প্লাস-মাইনাস কুয়ান্টিটি কন্ট্রোলার */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '18px', marginTop: '4px' }}>
+                        <button 
+                          onClick={() => decrementQuantity(item.id)} 
+                          style={{ background: 'none', border: 'none', color: '#666', cursor: 'pointer', fontSize: '16px', padding: '0 5px', transition: 'color 0.2s' }}
+                          onMouseOver={(e) => (e.currentTarget.style.color = 'white')}
+                          onMouseOut={(e) => (e.currentTarget.style.color = '#666')}
+                        >
+                          —
+                        </button>
+                        <span style={{ color: 'white', fontSize: '13px', fontFamily: 'monospace', minWidth: '10px', textAlign: 'center' }}>
+                          {item.quantity}
+                        </span>
+                        <button 
+                          onClick={() => addToCart({ id: item.id, name: item.name, price: item.price, image_url: item.image_url })} 
+                          style={{ background: 'none', border: 'none', color: '#666', cursor: 'pointer', fontSize: '16px', padding: '0 5px', transition: 'color 0.2s' }}
+                          onMouseOver={(e) => (e.currentTarget.style.color = 'white')}
+                          onMouseOut={(e) => (e.currentTarget.style.color = '#666')}
+                        >
+                          +
+                        </button>
+                      </div>
+
                     </div>
                   </div>
+                );
+              })}
 
-                  <div style={{ color: 'white' }}>৳{item.price * item.quantity}</div>
+              {/* সাবটোটাল এবং চেকআউট সেকশন */}
+              <div style={{ marginTop: '10px', padding: '10px 0' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '25px', fontSize: '15px', letterSpacing: '0.5px' }}>
+                  <span style={{ color: '#777' }}>Subtotal</span>
+                  <span style={{ color: 'white', fontWeight: 'bold' }}>৳{subtotal}</span>
                 </div>
-              );
-            })}
-
-            {/* সাবটোটাল এবং চেকআউট */}
-            <div style={{ marginTop: '20px', borderTop: '1px solid #333', paddingTop: '20px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', color: 'white', marginBottom: '20px' }}>
-                <span>Subtotal</span>
-                <span>৳{subtotal}</span>
+                
+                <button 
+                  disabled={selectedIds.length === 0}
+                  style={{ 
+                    width: '100%', 
+                    padding: '16px', 
+                    backgroundColor: selectedIds.length > 0 ? 'white' : '#222', 
+                    color: selectedIds.length > 0 ? 'black' : '#555', 
+                    border: 'none', 
+                    fontWeight: 'bold', 
+                    letterSpacing: '2px', 
+                    cursor: selectedIds.length > 0 ? 'pointer' : 'not-allowed', 
+                    fontSize: '12px', 
+                    textTransform: 'uppercase', 
+                    transition: 'opacity 0.2s' 
+                  }}
+                  onMouseOver={(e) => { if(selectedIds.length > 0) e.currentTarget.style.opacity = '0.9'; }}
+                  onMouseOut={(e) => { e.currentTarget.style.opacity = '1'; }}
+                >
+                  PROCEED TO CHECKOUT ({selectedIds.length})
+                </button>
               </div>
-              <button 
-                disabled={selectedIds.length === 0}
-                style={{ width: '100%', padding: '15px', backgroundColor: selectedIds.length > 0 ? 'white' : '#222', color: selectedIds.length > 0 ? 'black' : '#555', border: 'none', fontWeight: 'bold', cursor: selectedIds.length > 0 ? 'pointer' : 'not-allowed' }}
-              >
-                PROCEED TO CHECKOUT ({selectedIds.length})
-              </button>
             </div>
-          </div>
-        )}
+          )}
+        </div>
+
       </div>
     </div>
   );
