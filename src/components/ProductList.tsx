@@ -14,18 +14,16 @@ interface Product {
   created_at: string;
 }
 
-// 🛒 ২. ইনলাইন বাটন কম্পোনেন্ট (এটি প্রতিটি প্রোডাক্টের স্টেট আলাদা রাখবে এবং ডাবল-ক্লিক হ্যান্ডেল করবে)
+// 🛒 ২. ইনলাইন বাটন কম্পোনেন্ট (সম্পূর্ণ গ্লোবাল স্টেটের সাথে সিঙ্কড)
 interface ButtonProps {
   product: Product;
-  addToCart: (product: any) => void;
-  setIsCartOpen: (isOpen: boolean) => void;
   disabled: boolean;
 }
 
-const AddToCartInlineButton: React.FC<ButtonProps> = ({ product, addToCart, setIsCartOpen, disabled }) => {
-  const [buttonText, setButtonText] = useState('ADD TO CART');
+const AddToCartInlineButton: React.FC<ButtonProps> = ({ product, disabled }) => {
+  // গ্লোবাল কার্ট কনটেক্সট থেকে cartItems, addToCart এবং setIsCartOpen নিয়ে আসা হলো
+  const { cartItems, addToCart, setIsCartOpen } = useCart();
   const [isPressed, setIsPressed] = useState(false);
-  const lastClickTime = useRef<number>(0);
 
   // আউট অফ স্টক হলে সরাসরি SOLD OUT দেখাবে
   if (disabled) {
@@ -36,47 +34,45 @@ const AddToCartInlineButton: React.FC<ButtonProps> = ({ product, addToCart, setI
     );
   }
 
-  const handleCustomClick = () => {
-    const currentTime = Date.now();
-    const timeDiff = currentTime - lastClickTime.current;
+  // ✨ মোস্ট ইম্পর্ট্যান্ট লাইন: এই প্রোডাক্টটি কার্ট লিস্টে অলরেডি আছে কি না তা চেক করা
+  const isInCart = cartItems.some((item: any) => item.id === product.id);
 
-    if (timeDiff < 300) {
-      // ⚡ ডাবল ক্লিক সনাক্ত হলে সরাসরি কার্ট ওপেন হবে
+  const handleClick = () => {
+    setIsPressed(true);
+    setTimeout(() => setIsPressed(false), 150);
+
+    if (isInCart) {
+      // ⚡ অলরেডি কার্টে থাকলে ক্লিক করলে সরাসরি কার্ট ওভারলে ওপেন হবে
       setIsCartOpen(true);
     } else {
-      // 🛒 সিঙ্গেল ক্লিকে কার্টে যুক্ত হবে এবং বাটনে ফিডব্যাক দেখাবে
+      // 🛒 কার্টে না থাকলে যুক্ত হবে (যুক্ত হওয়ার সাথে সাথে গ্লোবাল স্টেট চেঞ্জ হয়ে বাটন নিজে থেকেই VIEW BAG হয়ে যাবে)
       addToCart(product);
-
-      setButtonText('ADDED ✓');
-      setIsPressed(true);
-
-      // ১ সেকেন্ড পর বাটন আবার আগের অবস্থায় ফিরবে
-      setTimeout(() => setButtonText('ADD TO CART'), 1000);
-      setTimeout(() => setIsPressed(false), 150);
     }
-
-    lastClickTime.current = currentTime;
   };
+
+  // 🎨 লাক্সারি মোনাক্রোম স্টাইল: অলরেডি কার্টে থাকলে সাদা ব্যাকগ্রাউন্ড ও কালো লেখা (VIEW BAG)
+  const buttonText = isInCart ? 'VIEW BAG' : 'ADD TO CART';
+  const backgroundColor = isInCart ? '#fff' : 'transparent';
+  const textColor = isInCart ? '#000' : '#fff';
+  const borderColor = isInCart ? '#fff' : '#333';
 
   return (
     <button
-      onClick={handleCustomClick}
+      onClick={handleClick}
       style={{
-        background: 'transparent',
-        border: buttonText === 'ADDED ✓' ? '1px solid #10b981' : '1px solid #333',
-        color: buttonText === 'ADDED ✓' ? '#10b981' : '#fff',
+        background: backgroundColor,
+        border: `1px solid ${borderColor}`,
+        color: textColor,
         padding: '8px 16px',
         fontSize: '11px',
         letterSpacing: '1.5px',
         cursor: 'pointer',
         textTransform: 'uppercase',
         fontWeight: '600',
-        transition: 'all 0.15s ease-in-out',
+        transition: 'all 0.2s ease-in-out', // রঙ পরিবর্তনের স্মুথ অ্যানিমেশন
         outline: 'none',
-        
-        // ক্লিকে হালকা অ্যানিমেশন রেসপন্স
         transform: isPressed ? 'scale(0.94)' : 'scale(1)',
-        opacity: isPressed ? 0.7 : 1,
+        opacity: isPressed ? 0.8 : 1,
         userSelect: 'none',
         WebkitUserSelect: 'none'
       }}
@@ -91,9 +87,6 @@ const AddToCartInlineButton: React.FC<ButtonProps> = ({ product, addToCart, setI
 export default function ProductList() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-
-  // ⚡ কার্ট ওপেন করা এবং প্রোডাক্ট যোগ করার গ্লোবাল ফাংশন নিয়ে আসা হলো
-  const { addToCart, setIsCartOpen } = useCart();
 
   // ডাটাবেজ থেকে প্রোডাক্ট ফেচ করা
   const fetchProducts = async () => {
@@ -177,11 +170,9 @@ export default function ProductList() {
                 ৳{product.price}
               </span>
 
-              {/* ⚡ আপডেটেড বাটন: পুরনো সাধারণ বাটনের জায়গায় কাস্টম ফিডব্যাক বাটনটি কল করা হলো */}
+              {/* ⚡ নতুন জাদুকরী বাটন যা গ্লোবাল কার্ট ট্র্যাক করে */}
               <AddToCartInlineButton 
                 product={product} 
-                addToCart={addToCart} 
-                setIsCartOpen={setIsCartOpen}
                 disabled={product.stock_quantity <= 0}
               />
             </div>
