@@ -7,6 +7,20 @@ const CartOverlay = () => {
   // সিলেক্ট করা আইটেমগুলোর আইডি ট্র্যাক করার স্টেট
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
+  // 🔒 জাদুকরী সমাধান: বডি স্ক্রল লক (Body Scroll Lock)
+  // কার্ট ওপেন হলে ব্যাকগ্রাউন্ড পেজ স্ক্রল হবে না, বন্ধ হলে আবার স্বাভাবিক হবে।
+  useEffect(() => {
+    if (isCartOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    // কম্পোনেন্ট আনমাউন্ট হলে সেফটি ক্লিনআপ
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isCartOpen]);
+
   // কার্টে কোনো নতুন প্রোডাক্ট ঢুকলে সেটি ডিফল্টভাবে সিলেক্টেড থাকবে
   useEffect(() => {
     setSelectedIds(cartItems.map(item => item.id));
@@ -29,7 +43,22 @@ const CartOverlay = () => {
   };
 
   return (
-    <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0, 0, 0, 0.96)', zIndex: 2000, overflowY: 'auto', padding: '40px 20px', boxSizing: 'border-box' }}>
+    <div 
+      style={{ 
+        position: 'fixed', 
+        top: 0, 
+        left: 0, 
+        right: 0,   // 💡 ডেক্সটপে চারকোনা লক নিশ্চিত করতে যুক্ত করা হলো
+        bottom: 0,  // 💡 ডেক্সটপে চারকোনা লক নিশ্চিত করতে যুক্ত করা হলো
+        width: '100vw', 
+        height: '100vh', 
+        backgroundColor: 'rgba(0, 0, 0, 0.98)', // ✨ ব্যাকগ্রাউন্ড লিক বন্ধ করতে অপাসিটি সামান্য বাড়ানো হলো (.98)
+        zIndex: 9999, // 💡 সর্বোচ্চ জেন-ইনডেক্স যাতে কোনো এলিমেন্ট এর ওপরে না উঠতে পারে
+        overflowY: 'auto', 
+        padding: '40px 20px', 
+        boxSizing: 'border-box' 
+      }}
+    >
       <div style={{ maxWidth: '500px', margin: '0 auto', position: 'relative' }}>
 
         {/* বন্ধ করার ক্রস বাটন */}
@@ -64,11 +93,13 @@ const CartOverlay = () => {
 
                       {/* লাইন ১: প্রোডাক্টের নাম এবং গোল চেকবক্স */}
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        
+                        {/* 🎨 আপডেটেড লাক্সারি সফট অফ-হোয়াইট কালার */}
                         <h4 style={{ 
                           margin: 0, 
                           fontSize: '15px', 
                           fontWeight: 'normal', 
-                          color: 'white', 
+                          color: '#e5e5e5', // ✨ পিওর হোয়াইটের বদলে সফট অফ-হোয়াইট করা হলো
                           letterSpacing: '0.5px',
                           paddingRight: '15px',   
                           lineHeight: '1.4',      
@@ -77,7 +108,7 @@ const CartOverlay = () => {
                           {item.name}
                         </h4>
 
-                        {/* 💎 আল্ট্রা-প্রিমিয়াম রাউন্ডেড চেকবক্স (সবুজ কালার সরিয়ে লাক্সারি মনোক্রোম করা হলো) */}
+                        {/* আল্ট্রা-প্রিমিয়াম রাউন্ডেড চেকবক্স */}
                         <div 
                           onClick={() => toggleSelect(item.id)}
                           style={{
@@ -95,7 +126,6 @@ const CartOverlay = () => {
                             flexShrink: 0 
                           }}
                         >
-                          {/* সিলেক্টেড হলে সাদা ব্যাকগ্রাউন্ডের ভেতর শার্প কালো টিক চিহ্ন */}
                           {isSelected && <span style={{ color: '#000', fontSize: '10px', fontWeight: 'bold' }}>✓</span>}
                         </div>
                       </div>
@@ -141,7 +171,7 @@ const CartOverlay = () => {
                   <span style={{ color: 'white', fontWeight: 'bold' }}>৳{subtotal}</span>
                 </div>
 
-                {/* ⚡ আল্ট্রা-লাক্সারি লাইট বর্ডার ও হোয়াইট ফন্ট বাটন */}
+                {/* আল্ট্রা-লাক্সারি লাইট বর্ডার ও হোয়াইট ফন্ট বাটন */}
                 <button 
                   disabled={selectedIds.length === 0}
                   style={{ 
