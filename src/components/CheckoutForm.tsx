@@ -14,7 +14,7 @@ export default function CheckoutForm({ onSuccess }: { onSuccess: () => void }) {
   const { cartItems, clearCart, totalPrice } = useCart();
   const [loading, setLoading] = useState(false);
   
-  // প্রিমিয়াম কাস্টম গেটওয়ে স্টেট
+  // লাক্সারি কাস্টম ড্রপডাউন স্টেট
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('');
   const [paymentLabel, setPaymentLabel] = useState('SELECT PAYMENT METHOD');
@@ -22,7 +22,7 @@ export default function CheckoutForm({ onSuccess }: { onSuccess: () => void }) {
   const [formData, setFormData] = useState({ name: '', phone: '', address: '', senderPhone: '' });
   const [transactionId, setTransactionId] = useState('');
 
-  // প্রতিটি আইটেমের সাইজ ও কালার স্টেট (ডিফল্ট: M এবং BLACK)
+  // ডিফল্ট ভেরিয়েন্ট স্টেট
   const [variants, setVariants] = useState<any>(
     cartItems.reduce((acc, item) => ({
       ...acc,
@@ -34,18 +34,11 @@ export default function CheckoutForm({ onSuccess }: { onSuccess: () => void }) {
     setVariants({ ...variants, [id]: { ...variants[id], [key]: value } });
   };
 
-  // আল্ট্রা-মিনিমাল গ্লোবাল ইনপুট স্টাইল (কোনো বক্স নেই, শুধু আন্ডারলাইন)
-  const inputStyle = {
-    width: '100%', background: 'transparent', border: 'none', borderBottom: '1px solid #222',
-    padding: '16px 0', color: '#fff', fontSize: '13px', letterSpacing: '2px', marginBottom: '15px', 
-    outline: 'none', transition: 'border-color 0.3s ease', borderRadius: 0
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!paymentMethod) return alert('অনুগ্রহ করে পেমেন্ট মেথড সিলেক্ট করুন');
+    if (!paymentMethod) return alert('Please select a payment method.');
     if (paymentMethod !== 'cod' && (!transactionId || !formData.senderPhone)) {
-      return alert('সেন্ট মানি নাম্বার এবং ট্রানজেকশন আইডি প্রদান করুন');
+      return alert('Please enter sender number and transaction ID.');
     }
     
     setLoading(true);
@@ -65,111 +58,121 @@ export default function CheckoutForm({ onSuccess }: { onSuccess: () => void }) {
       }));
 
       await supabase.from('order_items').insert(items);
-      alert('আপনার অর্ডারটি সফলভাবে গ্রহণ করা হয়েছে!');
       clearCart();
       onSuccess();
     } catch (err) { 
-      alert('দুঃখিত, অর্ডারটি সম্পন্ন করা যায়নি। আবার চেষ্টা করুন।'); 
+      alert('Order failed. Please try again.'); 
     } finally { 
       setLoading(false); 
     }
   };
 
+  // সিগনেচার মিনিমালিস্ট ইনপুট স্টাইল
+  const inputStyle = {
+    width: '100%', background: 'transparent', border: 'none', borderBottom: '1px solid #222',
+    padding: '18px 0', color: '#fff', fontSize: '12px', letterSpacing: '3px', marginBottom: '20px', 
+    outline: 'none', transition: 'border-color 0.4s ease', borderRadius: 0, fontFamily: 'monospace'
+  };
+
   return (
     <div style={{ 
-      maxHeight: '80vh', overflowY: 'auto', WebkitOverflowScrolling: 'touch', 
-      padding: '10px 15px', color: '#fff', fontFamily: 'monospace' 
+      maxHeight: '85vh', overflowY: 'scroll', WebkitOverflowScrolling: 'touch', 
+      padding: '10px 20px 140px 20px', color: '#fff', backgroundColor: '#000' 
     }}>
       <form onSubmit={handleSubmit}>
-        <h3 style={{ fontSize: '13px', letterSpacing: '4px', marginBottom: '35px', textTransform: 'uppercase', textAlign: 'center', fontWeight: 'normal' }}>
+        
+        {/* লাক্সারি ব্র্যান্ড হেডিং */}
+        <h3 style={{ fontSize: '14px', letterSpacing: '6px', marginBottom: '40px', textTransform: 'uppercase', textAlign: 'center', fontWeight: 300, color: '#fff' }}>
           CHECKOUT DETAILS
         </h3>
 
-        {/* প্রোডাক্ট ভেরিয়েন্ট সামারি ব্লক */}
-        <div style={{ marginBottom: '30px' }}>
+        {/* অর্ডারড আইটেম ভিউ */}
+        <div style={{ marginBottom: '40px' }}>
           {cartItems.map((item: any) => (
-            <div key={item.id} style={{ marginBottom: '25px', borderBottom: '1px solid #111', paddingBottom: '20px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '15px', letterSpacing: '1px' }}>
-                <span>{item.name.toUpperCase()} (x{item.quantity})</span>
-                <span>৳{item.price * item.quantity}</span>
+            <div key={item.id} style={{ marginBottom: '30px', borderBottom: '1px solid #111', paddingBottom: '25px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '16px', letterSpacing: '2px', fontFamily: 'monospace' }}>
+                <span style={{ color: '#aaa' }}>{item.name.toUpperCase()} (×{item.quantity})</span>
+                <span style={{ fontWeight: 'bold' }}>৳{item.price * item.quantity}</span>
               </div>
               
-              {/* সাইজ ও কালার পিকার ইলাস্ট্রেশন (হুবহু স্ক্রিনশটের মতো) */}
+              {/* সাইজ ও কালার সিলেকশন */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <span style={{ fontSize: '11px', color: '#555', letterSpacing: '1px' }}>SIZE:</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                  <span style={{ fontSize: '10px', color: '#444', letterSpacing: '2px' }}>SIZE:</span>
                   {['S', 'M', 'L', 'XL'].map((s) => (
                     <button key={s} type="button" onClick={() => updateVariant(item.id, 'size', s)}
                       style={{
-                        background: 'transparent', color: variants[item.id].size === s ? '#fff' : '#444',
-                        border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: variants[item.id].size === s ? 'bold' : 'normal',
-                        padding: '2px 4px', transition: 'color 0.2s'
+                        background: 'transparent', color: variants[item.id].size === s ? '#fff' : '#333',
+                        border: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: variants[item.id].size === s ? 'bold' : 'normal',
+                        padding: '2px 6px', transition: 'color 0.3s ease', letterSpacing: '1px'
                       }}>{s}</button>
                   ))}
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontSize: '11px', color: '#555', letterSpacing: '1px' }}>COLOR:</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span style={{ fontSize: '10px', color: '#444', letterSpacing: '2px' }}>COLOR:</span>
                   <input type="text" value={variants[item.id].color} onChange={(e) => updateVariant(item.id, 'color', e.target.value.toUpperCase())}
-                    style={{ background: 'transparent', border: 'none', borderBottom: '1px solid #333', color: '#fff', fontSize: '12px', width: '70px', outline: 'none', padding: '2px 0', textAlign: 'center', letterSpacing: '1px' }} />
+                    style={{ background: 'transparent', border: 'none', borderBottom: '1px solid #222', color: '#fff', fontSize: '11px', width: '80px', outline: 'none', padding: '2px 0', textAlign: 'right', letterSpacing: '1px', fontFamily: 'monospace' }} />
                 </div>
               </div>
             </div>
           ))}
         </div>
 
-        {/* মিনিমালিস্ট আন্ডারলাইন ইনপুট ফিল্ডস */}
-        <input style={inputStyle} placeholder="NAME" required onChange={(e) => setFormData({...formData, name: e.target.value})} onFocus={(e) => e.target.style.borderColor = '#555'} onBlur={(e) => e.target.style.borderColor = '#222'} />
-        <input style={inputStyle} placeholder="PHONE" required onChange={(e) => setFormData({...formData, phone: e.target.value})} onFocus={(e) => e.target.style.borderColor = '#555'} onBlur={(e) => e.target.style.borderColor = '#222'} />
-        <input style={inputStyle} placeholder="ADDRESS" required onChange={(e) => setFormData({...formData, address: e.target.value})} onFocus={(e) => e.target.style.borderColor = '#555'} onBlur={(e) => e.target.style.borderColor = '#222'} />
+        {/* ইনফরমেশন ফিল্ডস */}
+        <input style={inputStyle} placeholder="FULL NAME" required onChange={(e) => setFormData({...formData, name: e.target.value})} onFocus={(e) => e.target.style.borderColor = '#fff'} onBlur={(e) => e.target.style.borderColor = '#222'} />
+        <input style={inputStyle} placeholder="CONTACT NUMBER" required onChange={(e) => setFormData({...formData, phone: e.target.value})} onFocus={(e) => e.target.style.borderColor = '#fff'} onBlur={(e) => e.target.style.borderColor = '#222'} />
+        <input style={inputStyle} placeholder="SHIPPING ADDRESS" required onChange={(e) => setFormData({...formData, address: e.target.value})} onFocus={(e) => e.target.style.borderColor = '#fff'} onBlur={(e) => e.target.style.borderColor = '#222'} />
 
-        {/* কাস্টম পেমেন্ট গেটওয়ে কন্টেইনার (ঝাকুনি-মুক্ত রেপ ভিউ) */}
-        <div style={{ position: 'relative', marginBottom: '25px' }}>
+        {/* প্রিমিয়াম কাস্টম ড্রপডাউন (চেকমার্ক সহ) */}
+        <div style={{ position: 'relative', marginBottom: '30px' }}>
           <div onClick={() => setIsDropdownOpen(!isDropdownOpen)}
             style={{ ...inputStyle, cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 0 }}>
-            <span>{paymentLabel}</span>
-            <span style={{ fontSize: '9px', transform: isDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }}>
+            <span style={{ color: paymentMethod ? '#fff' : '#666' }}>{paymentLabel}</span>
+            <span style={{ fontSize: '8px', color: '#666', transform: isDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease' }}>
               {isDropdownOpen ? '▲' : '▼'}
             </span>
           </div>
 
-          {/* অপশন প্যানেল - লেআউটের বাইরে পজিশন করা, তাই কোনো ঝাকুনি হবে না */}
+          {/* ড্রপডাউন অপশন প্যানেল - ওভারফ্লো ও স্ক্রল-লক মুক্ত সিস্টেম */}
           {isDropdownOpen && (
             <div style={{ 
-              position: 'absolute', top: '100%', left: 0, width: '100%', background: '#000', 
-              border: '1px solid #222', zIndex: 999, boxShadow: '0px 15px 35px rgba(0,0,0,0.9)'
+              position: 'absolute', top: '100%', left: 0, width: '100%', background: '#090909', 
+              border: '1px solid #1a1a1a', zIndex: 9999, boxShadow: '0px 20px 40px rgba(0,0,0,0.95)'
             }}>
               {PAYMENT_OPTIONS.map(opt => (
                 <div key={opt.value} onClick={() => { setPaymentMethod(opt.value); setPaymentLabel(opt.label); setIsDropdownOpen(false); }}
                   style={{ 
-                    padding: '16px', fontSize: '11px', letterSpacing: '2px', cursor: 'pointer', 
-                    borderBottom: '1px solid #111', color: paymentMethod === opt.value ? '#fff' : '#555',
-                    transition: 'color 0.2s'
+                    padding: '18px 20px', fontSize: '11px', letterSpacing: '3px', cursor: 'pointer', 
+                    borderBottom: '1px solid #111', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    color: paymentMethod === opt.value ? '#fff' : '#555', transition: 'all 0.3s ease',
+                    backgroundColor: paymentMethod === opt.value ? '#111' : 'transparent'
                   }}>
-                  {opt.label}
+                  <span>{opt.label}</span>
+                  {paymentMethod === opt.value && (
+                    <span style={{ fontSize: '12px', color: '#fff', fontWeight: 'bold' }}>✓</span>
+                  )}
                 </div>
               ))}
             </div>
           )}
         </div>
 
-        {/* কাস্টম পেমেন্ট ভেরিফিকেশন ফিল্ডস */}
+        {/* মোবাইল ব্যাংকিং ভেরিফিকেশন ফিল্ডস */}
         {paymentMethod && paymentMethod !== 'cod' && (
-          <div style={{ padding: '15px 0 5px 0', borderTop: '1px solid #111', marginTop: '10px' }}>
-            <p style={{ fontSize: '10px', color: '#555', letterSpacing: '2px', marginBottom: '4px' }}>SEND MONEY TO:</p>
-            <p style={{ fontSize: '18px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '20px', color: '#fff' }}>01521731371</p>
-            <input style={inputStyle} placeholder="ENTER SENDER NUMBER (যে নাম্বার থেকে পাঠিয়েছেন)" required onChange={(e) => setFormData({...formData, senderPhone: e.target.value})} onFocus={(e) => e.target.style.borderColor = '#555'} onBlur={(e) => e.target.style.borderColor = '#222'} />
-            <input style={inputStyle} placeholder="ENTER TRANSACTION ID" required onChange={(e) => setTransactionId(e.target.value)} onFocus={(e) => e.target.style.borderColor = '#555'} onBlur={(e) => e.target.style.borderColor = '#222'} />
+          <div style={{ padding: '20px 0', borderTop: '1px solid #111', marginTop: '15px', animation: 'fadeIn 0.4s ease' }}>
+            <p style={{ fontSize: '9px', color: '#444', letterSpacing: '3px', marginBottom: '8px' }}>SEND MONEY TO [PERSONAL]:</p>
+            <p style={{ fontSize: '20px', fontWeight: 300, letterSpacing: '2px', marginBottom: '30px', color: '#fff', fontFamily: 'monospace' }}>01521731371</p>
+            <input style={inputStyle} placeholder="SENDER PHONE NUMBER" required onChange={(e) => setFormData({...formData, senderPhone: e.target.value})} onFocus={(e) => e.target.style.borderColor = '#fff'} onBlur={(e) => e.target.style.borderColor = '#222'} />
+            <input style={inputStyle} placeholder="TRANSACTION ID" required onChange={(e) => setTransactionId(e.target.value)} onFocus={(e) => e.target.style.borderColor = '#fff'} onBlur={(e) => e.target.style.borderColor = '#222'} />
           </div>
         )}
 
-        {/* আল্ট্রা-প্রিমিয়াম মিনিমাল বর্ডার বাটন */}
+        {/* সলিড লাক্সারি কন্ট্রাস্ট বাটন */}
         <button type="submit" disabled={loading} style={{ 
-          width: '100%', padding: '16px', background: 'transparent', border: '1px solid #333', 
-          color: '#fff', cursor: 'pointer', letterSpacing: '4px', fontSize: '11px', marginTop: '25px',
-          transition: 'all 0.3s ease', outline: 'none', textTransform: 'uppercase'
-        }}
-        onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#fff'; }}
-        onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#333'; }}>
+          width: '100%', padding: '20px', background: '#fff', border: 'none', 
+          color: '#000', cursor: 'pointer', letterSpacing: '5px', fontSize: '11px', fontWeight: 'bold', marginTop: '30px',
+          transition: 'all 0.3s ease', outline: 'none', textTransform: 'uppercase', fontFamily: 'monospace'
+        }}>
           {loading ? 'PROCESSING...' : 'PLACE ORDER'}
         </button>
       </form>
