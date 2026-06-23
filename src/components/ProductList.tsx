@@ -1,20 +1,20 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../supabaseClient';
-import { useCart } from '../context/CartContext'; 
+import { useCart } from '../context/CartContext';
 
 interface Product {
   id: string | number;
   name: string;
   description: string;
   price: number;
-  image_url: string;      // মূল ছবি (ব্যাকআপ হিসেবে)
-  image_urls?: string[];  // নতুন প্রপার্টি (একাধিক ছবির জন্য)
   category: string;
   stock_quantity: number;
   created_at: string;
+  // নতুন রিলেশনাল ডাটা স্ট্রাকচার
+  product_media: { media_url: string; media_type: string }[];
 }
 
-// 📸 প্রোডাক্ট গ্যালারি কম্পোনেন্ট (ইন্সটাগ্রাম স্টাইল)
+// 📸 প্রোডাক্ট গ্যালারি কম্পোনেন্ট
 const ProductGallery = ({ images, productName }: { images: string[], productName: string }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -31,29 +31,35 @@ const ProductGallery = ({ images, productName }: { images: string[], productName
   return (
     <div style={{ width: '100%', aspectRatio: '3/4', position: 'relative', overflow: 'hidden', backgroundColor: '#111' }}>
       {/* ছবি ডিসপ্লে */}
-      <img 
-        src={images[currentIndex]} 
-        alt={productName} 
-        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-      />
+      {images.length > 0 ? (
+        <img 
+          src={images[currentIndex]} 
+          alt={productName} 
+          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+        />
+      ) : (
+        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#333' }}>No Image</div>
+      )}
 
-      {/* টাচ এরিয়া: বাম ও ডান পাশে ক্লিক হ্যান্ডলার */}
-      <div style={{ position: 'absolute', top: 0, left: 0, width: '50%', height: '100%', cursor: 'pointer' }} onClick={handlePrev} />
-      <div style={{ position: 'absolute', top: 0, right: 0, width: '50%', height: '100%', cursor: 'pointer' }} onClick={handleNext} />
-
-      {/* ডট ইন্ডিকেটর (ইন্সটাগ্রামের মতো) */}
+      {/* টাচ এরিয়া */}
       {images.length > 1 && (
-        <div style={{ position: 'absolute', bottom: '15px', left: 0, width: '100%', display: 'flex', justifyContent: 'center', gap: '6px' }}>
-          {images.map((_, idx) => (
-            <div 
-              key={idx}
-              style={{ 
-                width: '6px', height: '6px', borderRadius: '50%', 
-                background: currentIndex === idx ? '#fff' : 'rgba(255,255,255,0.4)',
-              }}
-            />
-          ))}
-        </div>
+        <>
+          <div style={{ position: 'absolute', top: 0, left: 0, width: '50%', height: '100%', cursor: 'pointer' }} onClick={handlePrev} />
+          <div style={{ position: 'absolute', top: 0, right: 0, width: '50%', height: '100%', cursor: 'pointer' }} onClick={handleNext} />
+          
+          {/* ডট ইন্ডিকেটর */}
+          <div style={{ position: 'absolute', bottom: '15px', left: 0, width: '100%', display: 'flex', justifyContent: 'center', gap: '6px' }}>
+            {images.map((_, idx) => (
+              <div 
+                key={idx}
+                style={{ 
+                  width: '6px', height: '6px', borderRadius: '50%', 
+                  background: currentIndex === idx ? '#fff' : 'rgba(255,255,255,0.4)',
+                }}
+              />
+            ))}
+          </div>
+        </>
       )}
     </div>
   );
@@ -108,7 +114,18 @@ export default function ProductList() {
 
   const fetchProducts = async () => {
     setLoading(true);
-    const { data, error } = await supabase.from('products').select('*').order('created_at', { ascending: false });
+    // রিলেশনাল ডাটা ফেচিং
+    const { data, error } = await supabase
+      .from('products')
+      .select(`
+        *,
+        product_media (
+          media_url,
+          media_type
+        )
+      `)
+      .order('created_at', { ascending: false });
+
     if (data) setProducts(data as Product[]);
     setLoading(false);
   };
@@ -137,10 +154,10 @@ export default function ProductList() {
             <div className="showroom-row-container" style={{ display: 'flex', flexWrap: isExpanded ? 'wrap' : 'nowrap', width: '100%', scrollSnapType: 'x mandatory', overflowX: 'auto', scrollBehavior: 'smooth' }}>
               {categoryProducts.map((product) => (
                 <div key={product.id} className="showroom-card-item" style={{ scrollSnapAlign: 'start', boxSizing: 'border-box', display: 'flex', flexDirection: 'column' }}>
-                  
-                  {/* আপডেট করা গ্যালারি */}
+
+                  {/* নতুন ডাটা স্ট্রাকচার থেকে ইমেজ ম্যাপ করা */}
                   <ProductGallery 
-                    images={product.image_urls && product.image_urls.length > 0 ? product.image_urls : [product.image_url]} 
+                    images={product.product_media?.map(m => m.media_url) || []} 
                     productName={product.name} 
                   />
 
