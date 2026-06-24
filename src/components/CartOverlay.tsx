@@ -13,7 +13,7 @@ const CartOverlay = () => {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
-      setIsCheckingOut(false);
+      setIsCheckingOut(false); 
     }
     return () => {
       document.body.style.overflow = 'unset';
@@ -21,20 +21,20 @@ const CartOverlay = () => {
   }, [isCartOpen]);
 
   useEffect(() => {
-    setSelectedIds(cartItems.map(item => `${item.id}-${item.size || 'default'}-${item.color || 'default'}`));
+    setSelectedIds(cartItems.map(item => item.id)); // আপনার আদি আইডি ট্র্যাকিং
   }, [cartItems]);
 
   if (!isCartOpen) return null;
 
   const subtotal = cartItems
-    .filter(item => selectedIds.includes(`${item.id}-${item.size || 'default'}-${item.color || 'default'}`))
+    .filter(item => selectedIds.includes(item.id))
     .reduce((acc, item) => acc + item.price * item.quantity, 0);
 
-  const toggleSelect = (itemKey: string) => {
-    if (selectedIds.includes(itemKey)) {
-      setSelectedIds(selectedIds.filter(key => key !== itemKey));
+  const toggleSelect = (id: string) => {
+    if (selectedIds.includes(id)) {
+      setSelectedIds(selectedIds.filter(itemId => itemId !== id));
     } else {
-      setSelectedIds([...selectedIds, itemKey]);
+      setSelectedIds([...selectedIds, id]);
     }
   };
 
@@ -84,37 +84,29 @@ const CartOverlay = () => {
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
                 {cartItems.map((item) => {
-                  const itemKey = `${item.id}-${item.size || 'default'}-${item.color || 'default'}`;
-                  const isSelected = selectedIds.includes(itemKey);
+                  const isSelected = selectedIds.includes(item.id);
                   return (
-                    <div key={itemKey} style={{ display: 'flex', gap: '20px', alignItems: 'center', borderBottom: '1px solid #1a1a1a', paddingBottom: '20px' }}>
-                      {/* इमेज সোর্স ফিক্স করা হলো (image_url অথবা image দুটির যেকোনো একটির সাপোর্ট সহ) */}
-                      <img 
-                        src={item.image_url || item.image} 
-                        alt={item.name} 
-                        style={{ width: '75px', height: '90px', objectFit: 'cover', border: '1px solid #1a1a1a' }} 
-                      />
+                    <div key={item.id} style={{ display: 'flex', gap: '20px', alignItems: 'center', borderBottom: '1px solid #1a1a1a', paddingBottom: '20px' }}>
+                      {/* ছবি রেন্ডারিং আপনার আদি কোড অনুযায়ী রিস্টোর করা হলো */}
+                      <img src={item.image_url} alt={item.name} style={{ width: '75px', height: '90px', objectFit: 'cover', border: '1px solid #1a1a1a' }} />
                       
                       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '16px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', paddingRight: '15px' }}>
-                            <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 'normal', color: '#e5e5e5', letterSpacing: '0.5px', lineHeight: '1.4', wordBreak: 'break-word' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 'normal', color: '#e5e5e5', letterSpacing: '0.5px', paddingRight: '15px', lineHeight: '1.4', wordBreak: 'break-word' }}>
                               {item.name}
                             </h4>
-                            
-                            {/* সাইজ ও কালার কন্ডিশনাল রেন্ডারিং (ডাটা থাকলে তবেই দেখাবে, ফাঁকা ডট আসবে না) */}
-                            {(item.size || item.color) && (
-                              <div style={{ fontSize: '10px', color: '#777', letterSpacing: '1.5px', textTransform: 'uppercase', fontFamily: 'monospace' }}>
-                                {item.size && `SIZE: ${item.size}`}
-                                {item.size && item.color && ' \u2022 '}
-                                {item.color && `COLOR: ${item.color}`}
+                            {/* সরাসরি লেবেল ছাড়া Black / M ফরম্যাটে দেখাবে (যদি ডেটা থাকে) */}
+                            {(item.color || item.size) && (
+                              <div style={{ fontSize: '11px', color: '#888', fontFamily: 'monospace', textTransform: 'uppercase', marginTop: '2px' }}>
+                                {item.color}{item.color && item.size ? ' / ' : ''}{item.size}
                               </div>
                             )}
                           </div>
                           
                           <div 
-                            onClick={() => toggleSelect(itemKey)}
-                            style={{ width: '18px', height: '18px', borderRadius: '50%', border: isSelected ? '1px solid #fff' : '1px solid #444', backgroundColor: isSelected ? '#fff' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s ease', userSelect: 'none', flexShrink: 0, marginTop: '2px' }}
+                            onClick={() => toggleSelect(item.id)}
+                            style={{ width: '18px', height: '18px', borderRadius: '50%', border: isSelected ? '1px solid #fff' : '1px solid #444', backgroundColor: isSelected ? '#fff' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s ease', userSelect: 'none', flexShrink: 0 }}
                           >
                             {isSelected && <span style={{ color: '#000', fontSize: '10px', fontWeight: 'bold' }}>✓</span>}
                           </div>
@@ -122,9 +114,9 @@ const CartOverlay = () => {
 
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '18px' }}>
-                            <button onClick={() => decrementQuantity(item.id, item.size, item.color)} style={{ background: 'none', border: 'none', color: '#b3b3b3', cursor: 'pointer', fontSize: '16px', padding: '0 5px' }}>—</button>
+                            <button onClick={() => decrementQuantity(item.id)} style={{ background: 'none', border: 'none', color: '#b3b3b3', cursor: 'pointer', fontSize: '16px', padding: '0 5px' }}>—</button>
                             <span style={{ color: 'white', fontSize: '14px', fontFamily: 'monospace', minWidth: '10px', textAlign: 'center' }}>{item.quantity}</span>
-                            <button onClick={() => incrementQuantity(item.id, item.size, item.color)} style={{ background: 'none', border: 'none', color: '#b3b3b3', cursor: 'pointer', fontSize: '16px', padding: '0 5px' }}>+</button>
+                            <button onClick={() => incrementQuantity(item.id)} style={{ background: 'none', border: 'none', color: '#b3b3b3', cursor: 'pointer', fontSize: '16px', padding: '0 5px' }}>+</button>
                           </div>
                           <div style={{ color: 'white', fontSize: '15px', fontFamily: 'monospace', fontWeight: '500' }}>৳{item.price * item.quantity}</div>
                         </div>
