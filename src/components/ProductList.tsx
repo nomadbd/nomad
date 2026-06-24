@@ -9,6 +9,7 @@ interface Product {
   price: number;
   category: string;
   stock_quantity: number;
+  status: 'active' | 'sold_out' | string; // 🛠️ অ্যাডমিন কন্ট্রোলড স্ট্যাটাস কলাম
   created_at: string;
   product_media: { media_url: string; media_type: string }[];
 }
@@ -61,28 +62,25 @@ const ProductGallery = ({ images, productName }: { images: string[], productName
   );
 };
 
-// 🛒 প্রিমিয়াম ইনলাইন অ্যাকশন রো (মাইক্রো হরাইজন্টাল স্ক্রল সহ)
+// 🛒 প্রিমিয়াম ইনলাইন অ্যাকশন রো (অ্যাডমিন সোল্ড-আউট কন্ট্রোল সহ)
 const ProductActionRow = ({ product }: { product: Product }) => {
   const { cartItems, addToCart, setIsCartOpen } = useCart();
   
-  const [step, setStep] = useState<'idle' | 'size' | 'color' | 'error'>('idle');
+  // স্টেট মেশিন: 'idle' | 'size' | 'color'
+  const [step, setStep] = useState<'idle' | 'size' | 'color'>('idle');
   const [selectedSize, setSelectedSize] = useState('');
 
-  // এখানে ১০টি বা তার বেশি কালার থাকলেও কোনো সমস্যা নেই, সুন্দর স্ক্রল হবে
   const availableSizes = ['S', 'M', 'L', 'XL', 'XXL'];
   const availableColors = ['BLACK', 'WHITE', 'OLIVE', 'NAVY', 'GREY', 'BEIGE', 'CHARCOAL', 'CREAM'];
 
   const isInCart = cartItems.some((item: any) => item.id === product.id);
-  const isOutOfStock = product.stock_quantity <= 0;
+  
+  // ⚙️ অ্যাডমিন প্যানেল থেকে status 'sold_out' করলে অথবা স্টক ০ বা তার কম হলে পণ্যটি সোল্ড আউট দেখাবে
+  const isSoldOut = product.status === 'sold_out' || product.stock_quantity <= 0;
 
   const handleActionClick = () => {
     if (isInCart) {
       setIsCartOpen(true);
-      return;
-    }
-    if (isOutOfStock) {
-      setStep('error');
-      setTimeout(() => setStep('idle'), 2500);
       return;
     }
     setStep('size');
@@ -91,31 +89,53 @@ const ProductActionRow = ({ product }: { product: Product }) => {
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: '36px', marginTop: 'auto', paddingBottom: '5px', boxSizing: 'border-box', width: '100%', overflow: 'hidden' }}>
       
-      {/* ১. সাধারণ অবস্থা */}
+      {/* ১. সাধারণ অবস্থা (আইডল) */}
       {step === 'idle' && (
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', animation: 'swapFadeIn 0.25s ease-in-out' }}>
-          <span style={{ fontSize: '15px', color: '#fff', fontWeight: 500, fontFamily: 'monospace' }}>৳{product.price}</span>
-          <button
-            onClick={handleActionClick}
-            style={{
-              background: 'transparent',
-              border: `1px solid ${isInCart ? '#fff' : '#333'}`,
-              color: '#fff',
-              padding: '8px 16px',
-              fontSize: '11px',
-              letterSpacing: '1.5px',
-              cursor: 'pointer',
-              textTransform: 'uppercase',
-              fontWeight: '600',
-              transition: 'all 0.2s ease',
-            }}
-          >
-            {isInCart ? 'VIEW BAG' : 'ADD TO CART'}
-          </button>
+          <span style={{ fontSize: '15px', color: isSoldOut ? '#555' : '#fff', fontWeight: 500, fontFamily: 'monospace', transition: 'color 0.2s ease' }}>৳{product.price}</span>
+          
+          {isSoldOut ? (
+            /* 🔒 অ্যাডমিন সোল্ড আউট বাটন (ডিজেবলড ও মিনিমাল লাক্সারি লুক) */
+            <button
+              disabled
+              style={{
+                background: 'transparent',
+                border: '1px solid #222',
+                color: '#555',
+                padding: '8px 16px',
+                fontSize: '11px',
+                letterSpacing: '1.5px',
+                cursor: 'not-allowed',
+                textTransform: 'uppercase',
+                fontWeight: '600',
+              }}
+            >
+              SOLD OUT
+            </button>
+          ) : (
+            /* 🛒 অ্যাক্টিভ বাটন */
+            <button
+              onClick={handleActionClick}
+              style={{
+                background: 'transparent',
+                border: `1px solid ${isInCart ? '#fff' : '#333'}`,
+                color: '#fff',
+                padding: '8px 16px',
+                fontSize: '11px',
+                letterSpacing: '1.5px',
+                cursor: 'pointer',
+                textTransform: 'uppercase',
+                fontWeight: '600',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              {isInCart ? 'VIEW BAG' : 'ADD TO CART'}
+            </button>
+          )}
         </div>
       )}
 
-      {/* ২. সাইজ সিলেকশন (ডানে-বামে স্ক্রলযোগ্য) */}
+      {/* ২. সাইজ সিলেকশন (হরাইজন্টাল স্মুথ স্ক্রল) */}
       {step === 'size' && (
         <div style={{ display: 'flex', alignItems: 'center', width: '100%', height: '100%', animation: 'swapFadeIn 0.25s ease-in-out', overflow: 'hidden' }}>
           <span style={{ fontSize: '9px', color: '#555', letterSpacing: '2px', textTransform: 'uppercase', flexShrink: 0, marginRight: '15px' }}>SIZE:</span>
@@ -136,7 +156,7 @@ const ProductActionRow = ({ product }: { product: Product }) => {
         </div>
       )}
 
-      {/* ৩. কালার সিলেকশন (১০+ কালার হলেও ডানে-বামে স্মুথ স্ক্রল হবে) */}
+      {/* ৩. কালার সিলেকশন (১০+ কালার হলেও ডানে-বামে স্ক্রল সম্ভব) */}
       {step === 'color' && (
         <div style={{ display: 'flex', alignItems: 'center', width: '100%', height: '100%', animation: 'swapFadeIn 0.25s ease-in-out', overflow: 'hidden' }}>
           <span style={{ fontSize: '9px', color: '#555', letterSpacing: '2px', textTransform: 'uppercase', flexShrink: 0, marginRight: '15px' }}>COLOR:</span>
@@ -158,13 +178,6 @@ const ProductActionRow = ({ product }: { product: Product }) => {
               </span>
             ))}
           </div>
-        </div>
-      )}
-
-      {/* ৪. স্টক আউট অবস্থা */}
-      {step === 'error' && (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', color: '#ff4d4d', fontSize: '10px', letterSpacing: '2px', fontWeight: 600, textTransform: 'uppercase', animation: 'swapFadeIn 0.25s ease-in-out', fontFamily: 'monospace' }}>
-          PRODUCT UNAVAILABLE / OUT OF STOCK
         </div>
       )}
     </div>
@@ -191,6 +204,7 @@ export default function ProductList() {
       .order('created_at', { ascending: false });
 
     if (data) {
+      // 🎲 ডাটা এবং ক্যাটাগরি সম্পূর্ণ র‍্যান্ডমাইজ করা হচ্ছে
       const shuffledProducts = [...data].sort(() => Math.random() - 0.5);
       const uniqueCategories = Array.from(new Set(shuffledProducts.map(p => p.category)))
         .sort(() => Math.random() - 0.5);
@@ -247,7 +261,6 @@ export default function ProductList() {
           from { opacity: 0; transform: translateY(1px); }
           to { opacity: 1; transform: translateY(0); }
         }
-        /* 🤫 সাইজ ও কালার স্ক্রল কন্টেইনারের বর্ডার ও স্ক্রলবার হাইড করার সিএসএস */
         .variant-scroll-container::-webkit-scrollbar {
           display: none;
         }
