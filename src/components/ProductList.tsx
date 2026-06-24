@@ -10,7 +10,6 @@ interface Product {
   category: string;
   stock_quantity: number;
   created_at: string;
-  // নতুন রিলেশনাল ডাটা স্ট্রাকচার
   product_media: { media_url: string; media_type: string }[];
 }
 
@@ -30,7 +29,6 @@ const ProductGallery = ({ images, productName }: { images: string[], productName
 
   return (
     <div style={{ width: '100%', aspectRatio: '3/4', position: 'relative', overflow: 'hidden', backgroundColor: '#111' }}>
-      {/* ছবি ডিসপ্লে */}
       {images.length > 0 ? (
         <img 
           src={images[currentIndex]} 
@@ -41,13 +39,11 @@ const ProductGallery = ({ images, productName }: { images: string[], productName
         <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#333' }}>No Image</div>
       )}
 
-      {/* টাচ এরিয়া */}
       {images.length > 1 && (
         <>
           <div style={{ position: 'absolute', top: 0, left: 0, width: '50%', height: '100%', cursor: 'pointer' }} onClick={handlePrev} />
           <div style={{ position: 'absolute', top: 0, right: 0, width: '50%', height: '100%', cursor: 'pointer' }} onClick={handleNext} />
-          
-          {/* ডট ইন্ডিকেটর */}
+
           <div style={{ position: 'absolute', bottom: '15px', left: 0, width: '100%', display: 'flex', justifyContent: 'center', gap: '6px' }}>
             {images.map((_, idx) => (
               <div 
@@ -65,10 +61,14 @@ const ProductGallery = ({ images, productName }: { images: string[], productName
   );
 };
 
-// 🛒 ইনলাইন বাটন কম্পোনেন্ট
+// 🛒 ইনলাইন বাটন, সাইজ ও কালার সিলেক্টর কম্পোনেন্ট
 const AddToCartInlineButton = ({ product, disabled }: { product: Product, disabled: boolean }) => {
   const { cartItems, addToCart, setIsCartOpen } = useCart();
   const [isPressed, setIsPressed] = useState(false);
+  
+  // গ্রাহকের ইনপুট নেওয়ার জন্য স্টেট (সুপাবেজে আপাতত যা-ই থাকুক, গ্রাহকের ইনপুটই কার্টে যাবে)
+  const [selectedSize, setSelectedSize] = useState('M'); 
+  const [selectedColor, setSelectedColor] = useState('BLACK'); 
 
   if (disabled) {
     return (
@@ -81,29 +81,96 @@ const AddToCartInlineButton = ({ product, disabled }: { product: Product, disabl
   const isInCart = cartItems.some((item: any) => item.id === product.id);
 
   return (
-    <button
-      onClick={() => {
-        setIsPressed(true);
-        setTimeout(() => setIsPressed(false), 150);
-        isInCart ? setIsCartOpen(true) : addToCart(product);
-      }}
-      style={{
-        background: 'transparent',
-        border: `1px solid ${isInCart ? '#fff' : '#333'}`,
-        color: '#fff',
-        padding: '8px 16px',
-        fontSize: '11px',
-        letterSpacing: '1.5px',
-        cursor: 'pointer',
-        textTransform: 'uppercase',
-        fontWeight: '600',
-        transition: 'all 0.2s ease-in-out',
-        transform: isPressed ? 'scale(0.94)' : 'scale(1)',
-        opacity: isPressed ? 0.7 : 1
-      }}
-    >
-      {isInCart ? 'VIEW BAG' : 'ADD TO CART'}
-    </button>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '12px' }}>
+      
+      {/* সাইজ এবং কালার ইনপুট প্যানেল (শুধুমাত্র কার্টে যোগ করার আগে দেখাবে) */}
+      {!isInCart && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'flex-end' }}>
+          
+          {/* সাইজ সিলেক্টর বাটন */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '10px', color: '#555', letterSpacing: '1px' }}>SIZE:</span>
+            {['S', 'M', 'L', 'XL'].map((size) => (
+              <button
+                key={size}
+                onClick={() => setSelectedSize(size)}
+                style={{
+                  background: 'transparent',
+                  color: selectedSize === size ? '#fff' : '#555',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: '11px',
+                  fontWeight: selectedSize === size ? '700' : '400',
+                  padding: '2px 4px',
+                  letterSpacing: '1px'
+                }}
+              >
+                {size}
+              </button>
+            ))}
+          </div>
+
+          {/* কালার ইনপুট বক্স (মিনিমালিস্ট ডিজাইন) */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '10px', color: '#555', letterSpacing: '1px' }}>COLOR:</span>
+            <input
+              type="text"
+              value={selectedColor}
+              onChange={(e) => setSelectedColor(e.target.value.toUpperCase())}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                borderBottom: '1px solid #333',
+                color: '#fff',
+                fontSize: '11px',
+                width: '70px',
+                textAlign: 'right',
+                outline: 'none',
+                letterSpacing: '1px',
+                fontFamily: 'monospace'
+              }}
+              onFocus={(e) => e.target.style.borderBottom = '1px solid #666'}
+              onBlur={(e) => e.target.style.borderBottom = '1px solid #333'}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* অ্যাকশন বাটন */}
+      <button
+        onClick={() => {
+          setIsPressed(true);
+          setTimeout(() => setIsPressed(false), 150);
+          
+          if (isInCart) {
+            setIsCartOpen(true);
+          } else {
+            // গ্রাহকের সিলেক্ট করা সাইজ এবং কালার কার্ট অবজেক্টে পুশ করা হচ্ছে
+            addToCart({
+              ...product,
+              size: selectedSize,
+              color: selectedColor
+            });
+          }
+        }}
+        style={{
+          background: 'transparent',
+          border: `1px solid ${isInCart ? '#fff' : '#333'}`,
+          color: '#fff',
+          padding: '8px 16px',
+          fontSize: '11px',
+          letterSpacing: '1.5px',
+          cursor: 'pointer',
+          textTransform: 'uppercase',
+          fontWeight: '600',
+          transition: 'all 0.2s ease-in-out',
+          transform: isPressed ? 'scale(0.94)' : 'scale(1)',
+          opacity: isPressed ? 0.7 : 1
+        }}
+      >
+        {isInCart ? 'VIEW BAG' : 'ADD TO CART'}
+      </button>
+    </div>
   );
 };
 
@@ -114,7 +181,6 @@ export default function ProductList() {
 
   const fetchProducts = async () => {
     setLoading(true);
-    // রিলেশনাল ডাটা ফেচিং
     const { data, error } = await supabase
       .from('products')
       .select(`
@@ -155,7 +221,6 @@ export default function ProductList() {
               {categoryProducts.map((product) => (
                 <div key={product.id} className="showroom-card-item" style={{ scrollSnapAlign: 'start', boxSizing: 'border-box', display: 'flex', flexDirection: 'column' }}>
 
-                  {/* নতুন ডাটা স্ট্রাকচার থেকে ইমেজ ম্যাপ করা */}
                   <ProductGallery 
                     images={product.product_media?.map(m => m.media_url) || []} 
                     productName={product.name} 
@@ -164,8 +229,8 @@ export default function ProductList() {
                   <div style={{ marginTop: '15px', padding: '0 5px', display: 'flex', flexDirection: 'column', flex: 1 }}>
                     <h3 style={{ fontSize: '14px', color: '#e5e5e5', margin: '0 0 6px 0' }}>{product.name}</h3>
                     <p style={{ fontSize: '13px', color: '#888', margin: '0 0 15px 0', lineHeight: '1.4', WebkitLineClamp: 2, display: '-webkit-box', WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{product.description}</p>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', paddingBottom: '5px' }}>
-                      <span style={{ fontSize: '15px', color: '#fff' }}>৳{product.price}</span>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 'auto', paddingBottom: '5px' }}>
+                      <span style={{ fontSize: '15px', color: '#fff', paddingBottom: '2px' }}>৳{product.price}</span>
                       <AddToCartInlineButton product={product} disabled={product.stock_quantity <= 0} />
                     </div>
                   </div>
