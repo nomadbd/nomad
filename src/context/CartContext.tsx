@@ -7,8 +7,8 @@ export interface CartItem {
   price: number;
   image_url: string;
   quantity: number;
-  size: string;   // নতুন যুক্ত করা হয়েছে
-  color: string;  // নতুন যুক্ত করা হয়েছে
+  size?: string;  // অপশনাল রাখা হলো, ইনপুট না দিলে ডেটা আসবে না
+  color?: string; // অপশনাল রাখা হলো, ইনপুট না দিলে ডেটা আসবে না
 }
 
 interface CartContextType {
@@ -16,8 +16,8 @@ interface CartContextType {
   isCartOpen: boolean;
   setIsCartOpen: (isOpen: boolean) => void;
   addToCart: (item: Omit<CartItem, 'quantity'>) => Promise<void>;
-  incrementQuantity: (id: string, size: string, color: string) => Promise<void>; // প্যারামিটার আপডেট
-  decrementQuantity: (id: string, size: string, color: string) => Promise<void>; // প্যারামিটার আপডেট
+  incrementQuantity: (id: string) => Promise<void>; // আদি সিগনেচার অক্ষুণ্ণ
+  decrementQuantity: (id: string) => Promise<void>; // আদি সিগনেচার অক্ষুণ্ণ
   clearCart: () => Promise<void>;
 }
 
@@ -43,7 +43,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (userId) {
         const { data, error } = await supabase
           .from('cart_items')
-          .select('product_id, name, price, image_url, quantity, size, color') // size, color সিলেক্ট করা হলো
+          .select('product_id, name, price, image_url, quantity, size, color')
           .eq('user_id', userId);
 
         if (data && !error) {
@@ -53,8 +53,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
             price: Number(item.price),
             image_url: item.image_url,
             quantity: item.quantity,
-            size: item.size || 'M',
-            color: item.color || 'BLACK',
+            size: item.size || undefined,   // কোনো ডিফল্ট ভ্যালু থ্রু করবে না
+            color: item.color || undefined, // কোনো ডিফল্ট ভ্যালু থ্রু করবে না
           }));
           setCartItems(formattedItems);
         }
@@ -66,19 +66,14 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     loadCart();
   }, [userId]);
 
-  // 🛒 মেইন পেজের বাটন: আইডি, সাইজ এবং কালার সব মিললে তবেই ডুপ্লিকেট আটকাবে
   const addToCart = async (product: Omit<CartItem, 'quantity'>) => {
     let updatedCart = [...cartItems];
-    const existingItemIndex = updatedCart.findIndex(
-      (item) => item.id === product.id && item.size === product.size && item.color === product.color
-    );
+    const existingItemIndex = updatedCart.findIndex((item) => item.id === product.id);
 
-    // অলরেডি এই নির্দিষ্ট সাইজ ও কালারের আইটেম কার্টে থাকলে ফাংশন এখানেই স্টপ হবে
     if (existingItemIndex > -1) {
       return;
     }
 
-    // কার্টে না থাকলে একদম ফ্রেশ ১টি কোয়ান্টিটি নিয়ে যুক্ত হবে
     updatedCart.push({ ...product, quantity: 1 });
     setCartItems(updatedCart);
 
@@ -86,19 +81,16 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await supabase.from('cart_items').upsert({
         user_id: userId, product_id: product.id, name: product.name,
         price: product.price, image_url: product.image_url, quantity: 1,
-        size: product.size, color: product.color
-      }, { onConflict: 'user_id,product_id,size,color' }); // কম্পোজিট অন-কনফ্লিক্ট কনস্ট্রেইন্ট
+        size: product.size || null, color: product.color || null
+      }, { onConflict: 'user_id,product_id' });
     } else {
       localStorage.setItem('nomad_guest_cart', JSON.stringify(updatedCart));
     }
   };
 
-  // ➕ কার্টের ভেতরের বাটন: নির্দিষ্ট আইডি, সাইজ ও কালার ম্যাচ করে পরিমাণ ১ বাড়বে
-  const incrementQuantity = async (id: string, size: string, color: string) => {
+  const incrementQuantity = async (id: string) => {
     let updatedCart = [...cartItems];
-    const existingItemIndex = updatedCart.findIndex(
-      (item) => item.id === id && item.size === size && item.color === color
-    );
+    const existingItemIndex = updatedCart.findIndex((item) => item.id === id);
 
     if (existingItemIndex > -1) {
       const newQuantity = updatedCart[existingItemIndex].quantity + 1;
@@ -106,24 +98,16 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setCartItems(updatedCart);
 
       if (userId) {
-        await supabase.from('cart_items')
-          .update({ quantity: newQuantity })
-          .eq('user_id', userId)
-          .eq('product_id', id)
-          .eq('size', size)
-          .eq('color', color);
+        await supabase.from('cart_items').update({ quantity: newQuantity }).eq('user_id', userId).eq('product_id', id);
       } else {
         localStorage.setItem('nomad_guest_cart', JSON.stringify(updatedCart));
       }
     }
   };
 
-  // ➖ কার্টের ভেতরের বাটন: পরিমাণ কমবে বা রিমুভ হবে
-  const decrementQuantity = async (id: string, size: string, color: string) => {
+  const decrementQuantity = async (id: string) => {
     let updatedCart = [...cartItems];
-    const existingItemIndex = updatedCart.findIndex(
-      (item) => item.id === id && item.size === size && item.color === color
-    );
+    const existingItemIndex = updatedCart.findIndex((item) => item.id === id);
 
     if (existingItemIndex > -1) {
       const currentQty = updatedCart[existingItemIndex].quantity;
@@ -134,28 +118,16 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setCartItems(updatedCart);
 
         if (userId) {
-          await supabase.from('cart_items')
-            .update({ quantity: newQuantity })
-            .eq('user_id', userId)
-            .eq('product_id', id)
-            .eq('size', size)
-            .eq('color', color);
+          await supabase.from('cart_items').update({ quantity: newQuantity }).eq('user_id', userId).eq('product_id', id);
         } else {
           localStorage.setItem('nomad_guest_cart', JSON.stringify(updatedCart));
         }
       } else {
-        updatedCart = updatedCart.filter(
-          (item) => !(item.id === id && item.size === size && item.color === color)
-        );
+        updatedCart = updatedCart.filter((item) => item.id !== id);
         setCartItems(updatedCart);
 
         if (userId) {
-          await supabase.from('cart_items')
-            .delete()
-            .eq('user_id', userId)
-            .eq('product_id', id)
-            .eq('size', size)
-            .eq('color', color);
+          await supabase.from('cart_items').delete().eq('user_id', userId).eq('product_id', id);
         } else {
           localStorage.setItem('nomad_guest_cart', JSON.stringify(updatedCart));
         }
