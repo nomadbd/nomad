@@ -61,121 +61,119 @@ const ProductGallery = ({ images, productName }: { images: string[], productName
   );
 };
 
-// 🛒 ইনলাইন বাটন, সাইজ ও কালার সিলেক্টর কম্পোনেন্ট
-const AddToCartInlineButton = ({ product, disabled }: { product: Product, disabled: boolean }) => {
+// 🛒 প্রিমিয়াম ইনলাইন অ্যাকশন রো (মাইক্রো হরাইজন্টাল স্ক্রল সহ)
+const ProductActionRow = ({ product }: { product: Product }) => {
   const { cartItems, addToCart, setIsCartOpen } = useCart();
-  const [isPressed, setIsPressed] = useState(false);
   
-  // গ্রাহকের ইনপুট নেওয়ার জন্য স্টেট (সুপাবেজে আপাতত যা-ই থাকুক, গ্রাহকের ইনপুটই কার্টে যাবে)
-  const [selectedSize, setSelectedSize] = useState('M'); 
-  const [selectedColor, setSelectedColor] = useState('BLACK'); 
+  const [step, setStep] = useState<'idle' | 'size' | 'color' | 'error'>('idle');
+  const [selectedSize, setSelectedSize] = useState('');
 
-  if (disabled) {
-    return (
-      <button disabled style={{ background: 'transparent', border: '1px solid #1a1a1a', color: '#444', padding: '8px 16px', fontSize: '11px', letterSpacing: '1.5px', cursor: 'not-allowed', textTransform: 'uppercase', fontWeight: '600' }}>
-        SOLD OUT
-      </button>
-    );
-  }
+  // এখানে ১০টি বা তার বেশি কালার থাকলেও কোনো সমস্যা নেই, সুন্দর স্ক্রল হবে
+  const availableSizes = ['S', 'M', 'L', 'XL', 'XXL'];
+  const availableColors = ['BLACK', 'WHITE', 'OLIVE', 'NAVY', 'GREY', 'BEIGE', 'CHARCOAL', 'CREAM'];
 
   const isInCart = cartItems.some((item: any) => item.id === product.id);
+  const isOutOfStock = product.stock_quantity <= 0;
+
+  const handleActionClick = () => {
+    if (isInCart) {
+      setIsCartOpen(true);
+      return;
+    }
+    if (isOutOfStock) {
+      setStep('error');
+      setTimeout(() => setStep('idle'), 2500);
+      return;
+    }
+    setStep('size');
+  };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '12px' }}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: '36px', marginTop: 'auto', paddingBottom: '5px', boxSizing: 'border-box', width: '100%', overflow: 'hidden' }}>
       
-      {/* সাইজ এবং কালার ইনপুট প্যানেল (শুধুমাত্র কার্টে যোগ করার আগে দেখাবে) */}
-      {!isInCart && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'flex-end' }}>
-          
-          {/* সাইজ সিলেক্টর বাটন */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '10px', color: '#555', letterSpacing: '1px' }}>SIZE:</span>
-            {['S', 'M', 'L', 'XL'].map((size) => (
-              <button
+      {/* ১. সাধারণ অবস্থা */}
+      {step === 'idle' && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', animation: 'swapFadeIn 0.25s ease-in-out' }}>
+          <span style={{ fontSize: '15px', color: '#fff', fontWeight: 500, fontFamily: 'monospace' }}>৳{product.price}</span>
+          <button
+            onClick={handleActionClick}
+            style={{
+              background: 'transparent',
+              border: `1px solid ${isInCart ? '#fff' : '#333'}`,
+              color: '#fff',
+              padding: '8px 16px',
+              fontSize: '11px',
+              letterSpacing: '1.5px',
+              cursor: 'pointer',
+              textTransform: 'uppercase',
+              fontWeight: '600',
+              transition: 'all 0.2s ease',
+            }}
+          >
+            {isInCart ? 'VIEW BAG' : 'ADD TO CART'}
+          </button>
+        </div>
+      )}
+
+      {/* ২. সাইজ সিলেকশন (ডানে-বামে স্ক্রলযোগ্য) */}
+      {step === 'size' && (
+        <div style={{ display: 'flex', alignItems: 'center', width: '100%', height: '100%', animation: 'swapFadeIn 0.25s ease-in-out', overflow: 'hidden' }}>
+          <span style={{ fontSize: '9px', color: '#555', letterSpacing: '2px', textTransform: 'uppercase', flexShrink: 0, marginRight: '15px' }}>SIZE:</span>
+          <div className="variant-scroll-container" style={{ display: 'flex', gap: '16px', overflowX: 'auto', flex: 1, scrollBehavior: 'smooth', WebkitOverflowScrolling: 'touch', paddingRight: '5px' }}>
+            {availableSizes.map((size) => (
+              <span
                 key={size}
-                onClick={() => setSelectedSize(size)}
-                style={{
-                  background: 'transparent',
-                  color: selectedSize === size ? '#fff' : '#555',
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontSize: '11px',
-                  fontWeight: selectedSize === size ? '700' : '400',
-                  padding: '2px 4px',
-                  letterSpacing: '1px'
+                onClick={() => {
+                  setSelectedSize(size);
+                  setStep('color');
                 }}
+                style={{ color: '#fff', cursor: 'pointer', fontSize: '12px', fontWeight: '500', letterSpacing: '1px', flexShrink: 0, padding: '2px 4px' }}
               >
                 {size}
-              </button>
+              </span>
             ))}
-          </div>
-
-          {/* কালার ইনপুট বক্স (মিনিমালিস্ট ডিজাইন) */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '10px', color: '#555', letterSpacing: '1px' }}>COLOR:</span>
-            <input
-              type="text"
-              value={selectedColor}
-              onChange={(e) => setSelectedColor(e.target.value.toUpperCase())}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                borderBottom: '1px solid #333',
-                color: '#fff',
-                fontSize: '11px',
-                width: '70px',
-                textAlign: 'right',
-                outline: 'none',
-                letterSpacing: '1px',
-                fontFamily: 'monospace'
-              }}
-              onFocus={(e) => e.target.style.borderBottom = '1px solid #666'}
-              onBlur={(e) => e.target.style.borderBottom = '1px solid #333'}
-            />
           </div>
         </div>
       )}
 
-      {/* অ্যাকশন বাটন */}
-      <button
-        onClick={() => {
-          setIsPressed(true);
-          setTimeout(() => setIsPressed(false), 150);
-          
-          if (isInCart) {
-            setIsCartOpen(true);
-          } else {
-            // গ্রাহকের সিলেক্ট করা সাইজ এবং কালার কার্ট অবজেক্টে পুশ করা হচ্ছে
-            addToCart({
-              ...product,
-              size: selectedSize,
-              color: selectedColor
-            });
-          }
-        }}
-        style={{
-          background: 'transparent',
-          border: `1px solid ${isInCart ? '#fff' : '#333'}`,
-          color: '#fff',
-          padding: '8px 16px',
-          fontSize: '11px',
-          letterSpacing: '1.5px',
-          cursor: 'pointer',
-          textTransform: 'uppercase',
-          fontWeight: '600',
-          transition: 'all 0.2s ease-in-out',
-          transform: isPressed ? 'scale(0.94)' : 'scale(1)',
-          opacity: isPressed ? 0.7 : 1
-        }}
-      >
-        {isInCart ? 'VIEW BAG' : 'ADD TO CART'}
-      </button>
+      {/* ৩. কালার সিলেকশন (১০+ কালার হলেও ডানে-বামে স্মুথ স্ক্রল হবে) */}
+      {step === 'color' && (
+        <div style={{ display: 'flex', alignItems: 'center', width: '100%', height: '100%', animation: 'swapFadeIn 0.25s ease-in-out', overflow: 'hidden' }}>
+          <span style={{ fontSize: '9px', color: '#555', letterSpacing: '2px', textTransform: 'uppercase', flexShrink: 0, marginRight: '15px' }}>COLOR:</span>
+          <div className="variant-scroll-container" style={{ display: 'flex', gap: '14px', overflowX: 'auto', flex: 1, scrollBehavior: 'smooth', WebkitOverflowScrolling: 'touch', paddingRight: '5px' }}>
+            {availableColors.map((color) => (
+              <span
+                key={color}
+                onClick={() => {
+                  addToCart({
+                    ...product,
+                    size: selectedSize,
+                    color: color
+                  });
+                  setStep('idle');
+                }}
+                style={{ color: '#fff', cursor: 'pointer', fontSize: '11px', fontWeight: '500', letterSpacing: '1px', flexShrink: 0, padding: '2px 4px', textTransform: 'uppercase' }}
+              >
+                {color}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ৪. স্টক আউট অবস্থা */}
+      {step === 'error' && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', color: '#ff4d4d', fontSize: '10px', letterSpacing: '2px', fontWeight: 600, textTransform: 'uppercase', animation: 'swapFadeIn 0.25s ease-in-out', fontFamily: 'monospace' }}>
+          PRODUCT UNAVAILABLE / OUT OF STOCK
+        </div>
+      )}
     </div>
   );
 };
 
 export default function ProductList() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
 
@@ -192,15 +190,20 @@ export default function ProductList() {
       `)
       .order('created_at', { ascending: false });
 
-    if (data) setProducts(data as Product[]);
+    if (data) {
+      const shuffledProducts = [...data].sort(() => Math.random() - 0.5);
+      const uniqueCategories = Array.from(new Set(shuffledProducts.map(p => p.category)))
+        .sort(() => Math.random() - 0.5);
+
+      setProducts(shuffledProducts as Product[]);
+      setCategories(uniqueCategories);
+    }
     setLoading(false);
   };
 
   useEffect(() => { fetchProducts(); }, []);
 
-  if (loading) return <p style={{ color: '#555', padding: '40px' }}>LOADING PRODUCTS...</p>;
-
-  const categories = Array.from(new Set(products.map(p => p.category)));
+  if (loading) return <p style={{ color: '#555', padding: '40px', letterSpacing: '2px', fontSize: '11px' }}>LOADING PRODUCTS...</p>;
 
   return (
     <div style={{ backgroundColor: '#000', width: '100%', boxSizing: 'border-box' }}>
@@ -229,10 +232,8 @@ export default function ProductList() {
                   <div style={{ marginTop: '15px', padding: '0 5px', display: 'flex', flexDirection: 'column', flex: 1 }}>
                     <h3 style={{ fontSize: '14px', color: '#e5e5e5', margin: '0 0 6px 0' }}>{product.name}</h3>
                     <p style={{ fontSize: '13px', color: '#888', margin: '0 0 15px 0', lineHeight: '1.4', WebkitLineClamp: 2, display: '-webkit-box', WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{product.description}</p>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 'auto', paddingBottom: '5px' }}>
-                      <span style={{ fontSize: '15px', color: '#fff', paddingBottom: '2px' }}>৳{product.price}</span>
-                      <AddToCartInlineButton product={product} disabled={product.stock_quantity <= 0} />
-                    </div>
+                    
+                    <ProductActionRow product={product} />
                   </div>
                 </div>
               ))}
@@ -242,6 +243,18 @@ export default function ProductList() {
       })}
 
       <style>{`
+        @keyframes swapFadeIn {
+          from { opacity: 0; transform: translateY(1px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        /* 🤫 সাইজ ও কালার স্ক্রল কন্টেইনারের বর্ডার ও স্ক্রলবার হাইড করার সিএসএস */
+        .variant-scroll-container::-webkit-scrollbar {
+          display: none;
+        }
+        .variant-scroll-container {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
         @media (max-width: 767px) {
           .showroom-section { margin-left: calc(-50vw + 50%); margin-right: calc(-50vw + 50%); width: 100vw; }
           .showroom-card-item { width: 100vw !important; min-width: 100vw !important; padding: 0 15px !important; }
