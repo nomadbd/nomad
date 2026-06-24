@@ -22,20 +22,21 @@ const CartOverlay = () => {
   }, [isCartOpen]);
 
   useEffect(() => {
-    setSelectedIds(cartItems.map(item => item.id));
+    // ইউনিক ভ্যারিয়েন্ট কী (id-size-color) দিয়ে সিলেক্টেড আইটেম ট্র্যাক করা হচ্ছে
+    setSelectedIds(cartItems.map(item => `${item.id}-${item.size}-${item.color}`));
   }, [cartItems]);
 
   if (!isCartOpen) return null;
 
   const subtotal = cartItems
-    .filter(item => selectedIds.includes(item.id))
+    .filter(item => selectedIds.includes(`${item.id}-${item.size}-${item.color}`))
     .reduce((acc, item) => acc + item.price * item.quantity, 0);
 
-  const toggleSelect = (id: string) => {
-    if (selectedIds.includes(id)) {
-      setSelectedIds(selectedIds.filter(itemId => itemId !== id));
+  const toggleSelect = (itemKey: string) => {
+    if (selectedIds.includes(itemKey)) {
+      setSelectedIds(selectedIds.filter(key => key !== itemKey));
     } else {
-      setSelectedIds([...selectedIds, id]);
+      setSelectedIds([...selectedIds, itemKey]);
     }
   };
 
@@ -87,18 +88,25 @@ const CartOverlay = () => {
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
                 {cartItems.map((item) => {
-                  const isSelected = selectedIds.includes(item.id);
+                  const itemKey = `${item.id}-${item.size}-${item.color}`;
+                  const isSelected = selectedIds.includes(itemKey);
                   return (
-                    <div key={item.id} style={{ display: 'flex', gap: '20px', alignItems: 'center', borderBottom: '1px solid #1a1a1a', paddingBottom: '20px' }}>
+                    <div key={itemKey} style={{ display: 'flex', gap: '20px', alignItems: 'center', borderBottom: '1px solid #1a1a1a', paddingBottom: '20px' }}>
                       <img src={item.image_url} alt={item.name} style={{ width: '75px', height: '90px', objectFit: 'cover', border: '1px solid #1a1a1a' }} />
                       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '16px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                          <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 'normal', color: '#e5e5e5', letterSpacing: '0.5px', paddingRight: '15px', lineHeight: '1.4', wordBreak: 'break-word' }}>
-                            {item.name}
-                          </h4>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', paddingRight: '15px' }}>
+                            <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 'normal', color: '#e5e5e5', letterSpacing: '0.5px', lineHeight: '1.4', wordBreak: 'break-word' }}>
+                              {item.name}
+                            </h4>
+                            {/* মিনিমালিস্ট প্রিমিয়াম সাইজ ও কালার ডিসপ্লে */}
+                            <div style={{ fontSize: '10px', color: '#777', letterSpacing: '1.5px', textTransform: 'uppercase', fontFamily: 'monospace' }}>
+                              SIZE: {item.size} &bull; COLOR: {item.color}
+                            </div>
+                          </div>
                           <div 
-                            onClick={() => toggleSelect(item.id)}
-                            style={{ width: '18px', height: '18px', borderRadius: '50%', border: isSelected ? '1px solid #fff' : '1px solid #444', backgroundColor: isSelected ? '#fff' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s ease', userSelect: 'none', flexShrink: 0 }}
+                            onClick={() => toggleSelect(itemKey)}
+                            style={{ width: '18px', height: '18px', borderRadius: '50%', border: isSelected ? '1px solid #fff' : '1px solid #444', backgroundColor: isSelected ? '#fff' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s ease', userSelect: 'none', flexShrink: 0, marginTop: '2px' }}
                           >
                             {isSelected && <span style={{ color: '#000', fontSize: '10px', fontWeight: 'bold' }}>✓</span>}
                           </div>
@@ -106,9 +114,9 @@ const CartOverlay = () => {
 
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '18px' }}>
-                            <button onClick={() => decrementQuantity(item.id)} style={{ background: 'none', border: 'none', color: '#b3b3b3', cursor: 'pointer', fontSize: '16px', padding: '0 5px' }}>—</button>
+                            <button onClick={() => decrementQuantity(item.id, item.size, item.color)} style={{ background: 'none', border: 'none', color: '#b3b3b3', cursor: 'pointer', fontSize: '16px', padding: '0 5px' }}>—</button>
                             <span style={{ color: 'white', fontSize: '14px', fontFamily: 'monospace', minWidth: '10px', textAlign: 'center' }}>{item.quantity}</span>
-                            <button onClick={() => incrementQuantity(item.id)} style={{ background: 'none', border: 'none', color: '#b3b3b3', cursor: 'pointer', fontSize: '16px', padding: '0 5px' }}>+</button>
+                            <button onClick={() => incrementQuantity(item.id, item.size, item.color)} style={{ background: 'none', border: 'none', color: '#b3b3b3', cursor: 'pointer', fontSize: '16px', padding: '0 5px' }}>+</button>
                           </div>
                           <div style={{ color: 'white', fontSize: '15px', fontFamily: 'monospace', fontWeight: '500' }}>৳{item.price * item.quantity}</div>
                         </div>
