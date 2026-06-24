@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useCart } from '../context/CartContext';
-import CheckoutForm from './CheckoutForm'; // আপনার CheckoutForm টি এখানে ইমপোর্ট করুন
+import Checkout from './Checkout'; // নতুন Checkout কম্পোনেন্ট ইমপোর্ট করা হলো
 
 const CartOverlay = () => {
   const { cartItems, isCartOpen, setIsCartOpen, incrementQuantity, decrementQuantity } = useCart();
-  
+
   // চেকআউট ফর্ম দেখানোর স্টেট
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -72,7 +72,7 @@ const CartOverlay = () => {
 
         {/* যদি চেকআউট মোড অন থাকে, ফর্ম দেখাবে, নাহলে কার্ট লিস্ট */}
         {isCheckingOut ? (
-          <CheckoutForm onSuccess={() => {
+          <Checkout onSuccess={() => {
             setIsCheckingOut(false);
             setIsCartOpen(false);
           }} />
