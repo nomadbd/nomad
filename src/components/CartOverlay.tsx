@@ -21,7 +21,7 @@ const CartOverlay = () => {
   }, [isCartOpen]);
 
   useEffect(() => {
-    setSelectedIds(cartItems.map(item => item.id)); // আপনার আদি আইডি ট্র্যাকিং
+    setSelectedIds(cartItems.map(item => item.id)); 
   }, [cartItems]);
 
   if (!isCartOpen) return null;
@@ -85,25 +85,35 @@ const CartOverlay = () => {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
                 {cartItems.map((item) => {
                   const isSelected = selectedIds.includes(item.id);
+
+                  /* ✨ ফিক্স লজিক: সুপাবেস রিলেশন ডাটা থেকে সঠিক ইমেজের লিংক বের করা */
+                  const itemImage = item.image_url || 
+                    item.product_media?.find((m: any) => m.media_type === 'image')?.media_url || 
+                    item.product_media?.[0]?.media_url;
+
                   return (
                     <div key={item.id} style={{ display: 'flex', gap: '20px', alignItems: 'center', borderBottom: '1px solid #1a1a1a', paddingBottom: '20px' }}>
-                      {/* ছবি রেন্ডারিং আপনার আদি কোড অনুযায়ী রিস্টোর করা হলো */}
-                      <img src={item.image_url} alt={item.name} style={{ width: '75px', height: '90px', objectFit: 'cover', border: '1px solid #1a1a1a' }} />
                       
+                      {/* 📸 সঠিক ইমেজ ইউআরএল এখানে বসানো হয়েছে */}
+                      <img 
+                        src={itemImage} 
+                        alt={item.name} 
+                        style={{ width: '75px', height: '90px', objectFit: 'cover', border: '1px solid #1a1a1a', backgroundColor: '#111' }} 
+                      />
+
                       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '16px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                             <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 'normal', color: '#e5e5e5', letterSpacing: '0.5px', paddingRight: '15px', lineHeight: '1.4', wordBreak: 'break-word' }}>
                               {item.name}
                             </h4>
-                            {/* সরাসরি লেবেল ছাড়া Black / M ফরম্যাটে দেখাবে (যদি ডেটা থাকে) */}
                             {(item.color || item.size) && (
                               <div style={{ fontSize: '11px', color: '#888', fontFamily: 'monospace', textTransform: 'uppercase', marginTop: '2px' }}>
                                 {item.color}{item.color && item.size ? ' / ' : ''}{item.size}
                               </div>
                             )}
                           </div>
-                          
+
                           <div 
                             onClick={() => toggleSelect(item.id)}
                             style={{ width: '18px', height: '18px', borderRadius: '50%', border: isSelected ? '1px solid #fff' : '1px solid #444', backgroundColor: isSelected ? '#fff' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s ease', userSelect: 'none', flexShrink: 0 }}
