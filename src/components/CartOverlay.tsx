@@ -57,7 +57,7 @@ const CartOverlay = () => {
     >
       <div style={{ maxWidth: '500px', margin: '0 auto', position: 'relative' }}>
 
-        {/* 🛠️ ১. ডিফল্ট ক্রসের জায়গায় আল্ট্রা-থিন মিনিমালিস্ট SVG ক্লোজ বাটন */}
+        {/* ✖️ র' (Raw) SVG ক্লোজ বাটন */}
         <button 
           onClick={() => { setIsCartOpen(false); setIsCheckingOut(false); }} 
           style={{ position: 'absolute', top: '-5px', right: '0', background: 'none', border: 'none', color: 'white', cursor: 'pointer', padding: '5px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
@@ -95,7 +95,6 @@ const CartOverlay = () => {
                     item.product_media?.[0]?.media_url;
 
                   return (
-                    /* 🛠️ ৩. বর্ডারটিকে আরও ডিলিউটেড বা সাটল (Subtle) করা হয়েছে */
                     <div key={item.id} style={{ display: 'flex', gap: '20px', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '25px' }}>
                       
                       <img 
@@ -126,7 +125,7 @@ const CartOverlay = () => {
                         </div>
 
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          {/* 🛠️ ২. কোয়ান্টিটি সিলেক্টরের ক্লিক এরিয়া এবং প্রিমিয়াম স্পেসিং বাড়ানো হয়েছে */}
+                          {/* 🔘 প্রিমিয়াম কোয়ান্টিটি সিলেক্টর (ক্লিক ফ্রেন্ডলি প্যাডিং সহ) */}
                           <div style={{ display: 'flex', alignItems: 'center', backgroundColor: '#0a0a0a', border: '1px solid rgba(255,255,255,0.04)', borderRadius: '2px' }}>
                             <button onClick={() => decrementQuantity(item.id)} style={{ background: 'none', border: 'none', color: '#777', cursor: 'pointer', fontSize: '12px', width: '32px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', outline: 'none' }}>—</button>
                             <span style={{ color: 'white', fontSize: '13px', fontFamily: 'monospace', minWidth: '24px', textAlign: 'center', userSelect: 'none' }}>{item.quantity}</span>
@@ -145,17 +144,16 @@ const CartOverlay = () => {
                     <span style={{ color: 'white', fontWeight: '500', fontFamily: 'monospace', fontSize: '16px' }}>৳{subtotal}</span>
                   </div>
 
-                  {/* 🛠️ ৪. সিএসএস ক্লাসের মাধ্যমে আধুনিক হোভার অ্যানিমেশন এফেক্ট যুক্ত */}
+                  {/* 🖤 ক্লিন ও মিনিমালিস্ট বাটন (হোভার এফেক্ট ছাড়া) */}
                   <button 
                     disabled={selectedIds.length === 0}
                     onClick={() => setIsCheckingOut(true)} 
-                    className="premium-checkout-btn"
                     style={{ 
                       width: '100%', padding: '16px', background: 'transparent', 
                       color: selectedIds.length > 0 ? 'white' : '#444', 
                       border: selectedIds.length > 0 ? '1px solid rgba(255, 255, 255, 0.9)' : '1px solid #222', 
                       fontWeight: '600', letterSpacing: '3px', cursor: selectedIds.length > 0 ? 'pointer' : 'not-allowed', 
-                      fontSize: '11px', textTransform: 'uppercase', transition: 'all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+                      fontSize: '11px', textTransform: 'uppercase', transition: 'all 0.2s ease',
                       outline: 'none', opacity: selectedIds.length > 0 ? 1 : 0.3
                     }}
                   >
@@ -167,14 +165,6 @@ const CartOverlay = () => {
           </div>
         )}
       </div>
-
-      {/* গ্লোবাল স্টাইল ট্যাগ যা হোভার এফেক্ট হ্যান্ডেল করবে */}
-      <style>{`
-        .premium-checkout-btn:hover:not(:disabled) {
-          background-color: #ffffff !important;
-          color: #000000 !important;
-        }
-      `}</style>
     </div>
   );
 };
