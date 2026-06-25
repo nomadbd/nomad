@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient'; // আপনার সঠিক পাথ দিন
 
 interface CartItem {
-  id: string; // এটি সবসময় অরিজিনাল product.id থাকবে যেন View Bag ঠিকঠাক কাজ করে
+  id: string; // View Bag বাটন সচল রাখতে এটি অরিজিনাল product.id থাকবে
   name: string;
   price: number;
   quantity: number;
@@ -25,7 +25,7 @@ interface CartContextType {
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // ⚡ ১. রিফ্রেশ সমস্যা সমাধান: শুরুতেই ব্রাউজার থেকে ডাটা ইনস্ট্যান্ট লোড হবে, তাই কার্ট খালি হবে না
+  // ১. ব্রাউজার থেকে ইনস্ট্যান্ট লোড (রিফ্রেশ প্রোটেকশন)
   const [cartItems, setCartItems] = useState<CartItem[]>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('nomad_cart');
@@ -36,9 +36,9 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
-  const [isLoadedFromDB, setIsLoadedFromDB] = useState(false); // সেভ গার্ড
+  const [isLoadedFromDB, setIsLoadedFromDB] = useState(false);
 
-  // ২. ইউজার লগইন স্টেট এবং ডাটাবেজ থেকে কার্ট লোড করা
+  // ২. ডাটাবেজ থেকে কার্ট লোড এবং কালার/সাইজ রিকভারি মার্জ লজিক
   useEffect(() => {
     const loadInitialCart = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -51,18 +51,27 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
           .select('*')
           .eq('user_id', currentUserId);
 
-        // ডাটাবেজে ডাটা থাকলে এবং কালার/সাইজ অক্ষুণ্ণ রেখে স্টেটে বসানো
         if (!error && data && data.length > 0) {
-          const dbItems = data.map((item: any) => ({
-            id: item.product_id, // View Bag সচল রাখতে আইডি এবং প্রোডাক্ট আইডি এক রাখা হলো
-            name: item.name,
-            price: item.price,
-            quantity: item.quantity,
-            color: item.color || undefined, // কালার রিকভারি
-            size: item.size || undefined,   // সাইজ রিকভারি
-            image_url: item.image_url,
-            product_media: item.product_media ? JSON.parse(item.product_media) : undefined
-          }));
+          // 🎯 লোকাল স্টোরেজের ব্যাকআপ ডাটা রিড করা যেন কালার/সাইজ হারিয়ে না যায়
+          const localCart = localStorage.getItem('nomad_cart');
+          const localItems: CartItem[] = localCart ? JSON.parse(localCart) : [];
+
+          const dbItems = data.map((item: any) => {
+            // লোকাল কার্ট থেকে ম্যাচিং প্রোডাক্ট খুঁজে বের করা
+            const matchingLocal = localItems.find(l => l.id === item.product_id);
+
+            return {
+              id: item.product_id, 
+              name: item.name,
+              price: item.price,
+              quantity: item.quantity,
+              // ⚡ ডাটাবেজে না থাকলেও লোকাল স্টোরেজের ব্যাকআপ থেকে কালার/সাইজ উদ্ধার করা হবে
+              color: item.color || item.selected_color || matchingLocal?.color || undefined, 
+              size: item.size || item.selected_size || matchingLocal?.size || undefined,   
+              image_url: item.image_url,
+              product_media: item.product_media ? JSON.parse(item.product_media) : undefined
+            };
+          });
           setCartItems(dbItems);
         }
       }
@@ -82,16 +91,15 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => subscription.unsubscribe();
   }, []);
 
-  // ৩. ব্রাউজার ও ডাটাবেজে অটো-সেভ লজিক (ওভাররাইট প্রোটেক্টেড)
+  // ৩. অটো-সেভ ও সিঙ্ক (কালার ও সাইজ সুরক্ষিত রেখে)
   useEffect(() => {
-    if (userId && !isLoadedFromDB) return; // ডাটা লোড হওয়ার আগে ডাটাবেজ রাইট ব্লক করা হলো
+    if (userId && !isLoadedFromDB) return; 
 
     localStorage.setItem('nomad_cart', JSON.stringify(cartItems));
 
     const syncToDB = async () => {
       if (!userId) return;
 
-      // পুরানো ডাটা ক্লিন করে ফ্রেশ ডাটা ইনসার্ট
       await supabase.from('cart_items').delete().eq('user_id', userId);
 
       if (cartItems.length > 0) {
@@ -101,8 +109,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
           name: item.name,
           price: item.price,
           quantity: item.quantity,
-          color: item.color || null, // ডাটাবেজে কালার সেভ
-          size: item.size || null,   // ডাটাবেজে সাইজ সেভ
+          color: item.color || null, 
+          size: item.size || null,   
           image_url: item.image_url || item.product_media?.[0]?.media_url || null,
           product_media: item.product_media ? JSON.stringify(item.product_media) : null
         }));
@@ -115,7 +123,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => clearTimeout(debounce);
   }, [cartItems, userId, isLoadedFromDB]);
 
-  // ৪. কার্ট অ্যাকশনস (আইডি অরিজিনাল রেখে কালার/সাইজ হ্যান্ডলিং)
+  // ৪. কার্ট অ্যাকশনস (অরিজিনাল আইডি ব্যাকআপ সহ)
   const addToCart = (product: any, color?: string, size?: string) => {
     setCartItems((prev) => {
       const existingIndex = prev.findIndex(item => item.id === product.id && item.color === color && item.size === size);
@@ -129,7 +137,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return [
         ...prev,
         {
-          id: product.id, // 🎯 অরিজিনাল আইডি প্রিজার্ভড (View Bag এখন কাজ করবে)
+          id: product.id, 
           name: product.name,
           price: product.price,
           quantity: 1,
