@@ -10,8 +10,8 @@ interface Product {
   category: string;
   stock_quantity: number;
   status: 'active' | 'sold_out' | string;
-  sizes: string[];  // 🛠️ ডাটাবেজ থেকে আসা ডাইনামিক সাইজ অ্যারে
-  colors: string[]; // 🛠️ ডাটাবেজ থেকে আসা ডাইনামিক কালার অ্যারে
+  sizes: string[];  
+  colors: string[]; 
   created_at: string;
   product_media: { media_url: string; media_type: string }[];
 }
@@ -64,14 +64,13 @@ const ProductGallery = ({ images, productName }: { images: string[], productName
   );
 };
 
-// 🛒 ১০০% ডাইনামিক অ্যাকশন রো (অ্যাডমিন নিয়ন্ত্রিত সাইজ ও কালার ভিউ)
+// 🛒 প্রিমিয়াম অ্যাকশন রো (সিমেট্রিক বর্ডার ও ম্যাচিং ফন্ট লেবেল সহ)
 const ProductActionRow = ({ product }: { product: Product }) => {
   const { cartItems, addToCart, setIsCartOpen } = useCart();
   
   const [step, setStep] = useState<'idle' | 'size' | 'color'>('idle');
   const [selectedSize, setSelectedSize] = useState('');
 
-  // ⚡ ডাটাবেজ থেকে প্রডাক্টের নিজস্ব ভ্যারিয়েন্ট নেওয়া হচ্ছে (ফেলব্যাক সহ)
   const availableSizes = product.sizes || [];
   const availableColors = product.colors || [];
 
@@ -83,14 +82,10 @@ const ProductActionRow = ({ product }: { product: Product }) => {
       setIsCartOpen(true);
       return;
     }
-    
-    // যদি কোনো সাইজ বা কালার অ্যাডমিন সেট না করে থাকে, তবে সরাসরি কার্টে যোগ হবে
     if (availableSizes.length === 0 && availableColors.length === 0) {
       addToCart({ ...product, size: 'FREE', color: 'DEFAULT' });
       return;
     }
-    
-    // সাইজ না থাকলে সরাসরি কালার সিলেকশনে যাবে, অন্যথায় সাইজে যাবে
     if (availableSizes.length > 0) {
       setStep('size');
     } else {
@@ -98,26 +93,52 @@ const ProductActionRow = ({ product }: { product: Product }) => {
     }
   };
 
+  // 🏷️ SIZE: এবং COLOR: লেবেলের জন্য একই রকম প্রিমিয়াম লাইট গ্রে স্টাইল
+  const labelStyle: React.CSSProperties = {
+    fontSize: '11px',
+    fontWeight: '500',
+    letterSpacing: '1px',
+    color: '#888',
+    textTransform: 'uppercase',
+    flexShrink: 0,
+    marginRight: '12px',
+    display: 'inline-block',
+    lineHeight: '1'
+  };
+
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: '36px', marginTop: 'auto', paddingBottom: '5px', boxSizing: 'border-box', width: '100%', overflow: 'hidden' }}>
       
-      {/* ১. সাধারণ অবস্থা */}
+      {/* ১. সাধারণ অবস্থা (আইডল) */}
       {step === 'idle' && (
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', animation: 'swapFadeIn 0.25s ease-in-out' }}>
           <span style={{ fontSize: '15px', color: isSoldOut ? '#555' : '#fff', fontWeight: 500, fontFamily: 'monospace' }}>৳{product.price}</span>
           
           {isSoldOut ? (
-            <button disabled style={{ background: 'transparent', border: '1px solid #222', color: '#555', padding: '8px 16px', fontSize: '11px', letterSpacing: '1.5px', cursor: 'not-allowed', textTransform: 'uppercase', fontWeight: '600' }}>
+            <button 
+              disabled 
+              style={{ 
+                height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 20px', boxSizing: 'border-box', lineHeight: '1',
+                background: 'transparent', border: '1px solid #222', color: '#555', fontSize: '11px', letterSpacing: '1.5px', cursor: 'not-allowed', textTransform: 'uppercase', fontWeight: '600' 
+              }}
+            >
               SOLD OUT
             </button>
           ) : (
+            /* ✨ নিখুঁত প্রতিসম (Symmetrical) আউটলাইন বর্ডার বাটন */
             <button
               onClick={handleActionClick}
               style={{
+                height: '36px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '0 20px',
+                boxSizing: 'border-box',
+                lineHeight: '1',
                 background: 'transparent',
                 border: `1px solid ${isInCart ? '#fff' : '#333'}`,
                 color: '#fff',
-                padding: '8px 16px',
                 fontSize: '11px',
                 letterSpacing: '1.5px',
                 cursor: 'pointer',
@@ -135,8 +156,8 @@ const ProductActionRow = ({ product }: { product: Product }) => {
       {/* ২. ডাইনামিক সাইজ স্ক্রল */}
       {step === 'size' && (
         <div style={{ display: 'flex', alignItems: 'center', width: '100%', height: '100%', animation: 'swapFadeIn 0.25s ease-in-out', overflow: 'hidden' }}>
-          <span style={{ fontSize: '9px', color: '#555', letterSpacing: '2px', textTransform: 'uppercase', flexShrink: 0, marginRight: '15px' }}>SIZE:</span>
-          <div className="variant-scroll-container" style={{ display: 'flex', gap: '16px', overflowX: 'auto', flex: 1, scrollBehavior: 'smooth', WebkitOverflowScrolling: 'touch', paddingRight: '5px' }}>
+          <span style={labelStyle}>SIZE:</span>
+          <div className="variant-scroll-container" style={{ display: 'flex', gap: '16px', overflowX: 'auto', flex: 1, scrollBehavior: 'smooth', WebkitOverflowScrolling: 'touch', paddingRight: '5px', alignItems: 'center' }}>
             {availableSizes.map((size) => (
               <span
                 key={size}
@@ -149,7 +170,7 @@ const ProductActionRow = ({ product }: { product: Product }) => {
                     setStep('idle');
                   }
                 }}
-                style={{ color: '#fff', cursor: 'pointer', fontSize: '12px', fontWeight: '500', letterSpacing: '1px', flexShrink: 0, padding: '2px 4px' }}
+                style={{ color: '#fff', cursor: 'pointer', fontSize: '11px', fontWeight: '500', letterSpacing: '1px', flexShrink: 0, padding: '4px 2px', lineHeight: '1' }}
               >
                 {size}
               </span>
@@ -161,8 +182,8 @@ const ProductActionRow = ({ product }: { product: Product }) => {
       {/* ৩. ডাইনামিক কালার স্ক্রল */}
       {step === 'color' && (
         <div style={{ display: 'flex', alignItems: 'center', width: '100%', height: '100%', animation: 'swapFadeIn 0.25s ease-in-out', overflow: 'hidden' }}>
-          <span style={{ fontSize: '9px', color: '#555', letterSpacing: '2px', textTransform: 'uppercase', flexShrink: 0, marginRight: '15px' }}>COLOR:</span>
-          <div className="variant-scroll-container" style={{ display: 'flex', gap: '14px', overflowX: 'auto', flex: 1, scrollBehavior: 'smooth', WebkitOverflowScrolling: 'touch', paddingRight: '5px' }}>
+          <span style={labelStyle}>COLOR:</span>
+          <div className="variant-scroll-container" style={{ display: 'flex', gap: '14px', overflowX: 'auto', flex: 1, scrollBehavior: 'smooth', WebkitOverflowScrolling: 'touch', paddingRight: '5px', alignItems: 'center' }}>
             {availableColors.map((color) => (
               <span
                 key={color}
@@ -174,7 +195,7 @@ const ProductActionRow = ({ product }: { product: Product }) => {
                   });
                   setStep('idle');
                 }}
-                style={{ color: '#fff', cursor: 'pointer', fontSize: '11px', fontWeight: '500', letterSpacing: '1px', flexShrink: 0, padding: '2px 4px', textTransform: 'uppercase' }}
+                style={{ color: '#fff', cursor: 'pointer', fontSize: '11px', fontWeight: '500', letterSpacing: '1px', flexShrink: 0, padding: '4px 2px', textTransform: 'uppercase', lineHeight: '1' }}
               >
                 {color}
               </span>
@@ -228,10 +249,22 @@ export default function ProductList() {
 
         return (
           <div key={category} className="showroom-section" style={{ marginBottom: '50px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0 15px 12px 15px', borderBottom: '1px solid #141414' }}>
+            {/* 📋 ক্যাটাগরি হেডার */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 15px 12px 15px', borderBottom: '1px solid #141414' }}>
               <h3 style={{ margin: 0, fontSize: '13px', letterSpacing: '3px', color: '#b3b3b3', textTransform: 'uppercase' }}>{category}</h3>
-              <button onClick={() => setExpandedCategories(prev => ({ ...prev, [category]: !isExpanded }))} style={{ background: 'none', border: 'none', color: '#fff', fontSize: '11px', letterSpacing: '2px', cursor: 'pointer', opacity: 0.7 }}>
-                {isExpanded ? 'SEE LESS' : 'SEE MORE'}
+              
+              {/* ⚡ কোনো ঝাঁকুনি ছাড়া স্থির SEE MORE / LESS বাটন */}
+              <button 
+                onClick={() => setExpandedCategories(prev => ({ ...prev, [category]: !isExpanded }))} 
+                style={{ 
+                  background: 'none', border: 'none', color: '#fff', fontSize: '11px', letterSpacing: '2px', cursor: 'pointer', opacity: 0.7,
+                  display: 'flex', gap: '5px', padding: 0, alignItems: 'center'
+                }}
+              >
+                <span>SEE</span>
+                <span style={{ display: 'inline-block', minWidth: '35px', textAlign: 'left' }}>
+                  {isExpanded ? 'LESS' : 'MORE'}
+                </span>
               </button>
             </div>
 
