@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { supabase } from '../supabaseClient'; // আপনার supabaseClient এর সঠিক পাথ দিন
+import { supabase } from '../supabaseClient'; // আপনার সঠিক পাথ দিন
 
 interface CartItem {
   id: string;
@@ -28,8 +28,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  
+  // 🛡️ ক্রুশিয়াল স্টেট: ডাটা লোড হওয়া শেষ না হওয়া পর্যন্ত সেভ করা আটকাবে
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  // ১. ইউজারের লগইন স্টেট (Supabase Auth) মনিটর করা
+  // ১. ইউজারের লগইন স্টেট চেক করা
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUserId(session?.user?.id || null);
@@ -42,13 +45,13 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => subscription.unsubscribe();
   }, []);
 
-  // ২. ইনিশিয়াল লোড: ব্রাউজার অথবা ডাটাবেজ থেকে কার্ট ডাটা রিড করা
+  // ২. ইনিশিয়াল লোড: রিফ্রেশ করার পর ডাটা রিকভার করা
   useEffect(() => {
-    const fetchCart = async () => {
+    const fetchSavedCart = async () => {
       if (userId) {
-        // ইউজার লগইন থাকলে ডাটাবেজ থেকে কার্ট নিয়ে আসবে (মাল্টি-ডিভাইস সাপোর্ট)
+        // 🌐 ইউজার লগইন থাকলে ডাটাবেজ থেকে কার্ট আনা হবে
         const { data, error } = await supabase
-          .from('cart_items') // আপনার ডাটাবেজের টেবিল নাম
+          .from('cart_items')
           .select('*')
           .eq('user_id', userId);
 
@@ -56,55 +59,63 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setCartItems(data);
         }
       } else {
-        // লগইন না থাকলে ব্রাউজারের LocalStorage থেকে লোড করবে
+        // 💻 লগইন না থাকলে LocalStorage থেকে আনা হবে
         const localCart = localStorage.getItem('nomad_cart');
         if (localCart) {
           setCartItems(JSON.parse(localCart));
         }
       }
+      // লোডিং সম্পন্ন হলে সিঙ্ক করার পারমিশন দেওয়া হলো
+      setIsInitialized(true);
     };
 
-    fetchCart();
+    fetchSavedCart();
   }, [userId]);
 
-  // ৩. অটো-সেভ এবং সিঙ্ক: কার্টে কোনো পরিবর্তন হলেই তা সেভ হবে
+  // ৩. অটো-সেভ এবং ব্যাকএন্ড সিঙ্ক (ডাটা ওভাররাইট প্রোটেক্টেড)
   useEffect(() => {
-    if (cartItems.length === 0) {
-      localStorage.removeItem('nomad_cart');
-      return;
-    }
+    // 🚨 ডাটা পুরোপুরি লোড হওয়ার আগে যদি স্টেট খালি থাকে, তবে সেভ প্রসেস স্কিপ করো
+    if (!isInitialized) return;
 
-    // সবসময় ব্রাউজারে ব্যাকআপ রাখা হচ্ছে
+    // ব্রাউজারে ব্যাকআপ রাখা হচ্ছে
     localStorage.setItem('nomad_cart', JSON.stringify(cartItems));
 
-    // ইউজার লগইন থাকলে ডাটাবেজেও সিঙ্ক (Upsert) হবে যেন অন্য ডিভাইস থেকে পাওয়া যায়
+    // ডাটাবেজে সিঙ্ক করা
     const syncCartToDB = async () => {
-      if (userId) {
-        await supabase
-          .from('cart_items')
-          .upsert(
-            cartItems.map(item => ({
-              user_id: userId,
-              product_id: item.id,
-              quantity: item.quantity,
-              color: item.color,
-              size: item.size,
-              name: item.name,
-              price: item.price,
-              product_media: item.product_media
-            }))
-          );
+      if (!userId) return;
+
+      if (cartItems.length === 0) {
+        // কার্ট খালি হলে ডাটাবেজ থেকেও মুছে দাও
+        await supabase.from('cart_items').delete().eq('user_id', userId);
+        return;
       }
+
+      // ডাটাবেজের কনফ্লিক্ট এড়াতে প্রথমে পুরানো কার্ট মুছে নতুন অ্যারে ইনসার্ট করা সবচেয়ে নিরাপদ ও ক্লিন উপায়
+      await supabase.from('cart_items').delete().eq('user_id', userId);
+      
+      await supabase.from('cart_items').insert(
+        cartItems.map(item => ({
+          user_id: userId,
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+          color: item.color,
+          size: item.size,
+          product_media: item.product_media,
+          image_url: item.image_url || item.product_media?.[0]?.media_url
+        }))
+      );
     };
 
     const delayDebounce = setTimeout(() => {
       syncCartToDB();
-    }, 500); // ঘন ঘন ডাটাবেজ রিকোয়েস্ট কমানোর জন্য ছোট্ট ডিলে
+    }, 500); 
 
     return () => clearTimeout(delayDebounce);
-  }, [cartItems, userId]);
+  }, [cartItems, userId, isInitialized]);
 
-  // ৪. কার্টের অন্যান্য হ্যান্ডলার ফাংশনসমূহ
+  // ৪. কার্ট অ্যাকশন হ্যান্ডলারসমূহ
   const addToCart = (product: any, color?: string, size?: string) => {
     setCartItems((prev) => {
       const existingIndex = prev.findIndex(item => item.id === product.id && item.color === color && item.size === size);
