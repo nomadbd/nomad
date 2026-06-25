@@ -2,8 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient'; // আপনার সঠিক পাথ দিন
 
 interface CartItem {
-  id: string;          // ফ্রন্টএন্ডের জন্য ইউনিক আইডি (প্রোডাক্ট আইডি + কালার + সাইজ)
-  product_id: string;   // অরিজিনাল প্রোডাক্ট আইডি
+  id: string; // এটি সবসময় অরিজিনাল product.id থাকবে যেন View Bag ঠিকঠাক কাজ করে
   name: string;
   price: number;
   quantity: number;
@@ -26,65 +25,55 @@ interface CartContextType {
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  // ⚡ ১. রিফ্রেশ সমস্যা সমাধান: শুরুতেই ব্রাউজার থেকে ডাটা ইনস্ট্যান্ট লোড হবে, তাই কার্ট খালি হবে না
+  const [cartItems, setCartItems] = useState<CartItem[]>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('nomad_cart');
+      return saved ? JSON.parse(saved) : [];
+    }
+    return [];
+  });
+
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
-  const [isInitialized, setIsInitialized] = useState(false); // ট্র্যাকিং গার্ড
+  const [isLoadedFromDB, setIsLoadedFromDB] = useState(false); // সেভ গার্ড
 
-  // 🔄 ১. ইউনিফাইড লাইফসাইকেল: অথেনটিকেশন এবং কার্ট ডাটা একসাথে লোড করা
+  // ২. ইউজার লগইন স্টেট এবং ডাটাবেজ থেকে কার্ট লোড করা
   useEffect(() => {
-    const initializeAuthAndCart = async () => {
-      try {
-        // কারেন্ট সেশন থেকে ইউজার আইডি নেওয়া
-        const { data: { session } } = await supabase.auth.getSession();
-        const currentUserId = session?.user?.id || null;
-        setUserId(currentUserId);
-
-        if (currentUserId) {
-          // ইউজার লগইন থাকলে ডাটাবেজ থেকে কার্ট আনা
-          const { data, error } = await supabase
-            .from('cart_items')
-            .select('*')
-            .eq('user_id', currentUserId);
-
-          if (!error && data) {
-            // ডাটাবেজের ডাটা স্টেটে ম্যাপ করা
-            const mappedData = data.map(item => ({
-              ...item,
-              id: item.id || `${item.product_id}-${item.color || ''}-${item.size || ''}`
-            }));
-            setCartItems(mappedData);
-          }
-        } else {
-          // লগইন না থাকলে ব্রাউজারের LocalStorage থেকে আনা
-          const localCart = localStorage.getItem('nomad_cart');
-          if (localCart) {
-            setCartItems(JSON.parse(localCart));
-          }
-        }
-      } catch (err) {
-        console.error("Cart Initialization Error:", err);
-      } finally {
-        // ডাটা সম্পূর্ণ লোড হওয়ার পরেই কেবল ইনিশিয়ালাইজেশন ট্রু হবে
-        setIsInitialized(true);
-      }
-    };
-
-    initializeAuthAndCart();
-
-    // ইউজার ইনস্ট্যান্ট লগইন বা লগআউট করলে তা ট্র্যাক করা
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const loadInitialCart = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
       const currentUserId = session?.user?.id || null;
       setUserId(currentUserId);
 
       if (currentUserId) {
-        setIsInitialized(false); // নতুন ইউজারের ডাটা লোড হওয়ার আগ পর্যন্ত সিঙ্ক পজ থাকবে
-        const { data, error } = await supabase.from('cart_items').select('*').eq('user_id', currentUserId);
-        if (!error && data) {
-          setCartItems(data);
+        const { data, error } = await supabase
+          .from('cart_items')
+          .select('*')
+          .eq('user_id', currentUserId);
+
+        // ডাটাবেজে ডাটা থাকলে এবং কালার/সাইজ অক্ষুণ্ণ রেখে স্টেটে বসানো
+        if (!error && data && data.length > 0) {
+          const dbItems = data.map((item: any) => ({
+            id: item.product_id, // View Bag সচল রাখতে আইডি এবং প্রোডাক্ট আইডি এক রাখা হলো
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity,
+            color: item.color || undefined, // কালার রিকভারি
+            size: item.size || undefined,   // সাইজ রিকভারি
+            image_url: item.image_url,
+            product_media: item.product_media ? JSON.parse(item.product_media) : undefined
+          }));
+          setCartItems(dbItems);
         }
-        setIsInitialized(true);
-      } else if (event === 'SIGNED_OUT') {
+      }
+      setIsLoadedFromDB(true);
+    };
+
+    loadInitialCart();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setUserId(session?.user?.id || null);
+      if (event === 'SIGNED_OUT') {
         setCartItems([]);
         localStorage.removeItem('nomad_cart');
       }
@@ -93,52 +82,43 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => subscription.unsubscribe();
   }, []);
 
-  // 💾 ২. অটো-সেভ এবং ব্যাকএন্ড সিঙ্ক (রেস কন্ডিশন প্রোটেক্টেড)
+  // ৩. ব্রাউজার ও ডাটাবেজে অটো-সেভ লজিক (ওভাররাইট প্রোটেক্টেড)
   useEffect(() => {
-    if (!isInitialized) return; // ডাটা লোড শেষ না হওয়া পর্যন্ত সেভ করা সম্পূর্ণ নিষিদ্ধ
+    if (userId && !isLoadedFromDB) return; // ডাটা লোড হওয়ার আগে ডাটাবেজ রাইট ব্লক করা হলো
 
-    // লোকাল স্টোরেজে ব্যাকআপ রাখা
     localStorage.setItem('nomad_cart', JSON.stringify(cartItems));
 
-    const syncCartToDB = async () => {
+    const syncToDB = async () => {
       if (!userId) return;
 
-      // ডুপ্লিকেট বা কনফ্লিক্ট এড়াতে প্রথমে পুরানো ডাটা ক্লিন করা
+      // পুরানো ডাটা ক্লিন করে ফ্রেশ ডাটা ইনসার্ট
       await supabase.from('cart_items').delete().eq('user_id', userId);
 
       if (cartItems.length > 0) {
-        const recordsToInsert = cartItems.map(item => ({
+        const records = cartItems.map(item => ({
           user_id: userId,
-          product_id: item.product_id || item.id.split('-')[0], // অরিজিনাল প্রোডাক্ট আইডি নিশ্চিত করা
+          product_id: item.id,
           name: item.name,
           price: item.price,
           quantity: item.quantity,
-          color: item.color || null, // কালার প্রিজার্ভ করা
-          size: item.size || null,   // সাইজ প্রিজার্ভ করা
+          color: item.color || null, // ডাটাবেজে কালার সেভ
+          size: item.size || null,   // ডাটাবেজে সাইজ সেভ
           image_url: item.image_url || item.product_media?.[0]?.media_url || null,
-          product_media: item.product_media || null
+          product_media: item.product_media ? JSON.stringify(item.product_media) : null
         }));
 
-        await supabase.from('cart_items').insert(recordsToInsert);
+        await supabase.from('cart_items').insert(records);
       }
     };
 
-    const delayDebounce = setTimeout(() => {
-      syncCartToDB();
-    }, 500);
+    const debounce = setTimeout(syncToDB, 500);
+    return () => clearTimeout(debounce);
+  }, [cartItems, userId, isLoadedFromDB]);
 
-    return () => clearTimeout(delayDebounce);
-  }, [cartItems, userId, isInitialized]);
-
-  // ➕ ৩. কার্ট অ্যাকশন হ্যান্ডলার (ইউনিক কম্পোজিট আইডি সহ)
+  // ৪. কার্ট অ্যাকশনস (আইডি অরিজিনাল রেখে কালার/সাইজ হ্যান্ডলিং)
   const addToCart = (product: any, color?: string, size?: string) => {
     setCartItems((prev) => {
-      // আইডি, কালার এবং সাইজ তিনটিই মিললে তবেই কোয়ান্টিটি বাড়বে
-      const existingIndex = prev.findIndex(
-        item => (item.product_id === product.id || item.id.startsWith(product.id)) && 
-                item.color === color && 
-                item.size === size
-      );
+      const existingIndex = prev.findIndex(item => item.id === product.id && item.color === color && item.size === size);
 
       if (existingIndex > -1) {
         const newCart = [...prev];
@@ -146,18 +126,17 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return newCart;
       }
 
-      // ভিন্ন ভ্যারিয়েন্টের জন্য আলাদা ইউনিক আইডি জেনারেট করা (কী কলিশন রোধ করতে)
-      const cartItemId = `${product.id}-${color || ''}-${size || ''}`;
-      
       return [
-        ...prev, 
-        { 
-          ...product, 
-          id: cartItemId, 
-          product_id: product.id, 
-          quantity: 1, 
-          color: color || undefined, 
-          size: size || undefined 
+        ...prev,
+        {
+          id: product.id, // 🎯 অরিজিনাল আইডি প্রিজার্ভড (View Bag এখন কাজ করবে)
+          name: product.name,
+          price: product.price,
+          quantity: 1,
+          color: color,
+          size: size,
+          image_url: product.image_url || product.product_media?.[0]?.media_url,
+          product_media: product.product_media
         }
       ];
     });
