@@ -2,7 +2,8 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient'; // আপনার সঠিক পাথ দিন
 
 interface CartItem {
-  id: string;
+  id: string;          // ফ্রন্টএন্ডের জন্য ইউনিক আইডি (প্রোডাক্ট আইডি + কালার + সাইজ)
+  product_id: string;   // অরিজিনাল প্রোডাক্ট আইডি
   name: string;
   price: number;
   quantity: number;
@@ -28,103 +29,137 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
-  
-  // 🛡️ ক্রুশিয়াল স্টেট: ডাটা লোড হওয়া শেষ না হওয়া পর্যন্ত সেভ করা আটকাবে
-  const [isInitialized, setIsInitialized] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false); // ট্র্যাকিং গার্ড
 
-  // ১. ইউজারের লগইন স্টেট চেক করা
+  // 🔄 ১. ইউনিফাইড লাইফসাইকেল: অথেনটিকেশন এবং কার্ট ডাটা একসাথে লোড করা
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUserId(session?.user?.id || null);
-    });
+    const initializeAuthAndCart = async () => {
+      try {
+        // কারেন্ট সেশন থেকে ইউজার আইডি নেওয়া
+        const { data: { session } } = await supabase.auth.getSession();
+        const currentUserId = session?.user?.id || null;
+        setUserId(currentUserId);
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUserId(session?.user?.id || null);
+        if (currentUserId) {
+          // ইউজার লগইন থাকলে ডাটাবেজ থেকে কার্ট আনা
+          const { data, error } = await supabase
+            .from('cart_items')
+            .select('*')
+            .eq('user_id', currentUserId);
+
+          if (!error && data) {
+            // ডাটাবেজের ডাটা স্টেটে ম্যাপ করা
+            const mappedData = data.map(item => ({
+              ...item,
+              id: item.id || `${item.product_id}-${item.color || ''}-${item.size || ''}`
+            }));
+            setCartItems(mappedData);
+          }
+        } else {
+          // লগইন না থাকলে ব্রাউজারের LocalStorage থেকে আনা
+          const localCart = localStorage.getItem('nomad_cart');
+          if (localCart) {
+            setCartItems(JSON.parse(localCart));
+          }
+        }
+      } catch (err) {
+        console.error("Cart Initialization Error:", err);
+      } finally {
+        // ডাটা সম্পূর্ণ লোড হওয়ার পরেই কেবল ইনিশিয়ালাইজেশন ট্রু হবে
+        setIsInitialized(true);
+      }
+    };
+
+    initializeAuthAndCart();
+
+    // ইউজার ইনস্ট্যান্ট লগইন বা লগআউট করলে তা ট্র্যাক করা
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      const currentUserId = session?.user?.id || null;
+      setUserId(currentUserId);
+
+      if (currentUserId) {
+        setIsInitialized(false); // নতুন ইউজারের ডাটা লোড হওয়ার আগ পর্যন্ত সিঙ্ক পজ থাকবে
+        const { data, error } = await supabase.from('cart_items').select('*').eq('user_id', currentUserId);
+        if (!error && data) {
+          setCartItems(data);
+        }
+        setIsInitialized(true);
+      } else if (event === 'SIGNED_OUT') {
+        setCartItems([]);
+        localStorage.removeItem('nomad_cart');
+      }
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  // ২. ইনিশিয়াল লোড: রিফ্রেশ করার পর ডাটা রিকভার করা
+  // 💾 ২. অটো-সেভ এবং ব্যাকএন্ড সিঙ্ক (রেস কন্ডিশন প্রোটেক্টেড)
   useEffect(() => {
-    const fetchSavedCart = async () => {
-      if (userId) {
-        // 🌐 ইউজার লগইন থাকলে ডাটাবেজ থেকে কার্ট আনা হবে
-        const { data, error } = await supabase
-          .from('cart_items')
-          .select('*')
-          .eq('user_id', userId);
+    if (!isInitialized) return; // ডাটা লোড শেষ না হওয়া পর্যন্ত সেভ করা সম্পূর্ণ নিষিদ্ধ
 
-        if (!error && data) {
-          setCartItems(data);
-        }
-      } else {
-        // 💻 লগইন না থাকলে LocalStorage থেকে আনা হবে
-        const localCart = localStorage.getItem('nomad_cart');
-        if (localCart) {
-          setCartItems(JSON.parse(localCart));
-        }
-      }
-      // লোডিং সম্পন্ন হলে সিঙ্ক করার পারমিশন দেওয়া হলো
-      setIsInitialized(true);
-    };
-
-    fetchSavedCart();
-  }, [userId]);
-
-  // ৩. অটো-সেভ এবং ব্যাকএন্ড সিঙ্ক (ডাটা ওভাররাইট প্রোটেক্টেড)
-  useEffect(() => {
-    // 🚨 ডাটা পুরোপুরি লোড হওয়ার আগে যদি স্টেট খালি থাকে, তবে সেভ প্রসেস স্কিপ করো
-    if (!isInitialized) return;
-
-    // ব্রাউজারে ব্যাকআপ রাখা হচ্ছে
+    // লোকাল স্টোরেজে ব্যাকআপ রাখা
     localStorage.setItem('nomad_cart', JSON.stringify(cartItems));
 
-    // ডাটাবেজে সিঙ্ক করা
     const syncCartToDB = async () => {
       if (!userId) return;
 
-      if (cartItems.length === 0) {
-        // কার্ট খালি হলে ডাটাবেজ থেকেও মুছে দাও
-        await supabase.from('cart_items').delete().eq('user_id', userId);
-        return;
-      }
-
-      // ডাটাবেজের কনফ্লিক্ট এড়াতে প্রথমে পুরানো কার্ট মুছে নতুন অ্যারে ইনসার্ট করা সবচেয়ে নিরাপদ ও ক্লিন উপায়
+      // ডুপ্লিকেট বা কনফ্লিক্ট এড়াতে প্রথমে পুরানো ডাটা ক্লিন করা
       await supabase.from('cart_items').delete().eq('user_id', userId);
-      
-      await supabase.from('cart_items').insert(
-        cartItems.map(item => ({
+
+      if (cartItems.length > 0) {
+        const recordsToInsert = cartItems.map(item => ({
           user_id: userId,
-          id: item.id,
+          product_id: item.product_id || item.id.split('-')[0], // অরিজিনাল প্রোডাক্ট আইডি নিশ্চিত করা
           name: item.name,
           price: item.price,
           quantity: item.quantity,
-          color: item.color,
-          size: item.size,
-          product_media: item.product_media,
-          image_url: item.image_url || item.product_media?.[0]?.media_url
-        }))
-      );
+          color: item.color || null, // কালার প্রিজার্ভ করা
+          size: item.size || null,   // সাইজ প্রিজার্ভ করা
+          image_url: item.image_url || item.product_media?.[0]?.media_url || null,
+          product_media: item.product_media || null
+        }));
+
+        await supabase.from('cart_items').insert(recordsToInsert);
+      }
     };
 
     const delayDebounce = setTimeout(() => {
       syncCartToDB();
-    }, 500); 
+    }, 500);
 
     return () => clearTimeout(delayDebounce);
   }, [cartItems, userId, isInitialized]);
 
-  // ৪. কার্ট অ্যাকশন হ্যান্ডলারসমূহ
+  // ➕ ৩. কার্ট অ্যাকশন হ্যান্ডলার (ইউনিক কম্পোজিট আইডি সহ)
   const addToCart = (product: any, color?: string, size?: string) => {
     setCartItems((prev) => {
-      const existingIndex = prev.findIndex(item => item.id === product.id && item.color === color && item.size === size);
+      // আইডি, কালার এবং সাইজ তিনটিই মিললে তবেই কোয়ান্টিটি বাড়বে
+      const existingIndex = prev.findIndex(
+        item => (item.product_id === product.id || item.id.startsWith(product.id)) && 
+                item.color === color && 
+                item.size === size
+      );
+
       if (existingIndex > -1) {
         const newCart = [...prev];
         newCart[existingIndex].quantity += 1;
         return newCart;
       }
-      return [...prev, { ...product, quantity: 1, color, size }];
+
+      // ভিন্ন ভ্যারিয়েন্টের জন্য আলাদা ইউনিক আইডি জেনারেট করা (কী কলিশন রোধ করতে)
+      const cartItemId = `${product.id}-${color || ''}-${size || ''}`;
+      
+      return [
+        ...prev, 
+        { 
+          ...product, 
+          id: cartItemId, 
+          product_id: product.id, 
+          quantity: 1, 
+          color: color || undefined, 
+          size: size || undefined 
+        }
+      ];
     });
   };
 
