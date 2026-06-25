@@ -64,7 +64,7 @@ const ProductGallery = ({ images, productName }: { images: string[], productName
   );
 };
 
-// 🛒 প্রিমিয়াম অ্যাকশন রো (সিমেট্রিক বর্ডার ও ম্যাচিং ফন্ট লেবেল সহ)
+// 🛒 ১০০% সিমেট্রিক বর্ডার যুক্ত অ্যাকশন রো 
 const ProductActionRow = ({ product }: { product: Product }) => {
   const { cartItems, addToCart, setIsCartOpen } = useCart();
   
@@ -93,7 +93,6 @@ const ProductActionRow = ({ product }: { product: Product }) => {
     }
   };
 
-  // 🏷️ SIZE: এবং COLOR: লেবেলের জন্য একই রকম প্রিমিয়াম লাইট গ্রে স্টাইল
   const labelStyle: React.CSSProperties = {
     fontSize: '11px',
     fontWeight: '500',
@@ -107,7 +106,8 @@ const ProductActionRow = ({ product }: { product: Product }) => {
   };
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: '36px', marginTop: 'auto', paddingBottom: '5px', boxSizing: 'border-box', width: '100%', overflow: 'hidden' }}>
+    /* 🛠️ প্যারেন্ট কন্টেইনারের হাইট বাড়িয়ে ৪২ পিএক্স করা হয়েছে বর্ডার ক্লিপিং রোধ করতে */
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: '42px', marginTop: 'auto', boxSizing: 'border-box', width: '100%' }}>
       
       {/* ১. সাধারণ অবস্থা (আইডল) */}
       {step === 'idle' && (
@@ -125,7 +125,7 @@ const ProductActionRow = ({ product }: { product: Product }) => {
               SOLD OUT
             </button>
           ) : (
-            /* ✨ নিখুঁত প্রতিসম (Symmetrical) আউটলাইন বর্ডার বাটন */
+            /* ✨ চারদিকের বর্ডার এখন শতভাগ প্রতিসম ও স্পষ্ট */
             <button
               onClick={handleActionClick}
               style={{
@@ -253,16 +253,16 @@ export default function ProductList() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 15px 12px 15px', borderBottom: '1px solid #141414' }}>
               <h3 style={{ margin: 0, fontSize: '13px', letterSpacing: '3px', color: '#b3b3b3', textTransform: 'uppercase' }}>{category}</h3>
               
-              {/* ⚡ কোনো ঝাঁকুনি ছাড়া স্থির SEE MORE / LESS বাটন */}
+              {/* ⚡ কোনো ঝাঁকুনি ছাড়া সম্পূর্ণ স্থির SEE MORE / LESS বাটন স্ট্রাকচার */}
               <button 
                 onClick={() => setExpandedCategories(prev => ({ ...prev, [category]: !isExpanded }))} 
                 style={{ 
                   background: 'none', border: 'none', color: '#fff', fontSize: '11px', letterSpacing: '2px', cursor: 'pointer', opacity: 0.7,
-                  display: 'flex', gap: '5px', padding: 0, alignItems: 'center'
+                  display: 'flex', padding: 0, alignItems: 'center', width: '85px', justifyContent: 'flex-end'
                 }}
               >
-                <span>SEE</span>
-                <span style={{ display: 'inline-block', minWidth: '35px', textAlign: 'left' }}>
+                <span>SEE&nbsp;</span>
+                <span style={{ display: 'inline-block', width: '35px', textAlign: 'left' }}>
                   {isExpanded ? 'LESS' : 'MORE'}
                 </span>
               </button>
