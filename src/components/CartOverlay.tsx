@@ -57,14 +57,18 @@ const CartOverlay = () => {
     >
       <div style={{ maxWidth: '500px', margin: '0 auto', position: 'relative' }}>
 
+        {/* 🛠️ ১. ডিফল্ট ক্রসের জায়গায় আল্ট্রা-থিন মিনিমালিস্ট SVG ক্লোজ বাটন */}
         <button 
           onClick={() => { setIsCartOpen(false); setIsCheckingOut(false); }} 
-          style={{ position: 'absolute', top: '-10px', right: '0', background: 'none', border: 'none', color: 'white', fontSize: '32px', cursor: 'pointer' }}
+          style={{ position: 'absolute', top: '-5px', right: '0', background: 'none', border: 'none', color: 'white', cursor: 'pointer', padding: '5px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
         >
-          &times;
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
         </button>
 
-        <h2 style={{ fontSize: '20px', letterSpacing: '2px', textAlign: 'center', marginBottom: '35px', fontFamily: 'monospace', color: 'white' }}>
+        <h2 style={{ fontSize: '18px', fontWeight: '400', letterSpacing: '3px', textAlign: 'center', marginBottom: '45px', fontFamily: 'monospace', color: 'white' }}>
           {isCheckingOut ? 'CHECKOUT' : 'NOMAD BAG'}
         </h2>
 
@@ -75,40 +79,39 @@ const CartOverlay = () => {
           }} />
         ) : (
           <div>
-            <h3 style={{ fontSize: '12px', letterSpacing: '1px', color: '#b3b3b3', marginBottom: '25px', textTransform: 'uppercase' }}>
+            <h3 style={{ fontSize: '11px', letterSpacing: '1.5px', color: '#666', marginBottom: '30px', textTransform: 'uppercase', fontWeight: '500' }}>
               Cart Items ({cartItems.length})
             </h3>
 
             {cartItems.length === 0 ? (
-              <p style={{ textAlign: 'center', color: '#b3b3b3', padding: '40px 0', fontSize: '14px', letterSpacing: '1px' }}>YOUR BAG IS EMPTY</p>
+              <p style={{ textAlign: 'center', color: '#666', padding: '60px 0', fontSize: '13px', letterSpacing: '1.5px' }}>YOUR BAG IS EMPTY</p>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
                 {cartItems.map((item) => {
                   const isSelected = selectedIds.includes(item.id);
 
-                  /* ✨ ফিক্স লজিক: সুপাবেস রিলেশন ডাটা থেকে সঠিক ইমেজের লিংক বের করা */
                   const itemImage = item.image_url || 
                     item.product_media?.find((m: any) => m.media_type === 'image')?.media_url || 
                     item.product_media?.[0]?.media_url;
 
                   return (
-                    <div key={item.id} style={{ display: 'flex', gap: '20px', alignItems: 'center', borderBottom: '1px solid #1a1a1a', paddingBottom: '20px' }}>
+                    /* 🛠️ ৩. বর্ডারটিকে আরও ডিলিউটেড বা সাটল (Subtle) করা হয়েছে */
+                    <div key={item.id} style={{ display: 'flex', gap: '20px', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '25px' }}>
                       
-                      {/* 📸 সঠিক ইমেজ ইউআরএল এখানে বসানো হয়েছে */}
                       <img 
                         src={itemImage} 
                         alt={item.name} 
-                        style={{ width: '75px', height: '90px', objectFit: 'cover', border: '1px solid #1a1a1a', backgroundColor: '#111' }} 
+                        style={{ width: '75px', height: '95px', objectFit: 'cover', border: '1px solid rgba(255,255,255,0.05)', backgroundColor: '#111' }} 
                       />
 
-                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '18px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                            <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 'normal', color: '#e5e5e5', letterSpacing: '0.5px', paddingRight: '15px', lineHeight: '1.4', wordBreak: 'break-word' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                            <h4 style={{ margin: 0, fontSize: '14px', fontWeight: '400', color: '#efefef', letterSpacing: '0.5px', paddingRight: '15px', lineHeight: '1.4', wordBreak: 'break-word' }}>
                               {item.name}
                             </h4>
                             {(item.color || item.size) && (
-                              <div style={{ fontSize: '11px', color: '#888', fontFamily: 'monospace', textTransform: 'uppercase', marginTop: '2px' }}>
+                              <div style={{ fontSize: '10px', color: '#666', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                                 {item.color}{item.color && item.size ? ' / ' : ''}{item.size}
                               </div>
                             )}
@@ -116,41 +119,44 @@ const CartOverlay = () => {
 
                           <div 
                             onClick={() => toggleSelect(item.id)}
-                            style={{ width: '18px', height: '18px', borderRadius: '50%', border: isSelected ? '1px solid #fff' : '1px solid #444', backgroundColor: isSelected ? '#fff' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s ease', userSelect: 'none', flexShrink: 0 }}
+                            style={{ width: '16px', height: '16px', borderRadius: '50%', border: isSelected ? '1px solid #fff' : '1px solid #333', backgroundColor: isSelected ? '#fff' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s ease', userSelect: 'none', flexShrink: 0 }}
                           >
-                            {isSelected && <span style={{ color: '#000', fontSize: '10px', fontWeight: 'bold' }}>✓</span>}
+                            {isSelected && <span style={{ color: '#000', fontSize: '9px', fontWeight: 'bold' }}>✓</span>}
                           </div>
                         </div>
 
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '18px' }}>
-                            <button onClick={() => decrementQuantity(item.id)} style={{ background: 'none', border: 'none', color: '#b3b3b3', cursor: 'pointer', fontSize: '16px', padding: '0 5px' }}>—</button>
-                            <span style={{ color: 'white', fontSize: '14px', fontFamily: 'monospace', minWidth: '10px', textAlign: 'center' }}>{item.quantity}</span>
-                            <button onClick={() => incrementQuantity(item.id)} style={{ background: 'none', border: 'none', color: '#b3b3b3', cursor: 'pointer', fontSize: '16px', padding: '0 5px' }}>+</button>
+                          {/* 🛠️ ২. কোয়ান্টিটি সিলেক্টরের ক্লিক এরিয়া এবং প্রিমিয়াম স্পেসিং বাড়ানো হয়েছে */}
+                          <div style={{ display: 'flex', alignItems: 'center', backgroundColor: '#0a0a0a', border: '1px solid rgba(255,255,255,0.04)', borderRadius: '2px' }}>
+                            <button onClick={() => decrementQuantity(item.id)} style={{ background: 'none', border: 'none', color: '#777', cursor: 'pointer', fontSize: '12px', width: '32px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', outline: 'none' }}>—</button>
+                            <span style={{ color: 'white', fontSize: '13px', fontFamily: 'monospace', minWidth: '24px', textAlign: 'center', userSelect: 'none' }}>{item.quantity}</span>
+                            <button onClick={() => incrementQuantity(item.id)} style={{ background: 'none', border: 'none', color: '#777', cursor: 'pointer', fontSize: '12px', width: '32px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', outline: 'none' }}>+</button>
                           </div>
-                          <div style={{ color: 'white', fontSize: '15px', fontFamily: 'monospace', fontWeight: '500' }}>৳{item.price * item.quantity}</div>
+                          <div style={{ color: 'white', fontSize: '14px', fontFamily: 'monospace', fontWeight: '400' }}>৳{item.price * item.quantity}</div>
                         </div>
                       </div>
                     </div>
                   );
                 })}
 
-                <div style={{ marginTop: '10px', padding: '10px 0' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '25px', fontSize: '15px', letterSpacing: '0.5px' }}>
-                    <span style={{ color: '#b3b3b3' }}>Subtotal</span>
-                    <span style={{ color: 'white', fontWeight: 'bold' }}>৳{subtotal}</span>
+                <div style={{ marginTop: '15px', padding: '10px 0' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '30px', fontSize: '14px', letterSpacing: '0.5px' }}>
+                    <span style={{ color: '#666' }}>Subtotal</span>
+                    <span style={{ color: 'white', fontWeight: '500', fontFamily: 'monospace', fontSize: '16px' }}>৳{subtotal}</span>
                   </div>
 
+                  {/* 🛠️ ৪. সিএসএস ক্লাসের মাধ্যমে আধুনিক হোভার অ্যানিমেশন এফেক্ট যুক্ত */}
                   <button 
                     disabled={selectedIds.length === 0}
                     onClick={() => setIsCheckingOut(true)} 
+                    className="premium-checkout-btn"
                     style={{ 
-                      width: '100%', padding: '15px', background: 'transparent', 
-                      color: selectedIds.length > 0 ? 'white' : '#555', 
-                      border: selectedIds.length > 0 ? '1px solid rgba(255, 255, 255, 0.8)' : '1px solid #222', 
+                      width: '100%', padding: '16px', background: 'transparent', 
+                      color: selectedIds.length > 0 ? 'white' : '#444', 
+                      border: selectedIds.length > 0 ? '1px solid rgba(255, 255, 255, 0.9)' : '1px solid #222', 
                       fontWeight: '600', letterSpacing: '3px', cursor: selectedIds.length > 0 ? 'pointer' : 'not-allowed', 
-                      fontSize: '11px', textTransform: 'uppercase', transition: 'all 0.25s ease-in-out',
-                      outline: 'none', opacity: selectedIds.length > 0 ? 1 : 0.4
+                      fontSize: '11px', textTransform: 'uppercase', transition: 'all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+                      outline: 'none', opacity: selectedIds.length > 0 ? 1 : 0.3
                     }}
                   >
                     PROCEED TO CHECKOUT ({selectedIds.length})
@@ -161,6 +167,14 @@ const CartOverlay = () => {
           </div>
         )}
       </div>
+
+      {/* গ্লোবাল স্টাইল ট্যাগ যা হোভার এফেক্ট হ্যান্ডেল করবে */}
+      <style>{`
+        .premium-checkout-btn:hover:not(:disabled) {
+          background-color: #ffffff !important;
+          color: #000000 !important;
+        }
+      `}</style>
     </div>
   );
 };
