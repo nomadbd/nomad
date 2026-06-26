@@ -36,103 +36,95 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
 
-  const hasMergedGuestCart = useRef(false);
+  const hasMerged = useRef(false);
 
-  // ====================== AUTH HANDLING ======================
+  // =================== AUTH & CART LOAD ===================
   useEffect(() => {
-    const handleAuthChange = async (event: string, session: any) => {
-      const currentUserId = session?.user?.id || null;
-      setUserId(currentUserId);
+    const loadCartForUser = async (uid: string) => {
+      if (!uid) return;
 
-      if (event === 'SIGNED_IN' && currentUserId) {
-        await mergeGuestCartIntoUser(currentUserId);
-      } 
-      else if (event === 'SIGNED_OUT' || !currentUserId) {
-        setCartItems([]);
-        localStorage.removeItem('nomad_cart');
-        hasMergedGuestCart.current = false;
+      const { data: dbItems } = await supabase
+        .from('cart_items')
+        .select('*')
+        .eq('user_id', uid);
+
+      let finalItems: CartItem[] = [];
+
+      if (dbItems && dbItems.length > 0) {
+        finalItems = dbItems.map((item: any) => ({
+          id: item.product_id,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+          color: item.color || undefined,
+          size: item.size || undefined,
+          image_url: item.image_url,
+          product_media: item.product_media ? JSON.parse(item.product_media) : undefined,
+        }));
+      }
+
+      // গেস্ট কার্ট মার্জ করো (যদি থাকে)
+      const localStr = localStorage.getItem('nomad_cart');
+      if (localStr && !hasMerged.current) {
+        const localCart: CartItem[] = JSON.parse(localStr);
+        hasMerged.current = true;
+
+        const dbMap = new Map(dbItems?.map((i: any) => 
+          [`${i.product_id}-${i.color || ''}-${i.size || ''}`, i]) || []);
+
+        finalItems = localCart.map(local => {
+          const key = `${local.id}-${local.color || ''}-${local.size || ''}`;
+          const dbItem = dbMap.get(key);
+          return dbItem 
+            ? { ...local, quantity: Math.max(local.quantity, dbItem.quantity) }
+            : local;
+        });
+      }
+
+      setCartItems(finalItems);
+      localStorage.setItem('nomad_cart', JSON.stringify(finalItems));
+
+      // ডাটাবেজে সিঙ্ক করো
+      if (finalItems.length > 0) {
+        await syncToDatabase(uid, finalItems);
       }
     };
 
+    // Initial Session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      handleAuthChange('INITIAL', session);
+      const uid = session?.user?.id || null;
+      setUserId(uid);
+      if (uid) loadCartForUser(uid);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthChange);
+    // Auth State Change
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      const uid = session?.user?.id || null;
+      setUserId(uid);
+
+      if (event === 'SIGNED_IN' && uid) {
+        hasMerged.current = false;   // রিসেট করো যাতে মার্জ হয়
+        await loadCartForUser(uid);
+      } 
+      
+      if (event === 'SIGNED_OUT' || !uid) {
+        setCartItems([]);
+        localStorage.removeItem('nomad_cart');
+        hasMerged.current = false;
+      }
+    });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  // =================== MERGE GUEST CART ===================
-  const mergeGuestCartIntoUser = async (currentUserId: string) => {
-    if (hasMergedGuestCart.current) return;
-    hasMergedGuestCart.current = true;
-
-    const localCartStr = localStorage.getItem('nomad_cart');
-    if (!localCartStr) {
-      await fetchUserCart(currentUserId);
-      return;
-    }
-
-    const localCart: CartItem[] = JSON.parse(localCartStr);
-
-    const { data: dbCart } = await supabase
-      .from('cart_items')
-      .select('*')
-      .eq('user_id', currentUserId);
-
-    let finalCart: CartItem[] = [...localCart];
-
-    if (dbCart && dbCart.length > 0) {
-      const dbMap = new Map(
-        dbCart.map((item: any) => [`${item.product_id}-${item.color || ''}-${item.size || ''}`, item])
-      );
-
-      finalCart = localCart.map(localItem => {
-        const key = `${localItem.id}-${localItem.color || ''}-${localItem.size || ''}`;
-        const dbItem = dbMap.get(key);
-        return dbItem 
-          ? { ...localItem, quantity: Math.max(localItem.quantity, dbItem.quantity) }
-          : localItem;
-      });
-    }
-
-    setCartItems(finalCart);
-    localStorage.setItem('nomad_cart', JSON.stringify(finalCart));
-
-    await syncFullCartToDB(currentUserId, finalCart);
-  };
-
-  const fetchUserCart = async (currentUserId: string) => {
-    const { data } = await supabase
-      .from('cart_items')
-      .select('*')
-      .eq('user_id', currentUserId);
-
-    if (data) {
-      const mapped = data.map((item: any) => ({
-        id: item.product_id,
-        name: item.name,
-        price: item.price,
-        quantity: item.quantity,
-        color: item.color || undefined,
-        size: item.size || undefined,
-        image_url: item.image_url,
-        product_media: item.product_media ? JSON.parse(item.product_media) : undefined,
-      }));
-
-      setCartItems(mapped);
-      localStorage.setItem('nomad_cart', JSON.stringify(mapped));
-    }
-  };
-
-  const syncFullCartToDB = async (currentUserId: string, items: CartItem[]) => {
-    await supabase.from('cart_items').delete().eq('user_id', currentUserId);
+  // =================== AUTO SYNC TO DB ===================
+  const syncToDatabase = async (uid: string, items: CartItem[]) => {
+    await supabase.from('cart_items').delete().eq('user_id', uid);
 
     if (items.length === 0) return;
 
     const records = items.map(item => ({
-      user_id: currentUserId,
+      user_id: uid,
       product_id: item.id,
       name: item.name,
       price: item.price,
@@ -146,35 +138,31 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await supabase.from('cart_items').insert(records);
   };
 
-  // =================== AUTO SYNC ===================
   useEffect(() => {
     localStorage.setItem('nomad_cart', JSON.stringify(cartItems));
 
-    if (!userId) return;
-
-    const timeout = setTimeout(() => {
-      syncFullCartToDB(userId, cartItems);
-    }, 700);
-
-    return () => clearTimeout(timeout);
+    if (userId && cartItems.length > 0) {
+      const timeout = setTimeout(() => {
+        syncToDatabase(userId, cartItems);
+      }, 800);
+      return () => clearTimeout(timeout);
+    }
   }, [cartItems, userId]);
 
-  // =================== CART FUNCTIONS ===================
+  // =================== CART ACTIONS ===================
   const addToCart = (product: any, color?: string, size?: string) => {
     const chosenColor = color || product.color || product.selected_color || undefined;
     const chosenSize = size || product.size || product.selected_size || undefined;
 
-    setCartItems((prev) => {
-      const existingIndex = prev.findIndex(item =>
-        item.id === product.id &&
-        item.color === chosenColor &&
-        item.size === chosenSize
+    setCartItems(prev => {
+      const index = prev.findIndex(i => 
+        i.id === product.id && i.color === chosenColor && i.size === chosenSize
       );
 
-      if (existingIndex > -1) {
-        const newCart = [...prev];
-        newCart[existingIndex].quantity += 1;
-        return newCart;
+      if (index > -1) {
+        const updated = [...prev];
+        updated[index].quantity += 1;
+        return updated;
       }
 
       return [...prev, {
@@ -191,26 +179,23 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const incrementQuantity = (id: string, color?: string, size?: string) => {
-    setCartItems(prev =>
-      prev.map(item => {
-        const match = item.id === id &&
-          (color === undefined || item.color === color) &&
-          (size === undefined || item.size === size);
-        return match ? { ...item, quantity: item.quantity + 1 } : item;
-      })
-    );
+    setCartItems(prev => prev.map(item => {
+      const match = item.id === id &&
+        (color === undefined || item.color === color) &&
+        (size === undefined || item.size === size);
+      return match ? { ...item, quantity: item.quantity + 1 } : item;
+    }));
   };
 
   const decrementQuantity = (id: string, color?: string, size?: string) => {
-    setCartItems(prev =>
-      prev
-        .map(item => {
-          const match = item.id === id &&
-            (color === undefined || item.color === color) &&
-            (size === undefined || item.size === size);
-          return match ? { ...item, quantity: item.quantity - 1 } : item;
-        })
-        .filter(item => item.quantity > 0)
+    setCartItems(prev => prev
+      .map(item => {
+        const match = item.id === id &&
+          (color === undefined || item.color === color) &&
+          (size === undefined || item.size === size);
+        return match ? { ...item, quantity: item.quantity - 1 } : item;
+      })
+      .filter(item => item.quantity > 0)
     );
   };
 
