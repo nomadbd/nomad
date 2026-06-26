@@ -43,13 +43,19 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const loadCartForUser = async (uid: string) => {
       if (!uid) return;
 
-      const { data: dbItems } = await supabase
+      const { data: dbItems, error } = await supabase
         .from('cart_items')
         .select('*')
         .eq('user_id', uid);
 
+      if (error) {
+        console.error("Error fetching cart from DB:", error);
+        return;
+      }
+
       let finalItems: CartItem[] = [];
 
+      // প্রথমে ডাটাবেজের আইটেমগুলো নিয়ে ফাইনাল লিস্ট তৈরি করি
       if (dbItems && dbItems.length > 0) {
         finalItems = dbItems.map((item: any) => ({
           id: item.product_id,
@@ -63,34 +69,41 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }));
       }
 
-      // গেস্ট কার্ট মার্জ করো (যদি থাকে)
+      // সঠিক নিয়মে গেস্ট কার্ট ডাটাবেজের সাথে মার্জ (Merge) করার লজিক
       const localStr = localStorage.getItem('nomad_cart');
       if (localStr && !hasMerged.current) {
         const localCart: CartItem[] = JSON.parse(localStr);
         hasMerged.current = true;
 
-        const dbMap = new Map(dbItems?.map((i: any) => 
-          [`${i.product_id}-${i.color || ''}-${i.size || ''}`, i]) || []);
+        // ডাটাবেজের আইটেমগুলোর একটি ম্যাপ তৈরি করি সহজে খোঁজার জন্য
+        const dbMap = new Map(finalItems.map(item => 
+          [`${item.id}-${item.color || ''}-${item.size || ''}`, item]
+        ));
 
-        finalItems = localCart.map(local => {
-          const key = `${local.id}-${local.color || ''}-${local.size || ''}`;
-          const dbItem = dbMap.get(key);
-          return dbItem 
-            ? { ...local, quantity: Math.max(local.quantity, dbItem.quantity) }
-            : local;
+        localCart.forEach(localItem => {
+          const key = `${localItem.id}-${localItem.color || ''}-${localItem.size || ''}`;
+          const existingDbItem = dbMap.get(key);
+
+          if (existingDbItem) {
+            // যদি একই প্রোডাক্ট দুই জায়গাতেই থাকে, তবে সর্বোচ্চ কোয়ান্টিটি সেট করুন
+            existingDbItem.quantity = Math.max(existingDbItem.quantity, localItem.quantity);
+          } else {
+            // যদি প্রোডাক্টটি ডাটাবেজে না থাকে, তবে নতুন হিসেবে যোগ করুন
+            finalItems.push(localItem);
+          }
         });
       }
 
       setCartItems(finalItems);
       localStorage.setItem('nomad_cart', JSON.stringify(finalItems));
 
-      // ডাটাবেজে সিঙ্ক করো
+      // মার্জড কার্টটি ডাটাবেজে সিঙ্ক করে দিন
       if (finalItems.length > 0) {
         await syncToDatabase(uid, finalItems);
       }
     };
 
-    // Initial Session
+    // Initial Session Check
     supabase.auth.getSession().then(({ data: { session } }) => {
       const uid = session?.user?.id || null;
       setUserId(uid);
@@ -103,10 +116,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUserId(uid);
 
       if (event === 'SIGNED_IN' && uid) {
-        hasMerged.current = false;   // রিসেট করো যাতে মার্জ হয়
+        hasMerged.current = false; // রিসেট করা হলো যাতে নতুন করে মার্জ হতে পারে
         await loadCartForUser(uid);
       } 
-      
+
       if (event === 'SIGNED_OUT' || !uid) {
         setCartItems([]);
         localStorage.removeItem('nomad_cart');
@@ -119,6 +132,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // =================== AUTO SYNC TO DB ===================
   const syncToDatabase = async (uid: string, items: CartItem[]) => {
+    // পুরোনো রেকর্ড মুছে নতুন রেকর্ড ইনসার্ট করা হচ্ছে
     await supabase.from('cart_items').delete().eq('user_id', uid);
 
     if (items.length === 0) return;
@@ -141,7 +155,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     localStorage.setItem('nomad_cart', JSON.stringify(cartItems));
 
-    if (userId && cartItems.length > 0) {
+    // এখানে কন্ডিশন থেকে 'cartItems.length > 0' বাদ দেওয়া হয়েছে যাতে ফাঁকা কার্টও ডাটাবেজে সিঙ্ক হয়
+    if (userId) {
       const timeout = setTimeout(() => {
         syncToDatabase(userId, cartItems);
       }, 800);
