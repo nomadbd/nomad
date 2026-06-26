@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { supabase } from '../supabaseClient'; // আপনার সঠিক পাথ দিন
 
 interface CartItem {
@@ -25,7 +25,7 @@ interface CartContextType {
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // ১. লোকাল স্টোরেজ থেকে ইনস্ট্যান্ট ডাটা লোড (রিফ্রেশ প্রোটেকশন)
+  // ১. পেজ লোড হওয়া মাত্রই লোকাল স্টোরেজ থেকে কার্ট রিড করা (যাতে এক সেকেন্ডের জন্যও কার্ট খালি না দেখায়)
   const [cartItems, setCartItems] = useState<CartItem[]>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('nomad_cart');
@@ -36,51 +36,72 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
-  const [isLoadedFromDB, setIsLoadedFromDB] = useState(false);
+  
+  // 🛡️ ক্লাউড ডাটাবেজ ওভাররাইট প্রোটেকশন লক (সবচেয়ে গুরুত্বপূর্ণ গার্ড)
+  const allowDBSync = useRef(false);
 
-  // ২. ডাটাবেজ থেকে লোড এবং কালার/সাইজ সুরক্ষার লজিক
+  // ২. ইউনিফাইড অথেনটিকেশন এবং ডাটা রিকভারি লাইফসাইকেল
   useEffect(() => {
-    const loadInitialCart = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      const currentUserId = session?.user?.id || null;
+    const syncAuthAndFetchCart = async (currentUserId: string | null) => {
+      allowDBSync.current = false; // ডাটাবেজে রাইট করা সাময়িক লক করুন
       setUserId(currentUserId);
 
       if (currentUserId) {
+        // 🌐 ইউজার লগইন থাকলে ডাটাবেজ থেকে কার্ট ডাটা নিয়ে আসা
         const { data, error } = await supabase
           .from('cart_items')
           .select('*')
           .eq('user_id', currentUserId);
 
-        if (!error && data && data.length > 0) {
-          const localCart = localStorage.getItem('nomad_cart');
-          const localItems: CartItem[] = localCart ? JSON.parse(localCart) : [];
-
-          const dbItems = data.map((item: any) => {
-            const matchingLocal = localItems.find(l => l.id === item.product_id);
-
-            return {
-              id: item.product_id, 
+        if (!error && data) {
+          if (data.length > 0) {
+            // ক) ডাটাবেজে আগে থেকে প্রোডাক্ট থাকলে তা অ্যাপে লোড হবে (অন্য ডিভাইস বা আগের সেশনের ডাটা)
+            const dbItems = data.map((item: any) => ({
+              id: item.product_id,
               name: item.name,
               price: item.price,
               quantity: item.quantity,
-              // সব ধরনের সম্ভাব্য নামকরণ (Naming Conventions) থেকে কালার ও সাইজ রিকভারি
-              color: item.color || item.selected_color || item.selectedColor || matchingLocal?.color || undefined, 
-              size: item.size || item.selected_size || item.selectedSize || matchingLocal?.size || undefined,   
+              color: item.color || undefined,
+              size: item.size || undefined,
               image_url: item.image_url,
               product_media: item.product_media ? JSON.parse(item.product_media) : undefined
-            };
-          });
-          setCartItems(dbItems);
+            }));
+            setCartItems(dbItems);
+            localStorage.setItem('nomad_cart', JSON.stringify(dbItems));
+          } else {
+            // খ) ডাটাবেজ খালি কিন্তু লগইন করার আগে গেস্ট হিসেবে কার্টে কিছু আইটেম ছিল, তা অ্যাকাউন্টে থেকে যাবে
+            const localCart = localStorage.getItem('nomad_cart');
+            if (localCart) {
+              setCartItems(JSON.parse(localCart));
+            }
+          }
         }
+        // ডাটা সম্পূর্ণ লোড হওয়া শেষ, এবার ক্লাউড সিঙ্ক লক উন্মুক্ত (Unlock) করা হলো
+        allowDBSync.current = true;
+      } else {
+        // ইউজার লগইন না থাকলে (গেস্ট মোড)
+        allowDBSync.current = true;
       }
-      setIsLoadedFromDB(true);
     };
 
-    loadInitialCart();
+    // প্রথমবার অ্যাপ ওপেন বা রিফ্রেশ হলে সেশন চেক
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      syncAuthAndFetchCart(session?.user?.id || null);
+    });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setUserId(session?.user?.id || null);
+    // ডাইনামিক সাইন-ইন বা সাইন-আউট ইভেন্ট লিসেনার
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      const currentUserId = session?.user?.id || null;
+
+      if (event === 'SIGNED_IN') {
+        await syncAuthAndFetchCart(currentUserId);
+      }
+
       if (event === 'SIGNED_OUT') {
+        // 🚨 ক্রুশিয়াল ফিক্স: সাইন আউট করলে ডাটাবেজ রাইট সম্পূর্ণ লক করুন 
+        // যাতে অ্যাকাউন্টের ক্লাউড ডাটা কোনোভাবেই ডিলিট না হয়ে সুরক্ষিত থাকে।
+        allowDBSync.current = false; 
+        setUserId(null);
         setCartItems([]);
         localStorage.removeItem('nomad_cart');
       }
@@ -89,18 +110,22 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => subscription.unsubscribe();
   }, []);
 
-  // ৩. ডাটাবেজ ও লোকাল স্টোরেজ সিঙ্ক
+  // ৩. রিয়েল-টাইম অটো-সেভ এবং মাল্টি-ডিভাইস ক্লাউড সিঙ্ক
   useEffect(() => {
-    if (userId && !isLoadedFromDB) return; 
-
+    // লোকাল স্টোরেজে সবসময় ইনস্ট্যান্ট ব্যাকআপ থাকবে
     localStorage.setItem('nomad_cart', JSON.stringify(cartItems));
 
-    const syncToDB = async () => {
-      if (!userId) return;
+    // লক অন থাকলে বা ইউজার লগআউট অবস্থায় থাকলে ডাটাবেজে সিঙ্ক হবে না
+    if (!allowDBSync.current || !userId) return;
+
+    const syncToSupabase = async () => {
+      if (!userId || !allowDBSync.current) return;
 
       try {
+        // কনф্লিক্ট এড়াতে প্রথমে ক্লাউডের পুরানো ডাটা ক্লিন করা
         await supabase.from('cart_items').delete().eq('user_id', userId);
 
+        // কার্ট খালি না হলে নতুন আইটেমগুলো অ্যাকাউন্টে পুশ করা
         if (cartItems.length > 0) {
           const records = cartItems.map(item => ({
             user_id: userId,
@@ -108,8 +133,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
             name: item.name,
             price: item.price,
             quantity: item.quantity,
-            color: item.color || null, 
-            size: item.size || null,   
+            color: item.color || null,
+            size: item.size || null,
             image_url: item.image_url || item.product_media?.[0]?.media_url || null,
             product_media: item.product_media ? JSON.stringify(item.product_media) : null
           }));
@@ -117,17 +142,16 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
           await supabase.from('cart_items').insert(records);
         }
       } catch (err) {
-        console.error("DB Sync Error: ", err);
+        console.error("Cloud Sync Error:", err);
       }
     };
 
-    const debounce = setTimeout(syncToDB, 500);
+    const debounce = setTimeout(syncToSupabase, 500);
     return () => clearTimeout(debounce);
-  }, [cartItems, userId, isLoadedFromDB]);
+  }, [cartItems, userId]);
 
-  // ৪. ডিফেন্সিভ অ্যাড-টু-কার্ট (যাতে কোনোভাবেই কালার/সাইজ মিস না হয়)
+  // ৪. কার্ট অ্যাকশনস
   const addToCart = (product: any, color?: string, size?: string) => {
-    // প্রোডাক্ট অবজেক্টের ভেতর থেকে বা প্যারামিটার থেকে কালার ও সাইজ খুঁজে নেওয়া
     const chosenColor = color || product.color || product.selected_color || product.selectedColor || undefined;
     const chosenSize = size || product.size || product.selected_size || product.selectedSize || undefined;
 
@@ -147,7 +171,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return [
         ...prev,
         {
-          id: product.id, 
+          id: product.id,
           name: product.name,
           price: product.price,
           quantity: 1,
@@ -160,7 +184,6 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   };
 
-  // ৫. কোয়ান্টিটি বাড়ানোর লজিক (ভেরিয়েন্টসহ)
   const incrementQuantity = (id: string, color?: string, size?: string) => {
     setCartItems(prev => prev.map(item => {
       const isMatch = item.id === id && 
@@ -170,7 +193,6 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }));
   };
 
-  // 🎯 ফিক্সড মাইনাস (-) লজিক: ১ থেকে মাইনাস করলে কার্ট থেকে রিমুভ হয়ে যাবে
   const decrementQuantity = (id: string, color?: string, size?: string) => {
     setCartItems(prev => prev
       .map(item => {
@@ -179,7 +201,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
           (size === undefined || item.size === size);
         return isMatch ? { ...item, quantity: item.quantity - 1 } : item;
       })
-      .filter(item => item.quantity > 0) // কোয়ান্টিটি ০ হয়ে গেলে আইটেমটি কার্ট থেকে মুছে যাবে
+      .filter(item => item.quantity > 0)
     );
   };
 
