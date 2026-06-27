@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 
 interface CartItem {
@@ -25,7 +25,6 @@ interface CartContextType {
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // ১. শুরুতে লোকাল স্টোরেজ থেকে ডেটা লোড হবে (গেস্ট ও লগইন সবার জন্য)
   const [cartItems, setCartItems] = useState<CartItem[]>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('nomad_cart');
@@ -37,7 +36,6 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [loadingCart, setLoadingCart] = useState(true); 
-  const hasMerged = useRef(false);
 
   // DB Sync Helper
   const performDbSync = async (uid: string, items: CartItem[]) => {
@@ -63,7 +61,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // =================== AUTH STATE LISTENER (FIXED) ===================
+  // =================== AUTH STATE LISTENER ===================
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       const uid = session?.user?.id || null;
@@ -72,14 +70,17 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUserId(uid);
       } else {
         setUserId(null);
-        
-        // 🔥 ফিক্স: শুধুমাত্র ম্যানুয়াল SIGNED_OUT ইভেন্ট আসলেই কার্ট ডিলিট হবে
         if (event === 'SIGNED_OUT') {
           setCartItems([]);
           localStorage.removeItem('nomad_cart');
-          hasMerged.current = false;
+          
+          // লগআউট হলে সমস্ত মার্জ ট্র্যাকার ক্লিয়ার হবে যেন পরবর্তীতে আবার মার্জ হতে পারে
+          Object.keys(localStorage).forEach(key => {
+            if (key.startsWith('cart_merged_')) {
+              localStorage.removeItem(key);
+            }
+          });
         }
-        
         setLoadingCart(false);
       }
     });
@@ -87,10 +88,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => subscription.unsubscribe();
   }, []);
 
-  // =================== FETCH & MERGE CART ===================
+  // =================== FETCH & MERGE CART (FIXED FOR REDIRECTS) ===================
   useEffect(() => {
     if (!userId) {
-      setLoadingCart(false); // গেস্ট ইউজার হলে ডাটাবেজ ফেচ স্কিপ করবে
+      setLoadingCart(false);
       return;
     }
 
@@ -124,9 +125,13 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       const localStr = localStorage.getItem('nomad_cart');
-      if (localStr && !hasMerged.current) {
+      const mergeKey = `cart_merged_${userId}`;
+      const isAlreadyMerged = localStorage.getItem(mergeKey) === 'true';
+
+      // 🔥 ফিক্স: রিডাইরেক্ট বা রিমুন্ট হলেও এই লকটি লোকালস্টোরেজে টিকে থাকবে, তাই ডাবল মার্জ হবে না
+      if (localStr && !isAlreadyMerged) {
+        localStorage.setItem(mergeKey, 'true'); // চিরস্থায়ী লক বসানো হলো
         const localCart: CartItem[] = JSON.parse(localStr);
-        hasMerged.current = true;
 
         const dbMap = new Map(finalItems.map(item => 
           [`${item.id}-${item.color || ''}-${item.size || ''}`, item]
