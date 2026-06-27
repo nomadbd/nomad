@@ -20,21 +20,23 @@ const CartOverlay = () => {
     };
   }, [isCartOpen]);
 
+  // ভ্যারিয়েন্টসহ ইউনিক আইডি ট্র্যাকিং (ID + Color + Size)
   useEffect(() => {
-    setSelectedIds(cartItems.map(item => item.id)); 
+    setSelectedIds(cartItems.map(item => `${item.id}-${item.color || ''}-${item.size || ''}`)); 
   }, [cartItems]);
 
   if (!isCartOpen) return null;
 
+  // সিলেক্টেড ভ্যারিয়েন্টের ওপর ভিত্তি করে সাবটোটাল হিসাব
   const subtotal = cartItems
-    .filter(item => selectedIds.includes(item.id))
+    .filter(item => selectedIds.includes(`${item.id}-${item.color || ''}-${item.size || ''}`))
     .reduce((acc, item) => acc + item.price * item.quantity, 0);
 
-  const toggleSelect = (id: string) => {
-    if (selectedIds.includes(id)) {
-      setSelectedIds(selectedIds.filter(itemId => itemId !== id));
+  const toggleSelect = (itemKey: string) => {
+    if (selectedIds.includes(itemKey)) {
+      setSelectedIds(selectedIds.filter(key => key !== itemKey));
     } else {
-      setSelectedIds([...selectedIds, id]);
+      setSelectedIds([...selectedIds, itemKey]);
     }
   };
 
@@ -57,7 +59,7 @@ const CartOverlay = () => {
     >
       <div style={{ maxWidth: '500px', margin: '0 auto', position: 'relative' }}>
 
-        {/* ✖️ র' (Raw) SVG ক্লোজ বাটন */}
+        {/* ✖️ ক্লোজ বাটন */}
         <button 
           onClick={() => { setIsCartOpen(false); setIsCheckingOut(false); }} 
           style={{ position: 'absolute', top: '-5px', right: '0', background: 'none', border: 'none', color: 'white', cursor: 'pointer', padding: '5px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
@@ -88,15 +90,17 @@ const CartOverlay = () => {
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
                 {cartItems.map((item) => {
-                  const isSelected = selectedIds.includes(item.id);
+                  // ভ্যারিয়েন্ট ম্যাচিংয়ের জন্য ইউনিক কি জেনারেট
+                  const itemKey = `${item.id}-${item.color || ''}-${item.size || ''}`;
+                  const isSelected = selectedIds.includes(itemKey);
 
                   const itemImage = item.image_url || 
                     item.product_media?.find((m: any) => m.media_type === 'image')?.media_url || 
                     item.product_media?.[0]?.media_url;
 
                   return (
-                    <div key={item.id} style={{ display: 'flex', gap: '20px', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '25px' }}>
-                      
+                    <div key={itemKey} style={{ display: 'flex', gap: '20px', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '25px' }}>
+
                       <img 
                         src={itemImage} 
                         alt={item.name} 
@@ -117,7 +121,7 @@ const CartOverlay = () => {
                           </div>
 
                           <div 
-                            onClick={() => toggleSelect(item.id)}
+                            onClick={() => toggleSelect(itemKey)}
                             style={{ width: '16px', height: '16px', borderRadius: '50%', border: isSelected ? '1px solid #fff' : '1px solid #333', backgroundColor: isSelected ? '#fff' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s ease', userSelect: 'none', flexShrink: 0 }}
                           >
                             {isSelected && <span style={{ color: '#000', fontSize: '9px', fontWeight: 'bold' }}>✓</span>}
@@ -125,11 +129,21 @@ const CartOverlay = () => {
                         </div>
 
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          {/* 🔘 প্রিমিয়াম কোয়ান্টিটি সিলেক্টর (ক্লিক ফ্রেন্ডলি প্যাডিং সহ) */}
+                          {/* 🔘 কোয়ান্টিটি সিলেক্টর (এখন আইডি, কালার ও সাইজসহ কার্ট কনটেক্সটে ডেটা পাঠাবে) */}
                           <div style={{ display: 'flex', alignItems: 'center', backgroundColor: '#0a0a0a', border: '1px solid rgba(255,255,255,0.04)', borderRadius: '2px' }}>
-                            <button onClick={() => decrementQuantity(item.id)} style={{ background: 'none', border: 'none', color: '#777', cursor: 'pointer', fontSize: '12px', width: '32px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', outline: 'none' }}>—</button>
+                            <button 
+                              onClick={() => decrementQuantity(item.id, item.color, item.size)} 
+                              style={{ background: 'none', border: 'none', color: '#777', cursor: 'pointer', fontSize: '12px', width: '32px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', outline: 'none' }}
+                            >
+                              —
+                            </button>
                             <span style={{ color: 'white', fontSize: '13px', fontFamily: 'monospace', minWidth: '24px', textAlign: 'center', userSelect: 'none' }}>{item.quantity}</span>
-                            <button onClick={() => incrementQuantity(item.id)} style={{ background: 'none', border: 'none', color: '#777', cursor: 'pointer', fontSize: '12px', width: '32px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', outline: 'none' }}>+</button>
+                            <button 
+                              onClick={() => incrementQuantity(item.id, item.color, item.size)} 
+                              style={{ background: 'none', border: 'none', color: '#777', cursor: 'pointer', fontSize: '12px', width: '32px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', outline: 'none' }}
+                            >
+                              +
+                            </button>
                           </div>
                           <div style={{ color: 'white', fontSize: '14px', fontFamily: 'monospace', fontWeight: '400' }}>৳{item.price * item.quantity}</div>
                         </div>
@@ -144,7 +158,6 @@ const CartOverlay = () => {
                     <span style={{ color: 'white', fontWeight: '500', fontFamily: 'monospace', fontSize: '16px' }}>৳{subtotal}</span>
                   </div>
 
-                  {/* 🖤 ক্লিন ও মিনিমালিস্ট বাটন (হোভার এফেক্ট ছাড়া) */}
                   <button 
                     disabled={selectedIds.length === 0}
                     onClick={() => setIsCheckingOut(true)} 
