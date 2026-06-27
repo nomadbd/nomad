@@ -111,7 +111,7 @@ const ProductActionRow = ({ product }: { product: Product }) => {
   };
 
   return (
-    /* 🛠️ প্যারেন্ট কন্টেইনারের হাইট বাড়িয়ে ৪২ পিএক্স করা হয়েছে বর্ডার ক্লিপিং রোধ করতে */
+    /* 🛠️ প্যারেন্ট কন্টেইনারের হাইট ৪২ পিএক্স বর্ডার ক্লিপিং রোধ করতে */
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: '42px', marginTop: 'auto', boxSizing: 'border-box', width: '100%' }}>
 
       {/* ১. সাধারণ অবস্থা (আইডল) */}
@@ -123,22 +123,22 @@ const ProductActionRow = ({ product }: { product: Product }) => {
             <button 
               disabled 
               style={{ 
-                height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 20px', boxSizing: 'border-box', lineHeight: '1',
+                height: '36px', width: '130px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box', lineHeight: '1',
                 background: 'transparent', border: '1px solid #222', color: '#555', fontSize: '11px', letterSpacing: '1.5px', cursor: 'not-allowed', textTransform: 'uppercase', fontWeight: '600' 
               }}
             >
               SOLD OUT
             </button>
           ) : (
-            /* ✨ বাটনটি এখন সাময়িকভাবে ADDED দেখাবে এবং বর্ডার প্রফেশনাল রেসপন্স করবে */
+            /* ✨ width: '130px' দিয়ে আকার সম্পূর্ণ ফিক্সড করা হয়েছে, টেক্সট বদলালেও বাটন একটুও নড়বে না */
             <button
               onClick={handleActionClick}
               style={{
                 height: '36px',
+                width: '130px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                padding: '0 20px',
                 boxSizing: 'border-box',
                 lineHeight: '1',
                 background: 'transparent',
