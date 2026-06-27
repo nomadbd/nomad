@@ -25,6 +25,7 @@ interface CartContextType {
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  // ১. শুরুতে লোকাল স্টোরেজ থেকে ডেটা লোড হবে (গেস্ট ও লগইন সবার জন্য)
   const [cartItems, setCartItems] = useState<CartItem[]>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('nomad_cart');
@@ -38,7 +39,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loadingCart, setLoadingCart] = useState(true); 
   const hasMerged = useRef(false);
 
-  // =================== DIRECT DB SYNC HELPER ===================
+  // DB Sync Helper
   const performDbSync = async (uid: string, items: CartItem[]) => {
     try {
       await supabase.from('cart_items').delete().eq('user_id', uid);
@@ -62,7 +63,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // =================== AUTH STATE LISTENER ===================
+  // =================== AUTH STATE LISTENER (FIXED) ===================
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       const uid = session?.user?.id || null;
@@ -70,11 +71,15 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (uid) {
         setUserId(uid);
       } else {
-        // সাইন আউট হলে সমস্ত মেমোরি ও স্টোরেজ এক টানে সম্পূর্ণ খালি হবে
         setUserId(null);
-        setCartItems([]);
-        localStorage.removeItem('nomad_cart');
-        hasMerged.current = false;
+        
+        // 🔥 ফিক্স: শুধুমাত্র ম্যানুয়াল SIGNED_OUT ইভেন্ট আসলেই কার্ট ডিলিট হবে
+        if (event === 'SIGNED_OUT') {
+          setCartItems([]);
+          localStorage.removeItem('nomad_cart');
+          hasMerged.current = false;
+        }
+        
         setLoadingCart(false);
       }
     });
@@ -82,10 +87,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => subscription.unsubscribe();
   }, []);
 
-  // =================== FETCH & MERGE CART (BUSTER LOOP FIX) ===================
-  // এই ইফেক্টটি শুধুমাত্র তখনই রান হবে যখন userId সত্যিই পরিবর্তিত হবে (ডাবল ট্রিগার হবে না)
+  // =================== FETCH & MERGE CART ===================
   useEffect(() => {
-    if (!userId) return;
+    if (!userId) {
+      setLoadingCart(false); // গেস্ট ইউজার হলে ডাটাবেজ ফেচ স্কিপ করবে
+      return;
+    }
 
     const loadCartForUser = async () => {
       setLoadingCart(true);
@@ -146,7 +153,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     loadCartForUser();
   }, [userId]);
 
-  // =================== AUTO SYNC TO DB (ON UPDATE) ===================
+  // =================== AUTO SAVE TO LOCAL STORAGE ===================
   useEffect(() => {
     localStorage.setItem('nomad_cart', JSON.stringify(cartItems));
 
