@@ -66,24 +66,29 @@ const ProductGallery = ({ images, productName }: { images: string[], productName
 
 // 🛒 ১০০% সিমেট্রিক বর্ডার যুক্ত অ্যাকশন রো 
 const ProductActionRow = ({ product }: { product: Product }) => {
-  const { cartItems, addToCart, setIsCartOpen } = useCart();
-  
+  const { addToCart } = useCart();
+
   const [step, setStep] = useState<'idle' | 'size' | 'color'>('idle');
   const [selectedSize, setSelectedSize] = useState('');
+  const [isAdded, setIsAdded] = useState(false); // ⚡ সাময়িক ADDED স্টেট ট্র্যাকার
 
   const availableSizes = product.sizes || [];
   const availableColors = product.colors || [];
 
-  const isInCart = cartItems.some((item: any) => item.id === product.id);
   const isSoldOut = product.status === 'sold_out' || product.stock_quantity <= 0;
 
+  // ⚡ সাকসেস ফিডব্যাক ট্রিকার (১.৫ সেকেন্ডের জন্য ADDED দেখাবে)
+  const triggerAddedFeedback = () => {
+    setIsAdded(true);
+    setTimeout(() => {
+      setIsAdded(false);
+    }, 1500);
+  };
+
   const handleActionClick = () => {
-    if (isInCart) {
-      setIsCartOpen(true);
-      return;
-    }
     if (availableSizes.length === 0 && availableColors.length === 0) {
       addToCart({ ...product, size: 'FREE', color: 'DEFAULT' });
+      triggerAddedFeedback();
       return;
     }
     if (availableSizes.length > 0) {
@@ -108,12 +113,12 @@ const ProductActionRow = ({ product }: { product: Product }) => {
   return (
     /* 🛠️ প্যারেন্ট কন্টেইনারের হাইট বাড়িয়ে ৪২ পিএক্স করা হয়েছে বর্ডার ক্লিপিং রোধ করতে */
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: '42px', marginTop: 'auto', boxSizing: 'border-box', width: '100%' }}>
-      
+
       {/* ১. সাধারণ অবস্থা (আইডল) */}
       {step === 'idle' && (
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', animation: 'swapFadeIn 0.25s ease-in-out' }}>
           <span style={{ fontSize: '15px', color: isSoldOut ? '#555' : '#fff', fontWeight: 500, fontFamily: 'monospace' }}>৳{product.price}</span>
-          
+
           {isSoldOut ? (
             <button 
               disabled 
@@ -125,7 +130,7 @@ const ProductActionRow = ({ product }: { product: Product }) => {
               SOLD OUT
             </button>
           ) : (
-            /* ✨ চারদিকের বর্ডার এখন শতভাগ প্রতিসম ও স্পষ্ট */
+            /* ✨ বাটনটি এখন সাময়িকভাবে ADDED দেখাবে এবং বর্ডার প্রফেশনাল রেসপন্স করবে */
             <button
               onClick={handleActionClick}
               style={{
@@ -137,7 +142,7 @@ const ProductActionRow = ({ product }: { product: Product }) => {
                 boxSizing: 'border-box',
                 lineHeight: '1',
                 background: 'transparent',
-                border: `1px solid ${isInCart ? '#fff' : '#333'}`,
+                border: `1px solid ${isAdded ? '#fff' : '#333'}`,
                 color: '#fff',
                 fontSize: '11px',
                 letterSpacing: '1.5px',
@@ -147,7 +152,7 @@ const ProductActionRow = ({ product }: { product: Product }) => {
                 transition: 'all 0.2s ease',
               }}
             >
-              {isInCart ? 'VIEW BAG' : 'ADD TO CART'}
+              {isAdded ? 'ADDED' : 'ADD TO CART'}
             </button>
           )}
         </div>
@@ -167,6 +172,7 @@ const ProductActionRow = ({ product }: { product: Product }) => {
                     setStep('color');
                   } else {
                     addToCart({ ...product, size: size, color: 'DEFAULT' });
+                    triggerAddedFeedback();
                     setStep('idle');
                   }
                 }}
@@ -193,6 +199,7 @@ const ProductActionRow = ({ product }: { product: Product }) => {
                     size: selectedSize || 'FREE',
                     color: color
                   });
+                  triggerAddedFeedback();
                   setStep('idle');
                 }}
                 style={{ color: '#fff', cursor: 'pointer', fontSize: '11px', fontWeight: '500', letterSpacing: '1px', flexShrink: 0, padding: '4px 2px', textTransform: 'uppercase', lineHeight: '1' }}
@@ -252,7 +259,7 @@ export default function ProductList() {
             {/* 📋 ক্যাটাগরি হেডার */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 15px 12px 15px', borderBottom: '1px solid #141414' }}>
               <h3 style={{ margin: 0, fontSize: '13px', letterSpacing: '3px', color: '#b3b3b3', textTransform: 'uppercase' }}>{category}</h3>
-              
+
               {/* ⚡ কোনো ঝাঁকুনি ছাড়া সম্পূর্ণ স্থির SEE MORE / LESS বাটন স্ট্রাকচার */}
               <button 
                 onClick={() => setExpandedCategories(prev => ({ ...prev, [category]: !isExpanded }))} 
@@ -280,7 +287,7 @@ export default function ProductList() {
                   <div style={{ marginTop: '15px', padding: '0 5px', display: 'flex', flexDirection: 'column', flex: 1 }}>
                     <h3 style={{ fontSize: '14px', color: '#e5e5e5', margin: '0 0 6px 0' }}>{product.name}</h3>
                     <p style={{ fontSize: '13px', color: '#888', margin: '0 0 15px 0', lineHeight: '1.4', WebkitLineClamp: 2, display: '-webkit-box', WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{product.description}</p>
-                    
+
                     <ProductActionRow product={product} />
                   </div>
                 </div>
