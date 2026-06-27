@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+ import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { supabase } from '../supabaseClient';
 
 interface CartItem {
@@ -35,8 +35,35 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
-
+  
+  // ট্র্যাকিং স্টেট: ডাটাবেজ থেকে কার্ট লোড হওয়া পর্যন্ত অটো-সিঙ্ক বন্ধ রাখবে
+  const [loadingCart, setLoadingCart] = useState(true); 
   const hasMerged = useRef(false);
+
+  // =================== DIRECT DB SYNC HELPER ===================
+  // এই ফাংশনটি কোনো কন্ডিশন ছাড়াই সরাসরি ডাটাবেজে ডেটা রাইট করবে
+  const performDbSync = async (uid: string, items: CartItem[]) => {
+    try {
+      await supabase.from('cart_items').delete().eq('user_id', uid);
+      if (items.length === 0) return;
+
+      const records = items.map(item => ({
+        user_id: uid,
+        product_id: item.id,
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity,
+        color: item.color || null,
+        size: item.size || null,
+        image_url: item.image_url,
+        product_media: item.product_media ? JSON.stringify(item.product_media) : null,
+      }));
+
+      await supabase.from('cart_items').insert(records);
+    } catch (error) {
+      console.error("Database sync failed:", error);
+    }
+  };
 
   // =================== AUTH & CART LOAD ===================
   useEffect(() => {
@@ -50,12 +77,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (error) {
         console.error("Error fetching cart from DB:", error);
+        setLoadingCart(false);
         return;
       }
 
       let finalItems: CartItem[] = [];
 
-      // প্রথমে ডাটাবেজের আইটেমগুলো নিয়ে ফাইনাল লিস্ট তৈরি করি
       if (dbItems && dbItems.length > 0) {
         finalItems = dbItems.map((item: any) => ({
           id: item.product_id,
@@ -69,13 +96,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }));
       }
 
-      // সঠিক নিয়মে গেস্ট কার্ট ডাটাবেজের সাথে মার্জ (Merge) করার লজিক
+      // গেস্ট কার্ট মার্জিং লজিক
       const localStr = localStorage.getItem('nomad_cart');
       if (localStr && !hasMerged.current) {
         const localCart: CartItem[] = JSON.parse(localStr);
         hasMerged.current = true;
 
-        // ডাটাবেজের আইটেমগুলোর একটি ম্যাপ তৈরি করি সহজে খোঁজার জন্য
         const dbMap = new Map(finalItems.map(item => 
           [`${item.id}-${item.color || ''}-${item.size || ''}`, item]
         ));
@@ -85,10 +111,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const existingDbItem = dbMap.get(key);
 
           if (existingDbItem) {
-            // যদি একই প্রোডাক্ট দুই জায়গাতেই থাকে, তবে সর্বোচ্চ কোয়ান্টিটি সেট করুন
             existingDbItem.quantity = Math.max(existingDbItem.quantity, localItem.quantity);
           } else {
-            // যদি প্রোডাক্টটি ডাটাবেজে না থাকে, তবে নতুন হিসেবে যোগ করুন
             finalItems.push(localItem);
           }
         });
@@ -97,72 +121,51 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setCartItems(finalItems);
       localStorage.setItem('nomad_cart', JSON.stringify(finalItems));
 
-      // মার্জড কার্টটি ডাটাবেজে সিঙ্ক করে দিন
-      if (finalItems.length > 0) {
-        await syncToDatabase(uid, finalItems);
-      }
+      // মার্জ করা ডেটা সাথে সাথে ডাটাবেজে সেভ করে দিন
+      await performDbSync(uid, finalItems);
+
+      // সফলভাবে লোড ও মার্জ শেষ হলে লকটি খুলুন
+      setLoadingCart(false);
     };
 
-    // Initial Session Check
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      const uid = session?.user?.id || null;
-      setUserId(uid);
-      if (uid) loadCartForUser(uid);
-    });
-
-    // Auth State Change
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       const uid = session?.user?.id || null;
-      setUserId(uid);
 
-      if (event === 'SIGNED_IN' && uid) {
-        hasMerged.current = false; // রিসেট করা হলো যাতে নতুন করে মার্জ হতে পারে
-        await loadCartForUser(uid);
+      if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+        if (uid) {
+          setUserId(uid);
+          setLoadingCart(true); // লোডিং শুরু, অটো-সিঙ্ক সাময়িক বন্ধ
+          hasMerged.current = false;   
+          await loadCartForUser(uid);
+        } else {
+          setLoadingCart(false);
+        }
       } 
 
-      if (event === 'SIGNED_OUT' || !uid) {
+      if (event === 'SIGNED_OUT') {
+        setUserId(null);
         setCartItems([]);
         localStorage.removeItem('nomad_cart');
         hasMerged.current = false;
+        setLoadingCart(false); // লগআউট স্টেটও ক্লিন
       }
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  // =================== AUTO SYNC TO DB ===================
-  const syncToDatabase = async (uid: string, items: CartItem[]) => {
-    // পুরোনো রেকর্ড মুছে নতুন রেকর্ড ইনসার্ট করা হচ্ছে
-    await supabase.from('cart_items').delete().eq('user_id', uid);
-
-    if (items.length === 0) return;
-
-    const records = items.map(item => ({
-      user_id: uid,
-      product_id: item.id,
-      name: item.name,
-      price: item.price,
-      quantity: item.quantity,
-      color: item.color || null,
-      size: item.size || null,
-      image_url: item.image_url,
-      product_media: item.product_media ? JSON.stringify(item.product_media) : null,
-    }));
-
-    await supabase.from('cart_items').insert(records);
-  };
-
+  // =================== AUTO SYNC TO DB (ON UPDATE) ===================
   useEffect(() => {
     localStorage.setItem('nomad_cart', JSON.stringify(cartItems));
 
-    // এখানে কন্ডিশন থেকে 'cartItems.length > 0' বাদ দেওয়া হয়েছে যাতে ফাঁকা কার্টও ডাটাবেজে সিঙ্ক হয়
-    if (userId) {
+    // শুধুমাত্র তখনই সিঙ্ক হবে যখন ইউজার থাকবে এবং ব্যাকএন্ড থেকে ইনিশিয়াল লোড শেষ হবে
+    if (userId && !loadingCart) {
       const timeout = setTimeout(() => {
-        syncToDatabase(userId, cartItems);
+        performDbSync(userId, cartItems);
       }, 800);
       return () => clearTimeout(timeout);
     }
-  }, [cartItems, userId]);
+  }, [cartItems, userId, loadingCart]);
 
   // =================== CART ACTIONS ===================
   const addToCart = (product: any, color?: string, size?: string) => {
@@ -218,7 +221,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setCartItems([]);
     localStorage.removeItem('nomad_cart');
     if (userId) {
-      await supabase.from('cart_items').delete().eq('user_id', userId);
+      await performDbSync(userId, []);
     }
   };
 
