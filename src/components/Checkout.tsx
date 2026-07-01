@@ -19,8 +19,10 @@ const PAYMENT_OPTIONS = [
   { label: 'ROCKET (PERSONAL)', value: 'rocket' }
 ];
 
-export default function Checkout({ onSuccess }: { onSuccess: () => void }) {
-  const { cartItems, clearCart, totalPrice } = useCart() as any;
+// ⚡ এখানে selectedItems প্রপ্স যোগ করা হয়েছে
+export default function Checkout({ selectedItems, onSuccess }: { selectedItems: CartItem[], onSuccess: () => void }) {
+  // 🛠️ এখান থেকে cartItems এবং totalPrice বাদ দিয়ে শুধু clearCart রাখা হয়েছে
+  const { clearCart } = useCart() as any;
 
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -29,7 +31,7 @@ export default function Checkout({ onSuccess }: { onSuccess: () => void }) {
   const [paymentLabel, setPaymentLabel] = useState('SELECT PAYMENT METHOD');
   const [formData, setFormData] = useState({ name: '', phone: '', address: '', senderPhone: '' });
   const [transactionId, setTransactionId] = useState('');
-  
+
   // রেসপনসিভ লেআউটের জন্য স্ক্রিন সাইজ ট্র্যাকিং
   const [isMobile, setIsMobile] = useState(false);
 
@@ -40,7 +42,8 @@ export default function Checkout({ onSuccess }: { onSuccess: () => void }) {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const displayTotal = totalPrice || cartItems.reduce((acc: number, item: CartItem) => acc + item.price * item.quantity, 0);
+  // ⚡ এখন টোটাল প্রাইস হিসাব হবে শুধুমাত্র সিলেক্ট করা আইটেমগুলোর ওপর ভিত্তি করে
+  const displayTotal = selectedItems.reduce((acc: number, item: CartItem) => acc + item.price * item.quantity, 0);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,7 +68,7 @@ export default function Checkout({ onSuccess }: { onSuccess: () => void }) {
       const { data: order, error: orderError } = await supabase
         .from('orders')
         .insert([{
-          user_id: user?.id || null, // লগইন করা থাকলে ID যাবে, না থাকলে null (গেস্ট)
+          user_id: user?.id || null, 
           customer_name: formData.name,
           customer_phone: formData.phone,
           customer_address: formData.address,
@@ -73,14 +76,14 @@ export default function Checkout({ onSuccess }: { onSuccess: () => void }) {
           payment_method: paymentMethod,
           transaction_id: paymentMethod !== 'cod' ? transactionId : null,
           total_amount: displayTotal,
-          status: 'pending' // ডিফল্ট স্ট্যাটাস
+          status: 'pending' 
         }])
         .select().single();
 
       if (orderError) throw orderError;
 
-      // ২. অর্ডার আইটেমস টেবিলে ডাটা ইনসার্ট
-      const items = cartItems.map((item: CartItem) => ({
+      // ২. অর্ডার আইটেমস টেবিলে ডাটা ইনসার্ট (⚡ এখন cartItems এর বদলে selectedItems ম্যাপ হবে)
+      const items = selectedItems.map((item: CartItem) => ({
         order_id: order.id,
         product_id: item.id,
         quantity: item.quantity,
@@ -191,11 +194,11 @@ export default function Checkout({ onSuccess }: { onSuccess: () => void }) {
     <div style={styles.container}>
       <form onSubmit={handleSubmit} noValidate style={{ width: '100%' }}>
         <div style={styles.layoutGrid}>
-          
+
           {/* বাম পাশ: কাস্টমার এবং পেমেন্ট ইনফো ফর্ম */}
           <div style={styles.leftColumn}>
-            
-            {/* সেকশন ১: শিপিং ঠিকানা */}
+
+            {/* সেকশন ১:  শিপিং ঠিকানা */}
             <h2 style={styles.sectionHeading}>01 / SHIPPING ADDRESS</h2>
             <input
               style={styles.input}
@@ -330,9 +333,10 @@ export default function Checkout({ onSuccess }: { onSuccess: () => void }) {
           {/* ডান পাশ: স্টিকি অর্ডার সামারি */}
           <div style={styles.rightColumn}>
             <h2 style={{ ...styles.sectionHeading, marginBottom: '25px', borderBottom: '1px solid #222' }}>ORDER SUMMARY</h2>
-            
+
             <div style={{ maxHeight: '350px', overflowY: 'auto', paddingRight: '5px' }}>
-              {cartItems.map((item: CartItem) => (
+              {/* ⚡ এখন cartItems এর বদলে selectedItems ম্যাপ হচ্ছে */}
+              {selectedItems.map((item: CartItem) => (
                 <div key={item.id} style={styles.productRow}>
                   <img 
                     src={item.image_url || 'https://via.placeholder.com/60x75?text=NOMAD'} 
