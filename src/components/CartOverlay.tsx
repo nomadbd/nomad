@@ -66,10 +66,23 @@ const CartOverlay = () => {
       {/* 📦 মেইন ফ্লেক্স কন্টেইনার (প্যাডিং ভেতরে নিয়ে আসা হয়েছে যাতে কন্টেন্ট নিচে পুশ না হয়) */}
       <div style={{ maxWidth: '500px', width: '100%', height: '100%', position: 'relative', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', padding: '30px 20px 0 20px' }}>
 
-        {/* ✖️ ক্লোজ বাটন */}
+        {/* ✖️ ক্লোজ বাটন (⚡ হেডিং লেখার সাথে একই লাইনে অ্যালাইন করা হয়েছে) */}
         <button 
           onClick={() => { setIsCartOpen(false); setIsCheckingOut(false); }} 
-          style={{ position: 'absolute', top: '-5px', right: '0', background: 'none', border: 'none', color: 'white', cursor: 'pointer', padding: '5px', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10 }}
+          style={{ 
+            position: 'absolute', 
+            top: '28px', 
+            right: '20px', 
+            background: 'none', 
+            border: 'none', 
+            color: 'white', 
+            cursor: 'pointer', 
+            padding: '5px', 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            zIndex: 10 
+          }}
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
             <line x1="18" y1="6" x2="6" y2="18"></line>
