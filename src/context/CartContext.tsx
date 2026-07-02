@@ -27,45 +27,25 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [cartItems, setCartItems] = useState<CartItem[]>(() => {
     if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('nomad_cart');
-      return saved ? JSON.parse(saved) : [];
+      // প্রথমে চেক করবে লগইন করা কার্টের ক্যাশ আছে কিনা, না থাকলে গেস্ট কার্ট চেক করবে
+      const savedCart = localStorage.getItem('nomad_cart');
+      if (savedCart) return JSON.parse(savedCart);
+      
+      const guestCart = localStorage.getItem('nomad_guest_cart');
+      return guestCart ? JSON.parse(guestCart) : [];
     }
     return [];
   });
 
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
-  const [loadingCart, setLoadingCart] = useState(true); 
-
-  // DB Sync Helper
-  const performDbSync = async (uid: string, items: CartItem[]) => {
-    try {
-      await supabase.from('cart_items').delete().eq('user_id', uid);
-      if (items.length === 0) return;
-
-      const records = items.map(item => ({
-        user_id: uid,
-        product_id: item.id,
-        name: item.name,
-        price: item.price,
-        quantity: item.quantity,
-        color: item.color || null,
-        size: item.size || null,
-        image_url: item.image_url,
-      }));
-
-      const { error } = await supabase.from('cart_items').insert(records);
-      if (error) throw error;
-    } catch (error) {
-      console.error("Database sync failed:", error);
-    }
-  };
+  const [loadingCart, setLoadingCart] = useState(true);
 
   // =================== AUTH STATE LISTENER ===================
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       const uid = session?.user?.id || null;
-      
+
       if (uid) {
         setUserId(uid);
       } else {
@@ -73,13 +53,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (event === 'SIGNED_OUT') {
           setCartItems([]);
           localStorage.removeItem('nomad_cart');
-          
-          // লগআউট হলে সমস্ত মার্জ ট্র্যাকার ক্লিয়ার হবে যেন পরবর্তীতে আবার মার্জ হতে পারে
-          Object.keys(localStorage).forEach(key => {
-            if (key.startsWith('cart_merged_')) {
-              localStorage.removeItem(key);
-            }
-          });
+          localStorage.removeItem('nomad_guest_cart');
         }
         setLoadingCart(false);
       }
@@ -88,7 +62,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => subscription.unsubscribe();
   }, []);
 
-  // =================== FETCH & MERGE CART (FIXED FOR REDIRECTS) ===================
+  // =================== FETCH & SAFE MERGE CART (অন্য ফোনের জন্য নিরাপদ) ===================
   useEffect(() => {
     if (!userId) {
       setLoadingCart(false);
@@ -97,22 +71,16 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const loadCartForUser = async () => {
       setLoadingCart(true);
-      
-      const { data: dbItems, error } = await supabase
-        .from('cart_items')
-        .select('*')
-        .eq('user_id', userId);
+      try {
+        // ১. ডাটাবেজ থেকে এই ইউজারের কার্ট নিয়ে আসা (অন্য ফোন থেকে আসলেও ডাটা পাওয়া যাবে)
+        const { data: dbItems, error } = await supabase
+          .from('cart_items')
+          .select('*')
+          .eq('user_id', userId);
 
-      if (error) {
-        console.error("Error fetching cart from DB:", error);
-        setLoadingCart(false);
-        return;
-      }
+        if (error) throw error;
 
-      let finalItems: CartItem[] = [];
-
-      if (dbItems && dbItems.length > 0) {
-        finalItems = dbItems.map((item: any) => ({
+        let finalItems: CartItem[] = dbItems ? dbItems.map((item: any) => ({
           id: item.product_id,
           name: item.name,
           price: item.price,
@@ -121,60 +89,79 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
           size: item.size || undefined,
           image_url: item.image_url,
           product_media: [],
-        }));
-      }
+        })) : [];
 
-      const localStr = localStorage.getItem('nomad_cart');
-      const mergeKey = `cart_merged_${userId}`;
-      const isAlreadyMerged = localStorage.getItem(mergeKey) === 'true';
+        // ২. গেস্ট কার্ট চেক করা (লগইন করার ঠিক আগের মুহূর্তের প্রোডাক্ট মার্জ করার জন্য)
+        const guestStr = localStorage.getItem('nomad_guest_cart');
+        
+        if (guestStr) {
+          const guestCart: CartItem[] = JSON.parse(guestStr);
+          
+          if (guestCart.length > 0) {
+            for (const guestItem of guestCart) {
+              const existingItem = finalItems.find(item => 
+                item.id === guestItem.id && 
+                item.color === guestItem.color && 
+                item.size === guestItem.size
+              );
 
-      // 🔥 ফিক্স: রিডাইরেক্ট বা রিমুন্ট হলেও এই লকটি লোকালস্টোরেজে টিকে থাকবে, তাই ডাবল মার্জ হবে না
-      if (localStr && !isAlreadyMerged) {
-        localStorage.setItem(mergeKey, 'true'); // চিরস্থায়ী লক বসানো হলো
-        const localCart: CartItem[] = JSON.parse(localStr);
-
-        const dbMap = new Map(finalItems.map(item => 
-          [`${item.id}-${item.color || ''}-${item.size || ''}`, item]
-        ));
-
-        localCart.forEach(localItem => {
-          const key = `${localItem.id}-${localItem.color || ''}-${localItem.size || ''}`;
-          const existingDbItem = dbMap.get(key);
-
-          if (existingDbItem) {
-            existingDbItem.quantity += localItem.quantity;
-          } else {
-            finalItems.push(localItem);
+              if (existingItem) {
+                // পরিমাণ বাড়িয়ে ডাটাবেজ আপডেট করা
+                existingItem.quantity += guestItem.quantity;
+                await supabase
+                  .from('cart_items')
+                  .update({ quantity: existingItem.quantity })
+                  .eq('user_id', userId)
+                  .eq('product_id', guestItem.id)
+                  .eq('color', guestItem.color || null)
+                  .eq('size', guestItem.size || null);
+              } else {
+                // নতুন প্রোডাক্ট ডাটাবেজে যুক্ত করা
+                await supabase.from('cart_items').insert({
+                  user_id: userId,
+                  product_id: guestItem.id,
+                  name: guestItem.name,
+                  price: guestItem.price,
+                  quantity: guestItem.quantity,
+                  color: guestItem.color || null,
+                  size: guestItem.size || null,
+                  image_url: guestItem.image_url,
+                });
+                finalItems.push(guestItem);
+              }
+            }
+            // মার্জ শেষ! এবার গেস্ট কার্ট রিমুভ করে দেওয়া হলো যেন রিফ্রেশে ডাবল মার্জ না হয়
+            localStorage.removeItem('nomad_guest_cart');
           }
-        });
-      }
+        }
 
-      setCartItems(finalItems);
-      localStorage.setItem('nomad_cart', JSON.stringify(finalItems));
-      await performDbSync(userId, finalItems);
-      setLoadingCart(false);
+        setCartItems(finalItems);
+        localStorage.setItem('nomad_cart', JSON.stringify(finalItems));
+      } catch (err) {
+        console.error("Error loading cart:", err);
+      } finally {
+        setLoadingCart(false);
+      }
     };
 
     loadCartForUser();
   }, [userId]);
 
-  // =================== AUTO SAVE TO LOCAL STORAGE ===================
+  // =================== AUTO SAVE TO LOCAL STORAGE CACHE ===================
   useEffect(() => {
-    localStorage.setItem('nomad_cart', JSON.stringify(cartItems));
-
-    if (userId && !loadingCart) {
-      const timeout = setTimeout(() => {
-        performDbSync(userId, cartItems);
-      }, 800);
-      return () => clearTimeout(timeout);
+    if (userId) {
+      localStorage.setItem('nomad_cart', JSON.stringify(cartItems));
+    } else {
+      localStorage.setItem('nomad_guest_cart', JSON.stringify(cartItems));
     }
-  }, [cartItems, userId, loadingCart]);
+  }, [cartItems, userId]);
 
-  // =================== CART ACTIONS ===================
-  const addToCart = (product: any, color?: string, size?: string) => {
+  // =================== CART ACTIONS (REAL-TIME DB SYNC - নো ডিলে, নো ডাটা লস) ===================
+  const addToCart = async (product: any, color?: string, size?: string) => {
     const chosenColor = color || product.color || product.selected_color || undefined;
     const chosenSize = size || product.size || product.selected_size || undefined;
 
+    // UI-তে ইনস্ট্যান্ট রেসপন্স পাওয়ার জন্য স্টেট আপডেট
     setCartItems(prev => {
       const index = prev.findIndex(i => 
         i.id === product.id && i.color === chosenColor && i.size === chosenSize
@@ -197,16 +184,72 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         product_media: product.product_media,
       }];
     });
+
+    // ইউজার লগইন থাকলে সরাসরি ব্যাকএন্ডে ইনস্ট্যান্ট সেভ (কোনো ৮০০ms ডিলে নেই)
+    if (userId) {
+      try {
+        const { data: existing } = await supabase
+          .from('cart_items')
+          .select('id, quantity')
+          .eq('user_id', userId)
+          .eq('product_id', product.id)
+          .eq('color', chosenColor || null)
+          .eq('size', chosenSize || null)
+          .maybeSingle();
+
+        if (existing) {
+          await supabase
+            .from('from', 'cart_items')
+            .update({ quantity: existing.quantity + 1 })
+            .eq('id', existing.id);
+        } else {
+          await supabase.from('cart_items').insert({
+            user_id: userId,
+            product_id: product.id,
+            name: product.name,
+            price: product.price,
+            quantity: 1,
+            color: chosenColor || null,
+            size: chosenSize || null,
+            image_url: product.image_url || product.product_media?.[0]?.media_url,
+          });
+        }
+      } catch (error) {
+        console.error("Failed to add to DB cart:", error);
+      }
+    }
   };
 
-  const incrementQuantity = (id: string, color?: string, size?: string) => {
+  const incrementQuantity = async (id: string, color?: string, size?: string) => {
     setCartItems(prev => prev.map(item => {
       const match = item.id === id && item.color === color && item.size === size;
       return match ? { ...item, quantity: item.quantity + 1 } : item;
     }));
+
+    if (userId) {
+      try {
+        const { data: existing } = await supabase
+          .from('cart_items')
+          .select('id, quantity')
+          .eq('user_id', userId)
+          .eq('product_id', id)
+          .eq('color', color || null)
+          .eq('size', size || null)
+          .maybeSingle();
+
+        if (existing) {
+          await supabase
+            .from('cart_items')
+            .update({ quantity: existing.quantity + 1 })
+            .eq('id', existing.id);
+        }
+      } catch (error) {
+        console.error("Failed to increment in DB:", error);
+      }
+    }
   };
 
-  const decrementQuantity = (id: string, color?: string, size?: string) => {
+  const decrementQuantity = async (id: string, color?: string, size?: string) => {
     setCartItems(prev => prev
       .map(item => {
         const match = item.id === id && item.color === color && item.size === size;
@@ -214,13 +257,45 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       })
       .filter(item => item.quantity > 0)
     );
+
+    if (userId) {
+      try {
+        const { data: existing } = await supabase
+          .from('cart_items')
+          .select('id, quantity')
+          .eq('user_id', userId)
+          .eq('product_id', id)
+          .eq('color', color || null)
+          .eq('size', size || null)
+          .maybeSingle();
+
+        if (existing) {
+          if (existing.quantity <= 1) {
+            await supabase.from('cart_items').delete().eq('id', existing.id);
+          } else {
+            await supabase
+              .from('cart_items')
+              .update({ quantity: existing.quantity - 1 })
+              .eq('id', existing.id);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to decrement in DB:", error);
+      }
+    }
   };
 
   const clearCart = async () => {
     setCartItems([]);
-    localStorage.removeItem('nomad_cart');
     if (userId) {
-      await performDbSync(userId, []);
+      localStorage.removeItem('nomad_cart');
+      try {
+        await supabase.from('cart_items').delete().eq('user_id', userId);
+      } catch (error) {
+        console.error("Failed to clear DB cart:", error);
+      }
+    } else {
+      localStorage.removeItem('nomad_guest_cart');
     }
   };
 
