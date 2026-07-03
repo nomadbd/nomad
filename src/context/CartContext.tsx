@@ -24,7 +24,7 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-// ডুপ্লিকেট আইটেম দূর করার হেল্পার ফাংশন (সেফটি গার্ড)
+// ডুপ্লিকেট দূর করার হেল্পার
 const aggregateCartItems = (items: CartItem[]): CartItem[] => {
   const map = new Map<string, CartItem>();
   items.forEach(item => {
@@ -51,10 +51,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   
-  // 🔥 গুরুত্বপূর্ণ: ডাটাবেজ থেকে ডাটা আসা শেষ হয়েছে কিনা তা ট্র্যাক করার ফ্ল্যাগ
-  const [isCartInitialized, setIsCartInitialized] = useState(false); 
+  // 🔥 গুরুত্বপূর্ণ ২টি স্টেট গার্ড
+  const [authLoading, setAuthLoading] = useState(true); // অথেনটিকেশন চেক হচ্ছে কিনা
+  const [isCartInitialized, setIsCartInitialized] = useState(false); // ডাটাবেজ থেকে ডাটা লোড হয়েছে কিনা
 
-  // DB Sync Function
+  // DB Sync
   const performDbSync = async (uid: string, items: CartItem[]) => {
     try {
       await supabase.from('cart_items').delete().eq('user_id', uid);
@@ -78,16 +79,15 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // =================== AUTH STATE LISTENER ===================
+  // =================== ১. AUTH STATE LISTENER ===================
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       const uid = session?.user?.id || null;
+      setUserId(uid);
+      setAuthLoading(false); // 🔥 অথ চেক শেষ! এখন আমরা জানি ইউজার আসলে কে।
 
-      if (uid) {
-        setUserId(uid);
-      } else {
-        setUserId(null);
-        setIsCartInitialized(true); // গেস্ট ইউজারের জন্য ইনিশিয়ালাইজেশন ট্রু
+      if (!uid) {
+        setIsCartInitialized(true); // গেস্ট ইউজারের জন্য DB ফেচের দরকার নেই
         if (event === 'SIGNED_OUT') {
           setCartItems([]);
           localStorage.removeItem('nomad_cart');
@@ -99,12 +99,13 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => subscription.unsubscribe();
   }, []);
 
-  // =================== FETCH & SAFE MERGE CART ===================
+  // =================== ২. FETCH & SAFE MERGE CART ===================
   useEffect(() => {
-    if (!userId) return;
+    // যতক্ষণ অথ লোড হচ্ছে, ততক্ষণ ডাটাবেজ ফেচ করা যাবে না
+    if (authLoading || !userId) return;
 
     const loadCartForUser = async () => {
-      setIsCartInitialized(false); // ডাটা লোড হওয়া শুরু হলে লক করে দিন
+      setIsCartInitialized(false);
 
       const { data: dbItems, error } = await supabase
         .from('cart_items')
@@ -117,7 +118,6 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
 
-      // ডাটাবেজ থেকে আসা ডাটা ফরম্যাট করা
       let finalItems: CartItem[] = dbItems ? dbItems.map((item: any) => ({
         id: item.product_id,
         name: item.name,
@@ -129,36 +129,36 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         product_media: [],
       })) : [];
 
-      // ডাটাবেজের ডাটায় কোনো ডুপ্লিকেট থাকলে তা ক্লিন করা
       finalItems = aggregateCartItems(finalItems);
 
-      // গেস্ট কার্ট থাকলে তা মার্জ করা
+      // গেস্ট কার্ট থাকলে তা শুধুমাত্র একবারই লগইনের পর মার্জ হবে
       const guestStr = localStorage.getItem('nomad_guest_cart');
       if (guestStr) {
         const guestCart: CartItem[] = JSON.parse(guestStr);
         if (guestCart.length > 0) {
           finalItems = aggregateCartItems([...finalItems, ...guestCart]);
           await performDbSync(userId, finalItems);
-          localStorage.removeItem('nomad_guest_cart');
+          localStorage.removeItem('nomad_guest_cart'); // মার্জ শেষে গেস্ট কার্ট মুছে ফেলা হলো
         }
       }
 
       setCartItems(finalItems);
       localStorage.setItem('nomad_cart', JSON.stringify(finalItems));
-      
-      // 🔥 ডাটাবেজ থেকে ডাটা সফলভাবে স্টেটে বসে গেছে, এবার লক খুলুন
-      setIsCartInitialized(true); 
+      setIsCartInitialized(true); // 🔥 ডাটাবেজ থেকে ডাটা এসে স্টেটে বসে গেছে, লক ওপেন।
     };
 
     loadCartForUser();
-  }, [userId]);
+  }, [userId, authLoading]);
 
-  // =================== AUTO SAVE TO LOCAL STORAGE & DB ===================
+  // =================== ৩. AUTO SAVE EFFECT (SAFE) ===================
   useEffect(() => {
+    // 🔥 ফিক্স গার্ড: যতক্ষণ অথ চেক শেষ না হচ্ছে, কোনো কিছু কোথাও সেভ করা যাবে না (লিক বন্ধ)
+    if (authLoading) return; 
+
     if (userId) {
       localStorage.setItem('nomad_cart', JSON.stringify(cartItems));
       
-      // 🔥 ফিক্স: শুধুমাত্র ইনিশিয়ালাইজেশন ট্রু হলেই ডাটাবেজে রাইট হবে, রিফ্রেশ করার সাথে সাথে নয়
+      // শুধুমাত্র ডাটাবেজ থেকে ডাটা আসার পর সিঙ্ক চালু হবে
       if (isCartInitialized) {
         const timeout = setTimeout(() => {
           performDbSync(userId, cartItems);
@@ -166,9 +166,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return () => clearTimeout(timeout);
       }
     } else {
+      // গেস্ট ইউজার হলে গেস্ট কার্টেই সেভ হবে
       localStorage.setItem('nomad_guest_cart', JSON.stringify(cartItems));
     }
-  }, [cartItems, userId, isCartInitialized]);
+  }, [cartItems, userId, isCartInitialized, authLoading]);
 
   // =================== CART ACTIONS ===================
   const addToCart = (product: any, color?: string, size?: string) => {
