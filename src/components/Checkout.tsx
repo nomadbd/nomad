@@ -33,6 +33,7 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
   const [copied, setCopied] = useState(false);
   const [hoveredOption, setHoveredOption] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
+  const [isOrderPlaced, setIsOrderPlaced] = useState(false); // অর্ডার সাকসেস স্টেট
 
   const [deliveryCharge, setDeliveryCharge] = useState<number>(100); 
   const [vatRate, setVatRate] = useState<number>(0.05); 
@@ -88,7 +89,6 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
     try {
       const { data: { user } } = await supabase.auth.getUser();
 
-      // ⚡ এখানে আপনার ডাটাবেজের কলামের নাম 'shipping_address' করে দেওয়া হয়েছে
       const { data: order, error: orderError } = await supabase
         .from('orders')
         .insert([{
@@ -120,8 +120,8 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
       const { error: itemsError } = await supabase.from('order_items').insert(items);
       if (itemsError) throw itemsError;
 
-      clearCart();
-      onSuccess();
+      clearCart(); // কার্ট খালি হবে
+      setIsOrderPlaced(true); // সাকসেস স্ক্রিন দেখাবে
     } catch (err: any) {
       setErrorMessage(err.message || 'ORDER FAILED. PLEASE TRY AGAIN.');
     } finally {
@@ -225,8 +225,40 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
       fontWeight: 700,
       textTransform: 'uppercase' as const,
       marginTop: '35px',
+    },
+    // সাকসেস স্ক্রিনের স্টাইল
+    successWrapper: {
+      display: 'flex',
+      flexDirection: 'column' as const,
+      alignItems: 'center',
+      justifyContent: 'center',
+      minHeight: '60vh',
+      textAlign: 'center' as const,
+      maxWidth: '500px',
+      margin: '0 auto',
+      padding: '20px',
     }
   };
+
+  // 🎉 অর্ডার সফল হলে এই চমৎকার মিনিমাল স্ক্রিনটি শো করবে
+  if (isOrderPlaced) {
+    return (
+      <div style={styles.container}>
+        <div style={styles.successWrapper}>
+          <div style={{ fontSize: '32px', marginBottom: '20px' }}>✓</div>
+          <h2 style={{ fontSize: '14px', letterSpacing: '4px', fontWeight: 600, marginBottom: '15px', color: '#fff' }}>
+            ORDER PLACED SUCCESSFULLY
+          </h2>
+          <p style={{ fontSize: '11px', letterSpacing: '2px', color: '#666', lineHeight: '1.8', marginBottom: '40px', textTransform: 'uppercase' as const }}>
+            Thank you for your purchase. Your order has been received and is currently being processed. We will contact you shortly to confirm your shipment.
+          </p>
+          <button onClick={onSuccess} style={{ ...styles.submitBtn, marginTop: 0, maxWidth: '280px' }}>
+            CONTINUE SHOPPING
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={styles.container}>
