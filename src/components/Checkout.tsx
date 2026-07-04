@@ -159,6 +159,36 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
       outline: 'none',
       borderRadius: 0,
     },
+    // ✨ ১ লাইনের চেকমেথড রRow স্টাইল
+    paymentRow: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '12px',
+      marginTop: '35px',
+      marginBottom: '5px',
+      cursor: 'default',
+      userSelect: 'none' as const,
+    },
+    // ✨ মিনিমাল স্কয়ার চেকমার্ক বক্স
+    customCheckbox: {
+      width: '14px',
+      height: '14px',
+      border: '1.2px solid #fff',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontSize: '10px',
+      color: '#fff',
+      background: 'transparent',
+      lineHeight: 1,
+    },
+    paymentText: {
+      fontSize: '11px',
+      letterSpacing: '2px',
+      color: '#fff',
+      fontWeight: 500,
+      textTransform: 'uppercase' as const,
+    },
     productRow: {
       display: 'flex',
       gap: '20px',
@@ -184,7 +214,7 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
       fontSize: '11px',
       fontWeight: 500,
       textTransform: 'uppercase' as const,
-      marginTop: '35px',
+      marginTop: '30px',
       borderRadius: 0,
       outline: 'none',
       WebkitAppearance: 'none' as const,
@@ -263,14 +293,11 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
               onChange={(e) => setFormData({ ...formData, address: e.target.value })}
             />
 
-            {/* পেমেন্ট মেথড: মিনিমাল ১ লাইনের গ্রে স্টেটমেন্ট */}
-            <h2 style={styles.sectionHeading}>PAYMENT METHOD</h2>
-            <div style={{ color: '#fff', fontSize: '11px', letterSpacing: '2px', fontWeight: 500, marginBottom: '6px', textTransform: 'uppercase' }}>
-              CASH ON DELIVERY
+            {/* ⚡ নতুন আল্ট্রা-মিনিমাল পেমেন্ট সেকশন (হেডিং ছাড়া, শুধু চেকমার্ক ও টেক্সট) */}
+            <div style={styles.paymentRow}>
+              <div style={styles.customCheckbox}>✓</div>
+              <span style={styles.paymentText}>CASH ON DELIVERY</span>
             </div>
-            <p style={{ fontSize: '9px', letterSpacing: '1.5px', color: '#555', margin: '0 0 25px 0', textTransform: 'uppercase' as const }}>
-              CURRENTLY ACCEPTING CASH ON DELIVERY ONLY.
-            </p>
 
             {errorMessage && (
               <div style={{ color: '#ff4d4d', fontSize: '10px', letterSpacing: '2px', marginTop: '20px', textTransform: 'uppercase' }}>
