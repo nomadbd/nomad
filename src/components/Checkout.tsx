@@ -12,7 +12,6 @@ interface CartItem {
   image_url?: string;
 }
 
-// ⚡ onOrderPlaced প্রপটি যোগ করা হয়েছে প্যারেন্ট হেডার কন্ট্রোল করার জন্য
 export default function Checkout({ 
   selectedItems, 
   onSuccess, 
@@ -59,11 +58,9 @@ export default function Checkout({
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // অর্ডার প্লেস হলে অটোমেটিক স্ক্রিনের একদম ওপরে স্ক্রল করবে
   useEffect(() => {
     if (isOrderPlacedState) {
       window.scrollTo(0, 0);
-      // প্যারেন্ট কম্পোনেন্টকে জানিয়ে দেওয়া যে অর্ডার ডান, যেন সে হেডার লুকিয়ে ফেলে
       if (onOrderPlaced) {
         onOrderPlaced(true);
       }
@@ -78,12 +75,10 @@ export default function Checkout({
     e.preventDefault();
     setErrorMessage(null);
 
-    // ১. ফিল্ড খালি কিনা চেক
     if (!formData.name.trim() || !formData.phone.trim() || !formData.address.trim()) {
       return setErrorMessage('PLEASE FILL IN ALL REQUIRED SHIPPING FIELDS.');
     }
 
-    // ⚡ ২. বাংলাদেশি মোবাইল নাম্বার ভ্যালিডেশন (Strict Regex Check)
     const bdPhoneRegex = /^01[3-9]\d{8}$/;
     const cleanPhone = formData.phone.trim();
     if (!bdPhoneRegex.test(cleanPhone)) {
@@ -223,6 +218,21 @@ export default function Checkout({
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
       minHeight: isMobile ? '100vh' : 'auto',
       boxSizing: 'border-box' as const,
+    },
+    // ⚡ নতুন ফুল-স্ক্রিন ওভারলে স্টাইল যা প্যারেন্ট হেডারকে ঢেকে দেবে
+    successOverlay: {
+      position: 'fixed' as const,
+      top: 0,
+      left: 0,
+      width: '100vw',
+      height: '100vh',
+      backgroundColor: '#000',
+      zIndex: 99999, 
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      boxSizing: 'border-box' as const,
+      padding: '20px',
     },
     topHeader: {
       width: '100%',
@@ -385,8 +395,6 @@ export default function Checkout({
       flexDirection: 'column' as const,
       alignItems: 'center',
       justifyContent: 'center', 
-      paddingTop: isMobile ? '40px' : '60px', 
-      paddingBottom: '40px',
       textAlign: 'center' as const,
       maxWidth: '450px',
       margin: '0 auto',
@@ -406,10 +414,10 @@ export default function Checkout({
     }
   };
 
-  // 🌟 অর্ডার সাকসেস স্ক্রিন (এখানে কম্পোনেন্টের নিজস্ব কোনো হেডার নেই)
+  // 🌟 অর্ডার সাকসেস ওভারলে স্ক্রিন
   if (isOrderPlacedState) {
     return (
-      <div style={styles.container}>
+      <div style={styles.successOverlay}>
         <div style={styles.successWrapper}>
           <div style={{ fontSize: '32px', marginBottom: '15px', color: '#fff', lineHeight: 1 }}>✓</div>
           
@@ -437,7 +445,7 @@ export default function Checkout({
   return (
     <div style={styles.container}>
       
-      {/* কম্পোনেন্টের ইন্টারনাল হেডার */}
+      {/* ইন্টারনাল হেডার (ব্যাকআপ হিসেবে রাখা হয়েছে) */}
       <div style={styles.topHeader}>
         <span style={styles.topHeaderTitle}>CHECKOUT</span>
         <button type="button" onClick={onSuccess} style={styles.closeBtn}>✕</button>
@@ -477,7 +485,6 @@ export default function Checkout({
               <div style={styles.customCircleCheckbox}>✓</div>
             </div>
 
-            {/* ভুল ইনপুট দিলে এই এররটি পপ-আপ হবে */}
             {errorMessage && (
               <div style={{ color: '#ff4d4d', fontSize: '10px', letterSpacing: '2px', marginTop: '20px', textTransform: 'uppercase', lineHeight: '1.6' }}>
                 {errorMessage}
