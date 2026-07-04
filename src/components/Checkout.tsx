@@ -12,10 +12,11 @@ interface CartItem {
   image_url?: string;
 }
 
-// ⚡ ক্যাশ অন ডেলিভারি সহ গেটওয়ে লিস্ট আপডেট করা হয়েছে
+// আপনার স্ক্রিনশট অনুযায়ী অপশনস (NAGAD সহ)
 const PAYMENT_OPTIONS = [
   { label: 'CASH ON DELIVERY', value: 'cod' },
   { label: 'BKASH (PERSONAL)', value: 'bkash' },
+  { label: 'NAGAD (PERSONAL)', value: 'nagad' },
   { label: 'ROCKET (PERSONAL)', value: 'rocket' }
 ];
 
@@ -34,14 +35,40 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
   const [hoveredOption, setHoveredOption] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
 
+  // ⚡ সুপাবেজ গ্লোবাল টেবিল থেকে আসার স্টেট
+  const [deliveryCharge, setDeliveryCharge] = useState<number>(100); 
+  const [vatRate, setVatRate] = useState<number>(0.05); 
+
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 960);
     handleResize();
     window.addEventListener('resize', handleResize);
+    
+    // ⚡ লাইভ স্টোর সেটিংস ডাটা ফেচিং
+    const fetchStoreSettings = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('store_settings')
+          .select('delivery_charge, vat_rate')
+          .single();
+        
+        if (data && !error) {
+          setDeliveryCharge(data.delivery_charge);
+          setVatRate(Number(data.vat_rate));
+        }
+      } catch (err) {
+        console.error("Settings fetch failed, using fallbacks:", err);
+      }
+    };
+
+    fetchStoreSettings();
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const displayTotal = selectedItems.reduce((acc: number, item: CartItem) => acc + item.price * item.quantity, 0);
+  // 📐 গ্লোবাল ক্যালকুলেশনস
+  const subtotal = selectedItems.reduce((acc: number, item: CartItem) => acc + item.price * item.quantity, 0);
+  const vatAmount = Math.round(subtotal * vatRate);
+  const grandTotal = subtotal + deliveryCharge + vatAmount;
 
   const handleCopyNumber = () => {
     navigator.clipboard.writeText('01521731371');
@@ -54,12 +81,9 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
     setErrorMessage(null);
 
     if (!paymentMethod) return setErrorMessage('PLEASE SELECT A PAYMENT METHOD.');
-    
-    // ⚡ COD না হলে শুধুমাত্র তখনই ট্রানজেকশন আইডি ভ্যালিডেশন কাজ করবে
     if (paymentMethod !== 'cod' && (!formData.senderPhone.trim() || !transactionId.trim())) {
       return setErrorMessage('SENDER NUMBER AND TRANSACTION ID ARE REQUIRED.');
     }
-    
     if (!formData.name.trim() || !formData.phone.trim() || !formData.address.trim()) {
       return setErrorMessage('PLEASE FILL IN ALL REQUIRED SHIPPING FIELDS.');
     }
@@ -68,7 +92,6 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
     try {
       const { data: { user } } = await supabase.auth.getUser();
 
-      // ১. ওর্ডার্স টেবিলে ডাটা ইনসার্ট (COD কন্ডিশন হ্যান্ডেল সহ)
       const { data: order, error: orderError } = await supabase
         .from('orders')
         .insert([{
@@ -79,14 +102,15 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
           sender_phone: paymentMethod !== 'cod' ? formData.senderPhone : null,
           payment_method: paymentMethod,
           transaction_id: paymentMethod !== 'cod' ? transactionId : null,
-          total_amount: displayTotal,
+          delivery_charge: deliveryCharge, 
+          vat_amount: vatAmount,           
+          total_amount: grandTotal, 
           status: 'pending' 
         }])
         .select().single();
 
       if (orderError) throw orderError;
 
-      // ২. অর্ডার আইটেমস টেবিলে ডাটা ইনসার্ট
       const items = selectedItems.map((item: CartItem) => ({
         order_id: order.id,
         product_id: item.id,
@@ -113,18 +137,17 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
       width: '100%',
       maxWidth: '1200px',
       margin: '0 auto',
-      padding: isMobile ? '15px 15px 140px 15px' : '60px 20px 90px 20px',
+      padding: isMobile ? '10px 15px 120px 15px' : '50px 20px 80px 20px',
       color: '#fff',
       backgroundColor: '#000',
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
       minHeight: isMobile ? '100vh' : 'auto',
-      overflowY: 'auto' as const,
       boxSizing: 'border-box' as const,
     },
     layoutGrid: {
       display: 'flex',
       flexDirection: isMobile ? 'column-reverse' as const : 'row' as const,
-      gap: isMobile ? '40px' : '70px',
+      gap: isMobile ? '30px' : '60px',
       alignItems: 'flex-start',
     },
     leftColumn: {
@@ -136,20 +159,17 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
       width: '100%',
       position: isMobile ? 'relative' as const : 'sticky' as const,
       top: '40px',
-      background: '#030303',
-      border: '1px solid #0d0d0d',
-      padding: isMobile ? '30px 20px' : '40px',
+      background: '#000',
+      padding: isMobile ? '10px 0' : '20px',
       boxSizing: 'border-box' as const,
-      marginBottom: isMobile ? '15px' : '0',
     },
     sectionHeading: {
       fontSize: '11px',
-      letterSpacing: '4px',
+      letterSpacing: '3px',
       color: '#fff',
       textTransform: 'uppercase' as const,
-      marginBottom: '30px',
-      borderBottom: '1px solid #0d0d0d',
-      paddingBottom: '14px',
+      marginBottom: '25px',
+      marginTop: '35px',
       fontWeight: 600,
     },
     input: {
@@ -162,10 +182,9 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
       color: '#fff',
       fontSize: '11px',
       letterSpacing: '2px',
-      marginBottom: '28px',
+      marginBottom: '15px',
       outline: 'none',
       borderRadius: 0,
-      transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
     },
     productRow: {
       display: 'flex',
@@ -180,13 +199,13 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
       height: '80px',
       objectFit: 'cover' as const,
       background: '#0a0a0a',
-      border: '1px solid #111',
     },
     mfsPanel: {
-      padding: '30px 25px', 
-      background: '#030303', 
+      padding: '25px 20px', 
+      background: '#050505', 
       border: '1px solid #0d0d0d', 
-      marginBottom: '35px',
+      marginBottom: '25px',
+      marginTop: '15px'
     },
     copyBtn: {
       background: 'transparent',
@@ -196,33 +215,19 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
       fontSize: '8px',
       letterSpacing: '1.5px',
       cursor: 'pointer',
-      transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
-      fontWeight: 500
     },
     submitBtn: {
       width: '100%',
-      padding: '22px',
+      padding: '20px',
       background: '#fff',
       border: '1px solid #fff',
       color: '#000',
       cursor: 'pointer',
-      letterSpacing: '5px',
+      letterSpacing: '4px',
       fontSize: '11px',
       fontWeight: 700,
       textTransform: 'uppercase' as const,
-      transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
-      marginTop: '20px',
-    },
-    errorAlert: {
-      background: '#0a0505',
-      border: '1px solid #260f0f',
-      color: '#ff4d4d',
-      padding: '16px',
-      fontSize: '10px',
-      letterSpacing: '2px',
-      marginBottom: '30px',
-      fontFamily: 'monospace',
-      textAlign: 'center' as const
+      marginTop: '35px',
     }
   };
 
@@ -231,19 +236,16 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
       <form onSubmit={handleSubmit} noValidate style={{ width: '100%' }}>
         <div style={styles.layoutGrid}>
 
-          {/* বাম পাশ: ফর্ম ফিল্ডস */}
+          {/* বাম পাশ: কাস্টমার শিপিং এবং পেমেন্ট ফর্ম */}
           <div style={styles.leftColumn}>
-
-            {/* শিপিং এরিয়া */}
-            <h2 style={styles.sectionHeading}>SHIPPING ADDRESS</h2>
+            
+            <h2 style={{ ...styles.sectionHeading, marginTop: 0 }}>01 / SHIPPING ADDRESS</h2>
             <input
               style={styles.input}
               placeholder="FULL NAME"
               required
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              onFocus={(e) => e.target.style.borderBottom = '1px solid #fff'}
-              onBlur={(e) => e.target.style.borderBottom = '1px solid #161616'}
             />
             <input
               style={styles.input}
@@ -252,8 +254,6 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
               type="tel"
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              onFocus={(e) => e.target.style.borderBottom = '1px solid #fff'}
-              onBlur={(e) => e.target.style.borderBottom = '1px solid #161616'}
             />
             <input
               style={styles.input}
@@ -261,13 +261,10 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
               required
               value={formData.address}
               onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-              onFocus={(e) => e.target.style.borderBottom = '1px solid #fff'}
-              onBlur={(e) => e.target.style.borderBottom = '1px solid #161616'}
             />
 
-            {/* পেমেন্ট এরিয়া */}
-            <h2 style={{ ...styles.sectionHeading, marginTop: '25px' }}>PAYMENT METHOD</h2>
-            <div style={{ position: 'relative', marginBottom: '35px' }}>
+            <h2 style={styles.sectionHeading}>02 / PAYMENT METHOD</h2>
+            <div style={{ position: 'relative' }}>
               <div
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                 style={{ 
@@ -275,17 +272,17 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
                   cursor: 'pointer', 
                   display: 'flex', 
                   justifyContent: 'space-between', 
-                  alignItems: 'center', 
+                  alignItems: 'center',
                   color: paymentMethod ? '#fff' : '#555',
-                  borderBottom: isDropdownOpen ? '1px solid #fff' : '1px solid #161616'
+                  marginBottom: 0
                 }}
               >
-                <span style={{ fontSize: '11px', letterSpacing: '2px' }}>{paymentLabel}</span>
-                <span style={{ fontSize: '7px', transition: 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)', transform: isDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)', color: '#444' }}>▼</span>
+                <span>{paymentLabel}</span>
+                <span style={{ fontSize: '8px', transform: isDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}>▼</span>
               </div>
 
               {isDropdownOpen && (
-                <div style={{ position: 'absolute', top: '100%', left: 0, width: '100%', background: '#030303', border: '1px solid #0d0d0d', zIndex: 9999, marginTop: '-29px' }}>
+                <div style={{ position: 'absolute', top: '100%', left: 0, width: '100%', background: '#050505', border: '1px solid #111', zIndex: 9999 }}>
                   {PAYMENT_OPTIONS.map((opt) => (
                     <div
                       key={opt.value}
@@ -293,18 +290,16 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
                         setPaymentMethod(opt.value);
                         setPaymentLabel(opt.label);
                         setIsDropdownOpen(false);
-                        setErrorMessage(null);
                       }}
                       onMouseEnter={() => setHoveredOption(opt.value)}
                       onMouseLeave={() => setHoveredOption(null)}
                       style={{
-                        padding: '18px 20px',
+                        padding: '16px 20px',
                         fontSize: '11px',
                         letterSpacing: '2px',
                         cursor: 'pointer',
                         color: paymentMethod === opt.value ? '#000' : (hoveredOption === opt.value ? '#fff' : '#666'),
                         backgroundColor: paymentMethod === opt.value ? '#fff' : (hoveredOption === opt.value ? '#0a0a0a' : 'transparent'),
-                        transition: 'all 0.2s ease'
                       }}
                     >
                       {opt.label}
@@ -314,24 +309,15 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
               )}
             </div>
 
-            {/* ⚡ গেটওয়ে প্যানেল: শুধুমাত্র COD না হলে (অর্থাৎ বিকাশ/রকেটে) এটি দেখাবে */}
             {paymentMethod && paymentMethod !== 'cod' && (
               <div style={styles.mfsPanel}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                  <p style={{ fontSize: '9px', color: '#444', letterSpacing: '2px', margin: 0 }}>SEND MONEY TO [PERSONAL]:</p>
-                  <button 
-                    type="button"
-                    onClick={handleCopyNumber} 
-                    style={{
-                      ...styles.copyBtn,
-                      borderColor: copied ? '#fff' : '#222',
-                      color: copied ? '#fff' : '#888'
-                    }}
-                  >
+                <div style={{ display: 'flex', justifycontent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                  <p style={{ fontSize: '9px', color: '#555', letterSpacing: '2px', margin: 0 }}>SEND MONEY TO [PERSONAL]:</p>
+                  <button type="button" onClick={handleCopyNumber} style={styles.copyBtn}>
                     {copied ? 'COPIED' : 'COPY'}
                   </button>
                 </div>
-                <p style={{ fontSize: '22px', letterSpacing: '4px', marginBottom: '25px', color: '#fff', fontWeight: 600, fontFamily: 'monospace', margin: '0 0 25px 0' }}>01521731371</p>
+                <p style={{ fontSize: '20px', letterSpacing: '2px', color: '#fff', fontWeight: 600, margin: '5px 0 20px 0', fontFamily: 'monospace' }}>01521731371</p>
 
                 <input
                   style={styles.input}
@@ -339,8 +325,6 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
                   required
                   value={formData.senderPhone}
                   onChange={(e) => setFormData({ ...formData, senderPhone: e.target.value })}
-                  onFocus={(e) => e.target.style.borderBottom = '1px solid #fff'}
-                  onBlur={(e) => e.target.style.borderBottom = '1px solid #161616'}
                 />
                 <input
                   style={{ ...styles.input, marginBottom: 0 }}
@@ -348,87 +332,68 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
                   required
                   value={transactionId}
                   onChange={(e) => setTransactionId(e.target.value)}
-                  onFocus={(e) => e.target.style.borderBottom = '1px solid #fff'}
-                  onBlur={(e) => e.target.style.borderBottom = '1px solid #161616'}
                 />
               </div>
             )}
 
             {errorMessage && (
-              <div style={styles.errorAlert}>
-                {errorMessage.toUpperCase()}
+              <div style={{ color: '#ff4d4d', fontSize: '10px', letterSpacing: '2px', marginTop: '20px', textTransform: 'uppercase' }}>
+                {errorMessage}
               </div>
             )}
 
-            <button
-              type="submit"
-              disabled={loading}
-              style={{
-                ...styles.submitBtn,
-                opacity: loading ? 0.5 : 1,
-                letterSpacing: loading ? '2px' : '5px'
-              }}
-              onMouseEnter={(e) => {
-                if (!loading) {
-                  e.currentTarget.style.background = 'transparent';
-                  e.currentTarget.style.color = '#fff';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!loading) {
-                  e.currentTarget.style.background = '#fff';
-                  e.currentTarget.style.color = '#000';
-                }
-              }}
-            >
+            <button type="submit" disabled={loading} style={styles.submitBtn}>
               {loading ? 'PROCESSING...' : 'PLACE ORDER'}
             </button>
           </div>
 
-          {/* ডান পাশ: স্টিকি অর্ডার সামারি */}
+          {/* ডান পাশ: আপনার স্ক্রিনশটের মতো নিখুঁত অর্ডার সামারি */}
           <div style={styles.rightColumn}>
-            <h2 style={{ ...styles.sectionHeading, marginBottom: '25px', borderBottom: '1px solid #0d0d0d' }}>ORDER SUMMARY</h2>
+            <h2 style={{ ...styles.sectionHeading, marginTop: 0, borderBottom: '1px solid #111', paddingBottom: '15px' }}>ORDER SUMMARY</h2>
 
-            <div style={{ maxHeight: '380px', overflowY: 'auto', paddingRight: '5px' }}>
+            <div>
               {selectedItems.map((item: CartItem) => (
                 <div key={item.id} style={styles.productRow}>
-                  <img 
-                    src={item.image_url || 'https://via.placeholder.com/60x75?text=NOMAD'} 
-                    alt={item.name} 
-                    style={styles.productImg} 
-                  />
-                  <div style={{ flexGrow: 1, minWidth: 0 }}> 
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '15px', marginBottom: '8px', width: '100%' }}>
-                      <span style={{ color: '#fff', fontSize: '11px', letterSpacing: '1.5px', fontWeight: 500, textTransform: 'uppercase', lineHeight: '1.4' }}>
-                        {item.name}
-                      </span>
-                      <span style={{ color: '#fff', fontSize: '11px', fontFamily: 'monospace', fontWeight: 500, whiteSpace: 'nowrap', flexShrink: 0, paddingTop: '2px' }}>
-                        ৳{item.price * item.quantity}
-                      </span>
+                  <img src={item.image_url || 'https://via.placeholder.com/65x80'} alt={item.name} style={styles.productImg} />
+                  <div style={{ flexGrow: 1 }}> 
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
+                      <span style={{ fontSize: '11px', letterSpacing: '1.5px', fontWeight: 500 }}>{item.name.toUpperCase()}</span>
+                      <span style={{ fontSize: '11px', fontFamily: 'monospace' }}>৳{item.price * item.quantity}</span>
                     </div>
                     <div style={{ fontSize: '10px', color: '#444', letterSpacing: '1px' }}>
-                      QTY: {item.quantity} 
-                      {(item.size || item.color) && `  ·  `}
-                      {item.color?.toUpperCase()}{item.color && item.size ? ' / ' : ''}{item.size?.toUpperCase()}
+                      QTY: {item.quantity} {item.color && ` • ${item.color.toUpperCase()}`} {item.size && ` / ${item.size.toUpperCase()}`}
                     </div>
                   </div>
                 </div>
               ))}
             </div>
 
-            {/* হিসাব প্যানেল */}
-            <div style={{ marginTop: '25px', paddingTop: '20px', borderTop: '1px solid #0d0d0d' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', letterSpacing: '1.5px', marginBottom: '14px', color: '#555' }}>
+            {/* ⚡ লাক্সারি ট্যাক্স ও ডাইনামিক ডেলিভারি ক্যালকুলেশন */}
+            <div style={{ marginTop: '30px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', letterSpacing: '1.5px', marginBottom: '15px', color: '#666' }}>
                 <span>SUBTOTAL</span>
-                <span style={{ fontFamily: 'monospace' }}>৳{displayTotal}</span>
+                <span style={{ fontFamily: 'monospace' }}>৳{subtotal}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', letterSpacing: '1.5px', marginBottom: '25px', color: '#555' }}>
+
+              {/* ডেলিভারি চার্জ ০ টাকা হলে স্ক্রিনশটের মতো COMPLIMENTARY দেখাবে */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', letterSpacing: '1.5px', marginBottom: '15px', color: '#666' }}>
                 <span>SHIPPING</span>
-                <span style={{ fontSize: '10px', letterSpacing: '1px', color: '#666' }}>COMPLIMENTARY</span>
+                <span style={{ fontFamily: 'monospace', color: deliveryCharge === 0 ? '#fff' : '#666' }}>
+                  {deliveryCharge === 0 ? 'COMPLIMENTARY' : `৳${deliveryCharge}`}
+                </span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', letterSpacing: '2px', paddingTop: '18px', borderTop: '1px dashed #141414', color: '#fff', fontWeight: 600 }}>
+
+              {/* ভ্যাট থাকলে তবেই শো করবে */}
+              {vatRate > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', letterSpacing: '1.5px', marginBottom: '15px', color: '#666' }}>
+                  <span>VAT ({vatRate * 100}%)</span>
+                  <span style={{ fontFamily: 'monospace' }}>৳{vatAmount}</span>
+                </div>
+              )}
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', letterSpacing: '2px', paddingTop: '20px', borderTop: '1px dotted #222', color: '#fff', fontWeight: 600, marginTop: '25px' }}>
                 <span>TOTAL</span>
-                <span style={{ fontFamily: 'monospace', fontSize: '14px' }}>৳{displayTotal}</span>
+                <span style={{ fontFamily: 'monospace', fontSize: '14px' }}>৳{grandTotal}</span>
               </div>
             </div>
 
