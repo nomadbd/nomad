@@ -173,7 +173,6 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
       objectFit: 'cover' as const,
       background: '#0a0a0a',
     },
-    // ✨ পিক্সেল-পারফেক্ট বাটন স্টাইল (মোবাইলে ৪ দিকের বর্ডার একদম সমান দেখাবে)
     submitBtn: {
       width: '100%',
       height: '52px', 
@@ -196,7 +195,6 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
       justifyContent: 'center',
       boxSizing: 'border-box' as const,
     },
-    // ⚡ সাকসেস স্ক্রিন: প্যাডিং এডজাস্ট করা হয়েছে যেন স্ক্রল ছাড়াই সব ডিভাইসে ফিট হয়
     successWrapper: {
       display: 'flex',
       flexDirection: 'column' as const,
@@ -215,7 +213,6 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
     return (
       <div style={styles.container}>
         <div style={styles.successWrapper}>
-          {/* টিকমার্ক আইকন */}
           <div style={{ fontSize: '32px', marginBottom: '15px', color: '#fff', lineHeight: 1 }}>✓</div>
           
           <h2 style={{ fontSize: '13px', letterSpacing: '4px', fontWeight: 600, marginBottom: '20px', color: '#fff' }}>
@@ -266,13 +263,13 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
               onChange={(e) => setFormData({ ...formData, address: e.target.value })}
             />
 
-            {/* পেমেন্ট মেথড: প্রিমিয়াম গ্রে ফন্ট ব্র্যান্ড নোট */}
+            {/* পেমেন্ট মেথড: মিনিমাল ১ লাইনের গ্রে স্টেটমেন্ট */}
             <h2 style={styles.sectionHeading}>PAYMENT METHOD</h2>
-            <div style={{ color: '#fff', fontSize: '11px', letterSpacing: '2px', fontWeight: 500, marginBottom: '8px', textTransform: 'uppercase' }}>
+            <div style={{ color: '#fff', fontSize: '11px', letterSpacing: '2px', fontWeight: 500, marginBottom: '6px', textTransform: 'uppercase' }}>
               CASH ON DELIVERY
             </div>
-            <p style={{ fontSize: '9px', letterSpacing: '1.5px', color: '#666', lineHeight: '1.8', margin: '0 0 20px 0', textTransform: 'uppercase' as const }}>
-              WE EXCLUSIVELY OFFER CASH ON DELIVERY AT THIS STAGE TO GUARANTEE A SEAMLESS, SECURE AND COMPLIMENTARY HANDOFF FOR EVERY NOMAD PIECE. AUTOMATED DIGITAL GATEWAYS WILL BE INTEGRATED IN THE COMING PHASES.
+            <p style={{ fontSize: '9px', letterSpacing: '1.5px', color: '#555', margin: '0 0 25px 0', textTransform: 'uppercase' as const }}>
+              CURRENTLY ACCEPTING CASH ON DELIVERY ONLY.
             </p>
 
             {errorMessage && (
