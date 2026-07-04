@@ -136,7 +136,6 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
       padding: isMobile ? '10px 0' : '20px',
       boxSizing: 'border-box' as const,
     },
-    // ✨ নাম্বারিং ছাড়া মার্জিন এডজাস্ট করা ক্লিন হেডিং
     sectionHeading: {
       fontSize: '11px',
       letterSpacing: '3px',
@@ -174,11 +173,12 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
       objectFit: 'cover' as const,
       background: '#0a0a0a',
     },
+    // ✨ পিক্সেল-পারফেক্ট বাটন স্টাইল (মোবাইলে ৪ দিকের বর্ডার একদম সমান দেখাবে)
     submitBtn: {
       width: '100%',
-      padding: '18px 0', 
+      height: '52px', 
       background: 'transparent', 
-      border: '1px solid #fff',  
+      border: '1.5px solid #fff',  
       color: '#fff',             
       cursor: 'pointer',
       letterSpacing: '4px',
@@ -191,16 +191,18 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
       WebkitAppearance: 'none' as const,
       MozAppearance: 'none' as const,
       appearance: 'none' as const,
-      lineHeight: '1',
-      display: 'block',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
       boxSizing: 'border-box' as const,
     },
+    // ⚡ সাকসেস স্ক্রিন: প্যাডিং এডজাস্ট করা হয়েছে যেন স্ক্রল ছাড়াই সব ডিভাইসে ফিট হয়
     successWrapper: {
       display: 'flex',
       flexDirection: 'column' as const,
       alignItems: 'center',
-      justifyContent: 'flex-start', 
-      paddingTop: isMobile ? '120px' : '150px', 
+      justifyContent: 'center', 
+      paddingTop: isMobile ? '40px' : '60px', 
       paddingBottom: '40px',
       textAlign: 'center' as const,
       maxWidth: '450px',
@@ -213,7 +215,8 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
     return (
       <div style={styles.container}>
         <div style={styles.successWrapper}>
-          <div style={{ fontSize: '36px', marginBottom: '15px', color: '#fff' }}>✓</div>
+          {/* টিকমার্ক আইকন */}
+          <div style={{ fontSize: '32px', marginBottom: '15px', color: '#fff', lineHeight: 1 }}>✓</div>
           
           <h2 style={{ fontSize: '13px', letterSpacing: '4px', fontWeight: 600, marginBottom: '20px', color: '#fff' }}>
             ORDER PLACED SUCCESSFULLY
@@ -239,7 +242,7 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
           {/* বাম পাশ: ফর্ম */}
           <div style={styles.leftColumn}>
             
-            <h2 style={{ ...styles.sectionHeading, marginTop: 0 }}>SHIPPING ADDRESS</h2>
+            <h2 style={styles.sectionHeading}>SHIPPING ADDRESS</h2>
             <input
               style={styles.input}
               placeholder="FULL NAME"
@@ -263,11 +266,14 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
               onChange={(e) => setFormData({ ...formData, address: e.target.value })}
             />
 
-            {/* স্লিক অ্যান্ড মিনিমাল স্ট্যাটিক পেমেন্ট সেকশন */}
+            {/* পেমেন্ট মেথড: প্রিমিয়াম গ্রে ফন্ট ব্র্যান্ড নোট */}
             <h2 style={styles.sectionHeading}>PAYMENT METHOD</h2>
-            <div style={{ ...styles.input, color: '#fff', borderBottom: '1px solid #161616', cursor: 'default' }}>
+            <div style={{ color: '#fff', fontSize: '11px', letterSpacing: '2px', fontWeight: 500, marginBottom: '8px', textTransform: 'uppercase' }}>
               CASH ON DELIVERY
             </div>
+            <p style={{ fontSize: '9px', letterSpacing: '1.5px', color: '#666', lineHeight: '1.8', margin: '0 0 20px 0', textTransform: 'uppercase' as const }}>
+              WE EXCLUSIVELY OFFER CASH ON DELIVERY AT THIS STAGE TO GUARANTEE A SEAMLESS, SECURE AND COMPLIMENTARY HANDOFF FOR EVERY NOMAD PIECE. AUTOMATED DIGITAL GATEWAYS WILL BE INTEGRATED IN THE COMING PHASES.
+            </p>
 
             {errorMessage && (
               <div style={{ color: '#ff4d4d', fontSize: '10px', letterSpacing: '2px', marginTop: '20px', textTransform: 'uppercase' }}>
