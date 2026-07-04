@@ -12,26 +12,12 @@ interface CartItem {
   image_url?: string;
 }
 
-const PAYMENT_OPTIONS = [
-  { label: 'CASH ON DELIVERY', value: 'cod' },
-  { label: 'BKASH (PERSONAL)', value: 'bkash' },
-  { label: 'NAGAD (PERSONAL)', value: 'nagad' },
-  { label: 'ROCKET (PERSONAL)', value: 'rocket' }
-];
-
 export default function Checkout({ selectedItems, onSuccess }: { selectedItems: CartItem[], onSuccess: () => void }) {
   const { clearCart } = useCart() as any;
 
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState('');
-  const [paymentLabel, setPaymentLabel] = useState('SELECT PAYMENT METHOD');
-  const [formData, setFormData] = useState({ name: '', phone: '', address: '', senderPhone: '' });
-  const [transactionId, setTransactionId] = useState('');
-  
-  const [copied, setCopied] = useState(false);
-  const [hoveredOption, setHoveredOption] = useState<string | null>(null);
+  const [formData, setFormData] = useState({ name: '', phone: '', address: '' });
   const [isMobile, setIsMobile] = useState(false);
   const [isOrderPlaced, setIsOrderPlaced] = useState(false); 
 
@@ -67,20 +53,10 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
   const vatAmount = Math.round(subtotal * vatRate);
   const grandTotal = subtotal + deliveryCharge + vatAmount;
 
-  const handleCopyNumber = () => {
-    navigator.clipboard.writeText('01521731371');
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
 
-    if (!paymentMethod) return setErrorMessage('PLEASE SELECT A PAYMENT METHOD.');
-    if (paymentMethod !== 'cod' && (!formData.senderPhone.trim() || !transactionId.trim())) {
-      return setErrorMessage('SENDER NUMBER AND TRANSACTION ID ARE REQUIRED.');
-    }
     if (!formData.name.trim() || !formData.phone.trim() || !formData.address.trim()) {
       return setErrorMessage('PLEASE FILL IN ALL REQUIRED SHIPPING FIELDS.');
     }
@@ -96,9 +72,9 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
           customer_name: formData.name,
           customer_phone: formData.phone,
           shipping_address: formData.address, 
-          sender_phone: paymentMethod !== 'cod' ? formData.senderPhone : null,
-          payment_method: paymentMethod,
-          transaction_id: paymentMethod !== 'cod' ? transactionId : null,
+          sender_phone: null,
+          payment_method: 'cod',
+          transaction_id: null,
           delivery_charge: deliveryCharge, 
           vat_amount: vatAmount,           
           total_amount: grandTotal, 
@@ -160,6 +136,7 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
       padding: isMobile ? '10px 0' : '20px',
       boxSizing: 'border-box' as const,
     },
+    // ✨ নাম্বারিং ছাড়া মার্জিন এডজাস্ট করা ক্লিন হেডিং
     sectionHeading: {
       fontSize: '11px',
       letterSpacing: '3px',
@@ -169,7 +146,6 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
       marginTop: '30px',
       fontWeight: 600,
     },
-    // ✨ ইনপুট ফিল্ডের গ্যাপ ও প্যাডিং কমানো হয়েছে (স্লিক লুক)
     input: {
       width: '100%',
       boxSizing: 'border-box' as const,
@@ -198,26 +174,9 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
       objectFit: 'cover' as const,
       background: '#0a0a0a',
     },
-    mfsPanel: {
-      padding: '20px', 
-      background: '#050505', 
-      border: '1px solid #0d0d0d', 
-      marginBottom: '20px',
-      marginTop: '10px'
-    },
-    copyBtn: {
-      background: 'transparent',
-      border: '1px solid #222',
-      color: '#888',
-      padding: '5px 12px',
-      fontSize: '8px',
-      letterSpacing: '1.5px',
-      cursor: 'pointer',
-    },
-    // ✨ বাটন স্টাইল: সলিড সাদা বক্স থেকে মিনিমাল সাদা বর্ডারে রূপান্তর
     submitBtn: {
       width: '100%',
-      padding: '18px',
+      padding: '18px 0', 
       background: 'transparent', 
       border: '1px solid #fff',  
       color: '#fff',             
@@ -226,15 +185,22 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
       fontSize: '11px',
       fontWeight: 500,
       textTransform: 'uppercase' as const,
-      marginTop: '30px',
-      transition: 'all 0.2s ease',
+      marginTop: '35px',
+      borderRadius: 0,
+      outline: 'none',
+      WebkitAppearance: 'none' as const,
+      MozAppearance: 'none' as const,
+      appearance: 'none' as const,
+      lineHeight: '1',
+      display: 'block',
+      boxSizing: 'border-box' as const,
     },
     successWrapper: {
       display: 'flex',
       flexDirection: 'column' as const,
       alignItems: 'center',
       justifyContent: 'flex-start', 
-      paddingTop: isMobile ? '40px' : '80px', 
+      paddingTop: isMobile ? '120px' : '150px', 
       paddingBottom: '40px',
       textAlign: 'center' as const,
       maxWidth: '450px',
@@ -257,8 +223,7 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
             Thank you for your purchase. Your order has been received and is currently being processed. We will contact you shortly to confirm your shipment.
           </p>
           
-          {/* একই বর্ডার স্টাইলের বাটন */}
-          <button onClick={onSuccess} style={{ ...styles.submitBtn, marginTop: 0, maxWidth: '260px' }}>
+          <button onClick={onSuccess} style={{ ...styles.submitBtn, marginTop: 0, maxWidth: '260px', margin: '0 auto' }}>
             CONTINUE SHOPPING
           </button>
         </div>
@@ -274,7 +239,7 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
           {/* বাম পাশ: ফর্ম */}
           <div style={styles.leftColumn}>
             
-            <h2 style={{ ...styles.sectionHeading, marginTop: 0 }}>01 / SHIPPING ADDRESS</h2>
+            <h2 style={{ ...styles.sectionHeading, marginTop: 0 }}>SHIPPING ADDRESS</h2>
             <input
               style={styles.input}
               placeholder="FULL NAME"
@@ -298,78 +263,11 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
               onChange={(e) => setFormData({ ...formData, address: e.target.value })}
             />
 
-            <h2 style={styles.sectionHeading}>02 / PAYMENT METHOD</h2>
-            <div style={{ position: 'relative' }}>
-              <div
-                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                style={{ 
-                  ...styles.input, 
-                  cursor: 'pointer', 
-                  display: 'flex', 
-                  justifyContent: 'space-between', 
-                  alignItems: 'center',
-                  color: paymentMethod ? '#fff' : '#555',
-                  marginBottom: 0
-                }}
-              >
-                <span>{paymentLabel}</span>
-                <span style={{ fontSize: '8px', transform: isDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}>▼</span>
-              </div>
-
-              {isDropdownOpen && (
-                <div style={{ position: 'absolute', top: '100%', left: 0, width: '100%', background: '#050505', border: '1px solid #111', zIndex: 9999 }}>
-                  {PAYMENT_OPTIONS.map((opt) => (
-                    <div
-                      key={opt.value}
-                      onClick={() => {
-                        setPaymentMethod(opt.value);
-                        setPaymentLabel(opt.label);
-                        setIsDropdownOpen(false);
-                      }}
-                      onMouseEnter={() => setHoveredOption(opt.value)}
-                      onMouseLeave={() => setHoveredOption(null)}
-                      style={{
-                        padding: '16px 20px',
-                        fontSize: '11px',
-                        letterSpacing: '2px',
-                        cursor: 'pointer',
-                        color: paymentMethod === opt.value ? '#000' : (hoveredOption === opt.value ? '#fff' : '#666'),
-                        backgroundColor: paymentMethod === opt.value ? '#fff' : (hoveredOption === opt.value ? '#0a0a0a' : 'transparent'),
-                      }}
-                    >
-                      {opt.label}
-                    </div>
-                  ))}
-                </div>
-              )}
+            {/* স্লিক অ্যান্ড মিনিমাল স্ট্যাটিক পেমেন্ট সেকশন */}
+            <h2 style={styles.sectionHeading}>PAYMENT METHOD</h2>
+            <div style={{ ...styles.input, color: '#fff', borderBottom: '1px solid #161616', cursor: 'default' }}>
+              CASH ON DELIVERY
             </div>
-
-            {paymentMethod && paymentMethod !== 'cod' && (
-              <div style={styles.mfsPanel}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                  <p style={{ fontSize: '9px', color: '#555', letterSpacing: '2px', margin: 0 }}>SEND MONEY TO [PERSONAL]:</p>
-                  <button type="button" onClick={handleCopyNumber} style={styles.copyBtn}>
-                    {copied ? 'COPIED' : 'COPY'}
-                  </button>
-                </div>
-                <p style={{ fontSize: '20px', letterSpacing: '2px', color: '#fff', fontWeight: 600, margin: '5px 0 20px 0', fontFamily: 'monospace' }}>01521731371</p>
-
-                <input
-                  style={styles.input}
-                  placeholder="SENDER PHONE NUMBER"
-                  required
-                  value={formData.senderPhone}
-                  onChange={(e) => setFormData({ ...formData, senderPhone: e.target.value })}
-                />
-                <input
-                  style={{ ...styles.input, marginBottom: 0 }}
-                  placeholder="TRANSACTION ID"
-                  required
-                  value={transactionId}
-                  onChange={(e) => setTransactionId(e.target.value)}
-                />
-              </div>
-            )}
 
             {errorMessage && (
               <div style={{ color: '#ff4d4d', fontSize: '10px', letterSpacing: '2px', marginTop: '20px', textTransform: 'uppercase' }}>
@@ -377,7 +275,6 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
               </div>
             )}
 
-            {/* প্লেস অর্ডার বাটন (বর্ডার স্টাইলড) */}
             <button type="submit" disabled={loading} style={styles.submitBtn}>
               {loading ? 'PROCESSING...' : 'PLACE ORDER'}
             </button>
