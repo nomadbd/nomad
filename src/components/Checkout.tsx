@@ -32,7 +32,7 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
     
     const fetchStoreSettings = async () => {
       try {
-        const { data, error } = await supabase
+        const { data, error = null } = await supabase
           .from('store_settings')
           .select('delivery_charge, vat_rate')
           .single();
@@ -49,6 +49,13 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
     fetchStoreSettings();
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // অর্ডার প্লেস হলে অটোমেটিক স্ক্রিনের একদম ওপরে স্ক্রল করার জন্য এফেক্ট
+  useEffect(() => {
+    if (isOrderPlaced) {
+      window.scrollTo(0, 0);
+    }
+  }, [isOrderPlaced]);
 
   const subtotal = selectedItems.reduce((acc: number, item: CartItem) => acc + item.price * item.quantity, 0);
   const vatAmount = Math.round(subtotal * vatRate);
@@ -196,6 +203,34 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
       minHeight: isMobile ? '100vh' : 'auto',
       boxSizing: 'border-box' as const,
     },
+    // ⚡ নতুন কন্ডিশনাল টপ হেডার স্টাইল
+    topHeader: {
+      width: '100%',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      position: 'relative' as const,
+      paddingBottom: '15px',
+      marginBottom: '30px',
+      borderBottom: '1px solid #111',
+    },
+    topHeaderTitle: {
+      fontSize: '13px',
+      letterSpacing: '4px',
+      fontWeight: 600,
+      color: '#fff',
+    },
+    closeBtn: {
+      position: 'absolute' as const,
+      right: 0,
+      background: 'none',
+      border: 'none',
+      color: '#fff',
+      fontSize: '16px',
+      cursor: 'pointer',
+      outline: 'none',
+      padding: '5px',
+    },
     layoutGrid: {
       display: 'flex',
       flexDirection: isMobile ? 'column-reverse' as const : 'row' as const,
@@ -330,20 +365,19 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
       flexDirection: 'column' as const,
       alignItems: 'center',
       justifyContent: 'center', 
-      paddingTop: isMobile ? '40px' : '60px', 
+      paddingTop: isMobile ? '30px' : '60px', 
       paddingBottom: '40px',
       textAlign: 'center' as const,
       maxWidth: '450px',
       margin: '0 auto',
       boxSizing: 'border-box' as const,
     },
-    // ✨ ইনভয়েস টেক্সট লিংকের জন্য নতুন মিনিমাল স্টাইল
     invoiceLink: {
       fontSize: '11px',
       letterSpacing: '2px',
       color: '#888',
       cursor: 'pointer',
-      textDecoration: 'underline',
+      textDecoration: 'none' as const, // কোনো আন্ডারলাইন বা দাগ থাকবে না
       textTransform: 'uppercase' as const,
       background: 'none',
       border: 'none',
@@ -352,6 +386,7 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
     }
   };
 
+  // 🌟 অর্ডার সাকসেস স্ক্রিন (এখানে কোনো CHECKOUT হেডার বা ক্রস বাটন নেই)
   if (isOrderPlaced) {
     return (
       <div style={styles.container}>
@@ -366,12 +401,10 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
             Thank you for your purchase. Your order has been received and is currently being processed. Registered users can also track this in their profile.
           </p>
           
-          {/* ⚡ ১. ইনভয়েস লিংক: এখন এটি কেবল একটি আন্ডারলাইনড টেক্সট লিংক */}
           <button onClick={handleDownloadInvoice} style={styles.invoiceLink}>
             DOWNLOAD INVOICE
           </button>
 
-          {/* ⚡ ২. কন্টিনিউ শপিং বাটন: এটি আবার আগের মতো সুন্দর বর্ডার-বাটন স্টাইলে ফিরে এসেছে */}
           <button onClick={onSuccess} style={{ ...styles.submitBtn, marginTop: '25px', maxWidth: '260px', margin: '25px auto 0 auto' }}>
             CONTINUE SHOPPING
           </button>
@@ -380,14 +413,21 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
     );
   }
 
+  // 🌟 রেগুলার চেকআউট স্ক্রিন (ফর্ম পূরণের সময় ওপরে CHECKOUT হেডার দেখাবে)
   return (
     <div style={styles.container}>
+      
+      {/* ⚡ মেইন চেকআউট হেডার: যা সফল স্ক্রিনে সম্পূর্ণ হাইড থাকবে */}
+      <div style={styles.topHeader}>
+        <span style={styles.topHeaderTitle}>CHECKOUT</span>
+        <button type="button" onClick={onSuccess} style={styles.closeBtn}>✕</button>
+      </div>
+
       <form onSubmit={handleSubmit} noValidate style={{ width: '100%' }}>
         <div style={styles.layoutGrid}>
 
           {/* বাম পাশ: ফর্ম */}
           <div style={styles.leftColumn}>
-            
             <h2 style={styles.sectionHeading}>SHIPPING ADDRESS</h2>
             <input
               style={styles.input}
@@ -412,7 +452,6 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
               onChange={(e) => setFormData({ ...formData, address: e.target.value })}
             />
 
-            {/* পেমেন্ট মেথড: বামে টেক্সট, একদম ডানে হোয়াইট-সার্কেল ব্ল্যাক টিকমার্ক */}
             <div style={styles.paymentRow}>
               <span style={styles.paymentText}>CASH ON DELIVERY</span>
               <div style={styles.customCircleCheckbox}>✓</div>
