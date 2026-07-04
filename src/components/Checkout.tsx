@@ -12,14 +12,23 @@ interface CartItem {
   image_url?: string;
 }
 
-export default function Checkout({ selectedItems, onSuccess }: { selectedItems: CartItem[], onSuccess: () => void }) {
+// ⚡ onOrderPlaced প্রপটি যোগ করা হয়েছে প্যারেন্ট হেডার কন্ট্রোল করার জন্য
+export default function Checkout({ 
+  selectedItems, 
+  onSuccess, 
+  onOrderPlaced 
+}: { 
+  selectedItems: CartItem[], 
+  onSuccess: () => void,
+  onOrderPlaced?: (placed: boolean) => void
+}) {
   const { clearCart } = useCart() as any;
 
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [formData, setFormData] = useState({ name: '', phone: '', address: '' });
   const [isMobile, setIsMobile] = useState(false);
-  const [isOrderPlaced, setIsOrderPlaced] = useState(false); 
+  const [isOrderPlacedState, setIsOrderPlacedState] = useState(false); 
 
   const [deliveryCharge, setDeliveryCharge] = useState<number>(100); 
   const [vatRate, setVatRate] = useState<number>(0.05); 
@@ -50,12 +59,16 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // অর্ডার প্লেস হলে অটোমেটিক স্ক্রিনের একদম ওপরে স্ক্রল করার জন্য এফেক্ট
+  // অর্ডার প্লেস হলে অটোমেটিক স্ক্রিনের একদম ওপরে স্ক্রল করবে
   useEffect(() => {
-    if (isOrderPlaced) {
+    if (isOrderPlacedState) {
       window.scrollTo(0, 0);
+      // প্যারেন্ট কম্পোনেন্টকে জানিয়ে দেওয়া যে অর্ডার ডান, যেন সে হেডার লুকিয়ে ফেলে
+      if (onOrderPlaced) {
+        onOrderPlaced(true);
+      }
     }
-  }, [isOrderPlaced]);
+  }, [isOrderPlacedState, onOrderPlaced]);
 
   const subtotal = selectedItems.reduce((acc: number, item: CartItem) => acc + item.price * item.quantity, 0);
   const vatAmount = Math.round(subtotal * vatRate);
@@ -65,8 +78,16 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
     e.preventDefault();
     setErrorMessage(null);
 
+    // ১. ফিল্ড খালি কিনা চেক
     if (!formData.name.trim() || !formData.phone.trim() || !formData.address.trim()) {
       return setErrorMessage('PLEASE FILL IN ALL REQUIRED SHIPPING FIELDS.');
+    }
+
+    // ⚡ ২. বাংলাদেশি মোবাইল নাম্বার ভ্যালিডেশন (Strict Regex Check)
+    const bdPhoneRegex = /^01[3-9]\d{8}$/;
+    const cleanPhone = formData.phone.trim();
+    if (!bdPhoneRegex.test(cleanPhone)) {
+      return setErrorMessage('INVALID CONTACT NUMBER. PLEASE ENTER A VALID 11-DIGIT NUMBER (EG. 017XXXXXXXX).');
     }
 
     setLoading(true);
@@ -78,7 +99,7 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
         .insert([{
           user_id: user?.id || null, 
           customer_name: formData.name,
-          customer_phone: formData.phone,
+          customer_phone: cleanPhone,
           shipping_address: formData.address, 
           sender_phone: null,
           payment_method: 'cod',
@@ -107,7 +128,7 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
       setPlacedOrderDetails({
         orderId: order.id,
         customerName: formData.name,
-        customerPhone: formData.phone,
+        customerPhone: cleanPhone,
         shippingAddress: formData.address,
         items: [...selectedItems],
         subtotal,
@@ -117,7 +138,7 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
       });
 
       clearCart(); 
-      setIsOrderPlaced(true); 
+      setIsOrderPlacedState(true); 
     } catch (err: any) {
       setErrorMessage(err.message || 'ORDER FAILED. PLEASE TRY AGAIN.');
     } finally {
@@ -203,7 +224,6 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
       minHeight: isMobile ? '100vh' : 'auto',
       boxSizing: 'border-box' as const,
     },
-    // ⚡ নতুন কন্ডিশনাল টপ হেডার স্টাইল
     topHeader: {
       width: '100%',
       display: 'flex',
@@ -365,7 +385,7 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
       flexDirection: 'column' as const,
       alignItems: 'center',
       justifyContent: 'center', 
-      paddingTop: isMobile ? '30px' : '60px', 
+      paddingTop: isMobile ? '40px' : '60px', 
       paddingBottom: '40px',
       textAlign: 'center' as const,
       maxWidth: '450px',
@@ -377,7 +397,7 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
       letterSpacing: '2px',
       color: '#888',
       cursor: 'pointer',
-      textDecoration: 'none' as const, // কোনো আন্ডারলাইন বা দাগ থাকবে না
+      textDecoration: 'none' as const, 
       textTransform: 'uppercase' as const,
       background: 'none',
       border: 'none',
@@ -386,8 +406,8 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
     }
   };
 
-  // 🌟 অর্ডার সাকসেস স্ক্রিন (এখানে কোনো CHECKOUT হেডার বা ক্রস বাটন নেই)
-  if (isOrderPlaced) {
+  // 🌟 অর্ডার সাকসেস স্ক্রিন (এখানে কম্পোনেন্টের নিজস্ব কোনো হেডার নেই)
+  if (isOrderPlacedState) {
     return (
       <div style={styles.container}>
         <div style={styles.successWrapper}>
@@ -413,11 +433,11 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
     );
   }
 
-  // 🌟 রেগুলার চেকআউট স্ক্রিন (ফর্ম পূরণের সময় ওপরে CHECKOUT হেডার দেখাবে)
+  // 🌟 রেগুলার ফর্ম স্ক্রিন
   return (
     <div style={styles.container}>
       
-      {/* ⚡ মেইন চেকআউট হেডার: যা সফল স্ক্রিনে সম্পূর্ণ হাইড থাকবে */}
+      {/* কম্পোনেন্টের ইন্টারনাল হেডার */}
       <div style={styles.topHeader}>
         <span style={styles.topHeaderTitle}>CHECKOUT</span>
         <button type="button" onClick={onSuccess} style={styles.closeBtn}>✕</button>
@@ -457,8 +477,9 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
               <div style={styles.customCircleCheckbox}>✓</div>
             </div>
 
+            {/* ভুল ইনপুট দিলে এই এররটি পপ-আপ হবে */}
             {errorMessage && (
-              <div style={{ color: '#ff4d4d', fontSize: '10px', letterSpacing: '2px', marginTop: '20px', textTransform: 'uppercase' }}>
+              <div style={{ color: '#ff4d4d', fontSize: '10px', letterSpacing: '2px', marginTop: '20px', textTransform: 'uppercase', lineHeight: '1.6' }}>
                 {errorMessage}
               </div>
             )}
