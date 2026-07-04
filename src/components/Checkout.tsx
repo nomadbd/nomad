@@ -12,10 +12,10 @@ interface CartItem {
   image_url?: string;
 }
 
+// ⚡ ক্যাশ অন ডেলিভারি সহ গেটওয়ে লিস্ট আপডেট করা হয়েছে
 const PAYMENT_OPTIONS = [
   { label: 'CASH ON DELIVERY', value: 'cod' },
   { label: 'BKASH (PERSONAL)', value: 'bkash' },
-  { label: 'NAGAD (PERSONAL)', value: 'nagad' },
   { label: 'ROCKET (PERSONAL)', value: 'rocket' }
 ];
 
@@ -30,10 +30,8 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
   const [formData, setFormData] = useState({ name: '', phone: '', address: '', senderPhone: '' });
   const [transactionId, setTransactionId] = useState('');
   
-  // ⚡ নতুন স্টেট: নম্বর কপি করার ফিডব্যাক ট্র্যাকিং
   const [copied, setCopied] = useState(false);
   const [hoveredOption, setHoveredOption] = useState<string | null>(null);
-
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -45,7 +43,6 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
 
   const displayTotal = selectedItems.reduce((acc: number, item: CartItem) => acc + item.price * item.quantity, 0);
 
-  // ⚡ নম্বর কপি করার ফাংশন
   const handleCopyNumber = () => {
     navigator.clipboard.writeText('01521731371');
     setCopied(true);
@@ -57,11 +54,12 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
     setErrorMessage(null);
 
     if (!paymentMethod) return setErrorMessage('PLEASE SELECT A PAYMENT METHOD.');
-
-    if (paymentMethod !== 'cod' && (!transactionId.trim() || !formData.senderPhone.trim())) {
+    
+    // ⚡ COD না হলে শুধুমাত্র তখনই ট্রানজেকশন আইডি ভ্যালিডেশন কাজ করবে
+    if (paymentMethod !== 'cod' && (!formData.senderPhone.trim() || !transactionId.trim())) {
       return setErrorMessage('SENDER NUMBER AND TRANSACTION ID ARE REQUIRED.');
     }
-
+    
     if (!formData.name.trim() || !formData.phone.trim() || !formData.address.trim()) {
       return setErrorMessage('PLEASE FILL IN ALL REQUIRED SHIPPING FIELDS.');
     }
@@ -70,6 +68,7 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
     try {
       const { data: { user } } = await supabase.auth.getUser();
 
+      // ১. ওর্ডার্স টেবিলে ডাটা ইনসার্ট (COD কন্ডিশন হ্যান্ডেল সহ)
       const { data: order, error: orderError } = await supabase
         .from('orders')
         .insert([{
@@ -87,6 +86,7 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
 
       if (orderError) throw orderError;
 
+      // ২. অর্ডার আইটেমস টেবিলে ডাটা ইনসার্ট
       const items = selectedItems.map((item: CartItem) => ({
         order_id: order.id,
         product_id: item.id,
@@ -108,21 +108,23 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
     }
   };
 
-  // NOMAD আল্ট্রা-লাক্সারি মিনিমাল থিম স্টাইলস
   const styles = {
     container: {
       width: '100%',
       maxWidth: '1200px',
       margin: '0 auto',
-      padding: isMobile ? '20px 15px 60px 15px' : '50px 20px 80px 20px',
+      padding: isMobile ? '15px 15px 140px 15px' : '60px 20px 90px 20px',
       color: '#fff',
       backgroundColor: '#000',
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+      minHeight: isMobile ? '100vh' : 'auto',
+      overflowY: 'auto' as const,
+      boxSizing: 'border-box' as const,
     },
     layoutGrid: {
       display: 'flex',
       flexDirection: isMobile ? 'column-reverse' as const : 'row' as const,
-      gap: isMobile ? '40px' : '60px',
+      gap: isMobile ? '40px' : '70px',
       alignItems: 'flex-start',
     },
     leftColumn: {
@@ -135,17 +137,19 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
       position: isMobile ? 'relative' as const : 'sticky' as const,
       top: '40px',
       background: '#030303',
-      border: '1px solid #0a0a0a',
-      padding: isMobile ? '25px 20px' : '35px',
+      border: '1px solid #0d0d0d',
+      padding: isMobile ? '30px 20px' : '40px',
+      boxSizing: 'border-box' as const,
+      marginBottom: isMobile ? '15px' : '0',
     },
     sectionHeading: {
-      fontSize: '10px',
+      fontSize: '11px',
       letterSpacing: '4px',
-      color: '#555',
+      color: '#fff',
       textTransform: 'uppercase' as const,
-      marginBottom: '25px',
+      marginBottom: '30px',
       borderBottom: '1px solid #0d0d0d',
-      paddingBottom: '12px',
+      paddingBottom: '14px',
       fontWeight: 600,
     },
     input: {
@@ -153,15 +157,15 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
       boxSizing: 'border-box' as const,
       background: 'transparent',
       border: 'none',
-      borderBottom: '1px solid #141414',
-      padding: '16px 0',
+      borderBottom: '1px solid #161616',
+      padding: '18px 0',
       color: '#fff',
       fontSize: '11px',
       letterSpacing: '2px',
-      marginBottom: '25px',
+      marginBottom: '28px',
       outline: 'none',
       borderRadius: 0,
-      transition: 'border-color 0.4s cubic-bezier(0.25, 0.1, 0.25, 1)',
+      transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
     },
     productRow: {
       display: 'flex',
@@ -179,21 +183,20 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
       border: '1px solid #111',
     },
     mfsPanel: {
-      padding: '25px', 
+      padding: '30px 25px', 
       background: '#030303', 
       border: '1px solid #0d0d0d', 
       marginBottom: '35px',
-      transition: 'all 0.3s ease'
     },
     copyBtn: {
       background: 'transparent',
       border: '1px solid #222',
       color: '#888',
-      padding: '4px 10px',
+      padding: '5px 12px',
       fontSize: '8px',
       letterSpacing: '1.5px',
       cursor: 'pointer',
-      transition: 'all 0.2s ease',
+      transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
       fontWeight: 500
     },
     submitBtn: {
@@ -207,17 +210,17 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
       fontSize: '11px',
       fontWeight: 700,
       textTransform: 'uppercase' as const,
-      transition: 'all 0.4s cubic-bezier(0.25, 0.1, 0.25, 1)',
-      marginTop: '15px',
+      transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+      marginTop: '20px',
     },
     errorAlert: {
       background: '#0a0505',
       border: '1px solid #260f0f',
       color: '#ff4d4d',
-      padding: '15px',
+      padding: '16px',
       fontSize: '10px',
       letterSpacing: '2px',
-      marginBottom: '25px',
+      marginBottom: '30px',
       fontFamily: 'monospace',
       textAlign: 'center' as const
     }
@@ -231,8 +234,8 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
           {/* বাম পাশ: ফর্ম ফিল্ডস */}
           <div style={styles.leftColumn}>
 
-            {/* সেকশন ১: শিপিং ঠিকানা */}
-            <h2 style={styles.sectionHeading}>01 / SHIPPING ADDRESS</h2>
+            {/* শিপিং এরিয়া */}
+            <h2 style={styles.sectionHeading}>SHIPPING ADDRESS</h2>
             <input
               style={styles.input}
               placeholder="FULL NAME"
@@ -240,7 +243,7 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               onFocus={(e) => e.target.style.borderBottom = '1px solid #fff'}
-              onBlur={(e) => e.target.style.borderBottom = '1px solid #141414'}
+              onBlur={(e) => e.target.style.borderBottom = '1px solid #161616'}
             />
             <input
               style={styles.input}
@@ -250,20 +253,20 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
               onFocus={(e) => e.target.style.borderBottom = '1px solid #fff'}
-              onBlur={(e) => e.target.style.borderBottom = '1px solid #141414'}
+              onBlur={(e) => e.target.style.borderBottom = '1px solid #161616'}
             />
             <input
               style={styles.input}
-              placeholder="COMPLETE SHIPPING ADDRESS" // ⚡ ফিক্স: মোবাইল স্ক্রিনে ট্রাঙ্কেশন এড়াতে প্লেসহোল্ডার অপ্টিমাইজ করা হয়েছে
+              placeholder="COMPLETE SHIPPING ADDRESS"
               required
               value={formData.address}
               onChange={(e) => setFormData({ ...formData, address: e.target.value })}
               onFocus={(e) => e.target.style.borderBottom = '1px solid #fff'}
-              onBlur={(e) => e.target.style.borderBottom = '1px solid #141414'}
+              onBlur={(e) => e.target.style.borderBottom = '1px solid #161616'}
             />
 
-            {/* সেকশন ২: পেমেন্ট মেথড */}
-            <h2 style={{ ...styles.sectionHeading, marginTop: '20px' }}>02 / PAYMENT METHOD</h2>
+            {/* পেমেন্ট এরিয়া */}
+            <h2 style={{ ...styles.sectionHeading, marginTop: '25px' }}>PAYMENT METHOD</h2>
             <div style={{ position: 'relative', marginBottom: '35px' }}>
               <div
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -274,15 +277,15 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
                   justifyContent: 'space-between', 
                   alignItems: 'center', 
                   color: paymentMethod ? '#fff' : '#555',
-                  borderBottom: isDropdownOpen ? '1px solid #fff' : '1px solid #141414'
+                  borderBottom: isDropdownOpen ? '1px solid #fff' : '1px solid #161616'
                 }}
               >
                 <span style={{ fontSize: '11px', letterSpacing: '2px' }}>{paymentLabel}</span>
-                <span style={{ fontSize: '7px', transition: 'transform 0.3s', transform: isDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)', color: '#444' }}>▼</span>
+                <span style={{ fontSize: '7px', transition: 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)', transform: isDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)', color: '#444' }}>▼</span>
               </div>
 
               {isDropdownOpen && (
-                <div style={{ position: 'absolute', top: '100%', left: 0, width: '100%', background: '#030303', border: '1px solid #0d0d0d', zIndex: 9999, marginTop: '-26px' }}>
+                <div style={{ position: 'absolute', top: '100%', left: 0, width: '100%', background: '#030303', border: '1px solid #0d0d0d', zIndex: 9999, marginTop: '-29px' }}>
                   {PAYMENT_OPTIONS.map((opt) => (
                     <div
                       key={opt.value}
@@ -295,7 +298,7 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
                       onMouseEnter={() => setHoveredOption(opt.value)}
                       onMouseLeave={() => setHoveredOption(null)}
                       style={{
-                        padding: '16px 20px',
+                        padding: '18px 20px',
                         fontSize: '11px',
                         letterSpacing: '2px',
                         cursor: 'pointer',
@@ -311,13 +314,11 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
               )}
             </div>
 
-            {/* এমএফএস মোবাইল ব্যাংকিং প্যানেল */}
+            {/* ⚡ গেটওয়ে প্যানেল: শুধুমাত্র COD না হলে (অর্থাৎ বিকাশ/রকেটে) এটি দেখাবে */}
             {paymentMethod && paymentMethod !== 'cod' && (
               <div style={styles.mfsPanel}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                   <p style={{ fontSize: '9px', color: '#444', letterSpacing: '2px', margin: 0 }}>SEND MONEY TO [PERSONAL]:</p>
-                  
-                  {/* ⚡ প্রিমিয়াম কপি বাটন ইন্টারঅ্যাকশন */}
                   <button 
                     type="button"
                     onClick={handleCopyNumber} 
@@ -339,7 +340,7 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
                   value={formData.senderPhone}
                   onChange={(e) => setFormData({ ...formData, senderPhone: e.target.value })}
                   onFocus={(e) => e.target.style.borderBottom = '1px solid #fff'}
-                  onBlur={(e) => e.target.style.borderBottom = '1px solid #141414'}
+                  onBlur={(e) => e.target.style.borderBottom = '1px solid #161616'}
                 />
                 <input
                   style={{ ...styles.input, marginBottom: 0 }}
@@ -348,12 +349,11 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
                   value={transactionId}
                   onChange={(e) => setTransactionId(e.target.value)}
                   onFocus={(e) => e.target.style.borderBottom = '1px solid #fff'}
-                  onBlur={(e) => e.target.style.borderBottom = '1px solid #141414'}
+                  onBlur={(e) => e.target.style.borderBottom = '1px solid #161616'}
                 />
               </div>
             )}
 
-            {/* ⚡ মিনিমালিস্টিক এরর বক্স */}
             {errorMessage && (
               <div style={styles.errorAlert}>
                 {errorMessage.toUpperCase()}
@@ -397,12 +397,14 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
                     alt={item.name} 
                     style={styles.productImg} 
                   />
-                  <div style={{ flexGrow: 1, minWidth: 0 }}> {/* ⚡ মিক্সিন গার্ড: ফ্লেক্স ওভারফ্লো কমানো */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '15px', marginBottom: '6px' }}>
-                      <span style={{ color: '#fff', fontSize: '11px', letterSpacing: '1.5px', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '70%' }}>
-                        {item.name.toUpperCase()}
+                  <div style={{ flexGrow: 1, minWidth: 0 }}> 
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '15px', marginBottom: '8px', width: '100%' }}>
+                      <span style={{ color: '#fff', fontSize: '11px', letterSpacing: '1.5px', fontWeight: 500, textTransform: 'uppercase', lineHeight: '1.4' }}>
+                        {item.name}
                       </span>
-                      <span style={{ color: '#fff', fontSize: '11px', fontFamily: 'monospace', fontWeight: 500 }}>৳{item.price * item.quantity}</span>
+                      <span style={{ color: '#fff', fontSize: '11px', fontFamily: 'monospace', fontWeight: 500, whiteSpace: 'nowrap', flexShrink: 0, paddingTop: '2px' }}>
+                        ৳{item.price * item.quantity}
+                      </span>
                     </div>
                     <div style={{ fontSize: '10px', color: '#444', letterSpacing: '1px' }}>
                       QTY: {item.quantity} 
@@ -414,7 +416,7 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
               ))}
             </div>
 
-            {/* ক্যালকুলেশন প্যানেল */}
+            {/* হিসাব প্যানেল */}
             <div style={{ marginTop: '25px', paddingTop: '20px', borderTop: '1px solid #0d0d0d' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', letterSpacing: '1.5px', marginBottom: '14px', color: '#555' }}>
                 <span>SUBTOTAL</span>
