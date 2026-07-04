@@ -33,7 +33,7 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
   const [copied, setCopied] = useState(false);
   const [hoveredOption, setHoveredOption] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
-  const [isOrderPlaced, setIsOrderPlaced] = useState(false); // অর্ডার সাকসেস স্টেট
+  const [isOrderPlaced, setIsOrderPlaced] = useState(false); 
 
   const [deliveryCharge, setDeliveryCharge] = useState<number>(100); 
   const [vatRate, setVatRate] = useState<number>(0.05); 
@@ -120,8 +120,8 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
       const { error: itemsError } = await supabase.from('order_items').insert(items);
       if (itemsError) throw itemsError;
 
-      clearCart(); // কার্ট খালি হবে
-      setIsOrderPlaced(true); // সাকসেস স্ক্রিন দেখাবে
+      clearCart(); 
+      setIsOrderPlaced(true); 
     } catch (err: any) {
       setErrorMessage(err.message || 'ORDER FAILED. PLEASE TRY AGAIN.');
     } finally {
@@ -165,21 +165,22 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
       letterSpacing: '3px',
       color: '#fff',
       textTransform: 'uppercase' as const,
-      marginBottom: '25px',
-      marginTop: '35px',
+      marginBottom: '20px',
+      marginTop: '30px',
       fontWeight: 600,
     },
+    // ✨ ইনপুট ফিল্ডের গ্যাপ ও প্যাডিং কমানো হয়েছে (স্লিক লুক)
     input: {
       width: '100%',
       boxSizing: 'border-box' as const,
       background: 'transparent',
       border: 'none',
       borderBottom: '1px solid #161616',
-      padding: '18px 0',
+      padding: '12px 0', 
       color: '#fff',
       fontSize: '11px',
       letterSpacing: '2px',
-      marginBottom: '15px',
+      marginBottom: '10px', 
       outline: 'none',
       borderRadius: 0,
     },
@@ -198,11 +199,11 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
       background: '#0a0a0a',
     },
     mfsPanel: {
-      padding: '25px 20px', 
+      padding: '20px', 
       background: '#050505', 
       border: '1px solid #0d0d0d', 
-      marginBottom: '25px',
-      marginTop: '15px'
+      marginBottom: '20px',
+      marginTop: '10px'
     },
     copyBtn: {
       background: 'transparent',
@@ -213,46 +214,51 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
       letterSpacing: '1.5px',
       cursor: 'pointer',
     },
+    // ✨ বাটন স্টাইল: সলিড সাদা বক্স থেকে মিনিমাল সাদা বর্ডারে রূপান্তর
     submitBtn: {
       width: '100%',
-      padding: '20px',
-      background: '#fff',
-      border: '1px solid #fff',
-      color: '#000',
+      padding: '18px',
+      background: 'transparent', 
+      border: '1px solid #fff',  
+      color: '#fff',             
       cursor: 'pointer',
       letterSpacing: '4px',
       fontSize: '11px',
-      fontWeight: 700,
+      fontWeight: 500,
       textTransform: 'uppercase' as const,
-      marginTop: '35px',
+      marginTop: '30px',
+      transition: 'all 0.2s ease',
     },
-    // সাকসেস স্ক্রিনের স্টাইল
     successWrapper: {
       display: 'flex',
       flexDirection: 'column' as const,
       alignItems: 'center',
-      justifyContent: 'center',
-      minHeight: '60vh',
+      justifyContent: 'flex-start', 
+      paddingTop: isMobile ? '40px' : '80px', 
+      paddingBottom: '40px',
       textAlign: 'center' as const,
-      maxWidth: '500px',
+      maxWidth: '450px',
       margin: '0 auto',
-      padding: '20px',
+      boxSizing: 'border-box' as const,
     }
   };
 
-  // 🎉 অর্ডার সফল হলে এই চমৎকার মিনিমাল স্ক্রিনটি শো করবে
   if (isOrderPlaced) {
     return (
       <div style={styles.container}>
         <div style={styles.successWrapper}>
-          <div style={{ fontSize: '32px', marginBottom: '20px' }}>✓</div>
-          <h2 style={{ fontSize: '14px', letterSpacing: '4px', fontWeight: 600, marginBottom: '15px', color: '#fff' }}>
+          <div style={{ fontSize: '36px', marginBottom: '15px', color: '#fff' }}>✓</div>
+          
+          <h2 style={{ fontSize: '13px', letterSpacing: '4px', fontWeight: 600, marginBottom: '20px', color: '#fff' }}>
             ORDER PLACED SUCCESSFULLY
           </h2>
-          <p style={{ fontSize: '11px', letterSpacing: '2px', color: '#666', lineHeight: '1.8', marginBottom: '40px', textTransform: 'uppercase' as const }}>
+          
+          <p style={{ fontSize: '10px', letterSpacing: '2px', color: '#888', lineHeight: '2', marginBottom: '40px', textTransform: 'uppercase' as const, padding: '0 10px' }}>
             Thank you for your purchase. Your order has been received and is currently being processed. We will contact you shortly to confirm your shipment.
           </p>
-          <button onClick={onSuccess} style={{ ...styles.submitBtn, marginTop: 0, maxWidth: '280px' }}>
+          
+          {/* একই বর্ডার স্টাইলের বাটন */}
+          <button onClick={onSuccess} style={{ ...styles.submitBtn, marginTop: 0, maxWidth: '260px' }}>
             CONTINUE SHOPPING
           </button>
         </div>
@@ -371,6 +377,7 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
               </div>
             )}
 
+            {/* প্লেস অর্ডার বাটন (বর্ডার স্টাইলড) */}
             <button type="submit" disabled={loading} style={styles.submitBtn}>
               {loading ? 'PROCESSING...' : 'PLACE ORDER'}
             </button>
