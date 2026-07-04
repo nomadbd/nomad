@@ -159,28 +159,19 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
       outline: 'none',
       borderRadius: 0,
     },
-    // ✨ ১ লাইনের চেকমেথড রRow স্টাইল
+    // ✨ নতুন পেমেন্ট র স্টাইল (ইনপুট ফিল্ডের সাথে নিখুঁত ডানে-বামে অ্যালাইনড)
     paymentRow: {
       display: 'flex',
       alignItems: 'center',
-      gap: '12px',
-      marginTop: '35px',
-      marginBottom: '5px',
+      justifyContent: 'space-between', // টেক্সট বামে এবং চেকমার্ক একদম ডানে রাখবে
+      borderBottom: '1px solid #161616', // ইনপুট লাইনের সাথে ম্যাচিং বর্ডার
+      padding: '14px 0', 
+      marginTop: '30px',
+      marginBottom: '25px',
       cursor: 'default',
       userSelect: 'none' as const,
-    },
-    // ✨ মিনিমাল স্কয়ার চেকমার্ক বক্স
-    customCheckbox: {
-      width: '14px',
-      height: '14px',
-      border: '1.2px solid #fff',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      fontSize: '10px',
-      color: '#fff',
-      background: 'transparent',
-      lineHeight: 1,
+      width: '100%',
+      boxSizing: 'border-box' as const,
     },
     paymentText: {
       fontSize: '11px',
@@ -188,6 +179,21 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
       color: '#fff',
       fontWeight: 500,
       textTransform: 'uppercase' as const,
+    },
+    // ✨ ছোট সাদা ভরাট বৃত্ত ও কালো টিক চিহ্নের পিওর সিএসএস স্টাইল
+    customCircleCheckbox: {
+      width: '16px',
+      height: '16px',
+      backgroundColor: '#fff', // সাদা ভরাট বৃত্ত
+      borderRadius: '50%', // নিখুঁত গোল শেপ
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontSize: '11px',
+      color: '#000', // কালো টিক চিহ্ন
+      fontWeight: 'bold' as const,
+      lineHeight: 1,
+      flexShrink: 0, // রেসপন্সিভ স্ক্রিনে যেন ছোট না হয়ে যায়
     },
     productRow: {
       display: 'flex',
@@ -214,7 +220,7 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
       fontSize: '11px',
       fontWeight: 500,
       textTransform: 'uppercase' as const,
-      marginTop: '30px',
+      marginTop: '35px',
       borderRadius: 0,
       outline: 'none',
       WebkitAppearance: 'none' as const,
@@ -293,10 +299,10 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
               onChange={(e) => setFormData({ ...formData, address: e.target.value })}
             />
 
-            {/* ⚡ নতুন আল্ট্রা-মিনিমাল পেমেন্ট সেকশন (হেডিং ছাড়া, শুধু চেকমার্ক ও টেক্সট) */}
+            {/* ⚡ আল্ট্রা-মিনিমাল পেমেন্ট মেথড: বামে টেক্সট, একদম ডানে হোয়াইট-সার্কেল ব্ল্যাক টিকমার্ক */}
             <div style={styles.paymentRow}>
-              <div style={styles.customCheckbox}>✓</div>
               <span style={styles.paymentText}>CASH ON DELIVERY</span>
+              <div style={styles.customCircleCheckbox}>✓</div>
             </div>
 
             {errorMessage && (
