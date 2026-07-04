@@ -141,63 +141,97 @@ export default function Checkout({
     }
   };
 
+  // 🌟 আইনি সুরক্ষাসহ ইনভয়েস প্রিন্ট ফাংশন
   const handleDownloadInvoice = () => {
     if (!placedOrderDetails) return;
     
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
 
-    const itemsHtml = placedOrderDetails.items.map((item: any) => `
-      <tr>
-        <td style="padding: 10px 0; border-bottom: 1px solid #eee; font-size: 12px;">${item.name.toUpperCase()} (QTY: ${item.quantity})</td>
-        <td style="padding: 10px 0; border-bottom: 1px solid #eee; font-size: 12px; text-align: right; font-family: monospace;">৳${item.price * item.quantity}</td>
-      </tr>
-    `).join('');
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const date = String(today.getDate()).padStart(2, '0');
+    const formattedDate = `${year}-${month}-${date}`;
+
+    const itemsHtml = placedOrderDetails.items.map((item: any) => {
+      const detailsArray = [];
+      if (item.size) detailsArray.push(`SIZE: ${item.size.toUpperCase()}`);
+      if (item.color) detailsArray.push(`COLOR: ${item.color.toUpperCase()}`);
+      
+      const detailsString = detailsArray.length > 0 ? ` [${detailsArray.join(' | ')}]` : '';
+      
+      return `
+        <tr>
+          <td style="padding: 12px 0; border-bottom: 1px solid #eee; font-size: 11px; letter-spacing: 1px;">
+            <strong>${item.name.toUpperCase()}</strong>${detailsString}<br>
+            <span style="color: #666; font-size: 10px;">QTY: ${item.quantity} × ৳${item.price}</span>
+          </td>
+          <td style="padding: 12px 0; border-bottom: 1px solid #eee; font-size: 11px; text-align: right; font-family: monospace;">৳${item.price * item.quantity}</td>
+        </tr>
+      `;
+    }).join('');
 
     printWindow.document.write(`
       <html>
         <head>
-          <title>INVOICE - NOMAD</title>
+          <title>ORDER MEMO - NOMAD</title>
           <style>
-            body { font-family: sans-serif; color: #000; background: #fff; padding: 40px; margin: 0; }
-            .header { text-align: center; margin-bottom: 40px; letter-spacing: 4px; font-weight: bold; font-size: 20px; }
-            .info-table { width: 100%; margin-bottom: 30px; font-size: 12px; line-height: 1.6; }
-            .items-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
-            .summary-table { width: 40%; margin-left: auto; font-size: 12px; line-height: 1.8; }
+            body { font-family: sans-serif; color: #000; background: #fff; padding: 40px; margin: 0; -webkit-print-color-adjust: exact; }
+            .header { text-align: center; margin-bottom: 10px; letter-spacing: 6px; font-weight: bold; font-size: 22px; }
+            .sub-header { text-align: center; font-size: 10px; letter-spacing: 3px; color: #666; margin-bottom: 40px; text-transform: uppercase; }
+            .info-table { width: 100%; margin-bottom: 40px; font-size: 11px; line-height: 1.8; letter-spacing: 0.5px; }
+            .items-table { width: 100%; border-collapse: collapse; margin-bottom: 40px; }
+            .summary-table { width: 40%; margin-left: auto; font-size: 11px; line-height: 2; letter-spacing: 0.5px; margin-bottom: 60px; }
+            .disclaimer { font-size: 9px; color: #777; line-height: 1.6; text-align: center; border-top: 1px solid #eee; padding-top: 15px; letter-spacing: 0.5px; }
+            th { text-transform: uppercase; font-weight: 600; }
           </style>
         </head>
         <body>
           <div class="header">NOMAD</div>
+          <div class="sub-header">Proforma Invoice / Order Memorandum</div>
+          
           <table class="info-table">
             <tr>
-              <td>
-                <strong>SHIPPING DETAILS:</strong><br>
-                ${placedOrderDetails.customerName}<br>
+              <td style="width: 50%; vertical-align: top;">
+                <span style="color: #666; font-size: 10px; letter-spacing: 1px; display: block; margin-bottom: 5px;">SHIPPING DETAILS</span>
+                <strong>${placedOrderDetails.customerName.toUpperCase()}</strong><br>
                 ${placedOrderDetails.customerPhone}<br>
-                ${placedOrderDetails.shippingAddress}
+                ${placedOrderDetails.shippingAddress.toUpperCase()}
               </td>
               <td style="text-align: right; vertical-align: top;">
                 <strong>ORDER ID:</strong> #${placedOrderDetails.orderId}<br>
-                <strong>DATE:</strong> ${new Date().toLocaleDateString()}<br>
-                <strong>PAYMENT:</strong> CASH ON DELIVERY
+                <strong>DATE:</strong> ${formattedDate}<br>
+                <strong>PAYMENT:</strong> CASH ON DELIVERY<br>
+                <strong style="color: #ff0000; letter-spacing: 1px;">STATUS: UNPAID / DUE</strong>
               </td>
             </tr>
           </table>
+
           <table class="items-table">
             <thead>
               <tr>
-                <th style="text-align: left; padding-bottom: 10px; border-bottom: 2px solid #000; font-size: 12px;">ITEM</th>
-                <th style="text-align: right; padding-bottom: 10px; border-bottom: 2px solid #000; font-size: 12px;">TOTAL</th>
+                <th style="text-align: left; padding-bottom: 12px; border-bottom: 1.5px solid #000; font-size: 11px; letter-spacing: 1px;">DESCRIPTION</th>
+                <th style="text-align: right; padding-bottom: 12px; border-bottom: 1.5px solid #000; font-size: 11px; letter-spacing: 1px;">TOTAL</th>
               </tr>
             </thead>
             <tbody>${itemsHtml}</tbody>
           </table>
+
           <table class="summary-table">
             <tr><td>SUBTOTAL</td><td style="text-align: right; font-family: monospace;">৳${placedOrderDetails.subtotal}</td></tr>
             <tr><td>SHIPPING</td><td style="text-align: right; font-family: monospace;">৳${placedOrderDetails.deliveryCharge}</td></tr>
             <tr><td>VAT</td><td style="text-align: right; font-family: monospace;">৳${placedOrderDetails.vatAmount}</td></tr>
-            <tr style="font-weight: bold; font-size: 14px;"><td style="padding-top: 10px; border-top: 1px solid #000;">TOTAL</td><td style="text-align: right; padding-top: 10px; border-top: 1px solid #000; font-family: monospace;">৳${placedOrderDetails.grandTotal}</td></tr>
+            <tr style="font-weight: bold; font-size: 13px; color: #ff0000;">
+              <td style="padding-top: 12px; border-top: 1px solid #000; letter-spacing: 1px;">AMOUNT DUE</td>
+              <td style="text-align: right; padding-top: 12px; border-top: 1px solid #000; font-family: monospace;">৳${placedOrderDetails.grandTotal}</td>
+            </tr>
           </table>
+
+          <div class="disclaimer">
+            <strong>LEGAL NOTICE:</strong> This is a computer-generated order memorandum for Cash on Delivery (COD) transactions. It does not constitute a proof of final payment, sales receipt, or legal ownership of goods. Physical products will remain property of NOMAD until the full invoice amount is successfully collected by our authorized delivery agent.
+          </div>
+
           <script>
             window.onload = function() { window.print(); window.close(); }
           </script>
@@ -219,7 +253,6 @@ export default function Checkout({
       minHeight: isMobile ? '100vh' : 'auto',
       boxSizing: 'border-box' as const,
     },
-    // ⚡ নতুন ফুল-স্ক্রিন ওভারলে স্টাইল যা প্যারেন্ট হেডারকে ঢেকে দেবে
     successOverlay: {
       position: 'fixed' as const,
       top: 0,
@@ -414,7 +447,6 @@ export default function Checkout({
     }
   };
 
-  // 🌟 অর্ডার সাকসেস ওভারলে স্ক্রিন
   if (isOrderPlacedState) {
     return (
       <div style={styles.successOverlay}>
@@ -430,7 +462,7 @@ export default function Checkout({
           </p>
           
           <button onClick={handleDownloadInvoice} style={styles.invoiceLink}>
-            DOWNLOAD INVOICE
+            DOWNLOAD ORDER MEMO
           </button>
 
           <button onClick={onSuccess} style={{ ...styles.submitBtn, marginTop: '25px', maxWidth: '260px', margin: '25px auto 0 auto' }}>
@@ -441,11 +473,9 @@ export default function Checkout({
     );
   }
 
-  // 🌟 রেগুলার ফর্ম স্ক্রিন
   return (
     <div style={styles.container}>
       
-      {/* ইন্টারনাল হেডার (ব্যাকআপ হিসেবে রাখা হয়েছে) */}
       <div style={styles.topHeader}>
         <span style={styles.topHeaderTitle}>CHECKOUT</span>
         <button type="button" onClick={onSuccess} style={styles.closeBtn}>✕</button>
@@ -454,7 +484,6 @@ export default function Checkout({
       <form onSubmit={handleSubmit} noValidate style={{ width: '100%' }}>
         <div style={styles.layoutGrid}>
 
-          {/* বাম পাশ: ফর্ম */}
           <div style={styles.leftColumn}>
             <h2 style={styles.sectionHeading}>SHIPPING ADDRESS</h2>
             <input
@@ -496,7 +525,6 @@ export default function Checkout({
             </button>
           </div>
 
-          {/* ডান পাশ: অর্ডার সামারি */}
           <div style={styles.rightColumn}>
             <h2 style={{ ...styles.sectionHeading, marginTop: 0, borderBottom: '1px solid #111', paddingBottom: '15px' }}>ORDER SUMMARY</h2>
 
