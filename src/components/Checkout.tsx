@@ -23,6 +23,7 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
 
   const [deliveryCharge, setDeliveryCharge] = useState<number>(100); 
   const [vatRate, setVatRate] = useState<number>(0.05); 
+  const [placedOrderDetails, setPlacedOrderDetails] = useState<any>(null); 
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 960);
@@ -96,6 +97,18 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
       const { error: itemsError } = await supabase.from('order_items').insert(items);
       if (itemsError) throw itemsError;
 
+      setPlacedOrderDetails({
+        orderId: order.id,
+        customerName: formData.name,
+        customerPhone: formData.phone,
+        shippingAddress: formData.address,
+        items: [...selectedItems],
+        subtotal,
+        deliveryCharge,
+        vatAmount,
+        grandTotal
+      });
+
       clearCart(); 
       setIsOrderPlaced(true); 
     } catch (err: any) {
@@ -103,6 +116,72 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleDownloadInvoice = () => {
+    if (!placedOrderDetails) return;
+    
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    const itemsHtml = placedOrderDetails.items.map((item: any) => `
+      <tr>
+        <td style="padding: 10px 0; border-bottom: 1px solid #eee; font-size: 12px;">${item.name.toUpperCase()} (QTY: ${item.quantity})</td>
+        <td style="padding: 10px 0; border-bottom: 1px solid #eee; font-size: 12px; text-align: right; font-family: monospace;">৳${item.price * item.quantity}</td>
+      </tr>
+    `).join('');
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>INVOICE - NOMAD</title>
+          <style>
+            body { font-family: sans-serif; color: #000; background: #fff; padding: 40px; margin: 0; }
+            .header { text-align: center; margin-bottom: 40px; letter-spacing: 4px; font-weight: bold; font-size: 20px; }
+            .info-table { width: 100%; margin-bottom: 30px; font-size: 12px; line-height: 1.6; }
+            .items-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+            .summary-table { width: 40%; margin-left: auto; font-size: 12px; line-height: 1.8; }
+          </style>
+        </head>
+        <body>
+          <div class="header">NOMAD</div>
+          <table class="info-table">
+            <tr>
+              <td>
+                <strong>SHIPPING DETAILS:</strong><br>
+                ${placedOrderDetails.customerName}<br>
+                ${placedOrderDetails.customerPhone}<br>
+                ${placedOrderDetails.shippingAddress}
+              </td>
+              <td style="text-align: right; vertical-align: top;">
+                <strong>ORDER ID:</strong> #${placedOrderDetails.orderId}<br>
+                <strong>DATE:</strong> ${new Date().toLocaleDateString()}<br>
+                <strong>PAYMENT:</strong> CASH ON DELIVERY
+              </td>
+            </tr>
+          </table>
+          <table class="items-table">
+            <thead>
+              <tr>
+                <th style="text-align: left; padding-bottom: 10px; border-bottom: 2px solid #000; font-size: 12px;">ITEM</th>
+                <th style="text-align: right; padding-bottom: 10px; border-bottom: 2px solid #000; font-size: 12px;">TOTAL</th>
+              </tr>
+            </thead>
+            <tbody>${itemsHtml}</tbody>
+          </table>
+          <table class="summary-table">
+            <tr><td>SUBTOTAL</td><td style="text-align: right; font-family: monospace;">৳${placedOrderDetails.subtotal}</td></tr>
+            <tr><td>SHIPPING</td><td style="text-align: right; font-family: monospace;">৳${placedOrderDetails.deliveryCharge}</td></tr>
+            <tr><td>VAT</td><td style="text-align: right; font-family: monospace;">৳${placedOrderDetails.vatAmount}</td></tr>
+            <tr style="font-weight: bold; font-size: 14px;"><td style="padding-top: 10px; border-top: 1px solid #000;">TOTAL</td><td style="text-align: right; padding-top: 10px; border-top: 1px solid #000; font-family: monospace;">৳${placedOrderDetails.grandTotal}</td></tr>
+          </table>
+          <script>
+            window.onload = function() { window.print(); window.close(); }
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
   };
 
   const styles = {
@@ -159,12 +238,28 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
       outline: 'none',
       borderRadius: 0,
     },
-    // ✨ নতুন পেমেন্ট র স্টাইল (ইনপুট ফিল্ডের সাথে নিখুঁত ডানে-বামে অ্যালাইনড)
+    textarea: {
+      width: '100%',
+      boxSizing: 'border-box' as const,
+      background: 'transparent',
+      border: 'none',
+      borderBottom: '1px solid #161616',
+      padding: '12px 0', 
+      color: '#fff',
+      fontSize: '11px',
+      letterSpacing: '2px',
+      marginBottom: '10px', 
+      outline: 'none',
+      borderRadius: 0,
+      resize: 'none' as const,
+      height: '45px',
+      fontFamily: 'inherit',
+    },
     paymentRow: {
       display: 'flex',
       alignItems: 'center',
-      justifyContent: 'space-between', // টেক্সট বামে এবং চেকমার্ক একদম ডানে রাখবে
-      borderBottom: '1px solid #161616', // ইনপুট লাইনের সাথে ম্যাচিং বর্ডার
+      justifyContent: 'space-between',
+      borderBottom: '1px solid #161616',
       padding: '14px 0', 
       marginTop: '30px',
       marginBottom: '25px',
@@ -180,20 +275,19 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
       fontWeight: 500,
       textTransform: 'uppercase' as const,
     },
-    // ✨ ছোট সাদা ভরাট বৃত্ত ও কালো টিক চিহ্নের পিওর সিএসএস স্টাইল
     customCircleCheckbox: {
       width: '16px',
       height: '16px',
-      backgroundColor: '#fff', // সাদা ভরাট বৃত্ত
-      borderRadius: '50%', // নিখুঁত গোল শেপ
+      backgroundColor: '#fff',
+      borderRadius: '50%',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       fontSize: '11px',
-      color: '#000', // কালো টিক চিহ্ন
+      color: '#000',
       fontWeight: 'bold' as const,
       lineHeight: 1,
-      flexShrink: 0, // রেসপন্সিভ স্ক্রিনে যেন ছোট না হয়ে যায়
+      flexShrink: 0,
     },
     productRow: {
       display: 'flex',
@@ -242,6 +336,19 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
       maxWidth: '450px',
       margin: '0 auto',
       boxSizing: 'border-box' as const,
+    },
+    // ✨ ইনভয়েস টেক্সট লিংকের জন্য নতুন মিনিমাল স্টাইল
+    invoiceLink: {
+      fontSize: '11px',
+      letterSpacing: '2px',
+      color: '#888',
+      cursor: 'pointer',
+      textDecoration: 'underline',
+      textTransform: 'uppercase' as const,
+      background: 'none',
+      border: 'none',
+      outline: 'none',
+      padding: '5px 10px',
     }
   };
 
@@ -256,10 +363,16 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
           </h2>
           
           <p style={{ fontSize: '10px', letterSpacing: '2px', color: '#888', lineHeight: '2', marginBottom: '40px', textTransform: 'uppercase' as const, padding: '0 10px' }}>
-            Thank you for your purchase. Your order has been received and is currently being processed. We will contact you shortly to confirm your shipment.
+            Thank you for your purchase. Your order has been received and is currently being processed. Registered users can also track this in their profile.
           </p>
           
-          <button onClick={onSuccess} style={{ ...styles.submitBtn, marginTop: 0, maxWidth: '260px', margin: '0 auto' }}>
+          {/* ⚡ ১. ইনভয়েস লিংক: এখন এটি কেবল একটি আন্ডারলাইনড টেক্সট লিংক */}
+          <button onClick={handleDownloadInvoice} style={styles.invoiceLink}>
+            DOWNLOAD INVOICE
+          </button>
+
+          {/* ⚡ ২. কন্টিনিউ শপিং বাটন: এটি আবার আগের মতো সুন্দর বর্ডার-বাটন স্টাইলে ফিরে এসেছে */}
+          <button onClick={onSuccess} style={{ ...styles.submitBtn, marginTop: '25px', maxWidth: '260px', margin: '25px auto 0 auto' }}>
             CONTINUE SHOPPING
           </button>
         </div>
@@ -291,15 +404,15 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
             />
-            <input
-              style={styles.input}
+            <textarea
+              style={styles.textarea}
               placeholder="COMPLETE SHIPPING ADDRESS"
               required
               value={formData.address}
               onChange={(e) => setFormData({ ...formData, address: e.target.value })}
             />
 
-            {/* ⚡ আল্ট্রা-মিনিমাল পেমেন্ট মেথড: বামে টেক্সট, একদম ডানে হোয়াইট-সার্কেল ব্ল্যাক টিকমার্ক */}
+            {/* পেমেন্ট মেথড: বামে টেক্সট, একদম ডানে হোয়াইট-সার্কেল ব্ল্যাক টিকমার্ক */}
             <div style={styles.paymentRow}>
               <span style={styles.paymentText}>CASH ON DELIVERY</span>
               <div style={styles.customCircleCheckbox}>✓</div>
