@@ -12,7 +12,6 @@ interface CartItem {
   image_url?: string;
 }
 
-// আপনার স্ক্রিনশট অনুযায়ী অপশনস (NAGAD সহ)
 const PAYMENT_OPTIONS = [
   { label: 'CASH ON DELIVERY', value: 'cod' },
   { label: 'BKASH (PERSONAL)', value: 'bkash' },
@@ -35,7 +34,6 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
   const [hoveredOption, setHoveredOption] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
 
-  // ⚡ সুপাবেজ গ্লোবাল টেবিল থেকে আসার স্টেট
   const [deliveryCharge, setDeliveryCharge] = useState<number>(100); 
   const [vatRate, setVatRate] = useState<number>(0.05); 
 
@@ -44,7 +42,6 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
     handleResize();
     window.addEventListener('resize', handleResize);
     
-    // ⚡ লাইভ স্টোর সেটিংস ডাটা ফেচিং
     const fetchStoreSettings = async () => {
       try {
         const { data, error } = await supabase
@@ -65,7 +62,6 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // 📐 গ্লোবাল ক্যালকুলেশনস
   const subtotal = selectedItems.reduce((acc: number, item: CartItem) => acc + item.price * item.quantity, 0);
   const vatAmount = Math.round(subtotal * vatRate);
   const grandTotal = subtotal + deliveryCharge + vatAmount;
@@ -92,13 +88,14 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
     try {
       const { data: { user } } = await supabase.auth.getUser();
 
+      // ⚡ এখানে আপনার ডাটাবেজের কলামের নাম 'shipping_address' করে দেওয়া হয়েছে
       const { data: order, error: orderError } = await supabase
         .from('orders')
         .insert([{
           user_id: user?.id || null, 
           customer_name: formData.name,
           customer_phone: formData.phone,
-          customer_address: formData.address,
+          shipping_address: formData.address, 
           sender_phone: paymentMethod !== 'cod' ? formData.senderPhone : null,
           payment_method: paymentMethod,
           transaction_id: paymentMethod !== 'cod' ? transactionId : null,
@@ -236,7 +233,7 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
       <form onSubmit={handleSubmit} noValidate style={{ width: '100%' }}>
         <div style={styles.layoutGrid}>
 
-          {/* বাম পাশ: কাস্টমার শিপিং এবং পেমেন্ট ফর্ম */}
+          {/* বাম পাশ: ফর্ম */}
           <div style={styles.leftColumn}>
             
             <h2 style={{ ...styles.sectionHeading, marginTop: 0 }}>01 / SHIPPING ADDRESS</h2>
@@ -311,7 +308,7 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
 
             {paymentMethod && paymentMethod !== 'cod' && (
               <div style={styles.mfsPanel}>
-                <div style={{ display: 'flex', justifycontent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                   <p style={{ fontSize: '9px', color: '#555', letterSpacing: '2px', margin: 0 }}>SEND MONEY TO [PERSONAL]:</p>
                   <button type="button" onClick={handleCopyNumber} style={styles.copyBtn}>
                     {copied ? 'COPIED' : 'COPY'}
@@ -347,7 +344,7 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
             </button>
           </div>
 
-          {/* ডান পাশ: আপনার স্ক্রিনশটের মতো নিখুঁত অর্ডার সামারি */}
+          {/* ডান পাশ: অর্ডার সামারি */}
           <div style={styles.rightColumn}>
             <h2 style={{ ...styles.sectionHeading, marginTop: 0, borderBottom: '1px solid #111', paddingBottom: '15px' }}>ORDER SUMMARY</h2>
 
@@ -368,14 +365,12 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
               ))}
             </div>
 
-            {/* ⚡ লাক্সারি ট্যাক্স ও ডাইনামিক ডেলিভারি ক্যালকুলেশন */}
             <div style={{ marginTop: '30px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', letterSpacing: '1.5px', marginBottom: '15px', color: '#666' }}>
                 <span>SUBTOTAL</span>
                 <span style={{ fontFamily: 'monospace' }}>৳{subtotal}</span>
               </div>
 
-              {/* ডেলিভারি চার্জ ০ টাকা হলে স্ক্রিনশটের মতো COMPLIMENTARY দেখাবে */}
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', letterSpacing: '1.5px', marginBottom: '15px', color: '#666' }}>
                 <span>SHIPPING</span>
                 <span style={{ fontFamily: 'monospace', color: deliveryCharge === 0 ? '#fff' : '#666' }}>
@@ -383,7 +378,6 @@ export default function Checkout({ selectedItems, onSuccess }: { selectedItems: 
                 </span>
               </div>
 
-              {/* ভ্যাট থাকলে তবেই শো করবে */}
               {vatRate > 0 && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', letterSpacing: '1.5px', marginBottom: '15px', color: '#666' }}>
                   <span>VAT ({vatRate * 100}%)</span>
