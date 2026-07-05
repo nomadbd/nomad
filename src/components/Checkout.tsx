@@ -21,7 +21,8 @@ export default function Checkout({
   onSuccess: () => void,
   onOrderPlaced?: (placed: boolean) => void
 }) {
-  const { clearCart } = useCart() as any;
+  // 🛠️ কার্ট থেকে নির্দিষ্ট আইটেম রিমুভ করার জন্য removeItem/removeFromCart যুক্ত করা হয়েছে
+  const { clearCart, removeItem, removeFromCart } = useCart() as any;
 
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -132,7 +133,15 @@ export default function Checkout({
         grandTotal
       });
 
-      clearCart(); 
+      // 🔥 [FIXED] সম্পূর্ণ কার্ট খালি না করে শুধুমাত্র অর্ডার করা আইটেমগুলো রিমুভ করা হচ্ছে
+      selectedItems.forEach((item: CartItem) => {
+        if (typeof removeItem === 'function') {
+          removeItem(item.id);
+        } else if (typeof removeFromCart === 'function') {
+          removeFromCart(item.id);
+        }
+      });
+
       setIsOrderPlacedState(true); 
     } catch (err: any) {
       setErrorMessage(err.message || 'ORDER FAILED. PLEASE TRY AGAIN.');
@@ -144,11 +153,9 @@ export default function Checkout({
   const handleDownloadInvoice = () => {
     if (!placedOrderDetails) return;
 
-    // ১. মোবাইলে ফাইলের নাম "nomad" নিশ্চিত করার জন্য মূল পেজের টাইটেল সাময়িক পরিবর্তন
     const originalTitle = document.title;
     document.title = "nomad";
 
-    // ২. তারিখ এবং সময় আলাদা ফরম্যাট করা
     const now = new Date();
     const year = now.getFullYear();
     const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -159,7 +166,6 @@ export default function Checkout({
     const formattedDate = `${year}-${month}-${date}`;
     const formattedTime = `${hours}:${minutes}`;
 
-    // প্রোডাক্ট লিস্ট জেনারেট করা
     const itemsHtml = placedOrderDetails.items.map((item: any) => {
       const detailsArray = [];
       if (item.size) detailsArray.push(`SIZE: ${item.size.toUpperCase()}`);
@@ -181,7 +187,6 @@ export default function Checkout({
       `;
     }).join('');
 
-    // ৩. প্রিন্টের জন্য একটি অস্থায়ী ডিরেক্ট এলিমেন্ট তৈরি করা
     const printContainer = document.createElement('div');
     printContainer.className = 'nomad-print-invoice-overlay';
     
@@ -232,7 +237,6 @@ export default function Checkout({
       </div>
     `;
 
-    // ৪. ব্রাউজার হেডার-ফুটার গায়েব করার সিএসএস এবং প্রিন্ট স্টাইল ইনজেকশন
     const styleSheet = document.createElement('style');
     styleSheet.innerHTML = `
       @media print {
@@ -275,14 +279,11 @@ export default function Checkout({
     document.body.appendChild(printContainer);
     document.head.appendChild(styleSheet);
 
-    // ৫. প্রিন্ট ডায়ালগ ওপেন করা
     setTimeout(() => {
       window.print();
-      
-      // ৬. প্রিন্ট শেষ বা বাতিল হলে সবকিছু ক্লিনআপ করে আগের অবস্থায় ফিরিয়ে আনা
       document.body.removeChild(printContainer);
       document.head.removeChild(styleSheet);
-      document.title = originalTitle; // অ্যাপের অরিজিনাল টাইটেল ব্যাকআপ করা
+      document.title = originalTitle; 
     }, 100);
   };
 
