@@ -143,23 +143,23 @@ export default function Checkout({
 
   const handleDownloadInvoice = () => {
     if (!placedOrderDetails) return;
-    
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) return;
 
-    // ফাইলের নাম ফিক্সড "nomad" রাখা হলো
-    const invoiceFileName = "nomad";
+    // ১. মোবাইলে ফাইলের নাম "nomad" নিশ্চিত করার জন্য মূল পেজের টাইটেল সাময়িক পরিবর্তন
+    const originalTitle = document.title;
+    document.title = "nomad";
 
-    // তারিখ এবং সময় ফরম্যাট (YYYY-MM-DD | HH:MM)
+    // ২. তারিখ এবং সময় আলাদা ফরম্যাট করা
     const now = new Date();
     const year = now.getFullYear();
     const month = String(now.getMonth() + 1).padStart(2, '0');
     const date = String(now.getDate()).padStart(2, '0');
     const hours = String(now.getHours()).padStart(2, '0');
     const minutes = String(now.getMinutes()).padStart(2, '0');
-    const formattedDateTime = `${year}-${month}-${date} | ${hours}:${minutes}`;
+    
+    const formattedDate = `${year}-${month}-${date}`;
+    const formattedTime = `${hours}:${minutes}`;
 
-    // প্রোডাক্ট লিস্ট জেনারেট করা (সাইজ, কালার ও কোয়ান্টিটি নিচে নিচে)
+    // প্রোডাক্ট লিস্ট জেনারেট করা
     const itemsHtml = placedOrderDetails.items.map((item: any) => {
       const detailsArray = [];
       if (item.size) detailsArray.push(`SIZE: ${item.size.toUpperCase()}`);
@@ -171,94 +171,119 @@ export default function Checkout({
       
       return `
         <tr>
-          <td style="padding: 14px 0; border-bottom: 1px solid #eee; font-size: 11px; letter-spacing: 1px; line-height: 1.5;">
-            <strong>${item.name.toUpperCase()}</strong>
+          <td style="padding: 14px 0; border-bottom: 1px solid #eee; font-size: 11px; letter-spacing: 1px; line-height: 1.5; color: #000 !important;">
+            <strong style="color: #000 !important;">${item.name.toUpperCase()}</strong>
             ${detailsHtml}
             <div style="color: #666; font-size: 10px; margin-top: 5px;">QTY: ${item.quantity} × ৳${item.price}</div>
           </td>
-          <td style="padding: 14px 0; border-bottom: 1px solid #eee; font-size: 11px; text-align: right; font-family: monospace; vertical-align: bottom;">৳${item.price * item.quantity}</td>
+          <td style="padding: 14px 0; border-bottom: 1px solid #eee; font-size: 11px; text-align: right; font-family: monospace; vertical-align: bottom; color: #000 !important;">৳${item.price * item.quantity}</td>
         </tr>
       `;
     }).join('');
 
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>${invoiceFileName}</title>
-          <style>
-            /* 🛡️ ব্রাউজারের টপ হেডার (ওয়েবসাইট লিংক/মেমো টেক্সট) সম্পূর্ণ হাইড করার ম্যাজিক কোড */
-            @page { 
-              margin: 0mm; 
-            }
-            body { 
-              font-family: sans-serif; 
-              color: #000; 
-              background: #fff; 
-              padding: 50px 40px; 
-              margin: 0; 
-              -webkit-print-color-adjust: exact; 
-            }
-            .header { text-align: center; margin-bottom: 10px; letter-spacing: 6px; font-weight: bold; font-size: 22px; }
-            .sub-header { text-align: center; font-size: 10px; letter-spacing: 3px; color: #666; margin-bottom: 50px; text-transform: uppercase; }
-            .info-table { width: 100%; margin-bottom: 40px; font-size: 11px; line-height: 1.8; letter-spacing: 0.5px; }
-            .items-table { width: 100%; border-collapse: collapse; margin-bottom: 40px; }
-            .summary-table { width: 40%; margin-left: auto; font-size: 11px; line-height: 2; letter-spacing: 0.5px; margin-bottom: 60px; }
-            .disclaimer { font-size: 9px; color: #777; line-height: 1.6; text-align: center; border-top: 1px solid #eee; padding-top: 20px; letter-spacing: 0.5px; }
-            th { text-transform: uppercase; font-weight: 600; }
-          </style>
-        </head>
-        <body>
-          <div class="header">NOMAD</div>
-          <div class="sub-header">Proforma Invoice / Order Memorandum</div>
-          
-          <table class="info-table">
-            <tr>
-              <td style="width: 50%; vertical-align: top;">
-                <span style="color: #666; font-size: 10px; letter-spacing: 1px; display: block; margin-bottom: 5px;">SHIPPING DETAILS</span>
-                <strong>${placedOrderDetails.customerName.toUpperCase()}</strong><br>
-                ${placedOrderDetails.customerPhone}<br>
-                ${placedOrderDetails.shippingAddress.toUpperCase()}
-              </td>
-              <td style="text-align: right; vertical-align: top;">
-                <strong>ORDER ID:</strong> #${placedOrderDetails.orderId}<br>
-                <strong>DATE & TIME:</strong> ${formattedDateTime}<br>
-                <strong>PAYMENT:</strong> CASH ON DELIVERY<br>
-                <strong style="color: #ff0000; letter-spacing: 1px;">STATUS: UNPAID / DUE</strong>
-              </td>
-            </tr>
-          </table>
+    // ৩. প্রিন্টের জন্য একটি অস্থায়ী ডিরেক্ট এলিমেন্ট তৈরি করা
+    const printContainer = document.createElement('div');
+    printContainer.className = 'nomad-print-invoice-overlay';
+    
+    printContainer.innerHTML = `
+      <div class="header">NOMAD</div>
+      <div class="sub-header">Proforma Invoice / Order Memorandum</div>
+      
+      <table class="info-table">
+        <tr>
+          <td style="width: 50%; vertical-align: top; color: #000 !important; line-height: 1.8;">
+            <span style="color: #666; font-size: 10px; letter-spacing: 1px; display: block; margin-bottom: 5px;">SHIPPING DETAILS</span>
+            <strong style="color: #000 !important;">${placedOrderDetails.customerName.toUpperCase()}</strong><br>
+            ${placedOrderDetails.customerPhone}<br>
+            ${placedOrderDetails.shippingAddress.toUpperCase()}
+          </td>
+          <td style="text-align: right; vertical-align: top; color: #000 !important; line-height: 1.8;">
+            <strong style="color: #000 !important;">ORDER ID:</strong> #${placedOrderDetails.orderId}<br>
+            <strong style="color: #000 !important;">DATE:</strong> ${formattedDate}<br>
+            <strong style="color: #000 !important;">TIME:</strong> ${formattedTime}<br>
+            <strong style="color: #000 !important;">PAYMENT:</strong> CASH ON DELIVERY<br>
+            <strong style="color: #ff0000; letter-spacing: 1px;">STATUS: UNPAID / DUE</strong>
+          </td>
+        </tr>
+      </table>
 
-          <table class="items-table">
-            <thead>
-              <tr>
-                <th style="text-align: left; padding-bottom: 12px; border-bottom: 1.5px solid #000; font-size: 11px; letter-spacing: 1px;">DESCRIPTION</th>
-                <th style="text-align: right; padding-bottom: 12px; border-bottom: 1.5px solid #000; font-size: 11px; letter-spacing: 1px;">TOTAL</th>
-              </tr>
-            </thead>
-            <tbody>${itemsHtml}</tbody>
-          </table>
+      <table class="items-table">
+        <thead>
+          <tr>
+            <th style="text-align: left; padding-bottom: 12px; border-bottom: 1.5px solid #000; font-size: 11px; letter-spacing: 1px; color: #000 !important;">DESCRIPTION</th>
+            <th style="text-align: right; padding-bottom: 12px; border-bottom: 1.5px solid #000; font-size: 11px; letter-spacing: 1px; color: #000 !important;">TOTAL</th>
+          </tr>
+        </thead>
+        <tbody>${itemsHtml}</tbody>
+      </table>
 
-          <table class="summary-table">
-            <tr><td>SUBTOTAL</td><td style="text-align: right; font-family: monospace;">৳${placedOrderDetails.subtotal}</td></tr>
-            <tr><td>SHIPPING</td><td style="text-align: right; font-family: monospace;">৳${placedOrderDetails.deliveryCharge}</td></tr>
-            <tr><td>VAT</td><td style="text-align: right; font-family: monospace;">৳${placedOrderDetails.vatAmount}</td></tr>
-            <tr style="font-weight: bold; font-size: 13px; color: #ff0000;">
-              <td style="padding-top: 12px; border-top: 1px solid #000; letter-spacing: 1px;">AMOUNT DUE</td>
-              <td style="text-align: right; padding-top: 12px; border-top: 1px solid #000; font-family: monospace;">৳${placedOrderDetails.grandTotal}</td>
-            </tr>
-          </table>
+      <table class="summary-table">
+        <tr><td style="color: #000 !important;">SUBTOTAL</td><td style="text-align: right; font-family: monospace; color: #000 !important;">৳${placedOrderDetails.subtotal}</td></tr>
+        <tr><td style="color: #000 !important;">SHIPPING</td><td style="text-align: right; font-family: monospace; color: #000 !important;">৳${placedOrderDetails.deliveryCharge}</td></tr>
+        <tr><td style="color: #000 !important;">VAT</td><td style="text-align: right; font-family: monospace; color: #000 !important;">৳${placedOrderDetails.vatAmount}</td></tr>
+        <tr style="font-weight: bold; font-size: 13px; color: #ff0000;">
+          <td style="padding-top: 12px; border-top: 1px solid #000; letter-spacing: 1px;">AMOUNT DUE</td>
+          <td style="text-align: right; padding-top: 12px; border-top: 1px solid #000; font-family: monospace;">৳${placedOrderDetails.grandTotal}</td>
+        </tr>
+      </table>
 
-          <div class="disclaimer">
-            <strong>LEGAL NOTICE:</strong> This is a computer-generated order memorandum for Cash on Delivery (COD) transactions. It does not constitute a proof of final payment, sales receipt, or legal ownership of goods. Physical products will remain property of NOMAD until the full invoice amount is successfully collected by our authorized delivery agent.
-          </div>
+      <div class="disclaimer">
+        <strong>LEGAL NOTICE:</strong> This is a computer-generated order memorandum for Cash on Delivery (COD) transactions. It does not constitute a proof of final payment, sales receipt, or legal ownership of goods. Physical products will remain property of NOMAD until the full invoice amount is successfully collected by our authorized delivery agent.
+      </div>
+    `;
 
-          <script>
-            window.onload = function() { window.print(); window.close(); }
-          </script>
-        </body>
-      </html>
-    `);
-    printWindow.document.close();
+    // ৪. ব্রাউজার হেডার-ফুটার গায়েব করার সিএসএস এবং প্রিন্ট স্টাইল ইনজেকশন
+    const styleSheet = document.createElement('style');
+    styleSheet.innerHTML = `
+      @media print {
+        @page { 
+          margin: 0mm; 
+        }
+        body { 
+          background: #fff !important; 
+          color: #000 !important;
+          margin: 0 !important;
+          padding: 0 !important;
+        }
+        body > *:not(.nomad-print-invoice-overlay) {
+          display: none !important;
+        }
+        .nomad-print-invoice-overlay {
+          display: block !important;
+          position: absolute;
+          left: 0;
+          top: 0;
+          width: 100%;
+          background: #fff !important;
+          color: #000 !important;
+          padding: 50px 40px !important;
+          box-sizing: border-box;
+          font-family: sans-serif;
+        }
+        .header { text-align: center; margin-bottom: 10px; letter-spacing: 6px; font-weight: bold; font-size: 22px; color: #000 !important; }
+        .sub-header { text-align: center; font-size: 10px; letter-spacing: 3px; color: #666 !important; margin-bottom: 50px; text-transform: uppercase; }
+        .info-table { width: 100%; margin-bottom: 40px; font-size: 11px; letter-spacing: 0.5px; border-collapse: collapse; }
+        .items-table { width: 100%; border-collapse: collapse; margin-bottom: 40px; }
+        .summary-table { width: 40%; margin-left: auto; font-size: 11px; line-height: 2; letter-spacing: 0.5px; margin-bottom: 60px; }
+        .disclaimer { font-size: 9px; color: #777 !important; line-height: 1.6; text-align: center; border-top: 1px solid #eee; padding-top: 20px; letter-spacing: 0.5px; }
+      }
+      @media screen {
+        .nomad-print-invoice-overlay { display: none !important; }
+      }
+    `;
+
+    document.body.appendChild(printContainer);
+    document.head.appendChild(styleSheet);
+
+    // ৫. প্রিন্ট ডায়ালগ ওপেন করা
+    setTimeout(() => {
+      window.print();
+      
+      // ৬. প্রিন্ট শেষ বা বাতিল হলে সবকিছু ক্লিনআপ করে আগের অবস্থায় ফিরিয়ে আনা
+      document.body.removeChild(printContainer);
+      document.head.removeChild(styleSheet);
+      document.title = originalTitle; // অ্যাপের অরিজিনাল টাইটেল ব্যাকআপ করা
+    }, 100);
   };
 
   const styles = {
@@ -581,13 +606,13 @@ export default function Checkout({
               {vatRate > 0 && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', letterSpacing: '1.5px', marginBottom: '15px', color: '#666' }}>
                   <span>VAT ({vatRate * 100}%)</span>
-                  <span style={{ fontFamily: 'monospace' }}>৳${vatAmount}</span>
+                  <span style={{ fontFamily: 'monospace' }}>৳{vatAmount}</span>
                 </div>
               )}
 
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', letterSpacing: '2px', paddingTop: '20px', borderTop: '1px dotted #222', color: '#fff', fontWeight: 600, marginTop: '25px' }}>
                 <span>TOTAL</span>
-                <span style={{ fontFamily: 'monospace', fontSize: '14px' }}>৳${grandTotal}</span>
+                <span style={{ fontFamily: 'monospace', fontSize: '14px' }}>৳{grandTotal}</span>
               </div>
             </div>
 
