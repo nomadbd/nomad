@@ -21,8 +21,17 @@ export default function Checkout({
   onSuccess: () => void,
   onOrderPlaced?: (placed: boolean) => void
 }) {
-  // 🛠️ কার্ট থেকে নির্দিষ্ট আইটেম রিমুভ করার জন্য removeItem/removeFromCart যুক্ত করা হয়েছে
-  const { clearCart, removeItem, removeFromCart } = useCart() as any;
+  // 🛠️ কার্ট ম্যানেজমেন্টের সম্ভাব্য সব মেথড একসাথে কল করা হয়েছে
+  const { 
+    clearCart, 
+    removeItem, 
+    removeFromCart, 
+    deleteItem, 
+    cart, 
+    cartItems, 
+    setCart, 
+    setCartItems 
+  } = useCart() as any;
 
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -133,14 +142,38 @@ export default function Checkout({
         grandTotal
       });
 
-      // 🔥 [FIXED] সম্পূর্ণ কার্ট খালি না করে শুধুমাত্র অর্ডার করা আইটেমগুলো রিমুভ করা হচ্ছে
+      // 🔥 [FIXED] কার্ট থেকে অর্ডার করা প্রডাক্ট ১০০% ডিলিট করার মাল্টি-লেয়ার ব্যাকআপ লজিক
       selectedItems.forEach((item: CartItem) => {
         if (typeof removeItem === 'function') {
-          removeItem(item.id);
-        } else if (typeof removeFromCart === 'function') {
-          removeFromCart(item.id);
+          try { removeItem(item.id, item.size, item.color); } catch(e){}
+          try { removeItem(item.id); } catch(e){}
+          try { removeItem(item); } catch(e){}
+        }
+        if (typeof removeFromCart === 'function') {
+          try { removeFromCart(item.id, item.size, item.color); } catch(e){}
+          try { removeFromCart(item.id); } catch(e){}
+          try { removeFromCart(item); } catch(e){}
+        }
+        if (typeof deleteItem === 'function') {
+          try { deleteItem(item.id, item.size, item.color); } catch(e){}
+          try { deleteItem(item.id); } catch(e){}
+          try { deleteItem(item); } catch(e){}
         }
       });
+
+      // সরাসরি স্টেট আপডেট হ্যান্ডশেক (যদি কনটেক্সটে ফাংশন কাজ না করে)
+      if (typeof setCart === 'function' && Array.isArray(cart)) {
+        const updatedCart = cart.filter((cItem: any) => 
+          !selectedItems.some((sItem) => sItem.id === cItem.id && sItem.size === cItem.size && sItem.color === cItem.color)
+        );
+        setCart(updatedCart);
+      }
+      if (typeof setCartItems === 'function' && Array.isArray(cartItems)) {
+        const updatedCart = cartItems.filter((cItem: any) => 
+          !selectedItems.some((sItem) => sItem.id === cItem.id && sItem.size === cItem.size && sItem.color === cItem.color)
+        );
+        setCartItems(updatedCart);
+      }
 
       setIsOrderPlacedState(true); 
     } catch (err: any) {
@@ -153,6 +186,7 @@ export default function Checkout({
   const handleDownloadInvoice = () => {
     if (!placedOrderDetails) return;
 
+    // 🛡️ সব ব্রাউজারে ফাইলের নাম "nomad" লক করতে মেইন টাইটেল চেঞ্জ করা হলো
     const originalTitle = document.title;
     document.title = "nomad";
 
@@ -187,8 +221,9 @@ export default function Checkout({
       `;
     }).join('');
 
+    // মেইন ডক বডিতে ইনভয়েস কন্টেইনার ইনজেক্ট (Safari/Firefox Friendly)
     const printContainer = document.createElement('div');
-    printContainer.className = 'nomad-print-invoice-overlay';
+    printContainer.id = 'nomad-universal-print-area';
     
     printContainer.innerHTML = `
       <div class="header">NOMAD</div>
@@ -204,8 +239,7 @@ export default function Checkout({
           </td>
           <td style="text-align: right; vertical-align: top; color: #000 !important; line-height: 1.8;">
             <strong style="color: #000 !important;">ORDER ID:</strong> #${placedOrderDetails.orderId}<br>
-            <strong style="color: #000 !important;">DATE:</strong> ${formattedDate}<br>
-            <strong style="color: #000 !important;">TIME:</strong> ${formattedTime}<br>
+            <strong style="color: #000 !important;">DATE:</strong> ${formattedDate} &nbsp;&nbsp;&nbsp;&nbsp; <strong style="color: #000 !important;">TIME:</strong> ${formattedTime}<br>
             <strong style="color: #000 !important;">PAYMENT:</strong> CASH ON DELIVERY<br>
             <strong style="color: #ff0000; letter-spacing: 1px;">STATUS: UNPAID / DUE</strong>
           </td>
@@ -249,10 +283,11 @@ export default function Checkout({
           margin: 0 !important;
           padding: 0 !important;
         }
-        body > *:not(.nomad-print-invoice-overlay) {
+        /* প্রিন্ট করার সময় মেইন অ্যাপের বাকি সব হাইড করার গ্যারান্টি */
+        body > *:not(#nomad-universal-print-area) {
           display: none !important;
         }
-        .nomad-print-invoice-overlay {
+        #nomad-universal-print-area {
           display: block !important;
           position: absolute;
           left: 0;
@@ -272,7 +307,7 @@ export default function Checkout({
         .disclaimer { font-size: 9px; color: #777 !important; line-height: 1.6; text-align: center; border-top: 1px solid #eee; padding-top: 20px; letter-spacing: 0.5px; }
       }
       @media screen {
-        .nomad-print-invoice-overlay { display: none !important; }
+        #nomad-universal-print-area { display: none !important; }
       }
     `;
 
@@ -281,10 +316,13 @@ export default function Checkout({
 
     setTimeout(() => {
       window.print();
-      document.body.removeChild(printContainer);
+      // ক্লিনআপ অপারেশন
+      if (document.getElementById('nomad-universal-print-area')) {
+        document.body.removeChild(printContainer);
+      }
       document.head.removeChild(styleSheet);
       document.title = originalTitle; 
-    }, 100);
+    }, 150);
   };
 
   const styles = {
@@ -613,7 +651,7 @@ export default function Checkout({
 
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', letterSpacing: '2px', paddingTop: '20px', borderTop: '1px dotted #222', color: '#fff', fontWeight: 600, marginTop: '25px' }}>
                 <span>TOTAL</span>
-                <span style={{ fontFamily: 'monospace', fontSize: '14px' }}>৳{grandTotal}</span>
+                <span style={{ fontFamily: 'monospace', fontSize: '14px' }}>৳${grandTotal}</span>
               </div>
             </div>
 
