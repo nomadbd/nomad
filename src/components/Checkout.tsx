@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-import { useCart } from '../context/CartContext';
+import { useCart } from '../context/CartContext'; 
 
 interface CartItem {
   id: string;
@@ -21,7 +21,6 @@ export default function Checkout({
   onSuccess: () => void,
   onOrderPlaced?: (placed: boolean) => void
 }) {
-  // 🔥 কার্ট কনটেক্সট থেকে নতুন তৈরি করা 'removeFromCart' নিয়ে আসা হলো
   const { removeFromCart } = useCart();
 
   const [loading, setLoading] = useState(false);
@@ -133,7 +132,6 @@ export default function Checkout({
         grandTotal
       });
 
-      // 🔥 [FIXED] অর্ডার সফল হওয়ার পর কার্ট থেকে অর্ডারকৃত আইটেমগুলো ক্লিন করা হচ্ছে
       selectedItems.forEach((item: CartItem) => {
         removeFromCart(item.id, item.color, item.size);
       });
@@ -159,21 +157,20 @@ export default function Checkout({
     const formattedDate = `${year}-${month}-${date}`;
     const formattedTime = `${hours}:${minutes}`;
 
+    // 🔥 এখানে নতুন সিকোয়েন্স সেট করা হয়েছে: ১. সাইজ, ২. কালার, ৩. কোয়ান্টিটি
     const itemsHtml = placedOrderDetails.items.map((item: any) => {
       const detailsArray = [];
       if (item.size) detailsArray.push(`SIZE: ${item.size.toUpperCase()}`);
       if (item.color) detailsArray.push(`COLOR: ${item.color.toUpperCase()}`);
-      
-      const detailsHtml = detailsArray.length > 0 
-        ? `<div style="color: #666; font-size: 10px; margin-top: 5px; letter-spacing: 1px;">${detailsArray.join(' | ')}</div>` 
-        : '';
+      detailsArray.push(`QTY: ${item.quantity}`); // 👈 কোয়ান্টিটি এখন শেষে
       
       return `
         <tr>
-          <td style="padding: 14px 0; border-bottom: 1px solid #eee; font-size: 11px; letter-spacing: 1px; line-height: 1.5; color: #000 !important;">
-            <strong style="color: #000 !important;">${item.name.toUpperCase()}</strong>
-            ${detailsHtml}
-            <div style="color: #666; font-size: 10px; margin-top: 5px;">QTY: ${item.quantity} × ৳${item.price}</div>
+          <td style="padding: 14px 0; border-bottom: 1px solid #eee; font-size: 11px; letter-spacing: 1px; line-height: 1.6; color: #000 !important;">
+            <strong style="color: #000 !important; display: block; margin-bottom: 4px;">${item.name.toUpperCase()}</strong>
+            <div style="color: #555; font-size: 10px; letter-spacing: 0.5px; text-transform: uppercase;">
+              ${detailsArray.join(' &nbsp;|&nbsp; ')} &nbsp;•&nbsp; ৳${item.price}
+            </div>
           </td>
           <td style="padding: 14px 0; border-bottom: 1px solid #eee; font-size: 11px; text-align: right; font-family: monospace; vertical-align: bottom; color: #000 !important;">৳${item.price * item.quantity}</td>
         </tr>
@@ -189,17 +186,43 @@ export default function Checkout({
       
       <table class="info-table">
         <tr>
-          <td style="width: 50%; vertical-align: top; color: #000 !important; line-height: 1.8;">
-            <span style="color: #666; font-size: 10px; letter-spacing: 1px; display: block; margin-bottom: 5px;">SHIPPING DETAILS</span>
-            <strong style="color: #000 !important;">${placedOrderDetails.customerName.toUpperCase()}</strong><br>
-            ${placedOrderDetails.customerPhone}<br>
+          <td style="width: 50%; padding: 5px 0; vertical-align: top; color: #000 !important; line-height: 1.5;">
+            <span style="color: #666; font-size: 9px; letter-spacing: 1px; display: block; margin-bottom: 2px;">SHIPPING TO</span>
+            <strong style="color: #000 !important; font-size: 12px;">${placedOrderDetails.customerName.toUpperCase()}</strong>
+          </td>
+          <td style="text-align: right; padding: 5px 0; vertical-align: top; color: #000 !important; line-height: 1.5;">
+            <span style="color: #666; font-size: 9px; letter-spacing: 1px; display: block; margin-bottom: 2px;">ORDER ID</span>
+            <strong style="color: #000 !important;">#${placedOrderDetails.orderId}</strong>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 5px 0; vertical-align: top; color: #000 !important; line-height: 1.5;">
+            <span style="color: #666; font-size: 9px; letter-spacing: 1px; display: block; margin-bottom: 2px;">CONTACT NUMBER</span>
+            ${placedOrderDetails.customerPhone}
+          </td>
+          <td style="text-align: right; padding: 5px 0; vertical-align: top; color: #000 !important; line-height: 1.5;">
+            <span style="color: #666; font-size: 9px; letter-spacing: 1px; display: block; margin-bottom: 2px;">DATE & TIME</span>
+            ${formattedDate} &nbsp;&nbsp; ${formattedTime}
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 5px 0; vertical-align: top; color: #000 !important; line-height: 1.5; max-width: 280px;">
+            <span style="color: #666; font-size: 9px; letter-spacing: 1px; display: block; margin-bottom: 2px;">DELIVERY ADDRESS</span>
             ${placedOrderDetails.shippingAddress.toUpperCase()}
           </td>
-          <td style="text-align: right; vertical-align: top; color: #000 !important; line-height: 1.8;">
-            <strong style="color: #000 !important;">ORDER ID:</strong> #${placedOrderDetails.orderId}<br>
-            <strong style="color: #000 !important;">DATE:</strong> ${formattedDate} &nbsp;&nbsp;&nbsp;&nbsp; <strong style="color: #000 !important;">TIME:</strong> ${formattedTime}<br>
-            <strong style="color: #000 !important;">PAYMENT:</strong> CASH ON DELIVERY<br>
-            <strong style="color: #ff0000; letter-spacing: 1px;">STATUS: UNPAID / DUE</strong>
+          <td style="text-align: right; padding: 5px 0; vertical-align: top; color: #000 !important; line-height: 1.5;">
+            <span style="color: #666; font-size: 9px; letter-spacing: 1px; display: block; margin-bottom: 2px;">PAYMENT METHOD</span>
+            CASH ON DELIVERY
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 5px 0; vertical-align: top; color: #000 !important; line-height: 1.5;">
+            <span style="color: #666; font-size: 9px; letter-spacing: 1px; display: block; margin-bottom: 2px;">LOGISTICS CHANNEL</span>
+            STANDARD DELIVERY
+          </td>
+          <td style="text-align: right; padding: 5px 0; vertical-align: top; color: #000 !important; line-height: 1.5;">
+            <span style="color: #666; font-size: 9px; letter-spacing: 1px; display: block; margin-bottom: 2px;">ORDER STATUS</span>
+            <strong style="color: #ff0000; letter-spacing: 1px;">UNPAID / DUE</strong>
           </td>
         </tr>
       </table>
