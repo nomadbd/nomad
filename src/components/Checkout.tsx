@@ -157,12 +157,11 @@ export default function Checkout({
     const formattedDate = `${year}-${month}-${date}`;
     const formattedTime = `${hours}:${minutes}`;
 
-    // 🔥 এখানে নতুন সিকোয়েন্স সেট করা হয়েছে: ১. সাইজ, ২. কালার, ৩. কোয়ান্টিটি
     const itemsHtml = placedOrderDetails.items.map((item: any) => {
       const detailsArray = [];
       if (item.size) detailsArray.push(`SIZE: ${item.size.toUpperCase()}`);
       if (item.color) detailsArray.push(`COLOR: ${item.color.toUpperCase()}`);
-      detailsArray.push(`QTY: ${item.quantity}`); // 👈 কোয়ান্টিটি এখন শেষে
+      detailsArray.push(`QTY: ${item.quantity}`); 
       
       return `
         <tr>
@@ -180,49 +179,42 @@ export default function Checkout({
     const printContainer = document.createElement('div');
     printContainer.id = 'nomad-universal-print-area';
     
+    // 🔥 অতিরিক্ত টেক্সট লেবেল রিমুভ করে ৪ লাইনের ক্লিন মুখোমুখি লেআউট
     printContainer.innerHTML = `
       <div class="header">NOMAD</div>
       <div class="sub-header">Proforma Invoice / Order Memorandum</div>
       
       <table class="info-table">
         <tr>
-          <td style="width: 50%; padding: 5px 0; vertical-align: top; color: #000 !important; line-height: 1.5;">
-            <span style="color: #666; font-size: 9px; letter-spacing: 1px; display: block; margin-bottom: 2px;">SHIPPING TO</span>
-            <strong style="color: #000 !important; font-size: 12px;">${placedOrderDetails.customerName.toUpperCase()}</strong>
+          <td style="width: 50%; padding: 4px 0; vertical-align: top; color: #000 !important; font-size: 11px;">
+            <span style="color: #666; font-size: 9px; letter-spacing: 1.5px; font-weight: bold; display: block;">SHIPPING TO</span>
           </td>
-          <td style="text-align: right; padding: 5px 0; vertical-align: top; color: #000 !important; line-height: 1.5;">
-            <span style="color: #666; font-size: 9px; letter-spacing: 1px; display: block; margin-bottom: 2px;">ORDER ID</span>
-            <strong style="color: #000 !important;">#${placedOrderDetails.orderId}</strong>
+          <td style="text-align: right; padding: 4px 0; vertical-align: top; color: #000 !important; font-size: 11px; letter-spacing: 0.5px;">
+            <strong style="color: #000 !important;">ORDER ID:</strong> #${placedOrderDetails.orderId}
           </td>
         </tr>
         <tr>
-          <td style="padding: 5px 0; vertical-align: top; color: #000 !important; line-height: 1.5;">
-            <span style="color: #666; font-size: 9px; letter-spacing: 1px; display: block; margin-bottom: 2px;">CONTACT NUMBER</span>
+          <td style="padding: 4px 0; vertical-align: top; color: #000 !important; font-size: 11px; font-weight: bold; letter-spacing: 0.5px;">
+            ${placedOrderDetails.customerName.toUpperCase()}
+          </td>
+          <td style="text-align: right; padding: 4px 0; vertical-align: top; color: #000 !important; font-size: 11px; letter-spacing: 0.5px;">
+            <strong style="color: #000 !important;">DATE:</strong> ${formattedDate} &nbsp;&nbsp; <strong style="color: #000 !important;">TIME:</strong> ${formattedTime}
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 4px 0; vertical-align: top; color: #000 !important; font-size: 11px; letter-spacing: 0.5px;">
             ${placedOrderDetails.customerPhone}
           </td>
-          <td style="text-align: right; padding: 5px 0; vertical-align: top; color: #000 !important; line-height: 1.5;">
-            <span style="color: #666; font-size: 9px; letter-spacing: 1px; display: block; margin-bottom: 2px;">DATE & TIME</span>
-            ${formattedDate} &nbsp;&nbsp; ${formattedTime}
+          <td style="text-align: right; padding: 4px 0; vertical-align: top; color: #000 !important; font-size: 11px; letter-spacing: 0.5px;">
+            <strong style="color: #000 !important;">PAYMENT:</strong> CASH ON DELIVERY
           </td>
         </tr>
         <tr>
-          <td style="padding: 5px 0; vertical-align: top; color: #000 !important; line-height: 1.5; max-width: 280px;">
-            <span style="color: #666; font-size: 9px; letter-spacing: 1px; display: block; margin-bottom: 2px;">DELIVERY ADDRESS</span>
+          <td style="padding: 4px 0; vertical-align: top; color: #000 !important; font-size: 11px; letter-spacing: 0.5px; line-height: 1.4; max-width: 300px;">
             ${placedOrderDetails.shippingAddress.toUpperCase()}
           </td>
-          <td style="text-align: right; padding: 5px 0; vertical-align: top; color: #000 !important; line-height: 1.5;">
-            <span style="color: #666; font-size: 9px; letter-spacing: 1px; display: block; margin-bottom: 2px;">PAYMENT METHOD</span>
-            CASH ON DELIVERY
-          </td>
-        </tr>
-        <tr>
-          <td style="padding: 5px 0; vertical-align: top; color: #000 !important; line-height: 1.5;">
-            <span style="color: #666; font-size: 9px; letter-spacing: 1px; display: block; margin-bottom: 2px;">LOGISTICS CHANNEL</span>
-            STANDARD DELIVERY
-          </td>
-          <td style="text-align: right; padding: 5px 0; vertical-align: top; color: #000 !important; line-height: 1.5;">
-            <span style="color: #666; font-size: 9px; letter-spacing: 1px; display: block; margin-bottom: 2px;">ORDER STATUS</span>
-            <strong style="color: #ff0000; letter-spacing: 1px;">UNPAID / DUE</strong>
+          <td style="text-align: right; padding: 4px 0; vertical-align: top; color: #000 !important; font-size: 11px; letter-spacing: 0.5px;">
+            <strong style="color: #ff0000; letter-spacing: 1px;">STATUS: UNPAID / DUE</strong>
           </td>
         </tr>
       </table>
