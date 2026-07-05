@@ -179,7 +179,6 @@ export default function Checkout({
     const printContainer = document.createElement('div');
     printContainer.id = 'nomad-universal-print-area';
     
-    // 🔥 অতিরিক্ত টেক্সট লেবেল রিমুভ করে ৪ লাইনের ক্লিন মুখোমুখি লেআউট
     printContainer.innerHTML = `
       <div class="header">NOMAD</div>
       <div class="sub-header">Proforma Invoice / Order Memorandum</div>
@@ -273,8 +272,19 @@ export default function Checkout({
         .sub-header { text-align: center; font-size: 10px; letter-spacing: 3px; color: #666 !important; margin-bottom: 50px; text-transform: uppercase; }
         .info-table { width: 100%; margin-bottom: 40px; font-size: 11px; letter-spacing: 0.5px; border-collapse: collapse; }
         .items-table { width: 100%; border-collapse: collapse; margin-bottom: 40px; }
-        .summary-table { width: 40%; margin-left: auto; font-size: 11px; line-height: 2; letter-spacing: 0.5px; margin-bottom: 60px; }
-        .disclaimer { font-size: 9px; color: #777 !important; line-height: 1.6; text-align: center; border-top: 1px solid #eee; padding-top: 20px; letter-spacing: 0.5px; }
+        
+        /* 🔥 সামারি টেবিল ভেঙে আলাদা পাতায় যাওয়া রোধ করার প্রো-ফিক্স */
+        .summary-table { 
+          width: 40%; 
+          margin-left: auto; 
+          font-size: 11px; 
+          line-height: 2; 
+          letter-spacing: 0.5px; 
+          margin-bottom: 60px; 
+          page-break-inside: avoid !important; 
+        }
+        
+        .disclaimer { font-size: 9px; color: #777 !important; line-height: 1.6; text-align: center; border-top: 1px solid #eee; padding-top: 20px; letter-spacing: 0.5px; page-break-inside: avoid; }
       }
       @media screen {
         #nomad-universal-print-area { display: none !important; }
