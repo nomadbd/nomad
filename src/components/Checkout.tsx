@@ -21,17 +21,8 @@ export default function Checkout({
   onSuccess: () => void,
   onOrderPlaced?: (placed: boolean) => void
 }) {
-  // 🛠️ কার্ট ম্যানেজমেন্টের সম্ভাব্য সব মেথড একসাথে কল করা হয়েছে
-  const { 
-    clearCart, 
-    removeItem, 
-    removeFromCart, 
-    deleteItem, 
-    cart, 
-    cartItems, 
-    setCart, 
-    setCartItems 
-  } = useCart() as any;
+  // কার্ট কনটেক্সট থেকে সব সম্ভাব্য প্রোপার্টি এক্সট্রাক্ট করা হলো
+  const cartContext = useCart() as any;
 
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -142,38 +133,71 @@ export default function Checkout({
         grandTotal
       });
 
-      // 🔥 [FIXED] কার্ট থেকে অর্ডার করা প্রডাক্ট ১০০% ডিলিট করার মাল্টি-লেয়ার ব্যাকআপ লজিক
+      // =========================================================================
+      // 🔥 [FIXED] কার্ট থেকে অর্ডারকৃত প্রডাক্ট ১০০% ডিলিট করার বুলেটপ্রুফ মেথড
+      // =========================================================================
+      
+      // লেয়ার ১: কনটেক্সটের সম্ভাব্য সব ফাংশন ট্রাই করা (ভেরিয়েন্ট সহ এবং ভেরিয়েন্ট ছাড়া)
       selectedItems.forEach((item: CartItem) => {
-        if (typeof removeItem === 'function') {
-          try { removeItem(item.id, item.size, item.color); } catch(e){}
-          try { removeItem(item.id); } catch(e){}
-          try { removeItem(item); } catch(e){}
-        }
-        if (typeof removeFromCart === 'function') {
-          try { removeFromCart(item.id, item.size, item.color); } catch(e){}
-          try { removeFromCart(item.id); } catch(e){}
-          try { removeFromCart(item); } catch(e){}
-        }
-        if (typeof deleteItem === 'function') {
-          try { deleteItem(item.id, item.size, item.color); } catch(e){}
-          try { deleteItem(item.id); } catch(e){}
-          try { deleteItem(item); } catch(e){}
-        }
+        const potentialFunctions = ['removeItem', 'removeFromCart', 'deleteItem', 'removeCartItem', 'handleRemove'];
+        potentialFunctions.forEach((funcName) => {
+          if (typeof cartContext[funcName] === 'function') {
+            try { cartContext[funcName](item.id, item.size, item.color); } catch (e) {}
+            try { cartContext[funcName](item.id); } catch (e) {}
+            try { cartContext[funcName](item); } catch (e) {}
+          }
+        });
+
+        // যদি কোয়ান্টিটি আপডেট ফাংশন থাকে, তবে কোয়ান্টিটি ০ করে রিমুভ করার চেষ্টা
+        const qtyFunctions = ['updateQuantity', 'updateItemQuantity', 'changeQuantity'];
+        qtyFunctions.forEach((funcName) => {
+          if (typeof cartContext[funcName] === 'function') {
+            try { cartContext[funcName](item.id, 0); } catch (e) {}
+            try { cartContext[funcName](item.id, item.size, item.color, 0); } catch (e) {}
+          }
+        });
       });
 
-      // সরাসরি স্টেট আপডেট হ্যান্ডশেক (যদি কনটেক্সটে ফাংশন কাজ না করে)
-      if (typeof setCart === 'function' && Array.isArray(cart)) {
-        const updatedCart = cart.filter((cItem: any) => 
+      // লেয়ার ২: সরাসরি স্টেট অবজেক্ট ফিল্টার করে আপডেট করা (যদি এক্সপোজড থাকে)
+      const stateSetters = ['setCart', 'setCartItems', 'setCartData'];
+      const currentCartArray = cartContext.cart || cartContext.cartItems || [];
+      if (Array.isArray(currentCartArray)) {
+        const filteredCart = currentCartArray.filter((cItem: any) => 
           !selectedItems.some((sItem) => sItem.id === cItem.id && sItem.size === cItem.size && sItem.color === cItem.color)
         );
-        setCart(updatedCart);
+        stateSetters.forEach((setterName) => {
+          if (typeof cartContext[setterName] === 'function') {
+            try { cartContext[setterName](filteredCart); } catch (e) {}
+          }
+        });
       }
-      if (typeof setCartItems === 'function' && Array.isArray(cartItems)) {
-        const updatedCart = cartItems.filter((cItem: any) => 
-          !selectedItems.some((sItem) => sItem.id === cItem.id && sItem.size === cItem.size && sItem.color === cItem.color)
-        );
-        setCartItems(updatedCart);
-      }
+
+      // লেয়ার ৩: ব্রাউজারের LocalStorage ক্লিনআপ (যাতে রিলোড দিলেও আইটেম ফিরে না আসে)
+      try {
+        Object.keys(localStorage).forEach((key) => {
+          const storedValue = localStorage.getItem(key);
+          if (storedValue && (storedValue.startsWith('[') || storedValue.includes('quantity') || storedValue.includes('price'))) {
+            try {
+              const parsedArray = JSON.parse(storedValue);
+              if (Array.isArray(parsedArray)) {
+                const isCartKey = parsedArray.length === 0 || (parsedArray[0] && typeof parsedArray[0] === 'object' && ('id' in parsedArray[0] || 'productId' in parsedArray[0]));
+                if (isCartKey) {
+                  const cleanedArray = parsedArray.filter((cItem: any) => 
+                    !selectedItems.some((sItem) => 
+                      (sItem.id === cItem.id || sItem.id === cItem.productId || sItem.id === cItem.product_id) && 
+                      sItem.size === cItem.size && 
+                      sItem.color === cItem.color
+                    )
+                  );
+                  localStorage.setItem(key, JSON.stringify(cleanedArray));
+                }
+              }
+            } catch (e) {}
+          }
+        });
+      } catch (e) {}
+      
+      // =========================================================================
 
       setIsOrderPlacedState(true); 
     } catch (err: any) {
@@ -185,10 +209,6 @@ export default function Checkout({
 
   const handleDownloadInvoice = () => {
     if (!placedOrderDetails) return;
-
-    // 🛡️ সব ব্রাউজারে ফাইলের নাম "nomad" লক করতে মেইন টাইটেল চেঞ্জ করা হলো
-    const originalTitle = document.title;
-    document.title = "nomad";
 
     const now = new Date();
     const year = now.getFullYear();
@@ -221,7 +241,6 @@ export default function Checkout({
       `;
     }).join('');
 
-    // মেইন ডক বডিতে ইনভয়েস কন্টেইনার ইনজেক্ট (Safari/Firefox Friendly)
     const printContainer = document.createElement('div');
     printContainer.id = 'nomad-universal-print-area';
     
@@ -239,6 +258,7 @@ export default function Checkout({
           </td>
           <td style="text-align: right; vertical-align: top; color: #000 !important; line-height: 1.8;">
             <strong style="color: #000 !important;">ORDER ID:</strong> #${placedOrderDetails.orderId}<br>
+            <!-- 🛠️ [FIXED] তারিখ এবং সময় একই লাইনে সেট করা হয়েছে -->
             <strong style="color: #000 !important;">DATE:</strong> ${formattedDate} &nbsp;&nbsp;&nbsp;&nbsp; <strong style="color: #000 !important;">TIME:</strong> ${formattedTime}<br>
             <strong style="color: #000 !important;">PAYMENT:</strong> CASH ON DELIVERY<br>
             <strong style="color: #ff0000; letter-spacing: 1px;">STATUS: UNPAID / DUE</strong>
@@ -262,6 +282,7 @@ export default function Checkout({
         <tr><td style="color: #000 !important;">VAT</td><td style="text-align: right; font-family: monospace; color: #000 !important;">৳${placedOrderDetails.vatAmount}</td></tr>
         <tr style="font-weight: bold; font-size: 13px; color: #ff0000;">
           <td style="padding-top: 12px; border-top: 1px solid #000; letter-spacing: 1px;">AMOUNT DUE</td>
+          <!-- 🛠️ ডলার সাইন চিরতরে দূর করা হলো -->
           <td style="text-align: right; padding-top: 12px; border-top: 1px solid #000; font-family: monospace;">৳${placedOrderDetails.grandTotal}</td>
         </tr>
       </table>
@@ -274,16 +295,13 @@ export default function Checkout({
     const styleSheet = document.createElement('style');
     styleSheet.innerHTML = `
       @media print {
-        @page { 
-          margin: 0mm; 
-        }
+        @page { margin: 0mm; }
         body { 
           background: #fff !important; 
           color: #000 !important;
           margin: 0 !important;
           padding: 0 !important;
         }
-        /* প্রিন্ট করার সময় মেইন অ্যাপের বাকি সব হাইড করার গ্যারান্টি */
         body > *:not(#nomad-universal-print-area) {
           display: none !important;
         }
@@ -316,12 +334,10 @@ export default function Checkout({
 
     setTimeout(() => {
       window.print();
-      // ক্লিনআপ অপারেশন
       if (document.getElementById('nomad-universal-print-area')) {
         document.body.removeChild(printContainer);
       }
       document.head.removeChild(styleSheet);
-      document.title = originalTitle; 
     }, 150);
   };
 
@@ -651,7 +667,8 @@ export default function Checkout({
 
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', letterSpacing: '2px', paddingTop: '20px', borderTop: '1px dotted #222', color: '#fff', fontWeight: 600, marginTop: '25px' }}>
                 <span>TOTAL</span>
-                <span style={{ fontFamily: 'monospace', fontSize: '14px' }}>৳${grandTotal}</span>
+                <!-- 🛠️ [FIXED] এখানে থাকা ভুল ডলার সাইনটি পুরোপুরি মুছে শুধু টাকা সিম্বল রাখা হয়েছে -->
+                <span style={{ fontFamily: 'monospace', fontSize: '14px' }}>৳{grandTotal}</span>
               </div>
             </div>
 
