@@ -141,33 +141,42 @@ export default function Checkout({
     }
   };
 
-  // 🌟 আইনি সুরক্ষাসহ ইনভয়েস প্রিন্ট ফাংশন
   const handleDownloadInvoice = () => {
     if (!placedOrderDetails) return;
     
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
 
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = String(today.getMonth() + 1).padStart(2, '0');
-    const date = String(today.getDate()).padStart(2, '0');
-    const formattedDate = `${year}-${month}-${date}`;
+    // ফাইলের নাম ফিক্সড "nomad" রাখা হলো
+    const invoiceFileName = "nomad";
 
+    // তারিখ এবং সময় ফরম্যাট (YYYY-MM-DD | HH:MM)
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const date = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const formattedDateTime = `${year}-${month}-${date} | ${hours}:${minutes}`;
+
+    // প্রোডাক্ট লিস্ট জেনারেট করা (সাইজ, কালার ও কোয়ান্টিটি নিচে নিচে)
     const itemsHtml = placedOrderDetails.items.map((item: any) => {
       const detailsArray = [];
       if (item.size) detailsArray.push(`SIZE: ${item.size.toUpperCase()}`);
       if (item.color) detailsArray.push(`COLOR: ${item.color.toUpperCase()}`);
       
-      const detailsString = detailsArray.length > 0 ? ` [${detailsArray.join(' | ')}]` : '';
+      const detailsHtml = detailsArray.length > 0 
+        ? `<div style="color: #666; font-size: 10px; margin-top: 5px; letter-spacing: 1px;">${detailsArray.join(' | ')}</div>` 
+        : '';
       
       return `
         <tr>
-          <td style="padding: 12px 0; border-bottom: 1px solid #eee; font-size: 11px; letter-spacing: 1px;">
-            <strong>${item.name.toUpperCase()}</strong>${detailsString}<br>
-            <span style="color: #666; font-size: 10px;">QTY: ${item.quantity} × ৳${item.price}</span>
+          <td style="padding: 14px 0; border-bottom: 1px solid #eee; font-size: 11px; letter-spacing: 1px; line-height: 1.5;">
+            <strong>${item.name.toUpperCase()}</strong>
+            ${detailsHtml}
+            <div style="color: #666; font-size: 10px; margin-top: 5px;">QTY: ${item.quantity} × ৳${item.price}</div>
           </td>
-          <td style="padding: 12px 0; border-bottom: 1px solid #eee; font-size: 11px; text-align: right; font-family: monospace;">৳${item.price * item.quantity}</td>
+          <td style="padding: 14px 0; border-bottom: 1px solid #eee; font-size: 11px; text-align: right; font-family: monospace; vertical-align: bottom;">৳${item.price * item.quantity}</td>
         </tr>
       `;
     }).join('');
@@ -175,15 +184,26 @@ export default function Checkout({
     printWindow.document.write(`
       <html>
         <head>
-          <title>ORDER MEMO - NOMAD</title>
+          <title>${invoiceFileName}</title>
           <style>
-            body { font-family: sans-serif; color: #000; background: #fff; padding: 40px; margin: 0; -webkit-print-color-adjust: exact; }
+            /* 🛡️ ব্রাউজারের টপ হেডার (ওয়েবসাইট লিংক/মেমো টেক্সট) সম্পূর্ণ হাইড করার ম্যাজিক কোড */
+            @page { 
+              margin: 0mm; 
+            }
+            body { 
+              font-family: sans-serif; 
+              color: #000; 
+              background: #fff; 
+              padding: 50px 40px; 
+              margin: 0; 
+              -webkit-print-color-adjust: exact; 
+            }
             .header { text-align: center; margin-bottom: 10px; letter-spacing: 6px; font-weight: bold; font-size: 22px; }
-            .sub-header { text-align: center; font-size: 10px; letter-spacing: 3px; color: #666; margin-bottom: 40px; text-transform: uppercase; }
+            .sub-header { text-align: center; font-size: 10px; letter-spacing: 3px; color: #666; margin-bottom: 50px; text-transform: uppercase; }
             .info-table { width: 100%; margin-bottom: 40px; font-size: 11px; line-height: 1.8; letter-spacing: 0.5px; }
             .items-table { width: 100%; border-collapse: collapse; margin-bottom: 40px; }
             .summary-table { width: 40%; margin-left: auto; font-size: 11px; line-height: 2; letter-spacing: 0.5px; margin-bottom: 60px; }
-            .disclaimer { font-size: 9px; color: #777; line-height: 1.6; text-align: center; border-top: 1px solid #eee; padding-top: 15px; letter-spacing: 0.5px; }
+            .disclaimer { font-size: 9px; color: #777; line-height: 1.6; text-align: center; border-top: 1px solid #eee; padding-top: 20px; letter-spacing: 0.5px; }
             th { text-transform: uppercase; font-weight: 600; }
           </style>
         </head>
@@ -201,7 +221,7 @@ export default function Checkout({
               </td>
               <td style="text-align: right; vertical-align: top;">
                 <strong>ORDER ID:</strong> #${placedOrderDetails.orderId}<br>
-                <strong>DATE:</strong> ${formattedDate}<br>
+                <strong>DATE & TIME:</strong> ${formattedDateTime}<br>
                 <strong>PAYMENT:</strong> CASH ON DELIVERY<br>
                 <strong style="color: #ff0000; letter-spacing: 1px;">STATUS: UNPAID / DUE</strong>
               </td>
@@ -561,13 +581,13 @@ export default function Checkout({
               {vatRate > 0 && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', letterSpacing: '1.5px', marginBottom: '15px', color: '#666' }}>
                   <span>VAT ({vatRate * 100}%)</span>
-                  <span style={{ fontFamily: 'monospace' }}>৳{vatAmount}</span>
+                  <span style={{ fontFamily: 'monospace' }}>৳${vatAmount}</span>
                 </div>
               )}
 
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', letterSpacing: '2px', paddingTop: '20px', borderTop: '1px dotted #222', color: '#fff', fontWeight: 600, marginTop: '25px' }}>
                 <span>TOTAL</span>
-                <span style={{ fontFamily: 'monospace', fontSize: '14px' }}>৳{grandTotal}</span>
+                <span style={{ fontFamily: 'monospace', fontSize: '14px' }}>৳${grandTotal}</span>
               </div>
             </div>
 
