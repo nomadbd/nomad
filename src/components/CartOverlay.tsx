@@ -1,16 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useCart } from '../context/CartContext';
 import Checkout from './Checkout'; 
-import { supabase } from '../supabaseClient'; // 🔥 গেস্ট অর্ডারের লাইভ স্ট্যাটাস চেক করার জন্য সুপাবেস ইম্পোর্ট
 
 const CartOverlay = () => {
   const { cartItems, isCartOpen, setIsCartOpen, incrementQuantity, decrementQuantity } = useCart();
 
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-
-  // 🔥 গেস্ট অর্ডার ট্র্যাকিংয়ের জন্য নতুন স্টেটসমূহ
-  const [guestOrder, setGuestOrder] = useState<{ id: string; status: string } | null>(null);
 
   useEffect(() => {
     if (isCartOpen) {
@@ -28,38 +24,6 @@ const CartOverlay = () => {
   useEffect(() => {
     setSelectedIds(cartItems.map(item => `${item.id}-${item.color || ''}-${item.size || ''}`)); 
   }, [cartItems]);
-
-  // 🔥 কার্ট ওপেন হলে ব্রাউজার মেমরি চেক করে গেস্ট অর্ডারের লাইভ স্ট্যাটাস নিয়ে আসার ইফেক্ট
-  useEffect(() => {
-    const fetchGuestOrderStatus = async () => {
-      const storedGuestOrderId = localStorage.getItem('nomad_guest_order_id');
-      
-      if (!storedGuestOrderId) {
-        setGuestOrder(null);
-        return;
-      }
-
-      try {
-        const { data, error } = await supabase
-          .from('orders')
-          .select('id, status')
-          .eq('id', storedGuestOrderId)
-          .single();
-
-        if (!error && data) {
-          setGuestOrder(data);
-        } else {
-          setGuestOrder(null);
-        }
-      } catch (err) {
-        console.error("Error fetching guest order status:", err);
-      }
-    };
-
-    if (isCartOpen) {
-      fetchGuestOrderStatus();
-    }
-  }, [isCartOpen]);
 
   if (!isCartOpen) return null;
 
@@ -80,9 +44,6 @@ const CartOverlay = () => {
       setSelectedIds([...selectedIds, itemKey]);
     }
   };
-
-  // গেস্ট ট্র্যাকার স্টেপস
-  const statusSteps = ['pending', 'received', 'shipped', 'delivered'];
 
   return (
     <div 
@@ -145,53 +106,6 @@ const CartOverlay = () => {
           </div>
         ) : (
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-            
-            {/* 🔥 গেস্ট ইউজারদের লাইভ অর্ডার ট্র্যাকার ইউআই (UI) সেকশন */}
-            {guestOrder && (
-              <div style={{ backgroundColor: '#050505', border: '1px solid #111', padding: '15px', marginBottom: '20px', flexShrink: 0 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                  <span style={{ fontSize: '8px', letterSpacing: '1.5px', color: '#555', fontWeight: 600 }}>GUEST ORDER TRACKING</span>
-                  <button 
-                    onClick={() => {
-                      localStorage.removeItem('nomad_guest_order_id');
-                      setGuestOrder(null);
-                    }}
-                    style={{ background: 'none', border: 'none', color: '#ff4444', fontSize: '8px', cursor: 'pointer', letterSpacing: '1px', textTransform: 'uppercase', padding: 0, fontWeight: 'bold' }}
-                  >
-                    Dismiss
-                  </button>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', color: '#fff', marginBottom: '15px', letterSpacing: '0.5px', fontFamily: 'monospace' }}>
-                  <span>#{guestOrder.id.slice(0, 8).toUpperCase()}</span>
-                  <span style={{ textTransform: 'uppercase', fontWeight: 'bold', color: '#fff', fontSize: '10px', letterSpacing: '1px' }}>{guestOrder.status}</span>
-                </div>
-                
-                {/* মিনিমাল ডট স্টেপার */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', position: 'relative' }}>
-                  {statusSteps.map((step, idx) => {
-                    const currentStatusLower = guestOrder.status ? guestOrder.status.toLowerCase() : 'pending';
-                    const currentStepIndex = statusSteps.indexOf(currentStatusLower);
-                    const isActive = idx <= currentStepIndex;
-
-                    return (
-                      <div key={step} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1 }}>
-                        <div style={{
-                          width: '6px',
-                          height: '6px',
-                          borderRadius: '50%',
-                          backgroundColor: isActive ? '#fff' : '#222',
-                          boxShadow: isActive ? '0 0 6px #fff' : 'none',
-                          transition: 'all 0.3s ease'
-                        }} />
-                        <span style={{ fontSize: '7px', letterSpacing: '0.5px', marginTop: '6px', color: isActive ? '#aaa' : '#333', textTransform: 'uppercase' }}>
-                          {step}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
 
             <h3 style={{ fontSize: '11px', letterSpacing: '1.5px', color: '#666', marginBottom: '25px', textTransform: 'uppercase', fontWeight: '500', flexShrink: 0 }}>
               Cart Items ({cartItems.length})
