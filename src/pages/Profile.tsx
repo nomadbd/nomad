@@ -152,7 +152,7 @@ export default function Profile() {
 
               {/* 🔥 নতুন লাইভ ট্র্যাকিং ও অর্ডার হিস্ট্রি কম্পোনেন্ট এখানে রেন্ডার করা হলো */}
               <div style={{ marginTop: '20px', borderTop: '1px solid #111', paddingTop: '10px' }}>
-                <OrderHistory />
+                <OrderHistory userId={profile?.id} />
               </div>
             </>
           )
