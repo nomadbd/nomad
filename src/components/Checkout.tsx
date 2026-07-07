@@ -37,14 +37,14 @@ export default function Checkout({
     const handleResize = () => setIsMobile(window.innerWidth < 960);
     handleResize();
     window.addEventListener('resize', handleResize);
-    
+
     const fetchStoreSettings = async () => {
       try {
         const { data, error = null } = await supabase
           .from('store_settings')
           .select('delivery_charge, vat_rate')
           .single();
-        
+
         if (data && !error) {
           setDeliveryCharge(data.delivery_charge);
           setVatRate(Number(data.vat_rate));
@@ -120,11 +120,6 @@ export default function Checkout({
       const { error: itemsError } = await supabase.from('order_items').insert(items);
       if (itemsError) throw itemsError;
 
-      // 🔥 [NEW LOGIC] গ্রাহক লগইন না থাকলে ট্র্যাকিংয়ের জন্য ব্রাউজারে আইডি সেভ করে রাখছি
-      if (!user) {
-        localStorage.setItem('nomad_guest_order_id', order.id);
-      }
-
       setPlacedOrderDetails({
         orderId: order.id,
         customerName: formData.name,
@@ -158,7 +153,7 @@ export default function Checkout({
     const date = String(now.getDate()).padStart(2, '0');
     const hours = String(now.getHours()).padStart(2, '0');
     const minutes = String(now.getMinutes()).padStart(2, '0');
-    
+
     const formattedDate = `${year}-${month}-${date}`;
     const formattedTime = `${hours}:${minutes}`;
 
@@ -167,7 +162,7 @@ export default function Checkout({
       if (item.size) detailsArray.push(`SIZE: ${item.size.toUpperCase()}`);
       if (item.color) detailsArray.push(`COLOR: ${item.color.toUpperCase()}`);
       detailsArray.push(`QTY: ${item.quantity}`); 
-      
+
       return `
         <tr>
           <td style="padding: 14px 0; border-bottom: 1px solid #eee; font-size: 11px; letter-spacing: 1px; line-height: 1.6; color: #000 !important;">
@@ -183,7 +178,7 @@ export default function Checkout({
 
     const printContainer = document.createElement('div');
     printContainer.id = 'nomad-universal-print-area';
-    
+
     printContainer.innerHTML = `
       <div class="header">NOMAD</div>
       <div class="sub-header">Proforma Invoice / Order Memorandum</div>
@@ -508,15 +503,15 @@ export default function Checkout({
       <div style={styles.successOverlay}>
         <div style={styles.successWrapper}>
           <div style={{ fontSize: '32px', marginBottom: '15px', color: '#fff', lineHeight: 1 }}>✓</div>
-          
+
           <h2 style={{ fontSize: '13px', letterSpacing: '4px', fontWeight: 600, marginBottom: '20px', color: '#fff' }}>
             ORDER PLACED SUCCESSFULLY
           </h2>
-          
+
           <p style={{ fontSize: '10px', letterSpacing: '2px', color: '#888', lineHeight: '2', marginBottom: '40px', textTransform: 'uppercase' as const, padding: '0 10px' }}>
             Thank you for your purchase. Your order has been received and is currently being processed. Registered users can also track this in their profile.
           </p>
-          
+
           <button onClick={handleDownloadInvoice} style={styles.invoiceLink}>
             DOWNLOAD ORDER MEMO
           </button>
@@ -537,7 +532,6 @@ export default function Checkout({
       </div>
 
       <form onSubmit={handleSubmit} noValidate style={{ width: '100%' }}>
-        {/* Form elements remain the same */}
         <div style={styles.layoutGrid}>
           <div style={styles.leftColumn}>
             <h2 style={styles.sectionHeading}>SHIPPING ADDRESS</h2>
@@ -572,7 +566,7 @@ export default function Checkout({
             <div style={{ marginTop: '30px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', letterSpacing: '1.5px', marginBottom: '15px', color: '#666' }}><span>SUBTOTAL</span><span style={{ fontFamily: 'monospace' }}>৳{subtotal}</span></div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', letterSpacing: '1.5px', marginBottom: '15px', color: '#666' }}><span>SHIPPING</span><span style={{ fontFamily: 'monospace', color: deliveryCharge === 0 ? '#fff' : '#666' }}>{deliveryCharge === 0 ? 'COMPLIMENTARY' : `৳${deliveryCharge}`}</span></div>
-              {vatRate > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', letterSpacing: '1.5px', marginBottom: '15px', color: '#666' }}><span>VAT ({vatRate * 100}%)</span><span style={{ fontFamily: 'monospace' }}>৳${vatAmount}</span></div>}
+              {vatRate > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', letterSpacing: '1.5px', marginBottom: '15px', color: '#666' }}><span>VAT ({vatRate * 100}%)</span><span style={{ fontFamily: 'monospace' }}>৳{vatAmount}</span></div>}
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', letterSpacing: '2px', paddingTop: '20px', borderTop: '1px dotted #222', color: '#fff', fontWeight: 600, marginTop: '25px' }}><span>TOTAL</span><span style={{ fontFamily: 'monospace', fontSize: '14px' }}>৳{grandTotal}</span></div>
             </div>
           </div>
