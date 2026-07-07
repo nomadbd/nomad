@@ -120,6 +120,11 @@ export default function Checkout({
       const { error: itemsError } = await supabase.from('order_items').insert(items);
       if (itemsError) throw itemsError;
 
+      // 🔥 [NEW LOGIC] গ্রাহক লগইন না থাকলে ট্র্যাকিংয়ের জন্য ব্রাউজারে আইডি সেভ করে রাখছি
+      if (!user) {
+        localStorage.setItem('nomad_guest_order_id', order.id);
+      }
+
       setPlacedOrderDetails({
         orderId: order.id,
         customerName: formData.name,
@@ -272,18 +277,7 @@ export default function Checkout({
         .sub-header { text-align: center; font-size: 10px; letter-spacing: 3px; color: #666 !important; margin-bottom: 50px; text-transform: uppercase; }
         .info-table { width: 100%; margin-bottom: 40px; font-size: 11px; letter-spacing: 0.5px; border-collapse: collapse; }
         .items-table { width: 100%; border-collapse: collapse; margin-bottom: 40px; }
-        
-        /* 🔥 সামারি টেবিল ভেঙে আলাদা পাতায় যাওয়া রোধ করার প্রো-ফিক্স */
-        .summary-table { 
-          width: 40%; 
-          margin-left: auto; 
-          font-size: 11px; 
-          line-height: 2; 
-          letter-spacing: 0.5px; 
-          margin-bottom: 60px; 
-          page-break-inside: avoid !important; 
-        }
-        
+        .summary-table { width: 40%; margin-left: auto; font-size: 11px; line-height: 2; letter-spacing: 0.5px; margin-bottom: 60px; page-break-inside: avoid !important; }
         .disclaimer { font-size: 9px; color: #777 !important; line-height: 1.6; text-align: center; border-top: 1px solid #eee; padding-top: 20px; letter-spacing: 0.5px; page-break-inside: avoid; }
       }
       @media screen {
@@ -537,59 +531,28 @@ export default function Checkout({
 
   return (
     <div style={styles.container}>
-      
       <div style={styles.topHeader}>
         <span style={styles.topHeaderTitle}>CHECKOUT</span>
         <button type="button" onClick={onSuccess} style={styles.closeBtn}>✕</button>
       </div>
 
       <form onSubmit={handleSubmit} noValidate style={{ width: '100%' }}>
+        {/* Form elements remain the same */}
         <div style={styles.layoutGrid}>
-
           <div style={styles.leftColumn}>
             <h2 style={styles.sectionHeading}>SHIPPING ADDRESS</h2>
-            <input
-              style={styles.input}
-              placeholder="FULL NAME"
-              required
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            />
-            <input
-              style={styles.input}
-              placeholder="CONTACT NUMBER"
-              required
-              type="tel"
-              value={formData.phone}
-              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-            />
-            <textarea
-              style={styles.textarea}
-              placeholder="COMPLETE SHIPPING ADDRESS"
-              required
-              value={formData.address}
-              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-            />
-
+            <input style={styles.input} placeholder="FULL NAME" required value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
+            <input style={styles.input} placeholder="CONTACT NUMBER" required type="tel" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} />
+            <textarea style={styles.textarea} placeholder="COMPLETE SHIPPING ADDRESS" required value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} />
             <div style={styles.paymentRow}>
               <span style={styles.paymentText}>CASH ON DELIVERY</span>
               <div style={styles.customCircleCheckbox}>✓</div>
             </div>
-
-            {errorMessage && (
-              <div style={{ color: '#ff4d4d', fontSize: '10px', letterSpacing: '2px', marginTop: '20px', textTransform: 'uppercase', lineHeight: '1.6' }}>
-                {errorMessage}
-              </div>
-            )}
-
-            <button type="submit" disabled={loading} style={styles.submitBtn}>
-              {loading ? 'PROCESSING...' : 'PLACE ORDER'}
-            </button>
+            {errorMessage && <div style={{ color: '#ff4d4d', fontSize: '10px', letterSpacing: '2px', marginTop: '20px', textTransform: 'uppercase', lineHeight: '1.6' }}>{errorMessage}</div>}
+            <button type="submit" disabled={loading} style={styles.submitBtn}>{loading ? 'PROCESSING...' : 'PLACE ORDER'}</button>
           </div>
-
           <div style={styles.rightColumn}>
             <h2 style={{ ...styles.sectionHeading, marginTop: 0, borderBottom: '1px solid #111', paddingBottom: '15px' }}>ORDER SUMMARY</h2>
-
             <div>
               {selectedItems.map((item: CartItem) => (
                 <div key={item.id} style={styles.productRow}>
@@ -606,35 +569,13 @@ export default function Checkout({
                 </div>
               ))}
             </div>
-
             <div style={{ marginTop: '30px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', letterSpacing: '1.5px', marginBottom: '15px', color: '#666' }}>
-                <span>SUBTOTAL</span>
-                <span style={{ fontFamily: 'monospace' }}>৳{subtotal}</span>
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', letterSpacing: '1.5px', marginBottom: '15px', color: '#666' }}>
-                <span>SHIPPING</span>
-                <span style={{ fontFamily: 'monospace', color: deliveryCharge === 0 ? '#fff' : '#666' }}>
-                  {deliveryCharge === 0 ? 'COMPLIMENTARY' : `৳${deliveryCharge}`}
-                </span>
-              </div>
-
-              {vatRate > 0 && (
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', letterSpacing: '1.5px', marginBottom: '15px', color: '#666' }}>
-                  <span>VAT ({vatRate * 100}%)</span>
-                  <span style={{ fontFamily: 'monospace' }}>৳{vatAmount}</span>
-                </div>
-              )}
-
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', letterSpacing: '2px', paddingTop: '20px', borderTop: '1px dotted #222', color: '#fff', fontWeight: 600, marginTop: '25px' }}>
-                <span>TOTAL</span>
-                <span style={{ fontFamily: 'monospace', fontSize: '14px' }}>৳{grandTotal}</span>
-              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', letterSpacing: '1.5px', marginBottom: '15px', color: '#666' }}><span>SUBTOTAL</span><span style={{ fontFamily: 'monospace' }}>৳{subtotal}</span></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', letterSpacing: '1.5px', marginBottom: '15px', color: '#666' }}><span>SHIPPING</span><span style={{ fontFamily: 'monospace', color: deliveryCharge === 0 ? '#fff' : '#666' }}>{deliveryCharge === 0 ? 'COMPLIMENTARY' : `৳${deliveryCharge}`}</span></div>
+              {vatRate > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', letterSpacing: '1.5px', marginBottom: '15px', color: '#666' }}><span>VAT ({vatRate * 100}%)</span><span style={{ fontFamily: 'monospace' }}>৳${vatAmount}</span></div>}
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', letterSpacing: '2px', paddingTop: '20px', borderTop: '1px dotted #222', color: '#fff', fontWeight: 600, marginTop: '25px' }}><span>TOTAL</span><span style={{ fontFamily: 'monospace', fontSize: '14px' }}>৳{grandTotal}</span></div>
             </div>
-
           </div>
-
         </div>
       </form>
     </div>
