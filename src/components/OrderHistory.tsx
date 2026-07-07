@@ -14,7 +14,7 @@ interface Order {
   created_at: string;
   total_amount: number;
   status: string;
-  items: OrderItem[]; // মাল্টিপল প্রোডাক্টের জন্য অ্যারে
+  items: OrderItem[]; 
 }
 
 interface OrderHistoryProps {
@@ -37,7 +37,6 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      // 🌟 ফিক্সড কুয়েরি: আপনার ডাটাবেজ অনুযায়ী সঠিক কলামের নাম 'price_at_purchase' দেওয়া হয়েছে
       const { data, error } = await supabase
         .from('orders')
         .select(`
@@ -68,7 +67,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
             size: item.size || 'N/A',
             color: item.color || 'N/A',
             quantity: item.quantity || 1,
-            price: item.price_at_purchase || 0 // 🌟 ডাটাবেজের price_at_purchase কে ম্যাপ করা হলো
+            price: item.price_at_purchase || 0
           }));
 
           return {
@@ -137,20 +136,11 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
               <div className="skeleton-pulse" style={{ width: '70px', height: '15px', backgroundColor: '#222' }} />
               <div className="skeleton-pulse" style={{ width: '90px', height: '12px', backgroundColor: '#222' }} />
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px' }}>
-              {[1, 2, 3, 4].map((dot) => (
-                <div key={dot} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', flex: 1 }}>
-                  <div className="skeleton-pulse" style={{ width: '14px', height: '14px', borderRadius: '50%', backgroundColor: '#222' }} />
-                  <div className="skeleton-pulse" style={{ width: '45px', height: '8px', backgroundColor: '#222' }} />
-                </div>
-              ))}
-            </div>
           </div>
         ))}
         <style>{`
           @keyframes pulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 0.7; } }
           .skeleton-pulse { animation: pulse 1.5s infinite ease-in-out; }
-          .premium-carousel::-webkit-scrollbar { display: none !important; }
         `}</style>
       </div>
     );
@@ -216,29 +206,34 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
               overflow: 'hidden'
             }}
           >
-            {/* অ্যাকশন বাটন এরিয়া */}
-            <div style={{ position: 'absolute', top: '22px', right: '22px', zIndex: 5 }}>
-              {isManageMode ? (
-                <div 
-                  style={{ width: '20px', height: '20px', borderRadius: '50%', border: isSelected ? '2px solid #fff' : '2px solid #888', backgroundColor: isSelected ? '#fff' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s ease' }}
-                >
-                  {isSelected && <span style={{ color: '#000', fontSize: '12px', fontWeight: '900' }}>✓</span>}
-                </div>
-              ) : (
-                <button 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSingleOrderToHide(order.id);
-                    setModalType('single');
-                  }}
-                  style={{ background: 'none', border: 'none', color: '#777', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', outline: 'none', transition: 'color 0.2s ease' }}
-                >
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                  </svg>
-                </button>
-              )}
+            {/* 🛠️ ফিক্সড হেডার: ক্রস বাটন বা চেকবক্স এখানে নিরাপদে থাকবে, প্রোডাক্টের নামের সাথে ওভারল্যাপ হবে না */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', paddingRight: '25px' }}>
+              <span style={{ fontSize: '9px', color: '#555', fontFamily: 'monospace', letterSpacing: '1px', fontWeight: 'bold' }}>
+                ID: #{order.id.slice(0, 8).toUpperCase()}
+              </span>
+              <div>
+                {isManageMode ? (
+                  <div 
+                    style={{ width: '18px', height: '18px', borderRadius: '50%', border: isSelected ? '2px solid #fff' : '2px solid #555', backgroundColor: isSelected ? '#fff' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s ease' }}
+                  >
+                    {isSelected && <span style={{ color: '#000', fontSize: '11px', fontWeight: '900' }}>✓</span>}
+                  </div>
+                ) : (
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSingleOrderToHide(order.id);
+                      setModalType('single');
+                    }}
+                    style={{ background: 'none', border: 'none', color: '#555', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center', outline: 'none', transition: 'color 0.2s ease' }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <line x1="18" y1="6" x2="6" y2="18"></line>
+                      <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* 🏎️ হরিজোন্টাল প্রোডাক্ট কারোসেল */}
@@ -249,7 +244,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
                 flexDirection: 'row', 
                 overflowX: 'auto', 
                 gap: '20px', 
-                marginBottom: '20px',
+                marginBottom: '25px',
                 paddingRight: '25px', 
                 scrollbarWidth: 'none',
                 msOverflowStyle: 'none',
@@ -269,32 +264,27 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
                   }}
                 >
                   {/* প্রোডাক্টের নাম */}
-                  <div style={{ paddingRight: '40px' }}>
-                    <h4 style={{ margin: 0, fontSize: '14px', fontWeight: '700', color: '#fff', letterSpacing: '0.5px', lineHeight: '1.4', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', textTransform: 'uppercase' }}>
+                  <div>
+                    <h4 style={{ margin: 0, fontSize: '13px', fontWeight: '700', color: '#fff', letterSpacing: '0.5px', lineHeight: '1.4', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', textTransform: 'uppercase' }}>
                       {item.product_name}
                     </h4>
                   </div>
 
-                  {/* সাইজ, কালার, কোয়ান্টিটি ও ইন্ডিভিজুয়াল প্রাইস */}
-                  <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                      <span style={{ fontSize: '10px', color: '#888', fontFamily: 'monospace', fontWeight: 'bold' }}>
-                        SIZE: <span style={{ color: '#fff' }}>{item.size}</span>
-                      </span>
-                      <span style={{ width: '3px', height: '3px', backgroundColor: '#444', borderRadius: '50%' }}></span>
-                      <span style={{ fontSize: '10px', color: '#888', fontFamily: 'monospace', fontWeight: 'bold' }}>
-                        COLOR: <span style={{ color: '#fff' }}>{item.color}</span>
-                      </span>
-                    </div>
-                    <span style={{ fontSize: '11px', color: '#888', fontFamily: 'monospace', fontWeight: 'bold', backgroundColor: 'rgba(255,255,255,0.05)', padding: '3px 8px', borderRadius: '2px' }}>
-                      {item.quantity}x — ৳{item.price}
+                  {/* 🌟 আপডেট: ১×১২০০ ট্যাগটি সম্পূর্ণ বাদ দিয়ে শুধু সাইজ এবং কালার রাখা হয়েছে */}
+                  <div style={{ marginTop: '10px', display: 'flex', gap: '10px', alignItems: 'center' }}>
+                    <span style={{ fontSize: '10px', color: '#888', fontFamily: 'monospace', fontWeight: 'bold' }}>
+                      SIZE: <span style={{ color: '#fff' }}>{item.size}</span>
+                    </span>
+                    <span style={{ width: '3px', height: '3px', backgroundColor: '#444', borderRadius: '50%' }}></span>
+                    <span style={{ fontSize: '10px', color: '#888', fontFamily: 'monospace', fontWeight: 'bold' }}>
+                      COLOR: <span style={{ color: '#fff' }}>{item.color}</span>
                     </span>
                   </div>
                 </div>
               ))}
             </div>
 
-            {/* 🔒 পারমানেন্ট ফিক্সড সেকশন (মোট অর্ডারের দাম এবং তারিখ) */}
+            {/* মোট অর্ডারের দাম এবং তারিখ */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '18px', paddingRight: '25px' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                 <span style={{ fontSize: '9px', color: '#666', letterSpacing: '1px', fontWeight: 'bold' }}>TOTAL AMOUNT</span>
