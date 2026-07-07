@@ -1,13 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../supabaseClient';
-
-// অর্ডারের টাইপ ডিফাইন করা (TypeScript Interface)
-interface Order {
-  id: string | number;
-  total_amount: number;
-  created_at: string;
-  is_hidden: boolean;
-}
+import OrderHistory from '../components/OrderHistory'; // 🔥 নতুন ট্র্যাকিং কম্পোনেন্টটি ইম্পোর্ট করা হলো
 
 export default function Profile() {
   // localStorage থেকে ভিউ স্টেট রিস্টোর করা হচ্ছে
@@ -22,20 +15,15 @@ export default function Profile() {
   const [toast, setToast] = useState<{ message: string; color: string } | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
 
-  // অর্ডার হিস্ট্রির জন্য নতুন স্টেটসমূহ
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [ordersLoading, setOrdersLoading] = useState(false);
-
   // ভিউ পরিবর্তন হলে তা localStorage-এ সেভ করা হচ্ছে
   const changeView = (newView: 'profile' | 'settings') => {
     setView(newView);
     localStorage.setItem('currentView', newView);
   };
 
-  // প্রোফাইল ডেটা এবং অর্ডার হিস্ট্রি একসাথে লোড হবে
+  // প্রোফাইল ডেটা লোড হবে
   useEffect(() => { 
     fetchUserData(); 
-    fetchOrders();
   }, []);
 
   const Skeleton = () => (
@@ -61,36 +49,6 @@ export default function Profile() {
       setNewEmail('');
     }
     setLoading(false);
-  };
-
-  // ডাটাবেজ থেকে অর্ডার হিস্ট্রি নিয়ে আসার ফাংশন
-  const fetchOrders = async () => {
-    setOrdersLoading(true);
-    const { data, error } = await supabase
-      .from('orders')
-      .select('*')
-      .eq('is_hidden', false)
-      .order('created_at', { ascending: false }); // নতুন অর্ডারগুলো উপরে দেখাবে
-
-    if (!error && data) {
-      setOrders(data as Order[]);
-    }
-    setOrdersLoading(false);
-  };
-
-  // হিস্ট্রি ক্লিয়ার (হাইড) করার ফাংশন (ডাটাবেজ UPDATE পলিসি ব্যবহার করবে)
-  const handleClearHistory = async (orderId: string | number) => {
-    const { error } = await supabase
-      .from('orders')
-      .update({ is_hidden: true })
-      .eq('id', orderId);
-
-    if (error) {
-      showToast("Error: " + error.message, "#ff4444");
-    } else {
-      setOrders(prev => prev.filter(order => order.id !== orderId));
-      showToast("Order removed from history", "#2ecc71");
-    }
   };
 
   const handleSignOut = async () => { 
@@ -192,36 +150,9 @@ export default function Profile() {
                 <svg onClick={() => changeView('settings')} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" cursor="pointer"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
               </div>
 
-              {/* নতুন যুক্ত করা অর্ডার হিস্ট্রি সেকশন */}
-              <div style={{ marginTop: '20px', borderTop: '1px solid #111', paddingTop: '30px' }}>
-                <p style={{ fontSize: '10px', color: '#888', letterSpacing: '2px', marginBottom: '25px', textTransform: 'uppercase' }}>ORDER HISTORY</p>
-                
-                {ordersLoading ? (
-                  <p style={{ fontSize: '13px', color: '#444', letterSpacing: '1px' }}>Loading history...</p>
-                ) : orders.length === 0 ? (
-                  <p style={{ fontSize: '13px', color: '#444', letterSpacing: '0.5px' }}>No transactions found.</p>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                    {orders.map((order) => (
-                      <div key={order.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #111', padding: '15px 0' }}>
-                        <div>
-                          <p style={{ margin: '0 0 5px 0', fontSize: '14px', fontWeight: '500', color: '#fff', letterSpacing: '0.5px' }}>
-                            Order #{typeof order.id === 'string' ? order.id.slice(0, 8).toUpperCase() : order.id}
-                          </p>
-                          <p style={{ margin: '0', fontSize: '12px', color: '#555', letterSpacing: '0.5px' }}>
-                            {new Date(order.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })} • ৳{order.total_amount}
-                          </p>
-                        </div>
-                        <button 
-                          onClick={() => handleClearHistory(order.id)}
-                          style={{ background: 'transparent', border: '1px solid #222', color: '#ff4444', padding: '6px 12px', fontSize: '10px', cursor: 'pointer', letterSpacing: '1px', fontWeight: 'bold', textTransform: 'uppercase' }}
-                        >
-                          Clear
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
+              {/* 🔥 নতুন লাইভ ট্র্যাকিং ও অর্ডার হিস্ট্রি কম্পোনেন্ট এখানে রেন্ডার করা হলো */}
+              <div style={{ marginTop: '20px', borderTop: '1px solid #111', paddingTop: '10px' }}>
+                <OrderHistory />
               </div>
             </>
           )
