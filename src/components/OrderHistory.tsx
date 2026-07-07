@@ -156,13 +156,6 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginTop: '20px', position: 'relative' }}>
-      
-      {/* গ্লোবাল CSS ইন্জেকশন স্ক্রলবার হাইড করার জন্য */}
-      <style>{`
-        .premium-carousel::-webkit-scrollbar {
-          display: none; /* Chrome, Safari, Opera */
-        }
-      `}</style>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '12px' }}>
         <span style={{ fontSize: '11px', letterSpacing: '2px', color: '#fff', fontFamily: 'monospace', fontWeight: 'bold' }}>ORDER HISTORY</span>
@@ -198,7 +191,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
             style={{ 
               backgroundColor: '#050505', 
               border: isSelected ? '1px solid #fff' : '1px solid #222', 
-              padding: '25px 0px 25px 25px', // ডানপাশের প্যাডিং ০ করা হয়েছে কারোসেল বর্ডার টাচ করার জন্য
+              padding: '25px 0px 25px 25px', 
               position: 'relative',
               opacity: isManageMode && !isSelected ? 0.5 : 1,
               cursor: isManageMode ? 'pointer' : 'default',
@@ -230,32 +223,34 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
               )}
             </div>
 
-            {/* 🏎️ হরিজোন্টাল প্রোডাক্ট কারোসেল (ডানে বামে স্ক্রল) */}
+            {/* 🏎️ সুরক্ষিত হরিজোন্টাল প্রোডাক্ট কারোসেল */}
             <div 
-              className="premium-carousel"
               style={{ 
                 display: 'flex', 
                 flexDirection: 'row', 
                 overflowX: 'auto', 
                 gap: '20px', 
                 marginBottom: '25px',
-                paddingRight: '25px', // শেষ প্রোডাক্টের ডানপাশে গ্যাপ রাখার জন্য
-                scrollbarWidth: 'none', /* Firefox */
-                msOverflowStyle: 'none',  /* IE/Edge */
-                WebkitOverflowScrolling: 'touch' /* Smooth iOS scroll */
+                paddingRight: '25px',
+                scrollbarWidth: 'none',
+                msOverflowStyle: 'none',
+                WebkitOverflowScrolling: 'touch'
               }}
             >
               {order.items.map((item, index) => (
                 <div 
                   key={index} 
                   style={{ 
-                    // 🌟 ম্যাজিক লজিক: ১টির বেশি প্রোডাক্ট থাকলে এটি প্রতিটি কার্ডকে ৮২% চওড়া করবে, ফলে বাকি ১৮% পরের কার্ড থেকে উঁকি মারবে!
-                    flex: hasMultipleItems ? '0 0 82%' : '0 0 100%',
+                    // 🌟 ফিক্সড কোড: কম্পোনেন্ট কলাপ্স হওয়া রোধ করতে flex-shrink এবং হার্ডকোর minWidth ডিফাইন করা হয়েছে
+                    flex: '0 0 auto',
+                    width: hasMultipleItems ? '82%' : '100%',
+                    minWidth: hasMultipleItems ? '82%' : '100%',
                     borderRight: hasMultipleItems && index !== order.items.length - 1 ? '1px solid rgba(255,255,255,0.08)' : 'none',
-                    paddingRight: hasMultipleItems && index !== order.items.length - 1 ? '20px' : '0'
+                    paddingRight: hasMultipleItems && index !== order.items.length - 1 ? '20px' : '0',
+                    boxSizing: 'border-box'
                   }}
                 >
-                  {/* প্রোডাক্টের নাম এবং কোয়ান্টিটি/প্রাইস */}
+                  {/* প্রোডাক্টের নাম */}
                   <div style={{ paddingRight: '35px' }}>
                     <h4 style={{ margin: 0, fontSize: '14px', fontWeight: '700', color: '#fff', letterSpacing: '0.5px', lineHeight: '1.4', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', textTransform: 'uppercase' }}>
                       {item.product_name}
@@ -336,7 +331,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
         );
       })}
 
-      {/* ভাসমান অ্যাকশন বার এবং মোডাল আগের মতোই অপরিবর্তিত থাকবে... */}
+      {/* ভাসমান অ্যাকশন বার */}
       {isManageMode && selectedOrderIds.length > 0 && (
         <div style={{ position: 'fixed', bottom: '20px', left: '50%', transform: 'translateX(-50%)', maxWidth: '460px', width: 'calc(100% - 40px)', backgroundColor: '#fff', padding: '15px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 999, boxShadow: '0 10px 30px rgba(0,0,0,0.8)' }}>
           <span style={{ color: '#000', fontSize: '12px', fontWeight: 'bold', fontFamily: 'monospace', letterSpacing: '1px' }}>
@@ -348,6 +343,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
         </div>
       )}
 
+      {/* ওভারলে মোডাল */}
       {modalType && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.95)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000, padding: '20px' }}>
           <div style={{ maxWidth: '400px', width: '100%', backgroundColor: '#0a0a0a', border: '1px solid #1c1c1c', padding: '30px', textAlign: 'center' }}>
