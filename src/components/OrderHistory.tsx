@@ -137,7 +137,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
 
   if (orders.length === 0) {
     return (
-      <p style={{ textAlign: 'center', color: '#888', padding: '40px 0', fontSize: '11px', letterSpacing: '2px', fontFamily: 'monospace', fontWeight: 'bold' }}>
+      <p style={{ textAlign: 'center', color: '#fff', padding: '40px 0', fontSize: '11px', letterSpacing: '2px', fontFamily: 'monospace', fontWeight: 'bold' }}>
         NO ORDER MEMORANDUM FOUND
       </p>
     );
@@ -146,6 +146,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginTop: '20px', position: 'relative' }}>
 
+      {/* আপনার ফিডব্যাক অনুযায়ী হেডার এবং বাটন কালার সিঙ্ক করা হয়েছে */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '12px' }}>
         <span style={{ fontSize: '11px', letterSpacing: '2px', color: '#fff', fontFamily: 'monospace', fontWeight: 'bold' }}>ORDER HISTORY</span>
         <button 
@@ -153,7 +154,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
             setIsManageMode(!isManageMode);
             setSelectedOrderIds([]);
           }}
-          style={{ background: 'none', border: 'none', color: isManageMode ? '#ff4444' : '#aaa', fontSize: '11px', letterSpacing: '1.5px', cursor: 'pointer', fontFamily: 'monospace', outline: 'none', textTransform: 'uppercase', fontWeight: 'bold', transition: 'color 0.2s ease' }}
+          style={{ background: 'none', border: 'none', color: isManageMode ? '#ff4444' : '#fff', fontSize: '11px', letterSpacing: '2px', cursor: 'pointer', fontFamily: 'monospace', outline: 'none', textTransform: 'uppercase', fontWeight: 'bold', transition: 'color 0.2s ease' }}
         >
           {isManageMode ? 'CANCEL' : 'MANAGE'}
         </button>
@@ -173,10 +174,10 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
             key={order.id} 
             style={{ 
               backgroundColor: '#050505', 
-              border: '1px solid #222', 
+              border: '1px solid #1c1c1c', 
               padding: '25px', 
               position: 'relative',
-              opacity: isManageMode && !isSelected ? 0.4 : 1,
+              opacity: isManageMode && !isSelected ? 0.3 : 1,
               transition: 'all 0.2s ease'
             }}
           >
@@ -185,7 +186,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
               {isManageMode ? (
                 <div 
                   onClick={() => toggleSelectOrder(order.id)}
-                  style={{ width: '20px', height: '20px', borderRadius: '50%', border: isSelected ? '2px solid #fff' : '2px solid #666', backgroundColor: isSelected ? '#fff' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', userSelect: 'none' }}
+                  style={{ width: '20px', height: '20px', borderRadius: '50%', border: isSelected ? '2px solid #fff' : '2px solid #555', backgroundColor: isSelected ? '#fff' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', userSelect: 'none' }}
                 >
                   {isSelected && <span style={{ color: '#000', fontSize: '12px', fontWeight: '900' }}>✓</span>}
                 </div>
@@ -195,9 +196,9 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
                     setSingleOrderToHide(order.id);
                     setModalType('single');
                   }}
-                  style={{ background: 'none', border: 'none', color: '#666', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', outline: 'none', transition: 'color 0.2s ease' }}
+                  style={{ background: 'none', border: 'none', color: '#444', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', outline: 'none', transition: 'color 0.2s ease' }}
                   onMouseEnter={(e) => e.currentTarget.style.color = '#ff4444'}
-                  onMouseLeave={(e) => e.currentTarget.style.color = '#666'}
+                  onMouseLeave={(e) => e.currentTarget.style.color = '#444'}
                 >
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                     <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -207,9 +208,9 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
               )}
             </div>
 
-            {/* প্রোডাক্টের নাম */}
+            {/* প্রোডাক্টের নাম - বড় হলেও ২ লাইনে ক্ল্যাম্প হয়ে যাবে, ডিজাইন ভাঙবে না */}
             <div style={{ paddingRight: '40px', marginBottom: '18px' }}>
-              <h4 style={{ margin: 0, fontSize: '15px', fontWeight: '600', color: '#fff', letterSpacing: '0.5px', lineHeight: '1.4', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', textTransform: 'uppercase' }}>
+              <h4 style={{ margin: 0, fontSize: '15px', fontWeight: '700', color: '#fff', letterSpacing: '0.5px', lineHeight: '1.4', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', textTransform: 'uppercase' }}>
                 {order.product_name}
               </h4>
             </div>
@@ -219,13 +220,13 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
               <span style={{ fontSize: '16px', color: '#fff', fontWeight: '700', fontFamily: 'monospace' }}>
                 ৳{order.total_amount}
               </span>
-              <span style={{ fontSize: '12px', color: '#fff', fontFamily: 'monospace', letterSpacing: '0.5px', fontWeight: '500' }}>
+              <span style={{ fontSize: '12px', color: '#fff', fontFamily: 'monospace', letterSpacing: '0.5px', fontWeight: 'bold' }}>
                 {formattedDate}
               </span>
             </div>
 
-            {/* হাই-কন্ট্রাস্ট স্টেপার সেকশন */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', position: 'relative', marginTop: '15px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '20px' }}>
+            {/* স্টেপার সেকশন */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', position: 'relative', marginTop: '15px', borderTop: '1px solid rgba(255,255,255,0.04)', paddingTop: '20px' }}>
               {statusSteps.map((step, idx) => {
                 const currentStatusLower = order.status ? order.status.toLowerCase() : 'pending';
                 const currentStepIndex = statusSteps.indexOf(currentStatusLower);
@@ -240,8 +241,8 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
                       height: '16px',
                       borderRadius: '50%',
                       backgroundColor: isCompleted ? '#fff' : 'transparent',
-                      border: isCompleted ? '2px solid #fff' : '2px solid #555',
-                      boxShadow: isCurrent ? '0 0 10px rgba(255,255,255,0.8)' : 'none',
+                      border: isCompleted ? '2px solid #fff' : '2px solid #444',
+                      boxShadow: isCurrent ? '0 0 10px rgba(255,255,255,0.6)' : 'none',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -255,10 +256,10 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
                       fontSize: '9px', 
                       letterSpacing: '0.5px', 
                       marginTop: '10px', 
-                      color: isCompleted ? '#fff' : '#777', 
+                      color: isCompleted ? '#fff' : '#666', 
                       textTransform: 'uppercase', 
                       fontFamily: 'monospace',
-                      fontWeight: '700',
+                      fontWeight: 'bold',
                       transition: 'color 0.2s ease'
                     }}>
                       {step}
@@ -290,7 +291,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
       {/* ওভারলে মোডাল */}
       {modalType && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.95)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000, padding: '20px' }}>
-          <div style={{ maxWidth: '400px', width: '100%', backgroundColor: '#0a0a0a', border: '1px solid #222', padding: '30px', textAlign: 'center' }}>
+          <div style={{ maxWidth: '400px', width: '100%', backgroundColor: '#0a0a0a', border: '1px solid #1c1c1c', padding: '30px', textAlign: 'center' }}>
             <h4 style={{ color: '#fff', fontSize: '13px', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '15px', fontFamily: 'monospace', fontWeight: 'bold' }}>
               REMOVE FROM DASHBOARD?
             </h4>
@@ -298,7 +299,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
               THIS ACTION WILL HIDE THE SELECTED ITEM(S) FROM YOUR ACTIVE PROFILE VIEW. FOR REGULATORY COMPLIANCE, TAX AUDITS, AND CONSUMER PROTECTION LAWS, INTANGIBLE TRANSACTION LOGS ARE SECURELY IMMUTABLE WITHIN OUR CENTRAL ARCHIVED LEDGER.
             </p>
             <div style={{ display: 'flex', gap: '15px' }}>
-              <button disabled={isHiding} onClick={() => setModalType(null)} style={{ flex: 1, padding: '12px', background: 'transparent', color: '#fff', border: '1px solid #444', fontSize: '11px', letterSpacing: '2px', textTransform: 'uppercase', cursor: 'pointer', fontFamily: 'monospace', fontWeight: 'bold' }}>
+              <button disabled={isHiding} onClick={() => setModalType(null)} style={{ flex: 1, padding: '12px', background: 'transparent', color: '#fff', border: '1px solid #333', fontSize: '11px', letterSpacing: '2px', textTransform: 'uppercase', cursor: 'pointer', fontFamily: 'monospace', fontWeight: 'bold' }}>
                 CANCEL
               </button>
               <button 
