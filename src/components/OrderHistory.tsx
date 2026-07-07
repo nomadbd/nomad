@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 
-// ১. মাল্টিপল প্রোডাক্ট হ্যান্ডেল করার জন্য ইন্টারফেস আপডেট
 interface OrderItem {
   product_name: string;
   size: string;
@@ -15,7 +14,7 @@ interface Order {
   created_at: string;
   total_amount: number;
   status: string;
-  items: OrderItem[]; // একক product_name এর বদলে items অ্যারে
+  items: OrderItem[]; // মাল্টিপল প্রোডাক্টের জন্য অ্যারে
 }
 
 interface OrderHistoryProps {
@@ -38,7 +37,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      // ২. সুনির্দিষ্ট কলামসহ ডাটা ফেচিং (আপনার ডাটাবেজের নাম অনুযায়ী এগুলো পরিবর্তন করতে পারেন)
+      // 🌟 ফিক্সড কুয়েরি: আপনার ডাটাবেজ অনুযায়ী সঠিক কলামের নাম 'price_at_purchase' দেওয়া হয়েছে
       const { data, error } = await supabase
         .from('orders')
         .select(`
@@ -50,7 +49,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
             quantity, 
             size, 
             color, 
-            price,
+            price_at_purchase,
             products (
               name
             )
@@ -63,14 +62,13 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
       if (error) throw error;
 
       if (data) {
-        // ৩. প্রতিটি অর্ডারের ভেতরের সব প্রোডাক্টকে ফরম্যাট করা
         const formattedOrders = data.map((order: any) => {
           const items = (order.order_items || []).map((item: any) => ({
             product_name: item.products?.name || 'NOMAD PREMIUM APPAREL',
             size: item.size || 'N/A',
             color: item.color || 'N/A',
             quantity: item.quantity || 1,
-            price: item.price || 0
+            price: item.price_at_purchase || 0 // 🌟 ডাটাবেজের price_at_purchase কে ম্যাপ করা হলো
           }));
 
           return {
@@ -152,6 +150,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
         <style>{`
           @keyframes pulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 0.7; } }
           .skeleton-pulse { animation: pulse 1.5s infinite ease-in-out; }
+          .premium-carousel::-webkit-scrollbar { display: none !important; }
         `}</style>
       </div>
     );
@@ -168,7 +167,6 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginTop: '20px', position: 'relative' }}>
       
-      {/* গ্লোবাল স্ক্রলবার হাইড করার জন্য নিরাপদ CSS ইনজেকশন */}
       <style>{`
         .premium-carousel::-webkit-scrollbar {
           display: none !important;
@@ -209,7 +207,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
             style={{ 
               backgroundColor: '#050505', 
               border: isSelected ? '1px solid #fff' : '1px solid #222', 
-              padding: '25px 0px 25px 25px', // কারোসেলকে ডানে টাচ করানোর জন্য ডানপাশের প্যাডিং ০ করা হয়েছে
+              padding: '25px 0px 25px 25px', 
               position: 'relative',
               opacity: isManageMode && !isSelected ? 0.5 : 1,
               cursor: isManageMode ? 'pointer' : 'default',
@@ -234,8 +232,6 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
                     setModalType('single');
                   }}
                   style={{ background: 'none', border: 'none', color: '#777', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', outline: 'none', transition: 'color 0.2s ease' }}
-                  onMouseEnter={(e) => e.currentTarget.style.color = '#ff4444'}
-                  onMouseLeave={(e) => e.currentTarget.style.color = '#777'}
                 >
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                     <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -245,7 +241,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
               )}
             </div>
 
-            {/* 🏎️ ৪. হরিজোন্টাল প্রোডাক্ট কারোসেল (ডানে বামে স্ক্রল) */}
+            {/* 🏎️ হরিজোন্টাল প্রোডাক্ট কারোসেল */}
             <div 
               className="premium-carousel"
               style={{ 
@@ -255,9 +251,9 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
                 gap: '20px', 
                 marginBottom: '20px',
                 paddingRight: '25px', 
-                scrollbarWidth: 'none', /* Firefox */
-                msOverflowStyle: 'none',  /* IE/Edge */
-                WebkitOverflowScrolling: 'touch' /* Smooth iOS scroll */
+                scrollbarWidth: 'none',
+                msOverflowStyle: 'none',
+                WebkitOverflowScrolling: 'touch'
               }}
             >
               {order.items.map((item, index) => (
@@ -279,7 +275,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
                     </h4>
                   </div>
 
-                  {/* সাইজ, কালার, ইন্ডিভিজুয়াল কোয়ান্টিটি ও প্রাইস */}
+                  {/* সাইজ, কালার, কোয়ান্টিটি ও ইন্ডিভিজুয়াল প্রাইস */}
                   <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                       <span style={{ fontSize: '10px', color: '#888', fontFamily: 'monospace', fontWeight: 'bold' }}>
@@ -298,7 +294,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
               ))}
             </div>
 
-            {/* 🔒 ৫. পারমানেন্ট স্ক্রল-বিহীন সেকশন (মোট দাম এবং ইস্যু ডেট) */}
+            {/* 🔒 পারমানেন্ট ফিক্সড সেকশন (মোট অর্ডারের দাম এবং তারিখ) */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '18px', paddingRight: '25px' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                 <span style={{ fontSize: '9px', color: '#666', letterSpacing: '1px', fontWeight: 'bold' }}>TOTAL AMOUNT</span>
@@ -341,16 +337,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
                         <span style={{ color: '#000', fontSize: '9px', fontWeight: '900', lineHeight: 1 }}>✓</span>
                       )}
                     </div>
-                    <span style={{ 
-                      fontSize: '9px', 
-                      letterSpacing: '0.5px', 
-                      marginTop: '10px', 
-                      color: isCompleted ? '#fff' : '#888', 
-                      textTransform: 'uppercase', 
-                      fontFamily: 'monospace',
-                      fontWeight: 'bold',
-                      transition: 'color 0.2s ease'
-                    }}>
+                    <span style={{ fontSize: '9px', letterSpacing: '0.5px', marginTop: '10px', color: isCompleted ? '#fff' : '#888', textTransform: 'uppercase', fontFamily: 'monospace', fontWeight: 'bold' }}>
                       {step}
                     </span>
                   </div>
@@ -368,10 +355,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
           <span style={{ color: '#000', fontSize: '12px', fontWeight: 'bold', fontFamily: 'monospace', letterSpacing: '1px' }}>
             {selectedOrderIds.length} SELECTED
           </span>
-          <button 
-            onClick={() => setModalType('bulk')}
-            style={{ background: 'none', border: 'none', color: '#ff3333', fontWeight: 'bolder', fontSize: '12px', letterSpacing: '1.5px', cursor: 'pointer', fontFamily: 'monospace' }}
-          >
+          <button onClick={() => setModalType('bulk')} style={{ background: 'none', border: 'none', color: '#ff3333', fontWeight: 'bolder', fontSize: '12px', letterSpacing: '1.5px', cursor: 'pointer', fontFamily: 'monospace' }}>
             HIDE FROM VIEW
           </button>
         </div>
@@ -391,14 +375,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
               <button disabled={isHiding} onClick={() => setModalType(null)} style={{ flex: 1, padding: '12px', background: 'transparent', color: '#fff', border: '1px solid #444', fontSize: '11px', letterSpacing: '2px', textTransform: 'uppercase', cursor: 'pointer', fontFamily: 'monospace', fontWeight: 'bold' }}>
                 CANCEL
               </button>
-              <button 
-                disabled={isHiding} 
-                onClick={() => {
-                  const targets = modalType === 'single' && singleOrderToHide ? [singleOrderToHide] : selectedOrderIds;
-                  executeHideOrders(targets);
-                }} 
-                style={{ flex: 1, padding: '12px', backgroundColor: '#fff', color: '#000', border: '1px solid #fff', fontSize: '11px', letterSpacing: '2px', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 'bold', fontFamily: 'monospace' }}
-              >
+              <button disabled={isHiding} onClick={() => { const targets = modalType === 'single' && singleOrderToHide ? [singleOrderToHide] : selectedOrderIds; executeHideOrders(targets); }} style={{ flex: 1, padding: '12px', backgroundColor: '#fff', color: '#000', border: '1px solid #fff', fontSize: '11px', letterSpacing: '2px', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 'bold', fontFamily: 'monospace' }}>
                 {isHiding ? 'PROCESSING...' : 'CONFIRM'}
               </button>
             </div>
