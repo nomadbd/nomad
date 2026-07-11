@@ -15,6 +15,12 @@ interface Order {
   total_amount: number;
   status: string;
   items: OrderItem[]; 
+  shipping_name?: string;
+  shipping_phone?: string;
+  shipping_address?: string;
+  shipping_fee?: number;
+  vat?: number;
+  payment_method?: string;
 }
 
 interface OrderHistoryProps {
@@ -34,78 +40,116 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
 
   const statusSteps = ['pending', 'received', 'shipped', 'delivered'];
 
-  // 📄 ডাইনামিক ইনভয়েস জেনারেটর এবং ডাউনলোড ফাংশন
+  // 📄 ২য় ছবির (1.pdf) মতো প্রিমিয়াম ইনভয়েস জেনারেটর
   const handleDownloadInvoice = (order: Order) => {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
 
     const dateObj = new Date(order.created_at);
     const formattedDate = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
+    const formattedTime = `${String(dateObj.getHours()).padStart(2, '0')}:${String(dateObj.getMinutes()).padStart(2, '0')}`;
 
-    // ইনভয়েসের ভেতরের প্রোডাক্ট লিস্ট তৈরি
+    // হিসাব-নিকাশ ব্রেকডাউন
+    const subtotal = order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const shippingFee = order.shipping_fee || 0;
+    const vatAmount = order.vat || 0;
+
+    // প্রোডাক্ট লিস্ট রেন্ডার
     const itemsHtml = order.items.map(item => `
-      <tr style="border-bottom: 1px solid #eee;">
-        <td style="padding: 14px 0; font-size: 13px; font-weight: 700; text-transform: uppercase; color: #000;">
-          ${item.product_name}
-          <br>
-          <span style="font-size: 10px; color: #666; font-weight: 400; letter-spacing: 0.5px;">SIZE: ${item.size} | COLOR: ${item.color}</span>
+      <tr style="border-bottom: 1px solid #f2f2f2;">
+        <td style="padding: 15px 0; font-size: 12px; font-family: 'Inter', sans-serif;">
+          <div style="font-weight: 800; text-transform: uppercase; color: #000; letter-spacing: 0.3px;">${item.product_name}</div>
+          <div style="font-size: 10px; color: #666; font-weight: 500; margin-top: 5px; letter-spacing: 0.5px;">
+            SIZE: ${item.size} | COLOR: ${item.color} | QTY: ${item.quantity} × ৳${item.price}
+          </div>
         </td>
-        <td style="padding: 14px 0; text-align: center; font-size: 13px; color: #000;">${item.quantity}</td>
-        <td style="padding: 14px 0; text-align: right; font-size: 13px; font-weight: 700; color: #000;">৳${item.price}</td>
+        <td style="padding: 15px 0; text-align: right; font-size: 12px; font-weight: 700; color: #000; font-family: monospace;">
+          ৳${item.price * item.quantity}
+        </td>
       </tr>
     `).join('');
 
-    // ইনভয়েসের প্রিমিয়াম মিনিমালিস্ট ডিজাইন ও প্রিন্ট স্ক্রিপ্ট
+    // প্রিমিয়াম মিনিমালিস্ট পিডিএফ ডিজাইন ও ব্রাউজার হেডার হাইড স্ক্রিপ্ট
     printWindow.document.write(`
       <html>
         <head>
-          <title>INVOICE_#${order.id.slice(0, 8).toUpperCase()}</title>
+          <title>INVOICE_${order.id.slice(0, 8).toUpperCase()}</title>
           <style>
-            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap');
-            body { font-family: 'Inter', sans-serif; color: #000; margin: 40px; padding: 0; background: #fff; -webkit-print-color-adjust: exact; }
-            .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #000; padding-bottom: 20px; }
-            .brand { font-size: 22px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; }
-            .invoice-title { font-size: 26px; font-weight: 800; letter-spacing: 1px; text-align: right; }
-            .details-container { margin-top: 35px; display: flex; justify-content: space-between; font-size: 12px; line-height: 1.6; }
-            .status-badge { display: inline-block; padding: 5px 10px; background: #000; color: #fff; font-weight: 800; text-transform: uppercase; margin-top: 6px; font-size: 10px; letter-spacing: 1.5px; }
-            table { width: 100%; border-collapse: collapse; margin-top: 40px; }
-            th { border-bottom: 2px solid #000; padding-bottom: 12px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #000; }
-            .total-section { margin-top: 40px; border-top: 2px solid #000; padding-top: 20px; display: flex; justify-content: space-between; align-items: center; }
-            .total-label { font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
-            .total-amount { font-size: 24px; font-weight: 800; }
-            .footer { margin-top: 80px; text-align: center; font-size: 10px; color: #777; letter-spacing: 1px; line-height: 1.5; text-transform: uppercase; }
-            @media print { body { margin: 20px; } }
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap');
+            
+            /* 🚫 এই রুলটি ব্রাউজারের নিজস্ব সময়, ইউআরএল বা আইডি প্রিন্ট হওয়া বন্ধ করবে */
+            @page { 
+              size: A4; 
+              margin: 0mm; 
+            }
+            
+            body { 
+              font-family: 'Inter', sans-serif; 
+              color: #000; 
+              margin: 0; 
+              padding: 60px 50px; 
+              background: #fff; 
+              -webkit-print-color-adjust: exact; 
+              print-color-adjust: exact;
+            }
+            .brand-header { text-align: center; margin-bottom: 50px; }
+            .brand-name { font-size: 22px; font-weight: 800; letter-spacing: 4px; text-transform: uppercase; color: #000; }
+            .brand-subtitle { font-size: 9px; color: #555; margin-top: 6px; letter-spacing: 1.5px; font-weight: 700; text-transform: uppercase; }
+            
+            .metadata-container { display: flex; justify-content: space-between; font-size: 11px; line-height: 1.7; margin-bottom: 40px; }
+            .shipping-box { width: 50%; }
+            .shipping-title { color: #000; font-weight: 800; letter-spacing: 0.5px; font-size: 11px; }
+            .shipping-name { font-size: 12px; font-weight: 700; text-transform: uppercase; display: block; margin-top: 4px; }
+            .shipping-details { color: #444; }
+            
+            .order-box { width: 50%; text-align: right; font-family: monospace; font-size: 11px; }
+            .order-label { font-family: 'Inter', sans-serif; font-weight: 700; color: #000; }
+            .status-due { color: #ff3333; font-weight: 800; font-family: 'Inter', sans-serif; }
+            
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; margin-bottom: 30px; }
+            th { border-bottom: 2px solid #000; padding-bottom: 10px; font-size: 11px; font-weight: 800; letter-spacing: 0.5px; color: #000; }
+            
+            .summary-wrapper { display: flex; flex-direction: column; align-items: flex-end; margin-bottom: 60px; }
+            .summary-table { width: 240px; border-collapse: collapse; font-family: monospace; font-size: 12px; line-height: 2; }
+            .summary-label { font-family: 'Inter', sans-serif; font-weight: 700; color: #555; text-align: left; }
+            .summary-val { text-align: right; font-weight: 700; color: #000; }
+            .total-row { border-top: 1px solid #000; font-size: 13px; }
+            .total-label { font-family: 'Inter', sans-serif; font-weight: 800; color: #ff3333; padding-top: 8px; text-align: left; }
+            .total-val { font-weight: 800; color: #ff3333; padding-top: 8px; text-align: right; }
+            
+            .legal-notice { font-size: 9px; color: #444; line-height: 1.6; text-align: justify; border-top: 1px solid #e5e5e5; padding-top: 20px; font-weight: 500; }
           </style>
         </head>
         <body>
-          <div class="header">
-            <div>
-              <div class="brand">NOMAD PREMIUM APPAREL</div>
-              <div style="font-size: 11px; color: #555; margin-top: 5px; letter-spacing: 0.5px; font-weight: 500;">MEMORANDUM OF TRANSACTION</div>
-            </div>
-            <div>
-              <div class="invoice-title">INVOICE</div>
-              <div style="font-size: 11px; color: #555; text-align: right; font-family: monospace; margin-top: 5px;">#${order.id.toUpperCase()}</div>
-            </div>
+          
+          <div class="brand-header">
+            <div class="brand-name">NOMAD</div>
+            <div class="brand-subtitle">PROFORMA INVOICE / ORDER MEMORANDUM</div>
           </div>
           
-          <div class="details-container">
-            <div>
-              <span style="color: #666; font-weight: 700;">DATE OF ISSUE:</span><br>
-              <span style="font-size: 13px; font-weight: 700;">${formattedDate}</span>
+          <div class="metadata-container">
+            <div class="shipping-box">
+              <span class="shipping-title">SHIPPING TO</span><br>
+              <span class="shipping-name">${order.shipping_name || 'N/A'}</span>
+              <div class="shipping-details">
+                ${order.shipping_phone || 'N/A'}<br>
+                ${order.shipping_address || 'N/A'}
+              </div>
             </div>
-            <div style="text-align: right;">
-              <span style="color: #666; font-weight: 700;">FULFILLMENT STATUS:</span><br>
-              <div class="status-badge">${order.status}</div>
+            
+            <div class="order-box">
+              <span class="order-label">ORDER ID:</span> #${order.id}<br>
+              <span class="order-label">DATE:</span> ${formattedDate}&nbsp;&nbsp;&nbsp;<span class="order-label">TIME:</span> ${formattedTime}<br>
+              <span class="order-label">PAYMENT:</span> ${order.payment_method || 'CASH ON DELIVERY'}<br>
+              <span class="order-label">STATUS:</span> <span class="status-due">${order.status === 'delivered' ? 'PAID' : 'UNPAID / DUE'}</span>
             </div>
           </div>
 
           <table>
             <thead>
               <tr>
-                <th style="text-align: left;">ITEM DESCRIPTION</th>
-                <th style="text-align: center; width: 80px;">QTY</th>
-                <th style="text-align: right; width: 120px;">PRICE</th>
+                <th style="text-align: left;">DESCRIPTION</th>
+                <th style="text-align: right; width: 100px;">TOTAL</th>
               </tr>
             </thead>
             <tbody>
@@ -113,14 +157,29 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
             </tbody>
           </table>
 
-          <div class="total-section">
-            <div class="total-label">TOTAL AMOUNT</div>
-            <div class="total-amount">৳${order.total_amount}</div>
+          <div class="summary-wrapper">
+            <table class="summary-table">
+              <tr>
+                <td class="summary-label">SUBTOTAL</td>
+                <td class="summary-val">৳${subtotal}</td>
+              </tr>
+              <tr>
+                <td class="summary-label">SHIPPING</td>
+                <td class="summary-val">৳${shippingFee}</td>
+              </tr>
+              <tr>
+                <td class="summary-label" style="padding-bottom: 8px;">VAT</td>
+                <td class="summary-val" style="padding-bottom: 8px;">৳${vatAmount}</td>
+              </tr>
+              <tr class="total-row">
+                <td class="total-label">AMOUNT DUE</td>
+                <td class="total-val">৳${order.total_amount}</td>
+              </tr>
+            </table>
           </div>
 
-          <div class="footer">
-            THANK YOU FOR SHOPPING WITH NOMAD<br>
-            THIS IS A SYSTEM GENERATED ELECTRONIC INVOICE. NO PHYSICAL SIGNATURE REQUIRED.
+          <div class="legal-notice">
+            <strong>LEGAL NOTICE:</strong> This is a computer-generated order memorandum for Cash on Delivery (COD) transactions. It does not constitute a proof of final payment, sales receipt, or legal ownership of goods. Physical products will remain property of NOMAD until the full invoice amount is successfully collected by our authorized delivery agent.
           </div>
 
           <script>
@@ -145,6 +204,12 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
           created_at, 
           total_amount, 
           status,
+          shipping_name,
+          shipping_phone,
+          shipping_address,
+          shipping_fee,
+          vat,
+          payment_method,
           order_items (
             quantity, 
             size, 
@@ -176,6 +241,12 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
             created_at: order.created_at,
             total_amount: order.total_amount,
             status: order.status,
+            shipping_name: order.shipping_name,
+            shipping_phone: order.shipping_phone,
+            shipping_address: order.shipping_address,
+            shipping_fee: order.shipping_fee,
+            vat: order.vat,
+            payment_method: order.payment_method,
             items: items
           };
         });
@@ -307,7 +378,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
               overflow: 'hidden'
             }}
           >
-            {/* 🛠️ ফিক্সড হেডার: অর্ডার আইডির পরিবর্তে সাধারণ টেক্সট ইনভয়েস ডাউনলোড বাটন */}
+            {/* ফিক্সড হেডার: আন্ডারলাইন ছাড়া ডাউনলোড ইনভয়েস টেক্সট বাটন */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', paddingRight: '25px' }}>
               <div>
                 {isManageMode ? (
