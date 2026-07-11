@@ -34,6 +34,107 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
 
   const statusSteps = ['pending', 'received', 'shipped', 'delivered'];
 
+  // 📄 ডাইনামিক ইনভয়েস জেনারেটর এবং ডাউনলোড ফাংশন
+  const handleDownloadInvoice = (order: Order) => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    const dateObj = new Date(order.created_at);
+    const formattedDate = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
+
+    // ইনভয়েসের ভেতরের প্রোডাক্ট লিস্ট তৈরি
+    const itemsHtml = order.items.map(item => `
+      <tr style="border-bottom: 1px solid #eee;">
+        <td style="padding: 14px 0; font-size: 13px; font-weight: 700; text-transform: uppercase; color: #000;">
+          ${item.product_name}
+          <br>
+          <span style="font-size: 10px; color: #666; font-weight: 400; letter-spacing: 0.5px;">SIZE: ${item.size} | COLOR: ${item.color}</span>
+        </td>
+        <td style="padding: 14px 0; text-align: center; font-size: 13px; color: #000;">${item.quantity}</td>
+        <td style="padding: 14px 0; text-align: right; font-size: 13px; font-weight: 700; color: #000;">৳${item.price}</td>
+      </tr>
+    `).join('');
+
+    // ইনভয়েসের প্রিমিয়াম মিনিমালিস্ট ডিজাইন ও প্রিন্ট স্ক্রিপ্ট
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>INVOICE_#${order.id.slice(0, 8).toUpperCase()}</title>
+          <style>
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap');
+            body { font-family: 'Inter', sans-serif; color: #000; margin: 40px; padding: 0; background: #fff; -webkit-print-color-adjust: exact; }
+            .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #000; padding-bottom: 20px; }
+            .brand { font-size: 22px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; }
+            .invoice-title { font-size: 26px; font-weight: 800; letter-spacing: 1px; text-align: right; }
+            .details-container { margin-top: 35px; display: flex; justify-content: space-between; font-size: 12px; line-height: 1.6; }
+            .status-badge { display: inline-block; padding: 5px 10px; background: #000; color: #fff; font-weight: 800; text-transform: uppercase; margin-top: 6px; font-size: 10px; letter-spacing: 1.5px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 40px; }
+            th { border-bottom: 2px solid #000; padding-bottom: 12px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #000; }
+            .total-section { margin-top: 40px; border-top: 2px solid #000; padding-top: 20px; display: flex; justify-content: space-between; align-items: center; }
+            .total-label { font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+            .total-amount { font-size: 24px; font-weight: 800; }
+            .footer { margin-top: 80px; text-align: center; font-size: 10px; color: #777; letter-spacing: 1px; line-height: 1.5; text-transform: uppercase; }
+            @media print { body { margin: 20px; } }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div>
+              <div class="brand">NOMAD PREMIUM APPAREL</div>
+              <div style="font-size: 11px; color: #555; margin-top: 5px; letter-spacing: 0.5px; font-weight: 500;">MEMORANDUM OF TRANSACTION</div>
+            </div>
+            <div>
+              <div class="invoice-title">INVOICE</div>
+              <div style="font-size: 11px; color: #555; text-align: right; font-family: monospace; margin-top: 5px;">#${order.id.toUpperCase()}</div>
+            </div>
+          </div>
+          
+          <div class="details-container">
+            <div>
+              <span style="color: #666; font-weight: 700;">DATE OF ISSUE:</span><br>
+              <span style="font-size: 13px; font-weight: 700;">${formattedDate}</span>
+            </div>
+            <div style="text-align: right;">
+              <span style="color: #666; font-weight: 700;">FULFILLMENT STATUS:</span><br>
+              <div class="status-badge">${order.status}</div>
+            </div>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th style="text-align: left;">ITEM DESCRIPTION</th>
+                <th style="text-align: center; width: 80px;">QTY</th>
+                <th style="text-align: right; width: 120px;">PRICE</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${itemsHtml}
+            </tbody>
+          </table>
+
+          <div class="total-section">
+            <div class="total-label">TOTAL AMOUNT</div>
+            <div class="total-amount">৳${order.total_amount}</div>
+          </div>
+
+          <div class="footer">
+            THANK YOU FOR SHOPPING WITH NOMAD<br>
+            THIS IS A SYSTEM GENERATED ELECTRONIC INVOICE. NO PHYSICAL SIGNATURE REQUIRED.
+          </div>
+
+          <script>
+            window.onload = function() {
+              window.print();
+              setTimeout(function() { window.close(); }, 500);
+            };
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
   const fetchOrders = async () => {
     try {
       setLoading(true);
@@ -206,15 +307,50 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
               overflow: 'hidden'
             }}
           >
-            {/* 🛠️ ফিক্সড হেডার: ক্রস বাটন বা চেকবক্স এখানে নিরাপদে থাকবে, প্রোডাক্টের নামের সাথে ওভারল্যাপ হবে না */}
+            {/* 🛠️ ফিক্সড হেডার: অর্ডার আইডির পরিবর্তে ইনভয়েস ডাউনলোড বাটন ম্যাপ করা হলো */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', paddingRight: '25px' }}>
-              <span style={{ fontSize: '9px', color: '#555', fontFamily: 'monospace', letterSpacing: '1px', fontWeight: 'bold' }}>
-                ID: #{order.id.slice(0, 8).toUpperCase()}
-              </span>
+              <div>
+                {isManageMode ? (
+                  <span style={{ fontSize: '9px', color: '#555', fontFamily: 'monospace', letterSpacing: '1px', fontWeight: 'bold' }}>
+                    ID: #{order.id.slice(0, 8).toUpperCase()}
+                  </span>
+                ) : (
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDownloadInvoice(order);
+                    }}
+                    style={{ 
+                      background: 'none', 
+                      border: 'none', 
+                      color: '#fff', 
+                      fontSize: '10px', 
+                      fontFamily: 'monospace', 
+                      letterSpacing: '1px', 
+                      fontWeight: 'bold', 
+                      cursor: 'pointer',
+                      padding: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      textDecoration: 'underline',
+                      textTransform: 'uppercase',
+                      outline: 'none'
+                    }}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                      <polyline points="7 10 12 15 17 10"></polyline>
+                      <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    DOWNLOAD INVOICE
+                  </button>
+                )}
+              </div>
               <div>
                 {isManageMode ? (
                   <div 
-                    style={{ width: '18px', height: '18px', borderRadius: '50%', border: isSelected ? '2px solid #fff' : '2px solid #555', backgroundColor: isSelected ? '#fff' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s ease' }}
+                    style={{ width: '18px', height: '18px', borderRadius: '50%', border: isSelected ? '2px solid #fff' : '2px solid #555', backgroundColor: isSelected ? '#fff' : 'transparent', display: 'flex', alignItems: 'center', strokeWidth: '3px', justifyContent: 'center', transition: 'all 0.2s ease' }}
                   >
                     {isSelected && <span style={{ color: '#000', fontSize: '11px', fontWeight: '900' }}>✓</span>}
                   </div>
@@ -236,7 +372,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
               </div>
             </div>
 
-            {/* 🏎️ হরিজোন্টাল প্রোডাক্ট কারোসেল */}
+            {/* হরিজোন্টাল প্রোডাক্ট কারোসেল */}
             <div 
               className="premium-carousel"
               style={{ 
@@ -263,14 +399,12 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
                     boxSizing: 'border-box'
                   }}
                 >
-                  {/* প্রোডাক্টের নাম */}
                   <div>
                     <h4 style={{ margin: 0, fontSize: '13px', fontWeight: '700', color: '#fff', letterSpacing: '0.5px', lineHeight: '1.4', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', textTransform: 'uppercase' }}>
                       {item.product_name}
                     </h4>
                   </div>
 
-                  {/* 🌟 আপডেট: ১×১২০০ ট্যাগটি সম্পূর্ণ বাদ দিয়ে শুধু সাইজ এবং কালার রাখা হয়েছে */}
                   <div style={{ marginTop: '10px', display: 'flex', gap: '10px', alignItems: 'center' }}>
                     <span style={{ fontSize: '10px', color: '#888', fontFamily: 'monospace', fontWeight: 'bold' }}>
                       SIZE: <span style={{ color: '#fff' }}>{item.size}</span>
