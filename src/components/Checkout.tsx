@@ -90,6 +90,7 @@ export default function Checkout({
     try {
       const { data: { user } } = await supabase.auth.getUser();
 
+      // এখানে sender_phone কলামটি সম্পূর্ণ রিমুভ করা হয়েছে
       const { data: order, error: orderError } = await supabase
         .from('orders')
         .insert([{
@@ -97,7 +98,6 @@ export default function Checkout({
           customer_name: formData.name,
           customer_phone: cleanPhone,
           shipping_address: formData.address, 
-          sender_phone: null,
           payment_method: 'cod',
           transaction_id: null,
           delivery_charge: deliveryCharge, 
@@ -145,7 +145,6 @@ export default function Checkout({
     }
   };
 
-  // ইনভয়েসের সমস্ত লজিক এখন printInvoice ইউটিলিটির ভেতরে চলে গেছে
   const handleDownloadInvoice = () => {
     if (!placedOrderDetails) return;
     printInvoice(placedOrderDetails);
@@ -355,7 +354,6 @@ export default function Checkout({
 
   return (
     <div style={styles.container}>
-      {/* ডুপ্লিকেট topHeader এখান থেকে সম্পূর্ণ রিমুভড */}
       <form onSubmit={handleSubmit} noValidate style={{ width: '100%' }}>
         <div style={styles.layoutGrid}>
           <div style={styles.leftColumn}>
