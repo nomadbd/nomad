@@ -14,6 +14,7 @@ interface Product {
   colors: string[]; 
   created_at: string;
   product_media: { media_url: string; media_type: string }[];
+  details?: Record<string, string> | null; // ⚡ সুপাবেজের নতুন JSONB কলাম টাইপ
 }
 
 // 📸 প্রোডাক্ট গ্যালারি কম্পোনেন্ট
@@ -111,7 +112,6 @@ const ProductActionRow = ({ product }: { product: Product }) => {
   };
 
   return (
-    /* 🛠️ প্যারেন্ট কন্টেইনারের হাইট ৪২ পিএক্স বর্ডার ক্লিপিং রোধ করতে */
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: '42px', marginTop: 'auto', boxSizing: 'border-box', width: '100%' }}>
 
       {/* ১. সাধারণ অবস্থা (আইডল) */}
@@ -130,7 +130,6 @@ const ProductActionRow = ({ product }: { product: Product }) => {
               SOLD OUT
             </button>
           ) : (
-            /* ✨ width: '130px' দিয়ে আকার সম্পূর্ণ ফিক্সড করা হয়েছে, টেক্সট বদলালেও বাটন একটুও নড়বে না */
             <button
               onClick={handleActionClick}
               style={{
@@ -214,6 +213,69 @@ const ProductActionRow = ({ product }: { product: Product }) => {
   );
 };
 
+// 💳 ইনডিভিজুয়াল প্রোডাক্ট কার্ড কম্পোনেন্ট (লোকাল স্টেট হ্যান্ডেল করার জন্য)
+const ProductCard = ({ product }: { product: Product }) => {
+  const [isDescExpanded, setIsDescExpanded] = useState(false);
+
+  return (
+    <div className="showroom-card-item" style={{ scrollSnapAlign: 'start', boxSizing: 'border-box', display: 'flex', flexDirection: 'column' }}>
+      <ProductGallery 
+        images={product.product_media?.map(m => m.media_url) || []} 
+        productName={product.name} 
+      />
+
+      <div style={{ marginTop: '15px', padding: '0 5px', display: 'flex', flexDirection: 'column', flex: 1 }}>
+        <h3 style={{ fontSize: '14px', color: '#e5e5e5', margin: '0 0 6px 0' }}>{product.name}</h3>
+        
+        {/* ⚡ এক্সপ্যান্ডেবল বর্ণনা ও স্পেসিফিকেশন সেকশন */}
+        <div style={{ margin: '0 0 15px 0' }}>
+          {!isDescExpanded ? (
+            <>
+              <p style={{ fontSize: '13px', color: '#888', margin: 0, lineHeight: '1.4', WebkitLineClamp: 2, display: '-webkit-box', WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                {product.description}
+              </p>
+              <span 
+                onClick={() => setIsDescExpanded(true)}
+                style={{ fontSize: '11px', color: '#555', cursor: 'pointer', marginTop: '4px', display: 'inline-block', letterSpacing: '0.5px' }}
+              >
+                ... see more
+              </span>
+            </>
+          ) : (
+            <div style={{ animation: 'swapFadeIn 0.3s ease-in-out' }}>
+              <p style={{ fontSize: '13px', color: '#888', margin: 0, lineHeight: '1.4' }}>
+                {product.description}
+              </p>
+              
+              {/* 📊 সুপাবেজ JSONB থেকে আসা ডাইনামিক কি-ভ্যালু পেয়ার রেন্ডারিং */}
+              {product.details && Object.keys(product.details).length > 0 && (
+                <div style={{ borderTop: '1px solid #141414', marginTop: '10px', paddingTop: '10px', display: 'flex', flexDirection: 'column', gap: '6px', fontFamily: 'monospace', fontSize: '11px' }}>
+                  {Object.entries(product.details).map(([key, value]) => (
+                    <div key={key} style={{ display: 'flex', justifyContent: 'flex-start' }}>
+                      <span style={{ color: '#555', width: '90px', flexShrink: 0 }}>{key}</span>
+                      <span style={{ color: '#555', marginRight: '8px' }}>:</span>
+                      <span style={{ color: '#bbb' }}>{value}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <span 
+                onClick={() => setIsDescExpanded(false)}
+                style={{ fontSize: '11px', color: '#555', cursor: 'pointer', marginTop: '8px', display: 'inline-block', letterSpacing: '0.5px' }}
+              >
+                see less
+              </span>
+            </div>
+          )}
+        </div>
+
+        <ProductActionRow product={product} />
+      </div>
+    </div>
+  );
+};
+
 export default function ProductList() {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
@@ -256,11 +318,9 @@ export default function ProductList() {
 
         return (
           <div key={category} className="showroom-section" style={{ marginBottom: '50px' }}>
-            {/* 📋 ক্যাটাগরি হেডার */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 15px 12px 15px', borderBottom: '1px solid #141414' }}>
               <h3 style={{ margin: 0, fontSize: '13px', letterSpacing: '3px', color: '#b3b3b3', textTransform: 'uppercase' }}>{category}</h3>
 
-              {/* ⚡ কোনো ঝাঁকুনি ছাড়া সম্পূর্ণ স্থির SEE MORE / LESS বাটন স্ট্রাকচার */}
               <button 
                 onClick={() => setExpandedCategories(prev => ({ ...prev, [category]: !isExpanded }))} 
                 style={{ 
@@ -277,20 +337,7 @@ export default function ProductList() {
 
             <div className="showroom-row-container" style={{ display: 'flex', flexWrap: isExpanded ? 'wrap' : 'nowrap', width: '100%', scrollSnapType: 'x mandatory', overflowX: 'auto', scrollBehavior: 'smooth' }}>
               {categoryProducts.map((product) => (
-                <div key={product.id} className="showroom-card-item" style={{ scrollSnapAlign: 'start', boxSizing: 'border-box', display: 'flex', flexDirection: 'column' }}>
-
-                  <ProductGallery 
-                    images={product.product_media?.map(m => m.media_url) || []} 
-                    productName={product.name} 
-                  />
-
-                  <div style={{ marginTop: '15px', padding: '0 5px', display: 'flex', flexDirection: 'column', flex: 1 }}>
-                    <h3 style={{ fontSize: '14px', color: '#e5e5e5', margin: '0 0 6px 0' }}>{product.name}</h3>
-                    <p style={{ fontSize: '13px', color: '#888', margin: '0 0 15px 0', lineHeight: '1.4', WebkitLineClamp: 2, display: '-webkit-box', WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{product.description}</p>
-
-                    <ProductActionRow product={product} />
-                  </div>
-                </div>
+                <ProductCard key={product.id} product={product} />
               ))}
             </div>
           </div>
