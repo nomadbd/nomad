@@ -232,10 +232,8 @@ const ProductCard = ({ product }: { product: Product }) => {
               : product.description;
 
             return !isDescExpanded ? (
-              // 🤍 ডেসক্রিপশন লেখা পিওর হোয়াইট (সাদা)
               <p style={{ fontSize: '13px', color: '#fff', margin: 0, lineHeight: '1.4' }}>
                 {displayedText}
-                {/* 🔘 'see more' বাটনটি উজ্জ্বল ধূসর (#aaa) ও আন্ডারলাইন মুক্ত */}
                 <span 
                   onClick={() => setIsDescExpanded(true)}
                   style={{ fontSize: '12px', color: '#aaa', cursor: 'pointer', marginLeft: '6px', fontWeight: '500', display: 'inline' }}
@@ -245,7 +243,6 @@ const ProductCard = ({ product }: { product: Product }) => {
               </p>
             ) : (
               <div style={{ animation: 'swapFadeIn 0.3s ease-in-out' }}>
-                {/* 🤍 ডেসক্রিপশন লেখা পিওর হোয়াইট (সাদা) */}
                 <p style={{ fontSize: '13px', color: '#fff', margin: 0, lineHeight: '1.4' }}>
                   {product.description}
                 </p>
@@ -254,18 +251,17 @@ const ProductCard = ({ product }: { product: Product }) => {
                 {product.details && Object.keys(product.details).length > 0 && (
                   <div style={{ borderTop: '1px solid #1a1a1a', marginTop: '12px', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px', fontFamily: 'monospace', fontSize: '12px' }}>
                     {Object.entries(product.details).map(([key, value]) => (
-                      <div key={key} style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
-                        {/* 🤍 কোলনের বাম পাশের লেখা (Key) এখন পুরোপুরি সাদা */}
+                      // ⚡ alignItems: 'flex-start' করা হয়েছে যেন ভ্যালু মাল্টি-লাইন হলেও Key উপরেই এলাইন থাকে
+                      <div key={key} style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'flex-start' }}>
                         <span style={{ color: '#fff', width: '95px', flexShrink: 0, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{key}</span>
-                        <span style={{ color: '#555', marginRight: '10px' }}>:</span>
-                        {/* 🤍 কোলনের ডান পাশের লেখাও (Value) এখন পুরোপুরি সাদা */}
-                        <span style={{ color: '#fff', fontWeight: '400' }}>{value}</span>
+                        <span style={{ color: '#555', marginRight: '10px', flexShrink: 0 }}>:</span>
+                        {/* ⚡ flex: 1 এবং overflowWrap এর কারণে টেক্সট বড় হলেও কোলনের পরে সুন্দরভাবে ব্রেক হবে */}
+                        <span style={{ color: '#fff', fontWeight: '400', flex: 1, overflowWrap: 'break-word', wordBreak: 'break-word', lineHeight: '1.4' }}>{value}</span>
                       </div>
                     ))}
                   </div>
                 )}
 
-                {/* 🔘 'see less' বাটনটিও উজ্জ্বল ধূসর (#aaa) ও আন্ডারলাইন মুক্ত */}
                 <span 
                   onClick={() => setIsDescExpanded(false)}
                   style={{ fontSize: '11px', color: '#aaa', cursor: 'pointer', marginTop: '12px', display: 'inline-block', letterSpacing: '0.5px' }}
