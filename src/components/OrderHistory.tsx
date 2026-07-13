@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 // 📄 আপনার printInvoice.ts ফাইলের সঠিক পাথ অনুযায়ী নিচের লাইনটি প্রয়োজনে অ্যাডজাস্ট করে নিন
-import { printInvoice } from './printInvoice'; 
+import { printInvoice } from '../printInvoice'; 
 
 interface OrderItem {
   product_name: string;
