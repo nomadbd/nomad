@@ -15,6 +15,11 @@ interface Order {
   total_amount: number;
   status: string;
   items: OrderItem[]; 
+  customer_name?: string;
+  customer_phone?: string;
+  shipping_address?: string;
+  delivery_charge?: number;
+  vat_amount?: number;
 }
 
 interface OrderHistoryProps {
@@ -34,105 +39,161 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
 
   const statusSteps = ['pending', 'received', 'shipped', 'delivered'];
 
-  // 📄 ডাইনামিক ইনভয়েস জেনারেটর এবং ডাউনলোড ফাংশন
+  // 📄 আগের ফাইলের হুবহু ব্রাউজার-নেটিভ প্রিমিয়াম ডিজাইন (লাইভ স্ট্যাটাস সহ)
   const handleDownloadInvoice = (order: Order) => {
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) return;
-
     const dateObj = new Date(order.created_at);
-    const formattedDate = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
+    const year = dateObj.getFullYear();
+    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const date = String(dateObj.getDate()).padStart(2, '0');
+    const hours = String(dateObj.getHours()).padStart(2, '0');
+    const minutes = String(dateObj.getMinutes()).padStart(2, '0');
 
-    // ইনভয়েসের ভেতরের প্রোডাক্ট লিস্ট তৈরি
-    const itemsHtml = order.items.map(item => `
-      <tr style="border-bottom: 1px solid #eee;">
-        <td style="padding: 14px 0; font-size: 13px; font-weight: 700; text-transform: uppercase; color: #000;">
-          ${item.product_name}
-          <br>
-          <span style="font-size: 10px; color: #666; font-weight: 400; letter-spacing: 0.5px;">SIZE: ${item.size} | COLOR: ${item.color}</span>
-        </td>
-        <td style="padding: 14px 0; text-align: center; font-size: 13px; color: #000;">${item.quantity}</td>
-        <td style="padding: 14px 0; text-align: right; font-size: 13px; font-weight: 700; color: #000;">৳${item.price}</td>
-      </tr>
-    `).join('');
+    const formattedDate = `${year}-${month}-${date}`;
+    const formattedTime = `${hours}:${minutes}`;
 
-    // ইনভয়েসের প্রিমিয়াম মিনিমালিস্ট ডিজাইন ও প্রিন্ট স্ক্রিপ্ট
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>INVOICE_#${order.id.slice(0, 8).toUpperCase()}</title>
-          <style>
-            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap');
-            body { font-family: 'Inter', sans-serif; color: #000; margin: 40px; padding: 0; background: #fff; -webkit-print-color-adjust: exact; }
-            .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #000; padding-bottom: 20px; }
-            .brand { font-size: 22px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; }
-            .invoice-title { font-size: 26px; font-weight: 800; letter-spacing: 1px; text-align: right; }
-            .details-container { margin-top: 35px; display: flex; justify-content: space-between; font-size: 12px; line-height: 1.6; }
-            .status-badge { display: inline-block; padding: 5px 10px; background: #000; color: #fff; font-weight: 800; text-transform: uppercase; margin-top: 6px; font-size: 10px; letter-spacing: 1.5px; }
-            table { width: 100%; border-collapse: collapse; margin-top: 40px; }
-            th { border-bottom: 2px solid #000; padding-bottom: 12px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #000; }
-            .total-section { margin-top: 40px; border-top: 2px solid #000; padding-top: 20px; display: flex; justify-content: space-between; align-items: center; }
-            .total-label { font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
-            .total-amount { font-size: 24px; font-weight: 800; }
-            .footer { margin-top: 80px; text-align: center; font-size: 10px; color: #777; letter-spacing: 1px; line-height: 1.5; text-transform: uppercase; }
-            @media print { body { margin: 20px; } }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <div>
-              <div class="brand">NOMAD PREMIUM APPAREL</div>
-              <div style="font-size: 11px; color: #555; margin-top: 5px; letter-spacing: 0.5px; font-weight: 500;">MEMORANDUM OF TRANSACTION</div>
+    const subtotal = order.items.reduce((acc, item) => acc + item.price * item.quantity, 0);
+    const deliveryCharge = order.delivery_charge || 0;
+    const vatAmount = order.vat_amount || 0;
+    const grandTotal = order.total_amount;
+
+    const currentStatus = (order.status || 'pending').toUpperCase();
+    const isDelivered = currentStatus === 'DELIVERED';
+    const statusColor = isDelivered ? '#000000' : '#ff0000'; // ডেলিভারড হলে নরমাল ব্ল্যাক, অন্যথায় অ্যালার্ট রেড
+    const totalLabel = isDelivered ? 'TOTAL PAID' : 'AMOUNT DUE';
+
+    const itemsHtml = order.items.map((item) => {
+      const detailsArray = [];
+      if (item.size && item.size !== 'N/A') detailsArray.push(`SIZE: ${item.size.toUpperCase()}`);
+      if (item.color && item.color !== 'N/A') detailsArray.push(`COLOR: ${item.color.toUpperCase()}`);
+      detailsArray.push(`QTY: ${item.quantity}`); 
+
+      return `
+        <tr>
+          <td style="padding: 14px 0; border-bottom: 1px solid #eee; font-size: 11px; letter-spacing: 1px; line-height: 1.6; color: #000 !important;">
+            <strong style="color: #000 !important; display: block; margin-bottom: 4px;">${item.product_name.toUpperCase()}</strong>
+            <div style="color: #555; font-size: 10px; letter-spacing: 0.5px; text-transform: uppercase;">
+              ${detailsArray.join(' &nbsp;|&nbsp; ')} &nbsp;•&nbsp; ৳${item.price}
             </div>
-            <div>
-              <div class="invoice-title">INVOICE</div>
-              <div style="font-size: 11px; color: #555; text-align: right; font-family: monospace; margin-top: 5px;">#${order.id.toUpperCase()}</div>
-            </div>
-          </div>
-          
-          <div class="details-container">
-            <div>
-              <span style="color: #666; font-weight: 700;">DATE OF ISSUE:</span><br>
-              <span style="font-size: 13px; font-weight: 700;">${formattedDate}</span>
-            </div>
-            <div style="text-align: right;">
-              <span style="color: #666; font-weight: 700;">FULFILLMENT STATUS:</span><br>
-              <div class="status-badge">${order.status}</div>
-            </div>
-          </div>
+          </td>
+          <td style="padding: 14px 0; border-bottom: 1px solid #eee; font-size: 11px; text-align: right; font-family: monospace; vertical-align: bottom; color: #000 !important;">৳${item.price * item.quantity}</td>
+        </tr>
+      `;
+    }).join('');
 
-          <table>
-            <thead>
-              <tr>
-                <th style="text-align: left;">ITEM DESCRIPTION</th>
-                <th style="text-align: center; width: 80px;">QTY</th>
-                <th style="text-align: right; width: 120px;">PRICE</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${itemsHtml}
-            </tbody>
-          </table>
+    const printContainer = document.createElement('div');
+    printContainer.id = 'nomad-universal-print-area';
 
-          <div class="total-section">
-            <div class="total-label">TOTAL AMOUNT</div>
-            <div class="total-amount">৳${order.total_amount}</div>
-          </div>
+    printContainer.innerHTML = `
+      <div class="header">NOMAD</div>
+      <div class="sub-header">Proforma Invoice / Live Order Memorandum</div>
+      
+      <table class="info-table">
+        <tr>
+          <td style="width: 50%; padding: 4px 0; vertical-align: top; color: #000 !important; font-size: 11px;">
+            <span style="color: #666; font-size: 9px; letter-spacing: 1.5px; font-weight: bold; display: block;">SHIPPING TO</span>
+          </td>
+          <td style="text-align: right; padding: 4px 0; vertical-align: top; color: #000 !important; font-size: 11px; letter-spacing: 0.5px;">
+            <strong style="color: #000 !important;">ORDER ID:</strong> #${order.id}
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 4px 0; vertical-align: top; color: #000 !important; font-size: 11px; font-weight: bold; letter-spacing: 0.5px;">
+            ${(order.customer_name || 'VALUED CUSTOMER').toUpperCase()}
+          </td>
+          <td style="text-align: right; padding: 4px 0; vertical-align: top; color: #000 !important; font-size: 11px; letter-spacing: 0.5px;">
+            <strong style="color: #000 !important;">DATE:</strong> ${formattedDate} &nbsp;&nbsp; <strong style="color: #000 !important;">TIME:</strong> ${formattedTime}
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 4px 0; vertical-align: top; color: #000 !important; font-size: 11px; letter-spacing: 0.5px;">
+            ${order.customer_phone || 'N/A'}
+          </td>
+          <td style="text-align: right; padding: 4px 0; vertical-align: top; color: #000 !important; font-size: 11px; letter-spacing: 0.5px;">
+            <strong style="color: #000 !important;">PAYMENT:</strong> CASH ON DELIVERY
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 4px 0; vertical-align: top; color: #000 !important; font-size: 11px; letter-spacing: 0.5px; line-height: 1.4; max-width: 300px;">
+            ${(order.shipping_address || 'N/A').toUpperCase()}
+          </td>
+          <td style="text-align: right; padding: 4px 0; vertical-align: top; color: #000 !important; font-size: 11px; letter-spacing: 0.5px;">
+            <strong style="color: ${statusColor}; letter-spacing: 1px; text-transform: uppercase;">STATUS: ${currentStatus}</strong>
+          </td>
+        </tr>
+      </table>
 
-          <div class="footer">
-            THANK YOU FOR SHOPPING WITH NOMAD<br>
-            THIS IS A SYSTEM GENERATED ELECTRONIC INVOICE. NO PHYSICAL SIGNATURE REQUIRED.
-          </div>
+      <table class="items-table">
+        <thead>
+          <tr>
+            <th style="text-align: left; padding-bottom: 12px; border-bottom: 1.5px solid #000; font-size: 11px; letter-spacing: 1px; color: #000 !important;">DESCRIPTION</th>
+            <th style="text-align: right; padding-bottom: 12px; border-bottom: 1.5px solid #000; font-size: 11px; letter-spacing: 1px; color: #000 !important;">TOTAL</th>
+          </tr>
+        </thead>
+        <tbody>${itemsHtml}</tbody>
+      </table>
 
-          <script>
-            window.onload = function() {
-              window.print();
-              setTimeout(function() { window.close(); }, 500);
-            };
-          </script>
-        </body>
-      </html>
-    `);
-    printWindow.document.close();
+      <table class="summary-table">
+        <tr><td style="color: #000 !important;">SUBTOTAL</td><td style="text-align: right; font-family: monospace; color: #000 !important;">৳${subtotal}</td></tr>
+        <tr><td style="color: #000 !important;">SHIPPING</td><td style="text-align: right; font-family: monospace; color: #000 !important;">৳${deliveryCharge}</td></tr>
+        <tr><td style="color: #000 !important;">VAT</td><td style="text-align: right; font-family: monospace; color: #000 !important;">৳${vatAmount}</td></tr>
+        <tr style="font-weight: bold; font-size: 13px; color: ${statusColor};">
+          <td style="padding-top: 12px; border-top: 1px solid #000; letter-spacing: 1px;">${totalLabel}</td>
+          <td style="text-align: right; padding-top: 12px; border-top: 1px solid #000; font-family: monospace;">৳${grandTotal}</td>
+        </tr>
+      </table>
+
+      <div class="disclaimer">
+        <strong>LEGAL NOTICE:</strong> This is a live computer-generated order memorandum for Cash on Delivery (COD) transactions reflecting real-time fulfillment updates. Physical products remain property of NOMAD until the full invoice amount is successfully collected by our authorized delivery agent.
+      </div>
+    `;
+
+    const styleSheet = document.createElement('style');
+    styleSheet.innerHTML = `
+      @media print {
+        @page { margin: 0mm; }
+        body { 
+          background: #fff !important; 
+          color: #000 !important;
+          margin: 0 !important;
+          padding: 0 !important;
+        }
+        body > *:not(#nomad-universal-print-area) {
+          display: none !important;
+        }
+        #nomad-universal-print-area {
+          display: block !important;
+          position: absolute;
+          left: 0;
+          top: 0;
+          width: 100%;
+          background: #fff !important;
+          color: #000 !important;
+          padding: 50px 40px !important;
+          box-sizing: border-box;
+          font-family: sans-serif;
+        }
+        .header { text-align: center; margin-bottom: 10px; letter-spacing: 6px; font-weight: bold; font-size: 22px; color: #000 !important; }
+        .sub-header { text-align: center; font-size: 10px; letter-spacing: 3px; color: #666 !important; margin-bottom: 50px; text-transform: uppercase; }
+        .info-table { width: 100%; margin-bottom: 40px; font-size: 11px; letter-spacing: 0.5px; border-collapse: collapse; }
+        .items-table { width: 100%; border-collapse: collapse; margin-bottom: 40px; }
+        .summary-table { width: 40%; margin-left: auto; font-size: 11px; line-height: 2; letter-spacing: 0.5px; margin-bottom: 60px; page-break-inside: avoid !important; }
+        .disclaimer { font-size: 9px; color: #777 !important; line-height: 1.6; text-align: center; border-top: 1px solid #eee; padding-top: 20px; letter-spacing: 0.5px; page-break-inside: avoid; }
+      }
+      @media screen {
+        #nomad-universal-print-area { display: none !important; }
+      }
+    `;
+
+    document.body.appendChild(printContainer);
+    document.head.appendChild(styleSheet);
+
+    setTimeout(() => {
+      window.print();
+      if (document.getElementById('nomad-universal-print-area')) {
+        document.body.removeChild(printContainer);
+      }
+      document.head.removeChild(styleSheet);
+    }, 150);
   };
 
   const fetchOrders = async () => {
@@ -145,6 +206,11 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
           created_at, 
           total_amount, 
           status,
+          customer_name,
+          customer_phone,
+          shipping_address,
+          delivery_charge,
+          vat_amount,
           order_items (
             quantity, 
             size, 
@@ -176,6 +242,11 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
             created_at: order.created_at,
             total_amount: order.total_amount,
             status: order.status,
+            customer_name: order.customer_name,
+            customer_phone: order.customer_phone,
+            shipping_address: order.shipping_address,
+            delivery_charge: order.delivery_charge,
+            vat_amount: order.vat_amount,
             items: items
           };
         });
@@ -229,11 +300,11 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginTop: '20px' }}>
         {[1, 2].map((i) => (
           <div key={i} style={{ backgroundColor: '#050505', border: '1px solid #222', padding: '25px', display: 'flex', flexDirection: 'column', gap: '22px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div style={{ display: 'flex', justifycontent: 'space-between', alignItems: 'flex-start' }}>
               <div className="skeleton-pulse" style={{ width: '60%', height: '16px', backgroundColor: '#222' }} />
               <div className="skeleton-pulse" style={{ width: '12px', height: '12px', backgroundColor: '#222' }} />
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', justifycontent: 'space-between', alignItems: 'center' }}>
               <div className="skeleton-pulse" style={{ width: '70px', height: '15px', backgroundColor: '#222' }} />
               <div className="skeleton-pulse" style={{ width: '90px', height: '12px', backgroundColor: '#222' }} />
             </div>
@@ -257,14 +328,14 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginTop: '20px', position: 'relative' }}>
-      
+
       <style>{`
         .premium-carousel::-webkit-scrollbar {
           display: none !important;
         }
       `}</style>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '12px' }}>
+      <div style={{ display: 'flex', justifycontent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '12px' }}>
         <span style={{ fontSize: '11px', letterSpacing: '2px', color: '#fff', fontFamily: 'monospace', fontWeight: 'bold' }}>ORDER HISTORY</span>
         <button 
           onClick={() => {
@@ -307,16 +378,13 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
               overflow: 'hidden'
             }}
           >
-            {/* 🛠️ ফিক্সড হেডার: অর্ডার আইডির পরিবর্তে ক্লিন টেক্সট ইনভয়েস ডাউনলোড বাটন */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', paddingRight: '25px' }}>
+            <div style={{ display: 'flex', justifycontent: 'space-between', alignItems: 'center', marginBottom: '15px', paddingRight: '25px' }}>
               <div>
                 <button 
                   onClick={(e) => {
                     if (isManageMode) {
-                      // ম্যানেজ মোড অন থাকলে কার্ডটি সিলেক্ট হবে
                       toggleSelectOrder(order.id);
                     } else {
-                      // সাধারণ অবস্থায় ইনভয়েস ডাউনলোড ট্রিগার করবে
                       e.stopPropagation();
                       handleDownloadInvoice(order);
                     }
@@ -331,7 +399,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
                     fontWeight: 'bold', 
                     cursor: 'pointer',
                     padding: 0,
-                    textDecoration: 'none', // কোনো আন্ডারলাইন থাকবে না
+                    textDecoration: 'none', 
                     textTransform: 'uppercase',
                     outline: 'none',
                     transition: 'color 0.2s ease'
@@ -343,7 +411,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
               <div>
                 {isManageMode ? (
                   <div 
-                    style={{ width: '18px', height: '18px', borderRadius: '50%', border: isSelected ? '2px solid #fff' : '2px solid #555', backgroundColor: isSelected ? '#fff' : 'transparent', display: 'flex', alignItems: 'center', strokeWidth: '3px', justifyContent: 'center', transition: 'all 0.2s ease' }}
+                    style={{ width: '18px', height: '18px', borderRadius: '50%', border: isSelected ? '2px solid #fff' : '2px solid #555', backgroundColor: isSelected ? '#fff' : 'transparent', display: 'flex', alignItems: 'center', strokeWidth: '3px', justifycontent: 'center', transition: 'all 0.2s ease' }}
                   >
                     {isSelected && <span style={{ color: '#000', fontSize: '11px', fontWeight: '900' }}>✓</span>}
                   </div>
@@ -354,7 +422,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
                       setSingleOrderToHide(order.id);
                       setModalType('single');
                     }}
-                    style={{ background: 'none', border: 'none', color: '#555', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center', outline: 'none', transition: 'color 0.2s ease' }}
+                    style={{ background: 'none', border: 'none', color: '#555', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center', justifycontent: 'center', outline: 'none', transition: 'color 0.2s ease' }}
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                       <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -365,7 +433,6 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
               </div>
             </div>
 
-            {/* হরিজোন্টাল প্রোডাক্ট কারোসেল */}
             <div 
               className="premium-carousel"
               style={{ 
@@ -411,8 +478,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
               ))}
             </div>
 
-            {/* মোট অর্ডারের দাম এবং তারিখ */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '18px', paddingRight: '25px' }}>
+            <div style={{ display: 'flex', justifycontent: 'space-between', alignItems: 'center', marginBottom: '25px', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '18px', paddingRight: '25px' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                 <span style={{ fontSize: '9px', color: '#666', letterSpacing: '1px', fontWeight: 'bold' }}>TOTAL AMOUNT</span>
                 <span style={{ fontSize: '18px', color: '#fff', fontWeight: '800', fontFamily: 'monospace' }}>
@@ -427,8 +493,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
               </div>
             </div>
 
-            {/* স্টেপার সেকশন */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', position: 'relative', marginTop: '15px', borderTop: '1px solid rgba(255,255,255,0.04)', paddingTop: '20px', paddingRight: '25px' }}>
+            <div style={{ display: 'flex', justifycontent: 'space-between', position: 'relative', marginTop: '15px', borderTop: '1px solid rgba(255,255,255,0.04)', paddingTop: '20px', paddingRight: '25px' }}>
               {statusSteps.map((step, idx) => {
                 const currentStatusLower = order.status ? order.status.toLowerCase() : 'pending';
                 const currentStepIndex = statusSteps.indexOf(currentStatusLower);
@@ -447,7 +512,8 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
                       boxShadow: isCurrent ? '0 0 10px rgba(255,255,255,0.6)' : 'none',
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'center',
+                      strokeWidth: '3px',
+                      justifycontent: 'center',
                       transition: 'all 0.3s ease'
                     }}>
                       {isCompleted && (
@@ -466,9 +532,8 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
         );
       })}
 
-      {/* ভাসমান অ্যাকশন বার */}
       {isManageMode && selectedOrderIds.length > 0 && (
-        <div style={{ position: 'fixed', bottom: '20px', left: '50%', transform: 'translateX(-50%)', maxWidth: '460px', width: 'calc(100% - 40px)', backgroundColor: '#fff', padding: '15px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 999, boxShadow: '0 10px 30px rgba(0,0,0,0.8)' }}>
+        <div style={{ position: 'fixed', bottom: '20px', left: '50%', transform: 'translateX(-50%)', maxWidth: '460px', width: 'calc(100% - 40px)', backgroundColor: '#fff', padding: '15px', display: 'flex', justifycontent: 'space-between', alignItems: 'center', zIndex: 999, boxShadow: '0 10px 30px rgba(0,0,0,0.8)' }}>
           <span style={{ color: '#000', fontSize: '12px', fontWeight: 'bold', fontFamily: 'monospace', letterSpacing: '1px' }}>
             {selectedOrderIds.length} SELECTED
           </span>
@@ -478,9 +543,8 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
         </div>
       )}
 
-      {/* ওভারলে মোডাল */}
       {modalType && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.95)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000, padding: '20px' }}>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.95)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifycontent: 'center', zIndex: 10000, padding: '20px' }}>
           <div style={{ maxWidth: '400px', width: '100%', backgroundColor: '#0a0a0a', border: '1px solid #222', padding: '30px', textAlign: 'center' }}>
             <h4 style={{ color: '#fff', fontSize: '13px', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '15px', fontFamily: 'monospace', fontWeight: 'bold' }}>
               REMOVE FROM DASHBOARD?
