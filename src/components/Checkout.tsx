@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { useCart } from '../context/CartContext'; 
+import { printInvoice } from '../utils/printInvoice'; // printInvoice ইউটিলিটি ইম্পোর্ট করা হলো
 
 interface CartItem {
   id: string;
@@ -147,6 +148,9 @@ export default function Checkout({
   const handleDownloadInvoice = () => {
     if (!placedOrderDetails) return;
 
+    // যদি আপনি চান সরাসরি ইম্পোর্ট করা printInvoice ব্যবহার করতে, তবে নিচের কমেন্টটি আনকমেন্ট করতে পারেন:
+    // printInvoice(placedOrderDetails);
+    
     const now = new Date();
     const year = now.getFullYear();
     const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -526,10 +530,7 @@ export default function Checkout({
 
   return (
     <div style={styles.container}>
-      <div style={styles.topHeader}>
-        <span style={styles.topHeaderTitle}>CHECKOUT</span>
-        <button type="button" onClick={onSuccess} style={styles.closeBtn}>✕</button>
-      </div>
+      {/* ডুপ্লিকেট হেডার ও ক্রস বাটন বাগটি ফিক্স করার জন্য এই অংশ থেকে topHeader ডিভটি সরিয়ে দেওয়া হয়েছে */}
 
       <form onSubmit={handleSubmit} noValidate style={{ width: '100%' }}>
         <div style={styles.layoutGrid}>
