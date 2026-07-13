@@ -39,7 +39,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
 
   const statusSteps = ['pending', 'received', 'shipped', 'delivered'];
 
-  // 📄 আগের ফাইলের হুবহু ব্রাউজার-নেটিভ প্রিমিয়াম ডিজাইন (লাইভ স্ট্যাটাস সহ)
+  // 📄 ব্রাউজার-নেটিভ প্রিমিয়াম ডিজাইন (লাইভ স্ট্যাটাস সহ ডাউনলোড ব্যবস্থা)
   const handleDownloadInvoice = (order: Order) => {
     const dateObj = new Date(order.created_at);
     const year = dateObj.getFullYear();
@@ -58,7 +58,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
 
     const currentStatus = (order.status || 'pending').toUpperCase();
     const isDelivered = currentStatus === 'DELIVERED';
-    const statusColor = isDelivered ? '#000000' : '#ff0000'; // ডেলিভারড হলে নরমাল ব্ল্যাক, অন্যথায় অ্যালার্ট রেড
+    const statusColor = isDelivered ? '#000000' : '#ff0000'; // ডেলিভারড হলে ব্ল্যাক, অন্যথায় অ্যালার্ট রেড
     const totalLabel = isDelivered ? 'TOTAL PAID' : 'AMOUNT DUE';
 
     const itemsHtml = order.items.map((item) => {
@@ -300,11 +300,11 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginTop: '20px' }}>
         {[1, 2].map((i) => (
           <div key={i} style={{ backgroundColor: '#050505', border: '1px solid #222', padding: '25px', display: 'flex', flexDirection: 'column', gap: '22px' }}>
-            <div style={{ display: 'flex', justifycontent: 'space-between', alignItems: 'flex-start' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div className="skeleton-pulse" style={{ width: '60%', height: '16px', backgroundColor: '#222' }} />
               <div className="skeleton-pulse" style={{ width: '12px', height: '12px', backgroundColor: '#222' }} />
             </div>
-            <div style={{ display: 'flex', justifycontent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div className="skeleton-pulse" style={{ width: '70px', height: '15px', backgroundColor: '#222' }} />
               <div className="skeleton-pulse" style={{ width: '90px', height: '12px', backgroundColor: '#222' }} />
             </div>
@@ -335,7 +335,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
         }
       `}</style>
 
-      <div style={{ display: 'flex', justifycontent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '12px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '12px' }}>
         <span style={{ fontSize: '11px', letterSpacing: '2px', color: '#fff', fontFamily: 'monospace', fontWeight: 'bold' }}>ORDER HISTORY</span>
         <button 
           onClick={() => {
@@ -378,7 +378,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
               overflow: 'hidden'
             }}
           >
-            <div style={{ display: 'flex', justifycontent: 'space-between', alignItems: 'center', marginBottom: '15px', paddingRight: '25px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', paddingRight: '25px' }}>
               <div>
                 <button 
                   onClick={(e) => {
@@ -411,7 +411,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
               <div>
                 {isManageMode ? (
                   <div 
-                    style={{ width: '18px', height: '18px', borderRadius: '50%', border: isSelected ? '2px solid #fff' : '2px solid #555', backgroundColor: isSelected ? '#fff' : 'transparent', display: 'flex', alignItems: 'center', strokeWidth: '3px', justifycontent: 'center', transition: 'all 0.2s ease' }}
+                    style={{ width: '18px', height: '18px', borderRadius: '50%', border: isSelected ? '2px solid #fff' : '2px solid #555', backgroundColor: isSelected ? '#fff' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s ease' }}
                   >
                     {isSelected && <span style={{ color: '#000', fontSize: '11px', fontWeight: '900' }}>✓</span>}
                   </div>
@@ -422,7 +422,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
                       setSingleOrderToHide(order.id);
                       setModalType('single');
                     }}
-                    style={{ background: 'none', border: 'none', color: '#555', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center', justifycontent: 'center', outline: 'none', transition: 'color 0.2s ease' }}
+                    style={{ background: 'none', border: 'none', color: '#555', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center', outline: 'none', transition: 'color 0.2s ease' }}
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                       <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -478,7 +478,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
               ))}
             </div>
 
-            <div style={{ display: 'flex', justifycontent: 'space-between', alignItems: 'center', marginBottom: '25px', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '18px', paddingRight: '25px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '18px', paddingRight: '25px' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                 <span style={{ fontSize: '9px', color: '#666', letterSpacing: '1px', fontWeight: 'bold' }}>TOTAL AMOUNT</span>
                 <span style={{ fontSize: '18px', color: '#fff', fontWeight: '800', fontFamily: 'monospace' }}>
@@ -493,7 +493,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
               </div>
             </div>
 
-            <div style={{ display: 'flex', justifycontent: 'space-between', position: 'relative', marginTop: '15px', borderTop: '1px solid rgba(255,255,255,0.04)', paddingTop: '20px', paddingRight: '25px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', position: 'relative', marginTop: '15px', borderTop: '1px solid rgba(255,255,255,0.04)', paddingTop: '20px', paddingRight: '25px' }}>
               {statusSteps.map((step, idx) => {
                 const currentStatusLower = order.status ? order.status.toLowerCase() : 'pending';
                 const currentStepIndex = statusSteps.indexOf(currentStatusLower);
@@ -512,8 +512,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
                       boxShadow: isCurrent ? '0 0 10px rgba(255,255,255,0.6)' : 'none',
                       display: 'flex',
                       alignItems: 'center',
-                      strokeWidth: '3px',
-                      justifycontent: 'center',
+                      justifyContent: 'center',
                       transition: 'all 0.3s ease'
                     }}>
                       {isCompleted && (
@@ -533,7 +532,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
       })}
 
       {isManageMode && selectedOrderIds.length > 0 && (
-        <div style={{ position: 'fixed', bottom: '20px', left: '50%', transform: 'translateX(-50%)', maxWidth: '460px', width: 'calc(100% - 40px)', backgroundColor: '#fff', padding: '15px', display: 'flex', justifycontent: 'space-between', alignItems: 'center', zIndex: 999, boxShadow: '0 10px 30px rgba(0,0,0,0.8)' }}>
+        <div style={{ position: 'fixed', bottom: '20px', left: '50%', transform: 'translateX(-50%)', maxWidth: '460px', width: 'calc(100% - 40px)', backgroundColor: '#fff', padding: '15px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 999, boxShadow: '0 10px 30px rgba(0,0,0,0.8)' }}>
           <span style={{ color: '#000', fontSize: '12px', fontWeight: 'bold', fontFamily: 'monospace', letterSpacing: '1px' }}>
             {selectedOrderIds.length} SELECTED
           </span>
@@ -544,7 +543,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
       )}
 
       {modalType && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.95)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifycontent: 'center', zIndex: 10000, padding: '20px' }}>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.95)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000, padding: '20px' }}>
           <div style={{ maxWidth: '400px', width: '100%', backgroundColor: '#0a0a0a', border: '1px solid #222', padding: '30px', textAlign: 'center' }}>
             <h4 style={{ color: '#fff', fontSize: '13px', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '15px', fontFamily: 'monospace', fontWeight: 'bold' }}>
               REMOVE FROM DASHBOARD?
