@@ -3,6 +3,7 @@ import { supabase } from '../supabaseClient';
 
 interface OrderItem {
   product_name: string;
+  product_image: string; // ছবি দেখানোর জন্য নতুন প্রোপার্টি
   size: string;
   color: string;
   quantity: number;
@@ -39,7 +40,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
 
   const statusSteps = ['pending', 'received', 'shipped', 'delivered'];
 
-  // 📄 ব্রাউজার-নেটিভ প্রিমিয়াম ডিজাইন (লাইভ স্ট্যাটাস সহ ডাউনলোড ব্যবস্থা)
+  // 📄 ব্রাউজার-নেটিভ প্রিমিয়াম ডিজাইন (ডাউনলোড ব্যবস্থা)
   const handleDownloadInvoice = (order: Order) => {
     const dateObj = new Date(order.created_at);
     const year = dateObj.getFullYear();
@@ -58,7 +59,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
 
     const currentStatus = (order.status || 'pending').toUpperCase();
     const isDelivered = currentStatus === 'DELIVERED';
-    const statusColor = isDelivered ? '#000000' : '#ff0000'; // ডেলিভারড হলে ব্ল্যাক, অন্যথায় অ্যালার্ট রেড
+    const statusColor = isDelivered ? '#000000' : '#ff0000';
     const totalLabel = isDelivered ? 'TOTAL PAID' : 'AMOUNT DUE';
 
     const itemsHtml = order.items.map((item) => {
@@ -217,7 +218,8 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
             color, 
             price_at_purchase,
             products (
-              name
+              name,
+              image_url
             )
           )
         `)
@@ -231,6 +233,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
         const formattedOrders = data.map((order: any) => {
           const items = (order.order_items || []).map((item: any) => ({
             product_name: item.products?.name || 'NOMAD PREMIUM APPAREL',
+            product_image: item.products?.image_url || '', // সুপাবেস থেকে ইমেজ ইউআরএল ম্যাপ করা হলো
             size: item.size || 'N/A',
             color: item.color || 'N/A',
             quantity: item.quantity || 1,
@@ -456,23 +459,42 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
                     minWidth: hasMultipleItems ? '82%' : '100%',
                     borderRight: hasMultipleItems && index !== order.items.length - 1 ? '1px solid rgba(255,255,255,0.08)' : 'none',
                     paddingRight: hasMultipleItems && index !== order.items.length - 1 ? '20px' : '0',
-                    boxSizing: 'border-box'
+                    boxSizing: 'border-box',
+                    display: 'flex', // ছবি ও টেক্সট পাশাপাশি রাখার জন্য ফ্লেক্স
+                    gap: '15px'
                   }}
                 >
-                  <div>
-                    <h4 style={{ margin: 0, fontSize: '13px', fontWeight: '700', color: '#fff', letterSpacing: '0.5px', lineHeight: '1.4', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', textTransform: 'uppercase' }}>
-                      {item.product_name}
-                    </h4>
-                  </div>
+                  {/* 📸 প্রোডাক্ট ইমেজের থাম্বনেইল লেআউট */}
+                  {item.product_image && (
+                    <img 
+                      src={item.product_image} 
+                      alt={item.product_name} 
+                      style={{ 
+                        width: '55px', 
+                        height: '55px', 
+                        objectFit: 'cover', 
+                        backgroundColor: '#111', 
+                        border: '1px solid #222' 
+                      }} 
+                    />
+                  )}
+                  
+                  <div style={{ flex: 1 }}>
+                    <div>
+                      <h4 style={{ margin: 0, fontSize: '13px', fontWeight: '700', color: '#fff', letterSpacing: '0.5px', lineHeight: '1.4', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', textTransform: 'uppercase' }}>
+                        {item.product_name}
+                      </h4>
+                    </div>
 
-                  <div style={{ marginTop: '10px', display: 'flex', gap: '10px', alignItems: 'center' }}>
-                    <span style={{ fontSize: '10px', color: '#888', fontFamily: 'monospace', fontWeight: 'bold' }}>
-                      SIZE: <span style={{ color: '#fff' }}>{item.size}</span>
-                    </span>
-                    <span style={{ width: '3px', height: '3px', backgroundColor: '#444', borderRadius: '50%' }}></span>
-                    <span style={{ fontSize: '10px', color: '#888', fontFamily: 'monospace', fontWeight: 'bold' }}>
-                      COLOR: <span style={{ color: '#fff' }}>{item.color}</span>
-                    </span>
+                    <div style={{ marginTop: '10px', display: 'flex', gap: '10px', alignItems: 'center' }}>
+                      <span style={{ fontSize: '10px', color: '#888', fontFamily: 'monospace', fontWeight: 'bold' }}>
+                        SIZE: <span style={{ color: '#fff' }}>{item.size}</span>
+                      </span>
+                      <span style={{ width: '3px', height: '3px', backgroundColor: '#444', borderRadius: '50%' }}></span>
+                      <span style={{ fontSize: '10px', color: '#888', fontFamily: 'monospace', fontWeight: 'bold' }}>
+                        COLOR: <span style={{ color: '#fff' }}>{item.color}</span>
+                      </span>
+                    </div>
                   </div>
                 </div>
               ))}
