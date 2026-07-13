@@ -14,7 +14,7 @@ interface Product {
   colors: string[]; 
   created_at: string;
   product_media: { media_url: string; media_type: string }[];
-  details?: Record<string, string> | null; // ⚡ সুপাবেজের নতুন JSONB কলাম টাইপ
+  details?: Record<string, string> | null; // ⚡ সুপাবেজের JSONB কলাম টাইপ
 }
 
 // 📸 প্রোডাক্ট গ্যালারি কম্পোনেন্ট
@@ -71,14 +71,13 @@ const ProductActionRow = ({ product }: { product: Product }) => {
 
   const [step, setStep] = useState<'idle' | 'size' | 'color'>('idle');
   const [selectedSize, setSelectedSize] = useState('');
-  const [isAdded, setIsAdded] = useState(false); // ⚡ সাময়িক ADDED স্টেট ট্র্যাকার
+  const [isAdded, setIsAdded] = useState(false);
 
   const availableSizes = product.sizes || [];
   const availableColors = product.colors || [];
 
   const isSoldOut = product.status === 'sold_out' || product.stock_quantity <= 0;
 
-  // ⚡ সাকসেস ফিডব্যাক ট্রিকার (১.৫ সেকেন্ডের জন্য ADDED দেখাবে)
   const triggerAddedFeedback = () => {
     setIsAdded(true);
     setTimeout(() => {
@@ -113,8 +112,6 @@ const ProductActionRow = ({ product }: { product: Product }) => {
 
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: '42px', marginTop: 'auto', boxSizing: 'border-box', width: '100%' }}>
-
-      {/* ১. সাধারণ অবস্থা (আইডল) */}
       {step === 'idle' && (
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', animation: 'swapFadeIn 0.25s ease-in-out' }}>
           <span style={{ fontSize: '15px', color: isSoldOut ? '#555' : '#fff', fontWeight: 500, fontFamily: 'monospace' }}>৳{product.price}</span>
@@ -157,7 +154,6 @@ const ProductActionRow = ({ product }: { product: Product }) => {
         </div>
       )}
 
-      {/* ২. ডাইনামিক সাইজ স্ক্রল */}
       {step === 'size' && (
         <div style={{ display: 'flex', alignItems: 'center', width: '100%', height: '100%', animation: 'swapFadeIn 0.25s ease-in-out', overflow: 'hidden' }}>
           <span style={labelStyle}>SIZE:</span>
@@ -184,7 +180,6 @@ const ProductActionRow = ({ product }: { product: Product }) => {
         </div>
       )}
 
-      {/* ৩. ডাইনামিক কালার স্ক্রল */}
       {step === 'color' && (
         <div style={{ display: 'flex', alignItems: 'center', width: '100%', height: '100%', animation: 'swapFadeIn 0.25s ease-in-out', overflow: 'hidden' }}>
           <span style={labelStyle}>COLOR:</span>
@@ -213,7 +208,7 @@ const ProductActionRow = ({ product }: { product: Product }) => {
   );
 };
 
-// 💳 ইনডিভিজুয়াল প্রোডাক্ট কার্ড কম্পোনেন্ট (লোকাল স্টেট হ্যান্ডেল করার জন্য)
+// 💳 ইনডিভিজুয়াল প্রোডাক্ট কার্ড কম্পোনেন্ট
 const ProductCard = ({ product }: { product: Product }) => {
   const [isDescExpanded, setIsDescExpanded] = useState(false);
 
@@ -226,48 +221,55 @@ const ProductCard = ({ product }: { product: Product }) => {
 
       <div style={{ marginTop: '15px', padding: '0 5px', display: 'flex', flexDirection: 'column', flex: 1 }}>
         <h3 style={{ fontSize: '14px', color: '#e5e5e5', margin: '0 0 6px 0' }}>{product.name}</h3>
-        
+
         {/* ⚡ এক্সপ্যান্ডেবল বর্ণনা ও স্পেসিফিকেশন সেকশন */}
         <div style={{ margin: '0 0 15px 0' }}>
-          {!isDescExpanded ? (
-            <>
-              <p style={{ fontSize: '13px', color: '#888', margin: 0, lineHeight: '1.4', WebkitLineClamp: 2, display: '-webkit-box', WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                {product.description}
-              </p>
-              <span 
-                onClick={() => setIsDescExpanded(true)}
-                style={{ fontSize: '11px', color: '#555', cursor: 'pointer', marginTop: '4px', display: 'inline-block', letterSpacing: '0.5px' }}
-              >
-                ... see more
-              </span>
-            </>
-          ) : (
-            <div style={{ animation: 'swapFadeIn 0.3s ease-in-out' }}>
-              <p style={{ fontSize: '13px', color: '#888', margin: 0, lineHeight: '1.4' }}>
-                {product.description}
-              </p>
-              
-              {/* 📊 সুপাবেজ JSONB থেকে আসা ডাইনামিক কি-ভ্যালু পেয়ার রেন্ডারিং */}
-              {product.details && Object.keys(product.details).length > 0 && (
-                <div style={{ borderTop: '1px solid #141414', marginTop: '10px', paddingTop: '10px', display: 'flex', flexDirection: 'column', gap: '6px', fontFamily: 'monospace', fontSize: '11px' }}>
-                  {Object.entries(product.details).map(([key, value]) => (
-                    <div key={key} style={{ display: 'flex', justifyContent: 'flex-start' }}>
-                      <span style={{ color: '#555', width: '90px', flexShrink: 0 }}>{key}</span>
-                      <span style={{ color: '#555', marginRight: '8px' }}>:</span>
-                      <span style={{ color: '#bbb' }}>{value}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
+          {(() => {
+            const characterLimit = 75; // এই সীমার পর টেক্সট ট্রাঙ্কেট হবে
+            const isLongText = product.description.length > characterLimit;
+            const displayedText = isLongText 
+              ? product.description.slice(0, characterLimit) + '...' 
+              : product.description;
 
-              <span 
-                onClick={() => setIsDescExpanded(false)}
-                style={{ fontSize: '11px', color: '#555', cursor: 'pointer', marginTop: '8px', display: 'inline-block', letterSpacing: '0.5px' }}
-              >
-                see less
-              </span>
-            </div>
-          )}
+            return !isDescExpanded ? (
+              <p style={{ fontSize: '13px', color: '#888', margin: 0, lineHeight: '1.4' }}>
+                {displayedText}
+                {/* ⚡ 'see more' বাটনটি এখানে ইনলাইন হিসেবে সবসময় টেক্সটের শেষে বসবে */}
+                <span 
+                  onClick={() => setIsDescExpanded(true)}
+                  style={{ fontSize: '12px', color: '#555', cursor: 'pointer', marginLeft: '6px', fontWeight: '500', display: 'inline' }}
+                >
+                  see more
+                </span>
+              </p>
+            ) : (
+              <div style={{ animation: 'swapFadeIn 0.3s ease-in-out' }}>
+                <p style={{ fontSize: '13px', color: '#888', margin: 0, lineHeight: '1.4' }}>
+                  {product.description}
+                </p>
+
+                {/* 📊 সুপাবেজ JSONB থেকে আসা ডাইনামিক কি-ভ্যালু পেয়ার রেন্ডারিং */}
+                {product.details && Object.keys(product.details).length > 0 && (
+                  <div style={{ borderTop: '1px solid #141414', marginTop: '10px', paddingTop: '10px', display: 'flex', flexDirection: 'column', gap: '6px', fontFamily: 'monospace', fontSize: '11px' }}>
+                    {Object.entries(product.details).map(([key, value]) => (
+                      <div key={key} style={{ display: 'flex', justifyContent: 'flex-start' }}>
+                        <span style={{ color: '#555', width: '90px', flexShrink: 0 }}>{key}</span>
+                        <span style={{ color: '#555', marginRight: '8px' }}>:</span>
+                        <span style={{ color: '#bbb' }}>{value}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <span 
+                  onClick={() => setIsDescExpanded(false)}
+                  style={{ fontSize: '11px', color: '#555', cursor: 'pointer', marginTop: '8px', display: 'inline-block', letterSpacing: '0.5px' }}
+                >
+                  see less
+                </span>
+              </div>
+            );
+          })()}
         </div>
 
         <ProductActionRow product={product} />
