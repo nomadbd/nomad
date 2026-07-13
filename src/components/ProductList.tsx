@@ -220,50 +220,55 @@ const ProductCard = ({ product }: { product: Product }) => {
       />
 
       <div style={{ marginTop: '15px', padding: '0 5px', display: 'flex', flexDirection: 'column', flex: 1 }}>
-        <h3 style={{ fontSize: '14px', color: '#e5e5e5', margin: '0 0 6px 0' }}>{product.name}</h3>
+        <h3 style={{ fontSize: '14px', color: '#fff', margin: '0 0 6px 0', fontWeight: '600' }}>{product.name}</h3>
 
         {/* ⚡ এক্সপ্যান্ডেবল বর্ণনা ও স্পেসিফিকেশন সেকশন */}
         <div style={{ margin: '0 0 15px 0' }}>
           {(() => {
-            const characterLimit = 75; // এই সীমার পর টেক্সট ট্রাঙ্কেট হবে
+            const characterLimit = 75; 
             const isLongText = product.description.length > characterLimit;
             const displayedText = isLongText 
               ? product.description.slice(0, characterLimit) + '...' 
               : product.description;
 
             return !isDescExpanded ? (
-              <p style={{ fontSize: '13px', color: '#888', margin: 0, lineHeight: '1.4' }}>
+              // 🤍 ডেসক্রিপশন লেখা পিওর হোয়াইট (সাদা)
+              <p style={{ fontSize: '13px', color: '#fff', margin: 0, lineHeight: '1.4' }}>
                 {displayedText}
-                {/* ⚡ 'see more' বাটনটি এখানে ইনলাইন হিসেবে সবসময় টেক্সটের শেষে বসবে */}
+                {/* 🔘 'see more' বাটনটি উজ্জ্বল ধূসর (#aaa) ও আন্ডারলাইন মুক্ত */}
                 <span 
                   onClick={() => setIsDescExpanded(true)}
-                  style={{ fontSize: '12px', color: '#555', cursor: 'pointer', marginLeft: '6px', fontWeight: '500', display: 'inline' }}
+                  style={{ fontSize: '12px', color: '#aaa', cursor: 'pointer', marginLeft: '6px', fontWeight: '500', display: 'inline' }}
                 >
                   see more
                 </span>
               </p>
             ) : (
               <div style={{ animation: 'swapFadeIn 0.3s ease-in-out' }}>
-                <p style={{ fontSize: '13px', color: '#888', margin: 0, lineHeight: '1.4' }}>
+                {/* 🤍 ডেসক্রিপশন লেখা পিওর হোয়াইট (সাদা) */}
+                <p style={{ fontSize: '13px', color: '#fff', margin: 0, lineHeight: '1.4' }}>
                   {product.description}
                 </p>
 
                 {/* 📊 সুপাবেজ JSONB থেকে আসা ডাইনামিক কি-ভ্যালু পেয়ার রেন্ডারিং */}
                 {product.details && Object.keys(product.details).length > 0 && (
-                  <div style={{ borderTop: '1px solid #141414', marginTop: '10px', paddingTop: '10px', display: 'flex', flexDirection: 'column', gap: '6px', fontFamily: 'monospace', fontSize: '11px' }}>
+                  <div style={{ borderTop: '1px solid #1a1a1a', marginTop: '12px', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px', fontFamily: 'monospace', fontSize: '12px' }}>
                     {Object.entries(product.details).map(([key, value]) => (
-                      <div key={key} style={{ display: 'flex', justifyContent: 'flex-start' }}>
-                        <span style={{ color: '#555', width: '90px', flexShrink: 0 }}>{key}</span>
-                        <span style={{ color: '#555', marginRight: '8px' }}>:</span>
-                        <span style={{ color: '#bbb' }}>{value}</span>
+                      <div key={key} style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
+                        {/* 🤍 কোলনের বাম পাশের লেখা (Key) এখন পুরোপুরি সাদা */}
+                        <span style={{ color: '#fff', width: '95px', flexShrink: 0, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{key}</span>
+                        <span style={{ color: '#555', marginRight: '10px' }}>:</span>
+                        {/* 🤍 কোলনের ডান পাশের লেখাও (Value) এখন পুরোপুরি সাদা */}
+                        <span style={{ color: '#fff', fontWeight: '400' }}>{value}</span>
                       </div>
                     ))}
                   </div>
                 )}
 
+                {/* 🔘 'see less' বাটনটিও উজ্জ্বল ধূসর (#aaa) ও আন্ডারলাইন মুক্ত */}
                 <span 
                   onClick={() => setIsDescExpanded(false)}
-                  style={{ fontSize: '11px', color: '#555', cursor: 'pointer', marginTop: '8px', display: 'inline-block', letterSpacing: '0.5px' }}
+                  style={{ fontSize: '11px', color: '#aaa', cursor: 'pointer', marginTop: '12px', display: 'inline-block', letterSpacing: '0.5px' }}
                 >
                   see less
                 </span>
