@@ -1,49 +1,26 @@
-export interface InvoiceItem {
-  product_name: string;
-  size: string;
-  color: string;
-  quantity: number;
-  price: number;
-}
+export const printInvoice = (placedOrderDetails: any) => {
+  if (!placedOrderDetails) return;
 
-export interface InvoiceData {
-  id: string;
-  created_at: string;
-  total_amount: number;
-  status: string;
-  items: InvoiceItem[];
-  customer_name?: string;
-  customer_phone?: string;
-  shipping_address?: string;
-  delivery_charge?: number;
-  vat_amount?: number;
-}
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const date = String(now.getDate()).padStart(2, '0');
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
 
-export const printInvoice = (order: InvoiceData) => {
-  const dateObj = new Date(order.created_at);
-  const formattedDate = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
-  const formattedTime = `${String(dateObj.getHours()).padStart(2, '0')}:${String(dateObj.getMinutes()).padStart(2, '0')}`;
+  const formattedDate = `${year}-${month}-${date}`;
+  const formattedTime = `${hours}:${minutes}`;
 
-  const subtotal = order.items.reduce((acc, item) => acc + item.price * item.quantity, 0);
-  const deliveryCharge = order.delivery_charge || 0;
-  const vatAmount = order.vat_amount || 0;
-  const grandTotal = order.total_amount;
-
-  const currentStatus = (order.status || 'pending').toUpperCase();
-  const isDelivered = currentStatus === 'DELIVERED';
-  const statusColor = isDelivered ? '#000000' : '#ff0000';
-  const totalLabel = isDelivered ? 'TOTAL PAID' : 'AMOUNT DUE';
-
-  const itemsHtml = order.items.map((item) => {
+  const itemsHtml = placedOrderDetails.items.map((item: any) => {
     const detailsArray = [];
-    if (item.size && item.size !== 'N/A') detailsArray.push(`SIZE: ${item.size.toUpperCase()}`);
-    if (item.color && item.color !== 'N/A') detailsArray.push(`COLOR: ${item.color.toUpperCase()}`);
-    detailsArray.push(`QTY: ${item.quantity}`);
+    if (item.size) detailsArray.push(`SIZE: ${item.size.toUpperCase()}`);
+    if (item.color) detailsArray.push(`COLOR: ${item.color.toUpperCase()}`);
+    detailsArray.push(`QTY: ${item.quantity}`); 
 
     return `
       <tr>
         <td style="padding: 14px 0; border-bottom: 1px solid #eee; font-size: 11px; letter-spacing: 1px; line-height: 1.6; color: #000 !important;">
-          <strong style="color: #000 !important; display: block; margin-bottom: 4px;">${item.product_name.toUpperCase()}</strong>
+          <strong style="color: #000 !important; display: block; margin-bottom: 4px;">${item.name.toUpperCase()}</strong>
           <div style="color: #555; font-size: 10px; letter-spacing: 0.5px; text-transform: uppercase;">
             ${detailsArray.join(' &nbsp;|&nbsp; ')} &nbsp;•&nbsp; ৳${item.price}
           </div>
@@ -58,7 +35,7 @@ export const printInvoice = (order: InvoiceData) => {
 
   printContainer.innerHTML = `
     <div class="header">NOMAD</div>
-    <div class="sub-header">Proforma Invoice / Live Order Memorandum</div>
+    <div class="sub-header">Proforma Invoice / Order Memorandum</div>
     
     <table class="info-table">
       <tr>
@@ -66,12 +43,12 @@ export const printInvoice = (order: InvoiceData) => {
           <span style="color: #666; font-size: 9px; letter-spacing: 1.5px; font-weight: bold; display: block;">SHIPPING TO</span>
         </td>
         <td style="text-align: right; padding: 4px 0; vertical-align: top; color: #000 !important; font-size: 11px; letter-spacing: 0.5px;">
-          <strong style="color: #000 !important;">ORDER ID:</strong> #${order.id}
+          <strong style="color: #000 !important;">ORDER ID:</strong> #${placedOrderDetails.orderId}
         </td>
       </tr>
       <tr>
         <td style="padding: 4px 0; vertical-align: top; color: #000 !important; font-size: 11px; font-weight: bold; letter-spacing: 0.5px;">
-          ${(order.customer_name || 'VALUED CUSTOMER').toUpperCase()}
+          ${placedOrderDetails.customerName.toUpperCase()}
         </td>
         <td style="text-align: right; padding: 4px 0; vertical-align: top; color: #000 !important; font-size: 11px; letter-spacing: 0.5px;">
           <strong style="color: #000 !important;">DATE:</strong> ${formattedDate} &nbsp;&nbsp; <strong style="color: #000 !important;">TIME:</strong> ${formattedTime}
@@ -79,7 +56,7 @@ export const printInvoice = (order: InvoiceData) => {
       </tr>
       <tr>
         <td style="padding: 4px 0; vertical-align: top; color: #000 !important; font-size: 11px; letter-spacing: 0.5px;">
-          ${order.customer_phone || 'N/A'}
+          ${placedOrderDetails.customerPhone}
         </td>
         <td style="text-align: right; padding: 4px 0; vertical-align: top; color: #000 !important; font-size: 11px; letter-spacing: 0.5px;">
           <strong style="color: #000 !important;">PAYMENT:</strong> CASH ON DELIVERY
@@ -87,10 +64,10 @@ export const printInvoice = (order: InvoiceData) => {
       </tr>
       <tr>
         <td style="padding: 4px 0; vertical-align: top; color: #000 !important; font-size: 11px; letter-spacing: 0.5px; line-height: 1.4; max-width: 300px;">
-          ${(order.shipping_address || 'N/A').toUpperCase()}
+          ${placedOrderDetails.shippingAddress.toUpperCase()}
         </td>
         <td style="text-align: right; padding: 4px 0; vertical-align: top; color: #000 !important; font-size: 11px; letter-spacing: 0.5px;">
-          <strong style="color: ${statusColor}; letter-spacing: 1px; text-transform: uppercase;">STATUS: ${currentStatus}</strong>
+          <strong style="color: #ff0000; letter-spacing: 1px;">STATUS: UNPAID / DUE</strong>
         </td>
       </tr>
     </table>
@@ -106,17 +83,17 @@ export const printInvoice = (order: InvoiceData) => {
     </table>
 
     <table class="summary-table">
-      <tr><td style="color: #000 !important;">SUBTOTAL</td><td style="text-align: right; font-family: monospace; color: #000 !important;">৳${subtotal}</td></tr>
-      <tr><td style="color: #000 !important;">SHIPPING</td><td style="text-align: right; font-family: monospace; color: #000 !important;">৳${deliveryCharge}</td></tr>
-      <tr><td style="color: #000 !important;">VAT</td><td style="text-align: right; font-family: monospace; color: #000 !important;">৳${vatAmount}</td></tr>
-      <tr style="font-weight: bold; font-size: 13px; color: ${statusColor};">
-        <td style="padding-top: 12px; border-top: 1px solid #000; letter-spacing: 1px;">${totalLabel}</td>
-        <td style="text-align: right; padding-top: 12px; border-top: 1px solid #000; font-family: monospace;">৳${grandTotal}</td>
+      <tr><td style="color: #000 !important;">SUBTOTAL</td><td style="text-align: right; font-family: monospace; color: #000 !important;">৳${placedOrderDetails.subtotal}</td></tr>
+      <tr><td style="color: #000 !important;">SHIPPING</td><td style="text-align: right; font-family: monospace; color: #000 !important;">৳${placedOrderDetails.deliveryCharge}</td></tr>
+      <tr><td style="color: #000 !important;">VAT</td><td style="text-align: right; font-family: monospace; color: #000 !important;">৳${placedOrderDetails.vatAmount}</td></tr>
+      <tr style="font-weight: bold; font-size: 13px; color: #ff0000;">
+        <td style="padding-top: 12px; border-top: 1px solid #000; letter-spacing: 1px;">AMOUNT DUE</td>
+        <td style="text-align: right; padding-top: 12px; border-top: 1px solid #000; font-family: monospace;">৳${placedOrderDetails.grandTotal}</td>
       </tr>
     </table>
 
     <div class="disclaimer">
-      <strong>LEGAL NOTICE:</strong> This is a live computer-generated order memorandum for Cash on Delivery (COD) transactions reflecting real-time fulfillment updates. Physical products remain property of NOMAD until the full invoice amount is successfully collected by our authorized delivery agent.
+      <strong>LEGAL NOTICE:</strong> This is a computer-generated order memorandum for Cash on Delivery (COD) transactions. It does not constitute a proof of final payment, sales receipt, or legal ownership of goods. Physical products will remain property of NOMAD until the full invoice amount is successfully collected by our authorized delivery agent.
     </div>
   `;
 
