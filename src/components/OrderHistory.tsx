@@ -9,7 +9,9 @@ interface OrderItem {
   color: string | null;
   products: {
     name: string;
-    image_url: string;
+    product_media: {
+      media_url: string;
+    }[]; // এখানে মাল্টিপল মিডিয়া অবজেক্ট এর অ্যারে আসবে
   } | null;
 }
 
@@ -34,7 +36,6 @@ export default function OrderHistory() {
     const fetchOrderHistory = async () => {
       try {
         setLoading(true);
-        // ১. কারেন্ট লগইন করা ইউজারকে গেট করা
         const { data: { user } } = await supabase.auth.getUser();
 
         if (!user) {
@@ -43,7 +44,7 @@ export default function OrderHistory() {
           return;
         }
 
-        // ২. ইউজার আইডির ওপর বেস করে অর্ডার এবং আইটেমস জয়েন কোয়েরি করা
+        // ৩ লেভেলের নেস্টেড কোয়েরি: orders -> order_items -> products -> product_media
         const { data, error } = await supabase
           .from('orders')
           .select(`
@@ -61,9 +62,11 @@ export default function OrderHistory() {
               price_at_purchase,
               size,
               color,
-              products (
+              products:product_id (
                 name,
-                image_url
+                product_media (
+                  media_url
+                )
               )
             )
           `)
@@ -133,23 +136,36 @@ export default function OrderHistory() {
     },
     itemRow: {
       display: 'flex',
+      gap: '15px',
+      alignItems: 'center',
+      padding: '12px 0',
+      borderBottom: '1px solid #0d0d0d',
+    },
+    productImg: {
+      width: '45px',
+      height: '55px',
+      objectFit: 'cover' as const,
+      background: '#0a0a0a',
+      border: '1px solid #111',
+    },
+    itemDetails: {
+      flexGrow: 1,
+      display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'center',
-      padding: '8px 0',
       fontSize: '11px',
       letterSpacing: '1px',
     },
     metaText: {
       fontSize: '10px',
       color: '#555',
-      marginTop: '2px',
+      marginTop: '3px',
     },
     totalRow: {
       display: 'flex',
       justifyContent: 'space-between',
       marginTop: '15px',
       paddingTop: '12px',
-      borderTop: '1px dotted #222',
       fontSize: '11px',
       letterSpacing: '1.5px',
     },
@@ -178,26 +194,36 @@ export default function OrderHistory() {
             <span style={styles.statusBadge}>{order.status}</span>
           </div>
 
-          {/* অর্ডার আইটেম লিস্ট */}
           <div>
-            {order.order_items?.map((item) => (
-              <div key={item.id} style={styles.itemRow}>
-                <div>
-                  <span style={{ fontWeight: 500 }}>
-                    {item.products?.name ? item.products.name.toUpperCase() : 'PRODUCT'}
-                  </span>
-                  <div style={styles.metaText}>
-                    QTY: {item.quantity} 
-                    {item.color && ` • ${item.color.toUpperCase()}`} 
-                    {item.size && ` / ${item.size.toUpperCase()}`}
+            {order.order_items?.map((item) => {
+              // product_media অ্যারের প্রথম অবজেক্ট থেকে ছবি নেওয়া হচ্ছে
+              const firstImage = item.products?.product_media?.[0]?.media_url;
+
+              return (
+                <div key={item.id} style={styles.itemRow}>
+                  <img 
+                    src={firstImage || 'https://via.placeholder.com/45x55'} 
+                    alt={item.products?.name || 'Product'} 
+                    style={styles.productImg} 
+                  />
+                  <div style={styles.itemDetails}>
+                    <div>
+                      <span style={{ fontWeight: 500 }}>
+                        {item.products?.name ? item.products.name.toUpperCase() : 'PRODUCT'}
+                      </span>
+                      <div style={styles.metaText}>
+                        QTY: {item.quantity} 
+                        {item.color && ` • ${item.color.toUpperCase()}`} 
+                        {item.size && ` / ${item.size.toUpperCase()}`}
+                      </div>
+                    </div>
+                    <span style={{ fontFamily: 'monospace' }}>৳{item.price_at_purchase * item.quantity}</span>
                   </div>
                 </div>
-                <span style={{ fontFamily: 'monospace' }}>৳{item.price_at_purchase * item.quantity}</span>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
-          {/* টোটাল ক্যালকুলেশন */}
           <div style={styles.totalRow}>
             <span style={{ color: '#666' }}>
               DATE: {new Date(order.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }).toUpperCase()}
