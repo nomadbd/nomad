@@ -6,18 +6,29 @@ interface Props {
   onClose: () => void;
 }
 
+// product_media টেবিলের টাইপ
+interface ProductMedia {
+  id: string;
+  product_id: string;
+  media_url: string;
+  media_type: string;
+  sort_order: number;
+}
+
+// products টেবিলের টাইপ (আপনার নতুন স্ক্রিনশট অনুযায়ী কলামগুলো আপডেট করা হয়েছে)
 interface Product {
   id: string;
   name: string;
-  category: string;
-  sizes: string | string[];
-  price: number;
   description?: string;
-  // Supabase টেবিলে ইমেজের কলামের নাম সাধারণত image_path, image_url, বা শুধু image হয়ে থাকে। 
-  // এখানে আমরা কয়েকটি কমন অপশন হ্যান্ডেল করছি।
-  image_url?: string;
-  image_path?: string;
-  image?: string;
+  price: number;
+  category: string;
+  stock_quantity?: number;
+  sizes: string[]; // text[] array
+  colors: string[]; // text[] array
+  details?: Record<string, any>; // jsonb
+  status: string;
+  created_at: string;
+  product_media?: ProductMedia[]; // One-to-Many রিলেশনশিপের মাধ্যমে যুক্ত ইমেজসমূহ
 }
 
 const SearchOverlay: React.FC<Props> = ({ isOpen, onClose }) => {
@@ -39,39 +50,59 @@ const SearchOverlay: React.FC<Props> = ({ isOpen, onClose }) => {
   const searchProducts = async () => {
     try {
       const query = `%${searchQuery}%`;
-      
+
+      // ১. products এর সাথে product_media টেবিল জয়েন করে ডেটা আনা হচ্ছে।
+      // ২. নাম, ডেসক্রিপশন, ক্যাটাগরি, সাইজ অথবা কালারের সাথে মিললেই সার্চ রেজাল্ট চলে আসবে।
       const { data, error } = await supabase
         .from('products')
-        .select('*')
-        .or(`name.ilike.${query},category.ilike.${query},sizes.cs.{${searchQuery}}`); 
-        
+        .select(`
+          *,
+          product_media (*)
+        `)
+        .eq('status', 'active') // শুধুমাত্র একটিভ প্রোডাক্টগুলো দেখাবে
+        .or(`name.ilike.${query},description.ilike.${query},category.ilike.${query},sizes.cat.${query},colors.cat.${query}`); 
+
       if (error) {
+        // ফ্যালব্যাক কুয়েরি (যদি অ্যারে সার্চ করতে গিয়ে কোনো সমস্যা হয়)
         const { data: fallbackData, error: fallbackError } = await supabase
           .from('products')
-          .select('*')
-          .or(`name.ilike.${query},category.ilike.${query}`);
-        
+          .select(`
+            *,
+            product_media (*)
+          `)
+          .eq('status', 'active')
+          .or(`name.ilike.${query},description.ilike.${query},category.ilike.${query}`);
+
         if (fallbackError) throw fallbackError;
-        setResults(fallbackData || []);
+        setResults((fallbackData as Product[]) || []);
       } else {
-        setResults(data || []);
+        setResults((data as Product[]) || []);
       }
     } catch (err) {
       console.error('Error searching products:', err);
     }
   };
 
-  // ইমেজ ইউআরএল পাওয়ার একটি সেইফ ফাংশন
+  // product_media টেবিল থেকে সঠিক ইমেজ বের করার ফাংশন
   const getProductImage = (product: Product) => {
-    // ১. সরাসরি পূর্ণাঙ্গ URL থাকলে
-    const rawUrl = product.image_url || product.image_path || product.image;
-    if (!rawUrl) return null;
-    if (rawUrl.startsWith('http')) return rawUrl;
+    if (!product.product_media || product.product_media.length === 0) {
+      return null;
+    }
 
-    // ২. ইমেজটি যদি Supabase Storage-এর ভেতর থাকে (বাকেট নাম 'product-images' বা একই ধরণের কিছু হলে)
-    // আপনার বাকেট নাম অনুযায়ী নিচের 'product-images' পরিবর্তন করে নিতে পারেন।
-    const { data } = supabase.storage.from('product-images').getPublicUrl(rawUrl);
-    return data?.publicUrl || rawUrl;
+    // sort_order অনুযায়ী সর্ট করে প্রথম ইমেজটি নেওয়া (যেটি সাধারণত থাম্বনেইল/কভার ইমেজ হয়)
+    const sortedMedia = [...product.product_media].sort((a, b) => a.sort_order - b.sort_order);
+    const media = sortedMedia[0];
+
+    if (!media || !media.media_url) return null;
+
+    // যদি সরাসরি Unsplash বা কোনো CDN URL থাকে
+    if (media.media_url.startsWith('http')) {
+      return media.media_url;
+    }
+
+    // যদি Supabase storage বাকেটে থাকে (বাকেটের নাম পরিবর্তন করতে পারেন)
+    const { data } = supabase.storage.from('product-images').getPublicUrl(media.media_url);
+    return data?.publicUrl || media.media_url;
   };
 
   if (!isOpen) return null;
@@ -82,7 +113,7 @@ const SearchOverlay: React.FC<Props> = ({ isOpen, onClose }) => {
       backgroundColor: 'black', zIndex: 1000, padding: '24px', boxSizing: 'border-box',
       overflowY: 'auto', fontFamily: 'sans-serif'
     }}>
-      {/* Search Header - Exactly matching your UI */}
+      {/* Search Header */}
       <div style={{ 
         display: 'flex', justifyContent: 'space-between', alignItems: 'center', 
         marginBottom: '40px', borderBottom: '1px solid rgba(255, 255, 255, 0.2)', paddingBottom: '15px'
@@ -124,7 +155,7 @@ const SearchOverlay: React.FC<Props> = ({ isOpen, onClose }) => {
               const imageUrl = getProductImage(product);
               return (
                 <div key={product.id} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                  
+
                   {/* Category with "SEE MORE" on the right */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ 
@@ -185,7 +216,7 @@ const SearchOverlay: React.FC<Props> = ({ isOpen, onClose }) => {
                     }}>
                       {product.name}
                     </h3>
-                    
+
                     {product.description && (
                       <p style={{ 
                         fontSize: '14px', 
