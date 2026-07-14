@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient'; 
-import { useCart } from '../context/CartContext'; // 🛒 কার্ট কন্টেক্সট ইম্পোর্ট করা হয়েছে
+import { useCart } from '../context/CartContext'; 
 
 interface Props {
   isOpen: boolean;
@@ -19,10 +19,10 @@ interface Product {
   colors: string[]; 
   created_at: string;
   product_media: { media_url: string; media_type: string }[];
-  details?: Record<string, string> | null; // JSONB কলাম টাইপ
+  details?: Record<string, string> | null; 
 }
 
-// 📸 প্রোডাক্ট গ্যালারি কম্পোনেন্ট (ProductList থেকে নেওয়া)
+// 📸 প্রোডাক্ট গ্যালারি কম্পোনেন্ট
 const ProductGallery = ({ images, productName }: { images: string[], productName: string }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -70,7 +70,7 @@ const ProductGallery = ({ images, productName }: { images: string[], productName
   );
 };
 
-// 🛒 ১০০% সিমেট্রিক বর্ডার যুক্ত অ্যাকশন রো (ProductList থেকে নেওয়া)
+// 🛒 অ্যাকশন রো
 const ProductActionRow = ({ product }: { product: Product }) => {
   const { addToCart } = useCart();
 
@@ -213,19 +213,17 @@ const ProductActionRow = ({ product }: { product: Product }) => {
   );
 };
 
-// 💳 ইনডিভিজুয়াল প্রোডাক্ট কার্ড কম্পোনেন্ট (ডিটেইলস ও see more/less সহ)
+// 💳 ইনডিভিজুয়াল প্রোডাক্ট কার্ড কম্পোনেন্ট
 const ProductCard = ({ product }: { product: Product }) => {
   const [isDescExpanded, setIsDescExpanded] = useState(false);
-
-  // মিডিয়া উইন্ডো থেকে ছবির লিঙ্কগুলো বের করা
   const mediaUrls = product.product_media?.map(m => m.media_url) || [];
 
   return (
-    <div className="showroom-card-item" style={{ boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '30px' }}>
+    <div className="showroom-card-item search-card-item" style={{ boxSizing: 'border-box', display: 'flex', flexDirection: 'column' }}>
       
       {/* Category header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ textTransform: 'uppercase', fontSize: '12px', letterSpacing: '2px', fontWeight: 'bold', color: '#b3b3b3' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', padding: '0 5px' }}>
+        <span style={{ textTransform: 'uppercase', fontSize: '13px', letterSpacing: '3px', fontWeight: 'bold', color: '#b3b3b3' }}>
           {product.category || 'PRODUCT'}
         </span>
       </div>
@@ -235,10 +233,10 @@ const ProductCard = ({ product }: { product: Product }) => {
         productName={product.name} 
       />
 
-      <div style={{ padding: '0 5px', display: 'flex', flexDirection: 'column', flex: 1 }}>
+      <div style={{ marginTop: '15px', padding: '0 5px', display: 'flex', flexDirection: 'column', flex: 1 }}>
         <h3 style={{ fontSize: '14px', color: '#fff', margin: '0 0 6px 0', fontWeight: '600' }}>{product.name}</h3>
 
-        {/* ⚡ এক্সপ্যান্ডেবল বর্ণনা ও স্পেসিফিকেশন সেকশন */}
+        {/* ⚡ এক্সপ্যান্ডেবল বর্ণনা ও স্পেসিফিকেশন সেকশন (ProductList-এর মতো হুবহু 'see more/less' লজিক) */}
         <div style={{ margin: '0 0 15px 0' }}>
           {(() => {
             const characterLimit = 75; 
@@ -250,14 +248,12 @@ const ProductCard = ({ product }: { product: Product }) => {
             return !isDescExpanded ? (
               <p style={{ fontSize: '13px', color: '#fff', margin: 0, lineHeight: '1.4' }}>
                 {displayedText}
-                {isLongText && (
-                  <span 
-                    onClick={() => setIsDescExpanded(true)}
-                    style={{ fontSize: '12px', color: '#aaa', cursor: 'pointer', marginLeft: '6px', fontWeight: '500', display: 'inline' }}
-                  >
-                    see more
-                  </span>
-                )}
+                <span 
+                  onClick={() => setIsDescExpanded(true)}
+                  style={{ fontSize: '12px', color: '#aaa', cursor: 'pointer', marginLeft: '6px', fontWeight: '500', display: 'inline' }}
+                >
+                  see more
+                </span>
               </p>
             ) : (
               <div style={{ animation: 'swapFadeIn 0.3s ease-in-out' }}>
@@ -265,7 +261,7 @@ const ProductCard = ({ product }: { product: Product }) => {
                   {product.description}
                 </p>
 
-                {/* 📊 সুপাবেজ JSONB থেকে আসা ডাইনামিক স্পেসিফিকেশন টেবিল */}
+                {/* 📊 সুপাবেজ JSONB টেবিল */}
                 {product.details && Object.keys(product.details).length > 0 && (
                   <div style={{ borderTop: '1px solid #1a1a1a', marginTop: '12px', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px', fontFamily: 'monospace', fontSize: '12px' }}>
                     {Object.entries(product.details).map(([key, value]) => (
@@ -295,10 +291,8 @@ const ProductCard = ({ product }: { product: Product }) => {
   );
 };
 
-export default SearchOverlay;
-
 // 🔍 মেইন সার্চ ওভারলে কম্পোনেন্ট
-export function SearchOverlay({ isOpen, onClose }: Props) {
+export default function SearchOverlay({ isOpen, onClose }: Props) {
   const [searchQuery, setSearchQuery] = useState('');
   const [results, setResults] = useState<Product[]>([]);
 
@@ -359,13 +353,13 @@ export function SearchOverlay({ isOpen, onClose }: Props) {
   return (
     <div style={{
       position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
-      backgroundColor: 'black', zIndex: 1000, padding: '24px', boxSizing: 'border-box',
+      backgroundColor: 'black', zIndex: 1000, boxSizing: 'border-box',
       overflowY: 'auto', fontFamily: 'sans-serif'
     }}>
-      {/* Search Header */}
+      {/* সার্চ হেডার */}
       <div style={{ 
         display: 'flex', justifyContent: 'space-between', alignItems: 'center', 
-        marginBottom: '40px', borderBottom: '1px solid rgba(255, 255, 255, 0.2)', paddingBottom: '15px'
+        margin: '24px 24px 40px 24px', borderBottom: '1px solid rgba(255, 255, 255, 0.2)', paddingBottom: '15px'
       }}>
         <input 
           type="text" 
@@ -391,15 +385,10 @@ export function SearchOverlay({ isOpen, onClose }: Props) {
         </button>
       </div>
 
-      {/* Results Area */}
-      <div style={{ color: 'white' }}>
+      {/* রেজাল্ট এরিয়া (১০০% নিখুঁত মোবাইল ফিটিং সহ) */}
+      <div style={{ color: 'white', width: '100%', boxSizing: 'border-box' }}>
         {results.length > 0 && (
-          <div style={{ 
-            display: 'flex', 
-            flexDirection: 'column',
-            gap: '30px',
-            marginTop: '20px'
-          }}>
+          <div className="search-results-container">
             {results.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
@@ -411,7 +400,7 @@ export function SearchOverlay({ isOpen, onClose }: Props) {
             fontSize: '11px', 
             letterSpacing: '2px', 
             opacity: 0.5,
-            marginTop: '40px',
+            padding: '0 24px',
             textTransform: 'uppercase'
           }}>
             No products found matching "{searchQuery}"
@@ -419,7 +408,7 @@ export function SearchOverlay({ isOpen, onClose }: Props) {
         )}
       </div>
 
-      {/* অ্যানিমেশন ও স্ক্রলবার হাইড করার স্টাইলশীট */}
+      {/* রেসপন্সিভনেস এবং অ্যানিমেশনের স্টাইল */}
       <style>{`
         @keyframes swapFadeIn {
           from { opacity: 0; transform: translateY(1px); }
@@ -431,6 +420,36 @@ export function SearchOverlay({ isOpen, onClose }: Props) {
         .variant-scroll-container {
           -ms-overflow-style: none;
           scrollbar-width: none;
+        }
+        
+        /* 📱 মোবাইলের জন্য ফুল উইথ সেট করা হলো, যাতে সাইড স্ক্রল বা নড়াচড়া না করে */
+        @media (max-width: 767px) {
+          .search-results-container {
+            width: 100vw;
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+          }
+          .search-card-item {
+            width: 100vw !important;
+            min-width: 100vw !important;
+            padding: 0 24px !important; /* স্ক্রিনের সাথে সাইড গ্যাপিং অ্যাডজাস্ট করা হয়েছে */
+          }
+        }
+
+        /* 💻 ডেস্কটপ বা বড় স্ক্রিনের জন্য গ্রিড লেআউট */
+        @media (min-width: 768px) {
+          .search-results-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+            padding: 0 24px;
+          }
+          .search-card-item {
+            width: 300px;
+            min-width: 300px;
+            margin-bottom: 30px;
+          }
         }
       `}</style>
     </div>
