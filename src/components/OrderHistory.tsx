@@ -3,7 +3,7 @@ import { supabase } from '../supabaseClient';
 
 interface OrderItem {
   product_name: string;
-  product_image: string; // এখানে মিডিয়া বা ইমেজ ইউআরএল স্টোর হবে
+  product_image: string; // এখানে মিডিয়া ইউআরএল স্টোর হবে
   size: string;
   color: string;
   quantity: number;
@@ -200,8 +200,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      
-      // 🛡️ নতুন ও পুরোনো দুই ধরনের ডেটা নির্ভুলভাবে হ্যান্ডেল করার জন্য হাইব্রিড জয়েন কোয়েরি
+      // এখানে nested product_media থেকে media_url তুলে আনা হচ্ছে
       const { data, error } = await supabase
         .from('orders')
         .select(`
@@ -219,10 +218,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
             size, 
             color, 
             price_at_purchase,
-            product_name,        -- নতুন কলাম (অর্ডার নেওয়ার সময়ের নাম)
-            product_image,       -- নতুন ব্যাকআপ কলাম ১
-            product_image_url,   -- নতুন কলাম (অর্ডার নেওয়ার সময়ের ছবির URL)
-            products:product_id (  
+            products:product_id (
               name,
               product_media (
                 media_url
@@ -239,21 +235,12 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
       if (data) {
         const formattedOrders = data.map((order: any) => {
           const items = (order.order_items || []).map((item: any) => {
-            
-            // 🛡️ নামের জন্য ব্যাকআপ লজিক: 
-            // ১. অর্ডারের সময়ের product_name দেখবে -> ২. না থাকলে মূল products.name দেখবে -> ৩. নয়তো NOMAD দেখাবে
-            const finalName = item.product_name || item.products?.name || 'NOMAD PREMIUM APPAREL';
-            
-            // 🛡️ ছবির জন্য ব্যাকআপ লজিক:
-            // ১. product_image_url -> ২. product_image -> ৩. products.product_media -> ৪. প্লেসহোল্ডার
-            const finalImage = item.product_image_url || 
-                               item.product_image || 
-                               item.products?.product_media?.[0]?.media_url || 
-                               'https://via.placeholder.com/80x100';
+            // product_media অ্যারের প্রথম ছবির URL নেওয়া হচ্ছে
+            const firstImage = item.products?.product_media?.[0]?.media_url || 'https://via.placeholder.com/80x100';
 
             return {
-              product_name: finalName,
-              product_image: finalImage,
+              product_name: item.products?.name || 'NOMAD PREMIUM APPAREL',
+              product_image: firstImage,
               size: item.size || 'N/A',
               color: item.color || 'N/A',
               quantity: item.quantity || 1,
