@@ -12,14 +12,17 @@ interface Product {
   category: string;
   sizes: string | string[];
   price: number;
-  image_url?: string; // যদি ইমেজের কলাম থাকে
   description?: string;
+  // Supabase টেবিলে ইমেজের কলামের নাম সাধারণত image_path, image_url, বা শুধু image হয়ে থাকে। 
+  // এখানে আমরা কয়েকটি কমন অপশন হ্যান্ডেল করছি।
+  image_url?: string;
+  image_path?: string;
+  image?: string;
 }
 
 const SearchOverlay: React.FC<Props> = ({ isOpen, onClose }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [results, setResults] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
@@ -34,20 +37,15 @@ const SearchOverlay: React.FC<Props> = ({ isOpen, onClose }) => {
   }, [searchQuery]);
 
   const searchProducts = async () => {
-    setLoading(true);
     try {
       const query = `%${searchQuery}%`;
       
-      // Supabase search logic with error-safe string formatting for arrays
       const { data, error } = await supabase
         .from('products')
         .select('*')
         .or(`name.ilike.${query},category.ilike.${query},sizes.cs.{${searchQuery}}`); 
-        // sizes যদি postgres array হয় তবে .cs. (contains) চমৎকার কাজ করে। 
-        // যদি সেটি কাজ না করে, তবে নিচের ilike ব্যাকআপ হিসেবে কাজ করবে:
         
       if (error) {
-        // Fallback search if sizes format causes issue
         const { data: fallbackData, error: fallbackError } = await supabase
           .from('products')
           .select('*')
@@ -60,9 +58,20 @@ const SearchOverlay: React.FC<Props> = ({ isOpen, onClose }) => {
       }
     } catch (err) {
       console.error('Error searching products:', err);
-    } finally {
-      setLoading(false);
     }
+  };
+
+  // ইমেজ ইউআরএল পাওয়ার একটি সেইফ ফাংশন
+  const getProductImage = (product: Product) => {
+    // ১. সরাসরি পূর্ণাঙ্গ URL থাকলে
+    const rawUrl = product.image_url || product.image_path || product.image;
+    if (!rawUrl) return null;
+    if (rawUrl.startsWith('http')) return rawUrl;
+
+    // ২. ইমেজটি যদি Supabase Storage-এর ভেতর থাকে (বাকেট নাম 'product-images' বা একই ধরণের কিছু হলে)
+    // আপনার বাকেট নাম অনুযায়ী নিচের 'product-images' পরিবর্তন করে নিতে পারেন।
+    const { data } = supabase.storage.from('product-images').getPublicUrl(rawUrl);
+    return data?.publicUrl || rawUrl;
   };
 
   if (!isOpen) return null;
@@ -104,100 +113,123 @@ const SearchOverlay: React.FC<Props> = ({ isOpen, onClose }) => {
 
       {/* Premium Minimal Results Area */}
       <div style={{ color: 'white' }}>
-        {loading && (
-          <p style={{ fontSize: '14px', letterSpacing: '2px', textTransform: 'uppercase', opacity: 0.5 }}>
-            Searching...
-          </p>
-        )}
-        
-        {!loading && results.length > 0 && (
+        {results.length > 0 && (
           <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', 
-            gap: '40px 20px',
+            display: 'flex', 
+            flexDirection: 'column',
+            gap: '40px',
             marginTop: '20px'
           }}>
-            {results.map((product) => (
-              <div key={product.id} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {/* Product Image Placeholder matching your premium cards */}
-                <div style={{ 
-                  width: '100%', 
-                  aspectRatio: '3/4', 
-                  backgroundColor: '#111', 
-                  overflow: 'hidden',
-                  position: 'relative'
-                }}>
-                  {product.image_url ? (
-                    <img 
-                      src={product.image_url} 
-                      alt={product.name} 
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
-                    />
-                  ) : (
-                    <div style={{ 
-                      width: '100%', height: '100%', display: 'flex', 
-                      alignItems: 'center', justifyContent: 'center', color: '#333' 
-                    }}>
-                      NOMAD
-                    </div>
-                  )}
-                </div>
-
-                {/* Product details mimicking your main site design */}
-                <div>
-                  <h3 style={{ 
-                    fontSize: '18px', 
-                    fontWeight: 'bold', 
-                    margin: '0 0 4px 0',
-                    letterSpacing: '0.5px'
-                  }}>
-                    {product.name}
-                  </h3>
+            {results.map((product) => {
+              const imageUrl = getProductImage(product);
+              return (
+                <div key={product.id} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   
-                  {product.description && (
-                    <p style={{ 
-                      fontSize: '13px', 
-                      opacity: 0.6, 
-                      lineHeight: '1.4', 
-                      margin: '0 0 8px 0',
-                      display: '-webkit-box',
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: 'vertical',
-                      overflow: 'hidden'
+                  {/* Category with "SEE MORE" on the right */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ 
+                      textTransform: 'uppercase', 
+                      fontSize: '14px', 
+                      letterSpacing: '2px', 
+                      fontWeight: 'bold',
+                      color: '#fff' 
                     }}>
-                      {product.description}
-                    </p>
-                  )}
-
-                  <div style={{ 
-                    display: 'flex', 
-                    justifyContent: 'space-between', 
-                    alignItems: 'baseline',
-                    marginTop: '8px'
-                  }}>
-                    <span style={{ fontSize: '18px', fontWeight: '500' }}>
-                      ৳{product.price}
+                      {product.category || 'PRODUCT'}
                     </span>
-                    <button style={{
-                      background: 'none',
-                      border: '1px solid white',
-                      color: 'white',
-                      padding: '8px 16px',
-                      fontSize: '12px',
-                      letterSpacing: '1px',
-                      textTransform: 'uppercase',
-                      cursor: 'pointer'
+                    <button style={{ 
+                      background: 'none', 
+                      border: 'none', 
+                      color: '#888', 
+                      fontSize: '12px', 
+                      letterSpacing: '1px', 
+                      textTransform: 'uppercase', 
+                      cursor: 'pointer',
+                      padding: 0
                     }}>
-                      Add to Cart
+                      SEE MORE
                     </button>
                   </div>
+
+                  {/* Product Image */}
+                  <div style={{ 
+                    width: '100%', 
+                    aspectRatio: '3/4', 
+                    backgroundColor: '#111', 
+                    overflow: 'hidden',
+                  }}>
+                    {imageUrl ? (
+                      <img 
+                        src={imageUrl} 
+                        alt={product.name} 
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                      />
+                    ) : (
+                      <div style={{ 
+                        width: '100%', height: '100%', display: 'flex', 
+                        alignItems: 'center', justifyContent: 'center', color: '#333',
+                        letterSpacing: '4px', fontSize: '14px'
+                      }}>
+                        NOMAD
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Product Details */}
+                  <div>
+                    <h3 style={{ 
+                      fontSize: '22px', 
+                      fontWeight: 'bold', 
+                      margin: '0 0 8px 0',
+                      letterSpacing: '0.5px',
+                      color: 'white'
+                    }}>
+                      {product.name}
+                    </h3>
+                    
+                    {product.description && (
+                      <p style={{ 
+                        fontSize: '14px', 
+                        color: '#ccc',
+                        lineHeight: '1.5', 
+                        margin: '0 0 16px 0',
+                        fontWeight: '300'
+                      }}>
+                        {product.description} <span style={{ color: '#888', cursor: 'pointer', fontSize: '13px' }}>see more</span>
+                      </p>
+                    )}
+
+                    {/* Price and Add to Cart Action */}
+                    <div style={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'center',
+                      marginTop: '12px'
+                    }}>
+                      <span style={{ fontSize: '20px', fontWeight: 'bold' }}>
+                        ৳{product.price}
+                      </span>
+                      <button style={{
+                        background: 'none',
+                        border: '1px solid white',
+                        color: 'white',
+                        padding: '12px 24px',
+                        fontSize: '13px',
+                        letterSpacing: '1.5px',
+                        textTransform: 'uppercase',
+                        fontWeight: 'bold',
+                        cursor: 'pointer'
+                      }}>
+                        Add to Cart
+                      </button>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
-        {!loading && searchQuery.trim().length > 0 && results.length === 0 && (
+        {searchQuery.trim().length > 0 && results.length === 0 && (
           <p style={{ 
             fontSize: '14px', 
             letterSpacing: '1px', 
