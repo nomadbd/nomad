@@ -90,7 +90,7 @@ export default function Checkout({
     try {
       const { data: { user } } = await supabase.auth.getUser();
 
-      // এখানে sender_phone কলামটি সম্পূর্ণ রিমুভ করা হয়েছে
+      // orders টেবিল থেকে transaction_id কলামটি সম্পূর্ণ রিমুভ করা হয়েছে
       const { data: order, error: orderError } = await supabase
         .from('orders')
         .insert([{
@@ -99,7 +99,6 @@ export default function Checkout({
           customer_phone: cleanPhone,
           shipping_address: formData.address, 
           payment_method: 'cod',
-          transaction_id: null,
           delivery_charge: deliveryCharge, 
           vat_amount: vatAmount,           
           total_amount: grandTotal, 
@@ -109,13 +108,16 @@ export default function Checkout({
 
       if (orderError) throw orderError;
 
+      // order_items এ পাঠানোর জন্য আইটেম অবজেক্ট ম্যাপিং (নতুন দুটি স্ন্যাপশট কলামসহ)
       const items = selectedItems.map((item: CartItem) => ({
         order_id: order.id,
         product_id: item.id,
         quantity: item.quantity,
         price_at_purchase: item.price,
         size: item.size || null,   
-        color: item.color || null  
+        color: item.color || null,
+        product_name: item.name || 'NOMAD PREMIUM APPAREL', // 📸 প্রোডাক্ট নামের স্ন্যাপশট
+        product_image: item.image_url || 'https://via.placeholder.com/65x80' // 📸 প্রোডাক্ট ইমেজের স্ন্যাপশট
       }));
 
       const { error: itemsError } = await supabase.from('order_items').insert(items);
