@@ -201,7 +201,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
     try {
       setLoading(true);
       
-      // 🛠️ নিরাপদ ও পরীক্ষিত জয়েন কোয়েরি: ডাটাবেজের সব কলাম ও রিলেশন একসাথে রিট্রিভ করা হচ্ছে
+      // 🛡️ নতুন ও পুরোনো দুই ধরনের ডেটা নির্ভুলভাবে হ্যান্ডেল করার জন্য হাইব্রিড জয়েন কোয়েরি
       const { data, error } = await supabase
         .from('orders')
         .select(`
@@ -219,9 +219,9 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
             size, 
             color, 
             price_at_purchase,
-            product_name,        -- নতুন কলাম
+            product_name,        -- নতুন কলাম (অর্ডার নেওয়ার সময়ের নাম)
             product_image,       -- নতুন ব্যাকআপ কলাম ১
-            product_image_url,   -- 👈 আপনার টেবিলের আসল ইমেজ কলাম
+            product_image_url,   -- নতুন কলাম (অর্ডার নেওয়ার সময়ের ছবির URL)
             products:product_id (  
               name,
               product_media (
@@ -240,10 +240,11 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
         const formattedOrders = data.map((order: any) => {
           const items = (order.order_items || []).map((item: any) => {
             
-            // 🛡️ নামের জন্য ফলব্যাক: product_name খালি থাকলে products.name ব্যবহার করবে
+            // 🛡️ নামের জন্য ব্যাকআপ লজিক: 
+            // ১. অর্ডারের সময়ের product_name দেখবে -> ২. না থাকলে মূল products.name দেখবে -> ৩. নয়তো NOMAD দেখাবে
             const finalName = item.product_name || item.products?.name || 'NOMAD PREMIUM APPAREL';
             
-            // 🛡️ ইমেজের জন্য ক্রমানুযায়ী ফলব্যাক: 
+            // 🛡️ ছবির জন্য ব্যাকআপ লজিক:
             // ১. product_image_url -> ২. product_image -> ৩. products.product_media -> ৪. প্লেসহোল্ডার
             const finalImage = item.product_image_url || 
                                item.product_image || 
