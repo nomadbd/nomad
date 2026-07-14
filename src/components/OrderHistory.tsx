@@ -3,7 +3,7 @@ import { supabase } from '../supabaseClient';
 
 interface OrderItem {
   product_name: string;
-  product_image: string; // এখানে মিডিয়া ইউআরএল স্টোর হবে
+  product_image: string; // এখানে সরাসরি মিডিয়া ইউআরএল স্টোর হবে
   size: string;
   color: string;
   quantity: number;
@@ -200,7 +200,8 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      // এখানে nested product_media থেকে media_url তুলে আনা হচ্ছে
+      
+      // 📸 আপডেটেড কোয়েরি: nested products টেবিলের পরিবর্তে সরাসরি order_items থেকে নাম ও ছবি রিট্রিভ করা হচ্ছে
       const { data, error } = await supabase
         .from('orders')
         .select(`
@@ -218,12 +219,8 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
             size, 
             color, 
             price_at_purchase,
-            products:product_id (
-              name,
-              product_media (
-                media_url
-              )
-            )
+            product_name,    -- 👈 সরাসরি আমাদের নতুন স্ন্যাপশট কলাম
+            product_image   -- 👈 সরাসরি আমাদের নতুন স্ন্যাপশট কলাম
           )
         `)
         .eq('user_id', userId)
@@ -235,12 +232,9 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
       if (data) {
         const formattedOrders = data.map((order: any) => {
           const items = (order.order_items || []).map((item: any) => {
-            // product_media অ্যারের প্রথম ছবির URL নেওয়া হচ্ছে
-            const firstImage = item.products?.product_media?.[0]?.media_url || 'https://via.placeholder.com/80x100';
-
             return {
-              product_name: item.products?.name || 'NOMAD PREMIUM APPAREL',
-              product_image: firstImage,
+              product_name: item.product_name || 'NOMAD PREMIUM APPAREL',
+              product_image: item.product_image || 'https://via.placeholder.com/80x100',
               size: item.size || 'N/A',
               color: item.color || 'N/A',
               quantity: item.quantity || 1,
