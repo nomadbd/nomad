@@ -3,7 +3,7 @@ import { supabase } from '../supabaseClient';
 
 interface OrderItem {
   product_name: string;
-  product_image: string; // এখানে সরাসরি মিডিয়া ইউআরএল স্টোর হবে
+  product_image: string; // এখানে মিডিয়া বা ইমেজ ইউআরএল স্টোর হবে
   size: string;
   color: string;
   quantity: number;
@@ -201,7 +201,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
     try {
       setLoading(true);
       
-      // 📸 আপডেটেড কোয়েরি: nested products টেবিলের পরিবর্তে সরাসরি order_items থেকে নাম ও ছবি রিট্রিভ করা হচ্ছে
+      // 🛠️ নিরাপদ ও পরীক্ষিত জয়েন কোয়েরি: ডাটাবেজের সব কলাম ও রিলেশন একসাথে রিট্রিভ করা হচ্ছে
       const { data, error } = await supabase
         .from('orders')
         .select(`
@@ -219,8 +219,15 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
             size, 
             color, 
             price_at_purchase,
-            product_name,    -- 👈 সরাসরি আমাদের নতুন স্ন্যাপশট কলাম
-            product_image   -- 👈 সরাসরি আমাদের নতুন স্ন্যাপশট কলাম
+            product_name,        -- নতুন কলাম
+            product_image,       -- নতুন ব্যাকআপ কলাম ১
+            product_image_url,   -- 👈 আপনার টেবিলের আসল ইমেজ কলাম
+            products:product_id (  
+              name,
+              product_media (
+                media_url
+              )
+            )
           )
         `)
         .eq('user_id', userId)
@@ -232,9 +239,20 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
       if (data) {
         const formattedOrders = data.map((order: any) => {
           const items = (order.order_items || []).map((item: any) => {
+            
+            // 🛡️ নামের জন্য ফলব্যাক: product_name খালি থাকলে products.name ব্যবহার করবে
+            const finalName = item.product_name || item.products?.name || 'NOMAD PREMIUM APPAREL';
+            
+            // 🛡️ ইমেজের জন্য ক্রমানুযায়ী ফলব্যাক: 
+            // ১. product_image_url -> ২. product_image -> ৩. products.product_media -> ৪. প্লেসহোল্ডার
+            const finalImage = item.product_image_url || 
+                               item.product_image || 
+                               item.products?.product_media?.[0]?.media_url || 
+                               'https://via.placeholder.com/80x100';
+
             return {
-              product_name: item.product_name || 'NOMAD PREMIUM APPAREL',
-              product_image: item.product_image || 'https://via.placeholder.com/80x100',
+              product_name: finalName,
+              product_image: finalImage,
               size: item.size || 'N/A',
               color: item.color || 'N/A',
               quantity: item.quantity || 1,
