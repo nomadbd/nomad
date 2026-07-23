@@ -14,10 +14,15 @@ import ProductList from './components/ProductList';
 import { CartProvider } from './context/CartContext';
 import CartOverlay from './components/CartOverlay';
 
+// ⚡ অ্যাডমিন সিকিউরিটি ও ড্যাশবোর্ডের জন্য নতুন ইম্পোর্ট (যুক্ত করা হয়েছে)
+import { AdminRoute } from './components/AdminRoute';
+import AdminDashboard from './pages/AdminDashboard';
+
 const AppContent = ({ session, setIsSearchOpen, setIsAuthOpen }: any) => {
   const location = useLocation();
 
-  const showHeader = !['/profile', '/update-password'].includes(location.pathname);
+  // ⚡ অ্যাডমিন পেজে যাতে মেইন ওয়েবসাইট হেডার না দেখায় সেজন্য condition আপডেট করা হয়েছে
+  const showHeader = !['/profile', '/update-password'].includes(location.pathname) && !location.pathname.startsWith('/admin');
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: 'black', color: 'white' }}>
@@ -51,6 +56,16 @@ const AppContent = ({ session, setIsSearchOpen, setIsAuthOpen }: any) => {
         <Route 
           path="/update-password" 
           element={<AuthForm isRecoveryPage={true} />} 
+        />
+
+        {/* ⚡ অ্যাডমিন ড্যাশবোর্ড সিকিউর রাউট (যুক্ত করা হয়েছে) */}
+        <Route 
+          path="/admin/*" 
+          element={
+            <AdminRoute session={session}>
+              <AdminDashboard session={session} />
+            </AdminRoute>
+          } 
         />
       </Routes>
 
