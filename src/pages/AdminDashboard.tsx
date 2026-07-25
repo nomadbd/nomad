@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import AddProduct from '../components/AddProduct'; // ⚡ AddProduct ইম্পোর্ট করা হলো
 
 interface AdminDashboardProps {
   session: any;
@@ -105,10 +106,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ session }) => {
           </div>
         )}
 
+        {/* ⚡ এখানে সরাসরি AddProduct ফর্মটি বসিয়ে দেওয়া হলো */}
         {activeTab === 'products' && (
           <div>
-            <h1 style={{ fontSize: '24px', fontWeight: 'bold' }}>প্রোডাক্ট ও ছবি আপলোড (Cloudinary)</h1>
-            <p style={{ color: '#94a3b8', marginTop: '8px' }}>নতুন প্রোডাক্ট যোগ করা ও ক্লাউডিনারিতে ছবি আপলোডের সেকশন।</p>
+            <AddProduct />
           </div>
         )}
 
