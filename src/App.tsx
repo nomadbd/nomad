@@ -7,25 +7,17 @@ import Hero from './components/Hero/Hero';
 import AuthOverlay from './components/auth/AuthOverlay';
 import Profile from './pages/Profile';
 import AuthForm from './components/auth/AuthForm';
-// প্রোডাক্ট লিস্ট কম্পোনেন্টটি ইম্পোর্ট করা হলো
 import ProductList from './components/ProductList';
 
-// ⚡ নতুন প্রোডাক্ট যোগ করার কম্পোনেন্ট ইম্পোর্ট করা হলো
-import AddProduct from './components/AddProduct';
-
-// ⚡ কার্ট সিস্টেমের জন্য নতুন ইম্পোর্টসমূহ যুক্ত করা হলো
+// ⚡ কার্ট সিস্টেমের জন্য ইম্পোর্ট
 import { CartProvider } from './context/CartContext';
 import CartOverlay from './components/CartOverlay';
-
-// ⚡ অ্যাডমিন সিকিউরিটি ও ড্যাশবোর্ডের জন্য নতুন ইম্পোর্ট (যুক্ত করা হয়েছে)
-import { AdminRoute } from './components/AdminRoute';
-import AdminDashboard from './pages/AdminDashboard';
 
 const AppContent = ({ session, setIsSearchOpen, setIsAuthOpen }: any) => {
   const location = useLocation();
 
-  // ⚡ অ্যাডমিন পেজে যাতে মেইন ওয়েবসাইট হেডার না দেখায় সেজন্য condition আপডেট করা হয়েছে
-  const showHeader = !['/profile', '/update-password'].includes(location.pathname) && !location.pathname.startsWith('/admin');
+  // ⚡ /profile এবং /update-password পেজে মেইন হেডার হাইড থাকবে
+  const showHeader = !['/profile', '/update-password'].includes(location.pathname);
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: 'black', color: 'white' }}>
@@ -46,13 +38,13 @@ const AppContent = ({ session, setIsSearchOpen, setIsAuthOpen }: any) => {
         <Route path="/" element={
           <>
             <Hero />
-            {/* মেইন ট্যাগের ভেতরে প্রোডাক্ট লিস্ট বসানো হলো */}
             <main style={{ padding: '32px' }}>
               <ProductList />
             </main>
           </>
         } />
 
+        {/* ⚡ প্রোফাইল রাউট: Profile.tsx নিজেই চেক করে AdminDashboard বা কাস্টমার ভিউ দেখাবে */}
         <Route path="/profile" element={session ? <Profile /> : <Navigate to="/" />} />
 
         {/* Password Update Route */}
@@ -60,29 +52,9 @@ const AppContent = ({ session, setIsSearchOpen, setIsAuthOpen }: any) => {
           path="/update-password" 
           element={<AuthForm isRecoveryPage={true} />} 
         />
-
-        {/* ⚡ প্রোডাক্ট যোগ করার অ্যাডমিন রাউট (নতুন যুক্ত করা হয়েছে) */}
-        <Route 
-          path="/admin/add-product" 
-          element={
-            <AdminRoute session={session}>
-              <AddProduct />
-            </AdminRoute>
-          } 
-        />
-
-        {/* ⚡ অ্যাডমিন ড্যাশবোর্ড সিকিউর রাউট */}
-        <Route 
-          path="/admin/*" 
-          element={
-            <AdminRoute session={session}>
-              <AdminDashboard session={session} />
-            </AdminRoute>
-          } 
-        />
       </Routes>
 
-      {/* ⚡ নতুন ওয়ান-পেজ কার্ট ওভারলে এখানে যুক্ত করা হলো */}
+      {/* ওয়ান-পেজ কার্ট ওভারলে */}
       <CartOverlay session={session} />
     </div>
   );
@@ -96,7 +68,6 @@ const App: React.FC = () => {
   if (loading) return null;
 
   return (
-    // ⚡ পুরো অ্যাপে কার্ট স্টেট শেয়ার করার জন্য CartProvider দিয়ে মুড়ে দেওয়া হলো
     <CartProvider>
       <Router>
         <AppContent 
