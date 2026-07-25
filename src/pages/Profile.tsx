@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../supabaseClient';
-import OrderHistory from '../components/OrderHistory'; // 🔥 নতুন ট্র্যাকিং কম্পোনেন্টটি ইম্পোর্ট করা হলো
+import OrderHistory from '../components/OrderHistory'; 
+import AdminDashboard from './AdminDashboard'; // ⚡ AdminDashboard ইম্পোর্ট করা হলো
 
 export default function Profile() {
   // localStorage থেকে ভিউ স্টেট রিস্টোর করা হচ্ছে
@@ -8,6 +9,7 @@ export default function Profile() {
     return (localStorage.getItem('currentView') as 'profile' | 'settings') || 'profile';
   });
   const [profile, setProfile] = useState<any>(null);
+  const [session, setSession] = useState<any>(null); // ⚡ AdminDashboard-এর জন্য সেশন স্টেট
   const [loading, setLoading] = useState(true);
   const [newName, setNewName] = useState('');
   const [newEmail, setNewEmail] = useState('');
@@ -43,6 +45,7 @@ export default function Profile() {
     setLoading(true);
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
+      setSession({ user }); // সেশন সেট করা হলো
       const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single();
       setProfile({ ...prof, email: user.email });
       setNewName('');
@@ -109,6 +112,21 @@ export default function Profile() {
   const navButtonStyle = { background: 'transparent', border: 'none', color: '#aaa', cursor: 'pointer', fontSize: '13px', letterSpacing: '1px', display: 'block', width: '100%', textAlign: 'left', padding: '5px 0' };
   const dangerButtonStyle = { background: 'transparent', border: 'none', color: '#ff4444', cursor: 'pointer', fontSize: '11px', letterSpacing: '2px', textTransform: 'uppercase' as const, display: 'block', width: '100%', textAlign: 'left', fontWeight: 'bold' };
 
+  // ⚡ লোডিং অবস্থায় স্কেলিটন দেখানো
+  if (loading) {
+    return (
+      <div style={{ backgroundColor: '#000', minHeight: '100vh', color: '#fff', padding: '40px 20px' }}>
+        <Skeleton />
+      </div>
+    );
+  }
+
+  // ⚡ ১. ইউজার যদি 'admin' হয়, তবে সরাসরি AdminDashboard রেন্ডার হবে (কোনো অর্ডার হিস্ট্রি দেখাবে না)
+  if (profile?.role === 'admin') {
+    return <AdminDashboard session={session} />;
+  }
+
+  // ⚡ ২. ইউজার যদি সাধারণ গ্রাহক হয়, তবে নিচের কাস্টমার প্রোফাইল রেন্ডার হবে
   return (
     <div style={{ backgroundColor: '#000', minHeight: '100vh', color: '#fff', padding: '40px 20px', fontFamily: "'Inter', sans-serif", width: '100%', boxSizing: 'border-box', overflowX: 'hidden' }}>
 
@@ -130,32 +148,30 @@ export default function Profile() {
 
       <div style={{ width: '100%' }}>
         {view === 'profile' ? (
-          loading ? <Skeleton /> : (
-            <>
-              {/* প্রোফাইল হেডার সেকশন */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
-                <div style={{ width: '100%' }}>
-                  {profile?.name ? (
-                    <>
-                      <p style={{ margin: '0', fontSize: '22px', fontWeight: '600', color: '#fff', letterSpacing: '1px' }}>{profile.name}</p>
-                      <p style={{ margin: '5px 0 0 0', fontSize: '14px', color: '#666', letterSpacing: '0.5px' }}>{profile.email}</p>
-                    </>
-                  ) : (
-                    <>
-                      <p style={{ margin: 0, fontSize: '22px', fontWeight: '600', color: '#fff', letterSpacing: '1px' }}>PROFILE</p>
-                      <p style={{ fontSize: '13px', fontWeight: '500', color: '#aaa', cursor: 'pointer', margin: '8px 0 0 0', letterSpacing: '1px' }} onClick={() => changeView('settings')}>Add your name</p>
-                    </>
-                  )}
-                </div>
-                <svg onClick={() => changeView('settings')} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" cursor="pointer"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+          <>
+            {/* প্রোফাইল হেডার সেকশন */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
+              <div style={{ width: '100%' }}>
+                {profile?.name ? (
+                  <>
+                    <p style={{ margin: '0', fontSize: '22px', fontWeight: '600', color: '#fff', letterSpacing: '1px' }}>{profile.name}</p>
+                    <p style={{ margin: '5px 0 0 0', fontSize: '14px', color: '#666', letterSpacing: '0.5px' }}>{profile.email}</p>
+                  </>
+                ) : (
+                  <>
+                    <p style={{ margin: 0, fontSize: '22px', fontWeight: '600', color: '#fff', letterSpacing: '1px' }}>PROFILE</p>
+                    <p style={{ fontSize: '13px', fontWeight: '500', color: '#aaa', cursor: 'pointer', margin: '8px 0 0 0', letterSpacing: '1px' }} onClick={() => changeView('settings')}>Add your name</p>
+                  </>
+                )}
               </div>
+              <svg onClick={() => changeView('settings')} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" cursor="pointer"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            </div>
 
-              {/* 🔥 নতুন লাইভ ট্র্যাকিং ও অর্ডার হিস্ট্রি কম্পোনেন্ট এখানে রেন্ডার করা হলো */}
-              <div style={{ marginTop: '20px', borderTop: '1px solid #111', paddingTop: '10px' }}>
-                <OrderHistory userId={profile?.id} />
-              </div>
-            </>
-          )
+            {/* সাধারণ ইউজারের জন্য অর্ডার হিস্ট্রি */}
+            <div style={{ marginTop: '20px', borderTop: '1px solid #111', paddingTop: '10px' }}>
+              <OrderHistory userId={profile?.id} />
+            </div>
+          </>
         ) : (
           <>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
