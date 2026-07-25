@@ -10,6 +10,9 @@ import AuthForm from './components/auth/AuthForm';
 // প্রোডাক্ট লিস্ট কম্পোনেন্টটি ইম্পোর্ট করা হলো
 import ProductList from './components/ProductList';
 
+// ⚡ নতুন প্রোডাক্ট যোগ করার কম্পোনেন্ট ইম্পোর্ট করা হলো
+import AddProduct from './components/AddProduct';
+
 // ⚡ কার্ট সিস্টেমের জন্য নতুন ইম্পোর্টসমূহ যুক্ত করা হলো
 import { CartProvider } from './context/CartContext';
 import CartOverlay from './components/CartOverlay';
@@ -52,13 +55,23 @@ const AppContent = ({ session, setIsSearchOpen, setIsAuthOpen }: any) => {
 
         <Route path="/profile" element={session ? <Profile /> : <Navigate to="/" />} />
 
-        {/* Password Update Route - এখানে পরিবর্তন করেছি */}
+        {/* Password Update Route */}
         <Route 
           path="/update-password" 
           element={<AuthForm isRecoveryPage={true} />} 
         />
 
-        {/* ⚡ অ্যাডমিন ড্যাশবোর্ড সিকিউর রাউট (যুক্ত করা হয়েছে) */}
+        {/* ⚡ প্রোডাক্ট যোগ করার অ্যাডমিন রাউট (নতুন যুক্ত করা হয়েছে) */}
+        <Route 
+          path="/admin/add-product" 
+          element={
+            <AdminRoute session={session}>
+              <AddProduct />
+            </AdminRoute>
+          } 
+        />
+
+        {/* ⚡ অ্যাডমিন ড্যাশবোর্ড সিকিউর রাউট */}
         <Route 
           path="/admin/*" 
           element={
