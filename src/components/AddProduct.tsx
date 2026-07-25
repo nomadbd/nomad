@@ -5,7 +5,6 @@ import { supabase } from '../supabaseClient';
 export default function AddProduct() {
   const [title, setTitle] = useState<string>('');
   const [price, setPrice] = useState<string>('');
-  const [youtubeUrl, setYoutubeUrl] = useState<string>('');
   const [imageFiles, setImageFiles] = useState<FileList | null>(null);
   const [uploading, setUploading] = useState<boolean>(false);
 
@@ -25,12 +24,11 @@ export default function AddProduct() {
       );
       const imageUrls = await Promise.all(uploadPromises);
 
-      // ২. Supabase-এ পাঠানোর ড্যাটা
+      // ২. Supabase-এ ডাটা পাঠানো (ইউটিউব লিংক ছাড়া)
       const productData = {
         title,
         price: parseFloat(price),
         images: imageUrls,
-        youtube_url: youtubeUrl,
       };
 
       const { error } = await supabase.from('products').insert([productData]);
@@ -41,7 +39,6 @@ export default function AddProduct() {
       // ফর্ম রিসেট
       setTitle('');
       setPrice('');
-      setYoutubeUrl('');
       setImageFiles(null);
     } catch (err: any) {
       alert('সমস্যা হয়েছে: ' + err.message);
@@ -77,7 +74,7 @@ export default function AddProduct() {
         </div>
 
         <div style={{ marginBottom: '1rem' }}>
-          <label>Images (Multiple):</label>
+          <label>Product Images:</label>
           <input
             type="file"
             multiple
@@ -85,17 +82,6 @@ export default function AddProduct() {
             style={{ width: '100%', marginTop: '4px' }}
             onChange={(e) => setImageFiles(e.target.files)}
             required
-          />
-        </div>
-
-        <div style={{ marginBottom: '1rem' }}>
-          <label>YouTube Link:</label>
-          <input
-            type="url"
-            placeholder="https://www.youtube.com/watch?v=..."
-            style={{ width: '100%', padding: '8px', marginTop: '4px' }}
-            value={youtubeUrl}
-            onChange={(e) => setYoutubeUrl(e.target.value)}
           />
         </div>
 
