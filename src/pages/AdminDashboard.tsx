@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import AddProduct from '../components/AddProduct'; // ⚡ AddProduct ইম্পোর্ট করা হলো
+import AddProduct from '../components/AddProduct'; // ⚡ AddProduct ইম্পোর্ট
 
 interface AdminDashboardProps {
   session: any;
@@ -106,7 +106,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ session }) => {
           </div>
         )}
 
-        {/* ⚡ এখানে সরাসরি AddProduct ফর্মটি বসিয়ে দেওয়া হলো */}
+        {/* ⚡ প্রোডাক্ট আপলোড সেকশন */}
         {activeTab === 'products' && (
           <div>
             <AddProduct />
