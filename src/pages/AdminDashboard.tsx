@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import AdminOverview from './AdminOverview';
+// 🟢 src/pages/ থেকে একদিন উপরে উঠে src/supabaseClient কে কল করা হচ্ছে
+import { supabase } from '../supabaseClient'; 
 
-// অন্যান্য কম্পোনেন্ট থাকলে ইমপোর্ট করুন:
+// 🟢 একই ফোল্ডারে (src/pages/) বাকি ফাইলগুলো থাকলে:
+import AdminOverview from './AdminOverview';
 // import AdminOrders from './AdminOrders';
 // import AdminProducts from './AdminProducts';
 // import AdminSettings from './AdminSettings';
@@ -10,12 +12,33 @@ const AdminDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'overview' | 'orders' | 'products' | 'settings'>('overview');
   const [isMobile, setIsMobile] = useState<boolean>(false);
   const [menuOpen, setMenuOpen] = useState<boolean>(false);
+  
+  // ডাইনামিক ইউজারের ইমেইল স্টেট
+  const [userEmail, setUserEmail] = useState<string>('AUTHENTICATING...');
 
-  // স্ক্রিন সাইজ পর্যবেক্ষণ করে মোবাইল ভিউ নির্ধারণ
   useEffect(() => {
+    // ১. সুপাবেস সেশন থেকে লগইন করা ইউজারের ইমেইল নেওয়া
+    const fetchCurrentUser = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user?.email) {
+          setUserEmail(user.email);
+        } else {
+          setUserEmail('ADMIN USER');
+        }
+      } catch (err) {
+        console.error('Error fetching user info:', err);
+        setUserEmail('ADMIN USER');
+      }
+    };
+
+    fetchCurrentUser();
+
+    // ২. মোবাইল রেসপন্সিভনেস ট্র্যাকার
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
     };
+    
     handleResize();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
@@ -24,14 +47,14 @@ const AdminDashboard: React.FC = () => {
   return (
     <div style={{ backgroundColor: '#000', color: '#fff', minHeight: '100vh', fontFamily: 'sans-serif' }}>
       
-      {/* 📱💻 মেইন কন্টেইনার (মোবাইলে উপর-নিচে, ডেস্কটপে পাশাপাশি) */}
+      {/* 📱💻 মেইন লেআউট (মোবাইলে ওপর-নিচে, ডেস্কটপে পাশাপাশি) */}
       <div style={{
         display: 'flex',
         flexDirection: isMobile ? 'column' : 'row',
         minHeight: '100vh'
       }}>
 
-        {/* 👈 সাইডবার / মোবাইল ন্যাভিগেশন */}
+        {/* 👈 সাইডবার / ন্যাভিগেশন */}
         <aside style={{
           width: isMobile ? '100%' : '260px',
           backgroundColor: '#050505',
@@ -42,14 +65,14 @@ const AdminDashboard: React.FC = () => {
           flexShrink: 0
         }}>
           
-          {/* ব্র্যান্ড লোগো ও মোবাইল টগল বাটন */}
+          {/* ব্র্যান্ড লোগো ও মোবাইল মেনু বাটন্স */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: isMobile ? '15px' : '30px' }}>
             <div>
               <h1 style={{ fontSize: '18px', fontWeight: '900', letterSpacing: '4px', margin: 0, color: '#fff' }}>NOMAD</h1>
               <span style={{ fontSize: '9px', color: '#aaa', fontFamily: 'monospace', letterSpacing: '1px' }}>CONTROL PANEL</span>
             </div>
 
-            {/* মোবাইল মোডে মেনু বোতাম */}
+            {/* মোবাইল হ্যামবার্গার টগল */}
             {isMobile && (
               <button
                 onClick={() => setMenuOpen(!menuOpen)}
@@ -68,7 +91,7 @@ const AdminDashboard: React.FC = () => {
             )}
           </div>
 
-          {/* ন্যাভিগেশন লিংকসমূহ */}
+          {/* মেনু লিঙ্কসমূহ */}
           {(!isMobile || menuOpen) && (
             <nav style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <span style={{ fontSize: '9px', color: '#aaa', fontFamily: 'monospace', letterSpacing: '2px', marginBottom: '8px' }}>
@@ -162,7 +185,7 @@ const AdminDashboard: React.FC = () => {
           )}
         </aside>
 
-        {/* 👉 মূল ওয়ার্কস্পেস (Dashboard Content Area) */}
+        {/* 👉 মূল ড্যাশবোর্ড কন্টেন্ট */}
         <main style={{
           flex: 1,
           padding: isMobile ? '15px' : '30px',
@@ -170,19 +193,21 @@ const AdminDashboard: React.FC = () => {
           overflowX: 'hidden'
         }}>
           
-          {/* টপ-রাইট ইউজার স্টেটাস হেডার */}
+          {/* 🔝 টপ হেডার (ডাইনামিক সেশন ইমেইল) */}
           <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid #111', paddingBottom: '10px' }}>
             <div style={{ textAlign: 'right', fontFamily: 'monospace', fontSize: '10px' }}>
-              <span style={{ color: '#ccc', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '200px', whiteSpace: 'nowrap' }}>
-                muhammedtohaali@gmail.com
+              
+              <span style={{ color: '#ccc', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '220px', whiteSpace: 'nowrap' }} title={userEmail}>
+                {userEmail}
               </span>
+
               <span style={{ color: '#22c55e', fontSize: '9px', letterSpacing: '1px', fontWeight: 'bold' }}>
                 ● SYSTEM ACTIVE
               </span>
             </div>
           </div>
 
-          {/* সক্রিয় ট্যাব রেন্ডারিং */}
+          {/* ভিউ রেন্ডার */}
           {activeTab === 'overview' && <AdminOverview />}
           {/* {activeTab === 'orders' && <AdminOrders />} */}
           {/* {activeTab === 'products' && <AdminProducts />} */}
