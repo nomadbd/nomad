@@ -14,25 +14,40 @@ export const AdminRoute: React.FC<AdminRouteProps> = ({
   requireAdminOnly = false 
 }) => {
   const userId = session?.user?.id;
-  const { role, isAdmin, isManager, loading } = useAdmin(userId);
+  const { isAdmin, isManager, loading } = useAdmin(userId);
 
+  // ১. লোডিং স্টেট
   if (loading) {
-    return <div style={{ padding: '20px', color: 'white' }}>অ্যাক্সেস যাচাই করা হচ্ছে...</div>;
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh', 
+        backgroundColor: '#0f172a', 
+        color: '#38bdf8' 
+      }}>
+        ⏳ অ্যাক্সেস যাচাই করা হচ্ছে...
+      </div>
+    );
   }
 
+  // ২. ইউজার লগইন না থাকলে
   if (!session) {
     return <Navigate to="/" replace />;
   }
 
-  // যদি শুধু অ্যাডমিনের অনুমতি লাগে
+  // ৩. যদি পেজটি "শুধু অ্যাডমিনের জন্য" হয় কিন্তু ইউজার অ্যাডমিন না হয়
   if (requireAdminOnly && !isAdmin) {
     return <Navigate to="/" replace />;
   }
 
-  // যদি অ্যাডমিন বা ম্যানেজার যে কারও অনুমতি লাগে
-  if (!isManager) {
+  // ৪. যদি ইউজার অ্যাডমিন বা ম্যানেজার কোনটিই না হয় (অর্থাৎ সাধারণ ইউজার)
+  if (!isAdmin && !isManager) {
     return <Navigate to="/" replace />;
   }
 
   return <>{children}</>;
 };
+
+export default AdminRoute;
