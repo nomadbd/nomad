@@ -14,7 +14,6 @@ const AdminOverview: React.FC = () => {
   const [totalRevenue, setTotalRevenue] = useState<number>(0);
   const [totalOrders, setTotalOrders] = useState<number>(0);
   
-  // 🟢 প্রতিটি স্ট্যাটাসের জন্য আলাদা স্টেট
   const [pendingOrders, setPendingOrders] = useState<number>(0);
   const [processingOrders, setProcessingOrders] = useState<number>(0);
   const [receivedOrders, setReceivedOrders] = useState<number>(0);
@@ -22,6 +21,14 @@ const AdminOverview: React.FC = () => {
   const [deliveredOrders, setDeliveredOrders] = useState<number>(0);
   const [activeCatalogItems, setActiveCatalogItems] = useState<number>(0);
   const [recentOrders, setRecentOrders] = useState<OrderItem[]>([]);
+
+  // 🟢 শুধুমাত্র DELIVERED ফিল্টার (COMPLETE রিমুভ করা হয়েছে)
+  const isDelivered = (st: string) => (st || '').trim().toUpperCase().includes('DELIVER');
+  const isPending = (st: string) => (st || '').trim().toUpperCase().includes('PENDING');
+  const isProcessing = (st: string) => (st || '').trim().toUpperCase().includes('PROCESS');
+  const isReceived = (st: string) => (st || '').trim().toUpperCase().includes('RECEIV');
+  const isShipped = (st: string) => (st || '').trim().toUpperCase().includes('SHIP');
+  const isCancelled = (st: string) => (st || '').trim().toUpperCase().includes('CANCEL');
 
   const fetchMetricsData = async () => {
     setLoading(true);
@@ -35,20 +42,19 @@ const AdminOverview: React.FC = () => {
 
       if (orders) {
         setTotalOrders(orders.length);
-        const normalize = (st: string) => (st || '').trim().toUpperCase();
 
         // ১. মোট রেভিনিউ (বাতিল অর্ডার ছাড়া)
         const rev = orders
-          .filter(o => normalize(o.status) !== 'CANCELLED')
+          .filter(o => !isCancelled(o.status))
           .reduce((sum, o) => sum + (Number(o.total_amount) || 0), 0);
         setTotalRevenue(rev);
 
-        // 🟢 ২. প্রতিটি স্ট্যাটাস আলাদাভাবে নিখুঁত ফিল্টারিং
-        const pending = orders.filter(o => normalize(o.status) === 'PENDING').length;
-        const processing = orders.filter(o => normalize(o.status) === 'PROCESSING').length;
-        const received = orders.filter(o => normalize(o.status) === 'RECEIVED').length;
-        const shipped = orders.filter(o => normalize(o.status) === 'SHIPPED').length;
-        const delivered = orders.filter(o => normalize(o.status) === 'DELIVERED').length;
+        // ২. প্রতিটি স্ট্যাটাসের নিখুঁত গণনা
+        const pending = orders.filter(o => isPending(o.status)).length;
+        const processing = orders.filter(o => isProcessing(o.status)).length;
+        const received = orders.filter(o => isReceived(o.status)).length;
+        const shipped = orders.filter(o => isShipped(o.status)).length;
+        const delivered = orders.filter(o => isDelivered(o.status)).length;
 
         setPendingOrders(pending);
         setProcessingOrders(processing);
@@ -79,17 +85,18 @@ const AdminOverview: React.FC = () => {
     fetchMetricsData();
   }, []);
 
-  // 🏷️ স্ট্যাটাস ব্যাজ কালার ও ডিজাইন
+  // 🏷️ পরিষ্কার স্ট্যাটাস ব্যাজ (শুধু DELIVERED প্রদর্শন করবে)
   const renderStatusBadge = (status: string) => {
-    const s = (status || '').trim().toUpperCase();
+    const raw = (status || '').trim().toUpperCase();
+    let displayStatus = raw;
     let color = '#aaa';
     let bg = '#111';
 
-    if (s === 'PENDING') { color = '#eab308'; bg = '#2a2208'; }
-    else if (s === 'PROCESSING') { color = '#a855f7'; bg = '#1e102a'; }
-    else if (s === 'RECEIVED') { color = '#3b82f6'; bg = '#0d1d3a'; }
-    else if (s === 'SHIPPED') { color = '#06b6d4'; bg = '#082f35'; }
-    else if (s === 'DELIVERED') { color = '#22c55e'; bg = '#092b15'; }
+    if (isPending(raw)) { color = '#eab308'; bg = '#2a2208'; displayStatus = 'PENDING'; }
+    else if (isProcessing(raw)) { color = '#a855f7'; bg = '#1e102a'; displayStatus = 'PROCESSING'; }
+    else if (isReceived(raw)) { color = '#3b82f6'; bg = '#0d1d3a'; displayStatus = 'RECEIVED'; }
+    else if (isShipped(raw)) { color = '#06b6d4'; bg = '#082f35'; displayStatus = 'SHIPPED'; }
+    else if (isDelivered(raw)) { color = '#22c55e'; bg = '#092b15'; displayStatus = 'DELIVERED'; }
 
     return (
       <span style={{
@@ -104,7 +111,7 @@ const AdminOverview: React.FC = () => {
         borderRadius: '2px',
         whiteSpace: 'nowrap'
       }}>
-        ● {s}
+        ● {displayStatus}
       </span>
     );
   };
@@ -186,7 +193,6 @@ const AdminOverview: React.FC = () => {
           <span style={{ fontSize: '9px', color: '#555', marginTop: '4px', display: 'block' }}>* ALL-TIME LOGGED</span>
         </div>
 
-        {/* 🟢 পেন্ডিং এবং প্রসেসিং দুটোই সঠিক কাউন্টে */}
         <div className="metric-card">
           <span style={{ fontSize: '10px', color: '#888', letterSpacing: '1px', display: 'block', marginBottom: '8px' }}>ACTIVE QUEUE</span>
           <div style={{ fontSize: '22px', fontWeight: 'bold' }}>
@@ -205,7 +211,7 @@ const AdminOverview: React.FC = () => {
 
       </div>
 
-      {/* 📈 ২. ফুলফিলমেন্ট ব্রেকডাউন (প্রতিটির জন্য আলাদা প্রোগ্রেস বার) */}
+      {/* 📈 ২. ফুলফিলমেন্ট ব্রেকডাউন */}
       <div style={{ backgroundColor: '#060606', border: '1px solid #1a1a1a', padding: '16px', marginBottom: '25px', borderRadius: '2px' }}>
         <span style={{ fontSize: '10px', color: '#aaa', letterSpacing: '1.5px', fontWeight: 'bold', display: 'block', marginBottom: '12px' }}>
           FULFILLMENT STATUS BREAKDOWN
@@ -219,7 +225,6 @@ const AdminOverview: React.FC = () => {
           <div style={{ width: `${totalOrders ? (deliveredOrders / totalOrders) * 100 : 0}%`, backgroundColor: '#22c55e' }} title="Delivered" />
         </div>
 
-        {/* 🟢 সঠিক লেবেল ও সংখ্যা */}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px', fontSize: '10px' }}>
           <span><strong style={{ color: '#eab308' }}>● PENDING:</strong> {pendingOrders}</span>
           <span><strong style={{ color: '#a855f7' }}>● PROCESSING:</strong> {processingOrders}</span>
