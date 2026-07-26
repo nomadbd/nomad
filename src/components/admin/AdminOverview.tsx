@@ -23,7 +23,7 @@ const AdminOverview: React.FC = () => {
   const fetchMetricsData = async () => {
     setLoading(true);
     try {
-      // ১. অর্ডার ডেটা ফেচ
+      // ১. সুপাবেস থেকে সব অর্ডার ফেচ
       const { data: orders, error: ordersErr } = await supabase
         .from('orders')
         .select('*')
@@ -34,17 +34,24 @@ const AdminOverview: React.FC = () => {
       if (orders) {
         setTotalOrders(orders.length);
         
-        // মোট আয় (ক্যান্সেলড বাদে)
+        // স্ট্যাটাস নরম্যালাইজার ফাংশন (Case Insensitive Matching)
+        const normalize = (st: string) => (st || '').trim().toUpperCase();
+
+        // মোট আয় (CANCELLED বাদে)
         const rev = orders
-          .filter(o => o.status !== 'CANCELLED')
+          .filter(o => normalize(o.status) !== 'CANCELLED')
           .reduce((sum, o) => sum + (Number(o.total_amount) || 0), 0);
         setTotalRevenue(rev);
 
-        // স্ট্যাটাস ফিল্টারিং
-        const pending = orders.filter(o => o.status === 'PENDING' || o.status === 'PROCESSING').length;
-        const received = orders.filter(o => o.status === 'RECEIVED').length;
-        const shipped = orders.filter(o => o.status === 'SHIPPED').length;
-        const delivered = orders.filter(o => o.status === 'DELIVERED').length;
+        // 🟢 সঠিক ফিল্টারিং (স্মল লেটার/ক্যাপিটাল লেটার উভয় সাপোর্ট করবে)
+        const pending = orders.filter(o => {
+          const s = normalize(o.status);
+          return s === 'PENDING' || s === 'PROCESSING' || s === 'HOLD';
+        }).length;
+
+        const received = orders.filter(o => normalize(o.status) === 'RECEIVED').length;
+        const shipped = orders.filter(o => normalize(o.status) === 'SHIPPED').length;
+        const delivered = orders.filter(o => normalize(o.status) === 'DELIVERED').length;
 
         setPendingOrders(pending);
         setReceivedOrders(received);
@@ -55,7 +62,7 @@ const AdminOverview: React.FC = () => {
         setRecentOrders(orders.slice(0, 5));
       }
 
-      // ২. প্রোডাক্ট ক্যাটালগ আইটেম ফেচ
+      // ২. ক্যাটালগ প্রোডাক্ট কাউন্ট ফেচ
       const { count: productCount, error: prodErr } = await supabase
         .from('products')
         .select('*', { count: 'exact', head: true });
@@ -75,9 +82,9 @@ const AdminOverview: React.FC = () => {
     fetchMetricsData();
   }, []);
 
-  // স্ট্যাটাস ব্যাজের কালার ও স্টাইল হ্যান্ডলার
+  // ডাইনামিক স্ট্যাটাস ব্যাজ
   const renderStatusBadge = (status: string) => {
-    const s = status.toUpperCase();
+    const s = (status || '').trim().toUpperCase();
     let color = '#aaa';
     let bg = '#111';
 
@@ -106,7 +113,7 @@ const AdminOverview: React.FC = () => {
   return (
     <div style={{ color: '#fff', fontFamily: 'monospace, sans-serif' }}>
       
-      {/* 🔝 হেডার এবং রিফ্রেশ বাটন (একই লাইনে রেসপন্সিভভাবে সাজানো) */}
+      {/* 🔝 হেডার ও রিফ্রেশ বাটন */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '10px' }}>
         <div>
           <h2 style={{ fontSize: '16px', fontWeight: 'bold', letterSpacing: '2px', margin: 0 }}>
@@ -135,7 +142,7 @@ const AdminOverview: React.FC = () => {
         </button>
       </div>
 
-      {/* 📊 ১. ৪টি মূল মেট্রিক কার্ড (মোবাইলে ২-কলাম এবং ডেক্সটপে ৪-কলাম অটো-ফিট) */}
+      {/* 📊 ১. ৪টি মূল মেট্রিক কার্ড */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
@@ -143,7 +150,7 @@ const AdminOverview: React.FC = () => {
         marginBottom: '25px'
       }}>
         
-        {/* কার্ড ১: মোট আয় */}
+        {/* মোট আয় */}
         <div style={{ backgroundColor: '#050505', border: '1px solid #1a1a1a', padding: '15px' }}>
           <span style={{ fontSize: '9px', color: '#888', letterSpacing: '1px', display: 'block', marginBottom: '8px' }}>
             TOTAL GROSS REVENUE
@@ -156,7 +163,7 @@ const AdminOverview: React.FC = () => {
           </span>
         </div>
 
-        {/* কার্ড ২: মোট অর্ডার */}
+        {/* মোট অর্ডার */}
         <div style={{ backgroundColor: '#050505', border: '1px solid #1a1a1a', padding: '15px' }}>
           <span style={{ fontSize: '9px', color: '#888', letterSpacing: '1px', display: 'block', marginBottom: '8px' }}>
             TOTAL ORDERS LOGGED
@@ -169,7 +176,7 @@ const AdminOverview: React.FC = () => {
           </span>
         </div>
 
-        {/* কার্ড ৩: পেন্ডিং / রিসিভড */}
+        {/* পেন্ডিং / রিসিভড */}
         <div style={{ backgroundColor: '#050505', border: '1px solid #1a1a1a', padding: '15px' }}>
           <span style={{ fontSize: '9px', color: '#888', letterSpacing: '1px', display: 'block', marginBottom: '8px' }}>
             PENDING & RECEIVED
@@ -184,7 +191,7 @@ const AdminOverview: React.FC = () => {
           </span>
         </div>
 
-        {/* কার্ড ৪: এক্টিভ প্রোডাক্ট ক্যাটালগ */}
+        {/* ক্যাটালগ আইটেম */}
         <div style={{ backgroundColor: '#050505', border: '1px solid #1a1a1a', padding: '15px' }}>
           <span style={{ fontSize: '9px', color: '#888', letterSpacing: '1px', display: 'block', marginBottom: '8px' }}>
             ACTIVE CATALOG ITEMS
@@ -199,21 +206,21 @@ const AdminOverview: React.FC = () => {
 
       </div>
 
-      {/* 📈 ২. ফুলফিলমেন্ট স্ট্যাটাস ব্রেকডাউন */}
+      {/* 📈 ২. ফুলফিলমেন্ট স্ট্যাটাস প্রোগ্রেস বার (ফিক্সড) */}
       <div style={{ backgroundColor: '#050505', border: '1px solid #1a1a1a', padding: '15px', marginBottom: '25px' }}>
         <span style={{ fontSize: '10px', color: '#aaa', letterSpacing: '1.5px', display: 'block', marginBottom: '12px' }}>
           FULFILLMENT STATUS BREAKDOWN
         </span>
         
-        {/* ভিজ্যুয়াল প্রোগ্রেস বার */}
-        <div style={{ display: 'flex', height: '6px', backgroundColor: '#111', borderRadius: '2px', overflow: 'hidden', marginBottom: '12px' }}>
-          <div style={{ width: `${totalOrders ? (pendingOrders/totalOrders)*100 : 0}%`, backgroundColor: '#a855f7' }} />
-          <div style={{ width: `${totalOrders ? (receivedOrders/totalOrders)*100 : 0}%`, backgroundColor: '#3b82f6' }} />
-          <div style={{ width: `${totalOrders ? (shippedOrders/totalOrders)*100 : 0}%`, backgroundColor: '#eab308' }} />
-          <div style={{ width: `${totalOrders ? (deliveredOrders/totalOrders)*100 : 0}%`, backgroundColor: '#22c55e' }} />
+        {/* ডাইনামিক প্রোগ্রেস বার কন্টেইনার */}
+        <div style={{ display: 'flex', height: '8px', backgroundColor: '#181818', borderRadius: '4px', overflow: 'hidden', marginBottom: '12px' }}>
+          <div style={{ width: `${totalOrders ? (pendingOrders / totalOrders) * 100 : 0}%`, backgroundColor: '#a855f7', transition: 'width 0.4s ease' }} />
+          <div style={{ width: `${totalOrders ? (receivedOrders / totalOrders) * 100 : 0}%`, backgroundColor: '#3b82f6', transition: 'width 0.4s ease' }} />
+          <div style={{ width: `${totalOrders ? (shippedOrders / totalOrders) * 100 : 0}%`, backgroundColor: '#eab308', transition: 'width 0.4s ease' }} />
+          <div style={{ width: `${totalOrders ? (deliveredOrders / totalOrders) * 100 : 0}%`, backgroundColor: '#22c55e', transition: 'width 0.4s ease' }} />
         </div>
 
-        {/* লেজেন্ডস (সব ডিভাইসে মানানসই) */}
+        {/* স্ট্যাটাস কাউন্ট লেবেল */}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '15px', fontSize: '10px' }}>
           <span><strong style={{ color: '#a855f7' }}>● PENDING:</strong> {pendingOrders}</span>
           <span><strong style={{ color: '#3b82f6' }}>● RECEIVED:</strong> {receivedOrders}</span>
@@ -222,13 +229,12 @@ const AdminOverview: React.FC = () => {
         </div>
       </div>
 
-      {/* 📑 ৩. রিসেন্ট অর্ডার মেমোরেন্ডাম (টেবিল কেটে যাওয়া রোধ করার ফিক্সসহ) */}
+      {/* 📑 ৩. রিসেন্ট অর্ডার মেমোরেন্ডাম টেবিল */}
       <div style={{ backgroundColor: '#050505', border: '1px solid #1a1a1a', padding: '15px' }}>
         <span style={{ fontSize: '10px', color: '#aaa', letterSpacing: '1.5px', display: 'block', marginBottom: '15px' }}>
           RECENT ORDERS MEMORANDUM
         </span>
 
-        {/* 🟢 টেবিলকে হরিজন্টাল স্ক্রোলযোগ্য করা হলো যেন ছোট স্ক্রিনেও কলাম না কাটে */}
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', minWidth: '500px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '11px' }}>
             <thead>
