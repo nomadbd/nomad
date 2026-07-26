@@ -3,7 +3,7 @@ import { supabase } from '../supabaseClient';
 
 interface OrderItem {
   product_name: string;
-  product_image: string; // এখানে মিডিয়া ইউআরএল স্টোর হবে
+  product_image: string; 
   size: string;
   color: string;
   quantity: number;
@@ -38,19 +38,23 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
   const [singleOrderToHide, setSingleOrderToHide] = useState<string | null>(null);
   const [isHiding, setIsHiding] = useState<boolean>(false);
 
-  const statusSteps = ['pending', 'received', 'shipped', 'delivered'];
+  // 🔹 ১. সব জায়গায় একই নাম এবং একই স্ট্যাটাস দেখানোর ফাংশন
+  const getUnifiedStatus = (rawStatus: string) => {
+    if (!rawStatus) return 'PENDING';
+    return rawStatus.trim().toUpperCase();
+  };
 
-  // 🔹 ডাইনামিক স্ট্যাটাস ইনডেক্স বের করার হেলপার ফাংশন (completed / processing হ্যান্ডেল করবে)
-  const getStepIndex = (statusStr: string) => {
-    if (!statusStr) return 0;
-    const s = statusStr.toLowerCase().trim();
+  // 🔹 ২. ট্র্যাকার বারের প্রোগ্রেস বোঝার ফাংশন
+  const getStepIndex = (rawStatus: string) => {
+    if (!rawStatus) return 0;
+    const s = rawStatus.toLowerCase().trim();
     if (s === 'delivered' || s === 'completed') return 3;
     if (s === 'shipped') return 2;
     if (s === 'received' || s === 'processing') return 1;
-    return 0;
+    return 0; // pending
   };
 
-  // 📄 ব্রাউজার-নেটিভ প্রিমিয়াম ডিজাইন (লাইভ স্ট্যাটাস সহ ডাউনলোড ব্যবস্থা)
+  // 📄 ব্রাউজার-নেটিভ প্রিমিয়াম ইনভয়েস ডাউনলোড
   const handleDownloadInvoice = (order: Order) => {
     const dateObj = new Date(order.created_at);
     const year = dateObj.getFullYear();
@@ -67,10 +71,10 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
     const vatAmount = order.vat_amount || 0;
     const grandTotal = order.total_amount;
 
-    // 🔹 Delivered / Completed সঠিকভাবে হ্যান্ডেল করার লজিক
-    const rawStatus = (order.status || 'pending').toLowerCase().trim();
-    const isDelivered = rawStatus === 'delivered' || rawStatus === 'completed';
-    const currentStatusText = isDelivered ? 'DELIVERED' : rawStatus.toUpperCase();
+    // 🔹 সব জায়গায় ১-ই নাম (হুবহু ডাটাবেজের স্ট্যাটাস)
+    const unifiedStatus = getUnifiedStatus(order.status);
+    const isDelivered = unifiedStatus === 'DELIVERED' || unifiedStatus === 'COMPLETED';
+    
     const statusColor = isDelivered ? '#000000' : '#ff0000'; 
     const totalLabel = isDelivered ? 'TOTAL PAID' : 'AMOUNT DUE';
 
@@ -130,7 +134,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
             ${(order.shipping_address || 'N/A').toUpperCase()}
           </td>
           <td style="text-align: right; padding: 4px 0; vertical-align: top; color: #000 !important; font-size: 11px; letter-spacing: 0.5px;">
-            <strong style="color: ${statusColor}; letter-spacing: 1px; text-transform: uppercase;">STATUS: ${currentStatusText}</strong>
+            <strong style="color: ${statusColor}; letter-spacing: 1px; text-transform: uppercase;">STATUS: ${unifiedStatus}</strong>
           </td>
         </tr>
       </table>
@@ -379,8 +383,16 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
         const isSelected = selectedOrderIds.includes(order.id);
         const hasMultipleItems = order.items && order.items.length > 1;
 
-        // 🔹 getStepIndex দিয়ে স্টেপ ট্র্যাকার সঠিক করা হয়েছে
-        const currentStepIndex = getStepIndex(order.status);
+        const activeStepIndex = getStepIndex(order.status);
+        const unifiedStatusText = getUnifiedStatus(order.status);
+
+        // 🔹 ট্র্যাকার ৪টি ধাপের জন্য টেক্সট অ্যারে
+        const dynamicSteps = ['PENDING', 'RECEIVED', 'SHIPPED', 'DELIVERED'];
+        
+        // কারেন্ট স্টেপটি যদি 'PROCESSING' হয়, তবে ট্র্যাকার লাইনেও 'RECEIVED' এর বদলে হুবহু 'PROCESSING' দেখাবে
+        if (activeStepIndex === 1) {
+          dynamicSteps[1] = unifiedStatusText;
+        }
 
         return (
           <div 
@@ -531,14 +543,14 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
               </div>
             </div>
 
-            {/* 🔘 ডাইনামিক স্ট্যাটাস ট্র্যাকার */}
+            {/* 🔘 ১০০% সিঙ্কড স্ট্যাটাস ট্র্যাকার */}
             <div style={{ display: 'flex', justifyContent: 'space-between', position: 'relative', marginTop: '15px', borderTop: '1px solid rgba(255,255,255,0.04)', paddingTop: '20px', paddingRight: '25px' }}>
-              {statusSteps.map((step, idx) => {
-                const isCompleted = idx <= currentStepIndex;
-                const isCurrent = idx === currentStepIndex;
+              {dynamicSteps.map((stepText, idx) => {
+                const isCompleted = idx <= activeStepIndex;
+                const isCurrent = idx === activeStepIndex;
 
                 return (
-                  <div key={step} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1 }}>
+                  <div key={idx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1 }}>
                     <div style={{
                       width: '16px',
                       height: '16px',
@@ -556,7 +568,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
                       )}
                     </div>
                     <span style={{ fontSize: '9px', letterSpacing: '0.5px', marginTop: '10px', color: isCompleted ? '#fff' : '#888', textTransform: 'uppercase', fontFamily: 'monospace', fontWeight: 'bold' }}>
-                      {step}
+                      {stepText}
                     </span>
                   </div>
                 );
