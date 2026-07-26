@@ -13,7 +13,10 @@ const AdminOverview: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [totalRevenue, setTotalRevenue] = useState<number>(0);
   const [totalOrders, setTotalOrders] = useState<number>(0);
+  
+  // 🟢 প্রতিটি স্ট্যাটাসের জন্য আলাদা স্টেট
   const [pendingOrders, setPendingOrders] = useState<number>(0);
+  const [processingOrders, setProcessingOrders] = useState<number>(0);
   const [receivedOrders, setReceivedOrders] = useState<number>(0);
   const [shippedOrders, setShippedOrders] = useState<number>(0);
   const [deliveredOrders, setDeliveredOrders] = useState<number>(0);
@@ -34,21 +37,21 @@ const AdminOverview: React.FC = () => {
         setTotalOrders(orders.length);
         const normalize = (st: string) => (st || '').trim().toUpperCase();
 
+        // ১. মোট রেভিনিউ (বাতিল অর্ডার ছাড়া)
         const rev = orders
           .filter(o => normalize(o.status) !== 'CANCELLED')
           .reduce((sum, o) => sum + (Number(o.total_amount) || 0), 0);
         setTotalRevenue(rev);
 
-        const pending = orders.filter(o => {
-          const s = normalize(o.status);
-          return s === 'PENDING' || s === 'PROCESSING' || s === 'HOLD';
-        }).length;
-
+        // 🟢 ২. প্রতিটি স্ট্যাটাস আলাদাভাবে নিখুঁত ফিল্টারিং
+        const pending = orders.filter(o => normalize(o.status) === 'PENDING').length;
+        const processing = orders.filter(o => normalize(o.status) === 'PROCESSING').length;
         const received = orders.filter(o => normalize(o.status) === 'RECEIVED').length;
         const shipped = orders.filter(o => normalize(o.status) === 'SHIPPED').length;
         const delivered = orders.filter(o => normalize(o.status) === 'DELIVERED').length;
 
         setPendingOrders(pending);
+        setProcessingOrders(processing);
         setReceivedOrders(received);
         setShippedOrders(shipped);
         setDeliveredOrders(delivered);
@@ -56,6 +59,7 @@ const AdminOverview: React.FC = () => {
         setRecentOrders(orders.slice(0, 5));
       }
 
+      // ক্যাটালগ প্রোডাক্ট সংখ্যা
       const { count: productCount, error: prodErr } = await supabase
         .from('products')
         .select('*', { count: 'exact', head: true });
@@ -75,14 +79,16 @@ const AdminOverview: React.FC = () => {
     fetchMetricsData();
   }, []);
 
+  // 🏷️ স্ট্যাটাস ব্যাজ কালার ও ডিজাইন
   const renderStatusBadge = (status: string) => {
     const s = (status || '').trim().toUpperCase();
     let color = '#aaa';
     let bg = '#111';
 
-    if (s === 'PENDING' || s === 'PROCESSING') { color = '#a855f7'; bg = '#1e102a'; }
+    if (s === 'PENDING') { color = '#eab308'; bg = '#2a2208'; }
+    else if (s === 'PROCESSING') { color = '#a855f7'; bg = '#1e102a'; }
     else if (s === 'RECEIVED') { color = '#3b82f6'; bg = '#0d1d3a'; }
-    else if (s === 'SHIPPED') { color = '#eab308'; bg = '#2a2208'; }
+    else if (s === 'SHIPPED') { color = '#06b6d4'; bg = '#082f35'; }
     else if (s === 'DELIVERED') { color = '#22c55e'; bg = '#092b15'; }
 
     return (
@@ -109,19 +115,17 @@ const AdminOverview: React.FC = () => {
       <style>{`
         .metrics-grid {
           display: grid;
-          grid-template-columns: 1fr; /* মোবাইল ১ কলাম */
+          grid-template-columns: 1fr;
           gap: 12px;
           margin-bottom: 25px;
         }
 
-        /* 📱 মোবাইলে "Desktop Site" অন করলে বা ট্যাবলেটে ২ কলামে কার্ড থাকবে */
         @media (min-width: 768px) {
           .metrics-grid {
             grid-template-columns: repeat(2, 1fr);
           }
         }
 
-        /* 💻 বড় ডেস্কটপ স্ক্রিনে ৪ কলামে চমৎকার দেখাবে */
         @media (min-width: 1200px) {
           .metrics-grid {
             grid-template-columns: repeat(4, 1fr);
@@ -167,7 +171,7 @@ const AdminOverview: React.FC = () => {
         </button>
       </div>
 
-      {/* 📊 ১. ফ্লুইড ৪টি মেট্রিক কার্ড */}
+      {/* 📊 ১. ফ্লুইড মেট্রিক কার্ডস */}
       <div className="metrics-grid">
         
         <div className="metric-card">
@@ -182,14 +186,15 @@ const AdminOverview: React.FC = () => {
           <span style={{ fontSize: '9px', color: '#555', marginTop: '4px', display: 'block' }}>* ALL-TIME LOGGED</span>
         </div>
 
+        {/* 🟢 পেন্ডিং এবং প্রসেসিং দুটোই সঠিক কাউন্টে */}
         <div className="metric-card">
-          <span style={{ fontSize: '10px', color: '#888', letterSpacing: '1px', display: 'block', marginBottom: '8px' }}>PENDING & REC</span>
+          <span style={{ fontSize: '10px', color: '#888', letterSpacing: '1px', display: 'block', marginBottom: '8px' }}>ACTIVE QUEUE</span>
           <div style={{ fontSize: '22px', fontWeight: 'bold' }}>
-            <span style={{ color: '#a855f7' }}>{pendingOrders}</span>
-            <span style={{ fontSize: '14px', color: '#444', margin: '0 4px' }}>/</span>
-            <span style={{ color: '#3b82f6', fontSize: '16px' }}>{receivedOrders} REC</span>
+            <span style={{ color: '#a855f7' }}>{pendingOrders + processingOrders}</span>
+            <span style={{ fontSize: '14px', color: '#444', margin: '0 6px' }}>/</span>
+            <span style={{ color: '#3b82f6', fontSize: '15px' }}>{receivedOrders} REC</span>
           </div>
-          <span style={{ fontSize: '9px', color: '#555', marginTop: '4px', display: 'block' }}>* REQUIRES PROCESSING</span>
+          <span style={{ fontSize: '9px', color: '#555', marginTop: '4px', display: 'block' }}>* PENDING & PROCESSING</span>
         </div>
 
         <div className="metric-card">
@@ -200,23 +205,26 @@ const AdminOverview: React.FC = () => {
 
       </div>
 
-      {/* 📈 ২. ফুলফিলমেন্ট ব্রেকডাউন */}
+      {/* 📈 ২. ফুলফিলমেন্ট ব্রেকডাউন (প্রতিটির জন্য আলাদা প্রোগ্রেস বার) */}
       <div style={{ backgroundColor: '#060606', border: '1px solid #1a1a1a', padding: '16px', marginBottom: '25px', borderRadius: '2px' }}>
         <span style={{ fontSize: '10px', color: '#aaa', letterSpacing: '1.5px', fontWeight: 'bold', display: 'block', marginBottom: '12px' }}>
           FULFILLMENT STATUS BREAKDOWN
         </span>
         
         <div style={{ display: 'flex', height: '6px', backgroundColor: '#111', borderRadius: '3px', overflow: 'hidden', marginBottom: '12px' }}>
-          <div style={{ width: `${totalOrders ? (pendingOrders / totalOrders) * 100 : 0}%`, backgroundColor: '#a855f7' }} />
-          <div style={{ width: `${totalOrders ? (receivedOrders / totalOrders) * 100 : 0}%`, backgroundColor: '#3b82f6' }} />
-          <div style={{ width: `${totalOrders ? (shippedOrders / totalOrders) * 100 : 0}%`, backgroundColor: '#eab308' }} />
-          <div style={{ width: `${totalOrders ? (deliveredOrders / totalOrders) * 100 : 0}%`, backgroundColor: '#22c55e' }} />
+          <div style={{ width: `${totalOrders ? (pendingOrders / totalOrders) * 100 : 0}%`, backgroundColor: '#eab308' }} title="Pending" />
+          <div style={{ width: `${totalOrders ? (processingOrders / totalOrders) * 100 : 0}%`, backgroundColor: '#a855f7' }} title="Processing" />
+          <div style={{ width: `${totalOrders ? (receivedOrders / totalOrders) * 100 : 0}%`, backgroundColor: '#3b82f6' }} title="Received" />
+          <div style={{ width: `${totalOrders ? (shippedOrders / totalOrders) * 100 : 0}%`, backgroundColor: '#06b6d4' }} title="Shipped" />
+          <div style={{ width: `${totalOrders ? (deliveredOrders / totalOrders) * 100 : 0}%`, backgroundColor: '#22c55e' }} title="Delivered" />
         </div>
 
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', fontSize: '10px' }}>
-          <span><strong style={{ color: '#a855f7' }}>● PENDING:</strong> {pendingOrders}</span>
+        {/* 🟢 সঠিক লেবেল ও সংখ্যা */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px', fontSize: '10px' }}>
+          <span><strong style={{ color: '#eab308' }}>● PENDING:</strong> {pendingOrders}</span>
+          <span><strong style={{ color: '#a855f7' }}>● PROCESSING:</strong> {processingOrders}</span>
           <span><strong style={{ color: '#3b82f6' }}>● RECEIVED:</strong> {receivedOrders}</span>
-          <span><strong style={{ color: '#eab308' }}>● SHIPPED:</strong> {shippedOrders}</span>
+          <span><strong style={{ color: '#06b6d4' }}>● SHIPPED:</strong> {shippedOrders}</span>
           <span><strong style={{ color: '#22c55e' }}>● DELIVERED:</strong> {deliveredOrders}</span>
         </div>
       </div>
