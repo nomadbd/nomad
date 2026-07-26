@@ -9,6 +9,17 @@ interface OrderItem {
   status: string;
 }
 
+// 🟢 বড় সংখ্যা ফরম্যাট করার স্মার্ট ফাংশন (যেমন: 700000 -> 700K, 1500000 -> 1.5M)
+const formatNumber = (num: number): string => {
+  if (num >= 1_000_000) {
+    return (num / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M';
+  }
+  if (num >= 10_000) { // ১০ হাজারের ওপর গেলে K দেখাবে
+    return (num / 1_000).toFixed(1).replace(/\.0$/, '') + 'K';
+  }
+  return num.toLocaleString();
+};
+
 const AdminOverview: React.FC = () => {
   const [totalRevenue, setTotalRevenue] = useState<number>(0);
   const [totalOrders, setTotalOrders] = useState<number>(0);
@@ -18,11 +29,12 @@ const AdminOverview: React.FC = () => {
   const [receivedOrders, setReceivedOrders] = useState<number>(0);
   const [shippedOrders, setShippedOrders] = useState<number>(0);
   const [deliveredOrders, setDeliveredOrders] = useState<number>(0);
-  const [cancelledOrders, setCancelledOrders] = useState<number>(0); // 🔴 ক্যানসেলড স্টেট
+  const [cancelledOrders, setCancelledOrders] = useState<number>(0);
+  
   const [activeCatalogItems, setActiveCatalogItems] = useState<number>(0);
   const [recentOrders, setRecentOrders] = useState<OrderItem[]>([]);
 
-  // 🟢 স্ট্যাটাস ফিল্টার ফাংশনসমূহ
+  // স্ট্যাটাস চেকিং
   const isDelivered = (st: string) => (st || '').trim().toUpperCase().includes('DELIVER');
   const isPending = (st: string) => (st || '').trim().toUpperCase().includes('PENDING');
   const isProcessing = (st: string) => (st || '').trim().toUpperCase().includes('PROCESS');
@@ -30,12 +42,12 @@ const AdminOverview: React.FC = () => {
   const isShipped = (st: string) => (st || '').trim().toUpperCase().includes('SHIP');
   const isCancelled = (st: string) => (st || '').trim().toUpperCase().includes('CANCEL');
 
-  // 📊 ডাটা ফেচিং ফাংশন
   const fetchMetricsData = async () => {
     try {
+      // ⚡ লাখ লাখ ডাটার জন্য হালকা কুয়েরি (কেবল প্রয়োজনীয় কলাম নিয়ে কাজ করা)
       const { data: orders, error: ordersErr } = await supabase
         .from('orders')
-        .select('*')
+        .select('status, total_amount')
         .order('created_at', { ascending: false });
 
       if (ordersErr) throw ordersErr;
@@ -43,29 +55,38 @@ const AdminOverview: React.FC = () => {
       if (orders) {
         setTotalOrders(orders.length);
 
-        // ১. মোট রেভিনিউ (বাতিল ছাড়া)
+        // ১. রেভিনিউ গণনা
         const rev = orders
           .filter(o => !isCancelled(o.status))
           .reduce((sum, o) => sum + (Number(o.total_amount) || 0), 0);
         setTotalRevenue(rev);
 
-        // ২. প্রতিটি স্ট্যাটাসের নিখুঁত গণনা
+        // ২. স্ট্যাটাস গণনা
         setPendingOrders(orders.filter(o => isPending(o.status)).length);
         setProcessingOrders(orders.filter(o => isProcessing(o.status)).length);
         setReceivedOrders(orders.filter(o => isReceived(o.status)).length);
         setShippedOrders(orders.filter(o => isShipped(o.status)).length);
         setDeliveredOrders(orders.filter(o => isDelivered(o.status)).length);
-        setCancelledOrders(orders.filter(o => isCancelled(o.status)).length); // 🔴 ক্যানসেলড ফিল্টার
-
-        setRecentOrders(orders.slice(0, 5));
+        setCancelledOrders(orders.filter(o => isCancelled(o.status)).length);
       }
 
-      // ৩. ক্যাটালগ প্রোডাক্ট সংখ্যা
-      const { count: productCount, error: prodErr } = await supabase
+      // ৩. সাম্প্রতিক ৫টি অর্ডার
+      const { data: latestFive } = await supabase
+        .from('orders')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      if (latestFive) {
+        setRecentOrders(latestFive);
+      }
+
+      // ৪. ক্যাটালগ প্রোডাক্ট সংখ্যা
+      const { count: productCount } = await supabase
         .from('products')
         .select('*', { count: 'exact', head: true });
 
-      if (!prodErr && productCount !== null) {
+      if (productCount !== null) {
         setActiveCatalogItems(productCount);
       }
 
@@ -77,24 +98,16 @@ const AdminOverview: React.FC = () => {
   useEffect(() => {
     fetchMetricsData();
 
-    // ⚡ SUPABASE REALTIME SUBSCRIPTION
     const ordersSubscription = supabase
       .channel('admin-overview-orders')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => fetchMetricsData())
       .subscribe();
 
-    const productsSubscription = supabase
-      .channel('admin-overview-products')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => fetchMetricsData())
-      .subscribe();
-
     return () => {
       supabase.removeChannel(ordersSubscription);
-      supabase.removeChannel(productsSubscription);
     };
   }, []);
 
-  // 🏷️ স্ট্যাটাস ব্যাজ (CANCELLED সহ)
   const renderStatusBadge = (status: string) => {
     const raw = (status || '').trim().toUpperCase();
     let displayStatus = raw;
@@ -169,46 +182,51 @@ const AdminOverview: React.FC = () => {
         </span>
       </div>
 
-      {/* 📊 ১. মেট্রিক কার্ডস */}
+      {/* 📊 ১. মেট্রিক কার্ডস (ফরম্যাটেড ভ্যালু সহ) */}
       <div className="metrics-grid">
         
         <div className="metric-card">
           <span style={{ fontSize: '10px', color: '#888', letterSpacing: '1px', display: 'block', marginBottom: '8px' }}>TOTAL REVENUE</span>
-          <div style={{ fontSize: '22px', fontWeight: 'bold', color: '#22c55e' }}>৳{totalRevenue.toLocaleString()}</div>
+          {/* বড় রেভিনিউ সংখ্যা হলে K/M এ দেখাবে, মাউস নিলে পূর্ণ সংখ্যা দেখাবে */}
+          <div style={{ fontSize: '22px', fontWeight: 'bold', color: '#22c55e' }} title={`৳${totalRevenue.toLocaleString()}`}>
+            ৳{formatNumber(totalRevenue)}
+          </div>
           <span style={{ fontSize: '9px', color: '#555', marginTop: '4px', display: 'block' }}>* EXCLUDING CANCELLED</span>
         </div>
 
         <div className="metric-card">
           <span style={{ fontSize: '10px', color: '#888', letterSpacing: '1px', display: 'block', marginBottom: '8px' }}>TOTAL ORDERS</span>
-          <div style={{ fontSize: '22px', fontWeight: 'bold', color: '#fff' }}>{totalOrders}</div>
+          <div style={{ fontSize: '22px', fontWeight: 'bold', color: '#fff' }} title={`${totalOrders.toLocaleString()} Orders`}>
+            {formatNumber(totalOrders)}
+          </div>
           <span style={{ fontSize: '9px', color: '#555', marginTop: '4px', display: 'block' }}>* ALL-TIME LOGGED</span>
         </div>
 
         <div className="metric-card">
           <span style={{ fontSize: '10px', color: '#888', letterSpacing: '1px', display: 'block', marginBottom: '8px' }}>ACTIVE QUEUE</span>
           <div style={{ fontSize: '22px', fontWeight: 'bold' }}>
-            <span style={{ color: '#a855f7' }}>{pendingOrders + processingOrders}</span>
+            <span style={{ color: '#a855f7' }}>{formatNumber(pendingOrders + processingOrders)}</span>
             <span style={{ fontSize: '14px', color: '#444', margin: '0 6px' }}>/</span>
-            <span style={{ color: '#3b82f6', fontSize: '15px' }}>{receivedOrders} REC</span>
+            <span style={{ color: '#3b82f6', fontSize: '15px' }}>{formatNumber(receivedOrders)} REC</span>
           </div>
           <span style={{ fontSize: '9px', color: '#555', marginTop: '4px', display: 'block' }}>* PENDING & PROCESSING</span>
         </div>
 
         <div className="metric-card">
           <span style={{ fontSize: '10px', color: '#888', letterSpacing: '1px', display: 'block', marginBottom: '8px' }}>CATALOG ITEMS</span>
-          <div style={{ fontSize: '22px', fontWeight: 'bold', color: '#fff' }}>{activeCatalogItems}</div>
+          <div style={{ fontSize: '22px', fontWeight: 'bold', color: '#fff' }}>{formatNumber(activeCatalogItems)}</div>
           <span style={{ fontSize: '9px', color: '#555', marginTop: '4px', display: 'block' }}>* LIVE IN STORE</span>
         </div>
 
       </div>
 
-      {/* 📈 ২. ফুলফিলমেন্ট ব্রেকডাউন (CANCELLED সহ) */}
+      {/* 📈 ২. ফুলফিলমেন্ট ব্রেকডাউন (বড় সংখ্যার জন্য ফরম্যাটিং সহ) */}
       <div style={{ backgroundColor: '#060606', border: '1px solid #1a1a1a', padding: '16px', marginBottom: '25px', borderRadius: '2px' }}>
         <span style={{ fontSize: '10px', color: '#aaa', letterSpacing: '1.5px', fontWeight: 'bold', display: 'block', marginBottom: '12px' }}>
           FULFILLMENT STATUS BREAKDOWN
         </span>
         
-        {/* রিয়েলটাইম কালার বার */}
+        {/* রিয়েলটাইম কালার বার (শতাংশ সবসময় একই কাজ করবে লাখ ডাটা থাকলেও) */}
         <div style={{ display: 'flex', height: '6px', backgroundColor: '#111', borderRadius: '3px', overflow: 'hidden', marginBottom: '12px' }}>
           <div style={{ width: `${totalOrders ? (pendingOrders / totalOrders) * 100 : 0}%`, backgroundColor: '#eab308' }} title="Pending" />
           <div style={{ width: `${totalOrders ? (processingOrders / totalOrders) * 100 : 0}%`, backgroundColor: '#a855f7' }} title="Processing" />
@@ -218,14 +236,14 @@ const AdminOverview: React.FC = () => {
           <div style={{ width: `${totalOrders ? (cancelledOrders / totalOrders) * 100 : 0}%`, backgroundColor: '#ef4444' }} title="Cancelled" />
         </div>
 
-        {/* স্ট্যাটাস কাউন্টারসমূহ */}
+        {/* স্মার্ট কাউন্টারসমূহ */}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px', fontSize: '10px' }}>
-          <span><strong style={{ color: '#eab308' }}>● PENDING:</strong> {pendingOrders}</span>
-          <span><strong style={{ color: '#a855f7' }}>● PROCESSING:</strong> {processingOrders}</span>
-          <span><strong style={{ color: '#3b82f6' }}>● RECEIVED:</strong> {receivedOrders}</span>
-          <span><strong style={{ color: '#06b6d4' }}>● SHIPPED:</strong> {shippedOrders}</span>
-          <span><strong style={{ color: '#22c55e' }}>● DELIVERED:</strong> {deliveredOrders}</span>
-          <span><strong style={{ color: '#ef4444' }}>● CANCELLED:</strong> {cancelledOrders}</span>
+          <span><strong style={{ color: '#eab308' }}>● PENDING:</strong> {formatNumber(pendingOrders)}</span>
+          <span><strong style={{ color: '#a855f7' }}>● PROCESSING:</strong> {formatNumber(processingOrders)}</span>
+          <span><strong style={{ color: '#3b82f6' }}>● RECEIVED:</strong> {formatNumber(receivedOrders)}</span>
+          <span><strong style={{ color: '#06b6d4' }}>● SHIPPED:</strong> {formatNumber(shippedOrders)}</span>
+          <span><strong style={{ color: '#22c55e' }}>● DELIVERED:</strong> {formatNumber(deliveredOrders)}</span>
+          <span><strong style={{ color: '#ef4444' }}>● CANCELLED:</strong> {formatNumber(cancelledOrders)}</span>
         </div>
       </div>
 
