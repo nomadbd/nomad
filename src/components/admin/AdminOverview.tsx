@@ -10,7 +10,6 @@ interface OrderItem {
 }
 
 const AdminOverview: React.FC = () => {
-  const [loading, setLoading] = useState<boolean>(true);
   const [totalRevenue, setTotalRevenue] = useState<number>(0);
   const [totalOrders, setTotalOrders] = useState<number>(0);
   
@@ -22,7 +21,7 @@ const AdminOverview: React.FC = () => {
   const [activeCatalogItems, setActiveCatalogItems] = useState<number>(0);
   const [recentOrders, setRecentOrders] = useState<OrderItem[]>([]);
 
-  // 🟢 শুধুমাত্র DELIVERED ফিল্টার (COMPLETE রিমুভ করা হয়েছে)
+  // 🟢 স্ট্যাটাস ফিল্টার ফাংশনসমূহ
   const isDelivered = (st: string) => (st || '').trim().toUpperCase().includes('DELIVER');
   const isPending = (st: string) => (st || '').trim().toUpperCase().includes('PENDING');
   const isProcessing = (st: string) => (st || '').trim().toUpperCase().includes('PROCESS');
@@ -30,8 +29,8 @@ const AdminOverview: React.FC = () => {
   const isShipped = (st: string) => (st || '').trim().toUpperCase().includes('SHIP');
   const isCancelled = (st: string) => (st || '').trim().toUpperCase().includes('CANCEL');
 
+  // 📊 ডাটা ফেচিং ফাংশন
   const fetchMetricsData = async () => {
-    setLoading(true);
     try {
       const { data: orders, error: ordersErr } = await supabase
         .from('orders')
@@ -43,29 +42,23 @@ const AdminOverview: React.FC = () => {
       if (orders) {
         setTotalOrders(orders.length);
 
-        // ১. মোট রেভিনিউ (বাতিল অর্ডার ছাড়া)
+        // ১. মোট রেভিনিউ (বাতিল ছাড়া)
         const rev = orders
           .filter(o => !isCancelled(o.status))
           .reduce((sum, o) => sum + (Number(o.total_amount) || 0), 0);
         setTotalRevenue(rev);
 
-        // ২. প্রতিটি স্ট্যাটাসের নিখুঁত গণনা
-        const pending = orders.filter(o => isPending(o.status)).length;
-        const processing = orders.filter(o => isProcessing(o.status)).length;
-        const received = orders.filter(o => isReceived(o.status)).length;
-        const shipped = orders.filter(o => isShipped(o.status)).length;
-        const delivered = orders.filter(o => isDelivered(o.status)).length;
-
-        setPendingOrders(pending);
-        setProcessingOrders(processing);
-        setReceivedOrders(received);
-        setShippedOrders(shipped);
-        setDeliveredOrders(delivered);
+        // ২. প্রতিটি স্ট্যাটাসের নির্ভুল হিসাব
+        setPendingOrders(orders.filter(o => isPending(o.status)).length);
+        setProcessingOrders(orders.filter(o => isProcessing(o.status)).length);
+        setReceivedOrders(orders.filter(o => isReceived(o.status)).length);
+        setShippedOrders(orders.filter(o => isShipped(o.status)).length);
+        setDeliveredOrders(orders.filter(o => isDelivered(o.status)).length);
 
         setRecentOrders(orders.slice(0, 5));
       }
 
-      // ক্যাটালগ প্রোডাক্ট সংখ্যা
+      // ৩. ক্যাটালগ প্রোডাক্ট সংখ্যা
       const { count: productCount, error: prodErr } = await supabase
         .from('products')
         .select('*', { count: 'exact', head: true });
@@ -76,16 +69,44 @@ const AdminOverview: React.FC = () => {
 
     } catch (err) {
       console.error('Error fetching analytics:', err);
-    } finally {
-      setTimeout(() => setLoading(false), 300);
     }
   };
 
   useEffect(() => {
+    // ১. প্রথমবার লোডের সময় ডাটা আনবে
     fetchMetricsData();
+
+    // ⚡ ২. SUPABASE REALTIME SUBSCRIPTION (ডাটাবেজে পরিবর্তন হলেই অটো রিফ্রেশ হবে)
+    const ordersSubscription = supabase
+      .channel('admin-overview-orders')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'orders' },
+        () => {
+          fetchMetricsData(); // অটো আপডেট
+        }
+      )
+      .subscribe();
+
+    const productsSubscription = supabase
+      .channel('admin-overview-products')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'products' },
+        () => {
+          fetchMetricsData(); // অটো আপডেট
+        }
+      )
+      .subscribe();
+
+    // ক্লিনআপ (মেমোরি লিক বন্ধ করতে)
+    return () => {
+      supabase.removeChannel(ordersSubscription);
+      supabase.removeChannel(productsSubscription);
+    };
   }, []);
 
-  // 🏷️ পরিষ্কার স্ট্যাটাস ব্যাজ (শুধু DELIVERED প্রদর্শন করবে)
+  // 🏷️ স্ট্যাটাস ব্যাজ
   const renderStatusBadge = (status: string) => {
     const raw = (status || '').trim().toUpperCase();
     let displayStatus = raw;
@@ -149,36 +170,17 @@ const AdminOverview: React.FC = () => {
         }
       `}</style>
 
-      {/* 🔝 হেডার */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '10px' }}>
-        <div>
-          <h2 style={{ fontSize: '15px', fontWeight: 'bold', letterSpacing: '2px', margin: 0, color: '#fff' }}>
-            HQ METRICS & OVERVIEW
-          </h2>
-          <span style={{ fontSize: '9px', color: '#666', letterSpacing: '1px' }}>
-            REAL-TIME FINANCIAL & FULFILLMENT INSIGHTS
-          </span>
-        </div>
-
-        <button
-          onClick={fetchMetricsData}
-          disabled={loading}
-          style={{
-            backgroundColor: '#0a0a0a',
-            border: '1px solid #222',
-            color: '#ccc',
-            padding: '7px 14px',
-            fontSize: '10px',
-            fontFamily: 'monospace',
-            cursor: loading ? 'not-allowed' : 'pointer',
-            letterSpacing: '1px'
-          }}
-        >
-          {loading ? 'SYNCING...' : '↻ RELOAD'}
-        </button>
+      {/* 🔝 ক্লিন হেডার (রিলোড বাটন রিমুভ করা হয়েছে) */}
+      <div style={{ marginBottom: '20px' }}>
+        <h2 style={{ fontSize: '15px', fontWeight: 'bold', letterSpacing: '2px', margin: 0, color: '#fff' }}>
+          HQ METRICS & OVERVIEW
+        </h2>
+        <span style={{ fontSize: '9px', color: '#666', letterSpacing: '1px' }}>
+          REAL-TIME FINANCIAL & FULFILLMENT INSIGHTS
+        </span>
       </div>
 
-      {/* 📊 ১. ফ্লুইড মেট্রিক কার্ডস */}
+      {/* 📊 ১. মেট্রিক কার্ডস */}
       <div className="metrics-grid">
         
         <div className="metric-card">
