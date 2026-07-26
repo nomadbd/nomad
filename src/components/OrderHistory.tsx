@@ -40,6 +40,16 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
 
   const statusSteps = ['pending', 'received', 'shipped', 'delivered'];
 
+  // 🔹 ডাইনামিক স্ট্যাটাস ইনডেক্স বের করার হেলপার ফাংশন (completed / processing হ্যান্ডেল করবে)
+  const getStepIndex = (statusStr: string) => {
+    if (!statusStr) return 0;
+    const s = statusStr.toLowerCase().trim();
+    if (s === 'delivered' || s === 'completed') return 3;
+    if (s === 'shipped') return 2;
+    if (s === 'received' || s === 'processing') return 1;
+    return 0;
+  };
+
   // 📄 ব্রাউজার-নেটিভ প্রিমিয়াম ডিজাইন (লাইভ স্ট্যাটাস সহ ডাউনলোড ব্যবস্থা)
   const handleDownloadInvoice = (order: Order) => {
     const dateObj = new Date(order.created_at);
@@ -57,8 +67,10 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
     const vatAmount = order.vat_amount || 0;
     const grandTotal = order.total_amount;
 
-    const currentStatus = (order.status || 'pending').toUpperCase();
-    const isDelivered = currentStatus === 'DELIVERED';
+    // 🔹 Delivered / Completed সঠিকভাবে হ্যান্ডেল করার লজিক
+    const rawStatus = (order.status || 'pending').toLowerCase().trim();
+    const isDelivered = rawStatus === 'delivered' || rawStatus === 'completed';
+    const currentStatusText = isDelivered ? 'DELIVERED' : rawStatus.toUpperCase();
     const statusColor = isDelivered ? '#000000' : '#ff0000'; 
     const totalLabel = isDelivered ? 'TOTAL PAID' : 'AMOUNT DUE';
 
@@ -118,7 +130,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
             ${(order.shipping_address || 'N/A').toUpperCase()}
           </td>
           <td style="text-align: right; padding: 4px 0; vertical-align: top; color: #000 !important; font-size: 11px; letter-spacing: 0.5px;">
-            <strong style="color: ${statusColor}; letter-spacing: 1px; text-transform: uppercase;">STATUS: ${currentStatus}</strong>
+            <strong style="color: ${statusColor}; letter-spacing: 1px; text-transform: uppercase;">STATUS: ${currentStatusText}</strong>
           </td>
         </tr>
       </table>
@@ -200,7 +212,6 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      // এখানে nested product_media থেকে media_url তুলে আনা হচ্ছে
       const { data, error } = await supabase
         .from('orders')
         .select(`
@@ -235,7 +246,6 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
       if (data) {
         const formattedOrders = data.map((order: any) => {
           const items = (order.order_items || []).map((item: any) => {
-            // product_media অ্যারের প্রথম ছবির URL নেওয়া হচ্ছে
             const firstImage = item.products?.product_media?.[0]?.media_url || 'https://via.placeholder.com/80x100';
 
             return {
@@ -369,6 +379,9 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
         const isSelected = selectedOrderIds.includes(order.id);
         const hasMultipleItems = order.items && order.items.length > 1;
 
+        // 🔹 getStepIndex দিয়ে স্টেপ ট্র্যাকার সঠিক করা হয়েছে
+        const currentStepIndex = getStepIndex(order.status);
+
         return (
           <div 
             key={order.id} 
@@ -444,7 +457,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
               </div>
             </div>
 
-            {/* 🛒 ডানে-বাম সুদৃশ্য ক্যারোজেল স্ক্রলিং উইথ প্রোডাক্ট ইমেজ */}
+            {/* 🛒 প্রোডাক্ট ক্যারোজেল */}
             <div 
               className="premium-carousel"
               style={{ 
@@ -518,11 +531,9 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
               </div>
             </div>
 
+            {/* 🔘 ডাইনামিক স্ট্যাটাস ট্র্যাকার */}
             <div style={{ display: 'flex', justifyContent: 'space-between', position: 'relative', marginTop: '15px', borderTop: '1px solid rgba(255,255,255,0.04)', paddingTop: '20px', paddingRight: '25px' }}>
               {statusSteps.map((step, idx) => {
-                const currentStatusLower = order.status ? order.status.toLowerCase() : 'pending';
-                const currentStepIndex = statusSteps.indexOf(currentStatusLower);
-
                 const isCompleted = idx <= currentStepIndex;
                 const isCurrent = idx === currentStepIndex;
 
