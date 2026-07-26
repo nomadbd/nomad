@@ -52,6 +52,25 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ session, profile
     setTimeout(() => setToast(null), 4000);
   };
 
+  // স্ট্যাটাস অনুসারে কালার ও লেবেল দেওয়ার হেলপার ফাংশন
+  const getStatusBadge = (rawStatus: string) => {
+    const status = rawStatus?.toLowerCase().trim() || 'pending';
+    switch (status) {
+      case 'delivered':
+      case 'completed':
+        return { label: 'Delivered', bg: '#166534', color: '#4ade80' };
+      case 'shipped':
+        return { label: 'Shipped', bg: '#1e40af', color: '#93c5fd' };
+      case 'received':
+      case 'processing':
+        return { label: 'Received', bg: '#854d0e', color: '#fef08a' };
+      case 'cancelled':
+        return { label: 'Cancelled', bg: '#991b1b', color: '#fca5a5' };
+      default:
+        return { label: 'Pending', bg: '#374151', color: '#d1d5db' };
+    }
+  };
+
   // ১. ওভারভিউ ডাটা
   const fetchOverviewData = async () => {
     setLoadingStats(true);
@@ -107,14 +126,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ session, profile
         .eq('id', orderId);
 
       if (error) throw error;
-      showToast('অর্ডার স্ট্যাটাস আপডেট হয়েছে!', '#22c55e');
+      showToast('অর্ডার স্ট্যাটাস সফলভাবে আপডেট হয়েছে!', '#22c55e');
       fetchAllOrders();
     } catch (err: any) {
       showToast('স্ট্যাটাস আপডেট হয়নি: ' + err.message, '#ef4444');
     }
   };
 
-  // ৩. সকল ইউজার ও রোল লোড (updated_at কলাম দিয়ে ফিল্টার)
+  // ৩. সকল ইউজার ও রোল লোড
   const fetchAllUsers = async () => {
     setLoadingUsers(true);
     try {
@@ -132,7 +151,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ session, profile
     }
   };
 
-  // ইউজার রোল পরিবর্তন (User / Manager / Admin)
+  // ইউজার রোল পরিবর্তন
   const handleRoleChange = async (userId: string, newRole: string) => {
     try {
       const { error } = await supabase
@@ -235,7 +254,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ session, profile
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#0f172a', color: '#f8fafc', display: 'flex', fontFamily: "'Inter', sans-serif" }}>
-      
+
       {toast && (
         <div style={{ position: 'fixed', top: '20px', right: '20px', backgroundColor: '#1e293b', color: '#fff', padding: '14px 20px', borderRadius: '8px', borderLeft: `5px solid ${toast.color}`, zIndex: 9999, fontSize: '13px', boxShadow: '0 10px 25px rgba(0,0,0,0.5)' }}>
           {toast.message}
@@ -292,7 +311,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ session, profile
 
       {/* মূল কনটেন্ট এরিয়া */}
       <main style={{ flex: 1, padding: '32px', overflowY: 'auto' }}>
-        
+
         {/* ১. ওভারভিউ সেকশন */}
         {activeTab === 'overview' && (
           <div>
@@ -342,18 +361,21 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ session, profile
                         </tr>
                       </thead>
                       <tbody>
-                        {recentOrders.map((ord) => (
-                          <tr key={ord.id} style={{ borderBottom: '1px solid #0f172a' }}>
-                            <td style={{ padding: '10px', fontFamily: 'monospace', fontSize: '12px', color: '#38bdf8' }}>{ord.id.slice(0, 8)}...</td>
-                            <td style={{ padding: '10px', color: '#94a3b8', fontSize: '13px' }}>{new Date(ord.created_at).toLocaleDateString()}</td>
-                            <td style={{ padding: '10px', fontWeight: '600' }}>৳ {ord.total_amount || 0}</td>
-                            <td style={{ padding: '10px' }}>
-                              <span style={{ padding: '4px 8px', borderRadius: '4px', fontSize: '11px', backgroundColor: ord.status === 'completed' ? '#166534' : '#854d0e', color: ord.status === 'completed' ? '#4ade80' : '#fef08a' }}>
-                                {ord.status || 'pending'}
-                              </span>
-                            </td>
-                          </tr>
-                        ))}
+                        {recentOrders.map((ord) => {
+                          const badge = getStatusBadge(ord.status);
+                          return (
+                            <tr key={ord.id} style={{ borderBottom: '1px solid #0f172a' }}>
+                              <td style={{ padding: '10px', fontFamily: 'monospace', fontSize: '12px', color: '#38bdf8' }}>{ord.id.slice(0, 8)}...</td>
+                              <td style={{ padding: '10px', color: '#94a3b8', fontSize: '13px' }}>{new Date(ord.created_at).toLocaleDateString()}</td>
+                              <td style={{ padding: '10px', fontWeight: '600' }}>৳ {ord.total_amount || 0}</td>
+                              <td style={{ padding: '10px' }}>
+                                <span style={{ padding: '4px 8px', borderRadius: '4px', fontSize: '11px', backgroundColor: badge.bg, color: badge.color, fontWeight: '600' }}>
+                                  {badge.label}
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   )}
@@ -394,32 +416,37 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ session, profile
                     </tr>
                   </thead>
                   <tbody>
-                    {orders.map((ord) => (
-                      <tr key={ord.id} style={{ borderBottom: '1px solid #0f172a' }}>
-                        <td style={{ padding: '12px', fontFamily: 'monospace', color: '#38bdf8' }}>{ord.id.slice(0, 8)}...</td>
-                        <td style={{ padding: '12px', color: '#94a3b8', fontSize: '13px' }}>{new Date(ord.created_at).toLocaleDateString()}</td>
-                        <td style={{ padding: '12px' }}>{ord.customer_name || ord.phone || 'অজানা'}</td>
-                        <td style={{ padding: '12px', fontWeight: 'bold' }}>৳ {ord.total_amount || 0}</td>
-                        <td style={{ padding: '12px' }}>
-                          <span style={{ padding: '4px 8px', borderRadius: '4px', fontSize: '12px', backgroundColor: ord.status === 'completed' ? '#166534' : '#854d0e', color: ord.status === 'completed' ? '#4ade80' : '#fef08a' }}>
-                            {ord.status || 'pending'}
-                          </span>
-                        </td>
-                        <td style={{ padding: '12px' }}>
-                          <select
-                            value={ord.status || 'pending'}
-                            onChange={(e) => handleStatusChange(ord.id, e.target.value)}
-                            style={{ backgroundColor: '#0f172a', color: '#fff', border: '1px solid #334155', padding: '6px 10px', borderRadius: '6px', fontSize: '12px' }}
-                          >
-                            <option value="pending">Pending</option>
-                            <option value="processing">Processing</option>
-                            <option value="shipped">Shipped</option>
-                            <option value="completed">Completed</option>
-                            <option value="cancelled">Cancelled</option>
-                          </select>
-                        </td>
-                      </tr>
-                    ))}
+                    {orders.map((ord) => {
+                      const badge = getStatusBadge(ord.status);
+                      const currentVal = (ord.status?.toLowerCase() === 'completed') ? 'delivered' : (ord.status?.toLowerCase() || 'pending');
+
+                      return (
+                        <tr key={ord.id} style={{ borderBottom: '1px solid #0f172a' }}>
+                          <td style={{ padding: '12px', fontFamily: 'monospace', color: '#38bdf8' }}>{ord.id.slice(0, 8)}...</td>
+                          <td style={{ padding: '12px', color: '#94a3b8', fontSize: '13px' }}>{new Date(ord.created_at).toLocaleDateString()}</td>
+                          <td style={{ padding: '12px' }}>{ord.customer_name || ord.phone || 'অজানা'}</td>
+                          <td style={{ padding: '12px', fontWeight: 'bold' }}>৳ {ord.total_amount || 0}</td>
+                          <td style={{ padding: '12px' }}>
+                            <span style={{ padding: '4px 8px', borderRadius: '4px', fontSize: '12px', backgroundColor: badge.bg, color: badge.color, fontWeight: '600' }}>
+                              {badge.label}
+                            </span>
+                          </td>
+                          <td style={{ padding: '12px' }}>
+                            <select
+                              value={currentVal}
+                              onChange={(e) => handleStatusChange(ord.id, e.target.value)}
+                              style={{ backgroundColor: '#0f172a', color: '#fff', border: '1px solid #334155', padding: '6px 10px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer' }}
+                            >
+                              <option value="pending">⏳ Pending</option>
+                              <option value="received">📥 Received</option>
+                              <option value="shipped">🚚 Shipped</option>
+                              <option value="delivered">✅ Delivered / Completed</option>
+                              <option value="cancelled">❌ Cancelled</option>
+                            </select>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
