@@ -32,14 +32,16 @@ const AdminDashboard: React.FC = () => {
   return (
     <div style={{ backgroundColor: '#030303', color: '#fff', minHeight: '100vh', fontFamily: 'monospace, sans-serif' }}>
       
-      {/* 🟢 পিওর সিএসএস রেসপন্সিভ মিডিয়া কোয়েরি */}
+      {/* 🟢 ফিক্সড পিওর সিএসএস লেআউট */}
       <style>{`
-        * { box-sizing: border-box; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         
         .nomad-layout {
           display: flex;
           flex-direction: column;
           min-height: 100vh;
+          width: 100vw;
+          overflow-x: hidden;
         }
         
         .nomad-sidebar {
@@ -54,7 +56,7 @@ const AdminDashboard: React.FC = () => {
         .nomad-nav {
           display: ${menuOpen ? 'flex' : 'none'};
           flex-direction: column;
-          gap: 6px;
+          gap: 8px;
           margin-top: 15px;
           padding-top: 15px;
           border-top: 1px solid #181818;
@@ -68,13 +70,45 @@ const AdminDashboard: React.FC = () => {
           overflow-x: hidden;
         }
 
-        /* 💻 ডেস্কটপ ভিউ (768px বা তার উপরে) */
-        @media (min-width: 768px) {
+        /* 🟢 নেভিগেশন বাটনের ভিজিবিলিটি ফিক্স */
+        .nav-btn {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 12px 14px;
+          border: 1px solid transparent;
+          font-weight: bold;
+          font-size: 11px;
+          text-align: left;
+          cursor: pointer;
+          letter-spacing: 1px;
+          transition: all 0.2s ease;
+          background: transparent;
+          color: #aaa; /* দৃশ্যমান দৃশ্যটি ফিক্স করা হয়েছে */
+          border-radius: 2px;
+        }
+
+        .nav-btn.active {
+          background-color: #ffffff !important;
+          color: #000000 !important;
+          border-color: #ffffff !important;
+          box-shadow: 0 0 12px rgba(255, 255, 255, 0.2);
+        }
+
+        .nav-btn:hover:not(.active) {
+          background-color: #111111;
+          border-color: #222222;
+          color: #ffffff;
+        }
+
+        /* 💻 ১০২৪px বা তার বড় ডিসপ্লেতেই কেবল ডেস্কটপ সাইডবার দেখাবে */
+        @media (min-width: 1024px) {
           .nomad-layout {
             flex-direction: row;
           }
           .nomad-sidebar {
-            width: 250px;
+            width: 260px;
+            min-height: 100vh;
             border-bottom: none;
             border-right: 1px solid #1a1a1a;
             padding: 25px 20px;
@@ -89,42 +123,14 @@ const AdminDashboard: React.FC = () => {
             border-top: none;
           }
           .nomad-main {
-            padding: 25px 35px;
+            padding: 30px;
           }
-        }
-
-        .nav-btn {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          padding: 12px 14px;
-          border: 1px solid transparent;
-          font-weight: bold;
-          font-size: 11px;
-          text-align: left;
-          cursor: pointer;
-          letter-spacing: 1px;
-          transition: all 0.2s ease;
-          background: transparent;
-        }
-
-        .nav-btn.active {
-          background-color: #ffffff;
-          color: #000000;
-          border-color: #ffffff;
-          box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
-        }
-
-        .nav-btn:hover:not(.active) {
-          background-color: #111111;
-          border-color: #222222;
-          color: #ffffff;
         }
       `}</style>
 
       <div className="nomad-layout">
 
-        {/* 👈 সাইডবার */}
+        {/* 👈 সাইডবার (মোবাইলে টপ বার হিসেবে কাজ করবে) */}
         <aside className="nomad-sidebar">
           
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -138,10 +144,11 @@ const AdminDashboard: React.FC = () => {
               </span>
             </div>
 
-            {/* 📱 শুধুমাত্র মোবাইল ভিউ টগল বাটন */}
+            {/* 📱 শুধুমাত্র মোবাইলের জন্য প্রতীক বিশিষ্ট টগল বাটন */}
             <button
               className="nomad-menu-toggle"
               onClick={() => setMenuOpen(!menuOpen)}
+              aria-label="Toggle Menu"
               style={{
                 backgroundColor: '#111',
                 border: '1px solid #333',
@@ -171,7 +178,7 @@ const AdminDashboard: React.FC = () => {
               onClick={() => { setActiveTab('overview'); setMenuOpen(false); }}
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-              OVERVIEW
+              OVERVIEW & ANALYTICS
             </button>
 
             <button
@@ -179,7 +186,7 @@ const AdminDashboard: React.FC = () => {
               onClick={() => { setActiveTab('orders'); setMenuOpen(false); }}
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-              ORDERS
+              ORDER MANAGEMENT
             </button>
 
             <button
@@ -187,7 +194,7 @@ const AdminDashboard: React.FC = () => {
               onClick={() => { setActiveTab('products'); setMenuOpen(false); }}
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
-              PRODUCTS
+              PRODUCTS & STOCK
             </button>
 
             <button
@@ -195,12 +202,12 @@ const AdminDashboard: React.FC = () => {
               onClick={() => { setActiveTab('settings'); setMenuOpen(false); }}
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-              SETTINGS
+              ROLES & SETTINGS
             </button>
           </nav>
         </aside>
 
-        {/* 👉 মেইন কন্টেন্ট এলাকা */}
+        {/* 👉 মূল কন্টেন্ট এলাকা */}
         <main className="nomad-main">
           
           <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid #111', paddingBottom: '10px' }}>
