@@ -3,7 +3,7 @@ import { supabase } from '../supabaseClient';
 
 interface OrderItem {
   product_name: string;
-  product_image: string; // এখানে মিডিয়া ইউআরএল স্টোর হবে
+  product_image: string;
   size: string;
   color: string;
   quantity: number;
@@ -40,14 +40,14 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
 
   const statusSteps = ['pending', 'received', 'shipped', 'delivered'];
 
-  // 🔹 স্ট্যাটাস অনুযায়ী স্টেপ ইনডেক্স বের করার ডাইনামিক ফাংশন
+  // 🔹 গতিশীল স্ট্যাটাস ইনডেক্স বের করার ফাংশন (completed / processing হ্যান্ডেল করে)
   const getStepIndex = (statusStr: string) => {
     if (!statusStr) return 0;
     const s = statusStr.toLowerCase().trim();
     if (s === 'delivered' || s === 'completed') return 3;
     if (s === 'shipped') return 2;
     if (s === 'received' || s === 'processing') return 1;
-    return 0; // pending বা অন্য যেকোনো স্ট্যাটাস
+    return 0;
   };
 
   // 📄 ব্রাউজার-নেটিভ প্রিমিয়াম ডিজাইন (লাইভ স্ট্যাটাস সহ ডাউনলোড ব্যবস্থা)
@@ -67,6 +67,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
     const vatAmount = order.vat_amount || 0;
     const grandTotal = order.total_amount;
 
+    // 🔹 স্ট্যাটাস চেকিং লজিক (যা ১ম ভার্সনে সঠিকভাবে ছিল)
     const rawStatus = (order.status || 'pending').toLowerCase();
     const isDelivered = rawStatus === 'delivered' || rawStatus === 'completed';
     const currentStatusText = isDelivered ? 'DELIVERED' : rawStatus.toUpperCase();
@@ -378,7 +379,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
         const isSelected = selectedOrderIds.includes(order.id);
         const hasMultipleItems = order.items && order.items.length > 1;
 
-        // 🔹 গতিশীলভাবে বর্তমান স্টেপ ইনডেক্স বের করা হচ্ছে
+        // 🔹 ১ম ভার্সনের মতো সঠিক Step Index বের করা হচ্ছে
         const currentStepIndex = getStepIndex(order.status);
 
         return (
@@ -456,7 +457,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
               </div>
             </div>
 
-            {/* 🛒 ক্যারোজেল স্ক্রলিং */}
+            {/* 🛒 ডানে-বাম সুদৃশ্য ক্যারোজেল স্ক্রলিং উইথ প্রোডাক্ট ইমেজ */}
             <div 
               className="premium-carousel"
               style={{ 
