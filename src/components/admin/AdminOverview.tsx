@@ -9,12 +9,12 @@ interface OrderItem {
   status: string;
 }
 
-// 🟢 বড় সংখ্যা ফরম্যাট করার স্মার্ট ফাংশন (যেমন: 700000 -> 700K, 1500000 -> 1.5M)
+// 🟢 বড় সংখ্যা ফরম্যাট করার ফাংশন (যেমন: 700000 -> 700K, 1500000 -> 1.5M)
 const formatNumber = (num: number): string => {
   if (num >= 1_000_000) {
     return (num / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M';
   }
-  if (num >= 10_000) { // ১০ হাজারের ওপর গেলে K দেখাবে
+  if (num >= 10_000) {
     return (num / 1_000).toFixed(1).replace(/\.0$/, '') + 'K';
   }
   return num.toLocaleString();
@@ -34,7 +34,7 @@ const AdminOverview: React.FC = () => {
   const [activeCatalogItems, setActiveCatalogItems] = useState<number>(0);
   const [recentOrders, setRecentOrders] = useState<OrderItem[]>([]);
 
-  // স্ট্যাটাস চেকিং
+  // 🟢 স্ট্যাটাস চেকিং ফাংশন (Recent Orders টেবিলের জন্য)
   const isDelivered = (st: string) => (st || '').trim().toUpperCase().includes('DELIVER');
   const isPending = (st: string) => (st || '').trim().toUpperCase().includes('PENDING');
   const isProcessing = (st: string) => (st || '').trim().toUpperCase().includes('PROCESS');
@@ -42,38 +42,29 @@ const AdminOverview: React.FC = () => {
   const isShipped = (st: string) => (st || '').trim().toUpperCase().includes('SHIP');
   const isCancelled = (st: string) => (st || '').trim().toUpperCase().includes('CANCEL');
 
+  // 📊 ডাটা ফেচিং ফাংশন (Supabase RPC দিয়ে হাই-স্পিড ক্যালকুলেশন)
   const fetchMetricsData = async () => {
     try {
-      // ⚡ লাখ লাখ ডাটার জন্য হালকা কুয়েরি (কেবল প্রয়োজনীয় কলাম নিয়ে কাজ করা)
-      const { data: orders, error: ordersErr } = await supabase
-        .from('orders')
-        .select('status, total_amount')
-        .order('created_at', { ascending: false });
+      // ⚡ ১. সুপাবেজ ডাটাবেজের SQL Function (RPC) কল
+      const { data: metrics, error: rpcErr } = await supabase.rpc('get_admin_metrics');
 
-      if (ordersErr) throw ordersErr;
-
-      if (orders) {
-        setTotalOrders(orders.length);
-
-        // ১. রেভিনিউ গণনা
-        const rev = orders
-          .filter(o => !isCancelled(o.status))
-          .reduce((sum, o) => sum + (Number(o.total_amount) || 0), 0);
-        setTotalRevenue(rev);
-
-        // ২. স্ট্যাটাস গণনা
-        setPendingOrders(orders.filter(o => isPending(o.status)).length);
-        setProcessingOrders(orders.filter(o => isProcessing(o.status)).length);
-        setReceivedOrders(orders.filter(o => isReceived(o.status)).length);
-        setShippedOrders(orders.filter(o => isShipped(o.status)).length);
-        setDeliveredOrders(orders.filter(o => isDelivered(o.status)).length);
-        setCancelledOrders(orders.filter(o => isCancelled(o.status)).length);
+      if (rpcErr) {
+        console.error('RPC Error:', rpcErr);
+      } else if (metrics) {
+        setTotalOrders(Number(metrics.total_orders) || 0);
+        setTotalRevenue(Number(metrics.total_revenue) || 0);
+        setPendingOrders(Number(metrics.pending) || 0);
+        setProcessingOrders(Number(metrics.processing) || 0);
+        setReceivedOrders(Number(metrics.received) || 0);
+        setShippedOrders(Number(metrics.shipped) || 0);
+        setDeliveredOrders(Number(metrics.delivered) || 0);
+        setCancelledOrders(Number(metrics.cancelled) || 0);
       }
 
-      // ৩. সাম্প্রতিক ৫টি অর্ডার
+      // ⚡ ২. সাম্প্রতিক ৫টি অর্ডার (শুধুমাত্র প্রয়োজনীয় ৫টি রো ফেচ করা হচ্ছে)
       const { data: latestFive } = await supabase
         .from('orders')
-        .select('*')
+        .select('id, customer_name, created_at, total_amount, status')
         .order('created_at', { ascending: false })
         .limit(5);
 
@@ -81,7 +72,7 @@ const AdminOverview: React.FC = () => {
         setRecentOrders(latestFive);
       }
 
-      // ৪. ক্যাটালগ প্রোডাক্ট সংখ্যা
+      // ⚡ ৩. ক্যাটালগ প্রোডাক্ট সংখ্যা
       const { count: productCount } = await supabase
         .from('products')
         .select('*', { count: 'exact', head: true });
@@ -98,16 +89,24 @@ const AdminOverview: React.FC = () => {
   useEffect(() => {
     fetchMetricsData();
 
+    // ⚡ SUPABASE REALTIME SUBSCRIPTIONS
     const ordersSubscription = supabase
       .channel('admin-overview-orders')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => fetchMetricsData())
       .subscribe();
 
+    const productsSubscription = supabase
+      .channel('admin-overview-products')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => fetchMetricsData())
+      .subscribe();
+
     return () => {
       supabase.removeChannel(ordersSubscription);
+      supabase.removeChannel(productsSubscription);
     };
   }, []);
 
+  // 🏷️ স্ট্যাটাস ব্যাজ রেন্ডারার
   const renderStatusBadge = (status: string) => {
     const raw = (status || '').trim().toUpperCase();
     let displayStatus = raw;
@@ -182,12 +181,11 @@ const AdminOverview: React.FC = () => {
         </span>
       </div>
 
-      {/* 📊 ১. মেট্রিক কার্ডস (ফরম্যাটেড ভ্যালু সহ) */}
+      {/* 📊 ১. মেট্রিক কার্ডস */}
       <div className="metrics-grid">
         
         <div className="metric-card">
           <span style={{ fontSize: '10px', color: '#888', letterSpacing: '1px', display: 'block', marginBottom: '8px' }}>TOTAL REVENUE</span>
-          {/* বড় রেভিনিউ সংখ্যা হলে K/M এ দেখাবে, মাউস নিলে পূর্ণ সংখ্যা দেখাবে */}
           <div style={{ fontSize: '22px', fontWeight: 'bold', color: '#22c55e' }} title={`৳${totalRevenue.toLocaleString()}`}>
             ৳{formatNumber(totalRevenue)}
           </div>
@@ -220,13 +218,13 @@ const AdminOverview: React.FC = () => {
 
       </div>
 
-      {/* 📈 ২. ফুলফিলমেন্ট ব্রেকডাউন (বড় সংখ্যার জন্য ফরম্যাটিং সহ) */}
+      {/* 📈 ২. ফুলফিলমেন্ট ব্রেকডাউন */}
       <div style={{ backgroundColor: '#060606', border: '1px solid #1a1a1a', padding: '16px', marginBottom: '25px', borderRadius: '2px' }}>
         <span style={{ fontSize: '10px', color: '#aaa', letterSpacing: '1.5px', fontWeight: 'bold', display: 'block', marginBottom: '12px' }}>
           FULFILLMENT STATUS BREAKDOWN
         </span>
         
-        {/* রিয়েলটাইম কালার বার (শতাংশ সবসময় একই কাজ করবে লাখ ডাটা থাকলেও) */}
+        {/* রিয়েলটাইম কালার বার */}
         <div style={{ display: 'flex', height: '6px', backgroundColor: '#111', borderRadius: '3px', overflow: 'hidden', marginBottom: '12px' }}>
           <div style={{ width: `${totalOrders ? (pendingOrders / totalOrders) * 100 : 0}%`, backgroundColor: '#eab308' }} title="Pending" />
           <div style={{ width: `${totalOrders ? (processingOrders / totalOrders) * 100 : 0}%`, backgroundColor: '#a855f7' }} title="Processing" />
