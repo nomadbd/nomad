@@ -47,6 +47,7 @@ export default function Profile() {
       setProfile({ ...prof, email: user.email });
       setNewName('');
       setNewEmail('');
+      setNewPassword(''); // ⚡ স্টেট ক্লিয়ার
     }
     setLoading(false);
   };
@@ -59,6 +60,7 @@ export default function Profile() {
 
   const handleDeleteAccount = async () => {
     setShowConfirm(false);
+    // 🔒 Supabase RPC ফাংশনে নিশ্চিত করুন যে এটি auth.uid() ব্যবহার করে শুধুমাত্র নিজের অ্যাকাউন্টই মুছে দেয়
     const { error } = await supabase.rpc('delete_user');
     if (error) {
       showToast("Error: " + error.message, "#ff4444");
@@ -74,19 +76,29 @@ export default function Profile() {
       let emailChanged = false;
       let otherChanges = false;
 
-      if (newName && newName !== profile?.name) {
-        const { error: profileError } = await supabase.from('profiles').update({ name: newName }).eq('id', profile.id);
+      // 🔒 নাম আপডেট
+      if (newName.trim() && newName !== profile?.name) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({ name: newName.trim() })
+          .eq('id', profile.id); // RLS নিশ্চিত করবে যে শুধুমাত্র নিজের প্রোফাইলই আপডেট হতে পারে
         if (profileError) throw profileError;
         otherChanges = true;
       }
 
-      if (newEmail && newEmail !== profile?.email) {
-        const { error: emailError } = await supabase.auth.updateUser({ email: newEmail });
+      // 🔒 ইমেইল আপডেট
+      if (newEmail.trim() && newEmail !== profile?.email) {
+        const { error: emailError } = await supabase.auth.updateUser({ email: newEmail.trim() });
         if (emailError) throw emailError;
         emailChanged = true;
       }
 
+      // 🔒 পাসওয়ার্ড আপডেট
       if (newPassword) {
+        if (newPassword.length < 6) {
+          showToast("Password must be at least 6 characters long.", "#ff4444");
+          return;
+        }
         const { error: passwordError } = await supabase.auth.updateUser({ password: newPassword });
         if (passwordError) throw passwordError;
         otherChanges = true;
@@ -98,6 +110,7 @@ export default function Profile() {
         showToast("Profile updated successfully!", "#2ecc71");
       }
 
+      setNewPassword(''); // ⚡ সিকিউরিটির জন্য ইনপুট স্টেট ফাঁকা করা
       await fetchUserData();
       changeView('profile');
     } catch (error: any) {
@@ -117,12 +130,14 @@ export default function Profile() {
     );
   }
 
-  // ⚡ ইউজার যদি 'admin' হয়, তবে AdminDashboard লোড হবে
-  if (profile?.role === 'admin') {
+  // ⚡ ১. ইউজার 'admin' বা 'manager' হলে AdminDashboard লোড হবে
+  const isStaff = profile?.role === 'admin' || profile?.role === 'manager';
+
+  if (isStaff) {
     return <AdminDashboard session={session} profile={profile} onRefreshProfile={fetchUserData} />;
   }
 
-  // ⚡ সাধারণ কাস্টমার প্রোফাইল
+  // ⚡ ২. সাধারণ কাস্টমার প্রোফাইল
   return (
     <div style={{ backgroundColor: '#000', minHeight: '100vh', color: '#fff', padding: '40px 20px', fontFamily: "'Inter', sans-serif", width: '100%', boxSizing: 'border-box', overflowX: 'hidden' }}>
 
@@ -174,11 +189,13 @@ export default function Profile() {
             </div>
 
             <p style={{ fontSize: '10px', color: '#888', letterSpacing: '2px', marginBottom: '5px' }}>NAME</p>
-            <input placeholder={profile?.name || "Enter your name"} onChange={(e) => setNewName(e.target.value)} style={inputStyle} />
+            <input placeholder={profile?.name || "Enter your name"} value={newName} onChange={(e) => setNewName(e.target.value)} style={inputStyle} />
+            
             <p style={{ fontSize: '10px', color: '#888', letterSpacing: '2px', marginBottom: '5px' }}>EMAIL ADDRESS</p>
-            <input placeholder={profile?.email} onChange={(e) => setNewEmail(e.target.value)} style={inputStyle} />
+            <input placeholder={profile?.email} value={newEmail} onChange={(e) => setNewEmail(e.target.value)} style={inputStyle} />
+            
             <p style={{ fontSize: '10px', color: '#888', letterSpacing: '2px', marginBottom: '5px' }}>NEW PASSWORD</p>
-            <input type="password" placeholder="••••••••" onChange={(e) => setNewPassword(e.target.value)} style={inputStyle} />
+            <input type="password" placeholder="••••••••" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} style={inputStyle} />
 
             <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <button onClick={handleUpdate} style={{ ...navButtonStyle, color: '#fff', fontWeight: '600' }}>SAVE CHANGES</button>
