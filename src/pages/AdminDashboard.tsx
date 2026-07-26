@@ -21,7 +21,6 @@ const AdminDashboard: React.FC = () => {
           setUserEmail('ADMIN USER');
         }
       } catch (err) {
-        console.error('Error fetching user info:', err);
         setUserEmail('ADMIN USER');
       }
     };
@@ -32,7 +31,6 @@ const AdminDashboard: React.FC = () => {
   return (
     <div style={{ backgroundColor: '#030303', color: '#fff', minHeight: '100vh', fontFamily: 'monospace, sans-serif' }}>
       
-      {/* 🟢 ফিক্সড পিওর সিএসএস লেআউট */}
       <style>{`
         * { box-sizing: border-box; margin: 0; padding: 0; }
         
@@ -40,8 +38,7 @@ const AdminDashboard: React.FC = () => {
           display: flex;
           flex-direction: column;
           min-height: 100vh;
-          width: 100vw;
-          overflow-x: hidden;
+          width: 100%;
         }
         
         .nomad-sidebar {
@@ -50,7 +47,6 @@ const AdminDashboard: React.FC = () => {
           border-bottom: 1px solid #1a1a1a;
           padding: 15px 20px;
           flex-shrink: 0;
-          z-index: 100;
         }
 
         .nomad-nav {
@@ -64,13 +60,12 @@ const AdminDashboard: React.FC = () => {
 
         .nomad-main {
           flex: 1;
-          padding: 15px;
+          padding: 16px;
           background-color: #030303;
           width: 100%;
-          overflow-x: hidden;
+          box-sizing: border-box;
         }
 
-        /* 🟢 নেভিগেশন বাটনের ভিজিবিলিটি ফিক্স */
         .nav-btn {
           display: flex;
           align-items: center;
@@ -82,32 +77,23 @@ const AdminDashboard: React.FC = () => {
           text-align: left;
           cursor: pointer;
           letter-spacing: 1px;
-          transition: all 0.2s ease;
           background: transparent;
-          color: #aaa; /* দৃশ্যমান দৃশ্যটি ফিক্স করা হয়েছে */
-          border-radius: 2px;
+          color: #888;
         }
 
         .nav-btn.active {
           background-color: #ffffff !important;
           color: #000000 !important;
           border-color: #ffffff !important;
-          box-shadow: 0 0 12px rgba(255, 255, 255, 0.2);
         }
 
-        .nav-btn:hover:not(.active) {
-          background-color: #111111;
-          border-color: #222222;
-          color: #ffffff;
-        }
-
-        /* 💻 ১০২৪px বা তার বড় ডিসপ্লেতেই কেবল ডেস্কটপ সাইডবার দেখাবে */
-        @media (min-width: 1024px) {
+        /* 💻 শুধুমাত্র ৯৯২px বা তার বড় ডিসপ্লেতেই ডেস্কটপ সাইডবার লেআউট অন হবে */
+        @media (min-width: 992px) {
           .nomad-layout {
             flex-direction: row;
           }
           .nomad-sidebar {
-            width: 260px;
+            width: 250px;
             min-height: 100vh;
             border-bottom: none;
             border-right: 1px solid #1a1a1a;
@@ -130,9 +116,8 @@ const AdminDashboard: React.FC = () => {
 
       <div className="nomad-layout">
 
-        {/* 👈 সাইডবার (মোবাইলে টপ বার হিসেবে কাজ করবে) */}
+        {/* 👈 সাইডবার / মোবাইল হেডার */}
         <aside className="nomad-sidebar">
-          
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -144,11 +129,10 @@ const AdminDashboard: React.FC = () => {
               </span>
             </div>
 
-            {/* 📱 শুধুমাত্র মোবাইলের জন্য প্রতীক বিশিষ্ট টগল বাটন */}
+            {/* 📱 মোবাইল অনলি প্রতীক টগল */}
             <button
               className="nomad-menu-toggle"
               onClick={() => setMenuOpen(!menuOpen)}
-              aria-label="Toggle Menu"
               style={{
                 backgroundColor: '#111',
                 border: '1px solid #333',
@@ -167,7 +151,6 @@ const AdminDashboard: React.FC = () => {
             </button>
           </div>
 
-          {/* ন্যাভিগেশন লিংকস */}
           <nav className="nomad-nav">
             <span style={{ fontSize: '9px', color: '#555', letterSpacing: '2px', marginBottom: '8px', fontWeight: 'bold' }}>
               MAIN MENU
@@ -177,7 +160,6 @@ const AdminDashboard: React.FC = () => {
               className={`nav-btn ${activeTab === 'overview' ? 'active' : ''}`}
               onClick={() => { setActiveTab('overview'); setMenuOpen(false); }}
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
               OVERVIEW & ANALYTICS
             </button>
 
@@ -185,7 +167,6 @@ const AdminDashboard: React.FC = () => {
               className={`nav-btn ${activeTab === 'orders' ? 'active' : ''}`}
               onClick={() => { setActiveTab('orders'); setMenuOpen(false); }}
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
               ORDER MANAGEMENT
             </button>
 
@@ -193,7 +174,6 @@ const AdminDashboard: React.FC = () => {
               className={`nav-btn ${activeTab === 'products' ? 'active' : ''}`}
               onClick={() => { setActiveTab('products'); setMenuOpen(false); }}
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
               PRODUCTS & STOCK
             </button>
 
@@ -201,18 +181,17 @@ const AdminDashboard: React.FC = () => {
               className={`nav-btn ${activeTab === 'settings' ? 'active' : ''}`}
               onClick={() => { setActiveTab('settings'); setMenuOpen(false); }}
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
               ROLES & SETTINGS
             </button>
           </nav>
         </aside>
 
-        {/* 👉 মূল কন্টেন্ট এলাকা */}
+        {/* 👉 মেইন ওয়ার্কস্পেস */}
         <main className="nomad-main">
           
-          <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid #111', paddingBottom: '10px' }}>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid #111', paddingBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
             <div style={{ textAlign: 'right', fontSize: '10px' }}>
-              <span style={{ color: '#aaa', display: 'block' }}>
+              <span style={{ color: '#aaa', display: 'block', wordBreak: 'break-all' }}>
                 {userEmail}
               </span>
               <span style={{ color: '#22c55e', fontSize: '9px', letterSpacing: '1px', fontWeight: 'bold' }}>
