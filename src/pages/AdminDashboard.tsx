@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
-// 🟢 src/pages/ থেকে একদিন উপরে উঠে src/supabaseClient কে কল করা হচ্ছে
+
+// 🟢 src/pages/ থেকে একদিন উপরে উঠে src/supabaseClient ইমপোর্ট
 import { supabase } from '../supabaseClient'; 
 
-// 🟢 একই ফোল্ডারে (src/pages/) বাকি ফাইলগুলো থাকলে:
-import AdminOverview from './AdminOverview';
-// import AdminOrders from './AdminOrders';
-// import AdminProducts from './AdminProducts';
-// import AdminSettings from './AdminSettings';
+// 🟢 src/pages/ থেকে একদিন উপরে উঠে src/components/admin/ এর ভেতর থেকে সাব-কম্পোনেন্টসমূহ ইমপোর্ট
+import AdminOverview from '../components/admin/AdminOverview';
+// import AdminOrders from '../components/admin/AdminOrders';
+// import AdminProducts from '../components/admin/AdminProducts';
+// import AdminSettings from '../components/admin/AdminSettings';
 
 const AdminDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'overview' | 'orders' | 'products' | 'settings'>('overview');
