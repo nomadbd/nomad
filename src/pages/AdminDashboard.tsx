@@ -31,6 +31,7 @@ const AdminDashboard: React.FC = () => {
   return (
     <div style={{ backgroundColor: '#030303', color: '#fff', minHeight: '100vh', fontFamily: 'monospace, sans-serif' }}>
       
+      {/* 🟢 ফ্লুইড রেসপন্সিভ সিএসএস লেআউট */}
       <style>{`
         * { box-sizing: border-box; margin: 0; padding: 0; }
         
@@ -49,6 +50,7 @@ const AdminDashboard: React.FC = () => {
           flex-shrink: 0;
         }
 
+        /* মোবাইলে মেনু হাইড/শো থাকবে */
         .nomad-nav {
           display: ${menuOpen ? 'flex' : 'none'};
           flex-direction: column;
@@ -63,7 +65,7 @@ const AdminDashboard: React.FC = () => {
           padding: 16px;
           background-color: #030303;
           width: 100%;
-          box-sizing: border-box;
+          min-width: 0; /* ওভারফ্লো বন্ধ করার জন্য জরুরি */
         }
 
         .nav-btn {
@@ -78,30 +80,40 @@ const AdminDashboard: React.FC = () => {
           cursor: pointer;
           letter-spacing: 1px;
           background: transparent;
-          color: #888;
+          color: #aaa;
+          border-radius: 2px;
+          transition: all 0.2s ease;
         }
 
         .nav-btn.active {
           background-color: #ffffff !important;
           color: #000000 !important;
           border-color: #ffffff !important;
+          box-shadow: 0 0 10px rgba(255, 255, 255, 0.15);
         }
 
-        /* 💻 শুধুমাত্র ৯৯২px বা তার বড় ডিসপ্লেতেই ডেস্কটপ সাইডবার লেআউট অন হবে */
-        @media (min-width: 992px) {
+        .nav-btn:hover:not(.active) {
+          background-color: #111;
+          color: #fff;
+        }
+
+        /* 💻 ৭৬৮px বা তার বেশি (ডেস্কটপ এবং মোবাইলের "Desktop Site" অন করলে) */
+        @media (min-width: 768px) {
           .nomad-layout {
             flex-direction: row;
           }
           .nomad-sidebar {
-            width: 250px;
+            width: 230px;
             min-height: 100vh;
             border-bottom: none;
             border-right: 1px solid #1a1a1a;
-            padding: 25px 20px;
+            padding: 25px 18px;
           }
+          /* ডেস্কটপে টগল বাটন লোকানো থাকবে */
           .nomad-menu-toggle {
             display: none !important;
           }
+          /* ডেস্কটপে মেনু সবসময় দৃশ্যমান থাকবে */
           .nomad-nav {
             display: flex !important;
             margin-top: 25px;
@@ -109,14 +121,14 @@ const AdminDashboard: React.FC = () => {
             border-top: none;
           }
           .nomad-main {
-            padding: 30px;
+            padding: 25px 30px;
           }
         }
       `}</style>
 
       <div className="nomad-layout">
 
-        {/* 👈 সাইডবার / মোবাইল হেডার */}
+        {/* 👈 সাইডবার (ডেস্কটপ মোডে বামে স্থায়ী থাকবে) */}
         <aside className="nomad-sidebar">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
@@ -129,7 +141,7 @@ const AdminDashboard: React.FC = () => {
               </span>
             </div>
 
-            {/* 📱 মোবাইল অনলি প্রতীক টগল */}
+            {/* 📱 শুধুমাত্র মোবাইল নরমাল ভিউয়ের জন্য বাটন */}
             <button
               className="nomad-menu-toggle"
               onClick={() => setMenuOpen(!menuOpen)}
@@ -151,6 +163,7 @@ const AdminDashboard: React.FC = () => {
             </button>
           </div>
 
+          {/* মেনু লিঙ্কস */}
           <nav className="nomad-nav">
             <span style={{ fontSize: '9px', color: '#555', letterSpacing: '2px', marginBottom: '8px', fontWeight: 'bold' }}>
               MAIN MENU
@@ -186,12 +199,12 @@ const AdminDashboard: React.FC = () => {
           </nav>
         </aside>
 
-        {/* 👉 মেইন ওয়ার্কস্পেস */}
+        {/* 👉 মূল কন্টেন্ট এলাকা */}
         <main className="nomad-main">
           
-          <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid #111', paddingBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid #111', paddingBottom: '10px' }}>
             <div style={{ textAlign: 'right', fontSize: '10px' }}>
-              <span style={{ color: '#aaa', display: 'block', wordBreak: 'break-all' }}>
+              <span style={{ color: '#aaa', display: 'block' }}>
                 {userEmail}
               </span>
               <span style={{ color: '#22c55e', fontSize: '9px', letterSpacing: '1px', fontWeight: 'bold' }}>
