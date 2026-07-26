@@ -114,14 +114,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ session, profile
     }
   };
 
-  // ৩. সকল ইউজার ও রোল লোড
+  // ৩. সকল ইউজার ও রোল লোড (updated_at কলাম দিয়ে ফিল্টার)
   const fetchAllUsers = async () => {
     setLoadingUsers(true);
     try {
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('updated_at', { ascending: false });
 
       if (error) throw error;
       setUsersList(data || []);
