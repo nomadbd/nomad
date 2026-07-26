@@ -30,204 +30,190 @@ const AdminDashboard: React.FC = () => {
   }, []);
 
   return (
-    <div style={{ backgroundColor: '#000', color: '#fff', minHeight: '100vh', fontFamily: 'monospace, sans-serif' }}>
+    <div style={{ backgroundColor: '#030303', color: '#fff', minHeight: '100vh', fontFamily: 'monospace, sans-serif' }}>
       
-      {/* 🟢 সিএসএস মিডিয়া কোয়েরি (রেসপন্সিভ লেআউট) */}
+      {/* 🟢 পিওর সিএসএস রেসপন্সিভ মিডিয়া কোয়েরি */}
       <style>{`
+        * { box-sizing: border-box; }
+        
         .nomad-layout {
           display: flex;
           flex-direction: column;
           min-height: 100vh;
         }
+        
         .nomad-sidebar {
           width: 100%;
-          background-color: #050505;
-          border-bottom: 1px solid #1f1f1f;
+          background-color: #060606;
+          border-bottom: 1px solid #1a1a1a;
           padding: 15px 20px;
-          box-sizing: border-box;
           flex-shrink: 0;
+          z-index: 100;
         }
-        .nomad-menu-toggle {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
+
         .nomad-nav {
           display: ${menuOpen ? 'flex' : 'none'};
           flex-direction: column;
-          gap: 8px;
+          gap: 6px;
           margin-top: 15px;
+          padding-top: 15px;
+          border-top: 1px solid #181818;
         }
+
         .nomad-main {
           flex: 1;
           padding: 15px;
-          background-color: #000;
-          overflow-x: hidden;
+          background-color: #030303;
           width: 100%;
-          box-sizing: border-box;
+          overflow-x: hidden;
         }
 
-        /* 💻 ডেস্কটপ ভিউ (768px+) */
+        /* 💻 ডেস্কটপ ভিউ (768px বা তার উপরে) */
         @media (min-width: 768px) {
           .nomad-layout {
             flex-direction: row;
           }
           .nomad-sidebar {
-            width: 260px;
+            width: 250px;
             border-bottom: none;
-            border-right: 1px solid #1f1f1f;
-            padding: 20px;
+            border-right: 1px solid #1a1a1a;
+            padding: 25px 20px;
           }
           .nomad-menu-toggle {
-            display: none;
+            display: none !important;
           }
           .nomad-nav {
             display: flex !important;
-            margin-top: 20px;
+            margin-top: 25px;
+            padding-top: 0;
+            border-top: none;
           }
           .nomad-main {
-            padding: 30px;
+            padding: 25px 35px;
           }
+        }
+
+        .nav-btn {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 12px 14px;
+          border: 1px solid transparent;
+          font-weight: bold;
+          font-size: 11px;
+          text-align: left;
+          cursor: pointer;
+          letter-spacing: 1px;
+          transition: all 0.2s ease;
+          background: transparent;
+        }
+
+        .nav-btn.active {
+          background-color: #ffffff;
+          color: #000000;
+          border-color: #ffffff;
+          box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+        }
+
+        .nav-btn:hover:not(.active) {
+          background-color: #111111;
+          border-color: #222222;
+          color: #ffffff;
         }
       `}</style>
 
-      {/* 📱💻 মেইন লেআউট */}
       <div className="nomad-layout">
 
         {/* 👈 সাইডবার */}
         <aside className="nomad-sidebar">
           
-          {/* হেডার ও মোবাইল অনলি প্রতীক টগল */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
-              <h1 style={{ fontSize: '18px', fontWeight: '900', letterSpacing: '4px', margin: 0, color: '#fff' }}>NOMAD</h1>
-              <span style={{ fontSize: '9px', color: '#aaa', letterSpacing: '1px' }}>CONTROL PANEL</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ width: '8px', height: '8px', backgroundColor: '#22c55e', borderRadius: '50%', boxShadow: '0 0 8px #22c55e' }}></span>
+                <h1 style={{ fontSize: '18px', fontWeight: '900', letterSpacing: '4px', margin: 0, color: '#fff' }}>NOMAD</h1>
+              </div>
+              <span style={{ fontSize: '9px', color: '#666', letterSpacing: '1.5px', marginTop: '2px', display: 'block' }}>
+                CONTROL PANEL v2.0
+              </span>
             </div>
 
-            {/* 🟢 শুধুমাত্র প্রতীক বিশিষ্ট মোবাইল টগল বাটন */}
+            {/* 📱 শুধুমাত্র মোবাইল ভিউ টগল বাটন */}
             <button
               className="nomad-menu-toggle"
               onClick={() => setMenuOpen(!menuOpen)}
-              aria-label={menuOpen ? 'Close Menu' : 'Open Menu'}
               style={{
                 backgroundColor: '#111',
                 border: '1px solid #333',
                 color: '#fff',
-                width: '36px',
-                height: '36px',
-                fontSize: '16px',
+                width: '38px',
+                height: '38px',
+                fontSize: '18px',
                 cursor: 'pointer',
-                lineHeight: 1
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: '2px'
               }}
             >
               {menuOpen ? '✕' : '☰'}
             </button>
           </div>
 
-          {/* ন্যাভিগেশন ড্রপডাউন (মোবাইলে টগল হলে দেখাবে) */}
+          {/* ন্যাভিগেশন লিংকস */}
           <nav className="nomad-nav">
-            <span style={{ fontSize: '9px', color: '#666', letterSpacing: '2px', marginBottom: '4px' }}>
-              NAVIGATION
+            <span style={{ fontSize: '9px', color: '#555', letterSpacing: '2px', marginBottom: '8px', fontWeight: 'bold' }}>
+              MAIN MENU
             </span>
             
             <button
+              className={`nav-btn ${activeTab === 'overview' ? 'active' : ''}`}
               onClick={() => { setActiveTab('overview'); setMenuOpen(false); }}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px',
-                padding: '12px 14px',
-                backgroundColor: activeTab === 'overview' ? '#fff' : 'transparent',
-                color: activeTab === 'overview' ? '#000' : '#ccc',
-                border: 'none',
-                fontWeight: 'bold',
-                fontSize: '11px',
-                textAlign: 'left',
-                cursor: 'pointer',
-                letterSpacing: '1px'
-              }}
             >
-              ░ OVERVIEW & ANALYTICS
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+              OVERVIEW
             </button>
 
             <button
+              className={`nav-btn ${activeTab === 'orders' ? 'active' : ''}`}
               onClick={() => { setActiveTab('orders'); setMenuOpen(false); }}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px',
-                padding: '12px 14px',
-                backgroundColor: activeTab === 'orders' ? '#fff' : 'transparent',
-                color: activeTab === 'orders' ? '#000' : '#ccc',
-                border: 'none',
-                fontWeight: 'bold',
-                fontSize: '11px',
-                textAlign: 'left',
-                cursor: 'pointer',
-                letterSpacing: '1px'
-              }}
             >
-              ▤ ORDER MANAGEMENT
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+              ORDERS
             </button>
 
             <button
+              className={`nav-btn ${activeTab === 'products' ? 'active' : ''}`}
               onClick={() => { setActiveTab('products'); setMenuOpen(false); }}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px',
-                padding: '12px 14px',
-                backgroundColor: activeTab === 'products' ? '#fff' : 'transparent',
-                color: activeTab === 'products' ? '#000' : '#ccc',
-                border: 'none',
-                fontWeight: 'bold',
-                fontSize: '11px',
-                textAlign: 'left',
-                cursor: 'pointer',
-                letterSpacing: '1px'
-              }}
             >
-              ⬡ PRODUCTS & STOCK
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+              PRODUCTS
             </button>
 
             <button
+              className={`nav-btn ${activeTab === 'settings' ? 'active' : ''}`}
               onClick={() => { setActiveTab('settings'); setMenuOpen(false); }}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px',
-                padding: '12px 14px',
-                backgroundColor: activeTab === 'settings' ? '#fff' : 'transparent',
-                color: activeTab === 'settings' ? '#000' : '#ccc',
-                border: 'none',
-                fontWeight: 'bold',
-                fontSize: '11px',
-                textAlign: 'left',
-                cursor: 'pointer',
-                letterSpacing: '1px'
-              }}
             >
-              ⚙ ROLES & SETTINGS
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+              SETTINGS
             </button>
           </nav>
         </aside>
 
-        {/* 👉 মূল ওয়ার্কস্পেস */}
+        {/* 👉 মেইন কন্টেন্ট এলাকা */}
         <main className="nomad-main">
           
-          {/* 🔝 টপ হেডার */}
           <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid #111', paddingBottom: '10px' }}>
             <div style={{ textAlign: 'right', fontSize: '10px' }}>
-              <span style={{ color: '#ccc', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '180px', whiteSpace: 'nowrap' }} title={userEmail}>
+              <span style={{ color: '#aaa', display: 'block' }}>
                 {userEmail}
               </span>
               <span style={{ color: '#22c55e', fontSize: '9px', letterSpacing: '1px', fontWeight: 'bold' }}>
-                ● SYSTEM ACTIVE
+                ● ONLINE (ENCRYPTED)
               </span>
             </div>
           </div>
 
-          {/* সক্রিয় ট্যাব রেন্ডার */}
           {activeTab === 'overview' && <AdminOverview />}
           {activeTab === 'orders' && <AdminOrders />}
           {activeTab === 'products' && <AdminProducts />}
