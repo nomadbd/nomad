@@ -32,7 +32,7 @@ const AdminDashboard: React.FC = () => {
   return (
     <div style={{ backgroundColor: '#000', color: '#fff', minHeight: '100vh', fontFamily: 'monospace, sans-serif' }}>
       
-      {/* 🟢 বিশুদ্ধ CSS Media Query (যা মোবাইলে শতভাগ রেসপন্সিভ নিশ্চিত করে) */}
+      {/* 🟢 সিএসএস মিডিয়া কোয়েরি (রেসপন্সিভ লেআউট) */}
       <style>{`
         .nomad-layout {
           display: flex;
@@ -48,7 +48,9 @@ const AdminDashboard: React.FC = () => {
           flex-shrink: 0;
         }
         .nomad-menu-toggle {
-          display: block;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
         .nomad-nav {
           display: ${menuOpen ? 'flex' : 'none'};
@@ -65,7 +67,7 @@ const AdminDashboard: React.FC = () => {
           box-sizing: border-box;
         }
 
-        /* 💻 ডেস্কটপ ও ট্যাবলেট ভিউ (768px এর ওপরে) */
+        /* 💻 ডেস্কটপ ভিউ (768px+) */
         @media (min-width: 768px) {
           .nomad-layout {
             flex-direction: row;
@@ -95,31 +97,34 @@ const AdminDashboard: React.FC = () => {
         {/* 👈 সাইডবার */}
         <aside className="nomad-sidebar">
           
-          {/* হেডার ও মোবাইল মেনু টগল */}
+          {/* হেডার ও মোবাইল অনলি প্রতীক টগল */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
               <h1 style={{ fontSize: '18px', fontWeight: '900', letterSpacing: '4px', margin: 0, color: '#fff' }}>NOMAD</h1>
               <span style={{ fontSize: '9px', color: '#aaa', letterSpacing: '1px' }}>CONTROL PANEL</span>
             </div>
 
-            {/* মোবাইলে মেনু খুলতে বোতাম */}
+            {/* 🟢 শুধুমাত্র প্রতীক বিশিষ্ট মোবাইল টগল বাটন */}
             <button
               className="nomad-menu-toggle"
               onClick={() => setMenuOpen(!menuOpen)}
+              aria-label={menuOpen ? 'Close Menu' : 'Open Menu'}
               style={{
                 backgroundColor: '#111',
                 border: '1px solid #333',
                 color: '#fff',
-                padding: '6px 12px',
-                fontSize: '11px',
-                cursor: 'pointer'
+                width: '36px',
+                height: '36px',
+                fontSize: '16px',
+                cursor: 'pointer',
+                lineHeight: 1
               }}
             >
-              {menuOpen ? 'CLOSE ✕' : 'MENU ☰'}
+              {menuOpen ? '✕' : '☰'}
             </button>
           </div>
 
-          {/* ন্যাভিগেশন মেনু */}
+          {/* ন্যাভিগেশন ড্রপডাউন (মোবাইলে টগল হলে দেখাবে) */}
           <nav className="nomad-nav">
             <span style={{ fontSize: '9px', color: '#666', letterSpacing: '2px', marginBottom: '4px' }}>
               NAVIGATION
@@ -207,10 +212,10 @@ const AdminDashboard: React.FC = () => {
           </nav>
         </aside>
 
-        {/* 👉 মূল কন্টেন্ট এলাকা */}
+        {/* 👉 মূল ওয়ার্কস্পেস */}
         <main className="nomad-main">
           
-          {/* 🔝 টপ ইউজার হেডার (ফিক্সড ইমেইল রেসপন্সিভ) */}
+          {/* 🔝 টপ হেডার */}
           <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid #111', paddingBottom: '10px' }}>
             <div style={{ textAlign: 'right', fontSize: '10px' }}>
               <span style={{ color: '#ccc', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '180px', whiteSpace: 'nowrap' }} title={userEmail}>
@@ -222,7 +227,7 @@ const AdminDashboard: React.FC = () => {
             </div>
           </div>
 
-          {/* এক্টিভ ট্যাব রেন্ডারিং */}
+          {/* সক্রিয় ট্যাব রেন্ডার */}
           {activeTab === 'overview' && <AdminOverview />}
           {activeTab === 'orders' && <AdminOrders />}
           {activeTab === 'products' && <AdminProducts />}
