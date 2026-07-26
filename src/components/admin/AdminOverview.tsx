@@ -1,303 +1,276 @@
-import React, { useState, useEffect } from 'react';
-import { supabase } from '../../supabaseClient'; // আপনার সুপাবেস ক্লায়েন্ট পাথ নিশ্চিত করুন
+import React, { useEffect, useState } from 'react';
+import { supabase } from '../../supabaseClient';
 
-interface SummaryMetrics {
-  totalRevenue: number;
-  totalOrders: number;
-  pendingOrders: number;
-  receivedOrders: number;
-  shippedOrders: number;
-  deliveredOrders: number;
-  totalProducts: number;
-}
-
-interface RecentOrder {
+interface OrderItem {
   id: string;
   customer_name: string;
+  created_at: string;
   total_amount: number;
   status: string;
-  created_at: string;
 }
 
 const AdminOverview: React.FC = () => {
-  const [metrics, setMetrics] = useState<SummaryMetrics>({
-    totalRevenue: 0,
-    totalOrders: 0,
-    pendingOrders: 0,
-    receivedOrders: 0,
-    shippedOrders: 0,
-    deliveredOrders: 0,
-    totalProducts: 0
-  });
-
-  const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [totalRevenue, setTotalRevenue] = useState<number>(0);
+  const [totalOrders, setTotalOrders] = useState<number>(0);
+  const [pendingOrders, setPendingOrders] = useState<number>(0);
+  const [receivedOrders, setReceivedOrders] = useState<number>(0);
+  const [shippedOrders, setShippedOrders] = useState<number>(0);
+  const [deliveredOrders, setDeliveredOrders] = useState<number>(0);
+  const [activeCatalogItems, setActiveCatalogItems] = useState<number>(0);
+  const [recentOrders, setRecentOrders] = useState<OrderItem[]>([]);
 
-  const fetchOverviewData = async () => {
+  const fetchMetricsData = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-
-      // ১. সব অর্ডার ফেচ করা
-      const { data: orders, error: ordersError } = await supabase
+      // ১. অর্ডার ডেটা ফেচ
+      const { data: orders, error: ordersErr } = await supabase
         .from('orders')
-        .select('id, total_amount, status, created_at, customer_name')
+        .select('*')
         .order('created_at', { ascending: false });
 
-      if (ordersError) throw ordersError;
+      if (ordersErr) throw ordersErr;
 
-      // ২. সব প্রোডাক্টের সংখ্যা ফেচ করা
-      const { count: productCount, error: productsError } = await supabase
+      if (orders) {
+        setTotalOrders(orders.length);
+        
+        // মোট আয় (ক্যান্সেলড বাদে)
+        const rev = orders
+          .filter(o => o.status !== 'CANCELLED')
+          .reduce((sum, o) => sum + (Number(o.total_amount) || 0), 0);
+        setTotalRevenue(rev);
+
+        // স্ট্যাটাস ফিল্টারিং
+        const pending = orders.filter(o => o.status === 'PENDING' || o.status === 'PROCESSING').length;
+        const received = orders.filter(o => o.status === 'RECEIVED').length;
+        const shipped = orders.filter(o => o.status === 'SHIPPED').length;
+        const delivered = orders.filter(o => o.status === 'DELIVERED').length;
+
+        setPendingOrders(pending);
+        setReceivedOrders(received);
+        setShippedOrders(shipped);
+        setDeliveredOrders(delivered);
+
+        // সাম্প্রতিক ৫টি অর্ডার
+        setRecentOrders(orders.slice(0, 5));
+      }
+
+      // ২. প্রোডাক্ট ক্যাটালগ আইটেম ফেচ
+      const { count: productCount, error: prodErr } = await supabase
         .from('products')
         .select('*', { count: 'exact', head: true });
 
-      if (productsError) console.error('Error fetching product count:', productsError);
-
-      if (orders) {
-        let rev = 0;
-        let pending = 0;
-        let received = 0;
-        let shipped = 0;
-        let delivered = 0;
-
-        orders.forEach((ord: any) => {
-          const st = (ord.status || '').toLowerCase().trim();
-          
-          // মোট রেভিনিউ হিসাব (ক্যান্সেলড ছাড়া বাকি সব)
-          if (st !== 'cancelled') {
-            rev += (ord.total_amount || 0);
-          }
-
-          // Processing এবং Pending দুটোকেই পেন্ডিং/প্রসেসিং হিসেবে গণনা করা
-          if (st === 'pending' || st === 'processing') pending++;
-          else if (st === 'received') received++;
-          else if (st === 'shipped') shipped++;
-          else if (st === 'delivered' || st === 'completed' || st === 'delivered / completed') delivered++;
-        });
-
-        setMetrics({
-          totalRevenue: rev,
-          totalOrders: orders.length,
-          pendingOrders: pending,
-          receivedOrders: received,
-          shippedOrders: shipped,
-          deliveredOrders: delivered,
-          totalProducts: productCount || 0
-        });
-
-        // সাম্প্রতিক ৫টি অর্ডার
-        const recent = orders.slice(0, 5).map((ord: any) => ({
-          id: ord.id,
-          customer_name: ord.customer_name || 'VALUED CUSTOMER',
-          total_amount: ord.total_amount,
-          status: ord.status || 'Pending',
-          created_at: ord.created_at
-        }));
-
-        setRecentOrders(recent);
+      if (!prodErr && productCount !== null) {
+        setActiveCatalogItems(productCount);
       }
 
     } catch (err) {
-      console.error('Error loading overview analytics:', err);
+      console.error('Error loading dashboard analytics:', err);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchOverviewData();
+    fetchMetricsData();
   }, []);
 
-  const getStatusBadgeColor = (rawStatus: string) => {
-    const s = rawStatus.trim().toLowerCase();
-    if (s === 'received') return '#3b82f6'; // Blue
-    if (s === 'shipped') return '#eab308'; // Yellow
-    if (s === 'delivered' || s === 'completed' || s === 'delivered / completed') return '#22c55e'; // Green
-    if (s === 'cancelled') return '#ef4444'; // Red
-    if (s === 'processing') return '#a855f7'; // Purple
-    return '#a855f7'; // Default Purple
+  // স্ট্যাটাস ব্যাজের কালার ও স্টাইল হ্যান্ডলার
+  const renderStatusBadge = (status: string) => {
+    const s = status.toUpperCase();
+    let color = '#aaa';
+    let bg = '#111';
+
+    if (s === 'PENDING' || s === 'PROCESSING') { color = '#a855f7'; bg = '#1e102a'; }
+    else if (s === 'RECEIVED') { color = '#3b82f6'; bg = '#0d1d3a'; }
+    else if (s === 'SHIPPED') { color = '#eab308'; bg = '#2a2208'; }
+    else if (s === 'DELIVERED') { color = '#22c55e'; bg = '#092b15'; }
+
+    return (
+      <span style={{
+        backgroundColor: bg,
+        color: color,
+        padding: '3px 8px',
+        fontSize: '9px',
+        fontWeight: 'bold',
+        fontFamily: 'monospace',
+        letterSpacing: '1px',
+        border: `1px solid ${color}44`,
+        whiteSpace: 'nowrap'
+      }}>
+        ● {s}
+      </span>
+    );
   };
 
-  if (loading) {
-    return (
-      <div style={{ color: '#ccc', fontFamily: 'monospace', letterSpacing: '2px', fontSize: '11px', textAlign: 'center', padding: '50px 0' }}>
-        CALCULATING SYSTEM METRICS...
-      </div>
-    );
-  }
-
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '25px' }}>
+    <div style={{ color: '#fff', fontFamily: 'monospace, sans-serif' }}>
       
-      {/* 🔝 হেডার টাইটেল */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+      {/* 🔝 হেডার এবং রিফ্রেশ বাটন (একই লাইনে রেসপন্সিভভাবে সাজানো) */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '10px' }}>
         <div>
-          <h2 style={{ fontSize: '18px', fontWeight: '900', letterSpacing: '3px', margin: 0, color: '#fff' }}>
+          <h2 style={{ fontSize: '16px', fontWeight: 'bold', letterSpacing: '2px', margin: 0 }}>
             HQ METRICS & OVERVIEW
           </h2>
-          <span style={{ fontSize: '10px', color: '#b0b0b0', fontFamily: 'monospace', letterSpacing: '1px' }}>
+          <span style={{ fontSize: '10px', color: '#666', letterSpacing: '1px' }}>
             REAL-TIME FINANCIAL & FULFILLMENT INSIGHTS
           </span>
         </div>
+
         <button
-          onClick={fetchOverviewData}
+          onClick={fetchMetricsData}
+          disabled={loading}
           style={{
-            backgroundColor: '#111',
+            backgroundColor: '#050505',
             border: '1px solid #333',
             color: '#ccc',
-            padding: '8px 14px',
+            padding: '6px 12px',
             fontSize: '10px',
             fontFamily: 'monospace',
-            letterSpacing: '1px',
-            cursor: 'pointer'
+            cursor: loading ? 'not-allowed' : 'pointer',
+            letterSpacing: '1px'
           }}
         >
-          RELOAD ANALYTICS
+          {loading ? 'REFRESHING...' : '↻ RELOAD'}
         </button>
       </div>
 
-      {/* 📊 ৪টি প্রধান কি-পারফরম্যান্স কার্ড (KPI Cards) */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px' }}>
+      {/* 📊 ১. ৪টি মূল মেট্রিক কার্ড (মোবাইলে ২-কলাম এবং ডেক্সটপে ৪-কলাম অটো-ফিট) */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+        gap: '12px',
+        marginBottom: '25px'
+      }}>
         
-        {/* Card 1: Total Revenue */}
-        <div style={{ backgroundColor: '#050505', border: '1px solid #222', padding: '18px' }}>
-          <span style={{ fontSize: '9px', color: '#aaa', fontFamily: 'monospace', letterSpacing: '1.5px', fontWeight: 'bold', display: 'block', marginBottom: '8px' }}>
+        {/* কার্ড ১: মোট আয় */}
+        <div style={{ backgroundColor: '#050505', border: '1px solid #1a1a1a', padding: '15px' }}>
+          <span style={{ fontSize: '9px', color: '#888', letterSpacing: '1px', display: 'block', marginBottom: '8px' }}>
             TOTAL GROSS REVENUE
           </span>
-          <span style={{ fontSize: '22px', fontWeight: '900', color: '#00ff66', fontFamily: 'monospace', letterSpacing: '1px' }}>
-            ৳{metrics.totalRevenue.toLocaleString()}
+          <span style={{ fontSize: '20px', fontWeight: 'bold', color: '#22c55e' }}>
+            ৳{totalRevenue.toLocaleString()}
           </span>
-          <span style={{ fontSize: '9px', color: '#888', fontFamily: 'monospace', display: 'block', marginTop: '6px' }}>
-            • EXCLUDING CANCELLED ORDERS
+          <span style={{ fontSize: '8px', color: '#555', display: 'block', marginTop: '6px' }}>
+            * EXCLUDING CANCELLED
           </span>
         </div>
 
-        {/* Card 2: Total Orders */}
-        <div style={{ backgroundColor: '#050505', border: '1px solid #222', padding: '18px' }}>
-          <span style={{ fontSize: '9px', color: '#aaa', fontFamily: 'monospace', letterSpacing: '1.5px', fontWeight: 'bold', display: 'block', marginBottom: '8px' }}>
+        {/* কার্ড ২: মোট অর্ডার */}
+        <div style={{ backgroundColor: '#050505', border: '1px solid #1a1a1a', padding: '15px' }}>
+          <span style={{ fontSize: '9px', color: '#888', letterSpacing: '1px', display: 'block', marginBottom: '8px' }}>
             TOTAL ORDERS LOGGED
           </span>
-          <span style={{ fontSize: '22px', fontWeight: '900', color: '#fff', fontFamily: 'monospace', letterSpacing: '1px' }}>
-            {metrics.totalOrders}
+          <span style={{ fontSize: '20px', fontWeight: 'bold', color: '#fff' }}>
+            {totalOrders}
           </span>
-          <span style={{ fontSize: '9px', color: '#888', fontFamily: 'monospace', display: 'block', marginTop: '6px' }}>
-            • ALL-TIME SYSTEM RECORD
+          <span style={{ fontSize: '8px', color: '#555', display: 'block', marginTop: '6px' }}>
+            * ALL-TIME RECORD
           </span>
         </div>
 
-        {/* Card 3: Pending & Received Action Needed */}
-        <div style={{ backgroundColor: '#050505', border: '1px solid #222', padding: '18px' }}>
-          <span style={{ fontSize: '9px', color: '#aaa', fontFamily: 'monospace', letterSpacing: '1.5px', fontWeight: 'bold', display: 'block', marginBottom: '8px' }}>
+        {/* কার্ড ৩: পেন্ডিং / রিসিভড */}
+        <div style={{ backgroundColor: '#050505', border: '1px solid #1a1a1a', padding: '15px' }}>
+          <span style={{ fontSize: '9px', color: '#888', letterSpacing: '1px', display: 'block', marginBottom: '8px' }}>
             PENDING & RECEIVED
           </span>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-            <span style={{ fontSize: '22px', fontWeight: '900', color: '#a855f7', fontFamily: 'monospace' }}>
-              {metrics.pendingOrders}
-            </span>
-            <span style={{ fontSize: '11px', color: '#3b82f6', fontFamily: 'monospace' }}>
-              / {metrics.receivedOrders} REC
-            </span>
+          <div style={{ fontSize: '20px', fontWeight: 'bold' }}>
+            <span style={{ color: '#a855f7' }}>{pendingOrders}</span>
+            <span style={{ fontSize: '12px', color: '#444', margin: '0 4px' }}>/</span>
+            <span style={{ color: '#3b82f6', fontSize: '14px' }}>{receivedOrders} REC</span>
           </div>
-          <span style={{ fontSize: '9px', color: '#888', fontFamily: 'monospace', display: 'block', marginTop: '6px' }}>
-            • REQUIRES PROCESSING
+          <span style={{ fontSize: '8px', color: '#555', display: 'block', marginTop: '6px' }}>
+            * REQUIRES PROCESSING
           </span>
         </div>
 
-        {/* Card 4: Catalog Products */}
-        <div style={{ backgroundColor: '#050505', border: '1px solid #222', padding: '18px' }}>
-          <span style={{ fontSize: '9px', color: '#aaa', fontFamily: 'monospace', letterSpacing: '1.5px', fontWeight: 'bold', display: 'block', marginBottom: '8px' }}>
+        {/* কার্ড ৪: এক্টিভ প্রোডাক্ট ক্যাটালগ */}
+        <div style={{ backgroundColor: '#050505', border: '1px solid #1a1a1a', padding: '15px' }}>
+          <span style={{ fontSize: '9px', color: '#888', letterSpacing: '1px', display: 'block', marginBottom: '8px' }}>
             ACTIVE CATALOG ITEMS
           </span>
-          <span style={{ fontSize: '22px', fontWeight: '900', color: '#fff', fontFamily: 'monospace', letterSpacing: '1px' }}>
-            {metrics.totalProducts}
+          <span style={{ fontSize: '20px', fontWeight: 'bold', color: '#fff' }}>
+            {activeCatalogItems}
           </span>
-          <span style={{ fontSize: '9px', color: '#888', fontFamily: 'monospace', display: 'block', marginTop: '6px' }}>
-            • LIVE IN STORE
+          <span style={{ fontSize: '8px', color: '#555', display: 'block', marginTop: '6px' }}>
+            * LIVE IN STORE
           </span>
         </div>
 
       </div>
 
-      {/* 📈 স্ট্যাটাস ডিসট্রিবিউশন প্রোগ্রেস বার (Order Breakdown) */}
-      <div style={{ backgroundColor: '#050505', border: '1px solid #222', padding: '20px' }}>
-        <span style={{ fontSize: '10px', color: '#ccc', fontFamily: 'monospace', letterSpacing: '2px', fontWeight: 'bold', display: 'block', marginBottom: '15px' }}>
+      {/* 📈 ২. ফুলফিলমেন্ট স্ট্যাটাস ব্রেকডাউন */}
+      <div style={{ backgroundColor: '#050505', border: '1px solid #1a1a1a', padding: '15px', marginBottom: '25px' }}>
+        <span style={{ fontSize: '10px', color: '#aaa', letterSpacing: '1.5px', display: 'block', marginBottom: '12px' }}>
           FULFILLMENT STATUS BREAKDOWN
         </span>
-
-        {/* Visual Bar */}
-        <div style={{ height: '8px', backgroundColor: '#111', borderRadius: '4px', overflow: 'hidden', display: 'flex', marginBottom: '20px' }}>
-          <div style={{ width: `${metrics.totalOrders ? (metrics.deliveredOrders / metrics.totalOrders) * 100 : 0}%`, backgroundColor: '#22c55e' }} title="Delivered" />
-          <div style={{ width: `${metrics.totalOrders ? (metrics.shippedOrders / metrics.totalOrders) * 100 : 0}%`, backgroundColor: '#eab308' }} title="Shipped" />
-          <div style={{ width: `${metrics.totalOrders ? (metrics.receivedOrders / metrics.totalOrders) * 100 : 0}%`, backgroundColor: '#3b82f6' }} title="Received" />
-          <div style={{ width: `${metrics.totalOrders ? (metrics.pendingOrders / metrics.totalOrders) * 100 : 0}%`, backgroundColor: '#a855f7' }} title="Pending/Processing" />
+        
+        {/* ভিজ্যুয়াল প্রোগ্রেস বার */}
+        <div style={{ display: 'flex', height: '6px', backgroundColor: '#111', borderRadius: '2px', overflow: 'hidden', marginBottom: '12px' }}>
+          <div style={{ width: `${totalOrders ? (pendingOrders/totalOrders)*100 : 0}%`, backgroundColor: '#a855f7' }} />
+          <div style={{ width: `${totalOrders ? (receivedOrders/totalOrders)*100 : 0}%`, backgroundColor: '#3b82f6' }} />
+          <div style={{ width: `${totalOrders ? (shippedOrders/totalOrders)*100 : 0}%`, backgroundColor: '#eab308' }} />
+          <div style={{ width: `${totalOrders ? (deliveredOrders/totalOrders)*100 : 0}%`, backgroundColor: '#22c55e' }} />
         </div>
 
-        {/* Legend Indicator */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '12px' }}>
-          <div style={{ fontSize: '11px', fontFamily: 'monospace', color: '#ccc' }}>
-            <span style={{ color: '#a855f7' }}>●</span> PENDING: <strong style={{ color: '#fff' }}>{metrics.pendingOrders}</strong>
-          </div>
-          <div style={{ fontSize: '11px', fontFamily: 'monospace', color: '#ccc' }}>
-            <span style={{ color: '#3b82f6' }}>●</span> RECEIVED: <strong style={{ color: '#fff' }}>{metrics.receivedOrders}</strong>
-          </div>
-          <div style={{ fontSize: '11px', fontFamily: 'monospace', color: '#ccc' }}>
-            <span style={{ color: '#eab308' }}>●</span> SHIPPED: <strong style={{ color: '#fff' }}>{metrics.shippedOrders}</strong>
-          </div>
-          <div style={{ fontSize: '11px', fontFamily: 'monospace', color: '#ccc' }}>
-            <span style={{ color: '#22c55e' }}>●</span> DELIVERED: <strong style={{ color: '#fff' }}>{metrics.deliveredOrders}</strong>
-          </div>
+        {/* লেজেন্ডস (সব ডিভাইসে মানানসই) */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '15px', fontSize: '10px' }}>
+          <span><strong style={{ color: '#a855f7' }}>● PENDING:</strong> {pendingOrders}</span>
+          <span><strong style={{ color: '#3b82f6' }}>● RECEIVED:</strong> {receivedOrders}</span>
+          <span><strong style={{ color: '#eab308' }}>● SHIPPED:</strong> {shippedOrders}</span>
+          <span><strong style={{ color: '#22c55e' }}>● DELIVERED:</strong> {deliveredOrders}</span>
         </div>
       </div>
 
-      {/* 🕒 রিসেন্ট ৫টি অর্ডার টেবিল */}
-      <div style={{ backgroundColor: '#050505', border: '1px solid #222', padding: '20px' }}>
-        <span style={{ fontSize: '10px', color: '#ccc', fontFamily: 'monospace', letterSpacing: '2px', fontWeight: 'bold', display: 'block', marginBottom: '15px' }}>
+      {/* 📑 ৩. রিসেন্ট অর্ডার মেমোরেন্ডাম (টেবিল কেটে যাওয়া রোধ করার ফিক্সসহ) */}
+      <div style={{ backgroundColor: '#050505', border: '1px solid #1a1a1a', padding: '15px' }}>
+        <span style={{ fontSize: '10px', color: '#aaa', letterSpacing: '1.5px', display: 'block', marginBottom: '15px' }}>
           RECENT ORDERS MEMORANDUM
         </span>
 
-        {recentOrders.length === 0 ? (
-          <div style={{ color: '#aaa', fontFamily: 'monospace', fontSize: '11px', padding: '20px 0' }}>
-            NO RECENT ORDERS AVAILABLE
-          </div>
-        ) : (
-          <div style={{ overflowX: 'auto', width: '100%' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '11px', fontFamily: 'monospace', minWidth: '480px' }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid #333', color: '#aaa', textTransform: 'uppercase' }}>
-                  <th style={{ padding: '10px 5px' }}>ORDER ID</th>
-                  <th style={{ padding: '10px 5px' }}>CUSTOMER</th>
-                  <th style={{ padding: '10px 5px' }}>DATE</th>
-                  <th style={{ padding: '10px 5px' }}>AMOUNT</th>
-                  <th style={{ padding: '10px 5px', textAlign: 'right' }}>STATUS</th>
+        {/* 🟢 টেবিলকে হরিজন্টাল স্ক্রোলযোগ্য করা হলো যেন ছোট স্ক্রিনেও কলাম না কাটে */}
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', minWidth: '500px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '11px' }}>
+            <thead>
+              <tr style={{ borderBottom: '1px solid #222', color: '#666' }}>
+                <th style={{ padding: '8px 10px' }}>ORDER ID</th>
+                <th style={{ padding: '8px 10px' }}>CUSTOMER</th>
+                <th style={{ padding: '8px 10px' }}>DATE</th>
+                <th style={{ padding: '8px 10px' }}>AMOUNT</th>
+                <th style={{ padding: '8px 10px', textAlign: 'right' }}>STATUS</th>
+              </tr>
+            </thead>
+            <tbody>
+              {recentOrders.length === 0 ? (
+                <tr>
+                  <td colSpan={5} style={{ padding: '20px', textAlign: 'center', color: '#555' }}>
+                    NO LOGGED ORDERS FOUND
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {recentOrders.map((ord) => {
-                  const badgeColor = getStatusBadgeColor(ord.status);
-                  // Long UUID truncated for UI fit
-                  const shortId = ord.id.length > 12 ? `${ord.id.substring(0, 8)}...` : ord.id;
-
-                  return (
-                    <tr key={ord.id} style={{ borderBottom: '1px solid #1a1a1a', color: '#ddd' }}>
-                      <td style={{ padding: '12px 5px', fontWeight: 'bold', color: '#fff', whiteSpace: 'nowrap' }} title={`FULL ID: #${ord.id}`}>
-                        #{shortId}
-                      </td>
-                      <td style={{ padding: '12px 5px', color: '#ccc', whiteSpace: 'nowrap' }}>{ord.customer_name}</td>
-                      <td style={{ padding: '12px 5px', color: '#aaa', whiteSpace: 'nowrap' }}>
-                        {new Date(ord.created_at).toLocaleDateString()}
-                      </td>
-                      <td style={{ padding: '12px 5px', color: '#fff', fontWeight: 'bold', whiteSpace: 'nowrap' }}>৳{ord.total_amount}</td>
-                      <td style={{ padding: '12px 5px', textAlign: 'right', whiteSpace: 'nowrap' }}>
-                        <span style={{ fontSize: '9px', backgroundColor: `${badgeColor}22`, color: badgeColor, border: `1px solid ${badgeColor}55`, padding: '3px 8px', borderRadius: '2px', fontWeight: 'bold', display: 'inline-block' }}>
-                          ● {ord.status.toUpperCase()}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
+              ) : (
+                recentOrders.map((order) => (
+                  <tr key={order.id} style={{ borderBottom: '1px solid #111' }}>
+                    <td style={{ padding: '10px', color: '#ccc' }}>
+                      #{order.id.slice(0, 8)}...
+                    </td>
+                    <td style={{ padding: '10px', color: '#fff' }}>
+                      {order.customer_name || 'GUEST'}
+                    </td>
+                    <td style={{ padding: '10px', color: '#888' }}>
+                      {new Date(order.created_at).toLocaleDateString()}
+                    </td>
+                    <td style={{ padding: '10px', fontWeight: 'bold' }}>
+                      ৳{order.total_amount}
+                    </td>
+                    <td style={{ padding: '10px', textAlign: 'right' }}>
+                      {renderStatusBadge(order.status)}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
     </div>
