@@ -38,20 +38,28 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
   const [singleOrderToHide, setSingleOrderToHide] = useState<string | null>(null);
   const [isHiding, setIsHiding] = useState<boolean>(false);
 
-  // 🔹 ১. সব জায়গায় একই নাম এবং একই স্ট্যাটাস দেখানোর ফাংশন
+  // 🔹 ১. অ্যাডমিন প্যানেল ও ডাটাবেজের স্ট্যাটাসের সাথে হুবহু ১:১ ইউনিফাইড নাম
   const getUnifiedStatus = (rawStatus: string) => {
     if (!rawStatus) return 'PENDING';
+    const s = rawStatus.trim().toLowerCase();
+    
+    if (s === 'received') return 'RECEIVED';
+    if (s === 'shipped') return 'SHIPPED';
+    if (s === 'delivered' || s === 'completed' || s === 'delivered / completed') return 'DELIVERED';
+    if (s === 'cancelled') return 'CANCELLED';
+    if (s === 'processing') return 'PROCESSING';
+    
     return rawStatus.trim().toUpperCase();
   };
 
-  // 🔹 ২. ট্র্যাকার বারের প্রোগ্রেস বোঝার ফাংশন
+  // 🔹 ২. ট্র্যাকার বারের প্রোগ্রেস ইনডেক্স
   const getStepIndex = (rawStatus: string) => {
     if (!rawStatus) return 0;
     const s = rawStatus.toLowerCase().trim();
-    if (s === 'delivered' || s === 'completed') return 3;
+    if (s === 'delivered' || s === 'completed' || s === 'delivered / completed') return 3;
     if (s === 'shipped') return 2;
     if (s === 'received' || s === 'processing') return 1;
-    return 0; // pending
+    return 0; // pending or default
   };
 
   // 📄 ব্রাউজার-নেটিভ প্রিমিয়াম ইনভয়েস ডাউনলোড
@@ -71,9 +79,9 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
     const vatAmount = order.vat_amount || 0;
     const grandTotal = order.total_amount;
 
-    // 🔹 সব জায়গায় ১-ই নাম (হুবহু ডাটাবেজের স্ট্যাটাস)
+    // 🔹 ডাটাবেজের সঠিক স্ট্যাটাস ব্যবহার
     const unifiedStatus = getUnifiedStatus(order.status);
-    const isDelivered = unifiedStatus === 'DELIVERED' || unifiedStatus === 'COMPLETED';
+    const isDelivered = unifiedStatus === 'DELIVERED';
     
     const statusColor = isDelivered ? '#000000' : '#ff0000'; 
     const totalLabel = isDelivered ? 'TOTAL PAID' : 'AMOUNT DUE';
@@ -386,10 +394,10 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
         const activeStepIndex = getStepIndex(order.status);
         const unifiedStatusText = getUnifiedStatus(order.status);
 
-        // 🔹 ট্র্যাকার ৪টি ধাপের জন্য টেক্সট অ্যারে
+        // 🔹 ট্র্যাকার ধাপসমূহ (অ্যাডমিন প্যানেলের নামের সাথে সিঙ্কড)
         const dynamicSteps = ['PENDING', 'RECEIVED', 'SHIPPED', 'DELIVERED'];
         
-        // কারেন্ট স্টেপটি যদি 'PROCESSING' হয়, তবে ট্র্যাকার লাইনেও 'RECEIVED' এর বদলে হুবহু 'PROCESSING' দেখাবে
+        // বর্তমান স্ট্যাটাস যদি অ্যাডমিন থেকে 'RECEIVED' বা অন্য কিছু আসে, ট্র্যাকার লাইনে হুবহু সেটাই দেখাবে
         if (activeStepIndex === 1) {
           dynamicSteps[1] = unifiedStatusText;
         }
