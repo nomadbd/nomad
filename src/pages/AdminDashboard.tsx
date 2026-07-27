@@ -1,202 +1,236 @@
-import React, { useEffect, useState } from 'react';
-import { supabase } from '../supabaseClient';
+import React, { useState, useEffect } from 'react';
+import { supabase } from '../supabaseClient'; 
 
 import AdminOverview from '../components/admin/AdminOverview';
 import AdminOrders from '../components/admin/AdminOrders';
 import AdminProducts from '../components/admin/AdminProducts';
 import AdminSettings from '../components/admin/AdminSettings';
 
-export type UserRole = 'ADMIN' | 'MANAGER' | 'FINANCE' | 'SUPER ADMIN';
-
-export interface UserProfile {
-  id: string;
-  full_name?: string;
-  email?: string;
-  role?: UserRole;
-  hired_at?: string;
-  role_assigned_at?: string;
-  created_at?: string;
-}
-
-export const AdminDashboard: React.FC = () => {
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  const [activeTab, setActiveTab] = useState<string>('overview');
+const AdminDashboard: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<'overview' | 'orders' | 'products' | 'settings'>('overview');
+  const [menuOpen, setMenuOpen] = useState<boolean>(false);
+  const [userEmail, setUserEmail] = useState<string>('AUTHENTICATING...');
 
   useEffect(() => {
-    const fetchUserProfile = async () => {
+    const fetchCurrentUser = async () => {
       try {
-        setLoading(true);
         const { data: { user } } = await supabase.auth.getUser();
-
-        if (user) {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', user.id)
-            .single();
-
-          if (profile) {
-            setUserProfile(profile as UserProfile);
-          } else {
-            setUserProfile({
-              id: user.id,
-              full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'CYBER_OPERATOR',
-              email: user.email || '',
-              role: 'SUPER ADMIN',
-              hired_at: user.created_at,
-            });
-          }
+        if (user?.email) {
+          setUserEmail(user.email);
+        } else {
+          setUserEmail('ADMIN USER');
         }
       } catch (err) {
-        console.error('Profile fetch error:', err);
-      } finally {
-        setLoading(false);
+        setUserEmail('ADMIN USER');
       }
     };
 
-    fetchUserProfile();
+    fetchCurrentUser();
   }, []);
 
-  const formatDate = (dateStr?: string) => {
-    if (!dateStr) return 'N/A';
-    const date = new Date(dateStr);
-    return isNaN(date.getTime()) ? 'N/A' : date.toLocaleDateString();
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-black text-cyan-400 font-mono flex items-center justify-center text-sm tracking-widest">
-        INITIALIZING CYBER DOCK...
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-black text-neutral-200 flex font-sans relative">
-      <aside className="w-64 border-r border-neutral-800 bg-black p-6 flex flex-col justify-between">
-        <div>
-          <div className="mb-8">
-            <h1 className="text-xl font-black tracking-widest text-white">NOMAD</h1>
-            <p className="text-[10px] text-neutral-300 font-mono tracking-wider">
-              The one. Everywhere.
-            </p>
+    <div style={{ backgroundColor: '#030303', color: '#fff', minHeight: '100vh', fontFamily: 'monospace, sans-serif' }}>
+
+      {/* 🟢 ফ্লুইড রেসপন্সিভ সিএসএস লেআউট */}
+      <style>{`
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        .nomad-layout {
+          display: flex;
+          flex-direction: column;
+          min-height: 100vh;
+          width: 100%;
+        }
+        
+        .nomad-sidebar {
+          width: 100%;
+          background-color: #060606;
+          border-bottom: 1px solid #1a1a1a;
+          padding: 15px 20px;
+          flex-shrink: 0;
+        }
+
+        /* 🟢 লোগো হোভার অ্যানিমেশন */
+        .nomad-brand-link {
+          text-decoration: none;
+          color: inherit;
+          display: block;
+          transition: opacity 0.2s ease;
+        }
+
+        .nomad-brand-link:hover {
+          opacity: 0.8;
+        }
+
+        /* মোবাইলে মেনু হাইড/শো থাকবে */
+        .nomad-nav {
+          display: ${menuOpen ? 'flex' : 'none'};
+          flex-direction: column;
+          gap: 8px;
+          margin-top: 15px;
+          padding-top: 15px;
+          border-top: 1px solid #181818;
+        }
+
+        .nomad-main {
+          flex: 1;
+          padding: 16px;
+          background-color: #030303;
+          width: 100%;
+          min-width: 0; /* ওভারফ্লো বন্ধ করার জন্য জরুরি */
+        }
+
+        .nav-btn {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 12px 14px;
+          border: 1px solid transparent;
+          font-weight: bold;
+          font-size: 11px;
+          text-align: left;
+          cursor: pointer;
+          letter-spacing: 1px;
+          background: transparent;
+          color: #aaa;
+          border-radius: 2px;
+          transition: all 0.2s ease;
+        }
+
+        .nav-btn.active {
+          background-color: #ffffff !important;
+          color: #000000 !important;
+          border-color: #ffffff !important;
+          box-shadow: 0 0 10px rgba(255, 255, 255, 0.15);
+        }
+
+        .nav-btn:hover:not(.active) {
+          background-color: #111;
+          color: #fff;
+        }
+
+        /* 💻 ৭৬৮px বা তার বেশি */
+        @media (min-width: 768px) {
+          .nomad-layout {
+            flex-direction: row;
+          }
+          .nomad-sidebar {
+            width: 230px;
+            min-height: 100vh;
+            border-bottom: none;
+            border-right: 1px solid #1a1a1a;
+            padding: 25px 18px;
+          }
+          .nomad-menu-toggle {
+            display: none !important;
+          }
+          .nomad-nav {
+            display: flex !important;
+            margin-top: 25px;
+            padding-top: 0;
+            border-top: none;
+          }
+          .nomad-main {
+            padding: 25px 30px;
+          }
+        }
+      `}</style>
+
+      <div className="nomad-layout">
+
+        {/* 👈 সাইডবার */}
+        <aside className="nomad-sidebar">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            
+            {/* 🟢 NOMAD লোগো & স্লোগান */}
+            <a href="/" className="nomad-brand-link" title="Go to Store Homepage">
+              <h1 style={{ fontSize: '18px', fontWeight: '900', letterSpacing: '4px', margin: 0, color: '#fff' }}>
+                NOMAD
+              </h1>
+              <span style={{ fontSize: '9px', color: '#666', letterSpacing: '1.5px', marginTop: '2px', display: 'block' }}>
+                The one. Everywhere.
+              </span>
+            </a>
+
+            {/* 📱 শুধুমাত্র মোবাইল ভিউয়ের জন্য টগল বাটন */}
+            <button
+              className="nomad-menu-toggle"
+              onClick={() => setMenuOpen(!menuOpen)}
+              style={{
+                backgroundColor: '#111',
+                border: '1px solid #333',
+                color: '#fff',
+                width: '38px',
+                height: '38px',
+                fontSize: '18px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: '2px'
+              }}
+            >
+              {menuOpen ? '✕' : '☰'}
+            </button>
           </div>
 
-          <nav className="space-y-2 font-mono text-xs">
+          {/* মেনু লিঙ্কস */}
+          <nav className="nomad-nav">
+            <span style={{ fontSize: '9px', color: '#555', letterSpacing: '2px', marginBottom: '8px', fontWeight: 'bold' }}>
+              MAIN MENU
+            </span>
+
             <button
-              onClick={() => setActiveTab('overview')}
-              className={`w-full text-left py-2.5 px-3 rounded transition-all font-bold tracking-wider ${
-                activeTab === 'overview'
-                  ? 'bg-white text-black'
-                  : 'text-neutral-300 hover:text-white hover:bg-neutral-900'
-              }`}
+              className={`nav-btn ${activeTab === 'overview' ? 'active' : ''}`}
+              onClick={() => { setActiveTab('overview'); setMenuOpen(false); }}
             >
               OVERVIEW & ANALYTICS
             </button>
 
             <button
-              onClick={() => setActiveTab('orders')}
-              className={`w-full text-left py-2.5 px-3 rounded transition-all font-bold tracking-wider ${
-                activeTab === 'orders'
-                  ? 'bg-white text-black'
-                  : 'text-neutral-300 hover:text-white hover:bg-neutral-900'
-              }`}
+              className={`nav-btn ${activeTab === 'orders' ? 'active' : ''}`}
+              onClick={() => { setActiveTab('orders'); setMenuOpen(false); }}
             >
               ORDER MANAGEMENT
             </button>
 
             <button
-              onClick={() => setActiveTab('products')}
-              className={`w-full text-left py-2.5 px-3 rounded transition-all font-bold tracking-wider ${
-                activeTab === 'products'
-                  ? 'bg-white text-black'
-                  : 'text-neutral-300 hover:text-white hover:bg-neutral-900'
-              }`}
+              className={`nav-btn ${activeTab === 'products' ? 'active' : ''}`}
+              onClick={() => { setActiveTab('products'); setMenuOpen(false); }}
             >
               PRODUCTS & STOCK
             </button>
 
             <button
-              onClick={() => setActiveTab('settings')}
-              className={`w-full text-left py-2.5 px-3 rounded transition-all font-bold tracking-wider ${
-                activeTab === 'settings'
-                  ? 'bg-white text-black'
-                  : 'text-neutral-300 hover:text-white hover:bg-neutral-900'
-              }`}
+              className={`nav-btn ${activeTab === 'settings' ? 'active' : ''}`}
+              onClick={() => { setActiveTab('settings'); setMenuOpen(false); }}
             >
               ROLES & SETTINGS
             </button>
           </nav>
-        </div>
-      </aside>
+        </aside>
 
-      <main className="flex-1 p-8 bg-[#0a0a0a] overflow-y-auto">
-        <header className="flex justify-end mb-8">
-          <div
-            onClick={() => setIsModalOpen(true)}
-            className="group flex flex-col items-end cursor-pointer p-2 px-3 rounded bg-neutral-900/80 border border-neutral-800 hover:border-cyan-500/50 transition-all select-none"
-            title="Click to view Cyber Profile"
-          >
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
-              <span className="text-xs font-bold text-white group-hover:text-cyan-400 transition-colors uppercase tracking-wider">
-                {userProfile?.full_name || 'OPERATOR'}
+        {/* 👉 মূল কন্টেন্ট এলাকা */}
+        <main className="nomad-main">
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid #111', paddingBottom: '10px' }}>
+            <div style={{ textAlign: 'right', fontSize: '10px' }}>
+              <span style={{ color: '#aaa', display: 'block' }}>
+                {userEmail}
+              </span>
+              <span style={{ color: '#22c55e', fontSize: '9px', letterSpacing: '1px', fontWeight: 'bold' }}>
+                ● ONLINE (ENCRYPTED)
               </span>
             </div>
-            <div className="text-[10px] font-mono text-neutral-300 mt-0.5 tracking-wider">
-              ROLE: <span className="text-cyan-400 font-semibold uppercase">{userProfile?.role || 'SUPER ADMIN'}</span>
-            </div>
           </div>
-        </header>
 
-        {activeTab === 'overview' && <AdminOverview />}
-        {activeTab === 'orders' && <AdminOrders />}
-        {activeTab === 'products' && <AdminProducts />}
-        {activeTab === 'settings' && <AdminSettings />}
-      </main>
+          {activeTab === 'overview' && <AdminOverview />}
+          {activeTab === 'orders' && <AdminOrders />}
+          {activeTab === 'products' && <AdminProducts />}
+          {activeTab === 'settings' && <AdminSettings />}
 
-      {isModalOpen && userProfile && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-          <div className="bg-[#0f0f0f] border border-cyan-500/40 rounded-lg max-w-sm w-full p-6 shadow-2xl text-neutral-200 relative font-mono">
-            <button 
-              onClick={() => setIsModalOpen(false)}
-              className="absolute top-3 right-3 text-neutral-400 hover:text-white"
-            >
-              ✕
-            </button>
-
-            <div className="border-b border-neutral-800 pb-3 mb-4">
-              <span className="text-[10px] text-cyan-400 tracking-widest uppercase">System Dossier</span>
-              <h3 className="text-lg font-bold text-white uppercase mt-1">{userProfile.full_name || 'OPERATOR'}</h3>
-              <p className="text-xs text-neutral-300">{userProfile.email || 'N/A'}</p>
-            </div>
-
-            <div className="space-y-2 text-xs">
-              <div className="flex justify-between p-2.5 bg-neutral-900 rounded border border-neutral-800">
-                <span className="text-neutral-400">ROLE:</span>
-                <span className="text-cyan-400 font-bold">{userProfile.role || 'SUPER ADMIN'}</span>
-              </div>
-              <div className="flex justify-between p-2.5 bg-neutral-900 rounded border border-neutral-800">
-                <span className="text-neutral-400">HIRED DATE:</span>
-                <span className="text-neutral-200">{formatDate(userProfile.hired_at)}</span>
-              </div>
-              <div className="flex justify-between p-2.5 bg-neutral-900 rounded border border-neutral-800">
-                <span className="text-neutral-400">ROLE ASSIGNED:</span>
-                <span className="text-neutral-200">{formatDate(userProfile.role_assigned_at)}</span>
-              </div>
-            </div>
-
-            <button 
-              onClick={() => setIsModalOpen(false)}
-              className="w-full mt-5 py-2 bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-cyan-400 text-xs font-bold rounded transition-all"
-            >
-              CLOSE DOSSIER
-            </button>
-          </div>
-        </div>
-      )}
+        </main>
+      </div>
     </div>
   );
 };
