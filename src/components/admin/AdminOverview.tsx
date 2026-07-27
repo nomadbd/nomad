@@ -9,7 +9,11 @@ interface OrderItem {
   status: string;
 }
 
-// 🟢 বড় সংখ্যা ফরম্যাট করার ফাংশন (যেমন: 700000 -> 700K, 1500000 -> 1.5M)
+interface AdminOverviewProps {
+  onNavigateToFinance?: () => void; // 🟢 ফাইনান্স পেজে নেভিগেট করার জন্য কলব্যাক
+}
+
+// 🟢 বড় সংখ্যা ফরম্যাট করার ফাংশন (700000 -> 700K, 1500000 -> 1.5M)
 const formatNumber = (num: number): string => {
   if (num >= 1_000_000) {
     return (num / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M';
@@ -20,7 +24,7 @@ const formatNumber = (num: number): string => {
   return num.toLocaleString();
 };
 
-const AdminOverview: React.FC = () => {
+const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) => {
   const [totalRevenue, setTotalRevenue] = useState<number>(0);
   const [totalOrders, setTotalOrders] = useState<number>(0);
   
@@ -34,7 +38,7 @@ const AdminOverview: React.FC = () => {
   const [activeCatalogItems, setActiveCatalogItems] = useState<number>(0);
   const [recentOrders, setRecentOrders] = useState<OrderItem[]>([]);
 
-  // 🟢 স্ট্যাটাস চেকিং ফাংশন (Recent Orders টেবিলের জন্য)
+  // 🟢 স্ট্যাটাস চেকিং ফাংশন
   const isDelivered = (st: string) => (st || '').trim().toUpperCase().includes('DELIVER');
   const isPending = (st: string) => (st || '').trim().toUpperCase().includes('PENDING');
   const isProcessing = (st: string) => (st || '').trim().toUpperCase().includes('PROCESS');
@@ -61,7 +65,7 @@ const AdminOverview: React.FC = () => {
         setCancelledOrders(Number(metrics.cancelled) || 0);
       }
 
-      // ⚡ ২. সাম্প্রতিক ৫টি অর্ডার (শুধুমাত্র প্রয়োজনীয় ৫টি রো ফেচ করা হচ্ছে)
+      // ⚡ ২. সাম্প্রতিক ৫টি অর্ডার
       const { data: latestFive } = await supabase
         .from('orders')
         .select('id, customer_name, created_at, total_amount, status')
@@ -168,6 +172,22 @@ const AdminOverview: React.FC = () => {
           border-radius: 2px;
           box-sizing: border-box;
           width: 100%;
+          transition: all 0.2s ease-in-out;
+        }
+
+        /* 🟢 ক্লিকেবল রিভিনিউ কার্ডের স্পেশাল হোভার ইফেক্ট */
+        .revenue-card-clickable {
+          cursor: pointer;
+        }
+
+        .revenue-card-clickable:hover {
+          border-color: #22c55e !important;
+          box-shadow: 0 0 12px rgba(34, 197, 94, 0.15);
+          transform: translateY(-2px);
+        }
+
+        .table-row-hover:hover {
+          background-color: #0c0c0c;
         }
       `}</style>
 
@@ -184,9 +204,17 @@ const AdminOverview: React.FC = () => {
       {/* 📊 ১. মেট্রিক কার্ডস */}
       <div className="metrics-grid">
         
-        <div className="metric-card">
-          <span style={{ fontSize: '10px', color: '#888', letterSpacing: '1px', display: 'block', marginBottom: '8px' }}>TOTAL REVENUE</span>
-          <div style={{ fontSize: '22px', fontWeight: 'bold', color: '#22c55e' }} title={`৳${totalRevenue.toLocaleString()}`}>
+        {/* 🟢 TOTAL REVENUE (CLICKABLE CARD) */}
+        <div 
+          className="metric-card revenue-card-clickable"
+          onClick={() => onNavigateToFinance && onNavigateToFinance()}
+          title="Click to view detailed financial breakdown"
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+            <span style={{ fontSize: '10px', color: '#888', letterSpacing: '1px' }}>TOTAL REVENUE</span>
+            <span style={{ fontSize: '9px', color: '#22c55e', letterSpacing: '1px', opacity: 0.8 }}>DETAILED STATS →</span>
+          </div>
+          <div style={{ fontSize: '22px', fontWeight: 'bold', color: '#22c55e' }}>
             ৳{formatNumber(totalRevenue)}
           </div>
           <span style={{ fontSize: '9px', color: '#555', marginTop: '4px', display: 'block' }}>* EXCLUDING CANCELLED</span>
@@ -234,7 +262,7 @@ const AdminOverview: React.FC = () => {
           <div style={{ width: `${totalOrders ? (cancelledOrders / totalOrders) * 100 : 0}%`, backgroundColor: '#ef4444' }} title="Cancelled" />
         </div>
 
-        {/* স্মার্ট কাউন্টারসমূহ */}
+        {/* কাউন্টারসমূহ */}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px', fontSize: '10px' }}>
           <span><strong style={{ color: '#eab308' }}>● PENDING:</strong> {formatNumber(pendingOrders)}</span>
           <span><strong style={{ color: '#a855f7' }}>● PROCESSING:</strong> {formatNumber(processingOrders)}</span>
@@ -263,7 +291,7 @@ const AdminOverview: React.FC = () => {
           </thead>
           <tbody>
             {recentOrders.map((order) => (
-              <tr key={order.id} style={{ borderBottom: '1px solid #111' }}>
+              <tr key={order.id} className="table-row-hover" style={{ borderBottom: '1px solid #111', transition: 'background-color 0.2s' }}>
                 <td style={{ padding: '10px 8px', color: '#aaa' }}>#{order.id.slice(0, 8)}...</td>
                 <td style={{ padding: '10px 8px', color: '#fff' }}>{order.customer_name || 'GUEST'}</td>
                 <td style={{ padding: '10px 8px', color: '#666' }}>{new Date(order.created_at).toLocaleDateString()}</td>
