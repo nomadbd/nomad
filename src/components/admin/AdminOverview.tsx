@@ -10,10 +10,10 @@ interface OrderItem {
 }
 
 interface AdminOverviewProps {
-  onNavigateToFinance?: () => void; // 🟢 ফাইনান্স পেজে নেভিগেট করার জন্য কলব্যাক
+  onNavigateToFinance?: () => void;
 }
 
-// 🟢 বড় সংখ্যা ফরম্যাট করার ফাংশন (700000 -> 700K, 1500000 -> 1.5M)
+// 🟢 বড় সংখ্যা ফরম্যাট করার ফাংশন
 const formatNumber = (num: number): string => {
   if (num >= 1_000_000) {
     return (num / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M';
@@ -46,10 +46,9 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
   const isShipped = (st: string) => (st || '').trim().toUpperCase().includes('SHIP');
   const isCancelled = (st: string) => (st || '').trim().toUpperCase().includes('CANCEL');
 
-  // 📊 ডাটা ফেচিং ফাংশন (Supabase RPC দিয়ে হাই-স্পিড ক্যালকুলেশন)
+  // 📊 ডাটা ফেচিং ফাংশন
   const fetchMetricsData = async () => {
     try {
-      // ⚡ ১. সুপাবেজ ডাটাবেজের SQL Function (RPC) কল
       const { data: metrics, error: rpcErr } = await supabase.rpc('get_admin_metrics');
 
       if (rpcErr) {
@@ -65,25 +64,19 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
         setCancelledOrders(Number(metrics.cancelled) || 0);
       }
 
-      // ⚡ ২. সাম্প্রতিক ৫টি অর্ডার
       const { data: latestFive } = await supabase
         .from('orders')
         .select('id, customer_name, created_at, total_amount, status')
         .order('created_at', { ascending: false })
         .limit(5);
 
-      if (latestFive) {
-        setRecentOrders(latestFive);
-      }
+      if (latestFive) setRecentOrders(latestFive);
 
-      // ⚡ ৩. ক্যাটালগ প্রোডাক্ট সংখ্যা
       const { count: productCount } = await supabase
         .from('products')
         .select('*', { count: 'exact', head: true });
 
-      if (productCount !== null) {
-        setActiveCatalogItems(productCount);
-      }
+      if (productCount !== null) setActiveCatalogItems(productCount);
 
     } catch (err) {
       console.error('Error fetching analytics:', err);
@@ -93,7 +86,6 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
   useEffect(() => {
     fetchMetricsData();
 
-    // ⚡ SUPABASE REALTIME SUBSCRIPTIONS
     const ordersSubscription = supabase
       .channel('admin-overview-orders')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => fetchMetricsData())
@@ -110,7 +102,6 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
     };
   }, []);
 
-  // 🏷️ স্ট্যাটাস ব্যাজ রেন্ডারার
   const renderStatusBadge = (status: string) => {
     const raw = (status || '').trim().toUpperCase();
     let displayStatus = raw;
@@ -175,15 +166,14 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
           transition: all 0.2s ease-in-out;
         }
 
-        /* 🟢 ক্লিকেবল রিভিনিউ কার্ডের স্পেশাল হোভার ইফেক্ট */
+        /* 🟢 সম্পূর্ণ কার্ড জুড়ে সূক্ষ্ম হোভার ইফেক্ট */
         .revenue-card-clickable {
           cursor: pointer;
         }
 
         .revenue-card-clickable:hover {
           border-color: #22c55e !important;
-          box-shadow: 0 0 12px rgba(34, 197, 94, 0.15);
-          transform: translateY(-2px);
+          background-color: #080a08;
         }
 
         .table-row-hover:hover {
@@ -204,20 +194,20 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
       {/* 📊 ১. মেট্রিক কার্ডস */}
       <div className="metrics-grid">
         
-        {/* 🟢 TOTAL REVENUE (CLICKABLE CARD) */}
+        {/* 🟢 TOTAL REVENUE (CLEAN CLICKABLE CARD) */}
         <div 
           className="metric-card revenue-card-clickable"
           onClick={() => onNavigateToFinance && onNavigateToFinance()}
-          title="Click to view detailed financial breakdown"
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-            <span style={{ fontSize: '10px', color: '#888', letterSpacing: '1px' }}>TOTAL REVENUE</span>
-            <span style={{ fontSize: '9px', color: '#22c55e', letterSpacing: '1px', opacity: 0.8 }}>DETAILED STATS →</span>
-          </div>
+          <span style={{ fontSize: '10px', color: '#888', letterSpacing: '1px', display: 'block', marginBottom: '8px' }}>
+            TOTAL REVENUE
+          </span>
           <div style={{ fontSize: '22px', fontWeight: 'bold', color: '#22c55e' }}>
             ৳{formatNumber(totalRevenue)}
           </div>
-          <span style={{ fontSize: '9px', color: '#555', marginTop: '4px', display: 'block' }}>* EXCLUDING CANCELLED</span>
+          <span style={{ fontSize: '9px', color: '#555', marginTop: '4px', display: 'block' }}>
+            * EXCLUDING CANCELLED
+          </span>
         </div>
 
         <div className="metric-card">
@@ -252,7 +242,6 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
           FULFILLMENT STATUS BREAKDOWN
         </span>
         
-        {/* রিয়েলটাইম কালার বার */}
         <div style={{ display: 'flex', height: '6px', backgroundColor: '#111', borderRadius: '3px', overflow: 'hidden', marginBottom: '12px' }}>
           <div style={{ width: `${totalOrders ? (pendingOrders / totalOrders) * 100 : 0}%`, backgroundColor: '#eab308' }} title="Pending" />
           <div style={{ width: `${totalOrders ? (processingOrders / totalOrders) * 100 : 0}%`, backgroundColor: '#a855f7' }} title="Processing" />
@@ -262,7 +251,6 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
           <div style={{ width: `${totalOrders ? (cancelledOrders / totalOrders) * 100 : 0}%`, backgroundColor: '#ef4444' }} title="Cancelled" />
         </div>
 
-        {/* কাউন্টারসমূহ */}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px', fontSize: '10px' }}>
           <span><strong style={{ color: '#eab308' }}>● PENDING:</strong> {formatNumber(pendingOrders)}</span>
           <span><strong style={{ color: '#a855f7' }}>● PROCESSING:</strong> {formatNumber(processingOrders)}</span>
