@@ -13,7 +13,6 @@ interface AdminOverviewProps {
   onNavigateToFinance?: () => void;
 }
 
-// 🟢 বড় সংখ্যা ফরম্যাট করার ফাংশন
 const formatNumber = (num: number): string => {
   if (num >= 1_000_000) {
     return (num / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M';
@@ -38,7 +37,6 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
   const [activeCatalogItems, setActiveCatalogItems] = useState<number>(0);
   const [recentOrders, setRecentOrders] = useState<OrderItem[]>([]);
 
-  // 🟢 স্ট্যাটাস চেকিং ফাংশন
   const isDelivered = (st: string) => (st || '').trim().toUpperCase().includes('DELIVER');
   const isPending = (st: string) => (st || '').trim().toUpperCase().includes('PENDING');
   const isProcessing = (st: string) => (st || '').trim().toUpperCase().includes('PROCESS');
@@ -46,7 +44,6 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
   const isShipped = (st: string) => (st || '').trim().toUpperCase().includes('SHIP');
   const isCancelled = (st: string) => (st || '').trim().toUpperCase().includes('CANCEL');
 
-  // 📊 ডাটা ফেচিং ফাংশন
   const fetchMetricsData = async () => {
     try {
       const { data: metrics, error: rpcErr } = await supabase.rpc('get_admin_metrics');
@@ -133,8 +130,15 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
     );
   };
 
+  // பாதுகாப்பான শতকরা হিসাব (ব্রেক হওয়া রোধ করতে)
+  const calcPercent = (val: number) => {
+    if (!totalOrders || totalOrders <= 0) return 0;
+    const p = (val / totalOrders) * 100;
+    return isNaN(p) ? 0 : p;
+  };
+
   return (
-    <div style={{ color: '#fff', fontFamily: 'monospace, sans-serif', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
+    <div style={{ color: '#fff', fontFamily: 'monospace, sans-serif', width: '100%', maxWidth: '100%', boxSizing: 'border-box', overflowX: 'hidden' }}>
 
       <style>{`
         .metrics-grid {
@@ -164,10 +168,9 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
           border-radius: 2px;
           box-sizing: border-box;
           width: 100%;
-          transition: all 0.2s ease-in-out;
+          min-width: 0;
         }
 
-        /* 🟢 সম্পূর্ণ কার্ড জুড়ে সূক্ষ্ম হোভার ইফেক্ট */
         .revenue-card-clickable {
           cursor: pointer;
         }
@@ -181,7 +184,6 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
           background-color: #0c0c0c;
         }
 
-        /* 🟢 রেসপন্সিভ টেবিল কন্টেইনার */
         .table-wrapper {
           width: 100%;
           overflow-x: auto;
@@ -189,7 +191,6 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
         }
       `}</style>
 
-      {/* 🔝 হেডার */}
       <div style={{ marginBottom: '20px' }}>
         <h2 style={{ fontSize: '15px', fontWeight: 'bold', letterSpacing: '2px', margin: 0, color: '#fff' }}>
           HQ METRICS & OVERVIEW
@@ -199,10 +200,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
         </span>
       </div>
 
-      {/* 📊 ১. মেট্রিক কার্ডস */}
       <div className="metrics-grid">
-
-        {/* 🟢 TOTAL REVENUE (CLEAN CLICKABLE CARD) */}
         <div 
           className="metric-card revenue-card-clickable"
           onClick={() => onNavigateToFinance && onNavigateToFinance()}
@@ -220,7 +218,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
 
         <div className="metric-card">
           <span style={{ fontSize: '10px', color: '#888', letterSpacing: '1px', display: 'block', marginBottom: '8px' }}>TOTAL ORDERS</span>
-          <div style={{ fontSize: '22px', fontWeight: 'bold', color: '#fff' }} title={`${totalOrders.toLocaleString()} Orders`}>
+          <div style={{ fontSize: '22px', fontWeight: 'bold', color: '#fff' }}>
             {formatNumber(totalOrders)}
           </div>
           <span style={{ fontSize: '9px', color: '#555', marginTop: '4px', display: 'block' }}>* ALL-TIME LOGGED</span>
@@ -241,22 +239,21 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
           <div style={{ fontSize: '22px', fontWeight: 'bold', color: '#fff' }}>{formatNumber(activeCatalogItems)}</div>
           <span style={{ fontSize: '9px', color: '#555', marginTop: '4px', display: 'block' }}>* LIVE IN STORE</span>
         </div>
-
       </div>
 
-      {/* 📈 ২. ফুলফিলমেন্ট ব্রেকডাউন */}
-      <div style={{ backgroundColor: '#060606', border: '1px solid #1a1a1a', padding: '16px', marginBottom: '25px', borderRadius: '2px', boxSizing: 'border-box', width: '100%' }}>
+      {/* 🟢 ফিক্সড প্রগ্রেস বার কন্টেইনার */}
+      <div style={{ backgroundColor: '#060606', border: '1px solid #1a1a1a', padding: '16px', marginBottom: '25px', borderRadius: '2px', boxSizing: 'border-box', width: '100%', overflow: 'hidden' }}>
         <span style={{ fontSize: '10px', color: '#aaa', letterSpacing: '1.5px', fontWeight: 'bold', display: 'block', marginBottom: '12px' }}>
           FULFILLMENT STATUS BREAKDOWN
         </span>
 
         <div style={{ display: 'flex', height: '6px', backgroundColor: '#111', borderRadius: '3px', overflow: 'hidden', marginBottom: '12px', width: '100%' }}>
-          <div style={{ width: `${totalOrders ? (pendingOrders / totalOrders) * 100 : 0}%`, backgroundColor: '#eab308' }} title="Pending" />
-          <div style={{ width: `${totalOrders ? (processingOrders / totalOrders) * 100 : 0}%`, backgroundColor: '#a855f7' }} title="Processing" />
-          <div style={{ width: `${totalOrders ? (receivedOrders / totalOrders) * 100 : 0}%`, backgroundColor: '#3b82f6' }} title="Received" />
-          <div style={{ width: `${totalOrders ? (shippedOrders / totalOrders) * 100 : 0}%`, backgroundColor: '#06b6d4' }} title="Shipped" />
-          <div style={{ width: `${totalOrders ? (deliveredOrders / totalOrders) * 100 : 0}%`, backgroundColor: '#22c55e' }} title="Delivered" />
-          <div style={{ width: `${totalOrders ? (cancelledOrders / totalOrders) * 100 : 0}%`, backgroundColor: '#ef4444' }} title="Cancelled" />
+          <div style={{ width: `${calcPercent(pendingOrders)}%`, backgroundColor: '#eab308' }} />
+          <div style={{ width: `${calcPercent(processingOrders)}%`, backgroundColor: '#a855f7' }} />
+          <div style={{ width: `${calcPercent(receivedOrders)}%`, backgroundColor: '#3b82f6' }} />
+          <div style={{ width: `${calcPercent(shippedOrders)}%`, backgroundColor: '#06b6d4' }} />
+          <div style={{ width: `${calcPercent(deliveredOrders)}%`, backgroundColor: '#22c55e' }} />
+          <div style={{ width: `${calcPercent(cancelledOrders)}%`, backgroundColor: '#ef4444' }} />
         </div>
 
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', fontSize: '10px' }}>
@@ -269,14 +266,13 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
         </div>
       </div>
 
-      {/* 📑 ৩. রিসেন্ট অর্ডারস টেবিল (নিরাপদ কন্টেইনার ফিক্স) */}
       <div style={{ backgroundColor: '#060606', border: '1px solid #1a1a1a', padding: '16px', borderRadius: '2px', boxSizing: 'border-box', width: '100%', overflow: 'hidden' }}>
         <span style={{ fontSize: '10px', color: '#aaa', letterSpacing: '1.5px', fontWeight: 'bold', display: 'block', marginBottom: '12px' }}>
           RECENT ORDERS MEMORANDUM
         </span>
 
         <div className="table-wrapper">
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '11px', minWidth: '420px' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '11px', minWidth: '400px' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid #222', color: '#555' }}>
                 <th style={{ padding: '8px' }}>ORDER ID</th>
