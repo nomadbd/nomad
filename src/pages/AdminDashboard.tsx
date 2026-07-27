@@ -9,19 +9,20 @@ import AdminSettings from '../components/admin/AdminSettings';
 const AdminDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'overview' | 'orders' | 'products' | 'settings'>('overview');
   const [menuOpen, setMenuOpen] = useState<boolean>(false);
-  const [userEmail, setUserEmail] = useState<string>('AUTHENTICATING...');
+  const [userEmail, setUserEmail] = useState<string>('');
+  const [userRole, setUserRole] = useState<string>(''); // 🟢 ডিফল্ট কোনো রোল নেই
 
   useEffect(() => {
     const fetchCurrentUser = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
-        if (user?.email) {
-          setUserEmail(user.email);
-        } else {
-          setUserEmail('ADMIN USER');
+        if (user) {
+          setUserEmail(user.email || '');
+          // 🟢 শুধুমাত্র ইউজারের নির্ধারিত রোলটিই সেট হবে
+          setUserRole(user.user_metadata?.role || ''); 
         }
       } catch (err) {
-        setUserEmail('ADMIN USER');
+        console.error('Error fetching user:', err);
       }
     };
 
@@ -92,7 +93,7 @@ const AdminDashboard: React.FC = () => {
           cursor: pointer;
           letter-spacing: 1px;
           background: transparent;
-          color: #aaa;
+          color: #cccccc; /* 🟢 উজ্জ্বল ধূসর */
           border-radius: 2px;
           transition: all 0.2s ease;
         }
@@ -141,13 +142,13 @@ const AdminDashboard: React.FC = () => {
         {/* 👈 সাইডবার */}
         <aside className="nomad-sidebar">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            
+
             {/* 🟢 NOMAD লোগো & স্লোগান */}
             <a href="/" className="nomad-brand-link" title="Go to Store Homepage">
               <h1 style={{ fontSize: '18px', fontWeight: '900', letterSpacing: '4px', margin: 0, color: '#fff' }}>
                 NOMAD
               </h1>
-              <span style={{ fontSize: '9px', color: '#666', letterSpacing: '1.5px', marginTop: '2px', display: 'block' }}>
+              <span style={{ fontSize: '9px', color: '#aaaaaa', letterSpacing: '1.5px', marginTop: '2px', display: 'block' }}>
                 The one. Everywhere.
               </span>
             </a>
@@ -176,7 +177,7 @@ const AdminDashboard: React.FC = () => {
 
           {/* মেনু লিঙ্কস */}
           <nav className="nomad-nav">
-            <span style={{ fontSize: '9px', color: '#555', letterSpacing: '2px', marginBottom: '8px', fontWeight: 'bold' }}>
+            <span style={{ fontSize: '9px', color: '#888888', letterSpacing: '2px', marginBottom: '8px', fontWeight: 'bold' }}>
               MAIN MENU
             </span>
 
@@ -215,9 +216,17 @@ const AdminDashboard: React.FC = () => {
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid #111', paddingBottom: '10px' }}>
             <div style={{ textAlign: 'right', fontSize: '10px' }}>
-              <span style={{ color: '#aaa', display: 'block' }}>
+              <span style={{ color: '#dddddd', display: 'block', fontWeight: 'bold' }}>
                 {userEmail}
               </span>
+
+              {/* 🟢 সরাসরি ইউজারের রোল রেন্ডার হবে */}
+              {userRole && (
+                <span style={{ color: '#888888', fontSize: '9px', letterSpacing: '1px', display: 'block', margin: '2px 0', textTransform: 'uppercase' }}>
+                  ROLE: {userRole}
+                </span>
+              )}
+
               <span style={{ color: '#22c55e', fontSize: '9px', letterSpacing: '1px', fontWeight: 'bold' }}>
                 ● ONLINE (ENCRYPTED)
               </span>
