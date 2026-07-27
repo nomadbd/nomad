@@ -9,6 +9,7 @@ import AdminSettings from '../components/admin/AdminSettings';
 const AdminDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'overview' | 'orders' | 'products' | 'settings'>('overview');
   const [menuOpen, setMenuOpen] = useState<boolean>(false);
+  const [userName, setUserName] = useState<string>('');
   const [userEmail, setUserEmail] = useState<string>('');
   const [userRole, setUserRole] = useState<string>('');
 
@@ -20,26 +21,26 @@ const AdminDashboard: React.FC = () => {
         if (user) {
           setUserEmail(user.email || '');
 
-          // profiles টেবিল থেকে id ম্যাচ করে role ফেচ করা
+          // 🟢 profiles টেবিল থেকে role এর পাশাপাশি name কলামও আনা হচ্ছে
           const { data: profile, error } = await supabase
             .from('profiles')
-            .select('role')
+            .select('name, role')
             .eq('id', user.id)
             .single();
 
-          if (!error && profile?.role) {
-            setUserRole(profile.role);
+          if (!error && profile) {
+            if (profile.name) setUserName(profile.name);
+            if (profile.role) setUserRole(profile.role);
           }
         }
       } catch (err) {
-        console.error('Error fetching user or role:', err);
+        console.error('Error fetching user profile:', err);
       }
     };
 
     fetchCurrentUserAndRole();
   }, []);
 
-  // 🟢 স্লোগান এবং রোলের জন্য হুবহু একই স্টাইল অবজেক্ট
   const subTextStyle: React.CSSProperties = {
     fontSize: '10px',
     color: '#cccccc',
@@ -51,7 +52,6 @@ const AdminDashboard: React.FC = () => {
   return (
     <div style={{ backgroundColor: '#030303', color: '#fff', minHeight: '100vh', fontFamily: 'monospace, sans-serif' }}>
 
-      {/* ফ্লুইড রেসপন্সিভ সিএসএস লেআউট */}
       <style>{`
         * { box-sizing: border-box; margin: 0; padding: 0; }
         
@@ -155,7 +155,6 @@ const AdminDashboard: React.FC = () => {
 
       <div className="nomad-layout">
 
-        {/* 👈 সাইডবার */}
         <aside className="nomad-sidebar">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
 
@@ -163,7 +162,6 @@ const AdminDashboard: React.FC = () => {
               <h1 style={{ fontSize: '18px', fontWeight: '900', letterSpacing: '4px', margin: 0, color: '#fff' }}>
                 NOMAD
               </h1>
-              {/* 🟢 উজ্জ্বল ও মোটা স্লোগান (রোলের স্টাইলের সাথে হুবহু সমান) */}
               <span style={{ ...subTextStyle, marginTop: '2px' }}>
                 The one. Everywhere.
               </span>
@@ -225,17 +223,15 @@ const AdminDashboard: React.FC = () => {
           </nav>
         </aside>
 
-        {/* 👉 মূল কন্টেন্ট এলাকা */}
         <main className="nomad-main">
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid #111', paddingBottom: '10px' }}>
             <div style={{ textAlign: 'right', fontSize: '10px' }}>
-              {/* 🟢 ইমেল অ্যাড্রেস একদম সাদা (#ffffff) */}
-              <span style={{ color: '#ffffff', display: 'block', fontWeight: 'bold' }}>
-                {userEmail}
+              {/* 🟢 নাম থাকলে নাম দেখাবে, না থাকলে ব্যাকআপ হিসেবে ইমেইল দেখাবে */}
+              <span style={{ color: '#ffffff', display: 'block', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                {userName || userEmail}
               </span>
 
-              {/* 🟢 সরাসরি রোল দেখাবে (স্লোগানের হুবহু সমান ফন্ট, সাইজ ও কালার) */}
               {userRole && (
                 <span style={{ ...subTextStyle, marginTop: '2px', textTransform: 'uppercase' }}>
                   {userRole}
