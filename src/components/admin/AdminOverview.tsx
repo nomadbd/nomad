@@ -27,14 +27,14 @@ const formatNumber = (num: number): string => {
 const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) => {
   const [totalRevenue, setTotalRevenue] = useState<number>(0);
   const [totalOrders, setTotalOrders] = useState<number>(0);
-  
+
   const [pendingOrders, setPendingOrders] = useState<number>(0);
   const [processingOrders, setProcessingOrders] = useState<number>(0);
   const [receivedOrders, setReceivedOrders] = useState<number>(0);
   const [shippedOrders, setShippedOrders] = useState<number>(0);
   const [deliveredOrders, setDeliveredOrders] = useState<number>(0);
   const [cancelledOrders, setCancelledOrders] = useState<number>(0);
-  
+
   const [activeCatalogItems, setActiveCatalogItems] = useState<number>(0);
   const [recentOrders, setRecentOrders] = useState<OrderItem[]>([]);
 
@@ -134,14 +134,15 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
   };
 
   return (
-    <div style={{ color: '#fff', fontFamily: 'monospace, sans-serif', width: '100%' }}>
-      
+    <div style={{ color: '#fff', fontFamily: 'monospace, sans-serif', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
+
       <style>{`
         .metrics-grid {
           display: grid;
           grid-template-columns: 1fr;
           gap: 12px;
           margin-bottom: 25px;
+          width: 100%;
         }
 
         @media (min-width: 768px) {
@@ -179,6 +180,13 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
         .table-row-hover:hover {
           background-color: #0c0c0c;
         }
+
+        /* 🟢 রেসপন্সিভ টেবিল কন্টেইনার */
+        .table-wrapper {
+          width: 100%;
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+        }
       `}</style>
 
       {/* 🔝 হেডার */}
@@ -193,7 +201,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
 
       {/* 📊 ১. মেট্রিক কার্ডস */}
       <div className="metrics-grid">
-        
+
         {/* 🟢 TOTAL REVENUE (CLEAN CLICKABLE CARD) */}
         <div 
           className="metric-card revenue-card-clickable"
@@ -237,12 +245,12 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
       </div>
 
       {/* 📈 ২. ফুলফিলমেন্ট ব্রেকডাউন */}
-      <div style={{ backgroundColor: '#060606', border: '1px solid #1a1a1a', padding: '16px', marginBottom: '25px', borderRadius: '2px' }}>
+      <div style={{ backgroundColor: '#060606', border: '1px solid #1a1a1a', padding: '16px', marginBottom: '25px', borderRadius: '2px', boxSizing: 'border-box', width: '100%' }}>
         <span style={{ fontSize: '10px', color: '#aaa', letterSpacing: '1.5px', fontWeight: 'bold', display: 'block', marginBottom: '12px' }}>
           FULFILLMENT STATUS BREAKDOWN
         </span>
-        
-        <div style={{ display: 'flex', height: '6px', backgroundColor: '#111', borderRadius: '3px', overflow: 'hidden', marginBottom: '12px' }}>
+
+        <div style={{ display: 'flex', height: '6px', backgroundColor: '#111', borderRadius: '3px', overflow: 'hidden', marginBottom: '12px', width: '100%' }}>
           <div style={{ width: `${totalOrders ? (pendingOrders / totalOrders) * 100 : 0}%`, backgroundColor: '#eab308' }} title="Pending" />
           <div style={{ width: `${totalOrders ? (processingOrders / totalOrders) * 100 : 0}%`, backgroundColor: '#a855f7' }} title="Processing" />
           <div style={{ width: `${totalOrders ? (receivedOrders / totalOrders) * 100 : 0}%`, backgroundColor: '#3b82f6' }} title="Received" />
@@ -251,7 +259,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
           <div style={{ width: `${totalOrders ? (cancelledOrders / totalOrders) * 100 : 0}%`, backgroundColor: '#ef4444' }} title="Cancelled" />
         </div>
 
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px', fontSize: '10px' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', fontSize: '10px' }}>
           <span><strong style={{ color: '#eab308' }}>● PENDING:</strong> {formatNumber(pendingOrders)}</span>
           <span><strong style={{ color: '#a855f7' }}>● PROCESSING:</strong> {formatNumber(processingOrders)}</span>
           <span><strong style={{ color: '#3b82f6' }}>● RECEIVED:</strong> {formatNumber(receivedOrders)}</span>
@@ -261,34 +269,36 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
         </div>
       </div>
 
-      {/* 📑 ৩. রিসেন্ট অর্ডারস টেবিল */}
-      <div style={{ backgroundColor: '#060606', border: '1px solid #1a1a1a', padding: '16px', borderRadius: '2px', overflowX: 'auto' }}>
+      {/* 📑 ৩. রিসেন্ট অর্ডারস টেবিল (নিরাপদ কন্টেইনার ফিক্স) */}
+      <div style={{ backgroundColor: '#060606', border: '1px solid #1a1a1a', padding: '16px', borderRadius: '2px', boxSizing: 'border-box', width: '100%', overflow: 'hidden' }}>
         <span style={{ fontSize: '10px', color: '#aaa', letterSpacing: '1.5px', fontWeight: 'bold', display: 'block', marginBottom: '12px' }}>
           RECENT ORDERS MEMORANDUM
         </span>
 
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '11px', minWidth: '500px' }}>
-          <thead>
-            <tr style={{ borderBottom: '1px solid #222', color: '#555' }}>
-              <th style={{ padding: '8px' }}>ORDER ID</th>
-              <th style={{ padding: '8px' }}>CUSTOMER</th>
-              <th style={{ padding: '8px' }}>DATE</th>
-              <th style={{ padding: '8px' }}>AMOUNT</th>
-              <th style={{ padding: '8px', textAlign: 'right' }}>STATUS</th>
-            </tr>
-          </thead>
-          <tbody>
-            {recentOrders.map((order) => (
-              <tr key={order.id} className="table-row-hover" style={{ borderBottom: '1px solid #111', transition: 'background-color 0.2s' }}>
-                <td style={{ padding: '10px 8px', color: '#aaa' }}>#{order.id.slice(0, 8)}...</td>
-                <td style={{ padding: '10px 8px', color: '#fff' }}>{order.customer_name || 'GUEST'}</td>
-                <td style={{ padding: '10px 8px', color: '#666' }}>{new Date(order.created_at).toLocaleDateString()}</td>
-                <td style={{ padding: '10px 8px', fontWeight: 'bold', color: '#fff' }}>৳{order.total_amount}</td>
-                <td style={{ padding: '10px 8px', textAlign: 'right' }}>{renderStatusBadge(order.status)}</td>
+        <div className="table-wrapper">
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '11px', minWidth: '420px' }}>
+            <thead>
+              <tr style={{ borderBottom: '1px solid #222', color: '#555' }}>
+                <th style={{ padding: '8px' }}>ORDER ID</th>
+                <th style={{ padding: '8px' }}>CUSTOMER</th>
+                <th style={{ padding: '8px' }}>DATE</th>
+                <th style={{ padding: '8px' }}>AMOUNT</th>
+                <th style={{ padding: '8px', textAlign: 'right' }}>STATUS</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {recentOrders.map((order) => (
+                <tr key={order.id} className="table-row-hover" style={{ borderBottom: '1px solid #111', transition: 'background-color 0.2s' }}>
+                  <td style={{ padding: '10px 8px', color: '#aaa' }}>#{order.id.slice(0, 8)}...</td>
+                  <td style={{ padding: '10px 8px', color: '#fff' }}>{order.customer_name || 'GUEST'}</td>
+                  <td style={{ padding: '10px 8px', color: '#666' }}>{new Date(order.created_at).toLocaleDateString()}</td>
+                  <td style={{ padding: '10px 8px', fontWeight: 'bold', color: '#fff' }}>৳{order.total_amount}</td>
+                  <td style={{ padding: '10px 8px', textAlign: 'right' }}>{renderStatusBadge(order.status)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
     </div>
