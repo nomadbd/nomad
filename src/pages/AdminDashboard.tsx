@@ -51,7 +51,7 @@ const AdminDashboard: React.FC = () => {
   return (
     <div style={{ backgroundColor: '#030303', color: '#fff', minHeight: '100vh', fontFamily: 'monospace, sans-serif', width: '100%', overflowX: 'hidden' }}>
 
-      {/* 🟢 ফ্লুইড ও পারফেক্ট স্ক্রিন-ফিট সিএসএস লেআউট */}
+      {/* 🟢 মোবাইলের ডেক্সটপ ভিউ সহ সব স্ক্রিনের জন্য ১০০% স্ক্রিন-ফিট সিএসএস */}
       <style>{`
         * { box-sizing: border-box; margin: 0; padding: 0; }
         
@@ -102,9 +102,9 @@ const AdminDashboard: React.FC = () => {
           padding: 16px;
           background-color: #030303;
           width: 100%;
-          min-width: 0; /* স্ক্রিন ব্রেক হওয়া আটকায় */
+          min-width: 0; /* গ্রিড বা টেবিলের জন্য লেআউট ভাঙা আটকায় */
           max-width: 100%;
-          overflow-x: hidden;
+          overflow-x: auto; /* কন্টেন্ট বড় হলে শুধু কন্টেন্ট পার্ট রেসপন্সিভলি স্ক্রল হবে, লেআউট কাটবে না */
         }
 
         .nav-btn {
@@ -136,13 +136,11 @@ const AdminDashboard: React.FC = () => {
           color: #fff;
         }
 
-        /* 🟢 টেক্সট স্ক্রিনের বাইরে যাওয়া বন্ধ করার স্টাইল */
         .user-text-container {
           max-width: 100%;
           overflow: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;
-          word-break: break-all;
         }
 
         @media (min-width: 768px) {
@@ -150,11 +148,11 @@ const AdminDashboard: React.FC = () => {
             flex-direction: row;
           }
           .nomad-sidebar {
-            width: 220px;
+            width: 200px; /* ডেক্সটপে সাইডবার কিছুটা নিখুঁত সাইজে আনা হলো */
             min-height: 100vh;
             border-bottom: none;
             border-right: 1px solid #1a1a1a;
-            padding: 25px 18px;
+            padding: 20px 15px;
           }
           .nomad-menu-toggle {
             display: none !important;
@@ -167,7 +165,8 @@ const AdminDashboard: React.FC = () => {
           }
           .nomad-main {
             padding: 20px 24px;
-            width: calc(100vw - 220px); /* ডেক্সটপে পারফেক্ট স্ক্রিন ফিট */
+            flex: 1;
+            min-width: 0;
           }
         }
       `}</style>
