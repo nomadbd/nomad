@@ -10,23 +10,33 @@ const AdminDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'overview' | 'orders' | 'products' | 'settings'>('overview');
   const [menuOpen, setMenuOpen] = useState<boolean>(false);
   const [userEmail, setUserEmail] = useState<string>('');
-  const [userRole, setUserRole] = useState<string>(''); // 🟢 ডিফল্ট কোনো রোল নেই
+  const [userRole, setUserRole] = useState<string>('');
 
   useEffect(() => {
-    const fetchCurrentUser = async () => {
+    const fetchCurrentUserAndRole = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
+        
         if (user) {
           setUserEmail(user.email || '');
-          // 🟢 শুধুমাত্র ইউজারের নির্ধারিত রোলটিই সেট হবে
-          setUserRole(user.user_metadata?.role || ''); 
+
+          // 🟢 profiles টেবিল থেকে সরাসরি id ম্যাচ করে role নেওয়া হচ্ছে
+          const { data: profile, error } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single();
+
+          if (!error && profile?.role) {
+            setUserRole(profile.role);
+          }
         }
       } catch (err) {
-        console.error('Error fetching user:', err);
+        console.error('Error fetching user or role:', err);
       }
     };
 
-    fetchCurrentUser();
+    fetchCurrentUserAndRole();
   }, []);
 
   return (
@@ -51,7 +61,6 @@ const AdminDashboard: React.FC = () => {
           flex-shrink: 0;
         }
 
-        /* 🟢 লোগো হোভার অ্যানিমেশন */
         .nomad-brand-link {
           text-decoration: none;
           color: inherit;
@@ -63,7 +72,6 @@ const AdminDashboard: React.FC = () => {
           opacity: 0.8;
         }
 
-        /* মোবাইলে মেনু হাইড/শো থাকবে */
         .nomad-nav {
           display: ${menuOpen ? 'flex' : 'none'};
           flex-direction: column;
@@ -78,7 +86,7 @@ const AdminDashboard: React.FC = () => {
           padding: 16px;
           background-color: #030303;
           width: 100%;
-          min-width: 0; /* ওভারফ্লো বন্ধ করার জন্য জরুরি */
+          min-width: 0;
         }
 
         .nav-btn {
@@ -110,7 +118,6 @@ const AdminDashboard: React.FC = () => {
           color: #fff;
         }
 
-        /* 💻 ৭৬৮px বা তার বেশি */
         @media (min-width: 768px) {
           .nomad-layout {
             flex-direction: row;
@@ -143,7 +150,6 @@ const AdminDashboard: React.FC = () => {
         <aside className="nomad-sidebar">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
 
-            {/* 🟢 NOMAD লোগো & স্লোগান */}
             <a href="/" className="nomad-brand-link" title="Go to Store Homepage">
               <h1 style={{ fontSize: '18px', fontWeight: '900', letterSpacing: '4px', margin: 0, color: '#fff' }}>
                 NOMAD
@@ -153,7 +159,6 @@ const AdminDashboard: React.FC = () => {
               </span>
             </a>
 
-            {/* 📱 শুধুমাত্র মোবাইল ভিউয়ের জন্য টগল বাটন */}
             <button
               className="nomad-menu-toggle"
               onClick={() => setMenuOpen(!menuOpen)}
@@ -175,7 +180,6 @@ const AdminDashboard: React.FC = () => {
             </button>
           </div>
 
-          {/* মেনু লিঙ্কস */}
           <nav className="nomad-nav">
             <span style={{ fontSize: '9px', color: '#888888', letterSpacing: '2px', marginBottom: '8px', fontWeight: 'bold' }}>
               MAIN MENU
@@ -220,9 +224,9 @@ const AdminDashboard: React.FC = () => {
                 {userEmail}
               </span>
 
-              {/* 🟢 সরাসরি ইউজারের রোল রেন্ডার হবে */}
+              {/* 🟢 ইমেলের ঠিক নিচে ডাটাবেজ থেকে আসা রোল দেখাবে */}
               {userRole && (
-                <span style={{ color: '#888888', fontSize: '9px', letterSpacing: '1px', display: 'block', margin: '2px 0', textTransform: 'uppercase' }}>
+                <span style={{ color: '#aaaaaa', fontSize: '9px', letterSpacing: '1px', display: 'block', margin: '2px 0', textTransform: 'uppercase' }}>
                   ROLE: {userRole}
                 </span>
               )}
