@@ -138,18 +138,17 @@ const AdminDashboard: React.FC = () => {
 
       <div className="nomad-layout">
 
-        {/* 👈 সাইডবার (ডেস্কটপ মোডে বামে স্থায়ী থাকবে) */}
+        {/* 👈 সাইডবার */}
         <aside className="nomad-sidebar">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             
-            {/* 🟢 NOMAD লোগো (এখন ক্লিক করলে হোমপেজে নিয়ে যাবে) */}
+            {/* 🟢 NOMAD লোগো & স্লোগান */}
             <a href="/" className="nomad-brand-link" title="Go to Store Homepage">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ width: '8px', height: '8px', backgroundColor: '#22c55e', borderRadius: '50%', boxShadow: '0 0 8px #22c55e' }}></span>
-                <h1 style={{ fontSize: '18px', fontWeight: '900', letterSpacing: '4px', margin: 0, color: '#fff' }}>NOMAD</h1>
-              </div>
+              <h1 style={{ fontSize: '18px', fontWeight: '900', letterSpacing: '4px', margin: 0, color: '#fff' }}>
+                NOMAD
+              </h1>
               <span style={{ fontSize: '9px', color: '#666', letterSpacing: '1.5px', marginTop: '2px', display: 'block' }}>
-                CONTROL PANEL v2.0
+                The one. Everywhere.
               </span>
             </a>
 
