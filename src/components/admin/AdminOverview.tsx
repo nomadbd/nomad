@@ -130,23 +130,25 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
     );
   };
 
-  // பாதுகாப்பான শতকরা হিসাব (ব্রেক হওয়া রোধ করতে)
   const calcPercent = (val: number) => {
     if (!totalOrders || totalOrders <= 0) return 0;
     const p = (val / totalOrders) * 100;
-    return isNaN(p) ? 0 : p;
+    return isNaN(p) ? 0 : Math.min(Math.max(p, 0), 100);
   };
 
   return (
     <div style={{ color: '#fff', fontFamily: 'monospace, sans-serif', width: '100%', maxWidth: '100%', boxSizing: 'border-box', overflowX: 'hidden' }}>
 
       <style>{`
+        * { box-sizing: border-box; }
+        
         .metrics-grid {
           display: grid;
           grid-template-columns: 1fr;
           gap: 12px;
           margin-bottom: 25px;
           width: 100%;
+          max-width: 100%;
         }
 
         @media (min-width: 768px) {
@@ -166,8 +168,8 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
           border: 1px solid #1a1a1a;
           padding: 16px;
           border-radius: 2px;
-          box-sizing: border-box;
           width: 100%;
+          max-width: 100%;
           min-width: 0;
         }
 
@@ -186,12 +188,13 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
 
         .table-wrapper {
           width: 100%;
+          max-width: 100%;
           overflow-x: auto;
           -webkit-overflow-scrolling: touch;
         }
       `}</style>
 
-      <div style={{ marginBottom: '20px' }}>
+      <div style={{ marginBottom: '20px', width: '100%', maxWidth: '100%' }}>
         <h2 style={{ fontSize: '15px', fontWeight: 'bold', letterSpacing: '2px', margin: 0, color: '#fff' }}>
           HQ METRICS & OVERVIEW
         </h2>
@@ -241,22 +244,22 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
         </div>
       </div>
 
-      {/* 🟢 ফিক্সড প্রগ্রেস বার কন্টেইনার */}
-      <div style={{ backgroundColor: '#060606', border: '1px solid #1a1a1a', padding: '16px', marginBottom: '25px', borderRadius: '2px', boxSizing: 'border-box', width: '100%', overflow: 'hidden' }}>
+      {/* 🟢 ফিক্সড প্রগ্রেস বার (flex-shrink: 0 এবং কঠোর উইডথ কনট্রোল সহ) */}
+      <div style={{ backgroundColor: '#060606', border: '1px solid #1a1a1a', padding: '16px', marginBottom: '25px', borderRadius: '2px', width: '100%', maxWidth: '100%', overflow: 'hidden' }}>
         <span style={{ fontSize: '10px', color: '#aaa', letterSpacing: '1.5px', fontWeight: 'bold', display: 'block', marginBottom: '12px' }}>
           FULFILLMENT STATUS BREAKDOWN
         </span>
 
-        <div style={{ display: 'flex', height: '6px', backgroundColor: '#111', borderRadius: '3px', overflow: 'hidden', marginBottom: '12px', width: '100%' }}>
-          <div style={{ width: `${calcPercent(pendingOrders)}%`, backgroundColor: '#eab308' }} />
-          <div style={{ width: `${calcPercent(processingOrders)}%`, backgroundColor: '#a855f7' }} />
-          <div style={{ width: `${calcPercent(receivedOrders)}%`, backgroundColor: '#3b82f6' }} />
-          <div style={{ width: `${calcPercent(shippedOrders)}%`, backgroundColor: '#06b6d4' }} />
-          <div style={{ width: `${calcPercent(deliveredOrders)}%`, backgroundColor: '#22c55e' }} />
-          <div style={{ width: `${calcPercent(cancelledOrders)}%`, backgroundColor: '#ef4444' }} />
+        <div style={{ display: 'flex', height: '6px', backgroundColor: '#111', borderRadius: '3px', overflow: 'hidden', marginBottom: '12px', width: '100%', maxWidth: '100%' }}>
+          <div style={{ width: `${calcPercent(pendingOrders)}%`, flexShrink: 0, backgroundColor: '#eab308' }} />
+          <div style={{ width: `${calcPercent(processingOrders)}%`, flexShrink: 0, backgroundColor: '#a855f7' }} />
+          <div style={{ width: `${calcPercent(receivedOrders)}%`, flexShrink: 0, backgroundColor: '#3b82f6' }} />
+          <div style={{ width: `${calcPercent(shippedOrders)}%`, flexShrink: 0, backgroundColor: '#06b6d4' }} />
+          <div style={{ width: `${calcPercent(deliveredOrders)}%`, flexShrink: 0, backgroundColor: '#22c55e' }} />
+          <div style={{ width: `${calcPercent(cancelledOrders)}%`, flexShrink: 0, backgroundColor: '#ef4444' }} />
         </div>
 
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', fontSize: '10px' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', fontSize: '10px', width: '100%' }}>
           <span><strong style={{ color: '#eab308' }}>● PENDING:</strong> {formatNumber(pendingOrders)}</span>
           <span><strong style={{ color: '#a855f7' }}>● PROCESSING:</strong> {formatNumber(processingOrders)}</span>
           <span><strong style={{ color: '#3b82f6' }}>● RECEIVED:</strong> {formatNumber(receivedOrders)}</span>
@@ -266,13 +269,13 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
         </div>
       </div>
 
-      <div style={{ backgroundColor: '#060606', border: '1px solid #1a1a1a', padding: '16px', borderRadius: '2px', boxSizing: 'border-box', width: '100%', overflow: 'hidden' }}>
+      <div style={{ backgroundColor: '#060606', border: '1px solid #1a1a1a', padding: '16px', borderRadius: '2px', width: '100%', maxWidth: '100%', overflow: 'hidden' }}>
         <span style={{ fontSize: '10px', color: '#aaa', letterSpacing: '1.5px', fontWeight: 'bold', display: 'block', marginBottom: '12px' }}>
           RECENT ORDERS MEMORANDUM
         </span>
 
         <div className="table-wrapper">
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '11px', minWidth: '400px' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '11px', minWidth: '380px' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid #222', color: '#555' }}>
                 <th style={{ padding: '8px' }}>ORDER ID</th>
@@ -284,7 +287,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
             </thead>
             <tbody>
               {recentOrders.map((order) => (
-                <tr key={order.id} className="table-row-hover" style={{ borderBottom: '1px solid #111', transition: 'background-color 0.2s' }}>
+                <tr key={order.id} className="table-row-hover" style={{ borderBottom: '1px solid #111' }}>
                   <td style={{ padding: '10px 8px', color: '#aaa' }}>#{order.id.slice(0, 8)}...</td>
                   <td style={{ padding: '10px 8px', color: '#fff' }}>{order.customer_name || 'GUEST'}</td>
                   <td style={{ padding: '10px 8px', color: '#666' }}>{new Date(order.created_at).toLocaleDateString()}</td>
