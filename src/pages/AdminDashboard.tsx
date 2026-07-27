@@ -49,17 +49,24 @@ const AdminDashboard: React.FC = () => {
   };
 
   return (
-    <div style={{ backgroundColor: '#030303', color: '#fff', minHeight: '100vh', fontFamily: 'monospace, sans-serif' }}>
+    <div style={{ backgroundColor: '#030303', color: '#fff', minHeight: '100vh', fontFamily: 'monospace, sans-serif', width: '100%', overflowX: 'hidden' }}>
 
+      {/* 🟢 ফ্লুইড ও পারফেক্ট স্ক্রিন-ফিট সিএসএস লেআউট */}
       <style>{`
         * { box-sizing: border-box; margin: 0; padding: 0; }
         
+        html, body {
+          width: 100%;
+          max-width: 100vw;
+          overflow-x: hidden;
+        }
+
         .nomad-layout {
           display: flex;
           flex-direction: column;
           min-height: 100vh;
           width: 100%;
-          overflow-x: hidden; /* স্ক্রিন স্ক্রলিং/কাটা পড়া বন্ধ করবে */
+          max-width: 100vw;
         }
         
         .nomad-sidebar {
@@ -95,7 +102,8 @@ const AdminDashboard: React.FC = () => {
           padding: 16px;
           background-color: #030303;
           width: 100%;
-          min-width: 0;
+          min-width: 0; /* স্ক্রিন ব্রেক হওয়া আটকায় */
+          max-width: 100%;
           overflow-x: hidden;
         }
 
@@ -128,11 +136,13 @@ const AdminDashboard: React.FC = () => {
           color: #fff;
         }
 
+        /* 🟢 টেক্সট স্ক্রিনের বাইরে যাওয়া বন্ধ করার স্টাইল */
         .user-text-container {
           max-width: 100%;
           overflow: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;
+          word-break: break-all;
         }
 
         @media (min-width: 768px) {
@@ -140,7 +150,7 @@ const AdminDashboard: React.FC = () => {
             flex-direction: row;
           }
           .nomad-sidebar {
-            width: 230px;
+            width: 220px;
             min-height: 100vh;
             border-bottom: none;
             border-right: 1px solid #1a1a1a;
@@ -156,7 +166,8 @@ const AdminDashboard: React.FC = () => {
             border-top: none;
           }
           .nomad-main {
-            padding: 25px 30px;
+            padding: 20px 24px;
+            width: calc(100vw - 220px); /* ডেক্সটপে পারফেক্ট স্ক্রিন ফিট */
           }
         }
       `}</style>
@@ -236,7 +247,6 @@ const AdminDashboard: React.FC = () => {
           <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid #111', paddingBottom: '10px', width: '100%' }}>
             <div style={{ textAlign: 'right', fontSize: '10px', maxWidth: '100%', overflow: 'hidden' }}>
               
-              {/* 🟢 নাম থাকলে সেটা UPPERCASE দেখাবে, আর ইমেইল হলে সেটা ছোট হাতের অক্ষরেই থাকবে যাতে ওভারফ্লো না হয় */}
               <span 
                 className="user-text-container"
                 style={{ 
