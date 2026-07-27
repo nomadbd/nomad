@@ -21,7 +21,6 @@ const AdminDashboard: React.FC = () => {
         if (user) {
           setUserEmail(user.email || '');
 
-          // 🟢 profiles টেবিল থেকে role এর পাশাপাশি name কলামও আনা হচ্ছে
           const { data: profile, error } = await supabase
             .from('profiles')
             .select('name, role')
@@ -45,7 +44,7 @@ const AdminDashboard: React.FC = () => {
     fontSize: '10px',
     color: '#cccccc',
     fontWeight: 600,
-    letterSpacing: '1.5px',
+    letterSpacing: '1px',
     display: 'block',
   };
 
@@ -60,6 +59,7 @@ const AdminDashboard: React.FC = () => {
           flex-direction: column;
           min-height: 100vh;
           width: 100%;
+          overflow-x: hidden; /* স্ক্রিন স্ক্রলিং/কাটা পড়া বন্ধ করবে */
         }
         
         .nomad-sidebar {
@@ -96,6 +96,7 @@ const AdminDashboard: React.FC = () => {
           background-color: #030303;
           width: 100%;
           min-width: 0;
+          overflow-x: hidden;
         }
 
         .nav-btn {
@@ -125,6 +126,13 @@ const AdminDashboard: React.FC = () => {
         .nav-btn:hover:not(.active) {
           background-color: #111;
           color: #fff;
+        }
+
+        .user-text-container {
+          max-width: 100%;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
         }
 
         @media (min-width: 768px) {
@@ -225,10 +233,20 @@ const AdminDashboard: React.FC = () => {
 
         <main className="nomad-main">
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid #111', paddingBottom: '10px' }}>
-            <div style={{ textAlign: 'right', fontSize: '10px' }}>
-              {/* 🟢 নাম থাকলে নাম দেখাবে, না থাকলে ব্যাকআপ হিসেবে ইমেইল দেখাবে */}
-              <span style={{ color: '#ffffff', display: 'block', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid #111', paddingBottom: '10px', width: '100%' }}>
+            <div style={{ textAlign: 'right', fontSize: '10px', maxWidth: '100%', overflow: 'hidden' }}>
+              
+              {/* 🟢 নাম থাকলে সেটা UPPERCASE দেখাবে, আর ইমেইল হলে সেটা ছোট হাতের অক্ষরেই থাকবে যাতে ওভারফ্লো না হয় */}
+              <span 
+                className="user-text-container"
+                style={{ 
+                  color: '#ffffff', 
+                  display: 'block', 
+                  fontWeight: 'bold',
+                  textTransform: userName ? 'uppercase' : 'none',
+                  fontSize: '10px'
+                }}
+              >
                 {userName || userEmail}
               </span>
 
