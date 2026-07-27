@@ -1,6 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../supabaseClient';
 
+import AdminOverview from '../components/admin/AdminOverview';
+import AdminOrders from '../components/admin/AdminOrders';
+import AdminProducts from '../components/admin/AdminProducts';
+import AdminSettings from '../components/admin/AdminSettings';
+
 export type UserRole = 'ADMIN' | 'MANAGER' | 'FINANCE' | 'SUPER ADMIN';
 
 export interface UserProfile {
@@ -146,49 +151,10 @@ export const AdminDashboard: React.FC = () => {
           </div>
         </header>
 
-        {activeTab === 'overview' && (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-lg font-bold text-white tracking-wide uppercase">HQ METRICS & OVERVIEW</h2>
-              <p className="text-xs text-neutral-300 font-mono tracking-wider mt-0.5">
-                REAL-TIME FINANCIAL & FULFILLMENT INSIGHTS
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="bg-neutral-900/60 border border-neutral-800 p-4 rounded">
-                <span className="text-[11px] font-mono text-neutral-300 tracking-wider">TOTAL REVENUE</span>
-                <p className="text-2xl font-bold text-emerald-400 my-1">৳ 1,360</p>
-                <span className="text-[10px] text-neutral-400 font-mono">* EXCLUDING CANCELLED</span>
-              </div>
-
-              <div className="bg-neutral-900/60 border border-neutral-800 p-4 rounded">
-                <span className="text-[11px] font-mono text-neutral-300 tracking-wider">TOTAL ORDERS</span>
-                <p className="text-2xl font-bold text-white my-1">1</p>
-                <span className="text-[10px] text-neutral-400 font-mono">* ALL-TIME LOGGED</span>
-              </div>
-
-              <div className="bg-neutral-900/60 border border-neutral-800 p-4 rounded">
-                <span className="text-[11px] font-mono text-neutral-300 tracking-wider">ACTIVE QUEUE</span>
-                <p className="text-2xl font-bold text-purple-400 my-1">0 <span className="text-sm font-normal text-neutral-300">/ 0 REC</span></p>
-                <span className="text-[10px] text-neutral-400 font-mono">* PENDING & PROCESSING</span>
-              </div>
-
-              <div className="bg-neutral-900/60 border border-neutral-800 p-4 rounded">
-                <span className="text-[11px] font-mono text-neutral-300 tracking-wider">CATALOG ITEMS</span>
-                <p className="text-2xl font-bold text-white my-1">3</p>
-                <span className="text-[10px] text-neutral-400 font-mono">* LIVE IN STORE</span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'settings' && (
-          <div className="text-white font-mono text-sm">
-            <h2 className="text-lg font-bold mb-2">ROLES & PERMISSION SETTINGS</h2>
-            <p className="text-xs text-neutral-300">Manage Granular Access Control Here.</p>
-          </div>
-        )}
+        {activeTab === 'overview' && <AdminOverview />}
+        {activeTab === 'orders' && <AdminOrders />}
+        {activeTab === 'products' && <AdminProducts />}
+        {activeTab === 'settings' && <AdminSettings />}
       </main>
 
       {isModalOpen && userProfile && (
