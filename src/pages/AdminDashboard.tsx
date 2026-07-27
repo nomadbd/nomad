@@ -20,7 +20,7 @@ const AdminDashboard: React.FC = () => {
         if (user) {
           setUserEmail(user.email || '');
 
-          // 🟢 profiles টেবিল থেকে সরাসরি id ম্যাচ করে role নেওয়া হচ্ছে
+          // profiles টেবিল থেকে id ম্যাচ করে role ফেচ করা
           const { data: profile, error } = await supabase
             .from('profiles')
             .select('role')
@@ -39,10 +39,19 @@ const AdminDashboard: React.FC = () => {
     fetchCurrentUserAndRole();
   }, []);
 
+  // 🟢 স্লোগান এবং রোলের জন্য হুবহু একই স্টাইল অবজেক্ট
+  const subTextStyle: React.CSSProperties = {
+    fontSize: '10px',
+    color: '#cccccc',
+    fontWeight: 600,
+    letterSpacing: '1.5px',
+    display: 'block',
+  };
+
   return (
     <div style={{ backgroundColor: '#030303', color: '#fff', minHeight: '100vh', fontFamily: 'monospace, sans-serif' }}>
 
-      {/* 🟢 ফ্লুইড রেসপন্সিভ সিএসএস লেআউট */}
+      {/* ফ্লুইড রেসপন্সিভ সিএসএস লেআউট */}
       <style>{`
         * { box-sizing: border-box; margin: 0; padding: 0; }
         
@@ -101,7 +110,7 @@ const AdminDashboard: React.FC = () => {
           cursor: pointer;
           letter-spacing: 1px;
           background: transparent;
-          color: #cccccc; /* 🟢 উজ্জ্বল ধূসর */
+          color: #cccccc;
           border-radius: 2px;
           transition: all 0.2s ease;
         }
@@ -154,7 +163,8 @@ const AdminDashboard: React.FC = () => {
               <h1 style={{ fontSize: '18px', fontWeight: '900', letterSpacing: '4px', margin: 0, color: '#fff' }}>
                 NOMAD
               </h1>
-              <span style={{ fontSize: '9px', color: '#aaaaaa', letterSpacing: '1.5px', marginTop: '2px', display: 'block' }}>
+              {/* 🟢 উজ্জ্বল ও মোটা স্লোগান (রোলের স্টাইলের সাথে হুবহু সমান) */}
+              <span style={{ ...subTextStyle, marginTop: '2px' }}>
                 The one. Everywhere.
               </span>
             </a>
@@ -220,20 +230,17 @@ const AdminDashboard: React.FC = () => {
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid #111', paddingBottom: '10px' }}>
             <div style={{ textAlign: 'right', fontSize: '10px' }}>
-              <span style={{ color: '#dddddd', display: 'block', fontWeight: 'bold' }}>
+              {/* 🟢 ইমেল অ্যাড্রেস একদম সাদা (#ffffff) */}
+              <span style={{ color: '#ffffff', display: 'block', fontWeight: 'bold' }}>
                 {userEmail}
               </span>
 
-              {/* 🟢 ইমেলের ঠিক নিচে ডাটাবেজ থেকে আসা রোল দেখাবে */}
+              {/* 🟢 সরাসরি রোল দেখাবে (স্লোগানের হুবহু সমান ফন্ট, সাইজ ও কালার) */}
               {userRole && (
-                <span style={{ color: '#aaaaaa', fontSize: '9px', letterSpacing: '1px', display: 'block', margin: '2px 0', textTransform: 'uppercase' }}>
-                  ROLE: {userRole}
+                <span style={{ ...subTextStyle, marginTop: '2px', textTransform: 'uppercase' }}>
+                  {userRole}
                 </span>
               )}
-
-              <span style={{ color: '#22c55e', fontSize: '9px', letterSpacing: '1px', fontWeight: 'bold' }}>
-                ● ONLINE (ENCRYPTED)
-              </span>
             </div>
           </div>
 
