@@ -10,6 +10,7 @@ const AdminDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'overview' | 'orders' | 'products' | 'settings'>('overview');
   const [menuOpen, setMenuOpen] = useState<boolean>(false);
   const [userEmail, setUserEmail] = useState<string>('AUTHENTICATING...');
+  const [userRole, setUserRole] = useState<string>('SUPER ADMIN'); // 🟢 ইউজার রোল স্টেট
 
   useEffect(() => {
     const fetchCurrentUser = async () => {
@@ -17,11 +18,16 @@ const AdminDashboard: React.FC = () => {
         const { data: { user } } = await supabase.auth.getUser();
         if (user?.email) {
           setUserEmail(user.email);
+          // Supabase metadata থেকে রোল ফেচ করা (ডিফল্ট: SUPER ADMIN)
+          const role = user.user_metadata?.role || 'SUPER ADMIN';
+          setUserRole(role.toUpperCase());
         } else {
           setUserEmail('ADMIN USER');
+          setUserRole('SUPER ADMIN');
         }
       } catch (err) {
         setUserEmail('ADMIN USER');
+        setUserRole('SUPER ADMIN');
       }
     };
 
@@ -50,7 +56,6 @@ const AdminDashboard: React.FC = () => {
           flex-shrink: 0;
         }
 
-        /* 🟢 লোগো হোভার অ্যানিমেশন */
         .nomad-brand-link {
           text-decoration: none;
           color: inherit;
@@ -62,7 +67,6 @@ const AdminDashboard: React.FC = () => {
           opacity: 0.8;
         }
 
-        /* মোবাইলে মেনু হাইড/শো থাকবে */
         .nomad-nav {
           display: ${menuOpen ? 'flex' : 'none'};
           flex-direction: column;
@@ -77,9 +81,10 @@ const AdminDashboard: React.FC = () => {
           padding: 16px;
           background-color: #030303;
           width: 100%;
-          min-width: 0; /* ওভারফ্লো বন্ধ করার জন্য জরুরি */
+          min-width: 0;
         }
 
+        /* 🟢 উজ্জ্বল নাভ বাটন টেক্সট (#d4d4d4) */
         .nav-btn {
           display: flex;
           align-items: center;
@@ -92,7 +97,7 @@ const AdminDashboard: React.FC = () => {
           cursor: pointer;
           letter-spacing: 1px;
           background: transparent;
-          color: #aaa;
+          color: #d4d4d4;
           border-radius: 2px;
           transition: all 0.2s ease;
         }
@@ -109,7 +114,6 @@ const AdminDashboard: React.FC = () => {
           color: #fff;
         }
 
-        /* 💻 ৭৬৮px বা তার বেশি */
         @media (min-width: 768px) {
           .nomad-layout {
             flex-direction: row;
@@ -142,17 +146,16 @@ const AdminDashboard: React.FC = () => {
         <aside className="nomad-sidebar">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             
-            {/* 🟢 NOMAD লোগো & স্লোগান */}
             <a href="/" className="nomad-brand-link" title="Go to Store Homepage">
               <h1 style={{ fontSize: '18px', fontWeight: '900', letterSpacing: '4px', margin: 0, color: '#fff' }}>
                 NOMAD
               </h1>
-              <span style={{ fontSize: '9px', color: '#666', letterSpacing: '1.5px', marginTop: '2px', display: 'block' }}>
+              {/* 🟢 উজ্জ্বল লাইট ধূসর রঙ (#a3a3a3) */}
+              <span style={{ fontSize: '10px', color: '#a3a3a3', letterSpacing: '1.5px', marginTop: '3px', display: 'block' }}>
                 The one. Everywhere.
               </span>
             </a>
 
-            {/* 📱 শুধুমাত্র মোবাইল ভিউয়ের জন্য টগল বাটন */}
             <button
               className="nomad-menu-toggle"
               onClick={() => setMenuOpen(!menuOpen)}
@@ -174,9 +177,9 @@ const AdminDashboard: React.FC = () => {
             </button>
           </div>
 
-          {/* মেনু লিঙ্কস */}
           <nav className="nomad-nav">
-            <span style={{ fontSize: '9px', color: '#555', letterSpacing: '2px', marginBottom: '8px', fontWeight: 'bold' }}>
+            {/* 🟢 উজ্জ্বল ধূসর ক্যাটাগরি লেবেল (#a3a3a3) */}
+            <span style={{ fontSize: '9px', color: '#a3a3a3', letterSpacing: '2px', marginBottom: '8px', fontWeight: 'bold' }}>
               MAIN MENU
             </span>
 
@@ -213,13 +216,14 @@ const AdminDashboard: React.FC = () => {
         {/* 👉 মূল কন্টেন্ট এলাকা */}
         <main className="nomad-main">
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid #111', paddingBottom: '10px' }}>
-            <div style={{ textAlign: 'right', fontSize: '10px' }}>
-              <span style={{ color: '#aaa', display: 'block' }}>
+          {/* 🟢 আপডেটেড হেডার (ইউজার রোল দেখানোর জন্য) */}
+          <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid #1a1a1a', paddingBottom: '12px' }}>
+            <div style={{ textAlign: 'right', fontSize: '11px' }}>
+              <span style={{ color: '#e5e5e5', display: 'block', fontWeight: 'bold', marginBottom: '2px' }}>
                 {userEmail}
               </span>
-              <span style={{ color: '#22c55e', fontSize: '9px', letterSpacing: '1px', fontWeight: 'bold' }}>
-                ● ONLINE (ENCRYPTED)
+              <span style={{ color: '#38bdf8', fontSize: '10px', letterSpacing: '1px', fontWeight: 'bold' }}>
+                ROLE: {userRole}
               </span>
             </div>
           </div>
