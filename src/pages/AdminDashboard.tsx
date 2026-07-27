@@ -30,7 +30,7 @@ const AdminDashboard: React.FC = () => {
 
   return (
     <div style={{ backgroundColor: '#030303', color: '#fff', minHeight: '100vh', fontFamily: 'monospace, sans-serif' }}>
-      
+
       {/* 🟢 ফ্লুইড রেসপন্সিভ সিএসএস লেআউট */}
       <style>{`
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -48,6 +48,18 @@ const AdminDashboard: React.FC = () => {
           border-bottom: 1px solid #1a1a1a;
           padding: 15px 20px;
           flex-shrink: 0;
+        }
+
+        /* 🟢 লোগো হোভার অ্যানিমেশন */
+        .nomad-brand-link {
+          text-decoration: none;
+          color: inherit;
+          display: block;
+          transition: opacity 0.2s ease;
+        }
+
+        .nomad-brand-link:hover {
+          opacity: 0.8;
         }
 
         /* মোবাইলে মেনু হাইড/শো থাকবে */
@@ -97,7 +109,7 @@ const AdminDashboard: React.FC = () => {
           color: #fff;
         }
 
-        /* 💻 ৭৬৮px বা তার বেশি (ডেস্কটপ এবং মোবাইলের "Desktop Site" অন করলে) */
+        /* 💻 ৭৬৮px বা তার বেশি */
         @media (min-width: 768px) {
           .nomad-layout {
             flex-direction: row;
@@ -109,11 +121,9 @@ const AdminDashboard: React.FC = () => {
             border-right: 1px solid #1a1a1a;
             padding: 25px 18px;
           }
-          /* ডেস্কটপে টগল বাটন লোকানো থাকবে */
           .nomad-menu-toggle {
             display: none !important;
           }
-          /* ডেস্কটপে মেনু সবসময় দৃশ্যমান থাকবে */
           .nomad-nav {
             display: flex !important;
             margin-top: 25px;
@@ -131,7 +141,9 @@ const AdminDashboard: React.FC = () => {
         {/* 👈 সাইডবার (ডেস্কটপ মোডে বামে স্থায়ী থাকবে) */}
         <aside className="nomad-sidebar">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
+            
+            {/* 🟢 NOMAD লোগো (এখন ক্লিক করলে হোমপেজে নিয়ে যাবে) */}
+            <a href="/" className="nomad-brand-link" title="Go to Store Homepage">
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span style={{ width: '8px', height: '8px', backgroundColor: '#22c55e', borderRadius: '50%', boxShadow: '0 0 8px #22c55e' }}></span>
                 <h1 style={{ fontSize: '18px', fontWeight: '900', letterSpacing: '4px', margin: 0, color: '#fff' }}>NOMAD</h1>
@@ -139,9 +151,9 @@ const AdminDashboard: React.FC = () => {
               <span style={{ fontSize: '9px', color: '#666', letterSpacing: '1.5px', marginTop: '2px', display: 'block' }}>
                 CONTROL PANEL v2.0
               </span>
-            </div>
+            </a>
 
-            {/* 📱 শুধুমাত্র মোবাইল নরমাল ভিউয়ের জন্য বাটন */}
+            {/* 📱 শুধুমাত্র মোবাইল ভিউয়ের জন্য টগল বাটন */}
             <button
               className="nomad-menu-toggle"
               onClick={() => setMenuOpen(!menuOpen)}
@@ -168,7 +180,7 @@ const AdminDashboard: React.FC = () => {
             <span style={{ fontSize: '9px', color: '#555', letterSpacing: '2px', marginBottom: '8px', fontWeight: 'bold' }}>
               MAIN MENU
             </span>
-            
+
             <button
               className={`nav-btn ${activeTab === 'overview' ? 'active' : ''}`}
               onClick={() => { setActiveTab('overview'); setMenuOpen(false); }}
@@ -201,7 +213,7 @@ const AdminDashboard: React.FC = () => {
 
         {/* 👉 মূল কন্টেন্ট এলাকা */}
         <main className="nomad-main">
-          
+
           <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid #111', paddingBottom: '10px' }}>
             <div style={{ textAlign: 'right', fontSize: '10px' }}>
               <span style={{ color: '#aaa', display: 'block' }}>
