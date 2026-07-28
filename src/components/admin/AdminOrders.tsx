@@ -1,5 +1,36 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../../supabaseClient'; // আপনার সুপাবেস ক্লায়েন্ট পাথ নিশ্চিত করুন
+
+// 🔹 ১. ডাটাবেজ রেসপন্সের জন্য টাইপস্ক্রিপ্ট ইন্টারফেস 
+interface SupabaseProductMedia {
+  media_url: string;
+}
+
+interface SupabaseProduct {
+  name: string;
+  product_media: SupabaseProductMedia[];
+}
+
+interface SupabaseOrderItem {
+  quantity: number;
+  size: string;
+  color: string;
+  price_at_purchase: number;
+  products: SupabaseProduct;
+}
+
+interface SupabaseOrderResponse {
+  id: string;
+  created_at: string;
+  total_amount: number;
+  status: string;
+  customer_name?: string;
+  customer_phone?: string;
+  shipping_address?: string;
+  delivery_charge?: number;
+  vat_amount?: number;
+  order_items: SupabaseOrderItem[];
+}
 
 interface OrderItem {
   product_name: string;
@@ -73,8 +104,9 @@ const AdminOrders: React.FC = () => {
       if (error) throw error;
 
       if (data) {
-        const formatted = data.map((order: any) => {
-          const items = (order.order_items || []).map((item: any) => ({
+        // 'any' এর বদলে সঠিক ইন্টারফেস কাস্টিং করা হয়েছে
+        const formatted = (data as unknown as SupabaseOrderResponse[]).map((order) => {
+          const items = (order.order_items || []).map((item) => ({
             product_name: item.products?.name || 'NOMAD APPAREL',
             product_image: item.products?.product_media?.[0]?.media_url || 'https://via.placeholder.com/80x100',
             size: item.size || 'N/A',
@@ -120,7 +152,6 @@ const AdminOrders: React.FC = () => {
 
       if (error) throw error;
 
-      // লোকাল স্টেটে তৎক্ষণাৎ আপডেট
       setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
     } catch (err) {
       console.error('Failed to update status:', err);
@@ -151,7 +182,7 @@ const AdminOrders: React.FC = () => {
     return '#a855f7'; // Purple for Pending
   };
 
-  // 📄 অ্যাডমিন ইনভয়েস প্রিন্ট হ্যান্ডলার
+  // 📄 ৩. অ্যাডমিন ইনভয়েস প্রিন্ট হ্যান্ডলার (উন্নত ক্লিনআপ লজিক)
   const handlePrintInvoice = (order: Order) => {
     const dateObj = new Date(order.created_at);
     const formattedDate = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
@@ -272,37 +303,47 @@ const AdminOrders: React.FC = () => {
     document.body.appendChild(printContainer);
     document.head.appendChild(styleSheet);
 
+    // DOM রেন্ডার হওয়ার জন্য সময় বাড়ানো হয়েছে
     setTimeout(() => {
       window.print();
+    }, 250);
+
+    // ব্যবহারকারী প্রিন্ট উইন্ডো বন্ধ করলে বা প্রিন্ট সম্পন্ন করলে স্টাইল রিমুভ হবে
+    window.onafterprint = () => {
       if (document.getElementById('nomad-admin-print-area')) {
         document.body.removeChild(printContainer);
       }
-      document.head.removeChild(styleSheet);
-    }, 150);
+      if (document.head.contains(styleSheet)) {
+        document.head.removeChild(styleSheet);
+      }
+      window.onafterprint = null; // ইভেন্ট ক্লিয়ার
+    };
   };
 
-  // 🔹 সার্চ ও ফিল্টার অনুযায়ী ফিল্টার করা অর্ডারসমূহ
-  const filteredOrders = orders.filter(order => {
-    const matchesSearch = 
-      order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (order.customer_name && order.customer_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (order.customer_phone && order.customer_phone.includes(searchTerm));
+  // 🔹 ২. পারফরম্যান্স অপটিমাইজেশন (useMemo)
+  const filteredOrders = useMemo(() => {
+    return orders.filter(order => {
+      const matchesSearch = 
+        order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (order.customer_name && order.customer_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (order.customer_phone && order.customer_phone.includes(searchTerm));
 
-    if (selectedStatusFilter === 'ALL') return matchesSearch;
-    return matchesSearch && order.status.toLowerCase().trim() === selectedStatusFilter.toLowerCase().trim();
-  });
+      if (selectedStatusFilter === 'ALL') return matchesSearch;
+      return matchesSearch && order.status.toLowerCase().trim() === selectedStatusFilter.toLowerCase().trim();
+    });
+  }, [orders, searchTerm, selectedStatusFilter]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '25px' }}>
-      
+
       {/* 🔝 টপ কন্ট্রোল ফিল্টার ও সার্চ */}
       <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '15px', backgroundColor: '#050505', border: '1px solid #1a1a1a', padding: '20px' }}>
-        
+
         {/* 🔍 সার্চ বার */}
-        <div style={{ position: 'relative', flexGrow: 1, maxWidth: '400px' }}>
+        <div style={{ position: 'relative', flexGrow: 1, minWidth: '250px', maxWidth: '400px' }}>
           <input
             type="text"
-            placeholder="SEARCH BY ORDER ID, NAME OR PHONE..."
+            placeholder="SEARCH BY ID, NAME OR PHONE..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             style={{
@@ -321,7 +362,7 @@ const AdminOrders: React.FC = () => {
         </div>
 
         {/* 🏷️ স্ট্যাটাস ফিল্টার ট্যাবস */}
-        <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', maxWidth: '100%' }}>
+        <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', maxWidth: '100%', paddingBottom: '4px' }}>
           {['ALL', ...STATUS_OPTIONS].map((status) => {
             const isActive = selectedStatusFilter === status;
             return (
@@ -348,11 +389,10 @@ const AdminOrders: React.FC = () => {
             );
           })}
         </div>
-
       </div>
 
       {/* 📦 অর্ডার কাউন্টার */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
         <span style={{ fontSize: '11px', color: '#666', fontFamily: 'monospace', letterSpacing: '2px', fontWeight: 'bold' }}>
           SHOWING {filteredOrders.length} OF {orders.length} ORDERS
         </span>
@@ -382,14 +422,14 @@ const AdminOrders: React.FC = () => {
 
             return (
               <div key={order.id} style={{ backgroundColor: '#050505', border: '1px solid #222', padding: '20px', transition: 'border 0.2s ease' }}>
-                
+
                 {/* কার্ড হেডার */}
-                <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '15px', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '15px' }}>
-                  
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '20px', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '15px' }}>
+
+                  <div style={{ minWidth: '150px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
                       <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#fff', fontFamily: 'monospace', letterSpacing: '1px' }}>
-                        #{order.id}
+                        #{order.id.slice(0, 8)}... {/* বড় আইডি হলে ভেঙে না যাওয়ার জন্য ট্রাঙ্কেট করা হলো */}
                       </span>
                       <span style={{ fontSize: '9px', backgroundColor: `${statusColor}22`, color: statusColor, border: `1px solid ${statusColor}55`, padding: '2px 8px', borderRadius: '2px', fontFamily: 'monospace', fontWeight: 'bold' }}>
                         ● {order.status.toUpperCase()}
@@ -401,7 +441,7 @@ const AdminOrders: React.FC = () => {
                   </div>
 
                   {/* গ্রাহকের তথ্য */}
-                  <div>
+                  <div style={{ minWidth: '150px' }}>
                     <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#fff', display: 'block' }}>
                       {order.customer_name || 'GUEST CUSTOMER'}
                     </span>
@@ -411,7 +451,7 @@ const AdminOrders: React.FC = () => {
                   </div>
 
                   {/* টাকার পরিমাণ */}
-                  <div style={{ textAlign: 'right' }}>
+                  <div style={{ minWidth: '100px', textAlign: 'left' }}>
                     <span style={{ fontSize: '15px', fontWeight: '800', color: '#fff', fontFamily: 'monospace', display: 'block' }}>
                       ৳{order.total_amount}
                     </span>
@@ -421,7 +461,7 @@ const AdminOrders: React.FC = () => {
                   </div>
 
                   {/* ⚡ ইনস্ট্যান্ট স্ট্যাটাস ড্রপডাউন কন্ট্রোল */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
                     <select
                       value={order.status}
                       disabled={isUpdating}
@@ -466,15 +506,16 @@ const AdminOrders: React.FC = () => {
                     <button
                       onClick={() => setExpandedOrderId(isExpanded ? null : order.id)}
                       style={{
-                        backgroundColor: 'transparent',
-                        border: 'none',
-                        color: '#666',
+                        backgroundColor: '#111',
+                        border: '1px solid #333',
+                        color: '#fff',
                         cursor: 'pointer',
-                        fontSize: '14px',
-                        padding: '5px'
+                        fontSize: '12px',
+                        padding: '6px 12px',
+                        fontFamily: 'monospace'
                       }}
                     >
-                      {isExpanded ? '▲' : '▼'}
+                      {isExpanded ? 'HIDE' : 'VIEW'}
                     </button>
                   </div>
 
@@ -483,7 +524,7 @@ const AdminOrders: React.FC = () => {
                 {/* 🔽 এক্সপ্যান্ডেড ডিটেইলস (প্রোডাক্টস ও শিপিং এড্রেস) */}
                 {isExpanded && (
                   <div style={{ marginTop: '15px', paddingTop: '15px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                    
+
                     {/* ঠিকানা */}
                     <div style={{ backgroundColor: '#0a0a0a', border: '1px solid #1a1a1a', padding: '12px', fontSize: '11px', color: '#aaa', fontFamily: 'monospace', lineHeight: '1.5' }}>
                       <strong style={{ color: '#fff', display: 'block', marginBottom: '4px' }}>SHIPPING ADDRESS:</strong>
@@ -493,9 +534,9 @@ const AdminOrders: React.FC = () => {
                     {/* প্রোডাক্ট আইটেমসমূহ */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                       {order.items.map((item, idx) => (
-                        <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '15px', backgroundColor: '#000', padding: '10px', border: '1px solid #151515' }}>
+                        <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '15px', flexWrap: 'wrap', backgroundColor: '#000', padding: '10px', border: '1px solid #151515' }}>
                           <img src={item.product_image} alt="" style={{ width: '40px', height: '50px', objectFit: 'cover' }} />
-                          <div style={{ flexGrow: 1 }}>
+                          <div style={{ flexGrow: 1, minWidth: '150px' }}>
                             <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#fff', display: 'block', textTransform: 'uppercase' }}>
                               {item.product_name}
                             </span>
