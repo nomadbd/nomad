@@ -49,13 +49,26 @@ const AdminDashboard: React.FC = () => {
   };
 
   return (
-    <div style={{ backgroundColor: '#030303', color: '#fff', minHeight: '100vh', fontFamily: 'monospace, sans-serif', width: '100%' }}>
+    <div style={{ 
+      backgroundColor: '#030303', 
+      color: '#fff', 
+      minHeight: '100vh', 
+      fontFamily: 'monospace, sans-serif', 
+      width: '100%',
+      maxWidth: '100%',
+      overflowX: 'hidden'
+    }}>
 
       <style>{`
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        * { 
+          box-sizing: border-box; 
+          margin: 0; 
+          padding: 0; 
+        }
         
         html, body {
           width: 100%;
+          max-width: 100%;
           overflow-x: hidden;
         }
 
@@ -64,14 +77,16 @@ const AdminDashboard: React.FC = () => {
           flex-direction: column;
           min-height: 100vh;
           width: 100%;
+          max-width: 100%;
+          overflow-x: hidden;
         }
         
         .nomad-sidebar {
           width: 100%;
           background-color: #060606;
           border-bottom: 1px solid #1a1a1a;
-          padding: 15px 20px;
-          flex-shrink: 0; /* সাইডবার যেন কোনোভাবেই ছোট না হয় */
+          padding: 15px 14px;
+          flex-shrink: 0;
         }
 
         .nomad-brand-link {
@@ -95,17 +110,20 @@ const AdminDashboard: React.FC = () => {
         }
 
         .nomad-main {
-          flex: 1; /* খালি জায়গা পুরোটাই নিয়ে নিবে */
-          min-width: 0; /* ফ্লেক্সবক্সে কন্টেন্ট বাইরে যাওয়া আটকাতে এটি জাদুর মতো কাজ করে */
-          padding: 16px;
+          flex: 1;
+          min-width: 0;
+          padding: 12px 14px;
           background-color: #030303;
-          display: flex;
-          flex-direction: column;
+          width: 100%;
+          max-width: 100%;
+          overflow-x: hidden;
         }
 
         .content-scrollable {
           width: 100%;
-          overflow-x: auto; /* ভেতরের টেবিল বা বড় কন্টেন্ট শুধু এই অংশের ভেতরেই স্ক্রোল হবে */
+          max-width: 100%;
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
         }
 
         .nav-btn {
@@ -144,17 +162,27 @@ const AdminDashboard: React.FC = () => {
           white-space: nowrap;
         }
 
+        /* মোবাইলের জন্য অতিরিক্ত সুরক্ষা */
+        @media (max-width: 767px) {
+          .nomad-main {
+            padding: 12px 14px;
+          }
+          .nomad-sidebar {
+            padding: 15px 14px;
+          }
+        }
+
+        /* ডেক্সটপ ভিউ */
         @media (min-width: 768px) {
           .nomad-layout {
             flex-direction: row;
           }
           .nomad-sidebar {
-            width: 200px; /* সাইডবারের ফিক্সড মাপ */
+            width: 200px;
             min-height: 100vh;
             border-bottom: none;
             border-right: 1px solid #1a1a1a;
             padding: 20px 15px;
-            flex-shrink: 0; /* ডেক্সটপ ভিউতে সাইডবার যেন চুপসে না যায় */
           }
           .nomad-menu-toggle {
             display: none !important;
@@ -167,7 +195,6 @@ const AdminDashboard: React.FC = () => {
           }
           .nomad-main {
             padding: 20px 24px;
-            /* এখান থেকে max-width ক্যালকুলেশন বাদ দেওয়া হয়েছে যাতে flexbox নিজেই সব হ্যান্ডেল করে */
           }
         }
       `}</style>
@@ -244,8 +271,16 @@ const AdminDashboard: React.FC = () => {
 
         <main className="nomad-main">
 
-          {/* ইমেইল এবং রোলের অংশটি */}
-          <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid #111', paddingBottom: '10px', width: '100%', flexWrap: 'wrap' }}>
+          {/* User Info */}
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'flex-end', 
+            alignItems: 'center', 
+            marginBottom: '20px', 
+            borderBottom: '1px solid #111', 
+            paddingBottom: '10px', 
+            width: '100%' 
+          }}>
             <div style={{ textAlign: 'right', fontSize: '10px', width: '100%' }}>
 
               <span 
@@ -269,7 +304,7 @@ const AdminDashboard: React.FC = () => {
             </div>
           </div>
 
-          {/* চাইল্ড কম্পোনেন্টগুলো */}
+          {/* Child Components */}
           <div className="content-scrollable">
             {activeTab === 'overview' && <AdminOverview />}
             {activeTab === 'orders' && <AdminOrders />}
