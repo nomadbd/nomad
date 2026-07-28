@@ -17,7 +17,7 @@ const AdminDashboard: React.FC = () => {
     const fetchCurrentUserAndRole = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
-        
+
         if (user) {
           setUserEmail(user.email || '');
 
@@ -49,9 +49,8 @@ const AdminDashboard: React.FC = () => {
   };
 
   return (
-    <div style={{ backgroundColor: '#030303', color: '#fff', minHeight: '100vh', fontFamily: 'monospace, sans-serif', width: '100%', overflowX: 'hidden' }}>
+    <div style={{ backgroundColor: '#030303', color: '#fff', minHeight: '100vh', fontFamily: 'monospace, sans-serif', width: '100%', maxWidth: '100vw', overflowX: 'hidden' }}>
 
-      {/* 🟢 মোবাইলের ডেক্সটপ ভিউ সহ সব স্ক্রিনের জন্য ১০০% স্ক্রিন-ফিট সিএসএস */}
       <style>{`
         * { box-sizing: border-box; margin: 0; padding: 0; }
         
@@ -67,6 +66,7 @@ const AdminDashboard: React.FC = () => {
           min-height: 100vh;
           width: 100%;
           max-width: 100vw;
+          overflow: hidden; /* পুরো লেআউট যেন স্ক্রিনের বাইরে না যায় */
         }
         
         .nomad-sidebar {
@@ -102,9 +102,17 @@ const AdminDashboard: React.FC = () => {
           padding: 16px;
           background-color: #030303;
           width: 100%;
-          min-width: 0; /* গ্রিড বা টেবিলের জন্য লেআউট ভাঙা আটকায় */
-          max-width: 100%;
-          overflow-x: auto; /* কন্টেন্ট বড় হলে শুধু কন্টেন্ট পার্ট রেসপন্সিভলি স্ক্রল হবে, লেআউট কাটবে না */
+          min-width: 0; 
+          max-width: 100vw; /* মোবাইলের জন্য ফুল উইডথ */
+          overflow-x: hidden; /* এখানে hidden রাখছি যাতে কন্টেন্ট বাইরে না যায় */
+          display: flex;
+          flex-direction: column;
+        }
+
+        /* কন্টেন্ট স্ক্রল করার জন্য আলাদা কন্টেইনার ক্লাস (চাইল্ড কম্পোনেন্টগুলোতে ব্যবহার হবে) */
+        .content-scrollable {
+          width: 100%;
+          overflow-x: auto;
         }
 
         .nav-btn {
@@ -148,7 +156,7 @@ const AdminDashboard: React.FC = () => {
             flex-direction: row;
           }
           .nomad-sidebar {
-            width: 200px; /* ডেক্সটপে সাইডবার কিছুটা নিখুঁত সাইজে আনা হলো */
+            width: 200px;
             min-height: 100vh;
             border-bottom: none;
             border-right: 1px solid #1a1a1a;
@@ -167,6 +175,7 @@ const AdminDashboard: React.FC = () => {
             padding: 20px 24px;
             flex: 1;
             min-width: 0;
+            max-width: calc(100vw - 200px); /* ডেক্সটপে সাইডবার বাদে বাকি উইডথ স্ট্রিক্ট করা হলো */
           }
         }
       `}</style>
@@ -243,9 +252,10 @@ const AdminDashboard: React.FC = () => {
 
         <main className="nomad-main">
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid #111', paddingBottom: '10px', width: '100%' }}>
-            <div style={{ textAlign: 'right', fontSize: '10px', maxWidth: '100%', overflow: 'hidden' }}>
-              
+          {/* ইমেইল এবং রোলের অংশটি ফ্লেক্স র‍্যাপ করা হয়েছে যাতে স্ক্রিনের বাইরে না যায় */}
+          <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid #111', paddingBottom: '10px', width: '100%', flexWrap: 'wrap' }}>
+            <div style={{ textAlign: 'right', fontSize: '10px', width: '100%' }}>
+
               <span 
                 className="user-text-container"
                 style={{ 
@@ -267,10 +277,13 @@ const AdminDashboard: React.FC = () => {
             </div>
           </div>
 
-          {activeTab === 'overview' && <AdminOverview />}
-          {activeTab === 'orders' && <AdminOrders />}
-          {activeTab === 'products' && <AdminProducts />}
-          {activeTab === 'settings' && <AdminSettings />}
+          {/* চাইল্ড কম্পোনেন্টগুলো */}
+          <div className="content-scrollable">
+            {activeTab === 'overview' && <AdminOverview />}
+            {activeTab === 'orders' && <AdminOrders />}
+            {activeTab === 'products' && <AdminProducts />}
+            {activeTab === 'settings' && <AdminSettings />}
+          </div>
 
         </main>
       </div>
