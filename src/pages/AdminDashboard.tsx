@@ -49,14 +49,13 @@ const AdminDashboard: React.FC = () => {
   };
 
   return (
-    <div style={{ backgroundColor: '#030303', color: '#fff', minHeight: '100vh', fontFamily: 'monospace, sans-serif', width: '100%', maxWidth: '100vw', overflowX: 'hidden' }}>
+    <div style={{ backgroundColor: '#030303', color: '#fff', minHeight: '100vh', fontFamily: 'monospace, sans-serif', width: '100%' }}>
 
       <style>{`
         * { box-sizing: border-box; margin: 0; padding: 0; }
         
         html, body {
           width: 100%;
-          max-width: 100vw;
           overflow-x: hidden;
         }
 
@@ -65,8 +64,6 @@ const AdminDashboard: React.FC = () => {
           flex-direction: column;
           min-height: 100vh;
           width: 100%;
-          max-width: 100vw;
-          overflow: hidden; /* পুরো লেআউট যেন স্ক্রিনের বাইরে না যায় */
         }
         
         .nomad-sidebar {
@@ -74,7 +71,7 @@ const AdminDashboard: React.FC = () => {
           background-color: #060606;
           border-bottom: 1px solid #1a1a1a;
           padding: 15px 20px;
-          flex-shrink: 0;
+          flex-shrink: 0; /* সাইডবার যেন কোনোভাবেই ছোট না হয় */
         }
 
         .nomad-brand-link {
@@ -98,21 +95,17 @@ const AdminDashboard: React.FC = () => {
         }
 
         .nomad-main {
-          flex: 1;
+          flex: 1; /* খালি জায়গা পুরোটাই নিয়ে নিবে */
+          min-width: 0; /* ফ্লেক্সবক্সে কন্টেন্ট বাইরে যাওয়া আটকাতে এটি জাদুর মতো কাজ করে */
           padding: 16px;
           background-color: #030303;
-          width: 100%;
-          min-width: 0; 
-          max-width: 100vw; /* মোবাইলের জন্য ফুল উইডথ */
-          overflow-x: hidden; /* এখানে hidden রাখছি যাতে কন্টেন্ট বাইরে না যায় */
           display: flex;
           flex-direction: column;
         }
 
-        /* কন্টেন্ট স্ক্রল করার জন্য আলাদা কন্টেইনার ক্লাস (চাইল্ড কম্পোনেন্টগুলোতে ব্যবহার হবে) */
         .content-scrollable {
           width: 100%;
-          overflow-x: auto;
+          overflow-x: auto; /* ভেতরের টেবিল বা বড় কন্টেন্ট শুধু এই অংশের ভেতরেই স্ক্রোল হবে */
         }
 
         .nav-btn {
@@ -156,11 +149,12 @@ const AdminDashboard: React.FC = () => {
             flex-direction: row;
           }
           .nomad-sidebar {
-            width: 200px;
+            width: 200px; /* সাইডবারের ফিক্সড মাপ */
             min-height: 100vh;
             border-bottom: none;
             border-right: 1px solid #1a1a1a;
             padding: 20px 15px;
+            flex-shrink: 0; /* ডেক্সটপ ভিউতে সাইডবার যেন চুপসে না যায় */
           }
           .nomad-menu-toggle {
             display: none !important;
@@ -173,9 +167,7 @@ const AdminDashboard: React.FC = () => {
           }
           .nomad-main {
             padding: 20px 24px;
-            flex: 1;
-            min-width: 0;
-            max-width: calc(100vw - 200px); /* ডেক্সটপে সাইডবার বাদে বাকি উইডথ স্ট্রিক্ট করা হলো */
+            /* এখান থেকে max-width ক্যালকুলেশন বাদ দেওয়া হয়েছে যাতে flexbox নিজেই সব হ্যান্ডেল করে */
           }
         }
       `}</style>
@@ -252,7 +244,7 @@ const AdminDashboard: React.FC = () => {
 
         <main className="nomad-main">
 
-          {/* ইমেইল এবং রোলের অংশটি ফ্লেক্স র‍্যাপ করা হয়েছে যাতে স্ক্রিনের বাইরে না যায় */}
+          {/* ইমেইল এবং রোলের অংশটি */}
           <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid #111', paddingBottom: '10px', width: '100%', flexWrap: 'wrap' }}>
             <div style={{ textAlign: 'right', fontSize: '10px', width: '100%' }}>
 
