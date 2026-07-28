@@ -137,7 +137,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
   };
 
   return (
-    <div style={{ color: '#fff', fontFamily: 'monospace, sans-serif', width: '100%', maxWidth: '100%', boxSizing: 'border-box', overflowX: 'hidden' }}>
+    <div style={{ color: '#fff', fontFamily: 'monospace, sans-serif', width: '100%', minWidth: 0, boxSizing: 'border-box' }}>
 
       <style>{`
         * { box-sizing: border-box; }
@@ -148,10 +148,9 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
           gap: 12px;
           margin-bottom: 25px;
           width: 100%;
-          max-width: 100%;
         }
 
-        @media (min-width: 768px) {
+        @media (min-width: 480px) {
           .metrics-grid {
             grid-template-columns: repeat(2, 1fr);
           }
@@ -169,8 +168,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
           padding: 16px;
           border-radius: 2px;
           width: 100%;
-          max-width: 100%;
-          min-width: 0;
+          min-width: 0; /* কার্ডগুলোকে রেসপন্সিভ রাখতে */
         }
 
         .revenue-card-clickable {
@@ -188,13 +186,18 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
 
         .table-wrapper {
           width: 100%;
-          max-width: 100%;
-          overflow-x: auto;
+          overflow-x: auto; /* টেবিল বড় হলে শুধু টেবিলের অংশ স্ক্রল হবে */
           -webkit-overflow-scrolling: touch;
+        }
+
+        /* টেবিলের কন্টেন্ট যেন ভেঙে না যায় তাই nowrap করা হয়েছে */
+        .recent-orders-table th, 
+        .recent-orders-table td {
+          white-space: nowrap;
         }
       `}</style>
 
-      <div style={{ marginBottom: '20px', width: '100%', maxWidth: '100%' }}>
+      <div style={{ marginBottom: '20px', width: '100%' }}>
         <h2 style={{ fontSize: '15px', fontWeight: 'bold', letterSpacing: '2px', margin: 0, color: '#fff' }}>
           HQ METRICS & OVERVIEW
         </h2>
@@ -211,7 +214,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
           <span style={{ fontSize: '10px', color: '#888', letterSpacing: '1px', display: 'block', marginBottom: '8px' }}>
             TOTAL REVENUE
           </span>
-          <div style={{ fontSize: '22px', fontWeight: 'bold', color: '#22c55e' }}>
+          <div style={{ fontSize: '22px', fontWeight: 'bold', color: '#22c55e', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             ৳{formatNumber(totalRevenue)}
           </div>
           <span style={{ fontSize: '9px', color: '#555', marginTop: '4px', display: 'block' }}>
@@ -221,7 +224,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
 
         <div className="metric-card">
           <span style={{ fontSize: '10px', color: '#888', letterSpacing: '1px', display: 'block', marginBottom: '8px' }}>TOTAL ORDERS</span>
-          <div style={{ fontSize: '22px', fontWeight: 'bold', color: '#fff' }}>
+          <div style={{ fontSize: '22px', fontWeight: 'bold', color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {formatNumber(totalOrders)}
           </div>
           <span style={{ fontSize: '9px', color: '#555', marginTop: '4px', display: 'block' }}>* ALL-TIME LOGGED</span>
@@ -229,7 +232,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
 
         <div className="metric-card">
           <span style={{ fontSize: '10px', color: '#888', letterSpacing: '1px', display: 'block', marginBottom: '8px' }}>ACTIVE QUEUE</span>
-          <div style={{ fontSize: '22px', fontWeight: 'bold' }}>
+          <div style={{ fontSize: '22px', fontWeight: 'bold', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             <span style={{ color: '#a855f7' }}>{formatNumber(pendingOrders + processingOrders)}</span>
             <span style={{ fontSize: '14px', color: '#444', margin: '0 6px' }}>/</span>
             <span style={{ color: '#3b82f6', fontSize: '15px' }}>{formatNumber(receivedOrders)} REC</span>
@@ -239,18 +242,17 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
 
         <div className="metric-card">
           <span style={{ fontSize: '10px', color: '#888', letterSpacing: '1px', display: 'block', marginBottom: '8px' }}>CATALOG ITEMS</span>
-          <div style={{ fontSize: '22px', fontWeight: 'bold', color: '#fff' }}>{formatNumber(activeCatalogItems)}</div>
+          <div style={{ fontSize: '22px', fontWeight: 'bold', color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis' }}>{formatNumber(activeCatalogItems)}</div>
           <span style={{ fontSize: '9px', color: '#555', marginTop: '4px', display: 'block' }}>* LIVE IN STORE</span>
         </div>
       </div>
 
-      {/* 🟢 ফিক্সড প্রগ্রেস বার (flex-shrink: 0 এবং কঠোর উইডথ কনট্রোল সহ) */}
-      <div style={{ backgroundColor: '#060606', border: '1px solid #1a1a1a', padding: '16px', marginBottom: '25px', borderRadius: '2px', width: '100%', maxWidth: '100%', overflow: 'hidden' }}>
+      <div style={{ backgroundColor: '#060606', border: '1px solid #1a1a1a', padding: '16px', marginBottom: '25px', borderRadius: '2px', width: '100%' }}>
         <span style={{ fontSize: '10px', color: '#aaa', letterSpacing: '1.5px', fontWeight: 'bold', display: 'block', marginBottom: '12px' }}>
           FULFILLMENT STATUS BREAKDOWN
         </span>
 
-        <div style={{ display: 'flex', height: '6px', backgroundColor: '#111', borderRadius: '3px', overflow: 'hidden', marginBottom: '12px', width: '100%', maxWidth: '100%' }}>
+        <div style={{ display: 'flex', height: '6px', backgroundColor: '#111', borderRadius: '3px', overflow: 'hidden', marginBottom: '12px', width: '100%' }}>
           <div style={{ width: `${calcPercent(pendingOrders)}%`, flexShrink: 0, backgroundColor: '#eab308' }} />
           <div style={{ width: `${calcPercent(processingOrders)}%`, flexShrink: 0, backgroundColor: '#a855f7' }} />
           <div style={{ width: `${calcPercent(receivedOrders)}%`, flexShrink: 0, backgroundColor: '#3b82f6' }} />
@@ -269,13 +271,14 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
         </div>
       </div>
 
-      <div style={{ backgroundColor: '#060606', border: '1px solid #1a1a1a', padding: '16px', borderRadius: '2px', width: '100%', maxWidth: '100%', overflow: 'hidden' }}>
+      <div style={{ backgroundColor: '#060606', border: '1px solid #1a1a1a', padding: '16px', borderRadius: '2px', width: '100%' }}>
         <span style={{ fontSize: '10px', color: '#aaa', letterSpacing: '1.5px', fontWeight: 'bold', display: 'block', marginBottom: '12px' }}>
           RECENT ORDERS MEMORANDUM
         </span>
 
+        {/* 🟢 এখানে টেবিল র‍্যাপার দিয়ে ওভারফ্লো ফিক্স করা হয়েছে */}
         <div className="table-wrapper">
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '11px', minWidth: '380px' }}>
+          <table className="recent-orders-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '11px' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid #222', color: '#555' }}>
                 <th style={{ padding: '8px' }}>ORDER ID</th>
