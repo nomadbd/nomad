@@ -175,7 +175,7 @@ export default function StaffProfile({ isOpen, onClose, profile, onRefreshProfil
           ✕
         </button>
 
-        {/* 1. Header & Identity Block (Padding right added to prevent overlap with close button) */}
+        {/* 1. Header & Identity Block */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '22px', paddingRight: '36px' }}>
           <div style={{
             width: '48px',
@@ -243,7 +243,7 @@ export default function StaffProfile({ isOpen, onClose, profile, onRefreshProfil
           </div>
 
           <div style={{ gridColumn: 'span 2', borderTop: '1px dashed #1f1f1f', paddingTop: '10px', marginTop: '2px' }}>
-            <p style={{ margin: '0 0 3px 0', fontSize: '9px', color: '#666', letterSpacing: '1px', fontWeight 600 }}>TOTAL TENURE (SERVICE TIME)</p>
+            <p style={{ margin: '0 0 3px 0', fontSize: '9px', color: '#666', letterSpacing: '1px', fontWeight: 600 }}>TOTAL TENURE (SERVICE TIME)</p>
             <p style={{ margin: 0, fontSize: '12px', color: '#2ecc71', fontWeight: '600' }}>
               {calculateTenure(profile?.created_at)}
             </p>
