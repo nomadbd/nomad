@@ -63,18 +63,13 @@ const AdminDashboard: React.FC = () => {
       color: '#fff', 
       minHeight: '100dvh', 
       fontFamily: 'monospace, sans-serif', 
-      width: '100vw',
-      maxWidth: '100%',
+      width: '100%',
+      maxWidth: '100vw',
       overflowX: 'hidden'
     }}>
 
-      {/* Viewport Meta Enforcer & Global CSS Override */}
+      {/* Global Responsive Styling */}
       <style>{`
-        @viewport {
-          width: device-width;
-          initial-scale: 1.0;
-        }
-
         *, *::before, *::after { 
           box-sizing: border-box !important; 
           margin: 0; 
@@ -88,47 +83,26 @@ const AdminDashboard: React.FC = () => {
           background-color: #030303;
         }
 
+        /* 📱 Mobile Layout: Stack Top-to-Bottom */
         .nomad-layout {
           display: flex;
           flex-direction: column;
-          min-height: 100dvh;
           width: 100%;
-          max-width: 100%;
+          min-height: 100dvh;
         }
         
-        /* 📱 Mobile & Base Sidebar (Scroll-proof layout) */
         .nomad-sidebar {
           width: 100%;
           background-color: #060606;
           border-bottom: 1px solid #1a1a1a;
-          padding: 15px 14px;
-          flex-shrink: 0;
+          padding: 12px 16px;
           box-sizing: border-box;
-          display: flex;
-          flex-direction: column;
-          justify-content: space-between;
-        }
-
-        .nomad-sidebar-top {
-          width: 100%;
-        }
-
-        .nomad-sidebar-bottom {
-          margin-top: auto;
-          padding-top: 14px;
-          border-top: 1px solid #1a1a1a;
-          flex-shrink: 0;
         }
 
         .nomad-brand-link {
           text-decoration: none;
           color: inherit;
           display: block;
-          transition: opacity 0.2s ease;
-        }
-
-        .nomad-brand-link:hover {
-          opacity: 0.8;
         }
 
         .nomad-nav {
@@ -140,22 +114,19 @@ const AdminDashboard: React.FC = () => {
           border-top: 1px solid #181818;
         }
 
-        .nomad-main {
-          flex: 1;
-          min-width: 0;
-          padding: 12px 14px;
-          background-color: #030303;
-          width: 100%;
-          max-width: 100%;
-          overflow-x: hidden;
-          box-sizing: border-box;
+        .user-footer-mobile {
+          display: ${menuOpen ? 'block' : 'none'};
+          margin-top: 15px;
+          padding-top: 12px;
+          border-top: 1px solid #1f1f1f;
         }
 
-        .content-scrollable {
+        .nomad-main {
+          flex: 1;
+          padding: 16px 14px 40px 14px;
+          background-color: #030303;
           width: 100%;
-          max-width: 100%;
-          overflow-x: auto;
-          -webkit-overflow-scrolling: touch;
+          box-sizing: border-box;
         }
 
         .nav-btn {
@@ -183,11 +154,6 @@ const AdminDashboard: React.FC = () => {
           box-shadow: 0 0 10px rgba(255, 255, 255, 0.15);
         }
 
-        .nav-btn:hover:not(.active) {
-          background-color: #111;
-          color: #fff;
-        }
-
         .user-text-container {
           max-width: 100%;
           overflow: hidden;
@@ -195,38 +161,43 @@ const AdminDashboard: React.FC = () => {
           white-space: nowrap;
         }
 
-        /* 💻 Desktop Optimization: Sticky Sidebar with Dynamic Viewport Height */
+        /* 💻 Desktop Optimization: Side-by-Side Layout */
         @media (min-width: 768px) {
           .nomad-layout {
             display: grid;
-            grid-template-columns: 210px minmax(0, 1fr);
+            grid-template-columns: 220px minmax(0, 1fr);
             min-height: 100dvh;
           }
+
           .nomad-sidebar {
-            width: 210px;
+            width: 220px;
             height: 100dvh;
-            max-height: 100dvh;
             position: sticky;
             top: 0;
             border-bottom: none;
             border-right: 1px solid #1a1a1a;
             padding: 20px 14px;
-            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
           }
-          .nomad-sidebar-top {
-            overflow-y: auto;
-            flex: 1;
-            padding-bottom: 10px;
-          }
+
           .nomad-menu-toggle {
             display: none !important;
           }
+
           .nomad-nav {
             display: flex !important;
             margin-top: 25px;
             padding-top: 0;
             border-top: none;
           }
+
+          .user-footer-mobile {
+            display: block !important;
+            margin-top: auto;
+          }
+
           .nomad-main {
             padding: 24px 28px;
           }
@@ -239,7 +210,7 @@ const AdminDashboard: React.FC = () => {
         <aside className="nomad-sidebar">
 
           {/* TOP SECTION: BRAND & NAVIGATION */}
-          <div className="nomad-sidebar-top">
+          <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <a href="/" className="nomad-brand-link" title="Go to Store Homepage">
                 <h1 style={{ fontSize: '18px', fontWeight: '900', letterSpacing: '4px', margin: 0, color: '#fff' }}>
@@ -308,13 +279,8 @@ const AdminDashboard: React.FC = () => {
             </nav>
           </div>
 
-          {/* BOTTOM SECTION: USER ACCOUNT FOOTER (ALWAYS VISIBLE & PINNED) */}
-          <div 
-            className="nomad-sidebar-bottom"
-            style={{ 
-              display: (menuOpen || window.innerWidth >= 768) ? 'block' : 'none'
-            }}
-          >
+          {/* BOTTOM SECTION: USER ACCOUNT FOOTER */}
+          <div className="user-footer-mobile">
             <div 
               onClick={() => setIsProfileOpen(true)}
               style={{
@@ -355,12 +321,10 @@ const AdminDashboard: React.FC = () => {
 
         {/* MAIN CONTENT AREA */}
         <main className="nomad-main">
-          <div className="content-scrollable">
-            {activeTab === 'overview' && <AdminOverview key="overview" />}
-            {activeTab === 'orders' && <AdminOrders key="orders" />}
-            {activeTab === 'products' && <AdminProducts key="products" />}
-            {activeTab === 'settings' && <AdminSettings key="settings" />}
-          </div>
+          {activeTab === 'overview' && <AdminOverview key="overview" />}
+          {activeTab === 'orders' && <AdminOrders key="orders" />}
+          {activeTab === 'products' && <AdminProducts key="products" />}
+          {activeTab === 'settings' && <AdminSettings key="settings" />}
         </main>
 
       </div>
