@@ -5,11 +5,10 @@ interface StaffProfileProps {
   isOpen: boolean;
   onClose: () => void;
   profile: any;
-  onRefreshProfile: () => void;
+  onRefreshProfile?: () => void;
 }
 
-export default function StaffProfile({ isOpen, onClose, profile, onRefreshProfile }: StaffProfileProps) {
-  const [name, setName] = useState(profile?.name || '');
+export default function StaffProfile({ isOpen, onClose, profile }: StaffProfileProps) {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState<{ message: string; color: string } | null>(null);
@@ -54,38 +53,27 @@ export default function StaffProfile({ isOpen, onClose, profile, onRefreshProfil
     return role.replace('_', ' ').toUpperCase();
   };
 
-  const handleUpdate = async (e: React.FormEvent) => {
+  const handlePasswordUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!password) {
+      showToast("Please enter a new password.", "#ffbb00");
+      return;
+    }
+
+    if (password.length < 6) {
+      showToast("Password must be at least 6 characters.", "#ff4444");
+      return;
+    }
+
     setLoading(true);
 
     try {
-      let isUpdated = false;
+      const { error: passError } = await supabase.auth.updateUser({ password });
+      if (passError) throw passError;
 
-      if (name.trim() && name !== profile?.name) {
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .update({ name: name.trim() })
-          .eq('id', profile.id);
-        if (profileError) throw profileError;
-        isUpdated = true;
-      }
-
-      if (password) {
-        if (password.length < 6) {
-          throw new Error("Password must be at least 6 characters long.");
-        }
-        const { error: passError } = await supabase.auth.updateUser({ password });
-        if (passError) throw passError;
-        isUpdated = true;
-      }
-
-      if (isUpdated) {
-        showToast("Profile updated successfully!", "#2ecc71");
-        setPassword('');
-        onRefreshProfile();
-      } else {
-        showToast("No changes were made.", "#aaa");
-      }
+      showToast("Password updated successfully!", "#2ecc71");
+      setPassword('');
     } catch (err: any) {
       showToast("Error: " + err.message, "#ff4444");
     } finally {
@@ -107,7 +95,7 @@ export default function StaffProfile({ isOpen, onClose, profile, onRefreshProfil
       right: 0,
       bottom: 0,
       width: '100vw',
-      height: '100dvh', // Dynamic viewport height
+      height: '100dvh',
       backgroundColor: 'rgba(0, 0, 0, 0.85)',
       backdropFilter: 'blur(8px)',
       display: 'flex',
@@ -117,7 +105,6 @@ export default function StaffProfile({ isOpen, onClose, profile, onRefreshProfil
       paddingTop: '16px',
       paddingLeft: '16px',
       paddingRight: '16px',
-      // Dynamic Bottom Padding for mobile browsers/address bar safe area
       paddingBottom: 'calc(24px + env(safe-area-inset-bottom, 0px))',
       boxSizing: 'border-box'
     }}>
@@ -247,38 +234,15 @@ export default function StaffProfile({ isOpen, onClose, profile, onRefreshProfil
           </div>
 
           <div style={{ gridColumn: 'span 2', borderTop: '1px dashed #1f1f1f', paddingTop: '10px', marginTop: '2px' }}>
-            <p style={{ margin: '0 0 3px 0', fontSize: '9px', color: '#666', letterSpacing: '1px', fontWeight 600 }}>TOTAL TENURE (SERVICE TIME)</p>
+            <p style={{ margin: '0 0 3px 0', fontSize: '9px', color: '#666', letterSpacing: '1px', fontWeight: 600 }}>TOTAL TENURE (SERVICE TIME)</p>
             <p style={{ margin: 0, fontSize: '12px', color: '#2ecc71', fontWeight: '600' }}>
               {calculateTenure(profile?.created_at)}
             </p>
           </div>
         </div>
 
-        {/* 3. Settings Form */}
-        <form onSubmit={handleUpdate} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div>
-            <label style={{ fontSize: '9px', color: '#888', letterSpacing: '1px', display: 'block', marginBottom: '6px', fontWeight: 600 }}>
-              UPDATE DISPLAY NAME
-            </label>
-            <input 
-              type="text" 
-              value={name} 
-              onChange={(e) => setName(e.target.value)} 
-              placeholder="Enter full name"
-              style={{
-                width: '100%',
-                padding: '11px 12px',
-                backgroundColor: '#111111',
-                border: '1px solid #222222',
-                color: '#ffffff',
-                fontSize: '12px',
-                borderRadius: '2px',
-                outline: 'none',
-                boxSizing: 'border-box'
-              }}
-            />
-          </div>
-
+        {/* 3. Password Update Form */}
+        <form onSubmit={handlePasswordUpdate} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div>
             <label style={{ fontSize: '9px', color: '#888', letterSpacing: '1px', display: 'block', marginBottom: '6px', fontWeight: 600 }}>
               CHANGE PASSWORD
@@ -319,7 +283,7 @@ export default function StaffProfile({ isOpen, onClose, profile, onRefreshProfil
                 cursor: 'pointer'
               }}
             >
-              {loading ? 'SAVING CHANGES...' : 'SAVE CHANGES'}
+              {loading ? 'UPDATING...' : 'UPDATE PASSWORD'}
             </button>
 
             <button 
