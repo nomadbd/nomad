@@ -40,20 +40,6 @@ const AdminDashboard: React.FC = () => {
     fetchCurrentUserAndRole();
   }, []);
 
-  // Resize listener - ডেস্কটপ মোড টগল বা ভিউপোর্ট চেঞ্জ হলে লেআউট ফিক্স করবে
-  useEffect(() => {
-    const handleResize = () => {
-      // Force layout recalculation
-      document.body.style.width = '100%';
-      setTimeout(() => {
-        document.body.style.width = '';
-      }, 10);
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
   const subTextStyle: React.CSSProperties = {
     fontSize: '10px',
     color: '#cccccc',
@@ -80,18 +66,18 @@ const AdminDashboard: React.FC = () => {
           padding: 0; 
         }
         
-        html, body, .nomad-layout, .nomad-main, .content-scrollable {
-          width: 100% !important;
-          max-width: 100% !important;
-          overflow-x: hidden !important;
+        html, body {
+          width: 100%;
+          max-width: 100%;
+          overflow-x: hidden;
         }
 
         .nomad-layout {
           display: flex;
           flex-direction: column;
           min-height: 100vh;
-          width: 100% !important;
-          max-width: 100% !important;
+          width: 100%;
+          max-width: 100%;
           overflow-x: hidden;
         }
         
@@ -103,31 +89,82 @@ const AdminDashboard: React.FC = () => {
           flex-shrink: 0;
         }
 
+        .nomad-brand-link {
+          text-decoration: none;
+          color: inherit;
+          display: block;
+          transition: opacity 0.2s ease;
+        }
+
+        .nomad-brand-link:hover {
+          opacity: 0.8;
+        }
+
+        .nomad-nav {
+          display: ${menuOpen ? 'flex' : 'none'};
+          flex-direction: column;
+          gap: 8px;
+          margin-top: 15px;
+          padding-top: 15px;
+          border-top: 1px solid #181818;
+        }
+
         .nomad-main {
           flex: 1;
           min-width: 0;
           padding: 12px 14px;
           background-color: #030303;
-          width: 100% !important;
-          max-width: 100% !important;
+          width: 100%;
+          max-width: 100%;
           overflow-x: hidden;
         }
 
         .content-scrollable {
-          width: 100% !important;
-          max-width: 100% !important;
+          width: 100%;
+          max-width: 100%;
           overflow-x: auto;
           -webkit-overflow-scrolling: touch;
+          flex: 1;
         }
 
-        /* চাইল্ড কম্পোনেন্ট সুরক্ষা */
-        .metrics-grid, .metric-card, .table-wrapper, .recent-orders-table {
+        /* সব চাইল্ড কম্পোনেন্টের জন্য সুরক্ষা */
+        .metrics-grid,
+        .metric-card,
+        .table-wrapper,
+        .recent-orders-table {
           width: 100% !important;
           max-width: 100% !important;
           box-sizing: border-box;
         }
 
-        .nav-btn { ... } /* আগের মতো রাখুন */
+        .nav-btn {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 12px 14px;
+          border: 1px solid transparent;
+          font-weight: bold;
+          font-size: 11px;
+          text-align: left;
+          cursor: pointer;
+          letter-spacing: 1px;
+          background: transparent;
+          color: #cccccc;
+          border-radius: 2px;
+          transition: all 0.2s ease;
+        }
+
+        .nav-btn.active {
+          background-color: #ffffff !important;
+          color: #000000 !important;
+          border-color: #ffffff !important;
+          box-shadow: 0 0 10px rgba(255, 255, 255, 0.15);
+        }
+
+        .nav-btn:hover:not(.active) {
+          background-color: #111;
+          color: #fff;
+        }
 
         .user-text-container {
           max-width: 100%;
@@ -136,37 +173,156 @@ const AdminDashboard: React.FC = () => {
           white-space: nowrap;
         }
 
+        /* মোবাইল অপটিমাইজেশন */
         @media (max-width: 767px) {
-          .nomad-main { padding: 12px 14px; }
+          .nomad-main {
+            padding: 12px 14px;
+          }
+          .nomad-sidebar {
+            padding: 15px 14px;
+          }
         }
 
+        /* ডেক্সটপ ভিউ */
         @media (min-width: 768px) {
-          .nomad-layout { flex-direction: row; }
-          .nomad-sidebar { width: 200px; min-height: 100vh; border-right: 1px solid #1a1a1a; padding: 20px 15px; }
-          .nomad-main { padding: 20px 24px; }
+          .nomad-layout {
+            flex-direction: row;
+          }
+          .nomad-sidebar {
+            width: 200px;
+            min-height: 100vh;
+            border-bottom: none;
+            border-right: 1px solid #1a1a1a;
+            padding: 20px 15px;
+          }
+          .nomad-menu-toggle {
+            display: none !important;
+          }
+          .nomad-nav {
+            display: flex !important;
+            margin-top: 25px;
+            padding-top: 0;
+            border-top: none;
+          }
+          .nomad-main {
+            padding: 20px 24px;
+          }
         }
       `}</style>
 
       <div className="nomad-layout">
-        {/* Sidebar এবং অন্যান্য অংশ আগের মতোই রাখুন */}
-        {/* ... (আপনার আগের কোড থেকে sidebar, user info, nav ইত্যাদি কপি করে নিন) ... */}
+
+        <aside className="nomad-sidebar">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+
+            <a href="/" className="nomad-brand-link" title="Go to Store Homepage">
+              <h1 style={{ fontSize: '18px', fontWeight: '900', letterSpacing: '4px', margin: 0, color: '#fff' }}>
+                NOMAD
+              </h1>
+              <span style={{ ...subTextStyle, marginTop: '2px' }}>
+                The one. Everywhere.
+              </span>
+            </a>
+
+            <button
+              className="nomad-menu-toggle"
+              onClick={() => setMenuOpen(!menuOpen)}
+              style={{
+                backgroundColor: '#111',
+                border: '1px solid #333',
+                color: '#fff',
+                width: '38px',
+                height: '38px',
+                fontSize: '18px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: '2px'
+              }}
+            >
+              {menuOpen ? '✕' : '☰'}
+            </button>
+          </div>
+
+          <nav className="nomad-nav">
+            <span style={{ fontSize: '9px', color: '#888888', letterSpacing: '2px', marginBottom: '8px', fontWeight: 'bold' }}>
+              MAIN MENU
+            </span>
+
+            <button
+              className={`nav-btn ${activeTab === 'overview' ? 'active' : ''}`}
+              onClick={() => { setActiveTab('overview'); setMenuOpen(false); }}
+            >
+              OVERVIEW & ANALYTICS
+            </button>
+
+            <button
+              className={`nav-btn ${activeTab === 'orders' ? 'active' : ''}`}
+              onClick={() => { setActiveTab('orders'); setMenuOpen(false); }}
+            >
+              ORDER MANAGEMENT
+            </button>
+
+            <button
+              className={`nav-btn ${activeTab === 'products' ? 'active' : ''}`}
+              onClick={() => { setActiveTab('products'); setMenuOpen(false); }}
+            >
+              PRODUCTS & STOCK
+            </button>
+
+            <button
+              className={`nav-btn ${activeTab === 'settings' ? 'active' : ''}`}
+              onClick={() => { setActiveTab('settings'); setMenuOpen(false); }}
+            >
+              ROLES & SETTINGS
+            </button>
+          </nav>
+        </aside>
 
         <main className="nomad-main">
-          <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid #111', paddingBottom: '10px', width: '100%' }}>
+
+          {/* User Info */}
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'flex-end', 
+            alignItems: 'center', 
+            marginBottom: '20px', 
+            borderBottom: '1px solid #111', 
+            paddingBottom: '10px', 
+            width: '100%' 
+          }}>
             <div style={{ textAlign: 'right', fontSize: '10px', width: '100%' }}>
-              <span className="user-text-container" style={{ color: '#ffffff', display: 'block', fontWeight: 'bold', fontSize: '10px' }}>
+
+              <span 
+                className="user-text-container"
+                style={{ 
+                  color: '#ffffff', 
+                  display: 'block', 
+                  fontWeight: 'bold',
+                  textTransform: userName ? 'uppercase' : 'none',
+                  fontSize: '10px'
+                }}
+              >
                 {userName || userEmail}
               </span>
-              {userRole && <span style={{ ...subTextStyle, textTransform: 'uppercase' }}>{userRole}</span>}
+
+              {userRole && (
+                <span style={{ ...subTextStyle, marginTop: '2px', textTransform: 'uppercase' }}>
+                  {userRole}
+                </span>
+              )}
             </div>
           </div>
 
+          {/* Child Components */}
           <div className="content-scrollable">
             {activeTab === 'overview' && <AdminOverview key="overview" />}
             {activeTab === 'orders' && <AdminOrders key="orders" />}
             {activeTab === 'products' && <AdminProducts key="products" />}
             {activeTab === 'settings' && <AdminSettings key="settings" />}
           </div>
+
         </main>
       </div>
     </div>
