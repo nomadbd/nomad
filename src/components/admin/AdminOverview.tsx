@@ -13,11 +13,12 @@ interface AdminOverviewProps {
   onNavigateToFinance?: () => void;
 }
 
+// 1K, 1M ফরম্যাটিং লজিক
 const formatNumber = (num: number): string => {
   if (num >= 1_000_000) {
     return (num / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M';
   }
-  if (num >= 10_000) {
+  if (num >= 1_000) {
     return (num / 1_000).toFixed(1).replace(/\.0$/, '') + 'K';
   }
   return num.toLocaleString();
@@ -148,37 +149,28 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
       <style>{`
         * { box-sizing: border-box; }
         
+        /* মোবাইল ভিউ থেকেই পাশাপাশি ২ টা (২x২ গ্রিড) দেখাবে */
         .metrics-grid {
           display: grid;
-          grid-template-columns: 1fr;
-          gap: 12px;
-          margin-bottom: 25px;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 10px;
+          margin-bottom: 20px;
           width: 100%;
           max-width: 100%;
         }
 
-        @media (min-width: 480px) {
-          .metrics-grid {
-            grid-template-columns: repeat(2, 1fr);
-          }
-        }
-
-        @media (min-width: 768px) {
-          .metrics-grid {
-            grid-template-columns: repeat(2, 1fr);
-          }
-        }
-
-        @media (min-width: 1200px) {
+        /* ডেক্সটপে ৪ টি পাশাপাশি দেখাবে */
+        @media (min-width: 1024px) {
           .metrics-grid {
             grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
           }
         }
 
         .metric-card {
           background-color: #060606;
           border: 1px solid #1a1a1a;
-          padding: 16px;
+          padding: 14px 12px;
           border-radius: 2px;
           width: 100%;
           min-width: 0;
@@ -189,8 +181,8 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
         }
 
         .revenue-card-clickable:hover {
-          border-color: #22c55e !important;
-          background-color: #080a08;
+          border-color: #333 !important;
+          background-color: #0a0a0a;
         }
 
         .table-wrapper {
@@ -203,10 +195,10 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
 
         .recent-orders-table {
           width: 100%;
-          min-width: 520px; /* টেবিলের ন্যূনতম প্রস্থ (স্ক্রল হবে যদি ছোট হয়) */
+          min-width: 480px;
           border-collapse: collapse;
-          textAlign: left;
-          fontSize: '11px';
+          text-align: left;
+          font-size: 11px;
         }
 
         .recent-orders-table th, 
@@ -218,73 +210,96 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
         .status-breakdown {
           display: flex;
           flex-wrap: wrap;
-          gap: 12px;
+          gap: 10px;
           font-size: 10px;
           width: 100%;
         }
       `}</style>
 
-      <div style={{ marginBottom: '20px', width: '100%' }}>
-        <h2 style={{ fontSize: '15px', fontWeight: 'bold', letterSpacing: '2px', margin: 0, color: '#fff' }}>
-          HQ METRICS & OVERVIEW
+      {/* টাইটেল এবং সাবটাইটেল (মিনিমাল) */}
+      <div style={{ marginBottom: '16px', width: '100%' }}>
+        <h2 style={{ fontSize: '14px', fontWeight: 'bold', letterSpacing: '2px', margin: 0, color: '#fff' }}>
+          METRICS OVERVIEW
         </h2>
         <span style={{ fontSize: '9px', color: '#666', letterSpacing: '1px' }}>
-          REAL-TIME FINANCIAL & FULFILLMENT INSIGHTS
+          REAL-TIME INSIGHTS
         </span>
       </div>
 
-      {/* Metrics Grid */}
+      {/* Metrics Grid (২x২ মোবাইল ভিউ) */}
       <div className="metrics-grid">
+        
+        {/* Card 1: Revenue */}
         <div className="metric-card revenue-card-clickable" onClick={() => onNavigateToFinance && onNavigateToFinance()}>
-          <span style={{ fontSize: '10px', color: '#888', letterSpacing: '1px', display: 'block', marginBottom: '8px' }}>
+          <span style={{ fontSize: '9px', color: '#888', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
             TOTAL REVENUE
           </span>
-          <div style={{ fontSize: '22px', fontWeight: 'bold', color: '#22c55e' }}>
+          <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#ffffff' }}>
             ৳{formatNumber(totalRevenue)}
           </div>
-          <span style={{ fontSize: '9px', color: '#555', marginTop: '4px', display: 'block' }}>
-            * EXCLUDING CANCELLED
+          <span style={{ fontSize: '8px', color: '#555', marginTop: '4px', display: 'block' }}>
+            * NO CANCELLED
           </span>
         </div>
 
+        {/* Card 2: Orders */}
         <div className="metric-card">
-          <span style={{ fontSize: '10px', color: '#888', letterSpacing: '1px', display: 'block', marginBottom: '8px' }}>TOTAL ORDERS</span>
-          <div style={{ fontSize: '22px', fontWeight: 'bold', color: '#fff' }}>{formatNumber(totalOrders)}</div>
-          <span style={{ fontSize: '9px', color: '#555', marginTop: '4px', display: 'block' }}>* ALL-TIME LOGGED</span>
-        </div>
-
-        <div className="metric-card">
-          <span style={{ fontSize: '10px', color: '#888', letterSpacing: '1px', display: 'block', marginBottom: '8px' }}>ACTIVE QUEUE</span>
-          <div style={{ fontSize: '22px', fontWeight: 'bold' }}>
-            <span style={{ color: '#a855f7' }}>{formatNumber(pendingOrders + processingOrders)}</span>
-            <span style={{ fontSize: '14px', color: '#444', margin: '0 6px' }}>/</span>
-            <span style={{ color: '#3b82f6', fontSize: '15px' }}>{formatNumber(receivedOrders)} REC</span>
+          <span style={{ fontSize: '9px', color: '#888', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
+            TOTAL ORDERS
+          </span>
+          <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#ffffff' }}>
+            {formatNumber(totalOrders)}
           </div>
-          <span style={{ fontSize: '9px', color: '#555', marginTop: '4px', display: 'block' }}>* PENDING & PROCESSING</span>
+          <span style={{ fontSize: '8px', color: '#555', marginTop: '4px', display: 'block' }}>
+            * ALL LOGGED
+          </span>
         </div>
 
+        {/* Card 3: Active Queue */}
         <div className="metric-card">
-          <span style={{ fontSize: '10px', color: '#888', letterSpacing: '1px', display: 'block', marginBottom: '8px' }}>CATALOG ITEMS</span>
-          <div style={{ fontSize: '22px', fontWeight: 'bold', color: '#fff' }}>{formatNumber(activeCatalogItems)}</div>
-          <span style={{ fontSize: '9px', color: '#555', marginTop: '4px', display: 'block' }}>* LIVE IN STORE</span>
+          <span style={{ fontSize: '9px', color: '#888', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
+            ACTIVE QUEUE
+          </span>
+          <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#ffffff' }}>
+            {formatNumber(pendingOrders + processingOrders)}
+            <span style={{ fontSize: '12px', color: '#555', margin: '0 4px' }}>/</span>
+            <span style={{ fontSize: '13px', color: '#aaa' }}>{formatNumber(receivedOrders)} REC</span>
+          </div>
+          <span style={{ fontSize: '8px', color: '#555', marginTop: '4px', display: 'block' }}>
+            * PENDING & PROC
+          </span>
         </div>
+
+        {/* Card 4: Catalog Items */}
+        <div className="metric-card">
+          <span style={{ fontSize: '9px', color: '#888', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
+            CATALOG ITEMS
+          </span>
+          <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#ffffff' }}>
+            {formatNumber(activeCatalogItems)}
+          </div>
+          <span style={{ fontSize: '8px', color: '#555', marginTop: '4px', display: 'block' }}>
+            * LIVE ITEMS
+          </span>
+        </div>
+
       </div>
 
       {/* Fulfillment Status */}
       <div style={{ 
         backgroundColor: '#060606', 
         border: '1px solid #1a1a1a', 
-        padding: '16px', 
-        marginBottom: '25px', 
+        padding: '14px', 
+        marginBottom: '20px', 
         borderRadius: '2px', 
         width: '100%',
         maxWidth: '100%'
       }}>
-        <span style={{ fontSize: '10px', color: '#aaa', letterSpacing: '1.5px', fontWeight: 'bold', display: 'block', marginBottom: '12px' }}>
-          FULFILLMENT STATUS BREAKDOWN
+        <span style={{ fontSize: '9px', color: '#aaa', letterSpacing: '1.5px', fontWeight: 'bold', display: 'block', marginBottom: '10px' }}>
+          FULFILLMENT STATUS
         </span>
 
-        <div style={{ display: 'flex', height: '6px', backgroundColor: '#111', borderRadius: '3px', overflow: 'hidden', marginBottom: '12px', width: '100%' }}>
+        <div style={{ display: 'flex', height: '4px', backgroundColor: '#111', borderRadius: '2px', overflow: 'hidden', marginBottom: '10px', width: '100%' }}>
           <div style={{ width: `${calcPercent(pendingOrders)}%`, backgroundColor: '#eab308' }} />
           <div style={{ width: `${calcPercent(processingOrders)}%`, backgroundColor: '#a855f7' }} />
           <div style={{ width: `${calcPercent(receivedOrders)}%`, backgroundColor: '#3b82f6' }} />
@@ -295,8 +310,8 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
 
         <div className="status-breakdown">
           <span><strong style={{ color: '#eab308' }}>● PENDING:</strong> {formatNumber(pendingOrders)}</span>
-          <span><strong style={{ color: '#a855f7' }}>● PROCESSING:</strong> {formatNumber(processingOrders)}</span>
-          <span><strong style={{ color: '#3b82f6' }}>● RECEIVED:</strong> {formatNumber(receivedOrders)}</span>
+          <span><strong style={{ color: '#a855f7' }}>● PROC:</strong> {formatNumber(processingOrders)}</span>
+          <span><strong style={{ color: '#3b82f6' }}>● REC:</strong> {formatNumber(receivedOrders)}</span>
           <span><strong style={{ color: '#06b6d4' }}>● SHIPPED:</strong> {formatNumber(shippedOrders)}</span>
           <span><strong style={{ color: '#22c55e' }}>● DELIVERED:</strong> {formatNumber(deliveredOrders)}</span>
           <span><strong style={{ color: '#ef4444' }}>● CANCELLED:</strong> {formatNumber(cancelledOrders)}</span>
@@ -307,13 +322,13 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
       <div style={{ 
         backgroundColor: '#060606', 
         border: '1px solid #1a1a1a', 
-        padding: '16px', 
+        padding: '14px', 
         borderRadius: '2px', 
         width: '100%',
         maxWidth: '100%'
       }}>
-        <span style={{ fontSize: '10px', color: '#aaa', letterSpacing: '1.5px', fontWeight: 'bold', display: 'block', marginBottom: '12px' }}>
-          RECENT ORDERS MEMORANDUM
+        <span style={{ fontSize: '9px', color: '#aaa', letterSpacing: '1.5px', fontWeight: 'bold', display: 'block', marginBottom: '10px' }}>
+          RECENT ORDERS
         </span>
 
         <div className="table-wrapper">
@@ -329,7 +344,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
             </thead>
             <tbody>
               {recentOrders.map((order) => (
-                <tr key={order.id} className="table-row-hover" style={{ borderBottom: '1px solid #111' }}>
+                <tr key={order.id} style={{ borderBottom: '1px solid #111' }}>
                   <td style={{ color: '#aaa' }}>#{order.id.slice(0, 8)}...</td>
                   <td style={{ color: '#fff' }}>{order.customer_name || 'GUEST'}</td>
                   <td style={{ color: '#666' }}>{new Date(order.created_at).toLocaleDateString()}</td>
