@@ -54,31 +54,38 @@ const AdminDashboard: React.FC = () => {
       color: '#fff', 
       minHeight: '100vh', 
       fontFamily: 'monospace, sans-serif', 
-      width: '100%',
+      width: '100vw',
       maxWidth: '100%',
       overflowX: 'hidden'
     }}>
 
+      {/* Viewport Meta Enforcer & Global CSS Override */}
       <style>{`
-        * { 
-          box-sizing: border-box; 
+        @viewport {
+          width: device-width;
+          initial-scale: 1.0;
+        }
+
+        *, *::before, *::after { 
+          box-sizing: border-box !important; 
           margin: 0; 
           padding: 0; 
         }
         
         html, body {
-          width: 100%;
-          max-width: 100%;
-          overflow-x: hidden;
+          width: 100% !important;
+          max-width: 100% !important;
+          overflow-x: hidden !important;
+          background-color: #030303;
         }
 
+        /* Responsive Fluid Layout System */
         .nomad-layout {
           display: flex;
           flex-direction: column;
           min-height: 100vh;
           width: 100%;
           max-width: 100%;
-          overflow-x: hidden;
         }
         
         .nomad-sidebar {
@@ -87,6 +94,7 @@ const AdminDashboard: React.FC = () => {
           border-bottom: 1px solid #1a1a1a;
           padding: 15px 14px;
           flex-shrink: 0;
+          box-sizing: border-box;
         }
 
         .nomad-brand-link {
@@ -111,12 +119,13 @@ const AdminDashboard: React.FC = () => {
 
         .nomad-main {
           flex: 1;
-          min-width: 0;
+          min-width: 0; /* Prevents flex children from overflowing */
           padding: 12px 14px;
           background-color: #030303;
           width: 100%;
           max-width: 100%;
           overflow-x: hidden;
+          box-sizing: border-box;
         }
 
         .content-scrollable {
@@ -124,17 +133,16 @@ const AdminDashboard: React.FC = () => {
           max-width: 100%;
           overflow-x: auto;
           -webkit-overflow-scrolling: touch;
-          flex: 1;
         }
 
-        /* সব চাইল্ড কম্পোনেন্টের জন্য সুরক্ষা */
+        /* Strict boundary protection for all nested components */
         .metrics-grid,
         .metric-card,
         .table-wrapper,
-        .recent-orders-table {
-          width: 100% !important;
+        .recent-orders-table,
+        table {
           max-width: 100% !important;
-          box-sizing: border-box;
+          box-sizing: border-box !important;
         }
 
         .nav-btn {
@@ -152,6 +160,7 @@ const AdminDashboard: React.FC = () => {
           color: #cccccc;
           border-radius: 2px;
           transition: all 0.2s ease;
+          width: 100%;
         }
 
         .nav-btn.active {
@@ -173,24 +182,18 @@ const AdminDashboard: React.FC = () => {
           white-space: nowrap;
         }
 
-        /* মোবাইল অপটিমাইজেশন */
-        @media (max-width: 767px) {
-          .nomad-main {
-            padding: 12px 14px;
-          }
-          .nomad-sidebar {
-            padding: 15px 14px;
-          }
-        }
-
-        /* ডেক্সটপ ভিউ */
+        /* Desktop Optimization & Desktop Mode Enforcement */
         @media (min-width: 768px) {
           .nomad-layout {
-            flex-direction: row;
+            display: grid;
+            grid-template-columns: 200px minmax(0, 1fr);
+            min-height: 100vh;
           }
           .nomad-sidebar {
             width: 200px;
-            min-height: 100vh;
+            height: 100vh;
+            position: sticky;
+            top: 0;
             border-bottom: none;
             border-right: 1px solid #1a1a1a;
             padding: 20px 15px;
@@ -282,7 +285,7 @@ const AdminDashboard: React.FC = () => {
 
         <main className="nomad-main">
 
-          {/* User Info */}
+          {/* User Info Header */}
           <div style={{ 
             display: 'flex', 
             justifyContent: 'flex-end', 
@@ -315,7 +318,7 @@ const AdminDashboard: React.FC = () => {
             </div>
           </div>
 
-          {/* Child Components */}
+          {/* Child Components Container */}
           <div className="content-scrollable">
             {activeTab === 'overview' && <AdminOverview key="overview" />}
             {activeTab === 'orders' && <AdminOrders key="orders" />}
