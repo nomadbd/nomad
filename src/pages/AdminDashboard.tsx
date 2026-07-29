@@ -68,7 +68,7 @@ const AdminDashboard: React.FC = () => {
       overflowX: 'hidden'
     }}>
 
-      {/* Global Responsive Styling */}
+      {/* Global CSS Reset & Strict Mobile Responsive Rules */}
       <style>{`
         *, *::before, *::after { 
           box-sizing: border-box !important; 
@@ -83,25 +83,22 @@ const AdminDashboard: React.FC = () => {
           background-color: #030303;
         }
 
-        /* 📱 Mobile Layout */
+        /* 📱 DEFAULT: MOBILE FIRST STACKED LAYOUT */
         .nomad-layout {
-          display: flex;
-          flex-direction: column;
-          width: 100%;
+          display: flex !important;
+          flex-direction: column !important;
+          width: 100% !important;
           min-height: 100dvh;
-          padding-bottom: env(safe-area-inset-bottom);
         }
         
         .nomad-sidebar {
-          width: 100%;
+          width: 100% !important;
           background-color: #060606;
           border-bottom: 1px solid #1a1a1a;
-          padding: 12px 16px;
+          padding: 12px 14px;
           box-sizing: border-box;
-          display: flex;
-          flex-direction: column;
-          min-height: 100dvh;
-          padding-bottom: calc(20px + env(safe-area-inset-bottom));
+          position: relative;
+          z-index: 50;
         }
 
         .nomad-brand-link {
@@ -119,21 +116,20 @@ const AdminDashboard: React.FC = () => {
           border-top: 1px solid #181818;
         }
 
-        .user-footer-mobile {
-          margin-top: auto;
+        .user-footer-block {
           display: ${menuOpen ? 'block' : 'none'};
+          margin-top: 15px;
           padding-top: 12px;
           border-top: 1px solid #1f1f1f;
-          padding-bottom: env(safe-area-inset-bottom);
         }
 
         .nomad-main {
           flex: 1;
-          padding: 16px 14px 40px 14px;
+          padding: 14px 12px 40px 12px;
           background-color: #030303;
-          width: 100%;
+          width: 100% !important;
           box-sizing: border-box;
-          padding-bottom: calc(40px + env(safe-area-inset-bottom));
+          overflow-x: hidden;
         }
 
         .nav-btn {
@@ -168,24 +164,25 @@ const AdminDashboard: React.FC = () => {
           white-space: nowrap;
         }
 
-        /* 💻 Desktop Optimization */
-        @media (min-width: 768px) {
+        /* 💻 DESKTOP ONLY (768px or wider) */
+        @media screen and (min-width: 768px) {
           .nomad-layout {
-            display: grid;
-            grid-template-columns: 220px minmax(0, 1fr);
+            display: grid !important;
+            grid-template-columns: 220px minmax(0, 1fr) !important;
             min-height: 100dvh;
-            padding-bottom: 0;
           }
 
           .nomad-sidebar {
-            width: 220px;
+            width: 220px !important;
             height: 100dvh;
             position: sticky;
             top: 0;
             border-bottom: none;
             border-right: 1px solid #1a1a1a;
             padding: 20px 14px;
-            padding-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
           }
 
           .nomad-menu-toggle {
@@ -199,13 +196,13 @@ const AdminDashboard: React.FC = () => {
             border-top: none;
           }
 
-          .user-footer-mobile {
+          .user-footer-block {
             display: block !important;
+            margin-top: auto;
           }
 
           .nomad-main {
             padding: 24px 28px;
-            padding-bottom: 40px;
           }
         }
       `}</style>
@@ -286,7 +283,7 @@ const AdminDashboard: React.FC = () => {
           </div>
 
           {/* BOTTOM SECTION: USER ACCOUNT FOOTER */}
-          <div className="user-footer-mobile">
+          <div className="user-footer-block">
             <div 
               onClick={() => setIsProfileOpen(true)}
               style={{
@@ -335,7 +332,7 @@ const AdminDashboard: React.FC = () => {
 
       </div>
 
-      {/* STAFF PROFILE MODAL */}
+      {/* 👤 STAFF PROFILE MODAL */}
       <StaffProfile 
         isOpen={isProfileOpen} 
         onClose={() => setIsProfileOpen(false)} 
