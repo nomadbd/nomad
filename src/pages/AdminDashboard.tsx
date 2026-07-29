@@ -68,7 +68,7 @@ const AdminDashboard: React.FC = () => {
       overflowX: 'hidden'
     }}>
 
-      {/* Global CSS Reset & Strict Mobile Responsive Rules */}
+      {/* CSS Overrides & Strict Mobile Rules */}
       <style>{`
         *, *::before, *::after { 
           box-sizing: border-box !important; 
@@ -83,22 +83,94 @@ const AdminDashboard: React.FC = () => {
           background-color: #030303;
         }
 
-        /* 📱 DEFAULT: MOBILE FIRST STACKED LAYOUT */
-        .nomad-layout {
-          display: flex !important;
-          flex-direction: column !important;
-          width: 100% !important;
-          min-height: 100dvh;
+        /* 📱 MOBILE STYLES (Screen width up to 767px) */
+        @media screen and (max-width: 767px) {
+          .nomad-layout {
+            display: flex !important;
+            flex-direction: column !important;
+            width: 100% !important;
+            min-height: 100dvh;
+          }
+
+          .nomad-sidebar {
+            width: 100% !important;
+            height: auto !important;
+            position: relative !important;
+            background-color: #060606;
+            border-bottom: 1px solid #1a1a1a;
+            padding: 14px 16px;
+            box-sizing: border-box;
+          }
+
+          .nomad-menu-toggle {
+            display: flex !important;
+          }
+
+          .nomad-nav {
+            display: ${menuOpen ? 'flex' : 'none'} !important;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #181818;
+          }
+
+          .user-footer-block {
+            display: ${menuOpen ? 'block' : 'none'} !important;
+            margin-top: 15px;
+            padding-top: 12px;
+            border-top: 1px solid #1f1f1f;
+          }
+
+          .nomad-main {
+            width: 100% !important;
+            padding: 16px 12px 40px 12px;
+          }
         }
-        
-        .nomad-sidebar {
-          width: 100% !important;
-          background-color: #060606;
-          border-bottom: 1px solid #1a1a1a;
-          padding: 12px 14px;
-          box-sizing: border-box;
-          position: relative;
-          z-index: 50;
+
+        /* 💻 DESKTOP STYLES (Screen width 768px and above) */
+        @media screen and (min-width: 768px) {
+          .nomad-layout {
+            display: grid !important;
+            grid-template-columns: 220px minmax(0, 1fr) !important;
+            min-height: 100dvh;
+          }
+
+          .nomad-sidebar {
+            width: 220px !important;
+            height: 100dvh;
+            position: sticky;
+            top: 0;
+            border-bottom: none;
+            border-right: 1px solid #1a1a1a;
+            padding: 20px 14px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow-y: auto;
+          }
+
+          .nomad-menu-toggle {
+            display: none !important;
+          }
+
+          .nomad-nav {
+            display: flex !important;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 25px;
+          }
+
+          .user-footer-block {
+            display: block !important;
+            margin-top: auto;
+            padding-top: 16px;
+            border-top: 1px solid #1a1a1a;
+          }
+
+          .nomad-main {
+            padding: 24px 28px;
+          }
         }
 
         .nomad-brand-link {
@@ -107,27 +179,9 @@ const AdminDashboard: React.FC = () => {
           display: block;
         }
 
-        .nomad-nav {
-          display: ${menuOpen ? 'flex' : 'none'};
-          flex-direction: column;
-          gap: 8px;
-          margin-top: 15px;
-          padding-top: 15px;
-          border-top: 1px solid #181818;
-        }
-
-        .user-footer-block {
-          display: ${menuOpen ? 'block' : 'none'};
-          margin-top: 15px;
-          padding-top: 12px;
-          border-top: 1px solid #1f1f1f;
-        }
-
         .nomad-main {
           flex: 1;
-          padding: 14px 12px 40px 12px;
           background-color: #030303;
-          width: 100% !important;
           box-sizing: border-box;
           overflow-x: hidden;
         }
@@ -163,48 +217,6 @@ const AdminDashboard: React.FC = () => {
           text-overflow: ellipsis;
           white-space: nowrap;
         }
-
-        /* 💻 DESKTOP ONLY (768px or wider) */
-        @media screen and (min-width: 768px) {
-          .nomad-layout {
-            display: grid !important;
-            grid-template-columns: 220px minmax(0, 1fr) !important;
-            min-height: 100dvh;
-          }
-
-          .nomad-sidebar {
-            width: 220px !important;
-            height: 100dvh;
-            position: sticky;
-            top: 0;
-            border-bottom: none;
-            border-right: 1px solid #1a1a1a;
-            padding: 20px 14px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-          }
-
-          .nomad-menu-toggle {
-            display: none !important;
-          }
-
-          .nomad-nav {
-            display: flex !important;
-            margin-top: 25px;
-            padding-top: 0;
-            border-top: none;
-          }
-
-          .user-footer-block {
-            display: block !important;
-            margin-top: auto;
-          }
-
-          .nomad-main {
-            padding: 24px 28px;
-          }
-        }
       `}</style>
 
       <div className="nomad-layout">
@@ -235,7 +247,6 @@ const AdminDashboard: React.FC = () => {
                   height: '38px',
                   fontSize: '18px',
                   cursor: 'pointer',
-                  display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   borderRadius: '2px'
