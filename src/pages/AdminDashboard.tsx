@@ -5,7 +5,7 @@ import AdminOverview from '../components/admin/AdminOverview';
 import AdminOrders from '../components/admin/AdminOrders';
 import AdminProducts from '../components/admin/AdminProducts';
 import AdminSettings from '../components/admin/AdminSettings';
-import StaffProfile from '../components/StaffProfile'; // StaffProfile ইমপোর্ট করা হলো
+import StaffProfile from '../components/StaffProfile';
 
 const AdminDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'overview' | 'orders' | 'products' | 'settings'>('overview');
@@ -13,9 +13,9 @@ const AdminDashboard: React.FC = () => {
   const [userName, setUserName] = useState<string>('');
   const [userEmail, setUserEmail] = useState<string>('');
   const [userRole, setUserRole] = useState<string>('');
-  const [profileData, setProfileData] = useState<any>(null); // স্টাফ প্রোফাইলের ডাটা অবজেক্ট
+  const [profileData, setProfileData] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  const [isProfileOpen, setIsProfileOpen] = useState<boolean>(false); // Profile Modal এর স্টেট
+  const [isProfileOpen, setIsProfileOpen] = useState<boolean>(false);
 
   const fetchCurrentUserAndRole = async () => {
     try {
@@ -26,7 +26,7 @@ const AdminDashboard: React.FC = () => {
 
         const { data: profile, error } = await supabase
           .from('profiles')
-          .select('*') // StaffProfile এর জন্য সব তথ্য নেওয়া হচ্ছে
+          .select('*')
           .eq('id', user.id)
           .single();
 
@@ -51,7 +51,7 @@ const AdminDashboard: React.FC = () => {
 
   const subTextStyle: React.CSSProperties = {
     fontSize: '9px',
-    color: '#888888', // ধূসর কালার
+    color: '#888888',
     fontWeight: 600,
     letterSpacing: '1px',
     display: 'block',
@@ -61,7 +61,7 @@ const AdminDashboard: React.FC = () => {
     <div style={{ 
       backgroundColor: '#030303', 
       color: '#fff', 
-      minHeight: '100vh', 
+      minHeight: '100dvh', 
       fontFamily: 'monospace, sans-serif', 
       width: '100vw',
       maxWidth: '100%',
@@ -91,11 +91,12 @@ const AdminDashboard: React.FC = () => {
         .nomad-layout {
           display: flex;
           flex-direction: column;
-          min-height: 100vh;
+          min-height: 100dvh;
           width: 100%;
           max-width: 100%;
         }
         
+        /* 📱 Mobile & Base Sidebar (Scroll-proof layout) */
         .nomad-sidebar {
           width: 100%;
           background-color: #060606;
@@ -106,6 +107,17 @@ const AdminDashboard: React.FC = () => {
           display: flex;
           flex-direction: column;
           justify-content: space-between;
+        }
+
+        .nomad-sidebar-top {
+          width: 100%;
+        }
+
+        .nomad-sidebar-bottom {
+          margin-top: auto;
+          padding-top: 14px;
+          border-top: 1px solid #1a1a1a;
+          flex-shrink: 0;
         }
 
         .nomad-brand-link {
@@ -183,21 +195,28 @@ const AdminDashboard: React.FC = () => {
           white-space: nowrap;
         }
 
-        /* Desktop Optimization */
+        /* 💻 Desktop Optimization: Sticky Sidebar with Dynamic Viewport Height */
         @media (min-width: 768px) {
           .nomad-layout {
             display: grid;
             grid-template-columns: 210px minmax(0, 1fr);
-            min-height: 100vh;
+            min-height: 100dvh;
           }
           .nomad-sidebar {
             width: 210px;
-            height: 100vh;
+            height: 100dvh;
+            max-height: 100dvh;
             position: sticky;
             top: 0;
             border-bottom: none;
             border-right: 1px solid #1a1a1a;
             padding: 20px 14px;
+            overflow: hidden;
+          }
+          .nomad-sidebar-top {
+            overflow-y: auto;
+            flex: 1;
+            padding-bottom: 10px;
           }
           .nomad-menu-toggle {
             display: none !important;
@@ -220,7 +239,7 @@ const AdminDashboard: React.FC = () => {
         <aside className="nomad-sidebar">
 
           {/* TOP SECTION: BRAND & NAVIGATION */}
-          <div>
+          <div className="nomad-sidebar-top">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <a href="/" className="nomad-brand-link" title="Go to Store Homepage">
                 <h1 style={{ fontSize: '18px', fontWeight: '900', letterSpacing: '4px', margin: 0, color: '#fff' }}>
@@ -278,7 +297,6 @@ const AdminDashboard: React.FC = () => {
                 PRODUCTS & STOCK
               </button>
 
-              {/* শুধুমাত্র Administrator রা সিস্টেম সেটিংসে ঢোকার সুযোগ পাবে */}
               {userRole === 'ADMINISTRATOR' && (
                 <button
                   className={`nav-btn ${activeTab === 'settings' ? 'active' : ''}`}
@@ -290,13 +308,13 @@ const AdminDashboard: React.FC = () => {
             </nav>
           </div>
 
-          {/* BOTTOM SECTION: USER ACCOUNT FOOTER */}
-          <div style={{ 
-            marginTop: 'auto', 
-            paddingTop: '16px', 
-            borderTop: '1px solid #1a1a1a',
-            display: (menuOpen || window.innerWidth >= 768) ? 'block' : 'none'
-          }}>
+          {/* BOTTOM SECTION: USER ACCOUNT FOOTER (ALWAYS VISIBLE & PINNED) */}
+          <div 
+            className="nomad-sidebar-bottom"
+            style={{ 
+              display: (menuOpen || window.innerWidth >= 768) ? 'block' : 'none'
+            }}
+          >
             <div 
               onClick={() => setIsProfileOpen(true)}
               style={{
