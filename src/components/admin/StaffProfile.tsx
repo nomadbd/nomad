@@ -107,14 +107,18 @@ export default function StaffProfile({ isOpen, onClose, profile, onRefreshProfil
       right: 0,
       bottom: 0,
       width: '100vw',
-      height: '100dvh',
+      height: '100dvh', // Dynamic viewport height
       backgroundColor: 'rgba(0, 0, 0, 0.85)',
       backdropFilter: 'blur(8px)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       zIndex: 99999,
-      padding: '16px',
+      paddingTop: '16px',
+      paddingLeft: '16px',
+      paddingRight: '16px',
+      // Dynamic Bottom Padding for mobile browsers/address bar safe area
+      paddingBottom: 'calc(24px + env(safe-area-inset-bottom, 0px))',
       boxSizing: 'border-box'
     }}>
       <div style={{
@@ -128,7 +132,7 @@ export default function StaffProfile({ isOpen, onClose, profile, onRefreshProfil
         color: '#fff',
         position: 'relative',
         boxShadow: '0 20px 50px rgba(0,0,0,0.95)',
-        maxHeight: '90dvh',
+        maxHeight: 'calc(100dvh - 40px - env(safe-area-inset-bottom, 0px))',
         overflowY: 'auto'
       }}>
 
@@ -243,7 +247,7 @@ export default function StaffProfile({ isOpen, onClose, profile, onRefreshProfil
           </div>
 
           <div style={{ gridColumn: 'span 2', borderTop: '1px dashed #1f1f1f', paddingTop: '10px', marginTop: '2px' }}>
-            <p style={{ margin: '0 0 3px 0', fontSize: '9px', color: '#666', letterSpacing: '1px', fontWeight: 600 }}>TOTAL TENURE (SERVICE TIME)</p>
+            <p style={{ margin: '0 0 3px 0', fontSize: '9px', color: '#666', letterSpacing: '1px', fontWeight 600 }}>TOTAL TENURE (SERVICE TIME)</p>
             <p style={{ margin: 0, fontSize: '12px', color: '#2ecc71', fontWeight: '600' }}>
               {calculateTenure(profile?.created_at)}
             </p>
