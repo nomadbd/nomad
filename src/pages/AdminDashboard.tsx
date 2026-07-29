@@ -124,6 +124,17 @@ const AdminDashboard: React.FC = () => {
           max-width: 100%;
           overflow-x: auto;
           -webkit-overflow-scrolling: touch;
+          flex: 1;
+        }
+
+        /* সব চাইল্ড কম্পোনেন্টের জন্য সুরক্ষা */
+        .metrics-grid,
+        .metric-card,
+        .table-wrapper,
+        .recent-orders-table {
+          width: 100% !important;
+          max-width: 100% !important;
+          box-sizing: border-box;
         }
 
         .nav-btn {
@@ -162,7 +173,7 @@ const AdminDashboard: React.FC = () => {
           white-space: nowrap;
         }
 
-        /* মোবাইলের জন্য অতিরিক্ত সুরক্ষা */
+        /* মোবাইল অপটিমাইজেশন */
         @media (max-width: 767px) {
           .nomad-main {
             padding: 12px 14px;
@@ -306,10 +317,10 @@ const AdminDashboard: React.FC = () => {
 
           {/* Child Components */}
           <div className="content-scrollable">
-            {activeTab === 'overview' && <AdminOverview />}
-            {activeTab === 'orders' && <AdminOrders />}
-            {activeTab === 'products' && <AdminProducts />}
-            {activeTab === 'settings' && <AdminSettings />}
+            {activeTab === 'overview' && <AdminOverview key="overview" />}
+            {activeTab === 'orders' && <AdminOrders key="orders" />}
+            {activeTab === 'products' && <AdminProducts key="products" />}
+            {activeTab === 'settings' && <AdminSettings key="settings" />}
           </div>
 
         </main>
