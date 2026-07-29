@@ -83,12 +83,13 @@ const AdminDashboard: React.FC = () => {
           background-color: #030303;
         }
 
-        /* 📱 Mobile Layout: Stack Top-to-Bottom */
+        /* 📱 Mobile Layout */
         .nomad-layout {
           display: flex;
           flex-direction: column;
           width: 100%;
           min-height: 100dvh;
+          padding-bottom: env(safe-area-inset-bottom);
         }
         
         .nomad-sidebar {
@@ -97,6 +98,10 @@ const AdminDashboard: React.FC = () => {
           border-bottom: 1px solid #1a1a1a;
           padding: 12px 16px;
           box-sizing: border-box;
+          display: flex;
+          flex-direction: column;
+          min-height: 100dvh;
+          padding-bottom: calc(20px + env(safe-area-inset-bottom));
         }
 
         .nomad-brand-link {
@@ -115,10 +120,11 @@ const AdminDashboard: React.FC = () => {
         }
 
         .user-footer-mobile {
+          margin-top: auto;
           display: ${menuOpen ? 'block' : 'none'};
-          margin-top: 15px;
           padding-top: 12px;
           border-top: 1px solid #1f1f1f;
+          padding-bottom: env(safe-area-inset-bottom);
         }
 
         .nomad-main {
@@ -127,6 +133,7 @@ const AdminDashboard: React.FC = () => {
           background-color: #030303;
           width: 100%;
           box-sizing: border-box;
+          padding-bottom: calc(40px + env(safe-area-inset-bottom));
         }
 
         .nav-btn {
@@ -161,12 +168,13 @@ const AdminDashboard: React.FC = () => {
           white-space: nowrap;
         }
 
-        /* 💻 Desktop Optimization: Side-by-Side Layout */
+        /* 💻 Desktop Optimization */
         @media (min-width: 768px) {
           .nomad-layout {
             display: grid;
             grid-template-columns: 220px minmax(0, 1fr);
             min-height: 100dvh;
+            padding-bottom: 0;
           }
 
           .nomad-sidebar {
@@ -177,9 +185,7 @@ const AdminDashboard: React.FC = () => {
             border-bottom: none;
             border-right: 1px solid #1a1a1a;
             padding: 20px 14px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
+            padding-bottom: 20px;
           }
 
           .nomad-menu-toggle {
@@ -195,11 +201,11 @@ const AdminDashboard: React.FC = () => {
 
           .user-footer-mobile {
             display: block !important;
-            margin-top: auto;
           }
 
           .nomad-main {
             padding: 24px 28px;
+            padding-bottom: 40px;
           }
         }
       `}</style>
@@ -329,7 +335,7 @@ const AdminDashboard: React.FC = () => {
 
       </div>
 
-      {/* 👤 STAFF PROFILE MODAL */}
+      {/* STAFF PROFILE MODAL */}
       <StaffProfile 
         isOpen={isProfileOpen} 
         onClose={() => setIsProfileOpen(false)} 
