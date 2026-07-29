@@ -12,6 +12,7 @@ const AdminDashboard: React.FC = () => {
   const [userName, setUserName] = useState<string>('');
   const [userEmail, setUserEmail] = useState<string>('');
   const [userRole, setUserRole] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(true); // ১. লোডিং স্টেট যোগ করা হয়েছে
 
   useEffect(() => {
     const fetchCurrentUserAndRole = async () => {
@@ -34,6 +35,8 @@ const AdminDashboard: React.FC = () => {
         }
       } catch (err) {
         console.error('Error fetching user profile:', err);
+      } finally {
+        setLoading(false); // ২. ফেচিং শেষ হলে লোডিং বন্ধ হবে
       }
     };
 
@@ -297,6 +300,7 @@ const AdminDashboard: React.FC = () => {
           }}>
             <div style={{ textAlign: 'right', fontSize: '10px', width: '100%' }}>
 
+              {/* ৩. লোডিং চেক যুক্ত করা হয়েছে */}
               <span 
                 className="user-text-container"
                 style={{ 
@@ -307,7 +311,11 @@ const AdminDashboard: React.FC = () => {
                   fontSize: '10px'
                 }}
               >
-                {userName || userEmail}
+                {loading ? (
+                  <span style={{ color: '#666666' }}>...</span>
+                ) : (
+                  userName || userEmail
+                )}
               </span>
 
               {userRole && (
