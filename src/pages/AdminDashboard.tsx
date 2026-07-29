@@ -5,6 +5,7 @@ import AdminOverview from '../components/admin/AdminOverview';
 import AdminOrders from '../components/admin/AdminOrders';
 import AdminProducts from '../components/admin/AdminProducts';
 import AdminSettings from '../components/admin/AdminSettings';
+import AuthOverlay from '../components/auth/AuthOverlay'; // ১. বিদ্যমান AuthOverlay ইমপোর্ট করা হলো
 
 const AdminDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'overview' | 'orders' | 'products' | 'settings'>('overview');
@@ -12,7 +13,8 @@ const AdminDashboard: React.FC = () => {
   const [userName, setUserName] = useState<string>('');
   const [userEmail, setUserEmail] = useState<string>('');
   const [userRole, setUserRole] = useState<string>('');
-  const [loading, setLoading] = useState<boolean>(true); // ১. লোডিং স্টেট যোগ করা হয়েছে
+  const [loading, setLoading] = useState<boolean>(true);
+  const [isAuthOpen, setIsAuthOpen] = useState<boolean>(false); // ২. AuthOverlay এর জন্য স্টেট
 
   useEffect(() => {
     const fetchCurrentUserAndRole = async () => {
@@ -36,16 +38,21 @@ const AdminDashboard: React.FC = () => {
       } catch (err) {
         console.error('Error fetching user profile:', err);
       } finally {
-        setLoading(false); // ২. ফেচিং শেষ হলে লোডিং বন্ধ হবে
+        setLoading(false);
       }
     };
 
     fetchCurrentUserAndRole();
   }, []);
 
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    window.location.href = '/login';
+  };
+
   const subTextStyle: React.CSSProperties = {
-    fontSize: '10px',
-    color: '#cccccc',
+    fontSize: '9px',
+    color: '#888888',
     fontWeight: 600,
     letterSpacing: '1px',
     display: 'block',
@@ -82,7 +89,6 @@ const AdminDashboard: React.FC = () => {
           background-color: #030303;
         }
 
-        /* Responsive Fluid Layout System */
         .nomad-layout {
           display: flex;
           flex-direction: column;
@@ -98,6 +104,9 @@ const AdminDashboard: React.FC = () => {
           padding: 15px 14px;
           flex-shrink: 0;
           box-sizing: border-box;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
         }
 
         .nomad-brand-link {
@@ -122,7 +131,7 @@ const AdminDashboard: React.FC = () => {
 
         .nomad-main {
           flex: 1;
-          min-width: 0; /* Prevents flex children from overflowing */
+          min-width: 0;
           padding: 12px 14px;
           background-color: #030303;
           width: 100%;
@@ -136,16 +145,6 @@ const AdminDashboard: React.FC = () => {
           max-width: 100%;
           overflow-x: auto;
           -webkit-overflow-scrolling: touch;
-        }
-
-        /* Strict boundary protection for all nested components */
-        .metrics-grid,
-        .metric-card,
-        .table-wrapper,
-        .recent-orders-table,
-        table {
-          max-width: 100% !important;
-          box-sizing: border-box !important;
         }
 
         .nav-btn {
@@ -185,21 +184,21 @@ const AdminDashboard: React.FC = () => {
           white-space: nowrap;
         }
 
-        /* Desktop Optimization & Desktop Mode Enforcement */
+        /* Desktop Optimization */
         @media (min-width: 768px) {
           .nomad-layout {
             display: grid;
-            grid-template-columns: 200px minmax(0, 1fr);
+            grid-template-columns: 210px minmax(0, 1fr);
             min-height: 100vh;
           }
           .nomad-sidebar {
-            width: 200px;
+            width: 210px;
             height: 100vh;
             position: sticky;
             top: 0;
             border-bottom: none;
             border-right: 1px solid #1a1a1a;
-            padding: 20px 15px;
+            padding: 20px 14px;
           }
           .nomad-menu-toggle {
             display: none !important;
@@ -211,131 +210,180 @@ const AdminDashboard: React.FC = () => {
             border-top: none;
           }
           .nomad-main {
-            padding: 20px 24px;
+            padding: 24px 28px;
           }
         }
       `}</style>
 
       <div className="nomad-layout">
 
+        {/* SIDEBAR */}
         <aside className="nomad-sidebar">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          
+          {/* TOP SECTION: BRAND & NAVIGATION */}
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <a href="/" className="nomad-brand-link" title="Go to Store Homepage">
+                <h1 style={{ fontSize: '18px', fontWeight: '900', letterSpacing: '4px', margin: 0, color: '#fff' }}>
+                  NOMAD
+                </h1>
+                <span style={{ ...subTextStyle, marginTop: '2px', color: '#cccccc' }}>
+                  The one. Everywhere.
+                </span>
+              </a>
 
-            <a href="/" className="nomad-brand-link" title="Go to Store Homepage">
-              <h1 style={{ fontSize: '18px', fontWeight: '900', letterSpacing: '4px', margin: 0, color: '#fff' }}>
-                NOMAD
-              </h1>
-              <span style={{ ...subTextStyle, marginTop: '2px' }}>
-                The one. Everywhere.
-              </span>
-            </a>
-
-            <button
-              className="nomad-menu-toggle"
-              onClick={() => setMenuOpen(!menuOpen)}
-              style={{
-                backgroundColor: '#111',
-                border: '1px solid #333',
-                color: '#fff',
-                width: '38px',
-                height: '38px',
-                fontSize: '18px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                borderRadius: '2px'
-              }}
-            >
-              {menuOpen ? '✕' : '☰'}
-            </button>
-          </div>
-
-          <nav className="nomad-nav">
-            <span style={{ fontSize: '9px', color: '#888888', letterSpacing: '2px', marginBottom: '8px', fontWeight: 'bold' }}>
-              MAIN MENU
-            </span>
-
-            <button
-              className={`nav-btn ${activeTab === 'overview' ? 'active' : ''}`}
-              onClick={() => { setActiveTab('overview'); setMenuOpen(false); }}
-            >
-              OVERVIEW & ANALYTICS
-            </button>
-
-            <button
-              className={`nav-btn ${activeTab === 'orders' ? 'active' : ''}`}
-              onClick={() => { setActiveTab('orders'); setMenuOpen(false); }}
-            >
-              ORDER MANAGEMENT
-            </button>
-
-            <button
-              className={`nav-btn ${activeTab === 'products' ? 'active' : ''}`}
-              onClick={() => { setActiveTab('products'); setMenuOpen(false); }}
-            >
-              PRODUCTS & STOCK
-            </button>
-
-            <button
-              className={`nav-btn ${activeTab === 'settings' ? 'active' : ''}`}
-              onClick={() => { setActiveTab('settings'); setMenuOpen(false); }}
-            >
-              ROLES & SETTINGS
-            </button>
-          </nav>
-        </aside>
-
-        <main className="nomad-main">
-
-          {/* User Info Header */}
-          <div style={{ 
-            display: 'flex', 
-            justifyContent: 'flex-end', 
-            alignItems: 'center', 
-            marginBottom: '20px', 
-            borderBottom: '1px solid #111', 
-            paddingBottom: '10px', 
-            width: '100%' 
-          }}>
-            <div style={{ textAlign: 'right', fontSize: '10px', width: '100%' }}>
-
-              {/* ৩. লোডিং চেক যুক্ত করা হয়েছে */}
-              <span 
-                className="user-text-container"
-                style={{ 
-                  color: '#ffffff', 
-                  display: 'block', 
-                  fontWeight: 'bold',
-                  textTransform: userName ? 'uppercase' : 'none',
-                  fontSize: '10px'
+              <button
+                className="nomad-menu-toggle"
+                onClick={() => setMenuOpen(!menuOpen)}
+                style={{
+                  backgroundColor: '#111',
+                  border: '1px solid #333',
+                  color: '#fff',
+                  width: '38px',
+                  height: '38px',
+                  fontSize: '18px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: '2px'
                 }}
               >
-                {loading ? (
-                  <span style={{ color: '#666666' }}>...</span>
-                ) : (
-                  userName || userEmail
-                )}
+                {menuOpen ? '✕' : '☰'}
+              </button>
+            </div>
+
+            <nav className="nomad-nav">
+              <span style={{ fontSize: '9px', color: '#888888', letterSpacing: '2px', marginBottom: '8px', fontWeight: 'bold' }}>
+                MAIN MENU
               </span>
 
-              {userRole && (
-                <span style={{ ...subTextStyle, marginTop: '2px', textTransform: 'uppercase' }}>
-                  {userRole}
-                </span>
+              <button
+                className={`nav-btn ${activeTab === 'overview' ? 'active' : ''}`}
+                onClick={() => { setActiveTab('overview'); setMenuOpen(false); }}
+              >
+                OVERVIEW & ANALYTICS
+              </button>
+
+              <button
+                className={`nav-btn ${activeTab === 'orders' ? 'active' : ''}`}
+                onClick={() => { setActiveTab('orders'); setMenuOpen(false); }}
+              >
+                ORDER MANAGEMENT
+              </button>
+
+              <button
+                className={`nav-btn ${activeTab === 'products' ? 'active' : ''}`}
+                onClick={() => { setActiveTab('products'); setMenuOpen(false); }}
+              >
+                PRODUCTS & STOCK
+              </button>
+
+              {/* শুধুমাত্র Administrator রা সিস্টেম সেটিংসে ঢোকার সুযোগ পাবে */}
+              {userRole === 'ADMINISTRATOR' && (
+                <button
+                  className={`nav-btn ${activeTab === 'settings' ? 'active' : ''}`}
+                  onClick={() => { setActiveTab('settings'); setMenuOpen(false); }}
+                >
+                  ROLES & SETTINGS
+                </button>
               )}
+            </nav>
+          </div>
+
+          {/* BOTTOM SECTION: USER ACCOUNT & SECURITY FOOTER */}
+          <div style={{ 
+            marginTop: 'auto', 
+            paddingTop: '16px', 
+            borderTop: '1px solid #1a1a1a',
+            display: (menuOpen || window.innerWidth >= 768) ? 'block' : 'none'
+          }}>
+            <div 
+              style={{
+                backgroundColor: '#0a0a0a',
+                border: '1px solid #1f1f1f',
+                padding: '10px 12px',
+                borderRadius: '2px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }}
+            >
+              <div 
+                onClick={() => setIsAuthOpen(true)}
+                style={{ cursor: 'pointer', flex: 1, overflow: 'hidden' }}
+                title="Click to Open Security Settings"
+              >
+                <span 
+                  className="user-text-container"
+                  style={{ 
+                    color: '#ffffff', 
+                    display: 'block', 
+                    fontWeight: 'bold',
+                    textTransform: userName ? 'uppercase' : 'none',
+                    fontSize: '10px',
+                    letterSpacing: '1px'
+                  }}
+                >
+                  {loading ? '...' : (userName || userEmail || 'OPERATOR')}
+                </span>
+
+                {userRole && (
+                  <span style={{ ...subTextStyle, marginTop: '2px', textTransform: 'uppercase', color: '#4dff4d' }}>
+                    {userRole}
+                  </span>
+                )}
+              </div>
+
+              {/* SETTINGS GEAR & SIGN OUT */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span 
+                  onClick={() => setIsAuthOpen(true)}
+                  style={{ cursor: 'pointer', fontSize: '12px', color: '#888' }}
+                  title="Password & Auth Settings"
+                >
+                  ⚙️
+                </span>
+                
+                <span 
+                  onClick={handleSignOut}
+                  style={{ 
+                    cursor: 'pointer', 
+                    fontSize: '9px', 
+                    color: '#ff4d4d', 
+                    letterSpacing: '1px',
+                    fontWeight: 'bold',
+                    borderLeft: '1px solid #222',
+                    paddingLeft: '8px'
+                  }}
+                  title="Sign Out"
+                >
+                  EXIT
+                </span>
+              </div>
             </div>
           </div>
 
-          {/* Child Components Container */}
+        </aside>
+
+        {/* MAIN CONTENT AREA */}
+        <main className="nomad-main">
           <div className="content-scrollable">
             {activeTab === 'overview' && <AdminOverview key="overview" />}
             {activeTab === 'orders' && <AdminOrders key="orders" />}
             {activeTab === 'products' && <AdminProducts key="products" />}
             {activeTab === 'settings' && <AdminSettings key="settings" />}
           </div>
-
         </main>
+
       </div>
+
+      {/* ⚙️ EXISTING AUTH OVERLAY MODAL */}
+      <AuthOverlay 
+        isOpen={isAuthOpen} 
+        onClose={() => setIsAuthOpen(false)} 
+      />
+
     </div>
   );
 };
