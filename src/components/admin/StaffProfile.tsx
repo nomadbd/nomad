@@ -114,7 +114,7 @@ export default function StaffProfile({ isOpen, onClose, profile, onRefreshProfil
       alignItems: 'center',
       justifyContent: 'center',
       zIndex: 99999,
-      padding: '12px',
+      padding: '16px',
       boxSizing: 'border-box'
     }}>
       <div style={{
@@ -122,7 +122,7 @@ export default function StaffProfile({ isOpen, onClose, profile, onRefreshProfil
         border: '1px solid #222222',
         borderRadius: '8px',
         width: '100%',
-        maxWidth: '460px', /* ডেস্কটপে অতিরিক্ত বড় হবে না */
+        maxWidth: '420px',
         padding: '24px 20px',
         boxSizing: 'border-box',
         color: '#fff',
@@ -175,8 +175,8 @@ export default function StaffProfile({ isOpen, onClose, profile, onRefreshProfil
           ✕
         </button>
 
-        {/* 1. Header & Identity Block */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '22px' }}>
+        {/* 1. Header & Identity Block (Padding right added to prevent overlap with close button) */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '22px', paddingRight: '36px' }}>
           <div style={{
             width: '48px',
             height: '48px',
@@ -198,7 +198,7 @@ export default function StaffProfile({ isOpen, onClose, profile, onRefreshProfil
             <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '700', letterSpacing: '0.5px', color: '#fff' }}>
               {profile?.name || 'Staff User'}
             </h3>
-            <p style={{ margin: '3px 0 6px 0', fontSize: '11px', color: '#888', wordBreak: 'break-all' }}>
+            <p style={{ margin: '3px 0 6px 0', fontSize: '11px', color: '#888', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {profile?.email}
             </p>
             <span style={{
@@ -243,7 +243,7 @@ export default function StaffProfile({ isOpen, onClose, profile, onRefreshProfil
           </div>
 
           <div style={{ gridColumn: 'span 2', borderTop: '1px dashed #1f1f1f', paddingTop: '10px', marginTop: '2px' }}>
-            <p style={{ margin: '0 0 3px 0', fontSize: '9px', color: '#666', letterSpacing: '1px', fontWeight: 600 }}>TOTAL TENURE (SERVICE TIME)</p>
+            <p style={{ margin: '0 0 3px 0', fontSize: '9px', color: '#666', letterSpacing: '1px', fontWeight 600 }}>TOTAL TENURE (SERVICE TIME)</p>
             <p style={{ margin: 0, fontSize: '12px', color: '#2ecc71', fontWeight: '600' }}>
               {calculateTenure(profile?.created_at)}
             </p>
