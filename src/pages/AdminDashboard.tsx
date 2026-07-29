@@ -31,8 +31,8 @@ const AdminDashboard: React.FC = () => {
           .single();
 
         if (!error && profile) {
-          if (profile.name) setUserName(profile.name);
-          if (profile.role) setUserRole(profile.role);
+          setUserName(profile.name || '');
+          setUserRole(profile.role || '');
           setProfileData({ ...profile, email: user.email });
         } else {
           setProfileData({ email: user.email });
@@ -56,6 +56,9 @@ const AdminDashboard: React.FC = () => {
     letterSpacing: '1px',
     display: 'block',
   };
+
+  // অ্যাডমিন রোল চেক (ADMIN অথবা ADMINISTRATOR উভয়কেই সাপোর্ট করবে)
+  const isAdmin = userRole.toUpperCase() === 'ADMIN' || userRole.toUpperCase() === 'ADMINISTRATOR';
 
   return (
     <div style={{ 
@@ -282,7 +285,7 @@ const AdminDashboard: React.FC = () => {
                 PRODUCTS & STOCK
               </button>
 
-              {userRole === 'ADMINISTRATOR' && (
+              {isAdmin && (
                 <button
                   className={`nav-btn ${activeTab === 'settings' ? 'active' : ''}`}
                   onClick={() => { setActiveTab('settings'); setMenuOpen(false); }}
