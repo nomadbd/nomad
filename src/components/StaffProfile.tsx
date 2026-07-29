@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { supabase } from '../supabaseClient';
 
 interface StaffProfileProps {
@@ -129,14 +129,16 @@ export default function StaffProfile({ isOpen, onClose, profile, onRefreshProfil
       backdropFilter: 'blur(5px)',
       display: 'flex',
       alignItems: 'center',
-      justify: 'center',
-      zIndex: 99999
+      justifyContent: 'center', // Fix applied here
+      zIndex: 99999,
+      padding: '16px',
+      boxSizing: 'border-box'
     }}>
       <div style={{
         background: '#111',
         border: '1px solid #222',
         borderRadius: '12px',
-        width: '90%',
+        width: '100%',
         maxWidth: '420px',
         padding: '30px',
         boxSizing: 'border-box',
@@ -144,7 +146,7 @@ export default function StaffProfile({ isOpen, onClose, profile, onRefreshProfil
         position: 'relative',
         boxShadow: '0 20px 40px rgba(0,0,0,0.9)'
       }}>
-        
+
         {/* টোস্ট মেসেজ */}
         {toast && (
           <div style={{
@@ -233,7 +235,6 @@ export default function StaffProfile({ isOpen, onClose, profile, onRefreshProfil
           <div>
             <p style={{ margin: '0 0 3px 0', fontSize: '10px', color: '#666', letterSpacing: '1px' }}>ROLE ASSIGNED</p>
             <p style={{ margin: 0, fontSize: '12px', color: '#ddd', fontWeight: '500' }}>
-              {/* যদি ডাটাবেজে role_assigned_at থাকে সেটা দেখাবে, না থাকলে created_at দেখাবে */}
               {formatDate(profile?.role_assigned_at || profile?.created_at)}
             </p>
           </div>
