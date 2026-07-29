@@ -49,6 +49,16 @@ const AdminDashboard: React.FC = () => {
     fetchCurrentUserAndRole();
   }, []);
 
+  // অ্যাডমিন রোল চেক (ADMIN অথবা ADMINISTRATOR উভয়কেই সাপোর্ট করবে)
+  const isAdmin = userRole.toUpperCase() === 'ADMIN' || userRole.toUpperCase() === 'ADMINISTRATOR';
+
+  // সিকিউরিটি গার্ড: যদি অ-অ্যাডমিন ইউজার কোনোভাবে settings ট্যাবে আসার চেষ্টা করে, তাকে overview-তে রিডাইরেক্ট করবে
+  useEffect(() => {
+    if (!loading && !isAdmin && activeTab === 'settings') {
+      setActiveTab('overview');
+    }
+  }, [isAdmin, loading, activeTab]);
+
   const subTextStyle: React.CSSProperties = {
     fontSize: '9px',
     color: '#888888',
@@ -56,9 +66,6 @@ const AdminDashboard: React.FC = () => {
     letterSpacing: '1px',
     display: 'block',
   };
-
-  // অ্যাডমিন রোল চেক (ADMIN অথবা ADMINISTRATOR উভয়কেই সাপোর্ট করবে)
-  const isAdmin = userRole.toUpperCase() === 'ADMIN' || userRole.toUpperCase() === 'ADMINISTRATOR';
 
   return (
     <div style={{ 
@@ -285,6 +292,7 @@ const AdminDashboard: React.FC = () => {
                 PRODUCTS & STOCK
               </button>
 
+              {/* 🔒 শুধুমাত্র Admin ব্যক্তির জন্য দৃশ্যমান থাকবে */}
               {isAdmin && (
                 <button
                   className={`nav-btn ${activeTab === 'settings' ? 'active' : ''}`}
@@ -341,7 +349,17 @@ const AdminDashboard: React.FC = () => {
           {activeTab === 'overview' && <AdminOverview key="overview" />}
           {activeTab === 'orders' && <AdminOrders key="orders" />}
           {activeTab === 'products' && <AdminProducts key="products" />}
-          {activeTab === 'settings' && <AdminSettings key="settings" />}
+          
+          {/* 🔒 AdminSettings শুধুমাত্র Admin ইউজারের জন্য রেন্ডার হবে */}
+          {activeTab === 'settings' && (
+            isAdmin ? (
+              <AdminSettings key="settings" />
+            ) : (
+              <div style={{ padding: '40px 0', textAlign: 'center', color: '#ff4d4d', letterSpacing: '2px', fontSize: '12px' }}>
+                ACCESS DENIED: ADMINISTRATOR PRIVILEGES REQUIRED.
+              </div>
+            )
+          )}
         </main>
 
       </div>
