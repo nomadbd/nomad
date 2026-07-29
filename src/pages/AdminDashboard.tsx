@@ -5,7 +5,7 @@ import AdminOverview from '../components/admin/AdminOverview';
 import AdminOrders from '../components/admin/AdminOrders';
 import AdminProducts from '../components/admin/AdminProducts';
 import AdminSettings from '../components/admin/AdminSettings';
-import AuthOverlay from '../components/auth/AuthOverlay'; // ১. বিদ্যমান AuthOverlay ইমপোর্ট করা হলো
+import StaffProfile from '../components/StaffProfile'; // StaffProfile ইমপোর্ট করা হলো
 
 const AdminDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'overview' | 'orders' | 'products' | 'settings'>('overview');
@@ -13,46 +13,45 @@ const AdminDashboard: React.FC = () => {
   const [userName, setUserName] = useState<string>('');
   const [userEmail, setUserEmail] = useState<string>('');
   const [userRole, setUserRole] = useState<string>('');
+  const [profileData, setProfileData] = useState<any>(null); // স্টাফ প্রোফাইলের ডাটা অবজেক্ট
   const [loading, setLoading] = useState<boolean>(true);
-  const [isAuthOpen, setIsAuthOpen] = useState<boolean>(false); // ২. AuthOverlay এর জন্য স্টেট
+  const [isProfileOpen, setIsProfileOpen] = useState<boolean>(false); // Profile Modal এর স্টেট
+
+  const fetchCurrentUserAndRole = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (user) {
+        setUserEmail(user.email || '');
+
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('*') // StaffProfile এর জন্য সব তথ্য নেওয়া হচ্ছে
+          .eq('id', user.id)
+          .single();
+
+        if (!error && profile) {
+          if (profile.name) setUserName(profile.name);
+          if (profile.role) setUserRole(profile.role);
+          setProfileData({ ...profile, email: user.email });
+        } else {
+          setProfileData({ email: user.email });
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching user profile:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchCurrentUserAndRole = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-
-        if (user) {
-          setUserEmail(user.email || '');
-
-          const { data: profile, error } = await supabase
-            .from('profiles')
-            .select('name, role')
-            .eq('id', user.id)
-            .single();
-
-          if (!error && profile) {
-            if (profile.name) setUserName(profile.name);
-            if (profile.role) setUserRole(profile.role);
-          }
-        }
-      } catch (err) {
-        console.error('Error fetching user profile:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchCurrentUserAndRole();
   }, []);
 
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    window.location.href = '/login';
-  };
-
   const subTextStyle: React.CSSProperties = {
     fontSize: '9px',
-    color: '#888888',
+    color: '#888888', // ধূসর কালার
     fontWeight: 600,
     letterSpacing: '1px',
     display: 'block',
@@ -219,7 +218,7 @@ const AdminDashboard: React.FC = () => {
 
         {/* SIDEBAR */}
         <aside className="nomad-sidebar">
-          
+
           {/* TOP SECTION: BRAND & NAVIGATION */}
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -291,7 +290,7 @@ const AdminDashboard: React.FC = () => {
             </nav>
           </div>
 
-          {/* BOTTOM SECTION: USER ACCOUNT & SECURITY FOOTER */}
+          {/* BOTTOM SECTION: USER ACCOUNT FOOTER */}
           <div style={{ 
             marginTop: 'auto', 
             paddingTop: '16px', 
@@ -299,21 +298,18 @@ const AdminDashboard: React.FC = () => {
             display: (menuOpen || window.innerWidth >= 768) ? 'block' : 'none'
           }}>
             <div 
+              onClick={() => setIsProfileOpen(true)}
               style={{
                 backgroundColor: '#0a0a0a',
                 border: '1px solid #1f1f1f',
                 padding: '10px 12px',
                 borderRadius: '2px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
+                cursor: 'pointer',
+                transition: 'border-color 0.2s ease',
               }}
+              title="Click to view Staff Profile & Options"
             >
-              <div 
-                onClick={() => setIsAuthOpen(true)}
-                style={{ cursor: 'pointer', flex: 1, overflow: 'hidden' }}
-                title="Click to Open Security Settings"
-              >
+              <div style={{ width: '100%', overflow: 'hidden' }}>
                 <span 
                   className="user-text-container"
                   style={{ 
@@ -329,37 +325,10 @@ const AdminDashboard: React.FC = () => {
                 </span>
 
                 {userRole && (
-                  <span style={{ ...subTextStyle, marginTop: '2px', textTransform: 'uppercase', color: '#4dff4d' }}>
+                  <span style={{ ...subTextStyle, marginTop: '2px', textTransform: 'uppercase', color: '#888888' }}>
                     {userRole}
                   </span>
                 )}
-              </div>
-
-              {/* SETTINGS GEAR & SIGN OUT */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span 
-                  onClick={() => setIsAuthOpen(true)}
-                  style={{ cursor: 'pointer', fontSize: '12px', color: '#888' }}
-                  title="Password & Auth Settings"
-                >
-                  ⚙️
-                </span>
-                
-                <span 
-                  onClick={handleSignOut}
-                  style={{ 
-                    cursor: 'pointer', 
-                    fontSize: '9px', 
-                    color: '#ff4d4d', 
-                    letterSpacing: '1px',
-                    fontWeight: 'bold',
-                    borderLeft: '1px solid #222',
-                    paddingLeft: '8px'
-                  }}
-                  title="Sign Out"
-                >
-                  EXIT
-                </span>
               </div>
             </div>
           </div>
@@ -378,10 +347,12 @@ const AdminDashboard: React.FC = () => {
 
       </div>
 
-      {/* ⚙️ EXISTING AUTH OVERLAY MODAL */}
-      <AuthOverlay 
-        isOpen={isAuthOpen} 
-        onClose={() => setIsAuthOpen(false)} 
+      {/* 👤 STAFF PROFILE MODAL */}
+      <StaffProfile 
+        isOpen={isProfileOpen} 
+        onClose={() => setIsProfileOpen(false)} 
+        profile={profileData}
+        onRefreshProfile={fetchCurrentUserAndRole}
       />
 
     </div>
