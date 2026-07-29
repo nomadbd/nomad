@@ -1,32 +1,12 @@
-/* index.css */
-*, *::before, *::after {
+* {
   margin: 0;
   padding: 0;
-  box-sizing: border-box !important;
-}
-
-html {
-  width: 100%;
-  height: 100%;
-  overflow-x: hidden !important;
-  -webkit-text-size-adjust: 100%;
-  -moz-text-size-adjust: 100%;
-  -ms-text-size-adjust: 100%;
-  text-size-adjust: 100%;
+  box-sizing: border-box;
 }
 
 body {
-  width: 100%;
-  min-height: 100vh;
-  background-color: #000000;
-  color: #ffffff;
+  background-color: black;
+  color: white;
   font-family: sans-serif;
-  overflow-x: hidden !important;
-  position: relative;
-}
-
-#root {
-  width: 100%;
   min-height: 100vh;
-  overflow-x: hidden !important;
 }
