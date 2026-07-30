@@ -167,18 +167,27 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
           background-color: #0e0e0e;
         }
 
+        /* মোবাইলে ২ কলাম রাখা হলো যাতে ১৫px ফন্ট সুন্দর আটে */
         .status-grid {
           display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 8px;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 10px;
           width: 100%;
+        }
+
+        /* বড় স্ক্রিনে ৩ কলাম দেখাবে */
+        @media (min-width: 640px) {
+          .status-grid {
+            grid-template-columns: repeat(3, 1fr);
+          }
         }
 
         .status-card {
           background-color: #0d0d0d;
           border: 1px solid #222222;
-          padding: 10px 8px;
+          padding: 12px 10px;
           border-radius: 2px;
+          min-width: 0;
         }
 
         .secondary-metrics-grid {
@@ -278,7 +287,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
           <div style={{ width: `${calcPercent(cancelledOrders)}%`, backgroundColor: '#f87171' }} />
         </div>
 
-        {/* 3x2 Status Breakdown */}
+        {/* Status Breakdown - Responsive 2 Columns on Mobile */}
         <div className="status-grid">
           {statusItems.map((item) => {
             const percent = calcPercent(item.count).toFixed(0);
@@ -286,9 +295,17 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
 
             return (
               <div key={item.key} className="status-card">
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '4px' }}>
-                  <span style={{ color: isZero ? '#444' : item.color, fontSize: '10px' }}>●</span>
-                  <span style={{ fontSize: '15px', color: isZero ? '#666' : '#A0AEC0', fontWeight: 'bold', letterSpacing: '0.5px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', overflow: 'hidden' }}>
+                  <span style={{ color: isZero ? '#444' : item.color, fontSize: '10px', flexShrink: 0 }}>●</span>
+                  <span style={{ 
+                    fontSize: '15px', 
+                    color: isZero ? '#666' : '#A0AEC0', 
+                    fontWeight: 'bold', 
+                    letterSpacing: '0.5px',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis'
+                  }}>
                     {item.label}
                   </span>
                 </div>
@@ -299,7 +316,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
                   color: isZero ? '#555' : '#FFFFFF', 
                   display: 'flex', 
                   alignItems: 'baseline', 
-                  gap: '4px',
+                  gap: '6px',
                   lineHeight: '1.2'
                 }}>
                   {formatNumber(item.count)}
