@@ -12,6 +12,12 @@ const formatNumber = (num: number): string => {
 };
 
 const AdminOverview: React.FC = () => {
+  // Date Range States (Default: All Time)
+  const [startDate, setStartDate] = useState<string>('');
+  const [endDate, setEndDate] = useState<string>('');
+  const [selectedPreset, setSelectedPreset] = useState<string>('ALL');
+
+  // Metrics States
   const [totalRevenue, setTotalRevenue] = useState<number>(0);
   const [totalOrders, setTotalOrders] = useState<number>(0);
   const [pendingOrders, setPendingOrders] = useState<number>(0);
@@ -26,32 +32,95 @@ const AdminOverview: React.FC = () => {
   const [outOfStockCount, setOutOfStockCount] = useState<number>(0);
   const [lowStockCount, setLowStockCount] = useState<number>(0);
 
+  // Helper function for Date Formats (YYYY-MM-DD)
+  const formatDateToISO = (date: Date) => date.toISOString().split('T')[0];
+
+  // Handle Preset Clicks
+  const handlePresetSelect = (preset: string) => {
+    setSelectedPreset(preset);
+    const now = new Date();
+
+    if (preset === 'TODAY') {
+      const todayStr = formatDateToISO(now);
+      setStartDate(todayStr);
+      setEndDate(todayStr);
+    } else if (preset === '7D') {
+      const past7 = new Date();
+      past7.setDate(now.getDate() - 7);
+      setStartDate(formatDateToISO(past7));
+      setEndDate(formatDateToISO(now));
+    } else if (preset === '30D') {
+      const past30 = new Date();
+      past30.setDate(now.getDate() - 30);
+      setStartDate(formatDateToISO(past30));
+      setEndDate(formatDateToISO(now));
+    } else if (preset === 'THIS_MONTH') {
+      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+      setStartDate(formatDateToISO(firstDay));
+      setEndDate(formatDateToISO(now));
+    } else if (preset === 'ALL') {
+      setStartDate('');
+      setEndDate('');
+    }
+  };
+
   const fetchMetricsData = async () => {
     try {
-      // 1. Fetch Metrics from RPC
-      const { data: metrics, error: rpcErr } = await supabase.rpc('get_admin_metrics');
+      // 1. Fetch Orders with Date Filter
+      let ordersQuery = supabase.from('orders').select('status, total_price, created_at');
 
-      if (rpcErr) {
-        console.error('RPC Error:', rpcErr);
-      } else if (metrics) {
-        setTotalOrders(Number(metrics.total_orders) || 0);
-        setTotalRevenue(Number(metrics.total_revenue) || 0);
-        setPendingOrders(Number(metrics.pending) || 0);
-        setProcessingOrders(Number(metrics.processing) || 0);
-        setReceivedOrders(Number(metrics.received) || 0);
-        setShippedOrders(Number(metrics.shipped) || 0);
-        setDeliveredOrders(Number(metrics.delivered) || 0);
-        setCancelledOrders(Number(metrics.cancelled) || 0);
+      if (startDate) {
+        ordersQuery = ordersQuery.gte('created_at', `${startDate}T00:00:00.000Z`);
+      }
+      if (endDate) {
+        ordersQuery = ordersQuery.lte('created_at', `${endDate}T23:59:59.999Z`);
       }
 
-      // 2. Fetch Catalog Active Items
+      const { data: orders, error: orderErr } = await ordersQuery;
+
+      if (!orderErr && orders) {
+        let revenue = 0;
+        let pending = 0;
+        let processing = 0;
+        let received = 0;
+        let shipped = 0;
+        let delivered = 0;
+        let cancelled = 0;
+
+        orders.forEach((o: any) => {
+          const st = (o.status || '').toUpperCase();
+          
+          if (st === 'PENDING') pending++;
+          else if (st === 'PROCESSING' || st === 'PROC') processing++;
+          else if (st === 'RECEIVED' || st === 'REC') received++;
+          else if (st === 'SHIPPED') shipped++;
+          else if (st === 'DELIVERED') delivered++;
+          else if (st === 'CANCELLED') cancelled++;
+
+          // Calculate revenue for non-cancelled orders
+          if (st !== 'CANCELLED') {
+            revenue += Number(o.total_price || 0);
+          }
+        });
+
+        setTotalOrders(orders.length);
+        setTotalRevenue(revenue);
+        setPendingOrders(pending);
+        setProcessingOrders(processing);
+        setReceivedOrders(received);
+        setShippedOrders(shipped);
+        setDeliveredOrders(delivered);
+        setCancelledOrders(cancelled);
+      }
+
+      // 2. Fetch Catalog Active Items (Independent of date)
       const { count: productCount } = await supabase
         .from('products')
         .select('*', { count: 'exact', head: true });
 
       if (productCount !== null) setActiveCatalogItems(productCount);
 
-      // 3. Fetch Out of Stock Items (Stock = 0)
+      // 3. Fetch Stock Alerts
       const { count: outOfStock } = await supabase
         .from('products')
         .select('*', { count: 'exact', head: true })
@@ -59,7 +128,6 @@ const AdminOverview: React.FC = () => {
 
       if (outOfStock !== null) setOutOfStockCount(outOfStock);
 
-      // 4. Fetch Low Stock Items (Stock >= 1 AND Stock <= 3)
       const { count: lowStock } = await supabase
         .from('products')
         .select('*', { count: 'exact', head: true })
@@ -81,16 +149,10 @@ const AdminOverview: React.FC = () => {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => fetchMetricsData())
       .subscribe();
 
-    const productsSubscription = supabase
-      .channel('admin-overview-products')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => fetchMetricsData())
-      .subscribe();
-
     return () => {
       supabase.removeChannel(ordersSubscription);
-      supabase.removeChannel(productsSubscription);
     };
-  }, []);
+  }, [startDate, endDate]);
 
   const calcPercent = (val: number) => {
     if (!totalOrders || totalOrders <= 0) return 0;
@@ -98,7 +160,6 @@ const AdminOverview: React.FC = () => {
     return isNaN(p) ? 0 : Math.min(Math.max(p, 0), 100);
   };
 
-  // Calculate Average Order Value (AOV)
   const validOrderCount = totalOrders - cancelledOrders;
   const avgOrderValue = validOrderCount > 0 ? Math.round(totalRevenue / validOrderCount) : 0;
 
@@ -125,6 +186,67 @@ const AdminOverview: React.FC = () => {
       <style>{`
         * { box-sizing: border-box; }
         
+        /* 📅 DATE FILTER STYLES */
+        .date-filter-container {
+          background-color: #080808;
+          border: 1px solid #222222;
+          padding: 12px;
+          border-radius: 2px;
+          margin-bottom: 12px;
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+        }
+
+        .preset-buttons {
+          display: flex;
+          gap: 6px;
+          overflow-x: auto;
+          scrollbar-width: none;
+        }
+
+        .preset-btn {
+          background: #111;
+          border: 1px solid #222;
+          color: #888;
+          font-size: 10px;
+          font-weight: bold;
+          padding: 6px 10px;
+          cursor: pointer;
+          border-radius: 2px;
+          white-space: nowrap;
+          transition: all 0.2s ease;
+        }
+
+        .preset-btn.active {
+          background: #fff;
+          color: #000;
+          border-color: #fff;
+        }
+
+        .custom-date-inputs {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .date-input {
+          background: #111;
+          border: 1px solid #222;
+          color: #fff;
+          font-family: monospace;
+          font-size: 11px;
+          padding: 6px 8px;
+          border-radius: 2px;
+          outline: none;
+          width: 100%;
+        }
+
+        .date-input::-webkit-calendar-picker-indicator {
+          filter: invert(1);
+          cursor: pointer;
+        }
+
         .metrics-grid {
           display: grid;
           grid-template-columns: repeat(2, 1fr);
@@ -132,13 +254,26 @@ const AdminOverview: React.FC = () => {
           margin-top: 10px;
           margin-bottom: 10px;
           width: 100%;
-          max-width: 100%;
         }
 
         @media (min-width: 1024px) {
           .metrics-grid {
             grid-template-columns: repeat(4, 1fr);
             gap: 14px;
+          }
+
+          .date-filter-container {
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+          }
+
+          .custom-date-inputs {
+            width: auto;
+          }
+
+          .date-input {
+            width: 135px;
           }
         }
 
@@ -148,7 +283,6 @@ const AdminOverview: React.FC = () => {
           padding: 14px 12px;
           border-radius: 2px;
           width: 100%;
-          min-width: 0;
         }
 
         .status-grid {
@@ -169,7 +303,6 @@ const AdminOverview: React.FC = () => {
           border: 1px solid #222222;
           padding: 12px 10px;
           border-radius: 2px;
-          min-width: 0;
         }
 
         .secondary-metrics-grid {
@@ -180,14 +313,75 @@ const AdminOverview: React.FC = () => {
         }
       `}</style>
 
+      {/* 📅 DATE RANGE FILTER COMPONENT */}
+      <div className="date-filter-container">
+        
+        {/* Quick Presets */}
+        <div className="preset-buttons">
+          <button 
+            className={`preset-btn ${selectedPreset === 'ALL' ? 'active' : ''}`}
+            onClick={() => handlePresetSelect('ALL')}
+          >
+            ALL TIME
+          </button>
+          <button 
+            className={`preset-btn ${selectedPreset === 'TODAY' ? 'active' : ''}`}
+            onClick={() => handlePresetSelect('TODAY')}
+          >
+            TODAY
+          </button>
+          <button 
+            className={`preset-btn ${selectedPreset === '7D' ? 'active' : ''}`}
+            onClick={() => handlePresetSelect('7D')}
+          >
+            7 DAYS
+          </button>
+          <button 
+            className={`preset-btn ${selectedPreset === '30D' ? 'active' : ''}`}
+            onClick={() => handlePresetSelect('30D')}
+          >
+            30 DAYS
+          </button>
+          <button 
+            className={`preset-btn ${selectedPreset === 'THIS_MONTH' ? 'active' : ''}`}
+            onClick={() => handlePresetSelect('THIS_MONTH')}
+          >
+            THIS MONTH
+          </button>
+        </div>
+
+        {/* Custom Range Picker (1 to 15, 20 to 25 etc.) */}
+        <div className="custom-date-inputs">
+          <input 
+            type="date" 
+            className="date-input"
+            value={startDate}
+            onChange={(e) => {
+              setStartDate(e.target.value);
+              setSelectedPreset('CUSTOM');
+            }}
+          />
+          <span style={{ color: '#555', fontSize: '11px' }}>TO</span>
+          <input 
+            type="date" 
+            className="date-input"
+            value={endDate}
+            onChange={(e) => {
+              setEndDate(e.target.value);
+              setSelectedPreset('CUSTOM');
+            }}
+          />
+        </div>
+
+      </div>
+
       {/* 1. Fulfillment Breakdown Section */}
       <div style={{ 
         backgroundColor: '#080808', 
         border: '1px solid #222222', 
         padding: '14px', 
         borderRadius: '2px', 
-        width: '100%',
-        maxWidth: '100%'
+        width: '100%'
       }}>
         <span style={{ fontSize: '15px', color: '#CBD5E0', letterSpacing: '1px', fontWeight: 'bold', display: 'block', marginBottom: '10px' }}>
           FULFILLMENT STATUS
@@ -211,30 +405,14 @@ const AdminOverview: React.FC = () => {
 
             return (
               <div key={item.key} className="status-card">
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', overflow: 'hidden' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
                   <span style={{ color: isZero ? '#444' : item.color, fontSize: '10px', flexShrink: 0 }}>●</span>
-                  <span style={{ 
-                    fontSize: '15px', 
-                    color: isZero ? '#666' : '#A0AEC0', 
-                    fontWeight: 'bold', 
-                    letterSpacing: '0.5px',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis'
-                  }}>
+                  <span style={{ fontSize: '15px', color: isZero ? '#666' : '#A0AEC0', fontWeight: 'bold', letterSpacing: '0.5px' }}>
                     {item.label}
                   </span>
                 </div>
 
-                <div style={{ 
-                  fontSize: '20px', 
-                  fontWeight: 'bold', 
-                  color: isZero ? '#555' : '#FFFFFF', 
-                  display: 'flex', 
-                  alignItems: 'baseline', 
-                  gap: '6px',
-                  lineHeight: '1.2'
-                }}>
+                <div style={{ fontSize: '20px', fontWeight: 'bold', color: isZero ? '#555' : '#FFFFFF', display: 'flex', alignItems: 'baseline', gap: '6px' }}>
                   {formatNumber(item.count)}
                   <span style={{ fontSize: '10px', color: isZero ? '#444' : '#888', fontWeight: 'normal' }}>
                     ({percent}%)
@@ -246,7 +424,7 @@ const AdminOverview: React.FC = () => {
         </div>
       </div>
 
-      {/* 2. Primary Metric Cards (Static) */}
+      {/* 2. Primary Metric Cards */}
       <div className="metrics-grid">
 
         <div className="metric-card">
@@ -257,7 +435,7 @@ const AdminOverview: React.FC = () => {
             ৳{formatNumber(totalRevenue)}
           </div>
           <span style={{ fontSize: '10px', color: '#718096', marginTop: '4px', display: 'block' }}>
-            * NO CANCELLED
+            * FILTERED REVENUE
           </span>
         </div>
 
@@ -269,7 +447,7 @@ const AdminOverview: React.FC = () => {
             {formatNumber(totalOrders)}
           </div>
           <span style={{ fontSize: '10px', color: '#718096', marginTop: '4px', display: 'block' }}>
-            * ALL LOGGED
+            * FILTERED ORDERS
           </span>
         </div>
 
@@ -301,7 +479,7 @@ const AdminOverview: React.FC = () => {
 
       </div>
 
-      {/* 3. Secondary Insights Row (Static) */}
+      {/* 3. Secondary Insights Row */}
       <div className="secondary-metrics-grid">
         <div className="metric-card">
           <span style={{ fontSize: '15px', color: '#A0AEC0', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
