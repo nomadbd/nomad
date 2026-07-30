@@ -137,6 +137,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
           display: grid;
           grid-template-columns: repeat(2, 1fr);
           gap: 10px;
+          margin-top: 20px;
           margin-bottom: 20px;
           width: 100%;
           max-width: 100%;
@@ -167,7 +168,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
           background-color: #0e0e0e;
         }
 
-        /* মোবাইলে ২ কলাম রাখা হলো যাতে ১৫px ফন্ট সুন্দর আটে */
+        /* মোবাইলে ২ কলাম রাখা হলো যাতে সব টেক্সট না কেটে দেখা যায় */
         .status-grid {
           display: grid;
           grid-template-columns: repeat(2, 1fr);
@@ -175,7 +176,6 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
           width: 100%;
         }
 
-        /* বড় স্ক্রিনে ৩ কলাম দেখাবে */
         @media (min-width: 640px) {
           .status-grid {
             grid-template-columns: repeat(3, 1fr);
@@ -194,7 +194,6 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
           display: grid;
           grid-template-columns: repeat(2, 1fr);
           gap: 10px;
-          margin-top: 20px;
           width: 100%;
         }
       `}</style>
@@ -209,7 +208,73 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
         </span>
       </div>
 
-      {/* 4 Primary Metric Cards */}
+      {/* 1. Fulfillment Breakdown Section (Moved to top) */}
+      <div style={{ 
+        backgroundColor: '#080808', 
+        border: '1px solid #222222', 
+        padding: '14px', 
+        borderRadius: '2px', 
+        width: '100%',
+        maxWidth: '100%'
+      }}>
+        <span style={{ fontSize: '15px', color: '#CBD5E0', letterSpacing: '1px', fontWeight: 'bold', display: 'block', marginBottom: '10px' }}>
+          FULFILLMENT STATUS
+        </span>
+
+        {/* Multi-Color Progress Bar */}
+        <div style={{ display: 'flex', height: '4px', backgroundColor: '#181818', borderRadius: '2px', overflow: 'hidden', marginBottom: '12px', width: '100%' }}>
+          <div style={{ width: `${calcPercent(pendingOrders)}%`, backgroundColor: '#facc15' }} />
+          <div style={{ width: `${calcPercent(processingOrders)}%`, backgroundColor: '#c084fc' }} />
+          <div style={{ width: `${calcPercent(receivedOrders)}%`, backgroundColor: '#60a5fa' }} />
+          <div style={{ width: `${calcPercent(shippedOrders)}%`, backgroundColor: '#22d3ee' }} />
+          <div style={{ width: `${calcPercent(deliveredOrders)}%`, backgroundColor: '#4ade80' }} />
+          <div style={{ width: `${calcPercent(cancelledOrders)}%`, backgroundColor: '#f87171' }} />
+        </div>
+
+        {/* Status Breakdown - Responsive Grid */}
+        <div className="status-grid">
+          {statusItems.map((item) => {
+            const percent = calcPercent(item.count).toFixed(0);
+            const isZero = item.count === 0;
+
+            return (
+              <div key={item.key} className="status-card">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', overflow: 'hidden' }}>
+                  <span style={{ color: isZero ? '#444' : item.color, fontSize: '10px', flexShrink: 0 }}>●</span>
+                  <span style={{ 
+                    fontSize: '15px', 
+                    color: isZero ? '#666' : '#A0AEC0', 
+                    fontWeight: 'bold', 
+                    letterSpacing: '0.5px',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis'
+                  }}>
+                    {item.label}
+                  </span>
+                </div>
+
+                <div style={{ 
+                  fontSize: '20px', 
+                  fontWeight: 'bold', 
+                  color: isZero ? '#555' : '#FFFFFF', 
+                  display: 'flex', 
+                  alignItems: 'baseline', 
+                  gap: '6px',
+                  lineHeight: '1.2'
+                }}>
+                  {formatNumber(item.count)}
+                  <span style={{ fontSize: '10px', color: isZero ? '#444' : '#888', fontWeight: 'normal' }}>
+                    ({percent}%)
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* 2. Primary Metric Cards (Moved to Middle) */}
       <div className="metrics-grid">
 
         <div className="metric-card clickable-card" onClick={() => onNavigateToFinance && onNavigateToFinance()}>
@@ -264,73 +329,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
 
       </div>
 
-      {/* Fulfillment Breakdown Section */}
-      <div style={{ 
-        backgroundColor: '#080808', 
-        border: '1px solid #222222', 
-        padding: '14px', 
-        borderRadius: '2px', 
-        width: '100%',
-        maxWidth: '100%'
-      }}>
-        <span style={{ fontSize: '15px', color: '#CBD5E0', letterSpacing: '1px', fontWeight: 'bold', display: 'block', marginBottom: '10px' }}>
-          FULFILLMENT STATUS
-        </span>
-
-        {/* Multi-Color Progress Bar */}
-        <div style={{ display: 'flex', height: '4px', backgroundColor: '#181818', borderRadius: '2px', overflow: 'hidden', marginBottom: '12px', width: '100%' }}>
-          <div style={{ width: `${calcPercent(pendingOrders)}%`, backgroundColor: '#facc15' }} />
-          <div style={{ width: `${calcPercent(processingOrders)}%`, backgroundColor: '#c084fc' }} />
-          <div style={{ width: `${calcPercent(receivedOrders)}%`, backgroundColor: '#60a5fa' }} />
-          <div style={{ width: `${calcPercent(shippedOrders)}%`, backgroundColor: '#22d3ee' }} />
-          <div style={{ width: `${calcPercent(deliveredOrders)}%`, backgroundColor: '#4ade80' }} />
-          <div style={{ width: `${calcPercent(cancelledOrders)}%`, backgroundColor: '#f87171' }} />
-        </div>
-
-        {/* Status Breakdown - Responsive 2 Columns on Mobile */}
-        <div className="status-grid">
-          {statusItems.map((item) => {
-            const percent = calcPercent(item.count).toFixed(0);
-            const isZero = item.count === 0;
-
-            return (
-              <div key={item.key} className="status-card">
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', overflow: 'hidden' }}>
-                  <span style={{ color: isZero ? '#444' : item.color, fontSize: '10px', flexShrink: 0 }}>●</span>
-                  <span style={{ 
-                    fontSize: '15px', 
-                    color: isZero ? '#666' : '#A0AEC0', 
-                    fontWeight: 'bold', 
-                    letterSpacing: '0.5px',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis'
-                  }}>
-                    {item.label}
-                  </span>
-                </div>
-
-                <div style={{ 
-                  fontSize: '20px', 
-                  fontWeight: 'bold', 
-                  color: isZero ? '#555' : '#FFFFFF', 
-                  display: 'flex', 
-                  alignItems: 'baseline', 
-                  gap: '6px',
-                  lineHeight: '1.2'
-                }}>
-                  {formatNumber(item.count)}
-                  <span style={{ fontSize: '10px', color: isZero ? '#444' : '#888', fontWeight: 'normal' }}>
-                    ({percent}%)
-                  </span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Secondary Insights Row */}
+      {/* 3. Secondary Insights Row (Bottom) */}
       <div className="secondary-metrics-grid">
         <div className="metric-card">
           <span style={{ fontSize: '15px', color: '#A0AEC0', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
