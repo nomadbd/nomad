@@ -17,6 +17,31 @@ const AdminDashboard: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [isProfileOpen, setIsProfileOpen] = useState<boolean>(false);
 
+  // 📜 Hide on Scroll State for Mobile Header
+  const [isHeaderVisible, setIsHeaderVisible] = useState<boolean>(true);
+  const [lastScrollY, setLastScrollY] = useState<number>(0);
+
+  // 📱 Mobile Scroll Listener (Scroll down = Hide, Scroll up = Show)
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+
+      // মেনু খোলা থাকলে হেডার হাইড হবে না
+      if (menuOpen) return;
+
+      if (currentScrollY > lastScrollY && currentScrollY > 40) {
+        setIsHeaderVisible(false); // Hide Header on Scroll Down
+      } else {
+        setIsHeaderVisible(true);  // Show Header on Scroll Up
+      }
+
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [lastScrollY, menuOpen]);
+
   const fetchCurrentUserAndRole = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -49,10 +74,10 @@ const AdminDashboard: React.FC = () => {
     fetchCurrentUserAndRole();
   }, []);
 
-  // অ্যাডমিন রোল চেক (ADMIN অথবা ADMINISTRATOR উভয়কেই সাপোর্ট করবে)
+  // অ্যাডমিন রোল চেক
   const isAdmin = userRole.toUpperCase() === 'ADMIN' || userRole.toUpperCase() === 'ADMINISTRATOR';
 
-  // সিকিউরিটি গার্ড: যদি অ-অ্যাডমিন ইউজার কোনোভাবে settings ট্যাবে আসার চেষ্টা করে, তাকে overview-তে রিডাইরেক্ট করবে
+  // সিকিউরিটি গার্ড
   useEffect(() => {
     if (!loading && !isAdmin && activeTab === 'settings') {
       setActiveTab('overview');
@@ -105,11 +130,17 @@ const AdminDashboard: React.FC = () => {
           .nomad-sidebar {
             width: 100% !important;
             height: auto !important;
-            position: relative !important;
+            position: fixed !important;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
             background-color: #060606;
             border-bottom: 1px solid #1a1a1a;
             padding: 14px 16px;
             box-sizing: border-box;
+            transform: ${isHeaderVisible ? 'translateY(0)' : 'translateY(-100%)'};
+            transition: transform 0.3s ease-in-out;
           }
 
           .nomad-menu-toggle {
@@ -132,9 +163,10 @@ const AdminDashboard: React.FC = () => {
             border-top: 1px solid #1f1f1f;
           }
 
+          /* মোবিলে স্টিকি হেডারের জন্য উপরে স্পেস দেওয়া হলো যাতে কন্টেন্ট কেটে না যায় */
           .nomad-main {
             width: 100% !important;
-            padding: 16px 12px 40px 12px;
+            padding: 75px 12px 40px 12px !important;
           }
         }
 
@@ -158,6 +190,8 @@ const AdminDashboard: React.FC = () => {
             flex-direction: column;
             justify-content: space-between;
             overflow-y: auto;
+            transform: none !important;
+            background-color: #060606;
           }
 
           .nomad-menu-toggle {
@@ -179,7 +213,7 @@ const AdminDashboard: React.FC = () => {
           }
 
           .nomad-main {
-            padding: 24px 28px;
+            padding: 24px 28px !important;
           }
         }
 
@@ -231,7 +265,7 @@ const AdminDashboard: React.FC = () => {
 
       <div className="nomad-layout">
 
-        {/* SIDEBAR */}
+        {/* SIDEBAR / MOBILE HEADER */}
         <aside className="nomad-sidebar">
 
           {/* TOP SECTION: BRAND & NAVIGATION */}
@@ -349,7 +383,7 @@ const AdminDashboard: React.FC = () => {
           {activeTab === 'overview' && <AdminOverview key="overview" />}
           {activeTab === 'orders' && <AdminOrders key="orders" />}
           {activeTab === 'products' && <AdminProducts key="products" />}
-          
+
           {/* 🔒 AdminSettings শুধুমাত্র Admin ইউজারের জন্য রেন্ডার হবে */}
           {activeTab === 'settings' && (
             isAdmin ? (
