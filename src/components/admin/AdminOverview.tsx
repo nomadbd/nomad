@@ -177,7 +177,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
         .status-card {
           background-color: #0d0d0d;
           border: 1px solid #222222;
-          padding: 10px;
+          padding: 10px 8px;
           border-radius: 2px;
         }
 
@@ -192,10 +192,10 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
 
       {/* Header Title */}
       <div style={{ marginBottom: '16px', width: '100%' }}>
-        <h2 style={{ fontSize: '14px', fontWeight: 'bold', letterSpacing: '2px', margin: 0, color: '#FFFFFF' }}>
+        <h2 style={{ fontSize: '15px', fontWeight: 'bold', letterSpacing: '2px', margin: 0, color: '#FFFFFF' }}>
           METRICS OVERVIEW
         </h2>
-        <span style={{ fontSize: '9px', color: '#A0AEC0', letterSpacing: '1px' }}>
+        <span style={{ fontSize: '10px', color: '#A0AEC0', letterSpacing: '1px' }}>
           REAL-TIME INSIGHTS
         </span>
       </div>
@@ -204,51 +204,51 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
       <div className="metrics-grid">
 
         <div className="metric-card clickable-card" onClick={() => onNavigateToFinance && onNavigateToFinance()}>
-          <span style={{ fontSize: '9px', color: '#A0AEC0', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
+          <span style={{ fontSize: '15px', color: '#A0AEC0', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
             TOTAL REVENUE
           </span>
           <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF' }}>
             ৳{formatNumber(totalRevenue)}
           </div>
-          <span style={{ fontSize: '8px', color: '#718096', marginTop: '4px', display: 'block' }}>
+          <span style={{ fontSize: '10px', color: '#718096', marginTop: '4px', display: 'block' }}>
             * NO CANCELLED
           </span>
         </div>
 
         <div className="metric-card">
-          <span style={{ fontSize: '9px', color: '#A0AEC0', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
+          <span style={{ fontSize: '15px', color: '#A0AEC0', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
             TOTAL ORDERS
           </span>
           <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF' }}>
             {formatNumber(totalOrders)}
           </div>
-          <span style={{ fontSize: '8px', color: '#718096', marginTop: '4px', display: 'block' }}>
+          <span style={{ fontSize: '10px', color: '#718096', marginTop: '4px', display: 'block' }}>
             * ALL LOGGED
           </span>
         </div>
 
         <div className="metric-card">
-          <span style={{ fontSize: '9px', color: '#A0AEC0', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
+          <span style={{ fontSize: '15px', color: '#A0AEC0', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
             ACTIVE QUEUE
           </span>
-          <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF' }}>
-            {formatNumber(pendingOrders + processingOrders)}
-            <span style={{ fontSize: '12px', color: '#718096', margin: '0 4px' }}>/</span>
-            <span style={{ fontSize: '14px', color: '#CBD5E0' }}>{formatNumber(receivedOrders)} REC</span>
+          <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF', display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+            <span>{formatNumber(pendingOrders + processingOrders)}</span>
+            <span style={{ fontSize: '14px', color: '#718096' }}>/</span>
+            <span style={{ fontSize: '15px', color: '#CBD5E0', fontWeight: 'normal' }}>{formatNumber(receivedOrders)} REC</span>
           </div>
-          <span style={{ fontSize: '8px', color: '#718096', marginTop: '4px', display: 'block' }}>
+          <span style={{ fontSize: '10px', color: '#718096', marginTop: '4px', display: 'block' }}>
             * PENDING & PROC
           </span>
         </div>
 
         <div className="metric-card clickable-card" onClick={() => onNavigateToProducts && onNavigateToProducts()}>
-          <span style={{ fontSize: '9px', color: '#A0AEC0', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
+          <span style={{ fontSize: '15px', color: '#A0AEC0', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
             CATALOG ITEMS
           </span>
           <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF' }}>
             {formatNumber(activeCatalogItems)}
           </div>
-          <span style={{ fontSize: '8px', color: '#718096', marginTop: '4px', display: 'block' }}>
+          <span style={{ fontSize: '10px', color: '#718096', marginTop: '4px', display: 'block' }}>
             * LIVE ITEMS
           </span>
         </div>
@@ -264,7 +264,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
         width: '100%',
         maxWidth: '100%'
       }}>
-        <span style={{ fontSize: '9px', color: '#CBD5E0', letterSpacing: '1.5px', fontWeight: 'bold', display: 'block', marginBottom: '10px' }}>
+        <span style={{ fontSize: '15px', color: '#CBD5E0', letterSpacing: '1px', fontWeight: 'bold', display: 'block', marginBottom: '10px' }}>
           FULFILLMENT STATUS
         </span>
 
@@ -286,16 +286,24 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
 
             return (
               <div key={item.key} className="status-card">
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
-                  <span style={{ color: isZero ? '#444' : item.color, fontSize: '9px' }}>●</span>
-                  <span style={{ fontSize: '9px', color: isZero ? '#666' : '#A0AEC0', fontWeight: 'bold', letterSpacing: '0.5px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '4px' }}>
+                  <span style={{ color: isZero ? '#444' : item.color, fontSize: '10px' }}>●</span>
+                  <span style={{ fontSize: '15px', color: isZero ? '#666' : '#A0AEC0', fontWeight: 'bold', letterSpacing: '0.5px' }}>
                     {item.label}
                   </span>
                 </div>
 
-                <div style={{ fontSize: '13px', fontWeight: 'bold', color: isZero ? '#555' : '#FFFFFF', paddingLeft: '15px' }}>
+                <div style={{ 
+                  fontSize: '20px', 
+                  fontWeight: 'bold', 
+                  color: isZero ? '#555' : '#FFFFFF', 
+                  display: 'flex', 
+                  alignItems: 'baseline', 
+                  gap: '4px',
+                  lineHeight: '1.2'
+                }}>
                   {formatNumber(item.count)}
-                  <span style={{ fontSize: '9px', color: isZero ? '#444' : '#CBD5E0', marginLeft: '6px', fontWeight: 'normal' }}>
+                  <span style={{ fontSize: '10px', color: isZero ? '#444' : '#888', fontWeight: 'normal' }}>
                     ({percent}%)
                   </span>
                 </div>
@@ -305,16 +313,16 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
         </div>
       </div>
 
-      {/* Secondary Insights Row (AOV & Split Stock Alerts) */}
+      {/* Secondary Insights Row */}
       <div className="secondary-metrics-grid">
         <div className="metric-card">
-          <span style={{ fontSize: '9px', color: '#A0AEC0', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
+          <span style={{ fontSize: '15px', color: '#A0AEC0', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
             AVG ORDER VALUE
           </span>
           <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF' }}>
             ৳{formatNumber(avgOrderValue)}
           </div>
-          <span style={{ fontSize: '8px', color: '#718096', marginTop: '4px', display: 'block' }}>
+          <span style={{ fontSize: '10px', color: '#718096', marginTop: '4px', display: 'block' }}>
             * PER ACTIVE ORDER
           </span>
         </div>
@@ -323,7 +331,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
           className="metric-card clickable-card" 
           onClick={() => onNavigateToProducts && onNavigateToProducts()}
         >
-          <span style={{ fontSize: '9px', color: '#A0AEC0', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
+          <span style={{ fontSize: '15px', color: '#A0AEC0', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
             STOCK ALERTS
           </span>
           
@@ -333,8 +341,8 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
                 <span style={{ color: outOfStockCount > 0 ? '#f87171' : '#FFFFFF', fontSize: '20px' }}>
                   {formatNumber(outOfStockCount)} OUT
                 </span>
-                <span style={{ fontSize: '12px', color: '#718096' }}>/</span>
-                <span style={{ color: lowStockCount > 0 ? '#facc15' : '#FFFFFF', fontSize: '14px' }}>
+                <span style={{ fontSize: '14px', color: '#718096' }}>/</span>
+                <span style={{ color: lowStockCount > 0 ? '#facc15' : '#FFFFFF', fontSize: '15px', fontWeight: 'normal' }}>
                   {formatNumber(lowStockCount)} LOW
                 </span>
               </div>
@@ -343,7 +351,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
             )}
           </div>
 
-          <span style={{ fontSize: '8px', color: '#718096', marginTop: '4px', display: 'block' }}>
+          <span style={{ fontSize: '10px', color: '#718096', marginTop: '4px', display: 'block' }}>
             {outOfStockCount > 0 || lowStockCount > 0 
               ? `* ${outOfStockCount} OUT OF STOCK, ${lowStockCount} LOW (≤ 3)` 
               : '* ALL STOCKS HEALTHY'}
