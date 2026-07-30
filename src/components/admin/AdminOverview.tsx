@@ -1,11 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../../supabaseClient';
 
-interface AdminOverviewProps {
-  onNavigateToFinance?: () => void;
-  onNavigateToProducts?: () => void;
-}
-
 const formatNumber = (num: number): string => {
   if (num >= 1_000_000) {
     return (num / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M';
@@ -16,10 +11,7 @@ const formatNumber = (num: number): string => {
   return num.toLocaleString();
 };
 
-const AdminOverview: React.FC<AdminOverviewProps> = ({ 
-  onNavigateToFinance, 
-  onNavigateToProducts 
-}) => {
+const AdminOverview: React.FC = () => {
   const [totalRevenue, setTotalRevenue] = useState<number>(0);
   const [totalOrders, setTotalOrders] = useState<number>(0);
   const [pendingOrders, setPendingOrders] = useState<number>(0);
@@ -137,8 +129,8 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
           display: grid;
           grid-template-columns: repeat(2, 1fr);
           gap: 10px;
-          margin-top: 14px;
-          margin-bottom: 14px;
+          margin-top: 10px;
+          margin-bottom: 10px;
           width: 100%;
           max-width: 100%;
         }
@@ -157,15 +149,6 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
           border-radius: 2px;
           width: 100%;
           min-width: 0;
-        }
-
-        .clickable-card {
-          cursor: pointer;
-        }
-
-        .clickable-card:hover {
-          border-color: #444 !important;
-          background-color: #0e0e0e;
         }
 
         .status-grid {
@@ -197,7 +180,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
         }
       `}</style>
 
-      {/* 1. Fulfillment Breakdown Section (Top-most element now) */}
+      {/* 1. Fulfillment Breakdown Section */}
       <div style={{ 
         backgroundColor: '#080808', 
         border: '1px solid #222222', 
@@ -220,7 +203,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
           <div style={{ width: `${calcPercent(cancelledOrders)}%`, backgroundColor: '#f87171' }} />
         </div>
 
-        {/* Status Breakdown - Responsive Grid */}
+        {/* Status Breakdown Grid */}
         <div className="status-grid">
           {statusItems.map((item) => {
             const percent = calcPercent(item.count).toFixed(0);
@@ -263,10 +246,9 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
         </div>
       </div>
 
-      {/* 2. Primary Metric Cards (Middle) */}
+      {/* 2. Primary Metric Cards (Static) */}
       <div className="metrics-grid">
 
-        {/* Total Revenue - Not Clickable */}
         <div className="metric-card">
           <span style={{ fontSize: '15px', color: '#A0AEC0', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
             TOTAL REVENUE
@@ -305,7 +287,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
           </span>
         </div>
 
-        <div className="metric-card clickable-card" onClick={() => onNavigateToProducts && onNavigateToProducts()}>
+        <div className="metric-card">
           <span style={{ fontSize: '15px', color: '#A0AEC0', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
             CATALOG ITEMS
           </span>
@@ -319,7 +301,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
 
       </div>
 
-      {/* 3. Secondary Insights Row (Bottom) */}
+      {/* 3. Secondary Insights Row (Static) */}
       <div className="secondary-metrics-grid">
         <div className="metric-card">
           <span style={{ fontSize: '15px', color: '#A0AEC0', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
@@ -333,10 +315,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
           </span>
         </div>
 
-        <div 
-          className="metric-card clickable-card" 
-          onClick={() => onNavigateToProducts && onNavigateToProducts()}
-        >
+        <div className="metric-card">
           <span style={{ fontSize: '15px', color: '#A0AEC0', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
             STOCK ALERTS
           </span>
