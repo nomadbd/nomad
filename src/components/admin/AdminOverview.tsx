@@ -181,7 +181,7 @@ const AdminOverview: React.FC = () => {
     { key: 'PROC', label: 'PROC', count: processingOrders, color: '#c084fc' },
     { key: 'REC', label: 'REC', count: receivedOrders, color: '#60a5fa' },
     { key: 'SHIPPED', label: 'SHIPPED', count: shippedOrders, color: '#22d3ee' },
-    { key: 'DELIVERED', label: 'DELIVERED', count: deliveredOrders, color: '#4ade80' },
+    { key: 'DELIVERED', label: 'DELIVERED', color: '#4ade80', count: deliveredOrders },
     { key: 'CANCELLED', label: 'CANCELLED', count: cancelledOrders, color: '#f87171' },
   ];
 
@@ -220,7 +220,7 @@ const AdminOverview: React.FC = () => {
         .preset-btn {
           background: #111;
           border: 1px solid #222;
-          color: #888;
+          color: #666; /* ধূসর কালার */
           font-size: 10px;
           font-weight: bold;
           padding: 6px 10px;
@@ -230,10 +230,11 @@ const AdminOverview: React.FC = () => {
           transition: all 0.2s ease;
         }
 
+        /* 🔹 সিলেক্ট করা ফিল্টারের ব্যাকগ্রাউন্ড হবে না, শুধু টেক্সট একদম সাদা হবে */
         .preset-btn.active {
-          background: #fff;
-          color: #000;
-          border-color: #fff;
+          background: #111;
+          color: #FFFFFF;
+          border-color: #333;
         }
 
         .custom-date-inputs {
@@ -242,11 +243,11 @@ const AdminOverview: React.FC = () => {
           gap: 8px;
         }
 
-        /* 🔹 তারিখ ফিল্ডকে ধূসর করার স্টাইল */
+        /* 🔹 তারিখ ইনপুট ফিল্ড ধূসর করা */
         .date-input {
           background: #111;
           border: 1px solid #222;
-          color: #888888; /* ধূসর রঙ */
+          color: #666666; /* mm/dd/yyyy ধূসর রঙ */
           font-family: monospace;
           font-size: 11px;
           padding: 6px 8px;
@@ -255,15 +256,15 @@ const AdminOverview: React.FC = () => {
           width: 100%;
         }
 
-        /* নতুন তারিখ সিলেক্ট করলে লেখা সাদা দেখাবে */
+        /* তারিখ সিলেক্ট করলে লেখা সাদা হবে */
         .date-input:valid,
         .date-input[value]:not([value=""]) {
           color: #FFFFFF;
         }
 
-        /* ক্যালেন্ডার আইকন টিউন করা */
+        /* ক্যালেন্ডার আইকন ধূসর করা */
         .date-input::-webkit-calendar-picker-indicator {
-          filter: invert(0.6);
+          filter: opacity(0.4) grayscale(100%);
           cursor: pointer;
         }
 
@@ -378,7 +379,8 @@ const AdminOverview: React.FC = () => {
               setSelectedPreset('CUSTOM');
             }}
           />
-          <span style={{ color: '#555', fontSize: '11px' }}>TO</span>
+          {/* 🔹 TO টেক্সটের রঙ ধূসর করা হয়েছে */}
+          <span style={{ color: '#666666', fontSize: '11px', fontWeight: 'bold' }}>TO</span>
           <input 
             type="date" 
             className="date-input"
