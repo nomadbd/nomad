@@ -12,7 +12,7 @@ const formatNumber = (num: number): string => {
 };
 
 const AdminOverview: React.FC = () => {
-  // Date Range States (Default: All Time)
+  // Date Range States (Default: ALL TIME)
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
   const [selectedPreset, setSelectedPreset] = useState<string>('ALL');
@@ -32,8 +32,13 @@ const AdminOverview: React.FC = () => {
   const [outOfStockCount, setOutOfStockCount] = useState<number>(0);
   const [lowStockCount, setLowStockCount] = useState<number>(0);
 
-  // Helper function for Date Formats (YYYY-MM-DD)
-  const formatDateToISO = (date: Date) => date.toISOString().split('T')[0];
+  // Helper for Date Formats
+  const formatDateToInput = (d: Date) => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
 
   // Handle Preset Clicks
   const handlePresetSelect = (preset: string) => {
@@ -41,23 +46,23 @@ const AdminOverview: React.FC = () => {
     const now = new Date();
 
     if (preset === 'TODAY') {
-      const todayStr = formatDateToISO(now);
+      const todayStr = formatDateToInput(now);
       setStartDate(todayStr);
       setEndDate(todayStr);
     } else if (preset === '7D') {
       const past7 = new Date();
       past7.setDate(now.getDate() - 7);
-      setStartDate(formatDateToISO(past7));
-      setEndDate(formatDateToISO(now));
+      setStartDate(formatDateToInput(past7));
+      setEndDate(formatDateToInput(now));
     } else if (preset === '30D') {
       const past30 = new Date();
       past30.setDate(now.getDate() - 30);
-      setStartDate(formatDateToISO(past30));
-      setEndDate(formatDateToISO(now));
+      setStartDate(formatDateToInput(past30));
+      setEndDate(formatDateToInput(now));
     } else if (preset === 'THIS_MONTH') {
       const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-      setStartDate(formatDateToISO(firstDay));
-      setEndDate(formatDateToISO(now));
+      setStartDate(formatDateToInput(firstDay));
+      setEndDate(formatDateToInput(now));
     } else if (preset === 'ALL') {
       setStartDate('');
       setEndDate('');
@@ -66,13 +71,14 @@ const AdminOverview: React.FC = () => {
 
   const fetchMetricsData = async () => {
     try {
-      // 1. Fetch Orders with Date Filter
+      // 1. Fetch Orders Query
       let ordersQuery = supabase.from('orders').select('status, total_price, created_at');
 
-      if (startDate) {
+      // Only apply date filters if valid dates are explicitly provided
+      if (startDate && startDate.trim() !== '') {
         ordersQuery = ordersQuery.gte('created_at', `${startDate}T00:00:00.000Z`);
       }
-      if (endDate) {
+      if (endDate && endDate.trim() !== '') {
         ordersQuery = ordersQuery.lte('created_at', `${endDate}T23:59:59.999Z`);
       }
 
@@ -97,7 +103,7 @@ const AdminOverview: React.FC = () => {
           else if (st === 'DELIVERED') delivered++;
           else if (st === 'CANCELLED') cancelled++;
 
-          // Calculate revenue for non-cancelled orders
+          // Calculate revenue for active orders
           if (st !== 'CANCELLED') {
             revenue += Number(o.total_price || 0);
           }
@@ -113,7 +119,7 @@ const AdminOverview: React.FC = () => {
         setCancelledOrders(cancelled);
       }
 
-      // 2. Fetch Catalog Active Items (Independent of date)
+      // 2. Fetch Catalog Items (Independent of date)
       const { count: productCount } = await supabase
         .from('products')
         .select('*', { count: 'exact', head: true });
@@ -350,7 +356,7 @@ const AdminOverview: React.FC = () => {
           </button>
         </div>
 
-        {/* Custom Range Picker (1 to 15, 20 to 25 etc.) */}
+        {/* Custom Range Picker */}
         <div className="custom-date-inputs">
           <input 
             type="date" 
@@ -435,7 +441,7 @@ const AdminOverview: React.FC = () => {
             ৳{formatNumber(totalRevenue)}
           </div>
           <span style={{ fontSize: '10px', color: '#718096', marginTop: '4px', display: 'block' }}>
-            * FILTERED REVENUE
+            * {selectedPreset === 'ALL' ? 'ALL TIME' : 'FILTERED'} REVENUE
           </span>
         </div>
 
@@ -447,7 +453,7 @@ const AdminOverview: React.FC = () => {
             {formatNumber(totalOrders)}
           </div>
           <span style={{ fontSize: '10px', color: '#718096', marginTop: '4px', display: 'block' }}>
-            * FILTERED ORDERS
+            * {selectedPreset === 'ALL' ? 'ALL TIME' : 'FILTERED'} ORDERS
           </span>
         </div>
 
