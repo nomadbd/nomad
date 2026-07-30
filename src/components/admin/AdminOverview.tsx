@@ -3,6 +3,7 @@ import { supabase } from '../../supabaseClient';
 
 interface AdminOverviewProps {
   onNavigateToFinance?: () => void;
+  onNavigateToProducts?: () => void;
 }
 
 const formatNumber = (num: number): string => {
@@ -15,7 +16,10 @@ const formatNumber = (num: number): string => {
   return num.toLocaleString();
 };
 
-const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) => {
+const AdminOverview: React.FC<AdminOverviewProps> = ({ 
+  onNavigateToFinance, 
+  onNavigateToProducts 
+}) => {
   const [totalRevenue, setTotalRevenue] = useState<number>(0);
   const [totalOrders, setTotalOrders] = useState<number>(0);
   const [pendingOrders, setPendingOrders] = useState<number>(0);
@@ -25,11 +29,14 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
   const [deliveredOrders, setDeliveredOrders] = useState<number>(0);
   const [cancelledOrders, setCancelledOrders] = useState<number>(0);
   const [activeCatalogItems, setActiveCatalogItems] = useState<number>(0);
+  
+  // Stock Alert States
+  const [outOfStockCount, setOutOfStockCount] = useState<number>(0);
   const [lowStockCount, setLowStockCount] = useState<number>(0);
 
   const fetchMetricsData = async () => {
     try {
-      // Fetch Metrics from RPC
+      // 1. Fetch Metrics from RPC
       const { data: metrics, error: rpcErr } = await supabase.rpc('get_admin_metrics');
 
       if (rpcErr) {
@@ -45,17 +52,26 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
         setCancelledOrders(Number(metrics.cancelled) || 0);
       }
 
-      // Fetch Catalog Active Items
+      // 2. Fetch Catalog Active Items
       const { count: productCount } = await supabase
         .from('products')
         .select('*', { count: 'exact', head: true });
 
       if (productCount !== null) setActiveCatalogItems(productCount);
 
-      // Fetch Low Stock / Out of Stock Items (Stock <= 3)
+      // 3. Fetch Out of Stock Items (Stock = 0)
+      const { count: outOfStock } = await supabase
+        .from('products')
+        .select('*', { count: 'exact', head: true })
+        .eq('stock', 0);
+
+      if (outOfStock !== null) setOutOfStockCount(outOfStock);
+
+      // 4. Fetch Low Stock Items (Stock >= 1 AND Stock <= 3)
       const { count: lowStock } = await supabase
         .from('products')
         .select('*', { count: 'exact', head: true })
+        .gte('stock', 1)
         .lte('stock', 3);
 
       if (lowStock !== null) setLowStockCount(lowStock);
@@ -142,11 +158,11 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
           min-width: 0;
         }
 
-        .revenue-card-clickable {
+        .clickable-card {
           cursor: pointer;
         }
 
-        .revenue-card-clickable:hover {
+        .clickable-card:hover {
           border-color: #444 !important;
           background-color: #0e0e0e;
         }
@@ -187,7 +203,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
       {/* 4 Primary Metric Cards */}
       <div className="metrics-grid">
 
-        <div className="metric-card revenue-card-clickable" onClick={() => onNavigateToFinance && onNavigateToFinance()}>
+        <div className="metric-card clickable-card" onClick={() => onNavigateToFinance && onNavigateToFinance()}>
           <span style={{ fontSize: '9px', color: '#A0AEC0', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
             TOTAL REVENUE
           </span>
@@ -218,14 +234,14 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
           <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF' }}>
             {formatNumber(pendingOrders + processingOrders)}
             <span style={{ fontSize: '12px', color: '#718096', margin: '0 4px' }}>/</span>
-            <span style={{ fontSize: '13px', color: '#CBD5E0' }}>{formatNumber(receivedOrders)} REC</span>
+            <span style={{ fontSize: '14px', color: '#CBD5E0' }}>{formatNumber(receivedOrders)} REC</span>
           </div>
           <span style={{ fontSize: '8px', color: '#718096', marginTop: '4px', display: 'block' }}>
             * PENDING & PROC
           </span>
         </div>
 
-        <div className="metric-card">
+        <div className="metric-card clickable-card" onClick={() => onNavigateToProducts && onNavigateToProducts()}>
           <span style={{ fontSize: '9px', color: '#A0AEC0', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
             CATALOG ITEMS
           </span>
@@ -289,13 +305,13 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
         </div>
       </div>
 
-      {/* Secondary Insights Row (AOV & Dynamic Stock Alert) */}
+      {/* Secondary Insights Row (AOV & Split Stock Alerts) */}
       <div className="secondary-metrics-grid">
         <div className="metric-card">
           <span style={{ fontSize: '9px', color: '#A0AEC0', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
             AVG ORDER VALUE
           </span>
-          <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#FFFFFF' }}>
+          <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF' }}>
             ৳{formatNumber(avgOrderValue)}
           </div>
           <span style={{ fontSize: '8px', color: '#718096', marginTop: '4px', display: 'block' }}>
@@ -303,19 +319,34 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
           </span>
         </div>
 
-        <div className="metric-card">
+        <div 
+          className="metric-card clickable-card" 
+          onClick={() => onNavigateToProducts && onNavigateToProducts()}
+        >
           <span style={{ fontSize: '9px', color: '#A0AEC0', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
             STOCK ALERTS
           </span>
-          <div style={{ 
-            fontSize: '18px', 
-            fontWeight: 'bold', 
-            color: lowStockCount > 0 ? '#f87171' : '#FFFFFF' 
-          }}>
-            {lowStockCount > 0 ? `${formatNumber(lowStockCount)} ITEMS` : 'ALL IN STOCK'}
+          
+          <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF' }}>
+            {outOfStockCount > 0 || lowStockCount > 0 ? (
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                <span style={{ color: outOfStockCount > 0 ? '#f87171' : '#FFFFFF', fontSize: '20px' }}>
+                  {formatNumber(outOfStockCount)} OUT
+                </span>
+                <span style={{ fontSize: '12px', color: '#718096' }}>/</span>
+                <span style={{ color: lowStockCount > 0 ? '#facc15' : '#FFFFFF', fontSize: '14px' }}>
+                  {formatNumber(lowStockCount)} LOW
+                </span>
+              </div>
+            ) : (
+              'ALL IN STOCK'
+            )}
           </div>
+
           <span style={{ fontSize: '8px', color: '#718096', marginTop: '4px', display: 'block' }}>
-            {lowStockCount > 0 ? '* ITEMS WITH ≤ 3 UNITS' : '* ALL STOCKS HEALTHY'}
+            {outOfStockCount > 0 || lowStockCount > 0 
+              ? `* ${outOfStockCount} OUT OF STOCK, ${lowStockCount} LOW (≤ 3)` 
+              : '* ALL STOCKS HEALTHY'}
           </span>
         </div>
       </div>
