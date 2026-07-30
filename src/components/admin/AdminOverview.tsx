@@ -27,7 +27,7 @@ const AdminOverview: React.FC = () => {
   const [deliveredOrders, setDeliveredOrders] = useState<number>(0);
   const [cancelledOrders, setCancelledOrders] = useState<number>(0);
   const [activeCatalogItems, setActiveCatalogItems] = useState<number>(0);
-  
+
   // Stock Alert States
   const [outOfStockCount, setOutOfStockCount] = useState<number>(0);
   const [lowStockCount, setLowStockCount] = useState<number>(0);
@@ -71,8 +71,8 @@ const AdminOverview: React.FC = () => {
 
   const fetchMetricsData = async () => {
     try {
-      // 1. Fetch Orders Query
-      let ordersQuery = supabase.from('orders').select('status, total_price, created_at');
+      // 1. Fetch Orders Query - total_amount দিয়ে আপডেট করা হয়েছে
+      let ordersQuery = supabase.from('orders').select('status, total_amount, created_at');
 
       // Only apply date filters if valid dates are explicitly provided
       if (startDate && startDate.trim() !== '') {
@@ -94,18 +94,29 @@ const AdminOverview: React.FC = () => {
         let cancelled = 0;
 
         orders.forEach((o: any) => {
-          const st = (o.status || '').toUpperCase();
-          
-          if (st === 'PENDING') pending++;
-          else if (st === 'PROCESSING' || st === 'PROC') processing++;
-          else if (st === 'RECEIVED' || st === 'REC') received++;
-          else if (st === 'SHIPPED') shipped++;
-          else if (st === 'DELIVERED') delivered++;
-          else if (st === 'CANCELLED') cancelled++;
+          const st = (o.status || '').toLowerCase().trim();
 
-          // Calculate revenue for active orders
-          if (st !== 'CANCELLED') {
-            revenue += Number(o.total_price || 0);
+          // Flexible status handling for variations like "Delivered / Completed"
+          if (st === 'pending') {
+            pending++;
+          } else if (st.includes('processing') || st.includes('proc')) {
+            processing++;
+          } else if (st.includes('received') || st.includes('rec')) {
+            received++;
+          } else if (st.includes('shipped')) {
+            shipped++;
+          } else if (st.includes('delivered') || st.includes('completed')) {
+            delivered++;
+          } else if (st.includes('cancel') || st.includes('cancelled')) {
+            cancelled++;
+          } else {
+            // যদি অন্য যেকোনো একটি নতুন স্ট্যাটাস থাকে, সেটাকে ডিফল্ট পেন্ডিং ধরে রাখা
+            pending++;
+          }
+
+          // Calculate revenue for active (non-cancelled) orders
+          if (!st.includes('cancel')) {
+            revenue += Number(o.total_amount || 0);
           }
         });
 
@@ -119,7 +130,7 @@ const AdminOverview: React.FC = () => {
         setCancelledOrders(cancelled);
       }
 
-      // 2. Fetch Catalog Items (Independent of date)
+      // 2. Fetch Catalog Items
       const { count: productCount } = await supabase
         .from('products')
         .select('*', { count: 'exact', head: true });
@@ -192,7 +203,6 @@ const AdminOverview: React.FC = () => {
       <style>{`
         * { box-sizing: border-box; }
         
-        /* 📅 DATE FILTER STYLES */
         .date-filter-container {
           background-color: #080808;
           border: 1px solid #222222;
@@ -321,8 +331,6 @@ const AdminOverview: React.FC = () => {
 
       {/* 📅 DATE RANGE FILTER COMPONENT */}
       <div className="date-filter-container">
-        
-        {/* Quick Presets */}
         <div className="preset-buttons">
           <button 
             className={`preset-btn ${selectedPreset === 'ALL' ? 'active' : ''}`}
@@ -356,7 +364,6 @@ const AdminOverview: React.FC = () => {
           </button>
         </div>
 
-        {/* Custom Range Picker */}
         <div className="custom-date-inputs">
           <input 
             type="date" 
@@ -378,7 +385,6 @@ const AdminOverview: React.FC = () => {
             }}
           />
         </div>
-
       </div>
 
       {/* 1. Fulfillment Breakdown Section */}
@@ -432,7 +438,6 @@ const AdminOverview: React.FC = () => {
 
       {/* 2. Primary Metric Cards */}
       <div className="metrics-grid">
-
         <div className="metric-card">
           <span style={{ fontSize: '15px', color: '#A0AEC0', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
             TOTAL REVENUE
@@ -482,7 +487,6 @@ const AdminOverview: React.FC = () => {
             * LIVE ITEMS
           </span>
         </div>
-
       </div>
 
       {/* 3. Secondary Insights Row */}
@@ -503,7 +507,7 @@ const AdminOverview: React.FC = () => {
           <span style={{ fontSize: '15px', color: '#A0AEC0', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
             STOCK ALERTS
           </span>
-          
+
           <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF' }}>
             {outOfStockCount > 0 || lowStockCount > 0 ? (
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
