@@ -289,7 +289,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
         </div>
       </div>
 
-      {/* Secondary Insights Row (AOV & Stock Alert) */}
+      {/* Secondary Insights Row (AOV & Dynamic Stock Alert) */}
       <div className="secondary-metrics-grid">
         <div className="metric-card">
           <span style={{ fontSize: '9px', color: '#A0AEC0', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
@@ -307,11 +307,15 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
           <span style={{ fontSize: '9px', color: '#A0AEC0', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
             STOCK ALERTS
           </span>
-          <div style={{ fontSize: '18px', fontWeight: 'bold', color: lowStockCount > 0 ? '#f87171' : '#4ade80' }}>
-            {lowStockCount > 0 ? `${lowStockCount} LOW STOCK` : 'ALL IN STOCK'}
+          <div style={{ 
+            fontSize: '18px', 
+            fontWeight: 'bold', 
+            color: lowStockCount > 0 ? '#f87171' : '#FFFFFF' 
+          }}>
+            {lowStockCount > 0 ? `${formatNumber(lowStockCount)} ITEMS` : 'ALL IN STOCK'}
           </div>
           <span style={{ fontSize: '8px', color: '#718096', marginTop: '4px', display: 'block' }}>
-            * ITEMS WITH ≤ 3 UNITS
+            {lowStockCount > 0 ? '* ITEMS WITH ≤ 3 UNITS' : '* ALL STOCKS HEALTHY'}
           </span>
         </div>
       </div>
