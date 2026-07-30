@@ -25,9 +25,11 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
   const [deliveredOrders, setDeliveredOrders] = useState<number>(0);
   const [cancelledOrders, setCancelledOrders] = useState<number>(0);
   const [activeCatalogItems, setActiveCatalogItems] = useState<number>(0);
+  const [lowStockCount, setLowStockCount] = useState<number>(0);
 
   const fetchMetricsData = async () => {
     try {
+      // Fetch Metrics from RPC
       const { data: metrics, error: rpcErr } = await supabase.rpc('get_admin_metrics');
 
       if (rpcErr) {
@@ -43,11 +45,20 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
         setCancelledOrders(Number(metrics.cancelled) || 0);
       }
 
+      // Fetch Catalog Active Items
       const { count: productCount } = await supabase
         .from('products')
         .select('*', { count: 'exact', head: true });
 
       if (productCount !== null) setActiveCatalogItems(productCount);
+
+      // Fetch Low Stock / Out of Stock Items (Stock <= 3)
+      const { count: lowStock } = await supabase
+        .from('products')
+        .select('*', { count: 'exact', head: true })
+        .lte('stock', 3);
+
+      if (lowStock !== null) setLowStockCount(lowStock);
 
     } catch (err) {
       console.error('Error fetching analytics:', err);
@@ -78,6 +89,10 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
     const p = (val / totalOrders) * 100;
     return isNaN(p) ? 0 : Math.min(Math.max(p, 0), 100);
   };
+
+  // Calculate Average Order Value (AOV)
+  const validOrderCount = totalOrders - cancelledOrders;
+  const avgOrderValue = validOrderCount > 0 ? Math.round(totalRevenue / validOrderCount) : 0;
 
   const statusItems = [
     { key: 'PENDING', label: 'PENDING', count: pendingOrders, color: '#facc15' },
@@ -148,6 +163,14 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
           border: 1px solid #222222;
           padding: 10px;
           border-radius: 2px;
+        }
+
+        .secondary-metrics-grid {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 10px;
+          margin-top: 20px;
+          width: 100%;
         }
       `}</style>
 
@@ -263,6 +286,33 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
               </div>
             );
           })}
+        </div>
+      </div>
+
+      {/* Secondary Insights Row (AOV & Stock Alert) */}
+      <div className="secondary-metrics-grid">
+        <div className="metric-card">
+          <span style={{ fontSize: '9px', color: '#A0AEC0', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
+            AVG ORDER VALUE
+          </span>
+          <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#FFFFFF' }}>
+            ৳{formatNumber(avgOrderValue)}
+          </div>
+          <span style={{ fontSize: '8px', color: '#718096', marginTop: '4px', display: 'block' }}>
+            * PER ACTIVE ORDER
+          </span>
+        </div>
+
+        <div className="metric-card">
+          <span style={{ fontSize: '9px', color: '#A0AEC0', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
+            STOCK ALERTS
+          </span>
+          <div style={{ fontSize: '18px', fontWeight: 'bold', color: lowStockCount > 0 ? '#f87171' : '#4ade80' }}>
+            {lowStockCount > 0 ? `${lowStockCount} LOW STOCK` : 'ALL IN STOCK'}
+          </div>
+          <span style={{ fontSize: '8px', color: '#718096', marginTop: '4px', display: 'block' }}>
+            * ITEMS WITH ≤ 3 UNITS
+          </span>
         </div>
       </div>
 
