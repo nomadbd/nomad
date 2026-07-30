@@ -50,24 +50,24 @@ const AdminOverview: React.FC = () => {
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase();
   };
 
-  // 🔹 ডায়নামিক ফিল্টার সাবটাইটেল জেনারেটর
+  // 🔹 ডায়নামিক ফিল্টার সাবটাইটেল জেনারেটর (* চিহ্ন ছাড়া)
   const getFilterSubtitle = (suffix: 'REVENUE' | 'ORDERS') => {
     if (selectedPreset === 'ALL') {
-      return `* ALL TIME ${suffix}`;
+      return `ALL TIME ${suffix}`;
     }
     
     if (selectedPreset === 'TODAY' && startDate) {
-      return `* TODAY (${formatDisplayDate(startDate)})`;
+      return `TODAY (${formatDisplayDate(startDate)})`;
     }
 
     if (startDate && endDate) {
       if (startDate === endDate) {
-        return `* ${formatDisplayDate(startDate)} ${suffix}`;
+        return `${formatDisplayDate(startDate)} ${suffix}`;
       }
-      return `* ${formatDisplayDate(startDate)} - ${formatDisplayDate(endDate)}`;
+      return `${formatDisplayDate(startDate)} - ${formatDisplayDate(endDate)}`;
     }
 
-    return `* FILTERED ${suffix}`;
+    return `FILTERED ${suffix}`;
   };
 
   // Handle Preset Clicks
@@ -476,7 +476,6 @@ const AdminOverview: React.FC = () => {
           <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF' }}>
             ৳{formatNumber(totalRevenue)}
           </div>
-          {/* 🔹 আপডেটেড ডায়নামিক ফিল্টার সাবটাইটেল */}
           <span style={{ fontSize: '10px', color: '#718096', marginTop: '4px', display: 'block' }}>
             {getFilterSubtitle('REVENUE')}
           </span>
@@ -489,7 +488,6 @@ const AdminOverview: React.FC = () => {
           <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF' }}>
             {formatNumber(totalOrders)}
           </div>
-          {/* 🔹 আপডেটেড ডায়নামিক ফিল্টার সাবটাইটেল */}
           <span style={{ fontSize: '10px', color: '#718096', marginTop: '4px', display: 'block' }}>
             {getFilterSubtitle('ORDERS')}
           </span>
@@ -505,7 +503,7 @@ const AdminOverview: React.FC = () => {
             <span style={{ fontSize: '15px', color: '#CBD5E0', fontWeight: 'normal' }}>{formatNumber(receivedOrders)} REC</span>
           </div>
           <span style={{ fontSize: '10px', color: '#718096', marginTop: '4px', display: 'block' }}>
-            * PENDING & PROC
+            PENDING & PROC
           </span>
         </div>
 
@@ -517,7 +515,7 @@ const AdminOverview: React.FC = () => {
             {formatNumber(activeCatalogItems)}
           </div>
           <span style={{ fontSize: '10px', color: '#718096', marginTop: '4px', display: 'block' }}>
-            * LIVE ITEMS
+            LIVE ITEMS
           </span>
         </div>
       </div>
@@ -532,7 +530,7 @@ const AdminOverview: React.FC = () => {
             ৳{formatNumber(avgOrderValue)}
           </div>
           <span style={{ fontSize: '10px', color: '#718096', marginTop: '4px', display: 'block' }}>
-            * PER ACTIVE ORDER
+            PER ACTIVE ORDER
           </span>
         </div>
 
@@ -559,8 +557,8 @@ const AdminOverview: React.FC = () => {
 
           <span style={{ fontSize: '10px', color: '#718096', marginTop: '4px', display: 'block' }}>
             {outOfStockCount > 0 || lowStockCount > 0 
-              ? `* ${outOfStockCount} OUT OF STOCK, ${lowStockCount} LOW (≤ 3)` 
-              : '* ALL STOCKS HEALTHY'}
+              ? `${outOfStockCount} OUT OF STOCK, ${lowStockCount} LOW (≤ 3)` 
+              : 'ALL STOCKS HEALTHY'}
           </span>
         </div>
       </div>
