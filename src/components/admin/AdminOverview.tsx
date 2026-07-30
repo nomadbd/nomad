@@ -137,8 +137,8 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
           display: grid;
           grid-template-columns: repeat(2, 1fr);
           gap: 10px;
-          margin-top: 20px;
-          margin-bottom: 20px;
+          margin-top: 14px;
+          margin-bottom: 14px;
           width: 100%;
           max-width: 100%;
         }
@@ -168,7 +168,6 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
           background-color: #0e0e0e;
         }
 
-        /* মোবাইলে ২ কলাম রাখা হলো যাতে সব টেক্সট না কেটে দেখা যায় */
         .status-grid {
           display: grid;
           grid-template-columns: repeat(2, 1fr);
@@ -198,17 +197,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
         }
       `}</style>
 
-      {/* Header Title */}
-      <div style={{ marginBottom: '16px', width: '100%' }}>
-        <h2 style={{ fontSize: '15px', fontWeight: 'bold', letterSpacing: '2px', margin: 0, color: '#FFFFFF' }}>
-          METRICS OVERVIEW
-        </h2>
-        <span style={{ fontSize: '10px', color: '#A0AEC0', letterSpacing: '1px' }}>
-          REAL-TIME INSIGHTS
-        </span>
-      </div>
-
-      {/* 1. Fulfillment Breakdown Section (Moved to top) */}
+      {/* 1. Fulfillment Breakdown Section (Top-most element now) */}
       <div style={{ 
         backgroundColor: '#080808', 
         border: '1px solid #222222', 
@@ -274,10 +263,11 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
         </div>
       </div>
 
-      {/* 2. Primary Metric Cards (Moved to Middle) */}
+      {/* 2. Primary Metric Cards (Middle) */}
       <div className="metrics-grid">
 
-        <div className="metric-card clickable-card" onClick={() => onNavigateToFinance && onNavigateToFinance()}>
+        {/* Total Revenue - Not Clickable */}
+        <div className="metric-card">
           <span style={{ fontSize: '15px', color: '#A0AEC0', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
             TOTAL REVENUE
           </span>
