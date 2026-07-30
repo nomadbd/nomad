@@ -71,10 +71,9 @@ const AdminOverview: React.FC = () => {
 
   const fetchMetricsData = async () => {
     try {
-      // 1. Fetch Orders Query - total_amount দিয়ে আপডেট করা হয়েছে
+      // 1. Fetch Orders Query
       let ordersQuery = supabase.from('orders').select('status, total_amount, created_at');
 
-      // Only apply date filters if valid dates are explicitly provided
       if (startDate && startDate.trim() !== '') {
         ordersQuery = ordersQuery.gte('created_at', `${startDate}T00:00:00.000Z`);
       }
@@ -96,7 +95,6 @@ const AdminOverview: React.FC = () => {
         orders.forEach((o: any) => {
           const st = (o.status || '').toLowerCase().trim();
 
-          // Flexible status handling for variations like "Delivered / Completed"
           if (st === 'pending') {
             pending++;
           } else if (st.includes('processing') || st.includes('proc')) {
@@ -110,11 +108,9 @@ const AdminOverview: React.FC = () => {
           } else if (st.includes('cancel') || st.includes('cancelled')) {
             cancelled++;
           } else {
-            // যদি অন্য যেকোনো একটি নতুন স্ট্যাটাস থাকে, সেটাকে ডিফল্ট পেন্ডিং ধরে রাখা
             pending++;
           }
 
-          // Calculate revenue for active (non-cancelled) orders
           if (!st.includes('cancel')) {
             revenue += Number(o.total_amount || 0);
           }
@@ -246,10 +242,11 @@ const AdminOverview: React.FC = () => {
           gap: 8px;
         }
 
+        /* 🔹 তারিখ ফিল্ডকে ধূসর করার স্টাইল */
         .date-input {
           background: #111;
           border: 1px solid #222;
-          color: #fff;
+          color: #888888; /* ধূসর রঙ */
           font-family: monospace;
           font-size: 11px;
           padding: 6px 8px;
@@ -258,8 +255,15 @@ const AdminOverview: React.FC = () => {
           width: 100%;
         }
 
+        /* নতুন তারিখ সিলেক্ট করলে লেখা সাদা দেখাবে */
+        .date-input:valid,
+        .date-input[value]:not([value=""]) {
+          color: #FFFFFF;
+        }
+
+        /* ক্যালেন্ডার আইকন টিউন করা */
         .date-input::-webkit-calendar-picker-indicator {
-          filter: invert(1);
+          filter: invert(0.6);
           cursor: pointer;
         }
 
