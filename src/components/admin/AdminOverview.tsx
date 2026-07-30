@@ -32,12 +32,42 @@ const AdminOverview: React.FC = () => {
   const [outOfStockCount, setOutOfStockCount] = useState<number>(0);
   const [lowStockCount, setLowStockCount] = useState<number>(0);
 
-  // Helper for Date Formats
+  // Helper for Date Formats (YYYY-MM-DD)
   const formatDateToInput = (d: Date) => {
     const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
+  };
+
+  // 🔹 তারিখকে শর্ট ফরম্যাটে রূপান্তর করার হেলপার (যেমন: JUL 30)
+  const formatDisplayDate = (dateStr: string) => {
+    if (!dateStr) return '';
+    // Timezone Mismatch এড়াতে টি অংশ কেটে নেওয়া
+    const [year, month, day] = dateStr.split('-').map(Number);
+    if (!year || !month || !day) return '';
+    const date = new Date(year, month - 1, day);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase();
+  };
+
+  // 🔹 ডায়নামিক ফিল্টার সাবটাইটেল জেনারেটর
+  const getFilterSubtitle = (suffix: 'REVENUE' | 'ORDERS') => {
+    if (selectedPreset === 'ALL') {
+      return `* ALL TIME ${suffix}`;
+    }
+    
+    if (selectedPreset === 'TODAY' && startDate) {
+      return `* TODAY (${formatDisplayDate(startDate)})`;
+    }
+
+    if (startDate && endDate) {
+      if (startDate === endDate) {
+        return `* ${formatDisplayDate(startDate)} ${suffix}`;
+      }
+      return `* ${formatDisplayDate(startDate)} - ${formatDisplayDate(endDate)}`;
+    }
+
+    return `* FILTERED ${suffix}`;
   };
 
   // Handle Preset Clicks
@@ -220,7 +250,7 @@ const AdminOverview: React.FC = () => {
         .preset-btn {
           background: #111;
           border: 1px solid #222;
-          color: #666; /* ধূসর কালার */
+          color: #666;
           font-size: 10px;
           font-weight: bold;
           padding: 6px 10px;
@@ -230,7 +260,6 @@ const AdminOverview: React.FC = () => {
           transition: all 0.2s ease;
         }
 
-        /* 🔹 সিলেক্ট করা ফিল্টারের ব্যাকগ্রাউন্ড হবে না, শুধু টেক্সট একদম সাদা হবে */
         .preset-btn.active {
           background: #111;
           color: #FFFFFF;
@@ -243,11 +272,10 @@ const AdminOverview: React.FC = () => {
           gap: 8px;
         }
 
-        /* 🔹 তারিখ ইনপুট ফিল্ড ধূসর করা */
         .date-input {
           background: #111;
           border: 1px solid #222;
-          color: #666666; /* mm/dd/yyyy ধূসর রঙ */
+          color: #666666;
           font-family: monospace;
           font-size: 11px;
           padding: 6px 8px;
@@ -256,13 +284,11 @@ const AdminOverview: React.FC = () => {
           width: 100%;
         }
 
-        /* তারিখ সিলেক্ট করলে লেখা সাদা হবে */
         .date-input:valid,
         .date-input[value]:not([value=""]) {
           color: #FFFFFF;
         }
 
-        /* ক্যালেন্ডার আইকন ধূসর করা */
         .date-input::-webkit-calendar-picker-indicator {
           filter: opacity(0.4) grayscale(100%);
           cursor: pointer;
@@ -379,7 +405,6 @@ const AdminOverview: React.FC = () => {
               setSelectedPreset('CUSTOM');
             }}
           />
-          {/* 🔹 TO টেক্সটের রঙ ধূসর করা হয়েছে */}
           <span style={{ color: '#666666', fontSize: '11px', fontWeight: 'bold' }}>TO</span>
           <input 
             type="date" 
@@ -451,8 +476,9 @@ const AdminOverview: React.FC = () => {
           <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF' }}>
             ৳{formatNumber(totalRevenue)}
           </div>
+          {/* 🔹 আপডেটেড ডায়নামিক ফিল্টার সাবটাইটেল */}
           <span style={{ fontSize: '10px', color: '#718096', marginTop: '4px', display: 'block' }}>
-            * {selectedPreset === 'ALL' ? 'ALL TIME' : 'FILTERED'} REVENUE
+            {getFilterSubtitle('REVENUE')}
           </span>
         </div>
 
@@ -463,8 +489,9 @@ const AdminOverview: React.FC = () => {
           <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF' }}>
             {formatNumber(totalOrders)}
           </div>
+          {/* 🔹 আপডেটেড ডায়নামিক ফিল্টার সাবটাইটেল */}
           <span style={{ fontSize: '10px', color: '#718096', marginTop: '4px', display: 'block' }}>
-            * {selectedPreset === 'ALL' ? 'ALL TIME' : 'FILTERED'} ORDERS
+            {getFilterSubtitle('ORDERS')}
           </span>
         </div>
 
