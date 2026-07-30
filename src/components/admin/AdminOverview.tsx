@@ -13,7 +13,6 @@ interface AdminOverviewProps {
   onNavigateToFinance?: () => void;
 }
 
-// 1K, 1M ফরম্যাটিং লজিক
 const formatNumber = (num: number): string => {
   if (num >= 1_000_000) {
     return (num / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M';
@@ -35,9 +34,6 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
   const [cancelledOrders, setCancelledOrders] = useState<number>(0);
   const [activeCatalogItems, setActiveCatalogItems] = useState<number>(0);
   const [recentOrders, setRecentOrders] = useState<OrderItem[]>([]);
-
-  // পার্সেন্টেজ দেখার জন্য সিলেক্টেড স্ট্যাটাসের স্টেট
-  const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
 
   const isDelivered = (st: string) => (st || '').trim().toUpperCase().includes('DELIVER');
   const isPending = (st: string) => (st || '').trim().toUpperCase().includes('PENDING');
@@ -138,7 +134,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
     return isNaN(p) ? 0 : Math.min(Math.max(p, 0), 100);
   };
 
-  // স্ট্যাটাস গ্রিড আইটেম ফিল্ড লিস্ট
+  // প্রতিটি স্ট্যাটাসের তথ্য
   const statusItems = [
     { key: 'PENDING', label: 'PENDING', count: pendingOrders, color: '#eab308' },
     { key: 'PROC', label: 'PROC', count: processingOrders, color: '#a855f7' },
@@ -218,7 +214,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
           white-space: nowrap;
         }
 
-        /* 3x2 Grid (২ লাইনে ৩ টা করে) */
+        /* 3x2 Grid */
         .status-grid {
           display: grid;
           grid-template-columns: repeat(3, 1fr);
@@ -229,25 +225,12 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
         .status-card {
           background-color: #0a0a0a;
           border: 1px solid #181818;
-          padding: 8px 10px;
+          padding: 10px;
           border-radius: 2px;
-          cursor: pointer;
-          transition: all 0.2s ease;
-          user-select: none;
-        }
-
-        .status-card:hover {
-          border-color: #333;
-          background-color: #111;
-        }
-
-        .status-card.active {
-          border-color: #444;
-          background-color: #141414;
         }
       `}</style>
 
-      {/* টাইটেল এবং সাবটাইটেল */}
+      {/* টাইটেল */}
       <div style={{ marginBottom: '16px', width: '100%' }}>
         <h2 style={{ fontSize: '14px', fontWeight: 'bold', letterSpacing: '2px', margin: 0, color: '#fff' }}>
           METRICS OVERVIEW
@@ -260,7 +243,6 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
       {/* Metrics Grid */}
       <div className="metrics-grid">
 
-        {/* Card 1: Revenue */}
         <div className="metric-card revenue-card-clickable" onClick={() => onNavigateToFinance && onNavigateToFinance()}>
           <span style={{ fontSize: '9px', color: '#888', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
             TOTAL REVENUE
@@ -273,7 +255,6 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
           </span>
         </div>
 
-        {/* Card 2: Orders */}
         <div className="metric-card">
           <span style={{ fontSize: '9px', color: '#888', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
             TOTAL ORDERS
@@ -286,7 +267,6 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
           </span>
         </div>
 
-        {/* Card 3: Active Queue */}
         <div className="metric-card">
           <span style={{ fontSize: '9px', color: '#888', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
             ACTIVE QUEUE
@@ -301,7 +281,6 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
           </span>
         </div>
 
-        {/* Card 4: Catalog Items */}
         <div className="metric-card">
           <span style={{ fontSize: '9px', color: '#888', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
             CATALOG ITEMS
@@ -316,7 +295,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
 
       </div>
 
-      {/* Fulfillment Status */}
+      {/* Fulfillment Status Section */}
       <div style={{ 
         backgroundColor: '#060606', 
         border: '1px solid #1a1a1a', 
@@ -326,16 +305,11 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
         width: '100%',
         maxWidth: '100%'
       }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-          <span style={{ fontSize: '9px', color: '#aaa', letterSpacing: '1.5px', fontWeight: 'bold' }}>
-            FULFILLMENT STATUS
-          </span>
-          <span style={{ fontSize: '8px', color: '#555', letterSpacing: '1px' }}>
-            CLICK ITEM FOR %
-          </span>
-        </div>
+        <span style={{ fontSize: '9px', color: '#aaa', letterSpacing: '1.5px', fontWeight: 'bold', display: 'block', marginBottom: '10px' }}>
+          FULFILLMENT STATUS
+        </span>
 
-        {/* Single Stacked Progress Bar */}
+        {/* Multi-color Stacked Progress Bar */}
         <div style={{ display: 'flex', height: '4px', backgroundColor: '#111', borderRadius: '2px', overflow: 'hidden', marginBottom: '12px', width: '100%' }}>
           <div style={{ width: `${calcPercent(pendingOrders)}%`, backgroundColor: '#eab308' }} />
           <div style={{ width: `${calcPercent(processingOrders)}%`, backgroundColor: '#a855f7' }} />
@@ -345,33 +319,32 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
           <div style={{ width: `${calcPercent(cancelledOrders)}%`, backgroundColor: '#ef4444' }} />
         </div>
 
-        {/* 2 Lines x 3 Items Grid */}
+        {/* Clean Monochrome 3x2 Grid */}
         <div className="status-grid">
           {statusItems.map((item) => {
-            const isSelected = selectedStatus === item.key;
-            const percent = calcPercent(item.count).toFixed(1);
+            const percent = calcPercent(item.count).toFixed(0);
             const isZero = item.count === 0;
 
             return (
               <div 
                 key={item.key}
-                className={`status-card ${isSelected ? 'active' : ''}`}
-                onClick={() => setSelectedStatus(isSelected ? null : item.key)}
-                style={{ opacity: isZero ? 0.5 : 1 }}
+                className="status-card"
+                style={{ opacity: isZero ? 0.35 : 1 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
-                  <span style={{ color: item.color, fontSize: '10px' }}>●</span>
-                  <span style={{ fontSize: '9px', color: isZero ? '#777' : '#ccc', fontWeight: 'bold', letterSpacing: '0.5px' }}>
+                {/* লেবেল ও প্রোগ্রেস পার্সেন্ট কালারের ছোট ডট */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+                  <span style={{ color: item.color, fontSize: '9px' }}>●</span>
+                  <span style={{ fontSize: '9px', color: '#888', fontWeight: 'bold', letterSpacing: '0.5px' }}>
                     {item.label}
                   </span>
                 </div>
-                <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#fff', paddingLeft: '14px' }}>
+
+                {/* সংখ্যা ও সরাসরি ব্র্যাকেটে পার্সেন্টেজ (সবই সাদা) */}
+                <div style={{ fontSize: '13px', fontWeight: 'bold', color: '#ffffff', paddingLeft: '15px' }}>
                   {formatNumber(item.count)}
-                  {isSelected && (
-                    <span style={{ fontSize: '9px', color: item.color, marginLeft: '6px', fontWeight: 'normal' }}>
-                      ({percent}%)
-                    </span>
-                  )}
+                  <span style={{ fontSize: '9px', color: '#666', marginLeft: '6px', fontWeight: 'normal' }}>
+                    ({percent}%)
+                  </span>
                 </div>
               </div>
             );
