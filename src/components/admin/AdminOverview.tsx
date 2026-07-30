@@ -1,14 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../../supabaseClient';
 
-interface OrderItem {
-  id: string;
-  customer_name: string;
-  created_at: string;
-  total_amount: number;
-  status: string;
-}
-
 interface AdminOverviewProps {
   onNavigateToFinance?: () => void;
 }
@@ -33,14 +25,6 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
   const [deliveredOrders, setDeliveredOrders] = useState<number>(0);
   const [cancelledOrders, setCancelledOrders] = useState<number>(0);
   const [activeCatalogItems, setActiveCatalogItems] = useState<number>(0);
-  const [recentOrders, setRecentOrders] = useState<OrderItem[]>([]);
-
-  const isDelivered = (st: string) => (st || '').trim().toUpperCase().includes('DELIVER');
-  const isPending = (st: string) => (st || '').trim().toUpperCase().includes('PENDING');
-  const isProcessing = (st: string) => (st || '').trim().toUpperCase().includes('PROCESS');
-  const isReceived = (st: string) => (st || '').trim().toUpperCase().includes('RECEIV');
-  const isShipped = (st: string) => (st || '').trim().toUpperCase().includes('SHIP');
-  const isCancelled = (st: string) => (st || '').trim().toUpperCase().includes('CANCEL');
 
   const fetchMetricsData = async () => {
     try {
@@ -58,14 +42,6 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
         setDeliveredOrders(Number(metrics.delivered) || 0);
         setCancelledOrders(Number(metrics.cancelled) || 0);
       }
-
-      const { data: latestFive } = await supabase
-        .from('orders')
-        .select('id, customer_name, created_at, total_amount, status')
-        .order('created_at', { ascending: false })
-        .limit(5);
-
-      if (latestFive) setRecentOrders(latestFive);
 
       const { count: productCount } = await supabase
         .from('products')
@@ -96,37 +72,6 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
       supabase.removeChannel(productsSubscription);
     };
   }, []);
-
-  const renderStatusBadge = (status: string) => {
-    const raw = (status || '').trim().toUpperCase();
-    let displayStatus = raw;
-    let color = '#ccc';
-    let bg = '#181818';
-
-    if (isPending(raw)) { color = '#facc15'; bg = '#2a2208'; displayStatus = 'PENDING'; }
-    else if (isProcessing(raw)) { color = '#c084fc'; bg = '#1e102a'; displayStatus = 'PROCESSING'; }
-    else if (isReceived(raw)) { color = '#60a5fa'; bg = '#0d1d3a'; displayStatus = 'RECEIVED'; }
-    else if (isShipped(raw)) { color = '#22d3ee'; bg = '#082f35'; displayStatus = 'SHIPPED'; }
-    else if (isDelivered(raw)) { color = '#4ade80'; bg = '#092b15'; displayStatus = 'DELIVERED'; }
-    else if (isCancelled(raw)) { color = '#f87171'; bg = '#2d1212'; displayStatus = 'CANCELLED'; }
-
-    return (
-      <span style={{
-        backgroundColor: bg,
-        color: color,
-        padding: '3px 8px',
-        fontSize: '9px',
-        fontWeight: 'bold',
-        fontFamily: 'monospace',
-        letterSpacing: '1px',
-        border: `1px solid ${color}44`,
-        borderRadius: '2px',
-        whiteSpace: 'nowrap'
-      }}>
-        ● {displayStatus}
-      </span>
-    );
-  };
 
   const calcPercent = (val: number) => {
     if (!totalOrders || totalOrders <= 0) return 0;
@@ -191,28 +136,6 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
           background-color: #0e0e0e;
         }
 
-        .table-wrapper {
-          width: 100%;
-          max-width: 100%;
-          overflow-x: auto;
-          -webkit-overflow-scrolling: touch;
-          border-radius: 2px;
-        }
-
-        .recent-orders-table {
-          width: 100%;
-          min-width: 480px;
-          border-collapse: collapse;
-          text-align: left;
-          font-size: 11px;
-        }
-
-        .recent-orders-table th, 
-        .recent-orders-table td {
-          padding: 10px 8px;
-          white-space: nowrap;
-        }
-
         .status-grid {
           display: grid;
           grid-template-columns: repeat(3, 1fr);
@@ -228,7 +151,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
         }
       `}</style>
 
-      {/* Title */}
+      {/* Header Title */}
       <div style={{ marginBottom: '16px', width: '100%' }}>
         <h2 style={{ fontSize: '14px', fontWeight: 'bold', letterSpacing: '2px', margin: 0, color: '#FFFFFF' }}>
           METRICS OVERVIEW
@@ -238,7 +161,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
         </span>
       </div>
 
-      {/* Metrics Grid */}
+      {/* 4 Primary Metric Cards */}
       <div className="metrics-grid">
 
         <div className="metric-card revenue-card-clickable" onClick={() => onNavigateToFinance && onNavigateToFinance()}>
@@ -293,12 +216,11 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
 
       </div>
 
-      {/* Fulfillment Status Section */}
+      {/* Fulfillment Breakdown Section */}
       <div style={{ 
         backgroundColor: '#080808', 
         border: '1px solid #222222', 
         padding: '14px', 
-        marginBottom: '20px', 
         borderRadius: '2px', 
         width: '100%',
         maxWidth: '100%'
@@ -307,7 +229,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
           FULFILLMENT STATUS
         </span>
 
-        {/* Progress Bar */}
+        {/* Multi-Color Progress Bar */}
         <div style={{ display: 'flex', height: '4px', backgroundColor: '#181818', borderRadius: '2px', overflow: 'hidden', marginBottom: '12px', width: '100%' }}>
           <div style={{ width: `${calcPercent(pendingOrders)}%`, backgroundColor: '#facc15' }} />
           <div style={{ width: `${calcPercent(processingOrders)}%`, backgroundColor: '#c084fc' }} />
@@ -317,73 +239,30 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateToFinance }) =>
           <div style={{ width: `${calcPercent(cancelledOrders)}%`, backgroundColor: '#f87171' }} />
         </div>
 
-        {/* Status Cards (Bright White/Grey Text) */}
+        {/* 3x2 Status Breakdown */}
         <div className="status-grid">
           {statusItems.map((item) => {
             const percent = calcPercent(item.count).toFixed(0);
             const isZero = item.count === 0;
 
             return (
-              <div 
-                key={item.key}
-                className="status-card"
-                style={{ opacity: isZero ? 0.55 : 1 }}
-              >
+              <div key={item.key} className="status-card">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
-                  <span style={{ color: item.color, fontSize: '9px' }}>●</span>
-                  <span style={{ fontSize: '9px', color: '#A0AEC0', fontWeight: 'bold', letterSpacing: '0.5px' }}>
+                  <span style={{ color: isZero ? '#444' : item.color, fontSize: '9px' }}>●</span>
+                  <span style={{ fontSize: '9px', color: isZero ? '#666' : '#A0AEC0', fontWeight: 'bold', letterSpacing: '0.5px' }}>
                     {item.label}
                   </span>
                 </div>
 
-                <div style={{ fontSize: '13px', fontWeight: 'bold', color: '#FFFFFF', paddingLeft: '15px' }}>
+                <div style={{ fontSize: '13px', fontWeight: 'bold', color: isZero ? '#555' : '#FFFFFF', paddingLeft: '15px' }}>
                   {formatNumber(item.count)}
-                  <span style={{ fontSize: '9px', color: '#CBD5E0', marginLeft: '6px', fontWeight: 'normal' }}>
+                  <span style={{ fontSize: '9px', color: isZero ? '#444' : '#CBD5E0', marginLeft: '6px', fontWeight: 'normal' }}>
                     ({percent}%)
                   </span>
                 </div>
               </div>
             );
           })}
-        </div>
-      </div>
-
-      {/* Recent Orders Table */}
-      <div style={{ 
-        backgroundColor: '#080808', 
-        border: '1px solid #222222', 
-        padding: '14px', 
-        borderRadius: '2px', 
-        width: '100%',
-        maxWidth: '100%'
-      }}>
-        <span style={{ fontSize: '9px', color: '#CBD5E0', letterSpacing: '1.5px', fontWeight: 'bold', display: 'block', marginBottom: '10px' }}>
-          RECENT ORDERS
-        </span>
-
-        <div className="table-wrapper">
-          <table className="recent-orders-table">
-            <thead>
-              <tr style={{ borderBottom: '1px solid #222222', color: '#A0AEC0' }}>
-                <th>ORDER ID</th>
-                <th>CUSTOMER</th>
-                <th>DATE</th>
-                <th>AMOUNT</th>
-                <th style={{ textAlign: 'right' }}>STATUS</th>
-              </tr>
-            </thead>
-            <tbody>
-              {recentOrders.map((order) => (
-                <tr key={order.id} style={{ borderBottom: '1px solid #141414' }}>
-                  <td style={{ color: '#CBD5E0' }}>#{order.id.slice(0, 8)}...</td>
-                  <td style={{ color: '#FFFFFF' }}>{order.customer_name || 'GUEST'}</td>
-                  <td style={{ color: '#A0AEC0' }}>{new Date(order.created_at).toLocaleDateString()}</td>
-                  <td style={{ fontWeight: 'bold', color: '#FFFFFF' }}>৳{order.total_amount}</td>
-                  <td style={{ textAlign: 'right' }}>{renderStatusBadge(order.status)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
         </div>
       </div>
 
