@@ -135,12 +135,13 @@ const AdminDashboard: React.FC = () => {
             left: 0;
             right: 0;
             z-index: 1000;
-            background-color: #060606;
-            border-bottom: 1px solid #1a1a1a;
+            background-color: rgba(6, 6, 6, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid #141414;
             padding: 14px 16px;
             box-sizing: border-box;
             transform: ${isHeaderVisible ? 'translateY(0)' : 'translateY(-100%)'};
-            transition: transform 0.3s ease-in-out;
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
           }
 
           .nomad-menu-toggle {
@@ -151,19 +152,19 @@ const AdminDashboard: React.FC = () => {
             display: ${menuOpen ? 'flex' : 'none'} !important;
             flex-direction: column;
             gap: 8px;
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 1px solid #181818;
+            margin-top: 18px;
+            padding-top: 16px;
+            border-top: 1px solid #141414;
           }
 
           .user-footer-block {
             display: ${menuOpen ? 'block' : 'none'} !important;
             margin-top: 15px;
             padding-top: 12px;
-            border-top: 1px solid #1f1f1f;
+            border-top: 1px solid #141414;
           }
 
-          /* মোবিলে স্টিকি হেডারের জন্য উপরে স্পেস দেওয়া হলো যাতে কন্টেন্ট কেটে না যায় */
+          /* মোবিলে স্টিকি হেডারের জন্য স্পেস */
           .nomad-main {
             width: 100% !important;
             padding: 75px 12px 40px 12px !important;
@@ -261,6 +262,31 @@ const AdminDashboard: React.FC = () => {
           text-overflow: ellipsis;
           white-space: nowrap;
         }
+
+        /* 🎨 Clean Borderless Menu Toggle Styling */
+        .nomad-menu-toggle-btn {
+          background: transparent;
+          border: none !important;
+          outline: none;
+          color: #ffffff;
+          width: 36px;
+          height: 36px;
+          font-size: 20px;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 4px;
+          transition: background-color 0.2s ease, opacity 0.2s ease;
+          opacity: 0.85;
+          -webkit-tap-highlight-color: transparent;
+        }
+
+        .nomad-menu-toggle-btn:hover,
+        .nomad-menu-toggle-btn:active {
+          background-color: rgba(255, 255, 255, 0.08);
+          opacity: 1;
+        }
       `}</style>
 
       <div className="nomad-layout">
@@ -280,21 +306,11 @@ const AdminDashboard: React.FC = () => {
                 </span>
               </a>
 
+              {/* 🎯 Borderless & Clean Menu Toggle */}
               <button
-                className="nomad-menu-toggle"
+                className="nomad-menu-toggle nomad-menu-toggle-btn"
                 onClick={() => setMenuOpen(!menuOpen)}
-                style={{
-                  backgroundColor: '#111',
-                  border: '1px solid #333',
-                  color: '#fff',
-                  width: '38px',
-                  height: '38px',
-                  fontSize: '18px',
-                  cursor: 'pointer',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  borderRadius: '2px'
-                }}
+                aria-label="Toggle Menu"
               >
                 {menuOpen ? '✕' : '☰'}
               </button>
