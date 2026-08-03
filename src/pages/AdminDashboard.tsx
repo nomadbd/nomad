@@ -73,16 +73,17 @@ const AdminDashboard: React.FC = () => {
     fetchCurrentUserAndRole();
   }, []);
 
-  // 🔐 ৩-লেভেল সিকিউরিটি গার্ড: শুধুমাত্র SUPER_ADMIN এবং ADMIN সেটিংস দেখতে পাবে
+  // 🔐 সিকিউরিটি গার্ড লজিক
   const normalizedRole = userRole.toUpperCase().trim();
-  const isAdmin = ['SUPER_ADMIN', 'ADMIN'].includes(normalizedRole);
+  // 👑 শুধুমাত্র SUPER_ADMIN সেটিংস নিয়ন্ত্রণ করতে পারবে
+  const isSuperAdmin = normalizedRole === 'SUPER_ADMIN';
 
-  // সিকিউরিটি গার্ড
+  // সিকিউরিটি গার্ড: Super Admin ছাড়া কেউ ইউআরএল বা অন্য উপায়ে Settings এ ঢুকতে চাইলে Overview-তে পাঠাবে
   useEffect(() => {
-    if (!loading && !isAdmin && activeTab === 'settings') {
+    if (!loading && !isSuperAdmin && activeTab === 'settings') {
       setActiveTab('overview');
     }
-  }, [isAdmin, loading, activeTab]);
+  }, [isSuperAdmin, loading, activeTab]);
 
   const subTextStyle: React.CSSProperties = {
     fontSize: '9px',
@@ -337,8 +338,8 @@ const AdminDashboard: React.FC = () => {
                 PRODUCTS & STOCK
               </button>
 
-              {/* 🔒 শুধুমাত্র SUPER_ADMIN এবং ADMIN ব্যক্তিদের জন্য দৃশ্যমান */}
-              {isAdmin && (
+              {/* 🔒 শুধুমাত্র SUPER_ADMIN ব্যক্তিদের জন্য দৃশ্যমান */}
+              {isSuperAdmin && (
                 <button
                   className={`nav-btn ${activeTab === 'settings' ? 'active' : ''}`}
                   onClick={() => { setActiveTab('settings'); setMenuOpen(false); }}
@@ -397,11 +398,11 @@ const AdminDashboard: React.FC = () => {
           {activeTab === 'products' && <AdminProducts key="products" />}
 
           {activeTab === 'settings' && (
-            isAdmin ? (
+            isSuperAdmin ? (
               <AdminSettings key="settings" />
             ) : (
               <div style={{ padding: '40px 0', textAlign: 'center', color: '#ff4d4d', letterSpacing: '2px', fontSize: '12px' }}>
-                ACCESS DENIED: ADMINISTRATOR PRIVILEGES REQUIRED.
+                ACCESS DENIED: SUPER ADMIN PRIVILEGES REQUIRED.
               </div>
             )
           )}
