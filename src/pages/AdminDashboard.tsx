@@ -73,9 +73,9 @@ const AdminDashboard: React.FC = () => {
     fetchCurrentUserAndRole();
   }, []);
 
-  // 🔐 অ্যাডমিন ও চেয়ারম্যান রোল চেক
+  // 🔐 ৩-লেভেল সিকিউরিটি গার্ড: শুধুমাত্র SUPER_ADMIN এবং ADMIN সেটিংস দেখতে পাবে
   const normalizedRole = userRole.toUpperCase().trim();
-  const isAdmin = ['ADMIN', 'ADMINISTRATOR', 'CHAIRMAN', 'FOUNDER', 'SUPER_ADMIN'].includes(normalizedRole);
+  const isAdmin = ['SUPER_ADMIN', 'ADMIN'].includes(normalizedRole);
 
   // সিকিউরিটি গার্ড
   useEffect(() => {
@@ -337,7 +337,7 @@ const AdminDashboard: React.FC = () => {
                 PRODUCTS & STOCK
               </button>
 
-              {/* 🔒 শুধুমাত্র Admin ব্যক্তিদের জন্য দৃশ্যমান */}
+              {/* 🔒 শুধুমাত্র SUPER_ADMIN এবং ADMIN ব্যক্তিদের জন্য দৃশ্যমান */}
               {isAdmin && (
                 <button
                   className={`nav-btn ${activeTab === 'settings' ? 'active' : ''}`}
@@ -391,7 +391,7 @@ const AdminDashboard: React.FC = () => {
 
         {/* MAIN CONTENT AREA */}
         <main className="nomad-main">
-          {/* 🔑 এখানে userRole প্রপ্স হিসেবে AdminOverview কম্পোনেন্টে পাঠোনো হচ্ছে */}
+          {/* 🔑 userRole প্রপ্স হিসেবে AdminOverview কম্পোনেন্টে পাঠানো হচ্ছে */}
           {activeTab === 'overview' && <AdminOverview key="overview" userRole={userRole} />}
           {activeTab === 'orders' && <AdminOrders key="orders" />}
           {activeTab === 'products' && <AdminProducts key="products" />}
