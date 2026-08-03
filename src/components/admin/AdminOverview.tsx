@@ -28,6 +28,9 @@ const AdminOverview: React.FC = () => {
   const [cancelledOrders, setCancelledOrders] = useState<number>(0);
   const [activeCatalogItems, setActiveCatalogItems] = useState<number>(0);
 
+  // 🔹 Profiles টেবিল থেকে সাধারণ ইউজার (কাস্টমার) গণনার স্টেট
+  const [totalCustomers, setTotalCustomers] = useState<number>(0);
+
   // Stock Alert States
   const [outOfStockCount, setOutOfStockCount] = useState<number>(0);
   const [lowStockCount, setLowStockCount] = useState<number>(0);
@@ -43,19 +46,18 @@ const AdminOverview: React.FC = () => {
   // 🔹 তারিখকে শর্ট ফরম্যাটে রূপান্তর করার হেলপার (যেমন: JUL 30)
   const formatDisplayDate = (dateStr: string) => {
     if (!dateStr) return '';
-    // Timezone Mismatch এড়াতে টি অংশ কেটে নেওয়া
     const [year, month, day] = dateStr.split('-').map(Number);
     if (!year || !month || !day) return '';
     const date = new Date(year, month - 1, day);
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase();
   };
 
-  // 🔹 ডায়নামিক ফিল্টার সাবটাইটেল জেনারেটর (* চিহ্ন ছাড়া)
-  const getFilterSubtitle = (suffix: 'REVENUE' | 'ORDERS') => {
+  // 🔹 ডায়নামিক ফিল্টার সাবটাইটেল জেনারেটর
+  const getFilterSubtitle = (suffix: string) => {
     if (selectedPreset === 'ALL') {
       return `ALL TIME ${suffix}`;
     }
-    
+
     if (selectedPreset === 'TODAY' && startDate) {
       return `TODAY (${formatDisplayDate(startDate)})`;
     }
@@ -163,7 +165,26 @@ const AdminOverview: React.FC = () => {
 
       if (productCount !== null) setActiveCatalogItems(productCount);
 
-      // 3. Fetch Stock Alerts
+      // 3. 🔹 Fetch Total Users/Customers (Only Profiles with role = 'customer' or 'user')
+      let customersQuery = supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true })
+        .eq('role', 'customer'); // 👈 আপনার টেবিলে সাধারণ ইউজারের রোলের নাম 'customer' নাকি 'user' তা অনুযায়ী নাম দিন
+
+      if (startDate && startDate.trim() !== '') {
+        customersQuery = customersQuery.gte('created_at', `${startDate}T00:00:00.000Z`);
+      }
+      if (endDate && endDate.trim() !== '') {
+        customersQuery = customersQuery.lte('created_at', `${endDate}T23:59:59.999Z`);
+      }
+
+      const { count: customerCount, error: customerErr } = await customersQuery;
+
+      if (!customerErr && customerCount !== null) {
+        setTotalCustomers(customerCount);
+      }
+
+      // 4. Fetch Stock Alerts
       const { count: outOfStock } = await supabase
         .from('products')
         .select('*', { count: 'exact', head: true })
@@ -305,7 +326,7 @@ const AdminOverview: React.FC = () => {
 
         @media (min-width: 1024px) {
           .metrics-grid {
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(3, 1fr);
             gap: 14px;
           }
 
@@ -350,13 +371,6 @@ const AdminOverview: React.FC = () => {
           border: 1px solid #222222;
           padding: 12px 10px;
           border-radius: 2px;
-        }
-
-        .secondary-metrics-grid {
-          display: grid;
-          grid-template-columns: repeat(2, 1fr);
-          gap: 10px;
-          width: 100%;
         }
       `}</style>
 
@@ -467,7 +481,7 @@ const AdminOverview: React.FC = () => {
         </div>
       </div>
 
-      {/* 2. Primary Metric Cards */}
+      {/* 2. Primary Metric Cards Grid */}
       <div className="metrics-grid">
         <div className="metric-card">
           <span style={{ fontSize: '15px', color: '#A0AEC0', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
@@ -493,6 +507,31 @@ const AdminOverview: React.FC = () => {
           </span>
         </div>
 
+        {/* 🔹 CUSTOMERS / USERS METRIC CARD */}
+        <div className="metric-card">
+          <span style={{ fontSize: '15px', color: '#A0AEC0', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
+            TOTAL USERS
+          </span>
+          <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF' }}>
+            {formatNumber(totalCustomers)}
+          </div>
+          <span style={{ fontSize: '10px', color: '#718096', marginTop: '4px', display: 'block' }}>
+            {getFilterSubtitle('USERS')}
+          </span>
+        </div>
+
+        <div className="metric-card">
+          <span style={{ fontSize: '15px', color: '#A0AEC0', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
+            AVG ORDER VALUE
+          </span>
+          <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF' }}>
+            ৳{formatNumber(avgOrderValue)}
+          </div>
+          <span style={{ fontSize: '10px', color: '#718096', marginTop: '4px', display: 'block' }}>
+            PER ACTIVE ORDER
+          </span>
+        </div>
+
         <div className="metric-card">
           <span style={{ fontSize: '15px', color: '#A0AEC0', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
             ACTIVE QUEUE
@@ -509,55 +548,14 @@ const AdminOverview: React.FC = () => {
 
         <div className="metric-card">
           <span style={{ fontSize: '15px', color: '#A0AEC0', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
-            CATALOG ITEMS
+            CATALOG & STOCK
           </span>
-          <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF' }}>
-            {formatNumber(activeCatalogItems)}
+          <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF', display: 'flex', alignItems: 'baseline', gap: '6px' }}>
+            <span>{formatNumber(activeCatalogItems)} ITEMS</span>
           </div>
-          <span style={{ fontSize: '10px', color: '#718096', marginTop: '4px', display: 'block' }}>
-            LIVE ITEMS
-          </span>
-        </div>
-      </div>
-
-      {/* 3. Secondary Insights Row */}
-      <div className="secondary-metrics-grid">
-        <div className="metric-card">
-          <span style={{ fontSize: '15px', color: '#A0AEC0', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
-            AVG ORDER VALUE
-          </span>
-          <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF' }}>
-            ৳{formatNumber(avgOrderValue)}
-          </div>
-          <span style={{ fontSize: '10px', color: '#718096', marginTop: '4px', display: 'block' }}>
-            PER ACTIVE ORDER
-          </span>
-        </div>
-
-        <div className="metric-card">
-          <span style={{ fontSize: '15px', color: '#A0AEC0', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
-            STOCK ALERTS
-          </span>
-
-          <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF' }}>
-            {outOfStockCount > 0 || lowStockCount > 0 ? (
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-                <span style={{ color: outOfStockCount > 0 ? '#f87171' : '#FFFFFF', fontSize: '20px' }}>
-                  {formatNumber(outOfStockCount)} OUT
-                </span>
-                <span style={{ fontSize: '14px', color: '#718096' }}>/</span>
-                <span style={{ color: lowStockCount > 0 ? '#facc15' : '#FFFFFF', fontSize: '15px', fontWeight: 'normal' }}>
-                  {formatNumber(lowStockCount)} LOW
-                </span>
-              </div>
-            ) : (
-              'ALL IN STOCK'
-            )}
-          </div>
-
-          <span style={{ fontSize: '10px', color: '#718096', marginTop: '4px', display: 'block' }}>
+          <span style={{ fontSize: '10px', color: outOfStockCount > 0 ? '#f87171' : '#718096', marginTop: '4px', display: 'block' }}>
             {outOfStockCount > 0 || lowStockCount > 0 
-              ? `${outOfStockCount} OUT OF STOCK, ${lowStockCount} LOW (≤ 3)` 
+              ? `${outOfStockCount} OUT, ${lowStockCount} LOW (≤ 3)` 
               : 'ALL STOCKS HEALTHY'}
           </span>
         </div>
