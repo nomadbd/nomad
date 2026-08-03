@@ -1,145 +1,596 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { supabase } from '../../supabaseClient';
 
+// 🔑 ১. প্রপস টাইপ ইন্টারফেস
 interface AdminOverviewProps {
   userRole?: string;
-  profile?: any;
 }
 
-interface AnalyticsData {
-  totalRevenue: number;
-  totalOrders: number;
-  totalProducts: number;
-  totalCustomers: number;
-}
+const formatNumber = (num: number): string => {
+  if (num >= 1_000_000) {
+    return (num / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M';
+  }
+  if (num >= 1_000) {
+    return (num / 1_000).toFixed(1).replace(/\.0$/, '') + 'K';
+  }
+  return num.toLocaleString();
+};
 
-const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole, profile }) => {
-  const [analytics, setAnalytics] = useState<AnalyticsData>({
-    totalRevenue: 0,
-    totalOrders: 0,
-    totalProducts: 0,
-    totalCustomers: 0,
-  });
-  const [loading, setLoading] = useState<boolean>(true);
+const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
+  // 🔒 সিকিউরিটি লক: ৩-লেভেল রোল আর্কিটেকচার অনুযায়ী শুধু SUPER_ADMIN এবং ADMIN সংবেদনশীল ডাটা দেখবে
+  const normalizedRole = userRole.toUpperCase().trim();
+  const canViewSensitiveData = ['SUPER_ADMIN', 'ADMIN'].includes(normalizedRole);
 
-  useEffect(() => {
-    fetchOverviewData();
-  }, []);
+  // Date Range States (Default: ALL TIME)
+  const [startDate, setStartDate] = useState<string>('');
+  const [endDate, setEndDate] = useState<string>('');
+  const [selectedPreset, setSelectedPreset] = useState<string>('ALL');
 
-  const fetchOverviewData = async () => {
-    try {
-      setLoading(true);
+  // Metrics States
+  const [totalRevenue, setTotalRevenue] = useState<number>(0);
+  const [totalOrders, setTotalOrders] = useState<number>(0);
+  const [pendingOrders, setPendingOrders] = useState<number>(0);
+  const [processingOrders, setProcessingOrders] = useState<number>(0);
+  const [receivedOrders, setReceivedOrders] = useState<number>(0);
+  const [shippedOrders, setShippedOrders] = useState<number>(0);
+  const [deliveredOrders, setDeliveredOrders] = useState<number>(0);
+  const [cancelledOrders, setCancelledOrders] = useState<number>(0);
+  const [activeCatalogItems, setActiveCatalogItems] = useState<number>(0);
 
-      // Fetch Total Orders & Revenue
-      const { data: orders, error: ordersError } = await supabase
-        .from('orders')
-        .select('total_amount, status');
+  // Total Users State
+  const [totalUsers, setTotalUsers] = useState<number>(0);
 
-      if (ordersError) throw ordersError;
+  // Stock Alert States
+  const [outOfStockCount, setOutOfStockCount] = useState<number>(0);
+  const [lowStockCount, setLowStockCount] = useState<number>(0);
 
-      const totalOrders = orders ? orders.length : 0;
-      const totalRevenue = orders
-        ? orders.reduce((sum, order) => sum + (Number(order.total_amount) || 0), 0)
-        : 0;
+  // Helper for Date Formats (YYYY-MM-DD)
+  const formatDateToInput = (d: Date) => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
 
-      // Fetch Total Products
-      const { count: productsCount, error: productsError } = await supabase
-        .from('products')
-        .select('*', { count: 'exact', head: true });
+  // তারিখকে শর্ট ফরম্যাটে রূপান্তর করার হেলপার (যেমন: JUL 30)
+  const formatDisplayDate = (dateStr: string) => {
+    if (!dateStr) return '';
+    const [year, month, day] = dateStr.split('-').map(Number);
+    if (!year || !month || !day) return '';
+    const date = new Date(year, month - 1, day);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase();
+  };
 
-      if (productsError) throw productsError;
+  // ডায়নামিক ফিল্টার সাবটাইটেল জেনারেটর
+  const getFilterSubtitle = (suffix: 'REVENUE' | 'ORDERS' | 'USERS') => {
+    if (selectedPreset === 'ALL') {
+      return `ALL TIME ${suffix}`;
+    }
 
-      // Fetch Total Customers/Profiles
-      const { count: profilesCount, error: profilesError } = await supabase
-        .from('profiles')
-        .select('*', { count: 'exact', head: true });
+    if (selectedPreset === 'TODAY' && startDate) {
+      return `TODAY (${formatDisplayDate(startDate)})`;
+    }
 
-      if (profilesError) throw profilesError;
+    if (startDate && endDate) {
+      if (startDate === endDate) {
+        return `${formatDisplayDate(startDate)} ${suffix}`;
+      }
+      return `${formatDisplayDate(startDate)} - ${formatDisplayDate(endDate)}`;
+    }
 
-      setAnalytics({
-        totalRevenue,
-        totalOrders,
-        totalProducts: productsCount || 0,
-        totalCustomers: profilesCount || 0,
-      });
-    } catch (err) {
-      console.error('Error loading overview analytics:', err);
-    } finally {
-      setLoading(false);
+    return `FILTERED ${suffix}`;
+  };
+
+  // Handle Preset Clicks
+  const handlePresetSelect = (preset: string) => {
+    setSelectedPreset(preset);
+    const now = new Date();
+
+    if (preset === 'TODAY') {
+      const todayStr = formatDateToInput(now);
+      setStartDate(todayStr);
+      setEndDate(todayStr);
+    } else if (preset === '7D') {
+      const past7 = new Date();
+      past7.setDate(now.getDate() - 7);
+      setStartDate(formatDateToInput(past7));
+      setEndDate(formatDateToInput(now));
+    } else if (preset === '30D') {
+      const past30 = new Date();
+      past30.setDate(now.getDate() - 30);
+      setStartDate(formatDateToInput(past30));
+      setEndDate(formatDateToInput(now));
+    } else if (preset === 'THIS_MONTH') {
+      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+      setStartDate(formatDateToInput(firstDay));
+      setEndDate(formatDateToInput(now));
+    } else if (preset === 'ALL') {
+      setStartDate('');
+      setEndDate('');
     }
   };
 
-  const cardStyle: React.CSSProperties = {
-    backgroundColor: '#0a0a0a',
-    border: '1px solid #1f1f1f',
-    padding: '20px',
-    borderRadius: '4px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '8px',
+  const fetchMetricsData = async () => {
+    try {
+      // 1. Fetch Orders Query
+      let ordersQuery = supabase.from('orders').select('status, total_amount, created_at');
+
+      if (startDate && startDate.trim() !== '') {
+        ordersQuery = ordersQuery.gte('created_at', `${startDate}T00:00:00.000Z`);
+      }
+      if (endDate && endDate.trim() !== '') {
+        ordersQuery = ordersQuery.lte('created_at', `${endDate}T23:59:59.999Z`);
+      }
+
+      const { data: orders, error: orderErr } = await ordersQuery;
+
+      if (!orderErr && orders) {
+        let revenue = 0;
+        let pending = 0;
+        let processing = 0;
+        let received = 0;
+        let shipped = 0;
+        let delivered = 0;
+        let cancelled = 0;
+
+        orders.forEach((o: any) => {
+          const st = (o.status || '').toLowerCase().trim();
+
+          if (st === 'pending') {
+            pending++;
+          } else if (st.includes('processing') || st.includes('proc')) {
+            processing++;
+          } else if (st.includes('received') || st.includes('rec')) {
+            received++;
+          } else if (st.includes('shipped')) {
+            shipped++;
+          } else if (st.includes('delivered') || st.includes('completed')) {
+            delivered++;
+          } else if (st.includes('cancel') || st.includes('cancelled')) {
+            cancelled++;
+          } else {
+            pending++;
+          }
+
+          if (!st.includes('cancel')) {
+            revenue += Number(o.total_amount || 0);
+          }
+        });
+
+        setTotalOrders(orders.length);
+        setTotalRevenue(revenue);
+        setPendingOrders(pending);
+        setProcessingOrders(processing);
+        setReceivedOrders(received);
+        setShippedOrders(shipped);
+        setDeliveredOrders(delivered);
+        setCancelledOrders(cancelled);
+      }
+
+      // 2. Fetch Catalog Items
+      const { count: productCount } = await supabase
+        .from('products')
+        .select('*', { count: 'exact', head: true });
+
+      if (productCount !== null) setActiveCatalogItems(productCount);
+
+      // 3. Fetch Stock Alerts
+      const { count: outOfStock } = await supabase
+        .from('products')
+        .select('*', { count: 'exact', head: true })
+        .eq('stock', 0);
+
+      if (outOfStock !== null) setOutOfStockCount(outOfStock);
+
+      const { count: lowStock } = await supabase
+        .from('products')
+        .select('*', { count: 'exact', head: true })
+        .gte('stock', 1)
+        .lte('stock', 3);
+
+      if (lowStock !== null) setLowStockCount(lowStock);
+
+      // 4. Fetch Users Query
+      let usersQuery = supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true })
+        .not('role', 'in', '("admin","manager")');
+
+      if (startDate && startDate.trim() !== '') {
+        usersQuery = usersQuery.gte('created_at', `${startDate}T00:00:00.000Z`);
+      }
+      if (endDate && endDate.trim() !== '') {
+        usersQuery = usersQuery.lte('created_at', `${endDate}T23:59:59.999Z`);
+      }
+
+      const { count: usersCount, error: userErr } = await usersQuery;
+
+      if (!userErr && usersCount !== null) {
+        setTotalUsers(usersCount);
+      }
+
+    } catch (err) {
+      console.error('Error fetching analytics:', err);
+    }
   };
 
-  const labelStyle: React.CSSProperties = {
-    fontSize: '10px',
-    color: '#888888',
-    letterSpacing: '1.5px',
-    fontWeight: 'bold',
-    textTransform: 'uppercase',
+  useEffect(() => {
+    fetchMetricsData();
+
+    const ordersSubscription = supabase
+      .channel('admin-overview-orders')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => fetchMetricsData())
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(ordersSubscription);
+    };
+  }, [startDate, endDate]);
+
+  const calcPercent = (val: number) => {
+    if (!totalOrders || totalOrders <= 0) return 0;
+    const p = (val / totalOrders) * 100;
+    return isNaN(p) ? 0 : Math.min(Math.max(p, 0), 100);
   };
 
-  const valueStyle: React.CSSProperties = {
-    fontSize: '24px',
-    color: '#ffffff',
-    fontWeight: '900',
-    fontFamily: 'monospace',
-  };
+  const validOrderCount = totalOrders - cancelledOrders;
+  const avgOrderValue = validOrderCount > 0 ? Math.round(totalRevenue / validOrderCount) : 0;
 
-  if (loading) {
-    return (
-      <div style={{ color: '#888888', fontSize: '11px', letterSpacing: '1px', padding: '20px 0' }}>
-        LOADING OVERVIEW DATA...
-      </div>
-    );
-  }
+  const statusItems = [
+    { key: 'PENDING', label: 'PENDING', count: pendingOrders, color: '#facc15' },
+    { key: 'PROC', label: 'PROC', count: processingOrders, color: '#c084fc' },
+    { key: 'REC', label: 'REC', count: receivedOrders, color: '#60a5fa' },
+    { key: 'SHIPPED', label: 'SHIPPED', count: shippedOrders, color: '#22d3ee' },
+    { key: 'DELIVERED', label: 'DELIVERED', color: '#4ade80', count: deliveredOrders },
+    { key: 'CANCELLED', label: 'CANCELLED', count: cancelledOrders, color: '#f87171' },
+  ];
 
   return (
-    <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '24px' }}>
-      
-      {/* Header Info */}
-      <div style={{ borderBottom: '1px solid #1f1f1f', paddingBottom: '16px' }}>
-        <h2 style={{ fontSize: '16px', fontWeight: '900', letterSpacing: '2px', color: '#fff', textTransform: 'uppercase' }}>
-          SYSTEM OVERVIEW & ANALYTICS
-        </h2>
-        <span style={{ fontSize: '10px', color: '#666666', letterSpacing: '1px', marginTop: '4px', display: 'block' }}>
-          LOGGED IN AS: {profile?.email || 'OPERATOR'} ({userRole || 'STAFF'})
-        </span>
+    <div style={{ 
+      color: '#FFFFFF', 
+      fontFamily: 'monospace, sans-serif', 
+      width: '100%', 
+      maxWidth: '100%', 
+      minWidth: 0, 
+      boxSizing: 'border-box',
+      overflowX: 'hidden'
+    }}>
+
+      <style>{`
+        * { box-sizing: border-box; }
+        
+        .date-filter-container {
+          background-color: #080808;
+          border: 1px solid #222222;
+          padding: 12px;
+          border-radius: 2px;
+          margin-bottom: 12px;
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+        }
+
+        .preset-buttons {
+          display: flex;
+          gap: 6px;
+          overflow-x: auto;
+          scrollbar-width: none;
+        }
+
+        .preset-btn {
+          background: #111;
+          border: 1px solid #222;
+          color: #666;
+          font-size: 10px;
+          font-weight: bold;
+          padding: 6px 10px;
+          cursor: pointer;
+          border-radius: 2px;
+          white-space: nowrap;
+          transition: all 0.2s ease;
+        }
+
+        .preset-btn.active {
+          background: #111;
+          color: #FFFFFF;
+          border-color: #333;
+        }
+
+        .custom-date-inputs {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .date-input {
+          background: #111;
+          border: 1px solid #222;
+          color: #666666;
+          font-family: monospace;
+          font-size: 11px;
+          padding: 6px 8px;
+          border-radius: 2px;
+          outline: none;
+          width: 100%;
+        }
+
+        .date-input:valid,
+        .date-input[value]:not([value=""]) {
+          color: #FFFFFF;
+        }
+
+        .date-input::-webkit-calendar-picker-indicator {
+          filter: opacity(0.4) grayscale(100%);
+          cursor: pointer;
+        }
+
+        /* পারফেক্ট ২-কলাম গ্রিড */
+        .two-column-grid {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 10px;
+          margin-top: 10px;
+          width: 100%;
+        }
+
+        .metric-card {
+          background-color: #080808;
+          border: 1px solid #222222;
+          padding: 14px 12px;
+          border-radius: 2px;
+          width: 100%;
+        }
+
+        .status-grid {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 10px;
+          width: 100%;
+        }
+
+        @media (min-width: 640px) {
+          .status-grid {
+            grid-template-columns: repeat(3, 1fr);
+          }
+        }
+
+        @media (min-width: 1024px) {
+          .date-filter-container {
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+          }
+
+          .custom-date-inputs {
+            width: auto;
+          }
+
+          .date-input {
+            width: 135px;
+          }
+        }
+      `}</style>
+
+      {/* 📅 DATE RANGE FILTER COMPONENT */}
+      <div className="date-filter-container">
+        <div className="preset-buttons">
+          <button 
+            className={`preset-btn ${selectedPreset === 'ALL' ? 'active' : ''}`}
+            onClick={() => handlePresetSelect('ALL')}
+          >
+            ALL TIME
+          </button>
+          <button 
+            className={`preset-btn ${selectedPreset === 'TODAY' ? 'active' : ''}`}
+            onClick={() => handlePresetSelect('TODAY')}
+          >
+            TODAY
+          </button>
+          <button 
+            className={`preset-btn ${selectedPreset === '7D' ? 'active' : ''}`}
+            onClick={() => handlePresetSelect('7D')}
+          >
+            7 DAYS
+          </button>
+          <button 
+            className={`preset-btn ${selectedPreset === '30D' ? 'active' : ''}`}
+            onClick={() => handlePresetSelect('30D')}
+          >
+            30 DAYS
+          </button>
+          <button 
+            className={`preset-btn ${selectedPreset === 'THIS_MONTH' ? 'active' : ''}`}
+            onClick={() => handlePresetSelect('THIS_MONTH')}
+          >
+            THIS MONTH
+          </button>
+        </div>
+
+        <div className="custom-date-inputs">
+          <input 
+            type="date" 
+            className="date-input"
+            value={startDate}
+            onChange={(e) => {
+              setStartDate(e.target.value);
+              setSelectedPreset('CUSTOM');
+            }}
+          />
+          <span style={{ color: '#666666', fontSize: '11px', fontWeight: 'bold' }}>TO</span>
+          <input 
+            type="date" 
+            className="date-input"
+            value={endDate}
+            onChange={(e) => {
+              setEndDate(e.target.value);
+              setSelectedPreset('CUSTOM');
+            }}
+          />
+        </div>
       </div>
 
-      {/* Analytics Grid */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-        gap: '16px',
+      {/* 1. Fulfillment Breakdown Section */}
+      <div style={{ 
+        backgroundColor: '#080808', 
+        border: '1px solid #222222', 
+        padding: '14px', 
+        borderRadius: '2px', 
         width: '100%'
       }}>
-        <div style={cardStyle}>
-          <span style={labelStyle}>TOTAL REVENUE</span>
-          <span style={valueStyle}>৳{analytics.totalRevenue.toLocaleString()}</span>
+        <span style={{ fontSize: '15px', color: '#CBD5E0', letterSpacing: '1px', fontWeight: 'bold', display: 'block', marginBottom: '10px' }}>
+          FULFILLMENT STATUS
+        </span>
+
+        {/* Multi-Color Progress Bar */}
+        <div style={{ display: 'flex', height: '4px', backgroundColor: '#181818', borderRadius: '2px', overflow: 'hidden', marginBottom: '12px', width: '100%' }}>
+          <div style={{ width: `${calcPercent(pendingOrders)}%`, backgroundColor: '#facc15' }} />
+          <div style={{ width: `${calcPercent(processingOrders)}%`, backgroundColor: '#c084fc' }} />
+          <div style={{ width: `${calcPercent(receivedOrders)}%`, backgroundColor: '#60a5fa' }} />
+          <div style={{ width: `${calcPercent(shippedOrders)}%`, backgroundColor: '#22d3ee' }} />
+          <div style={{ width: `${calcPercent(deliveredOrders)}%`, backgroundColor: '#4ade80' }} />
+          <div style={{ width: `${calcPercent(cancelledOrders)}%`, backgroundColor: '#f87171' }} />
         </div>
 
-        <div style={cardStyle}>
-          <span style={labelStyle}>TOTAL ORDERS</span>
-          <span style={valueStyle}>{analytics.totalOrders}</span>
+        {/* Status Breakdown Grid */}
+        <div className="status-grid">
+          {statusItems.map((item) => {
+            const percent = calcPercent(item.count).toFixed(0);
+            const isZero = item.count === 0;
+
+            return (
+              <div key={item.key} className="status-card">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+                  <span style={{ color: isZero ? '#444' : item.color, fontSize: '10px', flexShrink: 0 }}>●</span>
+                  <span style={{ fontSize: '15px', color: isZero ? '#666' : '#A0AEC0', fontWeight: 'bold', letterSpacing: '0.5px' }}>
+                    {item.label}
+                  </span>
+                </div>
+
+                <div style={{ fontSize: '20px', fontWeight: 'bold', color: isZero ? '#555' : '#FFFFFF', display: 'flex', alignItems: 'baseline', gap: '6px' }}>
+                  {formatNumber(item.count)}
+                  <span style={{ fontSize: '10px', color: isZero ? '#444' : '#888', fontWeight: 'normal' }}>
+                    ({percent}%)
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* 🔒 🔹 সারি ১: TOTAL REVENUE এবং AVG ORDER VALUE (শুধুমাত্র SUPER_ADMIN ও ADMIN দেখতে পারবে) */}
+      {canViewSensitiveData && (
+        <div className="two-column-grid">
+          <div className="metric-card">
+            <span style={{ fontSize: '15px', color: '#A0AEC0', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
+              TOTAL REVENUE
+            </span>
+            <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF' }}>
+              ৳{formatNumber(totalRevenue)}
+            </div>
+            <span style={{ fontSize: '10px', color: '#718096', marginTop: '4px', display: 'block' }}>
+              {getFilterSubtitle('REVENUE')}
+            </span>
+          </div>
+
+          <div className="metric-card">
+            <span style={{ fontSize: '15px', color: '#A0AEC0', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
+              AVG ORDER VALUE
+            </span>
+            <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF' }}>
+              ৳{formatNumber(avgOrderValue)}
+            </div>
+            <span style={{ fontSize: '10px', color: '#718096', marginTop: '4px', display: 'block' }}>
+              PER ACTIVE ORDER
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* 🔹 সারি ২: TOTAL ORDERS এবং ACTIVE QUEUE */}
+      <div className="two-column-grid">
+        <div className="metric-card">
+          <span style={{ fontSize: '15px', color: '#A0AEC0', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
+            TOTAL ORDERS
+          </span>
+          <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF' }}>
+            {formatNumber(totalOrders)}
+          </div>
+          <span style={{ fontSize: '10px', color: '#718096', marginTop: '4px', display: 'block' }}>
+            {getFilterSubtitle('ORDERS')}
+          </span>
         </div>
 
-        <div style={cardStyle}>
-          <span style={labelStyle}>PRODUCTS IN STOCK</span>
-          <span style={valueStyle}>{analytics.totalProducts}</span>
+        <div className="metric-card">
+          <span style={{ fontSize: '15px', color: '#A0AEC0', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
+            ACTIVE QUEUE
+          </span>
+          <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF', display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+            <span>{formatNumber(pendingOrders + processingOrders)}</span>
+            <span style={{ fontSize: '14px', color: '#718096' }}>/</span>
+            <span style={{ fontSize: '15px', color: '#CBD5E0', fontWeight: 'normal' }}>{formatNumber(receivedOrders)} REC</span>
+          </div>
+          <span style={{ fontSize: '10px', color: '#718096', marginTop: '4px', display: 'block' }}>
+            PENDING & PROC
+          </span>
+        </div>
+      </div>
+
+      {/* 🔹 সারি ৩: CATALOG ITEMS এবং TOTAL USERS */}
+      <div className="two-column-grid">
+        <div className="metric-card">
+          <span style={{ fontSize: '15px', color: '#A0AEC0', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
+            CATALOG ITEMS
+          </span>
+          <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF' }}>
+            {formatNumber(activeCatalogItems)}
+          </div>
+          <span style={{ fontSize: '10px', color: '#718096', marginTop: '4px', display: 'block' }}>
+            LIVE ITEMS
+          </span>
         </div>
 
-        <div style={cardStyle}>
-          <span style={labelStyle}>REGISTERED USERS</span>
-          <span style={valueStyle}>{analytics.totalCustomers}</span>
+        <div className="metric-card">
+          <span style={{ fontSize: '15px', color: '#A0AEC0', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
+            TOTAL USERS
+          </span>
+          <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF' }}>
+            {formatNumber(totalUsers)}
+          </div>
+          <span style={{ fontSize: '10px', color: '#718096', marginTop: '4px', display: 'block' }}>
+            {getFilterSubtitle('USERS')}
+          </span>
+        </div>
+      </div>
+
+      {/* 🔹 সারি ৪: STOCK ALERTS */}
+      <div className="two-column-grid">
+        <div className="metric-card" style={{ gridColumn: 'span 2' }}>
+          <span style={{ fontSize: '15px', color: '#A0AEC0', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
+            STOCK ALERTS
+          </span>
+
+          <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF' }}>
+            {outOfStockCount > 0 || lowStockCount > 0 ? (
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
+                <span style={{ color: outOfStockCount > 0 ? '#f87171' : '#FFFFFF', fontSize: '20px' }}>
+                  {formatNumber(outOfStockCount)} OUT
+                </span>
+                <span style={{ fontSize: '14px', color: '#718096' }}>/</span>
+                <span style={{ color: lowStockCount > 0 ? '#facc15' : '#FFFFFF', fontSize: '15px', fontWeight: 'normal' }}>
+                  {formatNumber(lowStockCount)} LOW
+                </span>
+              </div>
+            ) : (
+              'ALL IN STOCK'
+            )}
+          </div>
+
+          <span style={{ fontSize: '10px', color: '#718096', marginTop: '4px', display: 'block' }}>
+            {outOfStockCount > 0 || lowStockCount > 0 
+              ? `${outOfStockCount} OUT OF STOCK, ${lowStockCount} LOW (≤ 3)` 
+              : 'ALL STOCKS HEALTHY'}
+          </span>
         </div>
       </div>
 
