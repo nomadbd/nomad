@@ -1,6 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../../supabaseClient';
 
+// 🔑 ১. প্রপস টাইপ ইন্টারফেস
+interface AdminOverviewProps {
+  userRole?: string;
+}
+
 const formatNumber = (num: number): string => {
   if (num >= 1_000_000) {
     return (num / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M';
@@ -11,7 +16,11 @@ const formatNumber = (num: number): string => {
   return num.toLocaleString();
 };
 
-const AdminOverview: React.FC = () => {
+const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
+  // 🔒 গোপনীয়তা চেক: শুধু উচ্চপদস্থ রোল ছাড়া বাকি কারো কাছে এই অপশন থাকবেই না
+  const normalizedRole = userRole.toUpperCase().trim();
+  const canViewSensitiveData = ['ADMIN', 'ADMINISTRATOR', 'CHAIRMAN', 'FOUNDER', 'SUPER_ADMIN'].includes(normalizedRole);
+
   // Date Range States (Default: ALL TIME)
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
@@ -469,32 +478,34 @@ const AdminOverview: React.FC = () => {
         </div>
       </div>
 
-      {/* 🔹 সারি ১: TOTAL REVENUE এবং AVG ORDER VALUE */}
-      <div className="two-column-grid">
-        <div className="metric-card">
-          <span style={{ fontSize: '15px', color: '#A0AEC0', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
-            TOTAL REVENUE
-          </span>
-          <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF' }}>
-            ৳{formatNumber(totalRevenue)}
+      {/* 🔒 🔹 সারি ১: TOTAL REVENUE এবং AVG ORDER VALUE (শুধুমাত্র অনুমোদনপ্রাপ্তরা দেখতে পারবে, বাকিদের সম্পূর্ণ অদৃশ্য থাকবে) */}
+      {canViewSensitiveData && (
+        <div className="two-column-grid">
+          <div className="metric-card">
+            <span style={{ fontSize: '15px', color: '#A0AEC0', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
+              TOTAL REVENUE
+            </span>
+            <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF' }}>
+              ৳{formatNumber(totalRevenue)}
+            </div>
+            <span style={{ fontSize: '10px', color: '#718096', marginTop: '4px', display: 'block' }}>
+              {getFilterSubtitle('REVENUE')}
+            </span>
           </div>
-          <span style={{ fontSize: '10px', color: '#718096', marginTop: '4px', display: 'block' }}>
-            {getFilterSubtitle('REVENUE')}
-          </span>
-        </div>
 
-        <div className="metric-card">
-          <span style={{ fontSize: '15px', color: '#A0AEC0', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
-            AVG ORDER VALUE
-          </span>
-          <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF' }}>
-            ৳{formatNumber(avgOrderValue)}
+          <div className="metric-card">
+            <span style={{ fontSize: '15px', color: '#A0AEC0', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
+              AVG ORDER VALUE
+            </span>
+            <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF' }}>
+              ৳{formatNumber(avgOrderValue)}
+            </div>
+            <span style={{ fontSize: '10px', color: '#718096', marginTop: '4px', display: 'block' }}>
+              PER ACTIVE ORDER
+            </span>
           </div>
-          <span style={{ fontSize: '10px', color: '#718096', marginTop: '4px', display: 'block' }}>
-            PER ACTIVE ORDER
-          </span>
         </div>
-      </div>
+      )}
 
       {/* 🔹 সারি ২: TOTAL ORDERS এবং ACTIVE QUEUE */}
       <div className="two-column-grid">
@@ -552,7 +563,7 @@ const AdminOverview: React.FC = () => {
         </div>
       </div>
 
-      {/* 🔹 সারি ৪ (নিচে): STOCK ALERTS (পুরো প্রস্থ জুড়ে অবস্থান করবে) */}
+      {/* 🔹 সারি ৪: STOCK ALERTS */}
       <div className="two-column-grid">
         <div className="metric-card" style={{ gridColumn: 'span 2' }}>
           <span style={{ fontSize: '15px', color: '#A0AEC0', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
