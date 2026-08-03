@@ -61,6 +61,9 @@ const AdminDashboard: React.FC = () => {
         } else {
           setProfileData({ email: user.email });
         }
+      } else {
+        // ইউজার না থাকলে হোমপেজ বা লগইনে পাঠিয়ে দেওয়া
+        window.location.href = '/';
       }
     } catch (err) {
       console.error('Error fetching user profile:', err);
@@ -73,17 +76,28 @@ const AdminDashboard: React.FC = () => {
     fetchCurrentUserAndRole();
   }, []);
 
-  // 🔐 সিকিউরিটি গার্ড লজিক
+  // 🔐 সিকিউরিটি গার্ড লজিক (Case and whitespace normalization)
   const normalizedRole = userRole.toUpperCase().trim();
+  
   // 👑 শুধুমাত্র SUPER_ADMIN সেটিংস নিয়ন্ত্রণ করতে পারবে
   const isSuperAdmin = normalizedRole === 'SUPER_ADMIN';
 
-  // সিকিউরিটি গার্ড: Super Admin ছাড়া কেউ ইউআরএল বা অন্য উপায়ে Settings এ ঢুকতে চাইলে Overview-তে পাঠাবে
+  // 🛡️ ড্যাশবোর্ড এক্সেস রোলস: SUPER_ADMIN, ADMIN, এবং STAFF
+  const hasAdminAccess = ['SUPER_ADMIN', 'ADMIN', 'STAFF'].includes(normalizedRole);
+
+  // সিকিউরিটি গার্ড: Super Admin ছাড়া কেউ Settings এ ঢুকতে চাইলে Overview-তে পাঠাবে
   useEffect(() => {
     if (!loading && !isSuperAdmin && activeTab === 'settings') {
       setActiveTab('overview');
     }
   }, [isSuperAdmin, loading, activeTab]);
+
+  // 🛑 সিকিউরিটি রিডাইরেক্ট: কোনো সাধারণ CUSTOMER এই পেজে আসলে তাকে ইউজার প্রোফাইল/হোমপেজে পাঠিয়ে দিবে
+  useEffect(() => {
+    if (!loading && !hasAdminAccess) {
+      window.location.href = '/profile'; // আপনার কাস্টমার প্রোফাইল রুটের লিংক এখানে দিন
+    }
+  }, [loading, hasAdminAccess]);
 
   const subTextStyle: React.CSSProperties = {
     fontSize: '9px',
@@ -92,6 +106,20 @@ const AdminDashboard: React.FC = () => {
     letterSpacing: '1px',
     display: 'block',
   };
+
+  // লোডিং স্টেটে খালি বা স্পিনার দেখানো
+  if (loading) {
+    return (
+      <div style={{ backgroundColor: '#030303', color: '#fff', minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'monospace' }}>
+        LOADING DASHBOARD...
+      </div>
+    );
+  }
+
+  // এক্সেস না থাকলে কিছুই রেন্ডার করবে না (রিডাইরেক্ট হওয়া পর্যন্ত)
+  if (!hasAdminAccess) {
+    return null;
+  }
 
   return (
     <div style={{ 
@@ -376,7 +404,7 @@ const AdminDashboard: React.FC = () => {
                     letterSpacing: '1px'
                   }}
                 >
-                  {loading ? '...' : (userName || userEmail || 'OPERATOR')}
+                  {userName || userEmail || 'OPERATOR'}
                 </span>
 
                 {userRole && (
@@ -392,7 +420,6 @@ const AdminDashboard: React.FC = () => {
 
         {/* MAIN CONTENT AREA */}
         <main className="nomad-main">
-          {/* 🔑 userRole প্রপ্স হিসেবে AdminOverview কম্পোনেন্টে পাঠানো হচ্ছে */}
           {activeTab === 'overview' && <AdminOverview key="overview" userRole={userRole} />}
           {activeTab === 'orders' && <AdminOrders key="orders" />}
           {activeTab === 'products' && <AdminProducts key="products" />}
