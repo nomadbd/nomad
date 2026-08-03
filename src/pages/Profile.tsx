@@ -130,14 +130,15 @@ export default function Profile() {
     );
   }
 
-  // ⚡ ১. ইউজার 'admin' বা 'manager' হলে AdminDashboard লোড হবে
-  const isStaff = profile?.role === 'admin' || profile?.role === 'manager';
+  // ⚡ ১. নতুন রোল সিস্টেম অনুযায়ী অ্যাডমিন প্যানেল এক্সেস চেক (SUPER_ADMIN, ADMIN, STAFF)
+  const normalizedRole = profile?.role ? String(profile.role).toUpperCase().trim() : '';
+  const isStaff = ['SUPER_ADMIN', 'ADMIN', 'STAFF'].includes(normalizedRole);
 
   if (isStaff) {
     return <AdminDashboard session={session} profile={profile} onRefreshProfile={fetchUserData} />;
   }
 
-  // ⚡ ২. সাধারণ কাস্টমার প্রোফাইল
+  // ⚡ ২. সাধারণ কাস্টমার প্রোফাইল (CUSTOMER বা অন্য কোনো রোল হলে এটি দেখাবে)
   return (
     <div style={{ backgroundColor: '#000', minHeight: '100vh', color: '#fff', padding: '40px 20px', fontFamily: "'Inter', sans-serif", width: '100%', boxSizing: 'border-box', overflowX: 'hidden' }}>
 
@@ -190,10 +191,10 @@ export default function Profile() {
 
             <p style={{ fontSize: '10px', color: '#888', letterSpacing: '2px', marginBottom: '5px' }}>NAME</p>
             <input placeholder={profile?.name || "Enter your name"} value={newName} onChange={(e) => setNewName(e.target.value)} style={inputStyle} />
-            
+
             <p style={{ fontSize: '10px', color: '#888', letterSpacing: '2px', marginBottom: '5px' }}>EMAIL ADDRESS</p>
             <input placeholder={profile?.email} value={newEmail} onChange={(e) => setNewEmail(e.target.value)} style={inputStyle} />
-            
+
             <p style={{ fontSize: '10px', color: '#888', letterSpacing: '2px', marginBottom: '5px' }}>NEW PASSWORD</p>
             <input type="password" placeholder="••••••••" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} style={inputStyle} />
 
