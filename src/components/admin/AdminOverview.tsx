@@ -315,7 +315,7 @@ const AdminOverview: React.FC = () => {
           cursor: pointer;
         }
 
-        /* সবসময় ২ টি করে কলাম গ্রিড */
+        /* পারফেক্ট ২-কলাম গ্রিড */
         .two-column-grid {
           display: grid;
           grid-template-columns: repeat(2, 1fr);
@@ -469,7 +469,7 @@ const AdminOverview: React.FC = () => {
         </div>
       </div>
 
-      {/* 2. Row 1: Primary Metrics (2 Column Layout) */}
+      {/* 🔹 সারি ১: TOTAL REVENUE এবং AVG ORDER VALUE */}
       <div className="two-column-grid">
         <div className="metric-card">
           <span style={{ fontSize: '15px', color: '#A0AEC0', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
@@ -485,6 +485,21 @@ const AdminOverview: React.FC = () => {
 
         <div className="metric-card">
           <span style={{ fontSize: '15px', color: '#A0AEC0', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
+            AVG ORDER VALUE
+          </span>
+          <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF' }}>
+            ৳{formatNumber(avgOrderValue)}
+          </div>
+          <span style={{ fontSize: '10px', color: '#718096', marginTop: '4px', display: 'block' }}>
+            PER ACTIVE ORDER
+          </span>
+        </div>
+      </div>
+
+      {/* 🔹 সারি ২: TOTAL ORDERS এবং ACTIVE QUEUE */}
+      <div className="two-column-grid">
+        <div className="metric-card">
+          <span style={{ fontSize: '15px', color: '#A0AEC0', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
             TOTAL ORDERS
           </span>
           <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF' }}>
@@ -494,10 +509,7 @@ const AdminOverview: React.FC = () => {
             {getFilterSubtitle('ORDERS')}
           </span>
         </div>
-      </div>
 
-      {/* 3. Row 2: Secondary Metrics (2 Column Layout) */}
-      <div className="two-column-grid">
         <div className="metric-card">
           <span style={{ fontSize: '15px', color: '#A0AEC0', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
             ACTIVE QUEUE
@@ -511,7 +523,10 @@ const AdminOverview: React.FC = () => {
             PENDING & PROC
           </span>
         </div>
+      </div>
 
+      {/* 🔹 সারি ৩: CATALOG ITEMS এবং TOTAL USERS */}
+      <div className="two-column-grid">
         <div className="metric-card">
           <span style={{ fontSize: '15px', color: '#A0AEC0', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
             CATALOG ITEMS
@@ -523,30 +538,30 @@ const AdminOverview: React.FC = () => {
             LIVE ITEMS
           </span>
         </div>
-      </div>
 
-      {/* 4. Row 3: Insights (2 Column Layout) */}
-      <div className="two-column-grid">
         <div className="metric-card">
           <span style={{ fontSize: '15px', color: '#A0AEC0', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
-            AVG ORDER VALUE
+            TOTAL USERS
           </span>
           <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF' }}>
-            ৳{formatNumber(avgOrderValue)}
+            {formatNumber(totalUsers)}
           </div>
           <span style={{ fontSize: '10px', color: '#718096', marginTop: '4px', display: 'block' }}>
-            PER ACTIVE ORDER
+            {getFilterSubtitle('USERS')}
           </span>
         </div>
+      </div>
 
-        <div className="metric-card">
+      {/* 🔹 সারি ৪ (নিচে): STOCK ALERTS (পুরো প্রস্থ জুড়ে অবস্থান করবে) */}
+      <div className="two-column-grid">
+        <div className="metric-card" style={{ gridColumn: 'span 2' }}>
           <span style={{ fontSize: '15px', color: '#A0AEC0', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
             STOCK ALERTS
           </span>
 
           <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF' }}>
             {outOfStockCount > 0 || lowStockCount > 0 ? (
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
                 <span style={{ color: outOfStockCount > 0 ? '#f87171' : '#FFFFFF', fontSize: '20px' }}>
                   {formatNumber(outOfStockCount)} OUT
                 </span>
@@ -564,21 +579,6 @@ const AdminOverview: React.FC = () => {
             {outOfStockCount > 0 || lowStockCount > 0 
               ? `${outOfStockCount} OUT OF STOCK, ${lowStockCount} LOW (≤ 3)` 
               : 'ALL STOCKS HEALTHY'}
-          </span>
-        </div>
-      </div>
-
-      {/* 5. Bottom Row: TOTAL USERS (২ কলামের লেআউট ব্যালেন্স রাখার জন্য ২টি কার্ড বা ১টি পুরো ফিলিং কার্ড) */}
-      <div className="two-column-grid">
-        <div className="metric-card" style={{ gridColumn: 'span 2' }}>
-          <span style={{ fontSize: '15px', color: '#A0AEC0', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
-            TOTAL USERS
-          </span>
-          <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF' }}>
-            {formatNumber(totalUsers)}
-          </div>
-          <span style={{ fontSize: '10px', color: '#718096', marginTop: '4px', display: 'block' }}>
-            {getFilterSubtitle('USERS')}
           </span>
         </div>
       </div>
