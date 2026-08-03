@@ -17,9 +17,9 @@ const formatNumber = (num: number): string => {
 };
 
 const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
-  // 🔒 গোপনীয়তা চেক: শুধু উচ্চপদস্থ রোল ছাড়া বাকি কারো কাছে এই অপশন থাকবেই না
+  // 🔒 সিকিউরিটি লক: ৩-লেভেল রোল আর্কিটেকচার অনুযায়ী শুধু SUPER_ADMIN এবং ADMIN সংবেদনশীল ডাটা দেখবে
   const normalizedRole = userRole.toUpperCase().trim();
-  const canViewSensitiveData = ['ADMIN', 'ADMINISTRATOR', 'CHAIRMAN', 'FOUNDER', 'SUPER_ADMIN'].includes(normalizedRole);
+  const canViewSensitiveData = ['SUPER_ADMIN', 'ADMIN'].includes(normalizedRole);
 
   // Date Range States (Default: ALL TIME)
   const [startDate, setStartDate] = useState<string>('');
@@ -478,7 +478,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
         </div>
       </div>
 
-      {/* 🔒 🔹 সারি ১: TOTAL REVENUE এবং AVG ORDER VALUE (শুধুমাত্র অনুমোদনপ্রাপ্তরা দেখতে পারবে, বাকিদের সম্পূর্ণ অদৃশ্য থাকবে) */}
+      {/* 🔒 🔹 সারি ১: TOTAL REVENUE এবং AVG ORDER VALUE (শুধুমাত্র SUPER_ADMIN ও ADMIN দেখতে পারবে) */}
       {canViewSensitiveData && (
         <div className="two-column-grid">
           <div className="metric-card">
