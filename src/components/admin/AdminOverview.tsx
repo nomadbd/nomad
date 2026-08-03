@@ -28,7 +28,7 @@ const AdminOverview: React.FC = () => {
   const [cancelledOrders, setCancelledOrders] = useState<number>(0);
   const [activeCatalogItems, setActiveCatalogItems] = useState<number>(0);
 
-  // 🔹 Total Users State
+  // Total Users State
   const [totalUsers, setTotalUsers] = useState<number>(0);
 
   // Stock Alert States
@@ -43,17 +43,16 @@ const AdminOverview: React.FC = () => {
     return `${year}-${month}-${day}`;
   };
 
-  // 🔹 তারিখকে শর্ট ফরম্যাটে রূপান্তর করার হেলপার (যেমন: JUL 30)
+  // তারিখকে শর্ট ফরম্যাটে রূপান্তর করার হেলপার (যেমন: JUL 30)
   const formatDisplayDate = (dateStr: string) => {
     if (!dateStr) return '';
-    // Timezone Mismatch এড়াতে টি অংশ কেটে নেওয়া
     const [year, month, day] = dateStr.split('-').map(Number);
     if (!year || !month || !day) return '';
     const date = new Date(year, month - 1, day);
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase();
   };
 
-  // 🔹 ডায়নামিক ফিল্টার সাবটাইটেল জেনারেটর (* চিহ্ন ছাড়া)
+  // ডায়নামিক ফিল্টার সাবটাইটেল জেনারেটর
   const getFilterSubtitle = (suffix: 'REVENUE' | 'ORDERS' | 'USERS') => {
     if (selectedPreset === 'ALL') {
       return `ALL TIME ${suffix}`;
@@ -182,11 +181,11 @@ const AdminOverview: React.FC = () => {
 
       if (lowStock !== null) setLowStockCount(lowStock);
 
-      // 4. 🔹 Fetch Users Query (profiles টেবিল থেকে admin ও manager ব্যতীত সাধারণ ইউজার)
+      // 4. Fetch Users Query
       let usersQuery = supabase
         .from('profiles')
         .select('*', { count: 'exact', head: true })
-        .not('role', 'in', '("admin","manager")'); // অ্যাডমিন ও ম্যানেজার ফিল্টার আউট করা হয়েছে
+        .not('role', 'in', '("admin","manager")');
 
       if (startDate && startDate.trim() !== '') {
         usersQuery = usersQuery.gte('created_at', `${startDate}T00:00:00.000Z`);
@@ -316,34 +315,13 @@ const AdminOverview: React.FC = () => {
           cursor: pointer;
         }
 
-        .metrics-grid {
+        /* সবসময় ২ টি করে কলাম গ্রিড */
+        .two-column-grid {
           display: grid;
           grid-template-columns: repeat(2, 1fr);
           gap: 10px;
           margin-top: 10px;
-          margin-bottom: 10px;
           width: 100%;
-        }
-
-        @media (min-width: 1024px) {
-          .metrics-grid {
-            grid-template-columns: repeat(4, 1fr);
-            gap: 14px;
-          }
-
-          .date-filter-container {
-            flex-direction: row;
-            justify-content: space-between;
-            align-items: center;
-          }
-
-          .custom-date-inputs {
-            width: auto;
-          }
-
-          .date-input {
-            width: 135px;
-          }
         }
 
         .metric-card {
@@ -367,23 +345,19 @@ const AdminOverview: React.FC = () => {
           }
         }
 
-        .status-card {
-          background-color: #0d0d0d;
-          border: 1px solid #222222;
-          padding: 12px 10px;
-          border-radius: 2px;
-        }
+        @media (min-width: 1024px) {
+          .date-filter-container {
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+          }
 
-        .secondary-metrics-grid {
-          display: grid;
-          grid-template-columns: repeat(2, 1fr);
-          gap: 10px;
-          width: 100%;
-        }
+          .custom-date-inputs {
+            width: auto;
+          }
 
-        @media (min-width: 768px) {
-          .secondary-metrics-grid {
-            grid-template-columns: repeat(3, 1fr);
+          .date-input {
+            width: 135px;
           }
         }
       `}</style>
@@ -495,8 +469,8 @@ const AdminOverview: React.FC = () => {
         </div>
       </div>
 
-      {/* 2. Primary Metric Cards */}
-      <div className="metrics-grid">
+      {/* 2. Row 1: Primary Metrics (2 Column Layout) */}
+      <div className="two-column-grid">
         <div className="metric-card">
           <span style={{ fontSize: '15px', color: '#A0AEC0', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
             TOTAL REVENUE
@@ -520,7 +494,10 @@ const AdminOverview: React.FC = () => {
             {getFilterSubtitle('ORDERS')}
           </span>
         </div>
+      </div>
 
+      {/* 3. Row 2: Secondary Metrics (2 Column Layout) */}
+      <div className="two-column-grid">
         <div className="metric-card">
           <span style={{ fontSize: '15px', color: '#A0AEC0', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
             ACTIVE QUEUE
@@ -548,8 +525,8 @@ const AdminOverview: React.FC = () => {
         </div>
       </div>
 
-      {/* 3. Secondary Insights Row */}
-      <div className="secondary-metrics-grid">
+      {/* 4. Row 3: Insights (2 Column Layout) */}
+      <div className="two-column-grid">
         <div className="metric-card">
           <span style={{ fontSize: '15px', color: '#A0AEC0', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
             AVG ORDER VALUE
@@ -589,9 +566,11 @@ const AdminOverview: React.FC = () => {
               : 'ALL STOCKS HEALTHY'}
           </span>
         </div>
+      </div>
 
-        {/* 🔹 TOTAL USERS METRIC CARD */}
-        <div className="metric-card">
+      {/* 5. Bottom Row: TOTAL USERS (২ কলামের লেআউট ব্যালেন্স রাখার জন্য ২টি কার্ড বা ১টি পুরো ফিলিং কার্ড) */}
+      <div className="two-column-grid">
+        <div className="metric-card" style={{ gridColumn: 'span 2' }}>
           <span style={{ fontSize: '15px', color: '#A0AEC0', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
             TOTAL USERS
           </span>
