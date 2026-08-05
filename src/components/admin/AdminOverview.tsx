@@ -47,7 +47,12 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
   const [shippedOrders, setShippedOrders] = useState<number>(0);
   const [deliveredOrders, setDeliveredOrders] = useState<number>(0);
   const [cancelledOrders, setCancelledOrders] = useState<number>(0);
+  
+  // Catalog & Stock States
   const [activeCatalogItems, setActiveCatalogItems] = useState<number>(0);
+  const [outOfStockItems, setOutOfStockItems] = useState<number>(0);
+  const [lowStockItems, setLowStockItems] = useState<number>(0);
+  
   const [totalUsers, setTotalUsers] = useState<number>(0);
 
   const [rawOrdersData, setRawOrdersData] = useState<any[]>([]);
@@ -168,9 +173,18 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
         setCancelledOrders(cancelled);
       }
 
-      // Catalog Items
+      // Catalog Items & Stock Alerts (Updated to use 'stock_quantity' column)
+      // 1. Total Items
       const { count: productCount } = await supabase.from('products').select('*', { count: 'exact', head: true });
       if (productCount !== null) setActiveCatalogItems(productCount);
+
+      // 2. Out of Stock Items (stock_quantity ০ বা তার কম হলে)
+      const { count: outOfStockCount } = await supabase.from('products').select('*', { count: 'exact', head: true }).lte('stock_quantity', 0);
+      if (outOfStockCount !== null) setOutOfStockItems(outOfStockCount);
+
+      // 3. Low Stock Items (stock_quantity ১ থেকে ৫ এর মধ্যে হলে)
+      const { count: lowStockCount } = await supabase.from('products').select('*', { count: 'exact', head: true }).gt('stock_quantity', 0).lte('stock_quantity', 5);
+      if (lowStockCount !== null) setLowStockItems(lowStockCount);
 
       // Users Count
       let usersQuery = supabase.from('profiles').select('*', { count: 'exact', head: true }).not('role', 'in', '("admin","manager")');
@@ -492,15 +506,13 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
           )}
         </svg>
 
-        {/* Hover Tooltip (Updated with Dynamic Positioning) */}
+        {/* Hover Tooltip */}
         {activePoint && (
           <div
             style={{
               position: 'absolute',
               top: `${(activePoint.y / svgHeight) * 100}%`,
               left: `${Math.min(Math.max((activePoint.x / svgWidth) * 100, 15), 85)}%`,
-              // ডায়নামিক লজিক: পয়েন্ট যদি উপরের দিকে (y < 80) থাকে, তাহলে বক্সটি পয়েন্টের নিচে দেখাবে।
-              // না হলে আগের মতো উপরে দেখাবে।
               transform: activePoint.y < 80 
                 ? 'translate(-50%, 12px)' 
                 : 'translate(-50%, calc(-100% - 12px))',
@@ -748,7 +760,14 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
       <div className="two-column-grid">
         <div className="metric-card">
           <span style={{ fontSize: '12px', color: '#A0AEC0' }}>CATALOG ITEMS</span>
-          <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF', marginTop: '4px' }}>{formatNumber(activeCatalogItems)}</div>
+          <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF', marginTop: '4px' }}>
+            {formatNumber(activeCatalogItems)}
+            <span style={{ fontSize: '11px', marginLeft: '8px', fontWeight: 'normal' }}>
+              <span style={{ color: '#f87171' }}>{outOfStockItems} Out of stock</span>
+              <span style={{ color: '#666', margin: '0 4px' }}>/</span>
+              <span style={{ color: '#facc15' }}>{lowStockItems} Low stock</span>
+            </span>
+          </div>
         </div>
         <div className="metric-card">
           <span style={{ fontSize: '12px', color: '#A0AEC0' }}>TOTAL USERS</span>
@@ -785,4 +804,4 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
   );
 };
 
-export default AdminOverview; 
+export default AdminOverview;
