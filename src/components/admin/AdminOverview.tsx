@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { supabase } from '../../supabaseClient';
 
 interface AdminOverviewProps {
@@ -10,7 +10,11 @@ interface ChartPoint {
   label: string;
   revenue: number;
   orders: number;
+  aov: number;
 }
+
+type MetricType = 'REVENUE' | 'ORDERS' | 'AOV';
+type GranularityType = 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY';
 
 const formatNumber = (num: number): string => {
   if (num >= 1_000_000) {
@@ -28,7 +32,12 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
 
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
-  const [selectedPreset, setSelectedPreset] = useState<string>('ALL');
+  const [selectedPreset, setSelectedPreset] = useState<string>('30D');
+  
+  // Custom Filter States
+  const [selectedMetric, setSelectedMetric] = useState<MetricType>('REVENUE');
+  const [granularity, setGranularity] = useState<GranularityType>('DAILY');
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   const [totalRevenue, setTotalRevenue] = useState<number>(0);
   const [totalOrders, setTotalOrders] = useState<number>(0);
@@ -39,13 +48,11 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
   const [deliveredOrders, setDeliveredOrders] = useState<number>(0);
   const [cancelledOrders, setCancelledOrders] = useState<number>(0);
   const [activeCatalogItems, setActiveCatalogItems] = useState<number>(0);
-
   const [totalUsers, setTotalUsers] = useState<number>(0);
-
   const [outOfStockCount, setOutOfStockCount] = useState<number>(0);
   const [lowStockCount, setLowStockCount] = useState<number>(0);
 
-  const [chartData, setChartData] = useState<ChartPoint[]>([]);
+  const [rawOrdersData, setRawOrdersData] = useState<any[]>([]);
 
   const formatDateToInput = (d: Date) => {
     const year = d.getFullYear();
@@ -56,29 +63,15 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
 
   const formatDisplayDate = (dateStr: string) => {
     if (!dateStr) return '';
-    const [year, month, day] = dateStr.split('-').map(Number);
-    if (!year || !month || !day) return '';
+    const parts = dateStr.split('-');
+    if (parts.length === 1) return parts[0]; // Year
+    if (parts.length === 2) {
+      const date = new Date(Number(parts[0]), Number(parts[1]) - 1, 1);
+      return date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' }).toUpperCase();
+    }
+    const [year, month, day] = parts.map(Number);
     const date = new Date(year, month - 1, day);
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase();
-  };
-
-  const getFilterSubtitle = (suffix: 'REVENUE' | 'ORDERS' | 'USERS' | 'TREND') => {
-    if (selectedPreset === 'ALL') {
-      return `ALL TIME ${suffix}`;
-    }
-
-    if (selectedPreset === 'TODAY' && startDate) {
-      return `TODAY (${formatDisplayDate(startDate)})`;
-    }
-
-    if (startDate && endDate) {
-      if (startDate === endDate) {
-        return `${formatDisplayDate(startDate)} ${suffix}`;
-      }
-      return `${formatDisplayDate(startDate)} - ${formatDisplayDate(endDate)}`;
-    }
-
-    return `FILTERED ${suffix}`;
   };
 
   const handlePresetSelect = (preset: string) => {
@@ -89,25 +82,52 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
       const todayStr = formatDateToInput(now);
       setStartDate(todayStr);
       setEndDate(todayStr);
+      setGranularity('DAILY');
     } else if (preset === '7D') {
       const past7 = new Date();
       past7.setDate(now.getDate() - 7);
       setStartDate(formatDateToInput(past7));
       setEndDate(formatDateToInput(now));
+      setGranularity('DAILY');
     } else if (preset === '30D') {
       const past30 = new Date();
       past30.setDate(now.getDate() - 30);
       setStartDate(formatDateToInput(past30));
       setEndDate(formatDateToInput(now));
+      setGranularity('DAILY');
     } else if (preset === 'THIS_MONTH') {
       const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
       setStartDate(formatDateToInput(firstDay));
       setEndDate(formatDateToInput(now));
+      setGranularity('DAILY');
+    } else if (preset === '1Y') {
+      const past1Y = new Date();
+      past1Y.setFullYear(now.getFullYear() - 1);
+      setStartDate(formatDateToInput(past1Y));
+      setEndDate(formatDateToInput(now));
+      setGranularity('MONTHLY');
+    } else if (preset === '3Y') {
+      const past3Y = new Date();
+      past3Y.setFullYear(now.getFullYear() - 3);
+      setStartDate(formatDateToInput(past3Y));
+      setEndDate(formatDateToInput(now));
+      setGranularity('MONTHLY');
+    } else if (preset === '5Y') {
+      const past5Y = new Date();
+      past5Y.setFullYear(now.getFullYear() - 5);
+      setStartDate(formatDateToInput(past5Y));
+      setEndDate(formatDateToInput(now));
+      setGranularity('YEARLY');
     } else if (preset === 'ALL') {
       setStartDate('');
       setEndDate('');
+      setGranularity('YEARLY');
     }
   };
+
+  useEffect(() => {
+    handlePresetSelect('30D');
+  }, []);
 
   const fetchMetricsData = async () => {
     try {
@@ -123,6 +143,8 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
       const { data: orders, error: orderErr } = await ordersQuery;
 
       if (!orderErr && orders) {
+        setRawOrdersData(orders);
+
         let revenue = 0;
         let pending = 0;
         let processing = 0;
@@ -131,53 +153,22 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
         let delivered = 0;
         let cancelled = 0;
 
-        const dateMap: { [key: string]: { revenue: number; orders: number } } = {};
-
         orders.forEach((o: any) => {
           const st = (o.status || '').toLowerCase().trim();
 
-          if (st === 'pending') {
-            pending++;
-          } else if (st.includes('processing') || st.includes('proc')) {
-            processing++;
-          } else if (st.includes('received') || st.includes('rec')) {
-            received++;
-          } else if (st.includes('shipped')) {
-            shipped++;
-          } else if (st.includes('delivered') || st.includes('completed')) {
-            delivered++;
-          } else if (st.includes('cancel') || st.includes('cancelled')) {
-            cancelled++;
-          } else {
-            pending++;
-          }
+          if (st === 'pending') pending++;
+          else if (st.includes('proc')) processing++;
+          else if (st.includes('rec')) received++;
+          else if (st.includes('shipped')) shipped++;
+          else if (st.includes('delivered') || st.includes('completed')) delivered++;
+          else if (st.includes('cancel')) cancelled++;
+          else pending++;
 
           if (!st.includes('cancel')) {
-            const orderAmount = Number(o.total_amount || 0);
-            revenue += orderAmount;
-
-            if (o.created_at) {
-              const rawDate = new Date(o.created_at);
-              const dateKey = formatDateToInput(rawDate);
-
-              if (!dateMap[dateKey]) {
-                dateMap[dateKey] = { revenue: 0, orders: 0 };
-              }
-              dateMap[dateKey].revenue += orderAmount;
-              dateMap[dateKey].orders += 1;
-            }
+            revenue += Number(o.total_amount || 0);
           }
         });
 
-        const sortedDates = Object.keys(dateMap).sort();
-        const formattedGraphPoints: ChartPoint[] = sortedDates.map((dateKey) => ({
-          dateKey,
-          label: formatDisplayDate(dateKey),
-          revenue: dateMap[dateKey].revenue,
-          orders: dateMap[dateKey].orders,
-        }));
-
-        setChartData(formattedGraphPoints);
         setTotalOrders(orders.length);
         setTotalRevenue(revenue);
         setPendingOrders(pending);
@@ -188,44 +179,23 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
         setCancelledOrders(cancelled);
       }
 
-      const { count: productCount } = await supabase
-        .from('products')
-        .select('*', { count: 'exact', head: true });
-
+      // Catalog & Stock Counts
+      const { count: productCount } = await supabase.from('products').select('*', { count: 'exact', head: true });
       if (productCount !== null) setActiveCatalogItems(productCount);
 
-      const { count: outOfStock } = await supabase
-        .from('products')
-        .select('*', { count: 'exact', head: true })
-        .eq('stock', 0);
-
+      const { count: outOfStock } = await supabase.from('products').select('*', { count: 'exact', head: true }).eq('stock', 0);
       if (outOfStock !== null) setOutOfStockCount(outOfStock);
 
-      const { count: lowStock } = await supabase
-        .from('products')
-        .select('*', { count: 'exact', head: true })
-        .gte('stock', 1)
-        .lte('stock', 3);
-
+      const { count: lowStock } = await supabase.from('products').select('*', { count: 'exact', head: true }).gte('stock', 1).lte('stock', 3);
       if (lowStock !== null) setLowStockCount(lowStock);
 
-      let usersQuery = supabase
-        .from('profiles')
-        .select('*', { count: 'exact', head: true })
-        .not('role', 'in', '("admin","manager")');
+      // Users Count
+      let usersQuery = supabase.from('profiles').select('*', { count: 'exact', head: true }).not('role', 'in', '("admin","manager")');
+      if (startDate) usersQuery = usersQuery.gte('created_at', `${startDate}T00:00:00.000Z`);
+      if (endDate) usersQuery = usersQuery.lte('created_at', `${endDate}T23:59:59.999Z`);
 
-      if (startDate && startDate.trim() !== '') {
-        usersQuery = usersQuery.gte('created_at', `${startDate}T00:00:00.000Z`);
-      }
-      if (endDate && endDate.trim() !== '') {
-        usersQuery = usersQuery.lte('created_at', `${endDate}T23:59:59.999Z`);
-      }
-
-      const { count: usersCount, error: userErr } = await usersQuery;
-
-      if (!userErr && usersCount !== null) {
-        setTotalUsers(usersCount);
-      }
+      const { count: usersCount } = await usersQuery;
+      if (usersCount !== null) setTotalUsers(usersCount);
 
     } catch (err) {
       console.error('Error fetching analytics:', err);
@@ -245,10 +215,56 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
     };
   }, [startDate, endDate]);
 
+  // Dynamic Chart Points Generation with Continuous Date Fill & Granularity
+  const chartData = useMemo(() => {
+    if (!rawOrdersData || rawOrdersData.length === 0) return [];
+
+    const dateMap: { [key: string]: { revenue: number; orders: number } } = {};
+
+    rawOrdersData.forEach((o) => {
+      const st = (o.status || '').toLowerCase();
+      if (st.includes('cancel') || !o.created_at) return;
+
+      const d = new Date(o.created_at);
+      let key = '';
+
+      if (granularity === 'DAILY') {
+        key = formatDateToInput(d);
+      } else if (granularity === 'WEEKLY') {
+        const firstJan = new Date(d.getFullYear(), 0, 1);
+        const weekNum = Math.ceil((((d.getTime() - firstJan.getTime()) / 86400000) + firstJan.getDay() + 1) / 7);
+        key = `${d.getFullYear()}-W${String(weekNum).padStart(2, '0')}`;
+      } else if (granularity === 'MONTHLY') {
+        key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      } else if (granularity === 'YEARLY') {
+        key = `${d.getFullYear()}`;
+      }
+
+      if (!dateMap[key]) {
+        dateMap[key] = { revenue: 0, orders: 0 };
+      }
+      dateMap[key].revenue += Number(o.total_amount || 0);
+      dateMap[key].orders += 1;
+    });
+
+    const sortedKeys = Object.keys(dateMap).sort();
+
+    return sortedKeys.map((key) => {
+      const rev = dateMap[key].revenue;
+      const ord = dateMap[key].orders;
+      return {
+        dateKey: key,
+        label: formatDisplayDate(key),
+        revenue: rev,
+        orders: ord,
+        aov: ord > 0 ? Math.round(rev / ord) : 0,
+      };
+    });
+  }, [rawOrdersData, granularity]);
+
   const calcPercent = (val: number) => {
     if (!totalOrders || totalOrders <= 0) return 0;
-    const p = (val / totalOrders) * 100;
-    return isNaN(p) ? 0 : Math.min(Math.max(p, 0), 100);
+    return Math.min(Math.max((val / totalOrders) * 100, 0), 100);
   };
 
   const validOrderCount = totalOrders - cancelledOrders;
@@ -259,56 +275,85 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
     { key: 'PROC', label: 'PROC', count: processingOrders, color: '#c084fc' },
     { key: 'REC', label: 'REC', count: receivedOrders, color: '#60a5fa' },
     { key: 'SHIPPED', label: 'SHIPPED', count: shippedOrders, color: '#22d3ee' },
-    { key: 'DELIVERED', label: 'DELIVERED', color: '#4ade80', count: deliveredOrders },
+    { key: 'DELIVERED', label: 'DELIVERED', count: deliveredOrders, color: '#4ade80' },
     { key: 'CANCELLED', label: 'CANCELLED', count: cancelledOrders, color: '#f87171' },
   ];
+
+  // Smooth Bezier Curve Path Generator
+  const getSmoothPath = (pts: { x: number; y: number }[]) => {
+    if (pts.length === 0) return '';
+    if (pts.length === 1) return `M ${pts[0].x} ${pts[0].y}`;
+
+    let path = `M ${pts[0].x} ${pts[0].y}`;
+    for (let i = 0; i < pts.length - 1; i++) {
+      const p0 = pts[i === 0 ? i : i - 1];
+      const p1 = pts[i];
+      const p2 = pts[i + 1];
+      const p3 = pts[i + 2 < pts.length ? i + 2 : i + 1];
+
+      const cp1x = p1.x + (p2.x - p0.x) * 0.15;
+      const cp1y = p1.y + (p2.y - p0.y) * 0.15;
+      const cp2x = p2.x - (p3.x - p1.x) * 0.15;
+      const cp2y = p2.y - (p3.y - p1.y) * 0.15;
+
+      path += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p2.x} ${p2.y}`;
+    }
+    return path;
+  };
 
   const renderSVGChart = () => {
     if (chartData.length === 0) {
       return (
-        <div style={{ padding: '30px 0', textAlign: 'center', color: '#666', fontSize: '12px' }}>
+        <div style={{ padding: '40px 0', textAlign: 'center', color: '#666', fontSize: '11px', letterSpacing: '1px' }}>
           NO TRANSACTION DATA AVAILABLE FOR SELECTED PERIOD
         </div>
       );
     }
 
-    const svgWidth = 600;
-    const svgHeight = 160;
-    const paddingTop = 20;
-    const paddingBottom = 30;
-    const paddingLeft = 45;
+    const svgWidth = 650;
+    const svgHeight = 200;
+    const paddingTop = 25;
+    const paddingBottom = 35;
+    const paddingLeft = 50;
     const paddingRight = 20;
 
     const chartInnerWidth = svgWidth - paddingLeft - paddingRight;
     const chartInnerHeight = svgHeight - paddingTop - paddingBottom;
 
-    const displayValues = chartData.map((d) => d.revenue);
+    const getValue = (pt: ChartPoint) => {
+      if (selectedMetric === 'REVENUE') return pt.revenue;
+      if (selectedMetric === 'ORDERS') return pt.orders;
+      return pt.aov;
+    };
+
+    const displayValues = chartData.map(getValue);
     const maxValue = Math.max(...displayValues, 1);
 
     const points = chartData.map((pt, index) => {
-      const val = pt.revenue;
+      const val = getValue(pt);
       const x =
         chartData.length === 1
           ? paddingLeft + chartInnerWidth / 2
           : paddingLeft + (index / (chartData.length - 1)) * chartInnerWidth;
       const y = svgHeight - paddingBottom - (val / maxValue) * chartInnerHeight;
-      return { x, y, label: pt.label, value: val };
+      return { x, y, pt, val };
     });
 
-    const pathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+    const smoothPathD = getSmoothPath(points);
 
     const areaD =
       points.length > 0
-        ? `${pathD} L ${points[points.length - 1].x} ${svgHeight - paddingBottom} L ${points[0].x} ${
-            svgHeight - paddingBottom
-          } Z`
+        ? `${smoothPathD} L ${points[points.length - 1].x} ${svgHeight - paddingBottom} L ${points[0].x} ${svgHeight - paddingBottom} Z`
         : '';
 
+    const activePoint = hoveredIndex !== null ? points[hoveredIndex] : null;
+
     return (
-      <div style={{ width: '100%', overflowX: 'auto' }}>
+      <div style={{ position: 'relative', width: '100%', overflowX: 'auto' }}>
         <svg
           viewBox={`0 0 ${svgWidth} ${svgHeight}`}
           style={{ width: '100%', height: 'auto', display: 'block', overflow: 'visible' }}
+          onMouseLeave={() => setHoveredIndex(null)}
         >
           <defs>
             <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
@@ -317,6 +362,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
             </linearGradient>
           </defs>
 
+          {/* Grid lines */}
           {[0, 0.5, 1].map((ratio, idx) => {
             const yPos = svgHeight - paddingBottom - ratio * chartInnerHeight;
             const gridVal = Math.round(ratio * maxValue);
@@ -332,23 +378,23 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
                 />
                 <text
                   x={paddingLeft - 8}
-                  y={yPos + 4}
+                  y={yPos + 3}
                   fill="#555"
                   fontSize="9"
                   textAnchor="end"
                   fontFamily="monospace"
                 >
-                  ৳{formatNumber(gridVal)}
+                  {selectedMetric === 'ORDERS' ? formatNumber(gridVal) : `৳${formatNumber(gridVal)}`}
                 </text>
               </g>
             );
           })}
 
+          {/* Area Fill & Curve */}
           {areaD && <path d={areaD} fill="url(#chartGradient)" />}
-
-          {pathD && (
+          {smoothPathD && (
             <path
-              d={pathD}
+              d={smoothPathD}
               fill="none"
               stroke="#22d3ee"
               strokeWidth="2.5"
@@ -357,31 +403,97 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
             />
           )}
 
-          {points.map((pt, i) => (
-            <g key={i}>
-              <circle
-                cx={pt.x}
-                cy={pt.y}
-                r="3.5"
-                fill="#080808"
-                stroke="#22d3ee"
-                strokeWidth="2"
-              />
-              {(chartData.length <= 8 || i === 0 || i === points.length - 1 || i % Math.ceil(chartData.length / 5) === 0) && (
-                <text
-                  x={pt.x}
-                  y={svgHeight - 8}
-                  fill="#718096"
-                  fontSize="8"
-                  textAnchor="middle"
-                  fontFamily="monospace"
-                >
-                  {pt.label}
-                </text>
-              )}
-            </g>
-          ))}
+          {/* Data Points & X-Labels */}
+          {points.map((p, i) => {
+            const isHovered = hoveredIndex === i;
+            const step = Math.max(1, Math.ceil(points.length / 7));
+            const showLabel = points.length <= 10 || i === 0 || i === points.length - 1 || i % step === 0;
+
+            return (
+              <g key={i}>
+                <circle
+                  cx={p.x}
+                  cy={p.y}
+                  r={isHovered ? '5' : '3'}
+                  fill={isHovered ? '#22d3ee' : '#080808'}
+                  stroke="#22d3ee"
+                  strokeWidth={isHovered ? '3' : '2'}
+                  style={{ transition: 'all 0.15s ease' }}
+                />
+
+                {/* Hitbox for hover */}
+                <rect
+                  x={p.x - Math.max(chartInnerWidth / points.length / 2, 8)}
+                  y={paddingTop}
+                  width={Math.max(chartInnerWidth / points.length, 16)}
+                  height={chartInnerHeight}
+                  fill="transparent"
+                  style={{ cursor: 'pointer' }}
+                  onMouseEnter={() => setHoveredIndex(i)}
+                />
+
+                {showLabel && (
+                  <text
+                    x={p.x}
+                    y={svgHeight - 10}
+                    fill="#718096"
+                    fontSize="8"
+                    textAnchor="middle"
+                    fontFamily="monospace"
+                  >
+                    {p.pt.label}
+                  </text>
+                )}
+              </g>
+            );
+          })}
+
+          {/* Active Hover Indicator Line */}
+          {activePoint && (
+            <line
+              x1={activePoint.x}
+              y1={paddingTop}
+              x2={activePoint.x}
+              y2={svgHeight - paddingBottom}
+              stroke="#22d3ee"
+              strokeWidth="1"
+              strokeDasharray="2 2"
+            />
+          )}
         </svg>
+
+        {/* Hover Tooltip Overlay */}
+        {activePoint && (
+          <div
+            style={{
+              position: 'absolute',
+              top: `${(activePoint.y / svgHeight) * 100 - 25}%`,
+              left: `${Math.min(Math.max((activePoint.x / svgWidth) * 100, 15), 85)}%`,
+              transform: 'translate(-50%, -100%)',
+              backgroundColor: '#111',
+              border: '1px solid #22d3ee',
+              padding: '8px 12px',
+              borderRadius: '4px',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+              pointerEvents: 'none',
+              zIndex: 10,
+              minWidth: '130px',
+            }}
+          >
+            <div style={{ fontSize: '10px', color: '#888', fontWeight: 'bold', marginBottom: '4px' }}>
+              {activePoint.pt.label}
+            </div>
+            <div style={{ fontSize: '12px', color: '#22d3ee', fontWeight: 'bold' }}>
+              REVENUE: ৳{formatNumber(activePoint.pt.revenue)}
+            </div>
+            <div style={{ fontSize: '11px', color: '#A0AEC0' }}>
+              ORDERS: {activePoint.pt.orders}
+            </div>
+            <div style={{ fontSize: '11px', color: '#A0AEC0' }}>
+              AOV: ৳{formatNumber(activePoint.pt.aov)}
+            </div>
+          </div>
+        )}
       </div>
     );
   };
@@ -392,11 +504,9 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
       fontFamily: 'monospace, sans-serif', 
       width: '100%', 
       maxWidth: '100%', 
-      minWidth: 0, 
       boxSizing: 'border-box',
       overflowX: 'hidden'
     }}>
-
       <style>{`
         * { box-sizing: border-box; }
         
@@ -433,8 +543,8 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
 
         .preset-btn.active {
           background: #111;
-          color: #FFFFFF;
-          border-color: #333;
+          color: #22d3ee;
+          border-color: #22d3ee;
         }
 
         .custom-date-inputs {
@@ -446,23 +556,12 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
         .date-input {
           background: #111;
           border: 1px solid #222;
-          color: #666666;
+          color: #FFFFFF;
           font-family: monospace;
           font-size: 11px;
           padding: 6px 8px;
           border-radius: 2px;
           outline: none;
-          width: 100%;
-        }
-
-        .date-input:valid,
-        .date-input[value]:not([value=""]) {
-          color: #FFFFFF;
-        }
-
-        .date-input::-webkit-calendar-picker-indicator {
-          filter: opacity(0.4) grayscale(100%);
-          cursor: pointer;
         }
 
         .two-column-grid {
@@ -470,7 +569,6 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
           grid-template-columns: repeat(2, 1fr);
           gap: 10px;
           margin-top: 10px;
-          width: 100%;
         }
 
         .metric-card {
@@ -478,20 +576,33 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
           border: 1px solid #222222;
           padding: 14px 12px;
           border-radius: 2px;
-          width: 100%;
         }
 
         .status-grid {
           display: grid;
           grid-template-columns: repeat(2, 1fr);
           gap: 10px;
-          width: 100%;
+        }
+
+        .filter-toggle-btn {
+          background: #111;
+          border: 1px solid #333;
+          color: #aaa;
+          font-size: 9px;
+          padding: 4px 8px;
+          cursor: pointer;
+          border-radius: 2px;
+        }
+
+        .filter-toggle-btn.active {
+          background: #22d3ee;
+          color: #000;
+          border-color: #22d3ee;
+          font-weight: bold;
         }
 
         @media (min-width: 640px) {
-          .status-grid {
-            grid-template-columns: repeat(3, 1fr);
-          }
+          .status-grid { grid-template-columns: repeat(3, 1fr); }
         }
 
         @media (min-width: 1024px) {
@@ -500,54 +611,26 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
             justify-content: space-between;
             align-items: center;
           }
-
-          .custom-date-inputs {
-            width: auto;
-          }
-
-          .date-input {
-            width: 135px;
-          }
         }
       `}</style>
 
+      {/* Date Filter & Presets (Added 1Y, 3Y, 5Y) */}
       <div className="date-filter-container">
         <div className="preset-buttons">
-          <button 
-            className={`preset-btn ${selectedPreset === 'ALL' ? 'active' : ''}`}
-            onClick={() => handlePresetSelect('ALL')}
-          >
-            ALL TIME
-          </button>
-          <button 
-            className={`preset-btn ${selectedPreset === 'TODAY' ? 'active' : ''}`}
-            onClick={() => handlePresetSelect('TODAY')}
-          >
-            TODAY
-          </button>
-          <button 
-            className={`preset-btn ${selectedPreset === '7D' ? 'active' : ''}`}
-            onClick={() => handlePresetSelect('7D')}
-          >
-            7 DAYS
-          </button>
-          <button 
-            className={`preset-btn ${selectedPreset === '30D' ? 'active' : ''}`}
-            onClick={() => handlePresetSelect('30D')}
-          >
-            30 DAYS
-          </button>
-          <button 
-            className={`preset-btn ${selectedPreset === 'THIS_MONTH' ? 'active' : ''}`}
-            onClick={() => handlePresetSelect('THIS_MONTH')}
-          >
-            THIS MONTH
-          </button>
+          {['ALL', 'TODAY', '7D', '30D', 'THIS_MONTH', '1Y', '3Y', '5Y'].map((p) => (
+            <button
+              key={p}
+              className={`preset-btn ${selectedPreset === p ? 'active' : ''}`}
+              onClick={() => handlePresetSelect(p)}
+            >
+              {p === 'THIS_MONTH' ? 'THIS MONTH' : p}
+            </button>
+          ))}
         </div>
 
         <div className="custom-date-inputs">
-          <input 
-            type="date" 
+          <input
+            type="date"
             className="date-input"
             value={startDate}
             onChange={(e) => {
@@ -555,9 +638,9 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
               setSelectedPreset('CUSTOM');
             }}
           />
-          <span style={{ color: '#666666', fontSize: '11px', fontWeight: 'bold' }}>TO</span>
-          <input 
-            type="date" 
+          <span style={{ color: '#666', fontSize: '11px' }}>TO</span>
+          <input
+            type="date"
             className="date-input"
             value={endDate}
             onChange={(e) => {
@@ -568,18 +651,13 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
         </div>
       </div>
 
-      <div style={{ 
-        backgroundColor: '#080808', 
-        border: '1px solid #222222', 
-        padding: '14px', 
-        borderRadius: '2px', 
-        width: '100%'
-      }}>
-        <span style={{ fontSize: '15px', color: '#CBD5E0', letterSpacing: '1px', fontWeight: 'bold', display: 'block', marginBottom: '10px' }}>
+      {/* Fulfillment Status Bar */}
+      <div style={{ backgroundColor: '#080808', border: '1px solid #222', padding: '14px', borderRadius: '2px' }}>
+        <span style={{ fontSize: '14px', color: '#CBD5E0', letterSpacing: '1px', fontWeight: 'bold', display: 'block', marginBottom: '10px' }}>
           FULFILLMENT STATUS
         </span>
 
-        <div style={{ display: 'flex', height: '4px', backgroundColor: '#181818', borderRadius: '2px', overflow: 'hidden', marginBottom: '12px', width: '100%' }}>
+        <div style={{ display: 'flex', height: '4px', backgroundColor: '#181818', borderRadius: '2px', overflow: 'hidden', marginBottom: '12px' }}>
           <div style={{ width: `${calcPercent(pendingOrders)}%`, backgroundColor: '#facc15' }} />
           <div style={{ width: `${calcPercent(processingOrders)}%`, backgroundColor: '#c084fc' }} />
           <div style={{ width: `${calcPercent(receivedOrders)}%`, backgroundColor: '#60a5fa' }} />
@@ -589,165 +667,98 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
         </div>
 
         <div className="status-grid">
-          {statusItems.map((item) => {
-            const percent = calcPercent(item.count).toFixed(0);
-            const isZero = item.count === 0;
-
-            return (
-              <div key={item.key} className="status-card">
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
-                  <span style={{ color: isZero ? '#444' : item.color, fontSize: '10px', flexShrink: 0 }}>●</span>
-                  <span style={{ fontSize: '15px', color: isZero ? '#666' : '#A0AEC0', fontWeight: 'bold', letterSpacing: '0.5px' }}>
-                    {item.label}
-                  </span>
-                </div>
-
-                <div style={{ fontSize: '20px', fontWeight: 'bold', color: isZero ? '#555' : '#FFFFFF', display: 'flex', alignItems: 'baseline', gap: '6px' }}>
-                  {formatNumber(item.count)}
-                  <span style={{ fontSize: '10px', color: isZero ? '#444' : '#888', fontWeight: 'normal' }}>
-                    ({percent}%)
-                  </span>
-                </div>
+          {statusItems.map((item) => (
+            <div key={item.key}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+                <span style={{ color: item.count === 0 ? '#444' : item.color, fontSize: '10px' }}>●</span>
+                <span style={{ fontSize: '12px', color: '#A0AEC0', fontWeight: 'bold' }}>{item.label}</span>
               </div>
-            );
-          })}
+              <div style={{ fontSize: '18px', fontWeight: 'bold' }}>
+                {formatNumber(item.count)} <span style={{ fontSize: '10px', color: '#718096' }}>({calcPercent(item.count).toFixed(0)}%)</span>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
+      {/* Core Metrics */}
       {canViewSensitiveData && (
         <div className="two-column-grid">
           <div className="metric-card">
-            <span style={{ fontSize: '15px', color: '#A0AEC0', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
-              TOTAL REVENUE
-            </span>
-            <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF' }}>
-              ৳{formatNumber(totalRevenue)}
-            </div>
-            <span style={{ fontSize: '10px', color: '#718096', marginTop: '4px', display: 'block' }}>
-              {getFilterSubtitle('REVENUE')}
-            </span>
+            <span style={{ fontSize: '12px', color: '#A0AEC0' }}>TOTAL REVENUE</span>
+            <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF', marginTop: '4px' }}>৳{formatNumber(totalRevenue)}</div>
           </div>
-
           <div className="metric-card">
-            <span style={{ fontSize: '15px', color: '#A0AEC0', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
-              AVG ORDER VALUE
-            </span>
-            <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF' }}>
-              ৳{formatNumber(avgOrderValue)}
-            </div>
-            <span style={{ fontSize: '10px', color: '#718096', marginTop: '4px', display: 'block' }}>
-              PER ACTIVE ORDER
-            </span>
+            <span style={{ fontSize: '12px', color: '#A0AEC0' }}>AVG ORDER VALUE (AOV)</span>
+            <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF', marginTop: '4px' }}>৳{formatNumber(avgOrderValue)}</div>
           </div>
         </div>
       )}
 
       <div className="two-column-grid">
         <div className="metric-card">
-          <span style={{ fontSize: '15px', color: '#A0AEC0', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
-            TOTAL ORDERS
-          </span>
-          <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF' }}>
-            {formatNumber(totalOrders)}
-          </div>
-          <span style={{ fontSize: '10px', color: '#718096', marginTop: '4px', display: 'block' }}>
-            {getFilterSubtitle('ORDERS')}
-          </span>
+          <span style={{ fontSize: '12px', color: '#A0AEC0' }}>TOTAL ORDERS</span>
+          <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF', marginTop: '4px' }}>{formatNumber(totalOrders)}</div>
         </div>
-
         <div className="metric-card">
-          <span style={{ fontSize: '15px', color: '#A0AEC0', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
-            ACTIVE QUEUE
-          </span>
-          <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF', display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-            <span>{formatNumber(pendingOrders + processingOrders)}</span>
-            <span style={{ fontSize: '14px', color: '#718096' }}>/</span>
-            <span style={{ fontSize: '15px', color: '#CBD5E0', fontWeight: 'normal' }}>{formatNumber(receivedOrders)} REC</span>
+          <span style={{ fontSize: '12px', color: '#A0AEC0' }}>ACTIVE QUEUE</span>
+          <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF', marginTop: '4px' }}>
+            {formatNumber(pendingOrders + processingOrders)} <span style={{ fontSize: '12px', color: '#718096' }}>/ {formatNumber(receivedOrders)} REC</span>
           </div>
-          <span style={{ fontSize: '10px', color: '#718096', marginTop: '4px', display: 'block' }}>
-            PENDING & PROC
-          </span>
         </div>
       </div>
 
       <div className="two-column-grid">
         <div className="metric-card">
-          <span style={{ fontSize: '15px', color: '#A0AEC0', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
-            CATALOG ITEMS
-          </span>
-          <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF' }}>
-            {formatNumber(activeCatalogItems)}
-          </div>
-          <span style={{ fontSize: '10px', color: '#718096', marginTop: '4px', display: 'block' }}>
-            LIVE ITEMS
-          </span>
+          <span style={{ fontSize: '12px', color: '#A0AEC0' }}>CATALOG ITEMS</span>
+          <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF', marginTop: '4px' }}>{formatNumber(activeCatalogItems)}</div>
         </div>
-
         <div className="metric-card">
-          <span style={{ fontSize: '15px', color: '#A0AEC0', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
-            TOTAL USERS
-          </span>
-          <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF' }}>
-            {formatNumber(totalUsers)}
-          </div>
-          <span style={{ fontSize: '10px', color: '#718096', marginTop: '4px', display: 'block' }}>
-            {getFilterSubtitle('USERS')}
-          </span>
+          <span style={{ fontSize: '12px', color: '#A0AEC0' }}>TOTAL USERS</span>
+          <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF', marginTop: '4px' }}>{formatNumber(totalUsers)}</div>
         </div>
       </div>
 
-      <div className="two-column-grid">
-        <div className="metric-card" style={{ gridColumn: 'span 2' }}>
-          <span style={{ fontSize: '15px', color: '#A0AEC0', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
-            STOCK ALERTS
-          </span>
-
-          <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF' }}>
-            {outOfStockCount > 0 || lowStockCount > 0 ? (
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
-                <span style={{ color: outOfStockCount > 0 ? '#f87171' : '#FFFFFF', fontSize: '20px' }}>
-                  {formatNumber(outOfStockCount)} OUT
-                </span>
-                <span style={{ fontSize: '14px', color: '#718096' }}>/</span>
-                <span style={{ color: lowStockCount > 0 ? '#facc15' : '#FFFFFF', fontSize: '15px', fontWeight: 'normal' }}>
-                  {formatNumber(lowStockCount)} LOW
-                </span>
-              </div>
-            ) : (
-              'ALL IN STOCK'
-            )}
-          </div>
-
-          <span style={{ fontSize: '10px', color: '#718096', marginTop: '4px', display: 'block' }}>
-            {outOfStockCount > 0 || lowStockCount > 0 
-              ? `${outOfStockCount} OUT OF STOCK, ${lowStockCount} LOW (≤ 3)` 
-              : 'ALL STOCKS HEALTHY'}
-          </span>
-        </div>
-      </div>
-
+      {/* Advanced Interactive SVG Graph */}
       {canViewSensitiveData && (
-        <div style={{
-          backgroundColor: '#080808',
-          border: '1px solid #222222',
-          padding: '14px',
-          borderRadius: '2px',
-          marginTop: '10px',
-          width: '100%'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-            <span style={{ fontSize: '15px', color: '#CBD5E0', letterSpacing: '1px', fontWeight: 'bold' }}>
-              REVENUE TREND
+        <div style={{ backgroundColor: '#080808', border: '1px solid #222', padding: '14px', borderRadius: '2px', marginTop: '10px' }}>
+          
+          {/* Custom Filters Bar on Top of Graph */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '15px' }}>
+            <span style={{ fontSize: '13px', color: '#CBD5E0', fontWeight: 'bold', letterSpacing: '1px' }}>
+              ANALYTICS TREND
             </span>
-            <span style={{ fontSize: '10px', color: '#718096' }}>
-              {getFilterSubtitle('TREND')}
-            </span>
+
+            {/* Metric Switcher */}
+            <div style={{ display: 'flex', gap: '4px' }}>
+              {(['REVENUE', 'ORDERS', 'AOV'] as MetricType[]).map((m) => (
+                <button
+                  key={m}
+                  className={`filter-toggle-btn ${selectedMetric === m ? 'active' : ''}`}
+                  onClick={() => setSelectedMetric(m)}
+                >
+                  {m}
+                </button>
+              ))}
+            </div>
+
+            {/* Granularity Switcher */}
+            <div style={{ display: 'flex', gap: '4px' }}>
+              {(['DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY'] as GranularityType[]).map((g) => (
+                <button
+                  key={g}
+                  className={`filter-toggle-btn ${granularity === g ? 'active' : ''}`}
+                  onClick={() => setGranularity(g)}
+                >
+                  {g[0]} {/* D / W / M / Y */}
+                </button>
+              ))}
+            </div>
           </div>
 
           {renderSVGChart()}
         </div>
       )}
-
     </div>
   );
 };
