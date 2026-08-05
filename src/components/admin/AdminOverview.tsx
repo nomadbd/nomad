@@ -49,8 +49,6 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
   const [cancelledOrders, setCancelledOrders] = useState<number>(0);
   const [activeCatalogItems, setActiveCatalogItems] = useState<number>(0);
   const [totalUsers, setTotalUsers] = useState<number>(0);
-  const [outOfStockCount, setOutOfStockCount] = useState<number>(0);
-  const [lowStockCount, setLowStockCount] = useState<number>(0);
 
   const [rawOrdersData, setRawOrdersData] = useState<any[]>([]);
 
@@ -64,7 +62,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
   const formatDisplayDate = (dateStr: string) => {
     if (!dateStr) return '';
     const parts = dateStr.split('-');
-    if (parts.length === 1) return parts[0]; // Year
+    if (parts.length === 1) return parts[0];
     if (parts.length === 2) {
       const date = new Date(Number(parts[0]), Number(parts[1]) - 1, 1);
       return date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' }).toUpperCase();
@@ -74,7 +72,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase();
   };
 
-  // Preset Handlers (Only ALL, TODAY, 7D, 30D)
+  // Preset Handlers (ALL, TODAY, 7D, 30D)
   const handlePresetSelect = (preset: string) => {
     setSelectedPreset(preset);
     const now = new Date();
@@ -99,7 +97,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
     }
   };
 
-  // Auto-detect Granularity based on Date Range selected
+  // Auto-detect Granularity
   useEffect(() => {
     if (!startDate || !endDate) {
       setGranularity('MONTHLY');
@@ -112,8 +110,8 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
 
     if (diffDays <= 35) setGranularity('DAILY');
     else if (diffDays <= 180) setGranularity('WEEKLY');
-    else if (diffDays <= 1095) setGranularity('MONTHLY'); // up to 3 years
-    else setGranularity('YEARLY'); // 3+ to 5+ years
+    else if (diffDays <= 1095) setGranularity('MONTHLY');
+    else setGranularity('YEARLY');
   }, [startDate, endDate]);
 
   useEffect(() => {
@@ -170,15 +168,9 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
         setCancelledOrders(cancelled);
       }
 
-      // Catalog & Stock Counts
+      // Catalog Items
       const { count: productCount } = await supabase.from('products').select('*', { count: 'exact', head: true });
       if (productCount !== null) setActiveCatalogItems(productCount);
-
-      const { count: outOfStock } = await supabase.from('products').select('*', { count: 'exact', head: true }).eq('stock', 0);
-      if (outOfStock !== null) setOutOfStockCount(outOfStock);
-
-      const { count: lowStock } = await supabase.from('products').select('*', { count: 'exact', head: true }).gte('stock', 1).lte('stock', 3);
-      if (lowStock !== null) setLowStockCount(lowStock);
 
       // Users Count
       let usersQuery = supabase.from('profiles').select('*', { count: 'exact', head: true }).not('role', 'in', '("admin","manager")');
@@ -206,10 +198,28 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
     };
   }, [startDate, endDate]);
 
-  // Dynamic Chart Points Generation
+  // Continuous Date Bucket Generator with Zero-Filling
   const chartData = useMemo(() => {
-    if (!rawOrdersData || rawOrdersData.length === 0) return [];
+    if (!rawOrdersData) return [];
 
+    let startD = startDate ? new Date(`${startDate}T00:00:00`) : null;
+    let endD = endDate ? new Date(`${endDate}T23:59:59`) : new Date();
+
+    if (!startD && rawOrdersData.length > 0) {
+      const timestamps = rawOrdersData
+        .map((o) => new Date(o.created_at).getTime())
+        .filter((t) => !isNaN(t));
+      if (timestamps.length > 0) {
+        startD = new Date(Math.min(...timestamps));
+      }
+    }
+
+    if (!startD) {
+      startD = new Date();
+      startD.setDate(startD.getDate() - 30);
+    }
+
+    // 1. Group real sales data
     const dateMap: { [key: string]: { revenue: number; orders: number } } = {};
 
     rawOrdersData.forEach((o) => {
@@ -238,11 +248,36 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
       dateMap[key].orders += 1;
     });
 
-    const sortedKeys = Object.keys(dateMap).sort();
+    // 2. Generate continuous bucket keys to fill zero-data points
+    const resultKeys: string[] = [];
+    const curr = new Date(startD);
 
-    return sortedKeys.map((key) => {
-      const rev = dateMap[key].revenue;
-      const ord = dateMap[key].orders;
+    while (curr <= endD) {
+      let key = '';
+      if (granularity === 'DAILY') {
+        key = formatDateToInput(curr);
+        curr.setDate(curr.getDate() + 1);
+      } else if (granularity === 'WEEKLY') {
+        const firstJan = new Date(curr.getFullYear(), 0, 1);
+        const weekNum = Math.ceil((((curr.getTime() - firstJan.getTime()) / 86400000) + firstJan.getDay() + 1) / 7);
+        key = `${curr.getFullYear()}-W${String(weekNum).padStart(2, '0')}`;
+        curr.setDate(curr.getDate() + 7);
+      } else if (granularity === 'MONTHLY') {
+        key = `${curr.getFullYear()}-${String(curr.getMonth() + 1).padStart(2, '0')}`;
+        curr.setMonth(curr.getMonth() + 1);
+      } else if (granularity === 'YEARLY') {
+        key = `${curr.getFullYear()}`;
+        curr.setFullYear(curr.getFullYear() + 1);
+      }
+
+      if (key && !resultKeys.includes(key)) {
+        resultKeys.push(key);
+      }
+    }
+
+    return resultKeys.map((key) => {
+      const rev = dateMap[key]?.revenue || 0;
+      const ord = dateMap[key]?.orders || 0;
       return {
         dateKey: key,
         label: formatDisplayDate(key),
@@ -251,7 +286,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
         aov: ord > 0 ? Math.round(rev / ord) : 0,
       };
     });
-  }, [rawOrdersData, granularity]);
+  }, [rawOrdersData, granularity, startDate, endDate]);
 
   const calcPercent = (val: number) => {
     if (!totalOrders || totalOrders <= 0) return 0;
@@ -270,7 +305,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
     { key: 'CANCELLED', label: 'CANCELLED', count: cancelledOrders, color: '#f87171' },
   ];
 
-  // Bezier Smooth Curve Generator
+  // Bezier Curve Generator
   const getSmoothPath = (pts: { x: number; y: number }[]) => {
     if (pts.length === 0) return '';
     if (pts.length === 1) return `M ${pts[0].x} ${pts[0].y}`;
@@ -303,7 +338,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
 
     const svgWidth = 650;
     const svgHeight = 180;
-    const paddingTop = 20;
+    const paddingTop = 25;
     const paddingBottom = 30;
     const paddingLeft = 45;
     const paddingRight = 20;
@@ -318,7 +353,12 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
     };
 
     const displayValues = chartData.map(getValue);
-    const maxValue = Math.max(...displayValues, 1);
+    const rawMax = Math.max(...displayValues, 0);
+
+    // Dynamic Headroom to prevent flat horizontal line
+    const maxValue = selectedMetric === 'ORDERS' 
+      ? Math.max(rawMax * 1.3, 4) 
+      : Math.max(rawMax * 1.25, 100);
 
     const points = chartData.map((pt, index) => {
       const val = getValue(pt);
@@ -397,7 +437,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
           {/* Points & Hitboxes */}
           {points.map((p, i) => {
             const isHovered = hoveredIndex === i;
-            const step = Math.max(1, Math.ceil(points.length / 7));
+            const step = Math.max(1, Math.ceil(points.length / 8));
             const showLabel = points.length <= 10 || i === 0 || i === points.length - 1 || i % step === 0;
 
             return (
@@ -405,17 +445,17 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
                 <circle
                   cx={p.x}
                   cy={p.y}
-                  r={isHovered ? '4.5' : '2.5'}
-                  fill={isHovered ? '#22d3ee' : '#080808'}
+                  r={isHovered ? '4.5' : p.val > 0 ? '2.5' : '1.5'}
+                  fill={isHovered ? '#22d3ee' : p.val > 0 ? '#22d3ee' : '#111'}
                   stroke="#22d3ee"
-                  strokeWidth={isHovered ? '2.5' : '1.5'}
+                  strokeWidth={isHovered ? '2.5' : '1'}
                   style={{ transition: 'all 0.15s ease' }}
                 />
 
                 <rect
-                  x={p.x - Math.max(chartInnerWidth / points.length / 2, 8)}
+                  x={p.x - Math.max(chartInnerWidth / points.length / 2, 6)}
                   y={paddingTop}
-                  width={Math.max(chartInnerWidth / points.length, 16)}
+                  width={Math.max(chartInnerWidth / points.length, 12)}
                   height={chartInnerHeight}
                   fill="transparent"
                   style={{ cursor: 'pointer' }}
@@ -438,7 +478,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
             );
           })}
 
-          {/* Hover Indicator */}
+          {/* Hover Line */}
           {activePoint && (
             <line
               x1={activePoint.x}
@@ -457,7 +497,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
           <div
             style={{
               position: 'absolute',
-              top: `${(activePoint.y / svgHeight) * 100 - 20}%`,
+              top: `${(activePoint.y / svgHeight) * 100 - 15}%`,
               left: `${Math.min(Math.max((activePoint.x / svgWidth) * 100, 15), 85)}%`,
               transform: 'translate(-50%, -100%)',
               backgroundColor: '#111',
@@ -607,7 +647,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
         }
       `}</style>
 
-      {/* Clean Presets Filter Bar */}
+      {/* Date Filter Bar */}
       <div className="date-filter-container">
         <div className="preset-buttons">
           {['ALL', 'TODAY', '7D', '30D'].map((p) => (
@@ -721,7 +761,6 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
               ANALYTICS TREND
             </span>
 
-            {/* Metric Mode Switcher */}
             <div style={{ display: 'flex', gap: '4px' }}>
               {(['REVENUE', 'ORDERS', 'AOV'] as MetricType[]).map((m) => (
                 <button
