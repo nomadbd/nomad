@@ -6,6 +6,14 @@ interface AdminOverviewProps {
   userRole?: string;
 }
 
+// 📊 গ্রাফ ডাটা পয়েন্ট ইন্টারফেস
+interface ChartPoint {
+  dateKey: string;
+  label: string;
+  revenue: number;
+  orders: number;
+}
+
 const formatNumber = (num: number): string => {
   if (num >= 1_000_000) {
     return (num / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M';
@@ -44,6 +52,9 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
   const [outOfStockCount, setOutOfStockCount] = useState<number>(0);
   const [lowStockCount, setLowStockCount] = useState<number>(0);
 
+  // 📈 Pure SVG Graph State
+  const [chartData, setChartData] = useState<ChartPoint[]>([]);
+
   // Helper for Date Formats (YYYY-MM-DD)
   const formatDateToInput = (d: Date) => {
     const year = d.getFullYear();
@@ -62,7 +73,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
   };
 
   // ডায়নামিক ফিল্টার সাবটাইটেল জেনারেটর
-  const getFilterSubtitle = (suffix: 'REVENUE' | 'ORDERS' | 'USERS') => {
+  const getFilterSubtitle = (suffix: 'REVENUE' | 'ORDERS' | 'USERS' | 'TREND') => {
     if (selectedPreset === 'ALL') {
       return `ALL TIME ${suffix}`;
     }
@@ -133,6 +144,9 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
         let delivered = 0;
         let cancelled = 0;
 
+        // 📊 গ্রাফের জন্য তারিখ অনুযায়ী অর্ডার ডাটা গ্রুপ করা
+        const dateMap: { [key: string]: { revenue: number; orders: number } } = {};
+
         orders.forEach((o: any) => {
           const st = (o.status || '').toLowerCase().trim();
 
@@ -153,10 +167,33 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
           }
 
           if (!st.includes('cancel')) {
-            revenue += Number(o.total_amount || 0);
+            const orderAmount = Number(o.total_amount || 0);
+            revenue += orderAmount;
+
+            // গ্রাফের তারিখ অনুযায়ী সামারি
+            if (o.created_at) {
+              const rawDate = new Date(o.created_at);
+              const dateKey = formatDateToInput(rawDate);
+
+              if (!dateMap[dateKey]) {
+                dateMap[dateKey] = { revenue: 0, orders: 0 };
+              }
+              dateMap[dateKey].revenue += orderAmount;
+              dateMap[dateKey].orders += 1;
+            }
           }
         });
 
+        // গ্রাফের দিনগুলোকে ক্রমানুসারে সাজানো
+        const sortedDates = Object.keys(dateMap).sort();
+        const formattedGraphPoints: ChartPoint[] = sortedDates.map((dateKey) => ({
+          dateKey,
+          label: formatDisplayDate(dateKey),
+          revenue: dateMap[dateKey].revenue,
+          orders: dateMap[dateKey].orders,
+        }));
+
+        setChartData(formattedGraphPoints);
         setTotalOrders(orders.length);
         setTotalRevenue(revenue);
         setPendingOrders(pending);
@@ -244,6 +281,137 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
     { key: 'DELIVERED', label: 'DELIVERED', color: '#4ade80', count: deliveredOrders },
     { key: 'CANCELLED', label: 'CANCELLED', count: cancelledOrders, color: '#f87171' },
   ];
+
+  // 🎨 PURE SVG GRAPH RENDERER ENGINE (NO EXTERNAL PACKAGES)
+  const renderSVGChart = () => {
+    if (chartData.length === 0) {
+      return (
+        <div style={{ padding: '30px 0', textAlign: 'center', color: '#666', fontSize: '12px' }}>
+          NO TRANSACTION DATA AVAILABLE FOR SELECTED PERIOD
+        </div>
+      );
+    }
+
+    const svgWidth = 600;
+    const svgHeight = 160;
+    const paddingTop = 20;
+    const paddingBottom = 30;
+    const paddingLeft = 45;
+    const paddingRight = 20;
+
+    const chartInnerWidth = svgWidth - paddingLeft - paddingRight;
+    const chartInnerHeight = svgHeight - paddingTop - paddingBottom;
+
+    // সিকিউরিটি লেভেল অনুযায়ী রেভিনিউ নাকি অর্ডারের গ্রাফ দেখাবে তা নির্ধারণ
+    const displayValues = chartData.map((d) => (canViewSensitiveData ? d.revenue : d.orders));
+    const maxValue = Math.max(...displayValues, 1);
+
+    // পিন পয়েন্ট স্থানাংক নির্ধারণ (X, Y Co-ordinates)
+    const points = chartData.map((pt, index) => {
+      const val = canViewSensitiveData ? pt.revenue : pt.orders;
+      const x =
+        chartData.length === 1
+          ? paddingLeft + chartInnerWidth / 2
+          : paddingLeft + (index / (chartData.length - 1)) * chartInnerWidth;
+      const y = svgHeight - paddingBottom - (val / maxValue) * chartInnerHeight;
+      return { x, y, label: pt.label, value: val };
+    });
+
+    const pathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+
+    const areaD =
+      points.length > 0
+        ? `${pathD} L ${points[points.length - 1].x} ${svgHeight - paddingBottom} L ${points[0].x} ${
+            svgHeight - paddingBottom
+          } Z`
+        : '';
+
+    return (
+      <div style={{ width: '100%', overflowX: 'auto' }}>
+        <svg
+          viewBox={`0 0 ${svgWidth} ${svgHeight}`}
+          style={{ width: '100%', height: 'auto', display: 'block', overflow: 'visible' }}
+        >
+          <defs>
+            <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.35" />
+              <stop offset="100%" stopColor="#22d3ee" stopOpacity="0.0" />
+            </linearGradient>
+          </defs>
+
+          {/* Grid Background Horizontal Lines */}
+          {[0, 0.5, 1].map((ratio, idx) => {
+            const yPos = svgHeight - paddingBottom - ratio * chartInnerHeight;
+            const gridVal = Math.round(ratio * maxValue);
+            return (
+              <g key={idx}>
+                <line
+                  x1={paddingLeft}
+                  y1={yPos}
+                  x2={svgWidth - paddingRight}
+                  y2={yPos}
+                  stroke="#1b1b1b"
+                  strokeDasharray="3 3"
+                />
+                <text
+                  x={paddingLeft - 8}
+                  y={yPos + 4}
+                  fill="#555"
+                  fontSize="9"
+                  textAnchor="end"
+                  fontFamily="monospace"
+                >
+                  {canViewSensitiveData ? `৳${formatNumber(gridVal)}` : gridVal}
+                </text>
+              </g>
+            );
+          })}
+
+          {/* Area Fill Under Line */}
+          {areaD && <path d={areaD} fill="url(#chartGradient)" />}
+
+          {/* Main Trend Line */}
+          {pathD && (
+            <path
+              d={pathD}
+              fill="none"
+              stroke="#22d3ee"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          )}
+
+          {/* Data Points and X-Axis Labels */}
+          {points.map((pt, i) => (
+            <g key={i}>
+              <circle
+                cx={pt.x}
+                cy={pt.y}
+                r="3.5"
+                fill="#080808"
+                stroke="#22d3ee"
+                strokeWidth="2"
+              />
+              {/* Show label selectively to prevent overcrowding */}
+              {(chartData.length <= 8 || i === 0 || i === points.length - 1 || i % Math.ceil(chartData.length / 5) === 0) && (
+                <text
+                  x={pt.x}
+                  y={svgHeight - 8}
+                  fill="#718096"
+                  fontSize="8"
+                  textAnchor="middle"
+                  fontFamily="monospace"
+                >
+                  {pt.label}
+                </text>
+              )}
+            </g>
+          ))}
+        </svg>
+      </div>
+    );
+  };
 
   return (
     <div style={{ 
@@ -506,6 +674,27 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
           </div>
         </div>
       )}
+
+      {/* 📈 🔹 নতুন সেকশন: REVENUE & SALES TREND GRAPH (PURE SVG CHART) */}
+      <div style={{
+        backgroundColor: '#080808',
+        border: '1px solid #222222',
+        padding: '14px',
+        borderRadius: '2px',
+        marginTop: '10px',
+        width: '100%'
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+          <span style={{ fontSize: '15px', color: '#CBD5E0', letterSpacing: '1px', fontWeight: 'bold' }}>
+            {canViewSensitiveData ? 'REVENUE TREND' : 'ORDER VOLUME TREND'}
+          </span>
+          <span style={{ fontSize: '10px', color: '#718096' }}>
+            {getFilterSubtitle('TREND')}
+          </span>
+        </div>
+
+        {renderSVGChart()}
+      </div>
 
       {/* 🔹 সারি ২: TOTAL ORDERS এবং ACTIVE QUEUE */}
       <div className="two-column-grid">
