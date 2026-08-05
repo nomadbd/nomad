@@ -492,14 +492,18 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
           )}
         </svg>
 
-        {/* Hover Tooltip */}
+        {/* Hover Tooltip (Updated with Dynamic Positioning) */}
         {activePoint && (
           <div
             style={{
               position: 'absolute',
-              top: `${(activePoint.y / svgHeight) * 100 - 15}%`,
+              top: `${(activePoint.y / svgHeight) * 100}%`,
               left: `${Math.min(Math.max((activePoint.x / svgWidth) * 100, 15), 85)}%`,
-              transform: 'translate(-50%, -100%)',
+              // ডায়নামিক লজিক: পয়েন্ট যদি উপরের দিকে (y < 80) থাকে, তাহলে বক্সটি পয়েন্টের নিচে দেখাবে।
+              // না হলে আগের মতো উপরে দেখাবে।
+              transform: activePoint.y < 80 
+                ? 'translate(-50%, 12px)' 
+                : 'translate(-50%, calc(-100% - 12px))',
               backgroundColor: '#111',
               border: '1px solid #22d3ee',
               padding: '6px 10px',
