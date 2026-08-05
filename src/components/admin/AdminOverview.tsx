@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { supabase } from '../../supabaseClient';
 
 interface AdminOverviewProps {
@@ -33,7 +33,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
   const [selectedPreset, setSelectedPreset] = useState<string>('30D');
-  
+
   // Custom Filter & Graph States
   const [selectedMetric, setSelectedMetric] = useState<MetricType>('REVENUE');
   const [granularity, setGranularity] = useState<GranularityType>('DAILY');
@@ -51,6 +51,9 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
   const [totalUsers, setTotalUsers] = useState<number>(0);
 
   const [rawOrdersData, setRawOrdersData] = useState<any[]>([]);
+
+  // SVG Reference for touch and drag tracking
+  const svgRef = useRef<SVGSVGElement | null>(null);
 
   const formatDateToInput = (d: Date) => {
     const year = d.getFullYear();
@@ -355,7 +358,6 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
     const displayValues = chartData.map(getValue);
     const rawMax = Math.max(...displayValues, 0);
 
-    // Dynamic Headroom to prevent flat horizontal line
     const maxValue = selectedMetric === 'ORDERS' 
       ? Math.max(rawMax * 1.3, 4) 
       : Math.max(rawMax * 1.25, 100);
@@ -377,14 +379,53 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
         ? `${smoothPathD} L ${points[points.length - 1].x} ${svgHeight - paddingBottom} L ${points[0].x} ${svgHeight - paddingBottom} Z`
         : '';
 
+    // Continuous Drag/Touch Event Handler (Anywhere Tracking Logic)
+    const handlePointerAction = (e: React.PointerEvent<SVGSVGElement>) => {
+      if (!svgRef.current || points.length === 0) return;
+
+      const rect = svgRef.current.getBoundingClientRect();
+      const clientX = e.clientX;
+      
+      // Calculate cursor position relative to SVG coordinates
+      const mouseX = (clientX - rect.left) * (svgWidth / rect.width);
+
+      if (points.length === 1) {
+        setHoveredIndex(0);
+        return;
+      }
+
+      // Find nearest point index based on relative X position
+      const relativeX = mouseX - paddingLeft;
+      const pct = relativeX / chartInnerWidth;
+      let closestIdx = Math.round(pct * (points.length - 1));
+      closestIdx = Math.max(0, Math.min(points.length - 1, closestIdx));
+
+      setHoveredIndex(closestIdx);
+    };
+
     const activePoint = hoveredIndex !== null ? points[hoveredIndex] : null;
 
     return (
-      <div style={{ position: 'relative', width: '100%', overflowX: 'auto' }}>
+      <div 
+        style={{ 
+          position: 'relative', 
+          width: '100%', 
+          overflowX: 'auto',
+          touchAction: 'none' // Prevent page scroll when dragging on mobile
+        }}
+      >
         <svg
+          ref={svgRef}
           viewBox={`0 0 ${svgWidth} ${svgHeight}`}
-          style={{ width: '100%', height: 'auto', display: 'block', overflow: 'visible' }}
-          onMouseLeave={() => setHoveredIndex(null)}
+          style={{ width: '100%', height: 'auto', display: 'block', overflow: 'visible', cursor: 'crosshair', touchAction: 'none' }}
+          onPointerDown={handlePointerAction}
+          onPointerMove={(e) => {
+            // Track whenever pointer is moved or held down
+            if (e.buttons > 0 || e.pointerType === 'touch' || e.type === 'pointermove') {
+              handlePointerAction(e);
+            }
+          }}
+          onPointerLeave={() => setHoveredIndex(null)}
         >
           <defs>
             <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
@@ -434,7 +475,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
             />
           )}
 
-          {/* Points & Hitboxes */}
+          {/* Data Points */}
           {points.map((p, i) => {
             const isHovered = hoveredIndex === i;
             const step = Math.max(1, Math.ceil(points.length / 8));
@@ -445,21 +486,11 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
                 <circle
                   cx={p.x}
                   cy={p.y}
-                  r={isHovered ? '4.5' : p.val > 0 ? '2.5' : '1.5'}
+                  r={isHovered ? '5' : p.val > 0 ? '2.5' : '1.5'}
                   fill={isHovered ? '#22d3ee' : p.val > 0 ? '#22d3ee' : '#111'}
                   stroke="#22d3ee"
-                  strokeWidth={isHovered ? '2.5' : '1'}
-                  style={{ transition: 'all 0.15s ease' }}
-                />
-
-                <rect
-                  x={p.x - Math.max(chartInnerWidth / points.length / 2, 6)}
-                  y={paddingTop}
-                  width={Math.max(chartInnerWidth / points.length, 12)}
-                  height={chartInnerHeight}
-                  fill="transparent"
-                  style={{ cursor: 'pointer' }}
-                  onMouseEnter={() => setHoveredIndex(i)}
+                  strokeWidth={isHovered ? '3' : '1'}
+                  style={{ transition: 'all 0.1s ease' }}
                 />
 
                 {showLabel && (
@@ -478,7 +509,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
             );
           })}
 
-          {/* Hover Line */}
+          {/* Dynamic Crosshair Guide Line (Tracks Cursor/Touch anywhere) */}
           {activePoint && (
             <line
               x1={activePoint.x}
@@ -486,8 +517,8 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
               x2={activePoint.x}
               y2={svgHeight - paddingBottom}
               stroke="#22d3ee"
-              strokeWidth="1"
-              strokeDasharray="2 2"
+              strokeWidth="1.2"
+              strokeDasharray="3 3"
             />
           )}
         </svg>
@@ -755,7 +786,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
       {/* Graph Section */}
       {canViewSensitiveData && (
         <div style={{ backgroundColor: '#080808', border: '1px solid #222', padding: '14px', borderRadius: '2px', marginTop: '10px' }}>
-          
+
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginBottom: '12px' }}>
             <span style={{ fontSize: '13px', color: '#CBD5E0', fontWeight: 'bold', letterSpacing: '1px' }}>
               ANALYTICS TREND
