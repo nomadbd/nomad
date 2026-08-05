@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useRef } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { supabase } from '../../supabaseClient';
 
 interface AdminOverviewProps {
@@ -37,9 +37,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
   // Custom Filter & Graph States
   const [selectedMetric, setSelectedMetric] = useState<MetricType>('REVENUE');
   const [granularity, setGranularity] = useState<GranularityType>('DAILY');
-
-  // Continuous Scrubbing Position State (Pixel-by-pixel X)
-  const [pointerX, setPointerX] = useState<number | null>(null);
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   const [totalRevenue, setTotalRevenue] = useState<number>(0);
   const [totalOrders, setTotalOrders] = useState<number>(0);
@@ -53,9 +51,6 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
   const [totalUsers, setTotalUsers] = useState<number>(0);
 
   const [rawOrdersData, setRawOrdersData] = useState<any[]>([]);
-
-  // SVG Reference for touch and drag tracking
-  const svgRef = useRef<SVGSVGElement | null>(null);
 
   const formatDateToInput = (d: Date) => {
     const year = d.getFullYear();
@@ -203,7 +198,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
     };
   }, [startDate, endDate]);
 
-  // Continuous Date Bucket Generator
+  // Continuous Date Bucket Generator with Zero-Filling
   const chartData = useMemo(() => {
     if (!rawOrdersData) return [];
 
@@ -224,6 +219,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
       startD.setDate(startD.getDate() - 30);
     }
 
+    // 1. Group real sales data
     const dateMap: { [key: string]: { revenue: number; orders: number } } = {};
 
     rawOrdersData.forEach((o) => {
@@ -252,6 +248,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
       dateMap[key].orders += 1;
     });
 
+    // 2. Generate continuous bucket keys to fill zero-data points
     const resultKeys: string[] = [];
     const curr = new Date(startD);
 
@@ -358,6 +355,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
     const displayValues = chartData.map(getValue);
     const rawMax = Math.max(...displayValues, 0);
 
+    // Dynamic Headroom to prevent flat horizontal line
     const maxValue = selectedMetric === 'ORDERS' 
       ? Math.max(rawMax * 1.3, 4) 
       : Math.max(rawMax * 1.25, 100);
@@ -379,90 +377,14 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
         ? `${smoothPathD} L ${points[points.length - 1].x} ${svgHeight - paddingBottom} L ${points[0].x} ${svgHeight - paddingBottom} Z`
         : '';
 
-    // Track Pointer Action Pixel-by-Pixel
-    const handlePointerAction = (e: React.PointerEvent<SVGSVGElement>) => {
-      if (!svgRef.current || points.length === 0) return;
-
-      const rect = svgRef.current.getBoundingClientRect();
-      const clientX = e.clientX;
-      
-      const mouseX = (clientX - rect.left) * (svgWidth / rect.width);
-      const clampedX = Math.max(paddingLeft, Math.min(svgWidth - paddingRight, mouseX));
-
-      setPointerX(clampedX);
-    };
-
-    // Interpolate Data Between Points continuously
-    let activeData: {
-      x: number;
-      y: number;
-      revenue: number;
-      orders: number;
-      aov: number;
-      label: string;
-    } | null = null;
-
-    if (pointerX !== null && points.length > 0) {
-      if (points.length === 1) {
-        activeData = {
-          x: points[0].x,
-          y: points[0].y,
-          revenue: points[0].pt.revenue,
-          orders: points[0].pt.orders,
-          aov: points[0].pt.aov,
-          label: points[0].pt.label,
-        };
-      } else {
-        const totalGaps = points.length - 1;
-        const pct = (pointerX - paddingLeft) / chartInnerWidth;
-        const exactIdx = pct * totalGaps;
-        
-        const i1 = Math.floor(exactIdx);
-        const i2 = Math.min(totalGaps, i1 + 1);
-        const t = exactIdx - i1; // Fraction between point 1 and point 2 (0.0 to 1.0)
-
-        const p1 = points[i1];
-        const p2 = points[i2];
-
-        // Smooth Y position interpolation along line
-        const interpY = p1.y + (p2.y - p1.y) * t;
-
-        // Smooth Values interpolation
-        const interpRevenue = Math.round(p1.pt.revenue + (p2.pt.revenue - p1.pt.revenue) * t);
-        const interpOrders = Math.round(p1.pt.orders + (p2.pt.orders - p1.pt.orders) * t);
-        const interpAov = Math.round(p1.pt.aov + (p2.pt.aov - p1.pt.aov) * t);
-
-        activeData = {
-          x: pointerX,
-          y: interpY,
-          revenue: interpRevenue,
-          orders: interpOrders,
-          aov: interpAov,
-          label: t < 0.5 ? p1.pt.label : p2.pt.label,
-        };
-      }
-    }
+    const activePoint = hoveredIndex !== null ? points[hoveredIndex] : null;
 
     return (
-      <div 
-        style={{ 
-          position: 'relative', 
-          width: '100%', 
-          overflowX: 'auto',
-          touchAction: 'none'
-        }}
-      >
+      <div style={{ position: 'relative', width: '100%', overflowX: 'auto' }}>
         <svg
-          ref={svgRef}
           viewBox={`0 0 ${svgWidth} ${svgHeight}`}
-          style={{ width: '100%', height: 'auto', display: 'block', overflow: 'visible', cursor: 'crosshair', touchAction: 'none' }}
-          onPointerDown={handlePointerAction}
-          onPointerMove={(e) => {
-            if (e.buttons > 0 || e.pointerType === 'touch' || e.type === 'pointermove') {
-              handlePointerAction(e);
-            }
-          }}
-          onPointerLeave={() => setPointerX(null)}
+          style={{ width: '100%', height: 'auto', display: 'block', overflow: 'visible' }}
+          onMouseLeave={() => setHoveredIndex(null)}
         >
           <defs>
             <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
@@ -499,7 +421,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
             );
           })}
 
-          {/* Area & Smooth Line */}
+          {/* Area & Line */}
           {areaD && <path d={areaD} fill="url(#chartGradient)" />}
           {smoothPathD && (
             <path
@@ -512,8 +434,9 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
             />
           )}
 
-          {/* Fixed Data Point Dots */}
+          {/* Points & Hitboxes */}
           {points.map((p, i) => {
+            const isHovered = hoveredIndex === i;
             const step = Math.max(1, Math.ceil(points.length / 8));
             const showLabel = points.length <= 10 || i === 0 || i === points.length - 1 || i % step === 0;
 
@@ -522,10 +445,21 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
                 <circle
                   cx={p.x}
                   cy={p.y}
-                  r={p.val > 0 ? '2.5' : '1.5'}
-                  fill={p.val > 0 ? '#22d3ee' : '#111'}
+                  r={isHovered ? '4.5' : p.val > 0 ? '2.5' : '1.5'}
+                  fill={isHovered ? '#22d3ee' : p.val > 0 ? '#22d3ee' : '#111'}
                   stroke="#22d3ee"
-                  strokeWidth="1"
+                  strokeWidth={isHovered ? '2.5' : '1'}
+                  style={{ transition: 'all 0.15s ease' }}
+                />
+
+                <rect
+                  x={p.x - Math.max(chartInnerWidth / points.length / 2, 6)}
+                  y={paddingTop}
+                  width={Math.max(chartInnerWidth / points.length, 12)}
+                  height={chartInnerHeight}
+                  fill="transparent"
+                  style={{ cursor: 'pointer' }}
+                  onMouseEnter={() => setHoveredIndex(i)}
                 />
 
                 {showLabel && (
@@ -544,37 +478,27 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
             );
           })}
 
-          {/* Smooth Dynamic Indicator Circle & Vertical Crosshair Line */}
-          {activeData && (
-            <g>
-              <line
-                x1={activeData.x}
-                y1={paddingTop}
-                x2={activeData.x}
-                y2={svgHeight - paddingBottom}
-                stroke="#22d3ee"
-                strokeWidth="1.2"
-                strokeDasharray="3 3"
-              />
-              <circle
-                cx={activeData.x}
-                cy={activeData.y}
-                r="5"
-                fill="#22d3ee"
-                stroke="#000"
-                strokeWidth="2"
-              />
-            </g>
+          {/* Hover Line */}
+          {activePoint && (
+            <line
+              x1={activePoint.x}
+              y1={paddingTop}
+              x2={activePoint.x}
+              y2={svgHeight - paddingBottom}
+              stroke="#22d3ee"
+              strokeWidth="1"
+              strokeDasharray="2 2"
+            />
           )}
         </svg>
 
-        {/* Smooth Hover Tooltip */}
-        {activeData && (
+        {/* Hover Tooltip */}
+        {activePoint && (
           <div
             style={{
               position: 'absolute',
-              top: `${(activeData.y / svgHeight) * 100 - 15}%`,
-              left: `${Math.min(Math.max((activeData.x / svgWidth) * 100, 15), 85)}%`,
+              top: `${(activePoint.y / svgHeight) * 100 - 15}%`,
+              left: `${Math.min(Math.max((activePoint.x / svgWidth) * 100, 15), 85)}%`,
               transform: 'translate(-50%, -100%)',
               backgroundColor: '#111',
               border: '1px solid #22d3ee',
@@ -587,16 +511,16 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
             }}
           >
             <div style={{ fontSize: '9px', color: '#888', fontWeight: 'bold', marginBottom: '3px' }}>
-              {activeData.label}
+              {activePoint.pt.label}
             </div>
             <div style={{ fontSize: '11px', color: '#22d3ee', fontWeight: 'bold' }}>
-              REV: ৳{formatNumber(activeData.revenue)}
+              REV: ৳{formatNumber(activePoint.pt.revenue)}
             </div>
             <div style={{ fontSize: '10px', color: '#A0AEC0' }}>
-              ORDERS: {activeData.orders}
+              ORDERS: {activePoint.pt.orders}
             </div>
             <div style={{ fontSize: '10px', color: '#A0AEC0' }}>
-              AOV: ৳{formatNumber(activeData.aov)}
+              AOV: ৳{formatNumber(activePoint.pt.aov)}
             </div>
           </div>
         )}
