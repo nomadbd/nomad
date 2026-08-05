@@ -1,12 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../../supabaseClient';
 
-// 🔑 ১. প্রপস টাইপ ইন্টারফেস
 interface AdminOverviewProps {
   userRole?: string;
 }
 
-// 📊 গ্রাফ ডাটা পয়েন্ট ইন্টারফেস
 interface ChartPoint {
   dateKey: string;
   label: string;
@@ -25,16 +23,13 @@ const formatNumber = (num: number): string => {
 };
 
 const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
-  // 🔒 সিকিউরিটি লক: ৩-লেভেল রোল আর্কিটেকচার অনুযায়ী শুধু SUPER_ADMIN এবং ADMIN সংবেদনশীল ডাটা দেখবে
   const normalizedRole = userRole.toUpperCase().trim();
   const canViewSensitiveData = ['SUPER_ADMIN', 'ADMIN'].includes(normalizedRole);
 
-  // Date Range States (Default: ALL TIME)
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
   const [selectedPreset, setSelectedPreset] = useState<string>('ALL');
 
-  // Metrics States
   const [totalRevenue, setTotalRevenue] = useState<number>(0);
   const [totalOrders, setTotalOrders] = useState<number>(0);
   const [pendingOrders, setPendingOrders] = useState<number>(0);
@@ -45,17 +40,13 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
   const [cancelledOrders, setCancelledOrders] = useState<number>(0);
   const [activeCatalogItems, setActiveCatalogItems] = useState<number>(0);
 
-  // Total Users State
   const [totalUsers, setTotalUsers] = useState<number>(0);
 
-  // Stock Alert States
   const [outOfStockCount, setOutOfStockCount] = useState<number>(0);
   const [lowStockCount, setLowStockCount] = useState<number>(0);
 
-  // 📈 Pure SVG Graph State
   const [chartData, setChartData] = useState<ChartPoint[]>([]);
 
-  // Helper for Date Formats (YYYY-MM-DD)
   const formatDateToInput = (d: Date) => {
     const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, '0');
@@ -63,7 +54,6 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
     return `${year}-${month}-${day}`;
   };
 
-  // তারিখকে শর্ট ফরম্যাটে রূপান্তর করার হেলপার (যেমন: JUL 30)
   const formatDisplayDate = (dateStr: string) => {
     if (!dateStr) return '';
     const [year, month, day] = dateStr.split('-').map(Number);
@@ -72,7 +62,6 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase();
   };
 
-  // ডায়নামিক ফিল্টার সাবটাইটেল জেনারেটর
   const getFilterSubtitle = (suffix: 'REVENUE' | 'ORDERS' | 'USERS' | 'TREND') => {
     if (selectedPreset === 'ALL') {
       return `ALL TIME ${suffix}`;
@@ -92,7 +81,6 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
     return `FILTERED ${suffix}`;
   };
 
-  // Handle Preset Clicks
   const handlePresetSelect = (preset: string) => {
     setSelectedPreset(preset);
     const now = new Date();
@@ -123,7 +111,6 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
 
   const fetchMetricsData = async () => {
     try {
-      // 1. Fetch Orders Query
       let ordersQuery = supabase.from('orders').select('status, total_amount, created_at');
 
       if (startDate && startDate.trim() !== '') {
@@ -144,7 +131,6 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
         let delivered = 0;
         let cancelled = 0;
 
-        // 📊 গ্রাফের জন্য তারিখ অনুযায়ী অর্ডার ডাটা গ্রুপ করা
         const dateMap: { [key: string]: { revenue: number; orders: number } } = {};
 
         orders.forEach((o: any) => {
@@ -170,7 +156,6 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
             const orderAmount = Number(o.total_amount || 0);
             revenue += orderAmount;
 
-            // গ্রাফের তারিখ অনুযায়ী সামারি
             if (o.created_at) {
               const rawDate = new Date(o.created_at);
               const dateKey = formatDateToInput(rawDate);
@@ -184,7 +169,6 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
           }
         });
 
-        // গ্রাফের দিনগুলোকে ক্রমানুসারে সাজানো
         const sortedDates = Object.keys(dateMap).sort();
         const formattedGraphPoints: ChartPoint[] = sortedDates.map((dateKey) => ({
           dateKey,
@@ -204,14 +188,12 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
         setCancelledOrders(cancelled);
       }
 
-      // 2. Fetch Catalog Items
       const { count: productCount } = await supabase
         .from('products')
         .select('*', { count: 'exact', head: true });
 
       if (productCount !== null) setActiveCatalogItems(productCount);
 
-      // 3. Fetch Stock Alerts
       const { count: outOfStock } = await supabase
         .from('products')
         .select('*', { count: 'exact', head: true })
@@ -227,7 +209,6 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
 
       if (lowStock !== null) setLowStockCount(lowStock);
 
-      // 4. Fetch Users Query
       let usersQuery = supabase
         .from('profiles')
         .select('*', { count: 'exact', head: true })
@@ -282,7 +263,6 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
     { key: 'CANCELLED', label: 'CANCELLED', count: cancelledOrders, color: '#f87171' },
   ];
 
-  // 🎨 PURE SVG GRAPH RENDERER ENGINE (NO EXTERNAL PACKAGES)
   const renderSVGChart = () => {
     if (chartData.length === 0) {
       return (
@@ -302,13 +282,11 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
     const chartInnerWidth = svgWidth - paddingLeft - paddingRight;
     const chartInnerHeight = svgHeight - paddingTop - paddingBottom;
 
-    // সিকিউরিটি লেভেল অনুযায়ী রেভিনিউ নাকি অর্ডারের গ্রাফ দেখাবে তা নির্ধারণ
-    const displayValues = chartData.map((d) => (canViewSensitiveData ? d.revenue : d.orders));
+    const displayValues = chartData.map((d) => d.revenue);
     const maxValue = Math.max(...displayValues, 1);
 
-    // পিন পয়েন্ট স্থানাংক নির্ধারণ (X, Y Co-ordinates)
     const points = chartData.map((pt, index) => {
-      const val = canViewSensitiveData ? pt.revenue : pt.orders;
+      const val = pt.revenue;
       const x =
         chartData.length === 1
           ? paddingLeft + chartInnerWidth / 2
@@ -339,7 +317,6 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
             </linearGradient>
           </defs>
 
-          {/* Grid Background Horizontal Lines */}
           {[0, 0.5, 1].map((ratio, idx) => {
             const yPos = svgHeight - paddingBottom - ratio * chartInnerHeight;
             const gridVal = Math.round(ratio * maxValue);
@@ -361,16 +338,14 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
                   textAnchor="end"
                   fontFamily="monospace"
                 >
-                  {canViewSensitiveData ? `৳${formatNumber(gridVal)}` : gridVal}
+                  ৳{formatNumber(gridVal)}
                 </text>
               </g>
             );
           })}
 
-          {/* Area Fill Under Line */}
           {areaD && <path d={areaD} fill="url(#chartGradient)" />}
 
-          {/* Main Trend Line */}
           {pathD && (
             <path
               d={pathD}
@@ -382,7 +357,6 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
             />
           )}
 
-          {/* Data Points and X-Axis Labels */}
           {points.map((pt, i) => (
             <g key={i}>
               <circle
@@ -393,7 +367,6 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
                 stroke="#22d3ee"
                 strokeWidth="2"
               />
-              {/* Show label selectively to prevent overcrowding */}
               {(chartData.length <= 8 || i === 0 || i === points.length - 1 || i % Math.ceil(chartData.length / 5) === 0) && (
                 <text
                   x={pt.x}
@@ -492,7 +465,6 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
           cursor: pointer;
         }
 
-        /* পারফেক্ট ২-কলাম গ্রিড */
         .two-column-grid {
           display: grid;
           grid-template-columns: repeat(2, 1fr);
@@ -539,7 +511,6 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
         }
       `}</style>
 
-      {/* 📅 DATE RANGE FILTER COMPONENT */}
       <div className="date-filter-container">
         <div className="preset-buttons">
           <button 
@@ -597,7 +568,6 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
         </div>
       </div>
 
-      {/* 1. Fulfillment Breakdown Section */}
       <div style={{ 
         backgroundColor: '#080808', 
         border: '1px solid #222222', 
@@ -609,7 +579,6 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
           FULFILLMENT STATUS
         </span>
 
-        {/* Multi-Color Progress Bar */}
         <div style={{ display: 'flex', height: '4px', backgroundColor: '#181818', borderRadius: '2px', overflow: 'hidden', marginBottom: '12px', width: '100%' }}>
           <div style={{ width: `${calcPercent(pendingOrders)}%`, backgroundColor: '#facc15' }} />
           <div style={{ width: `${calcPercent(processingOrders)}%`, backgroundColor: '#c084fc' }} />
@@ -619,7 +588,6 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
           <div style={{ width: `${calcPercent(cancelledOrders)}%`, backgroundColor: '#f87171' }} />
         </div>
 
-        {/* Status Breakdown Grid */}
         <div className="status-grid">
           {statusItems.map((item) => {
             const percent = calcPercent(item.count).toFixed(0);
@@ -646,7 +614,6 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
         </div>
       </div>
 
-      {/* 🔒 🔹 সারি ১: TOTAL REVENUE এবং AVG ORDER VALUE (শুধুমাত্র SUPER_ADMIN ও ADMIN দেখতে পারবে) */}
       {canViewSensitiveData && (
         <div className="two-column-grid">
           <div className="metric-card">
@@ -675,28 +642,6 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
         </div>
       )}
 
-      {/* 📈 🔹 নতুন সেকশন: REVENUE & SALES TREND GRAPH (PURE SVG CHART) */}
-      <div style={{
-        backgroundColor: '#080808',
-        border: '1px solid #222222',
-        padding: '14px',
-        borderRadius: '2px',
-        marginTop: '10px',
-        width: '100%'
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-          <span style={{ fontSize: '15px', color: '#CBD5E0', letterSpacing: '1px', fontWeight: 'bold' }}>
-            {canViewSensitiveData ? 'REVENUE TREND' : 'ORDER VOLUME TREND'}
-          </span>
-          <span style={{ fontSize: '10px', color: '#718096' }}>
-            {getFilterSubtitle('TREND')}
-          </span>
-        </div>
-
-        {renderSVGChart()}
-      </div>
-
-      {/* 🔹 সারি ২: TOTAL ORDERS এবং ACTIVE QUEUE */}
       <div className="two-column-grid">
         <div className="metric-card">
           <span style={{ fontSize: '15px', color: '#A0AEC0', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
@@ -725,7 +670,6 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
         </div>
       </div>
 
-      {/* 🔹 সারি ৩: CATALOG ITEMS এবং TOTAL USERS */}
       <div className="two-column-grid">
         <div className="metric-card">
           <span style={{ fontSize: '15px', color: '#A0AEC0', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
@@ -752,7 +696,6 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
         </div>
       </div>
 
-      {/* 🔹 সারি ৪: STOCK ALERTS */}
       <div className="two-column-grid">
         <div className="metric-card" style={{ gridColumn: 'span 2' }}>
           <span style={{ fontSize: '15px', color: '#A0AEC0', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
@@ -782,6 +725,28 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
           </span>
         </div>
       </div>
+
+      {canViewSensitiveData && (
+        <div style={{
+          backgroundColor: '#080808',
+          border: '1px solid #222222',
+          padding: '14px',
+          borderRadius: '2px',
+          marginTop: '10px',
+          width: '100%'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+            <span style={{ fontSize: '15px', color: '#CBD5E0', letterSpacing: '1px', fontWeight: 'bold' }}>
+              REVENUE TREND
+            </span>
+            <span style={{ fontSize: '10px', color: '#718096' }}>
+              {getFilterSubtitle('TREND')}
+            </span>
+          </div>
+
+          {renderSVGChart()}
+        </div>
+      )}
 
     </div>
   );
