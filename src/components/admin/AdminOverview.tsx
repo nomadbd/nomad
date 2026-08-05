@@ -34,7 +34,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
   const [endDate, setEndDate] = useState<string>('');
   const [selectedPreset, setSelectedPreset] = useState<string>('30D');
   
-  // Custom Filter States
+  // Custom Filter & Graph States
   const [selectedMetric, setSelectedMetric] = useState<MetricType>('REVENUE');
   const [granularity, setGranularity] = useState<GranularityType>('DAILY');
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
@@ -74,6 +74,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase();
   };
 
+  // Preset Handlers (Only ALL, TODAY, 7D, 30D)
   const handlePresetSelect = (preset: string) => {
     setSelectedPreset(preset);
     const now = new Date();
@@ -82,48 +83,38 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
       const todayStr = formatDateToInput(now);
       setStartDate(todayStr);
       setEndDate(todayStr);
-      setGranularity('DAILY');
     } else if (preset === '7D') {
       const past7 = new Date();
       past7.setDate(now.getDate() - 7);
       setStartDate(formatDateToInput(past7));
       setEndDate(formatDateToInput(now));
-      setGranularity('DAILY');
     } else if (preset === '30D') {
       const past30 = new Date();
       past30.setDate(now.getDate() - 30);
       setStartDate(formatDateToInput(past30));
       setEndDate(formatDateToInput(now));
-      setGranularity('DAILY');
-    } else if (preset === 'THIS_MONTH') {
-      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-      setStartDate(formatDateToInput(firstDay));
-      setEndDate(formatDateToInput(now));
-      setGranularity('DAILY');
-    } else if (preset === '1Y') {
-      const past1Y = new Date();
-      past1Y.setFullYear(now.getFullYear() - 1);
-      setStartDate(formatDateToInput(past1Y));
-      setEndDate(formatDateToInput(now));
-      setGranularity('MONTHLY');
-    } else if (preset === '3Y') {
-      const past3Y = new Date();
-      past3Y.setFullYear(now.getFullYear() - 3);
-      setStartDate(formatDateToInput(past3Y));
-      setEndDate(formatDateToInput(now));
-      setGranularity('MONTHLY');
-    } else if (preset === '5Y') {
-      const past5Y = new Date();
-      past5Y.setFullYear(now.getFullYear() - 5);
-      setStartDate(formatDateToInput(past5Y));
-      setEndDate(formatDateToInput(now));
-      setGranularity('YEARLY');
     } else if (preset === 'ALL') {
       setStartDate('');
       setEndDate('');
-      setGranularity('YEARLY');
     }
   };
+
+  // Auto-detect Granularity based on Date Range selected
+  useEffect(() => {
+    if (!startDate || !endDate) {
+      setGranularity('MONTHLY');
+      return;
+    }
+
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const diffDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 3600 * 24));
+
+    if (diffDays <= 35) setGranularity('DAILY');
+    else if (diffDays <= 180) setGranularity('WEEKLY');
+    else if (diffDays <= 1095) setGranularity('MONTHLY'); // up to 3 years
+    else setGranularity('YEARLY'); // 3+ to 5+ years
+  }, [startDate, endDate]);
 
   useEffect(() => {
     handlePresetSelect('30D');
@@ -215,7 +206,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
     };
   }, [startDate, endDate]);
 
-  // Dynamic Chart Points Generation with Continuous Date Fill & Granularity
+  // Dynamic Chart Points Generation
   const chartData = useMemo(() => {
     if (!rawOrdersData || rawOrdersData.length === 0) return [];
 
@@ -279,7 +270,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
     { key: 'CANCELLED', label: 'CANCELLED', count: cancelledOrders, color: '#f87171' },
   ];
 
-  // Smooth Bezier Curve Path Generator
+  // Bezier Smooth Curve Generator
   const getSmoothPath = (pts: { x: number; y: number }[]) => {
     if (pts.length === 0) return '';
     if (pts.length === 1) return `M ${pts[0].x} ${pts[0].y}`;
@@ -304,17 +295,17 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
   const renderSVGChart = () => {
     if (chartData.length === 0) {
       return (
-        <div style={{ padding: '40px 0', textAlign: 'center', color: '#666', fontSize: '11px', letterSpacing: '1px' }}>
+        <div style={{ padding: '35px 0', textAlign: 'center', color: '#666', fontSize: '11px', letterSpacing: '1px' }}>
           NO TRANSACTION DATA AVAILABLE FOR SELECTED PERIOD
         </div>
       );
     }
 
     const svgWidth = 650;
-    const svgHeight = 200;
-    const paddingTop = 25;
-    const paddingBottom = 35;
-    const paddingLeft = 50;
+    const svgHeight = 180;
+    const paddingTop = 20;
+    const paddingBottom = 30;
+    const paddingLeft = 45;
     const paddingRight = 20;
 
     const chartInnerWidth = svgWidth - paddingLeft - paddingRight;
@@ -357,7 +348,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
         >
           <defs>
             <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.35" />
+              <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.3" />
               <stop offset="100%" stopColor="#22d3ee" stopOpacity="0.0" />
             </linearGradient>
           </defs>
@@ -390,20 +381,20 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
             );
           })}
 
-          {/* Area Fill & Curve */}
+          {/* Area & Line */}
           {areaD && <path d={areaD} fill="url(#chartGradient)" />}
           {smoothPathD && (
             <path
               d={smoothPathD}
               fill="none"
               stroke="#22d3ee"
-              strokeWidth="2.5"
+              strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
             />
           )}
 
-          {/* Data Points & X-Labels */}
+          {/* Points & Hitboxes */}
           {points.map((p, i) => {
             const isHovered = hoveredIndex === i;
             const step = Math.max(1, Math.ceil(points.length / 7));
@@ -414,14 +405,13 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
                 <circle
                   cx={p.x}
                   cy={p.y}
-                  r={isHovered ? '5' : '3'}
+                  r={isHovered ? '4.5' : '2.5'}
                   fill={isHovered ? '#22d3ee' : '#080808'}
                   stroke="#22d3ee"
-                  strokeWidth={isHovered ? '3' : '2'}
+                  strokeWidth={isHovered ? '2.5' : '1.5'}
                   style={{ transition: 'all 0.15s ease' }}
                 />
 
-                {/* Hitbox for hover */}
                 <rect
                   x={p.x - Math.max(chartInnerWidth / points.length / 2, 8)}
                   y={paddingTop}
@@ -435,7 +425,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
                 {showLabel && (
                   <text
                     x={p.x}
-                    y={svgHeight - 10}
+                    y={svgHeight - 8}
                     fill="#718096"
                     fontSize="8"
                     textAnchor="middle"
@@ -448,7 +438,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
             );
           })}
 
-          {/* Active Hover Indicator Line */}
+          {/* Hover Indicator */}
           {activePoint && (
             <line
               x1={activePoint.x}
@@ -462,34 +452,34 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
           )}
         </svg>
 
-        {/* Hover Tooltip Overlay */}
+        {/* Hover Tooltip */}
         {activePoint && (
           <div
             style={{
               position: 'absolute',
-              top: `${(activePoint.y / svgHeight) * 100 - 25}%`,
+              top: `${(activePoint.y / svgHeight) * 100 - 20}%`,
               left: `${Math.min(Math.max((activePoint.x / svgWidth) * 100, 15), 85)}%`,
               transform: 'translate(-50%, -100%)',
               backgroundColor: '#111',
               border: '1px solid #22d3ee',
-              padding: '8px 12px',
-              borderRadius: '4px',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+              padding: '6px 10px',
+              borderRadius: '2px',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.6)',
               pointerEvents: 'none',
               zIndex: 10,
-              minWidth: '130px',
+              minWidth: '120px',
             }}
           >
-            <div style={{ fontSize: '10px', color: '#888', fontWeight: 'bold', marginBottom: '4px' }}>
+            <div style={{ fontSize: '9px', color: '#888', fontWeight: 'bold', marginBottom: '3px' }}>
               {activePoint.pt.label}
             </div>
-            <div style={{ fontSize: '12px', color: '#22d3ee', fontWeight: 'bold' }}>
-              REVENUE: ৳{formatNumber(activePoint.pt.revenue)}
+            <div style={{ fontSize: '11px', color: '#22d3ee', fontWeight: 'bold' }}>
+              REV: ৳{formatNumber(activePoint.pt.revenue)}
             </div>
-            <div style={{ fontSize: '11px', color: '#A0AEC0' }}>
+            <div style={{ fontSize: '10px', color: '#A0AEC0' }}>
               ORDERS: {activePoint.pt.orders}
             </div>
-            <div style={{ fontSize: '11px', color: '#A0AEC0' }}>
+            <div style={{ fontSize: '10px', color: '#A0AEC0' }}>
               AOV: ৳{formatNumber(activePoint.pt.aov)}
             </div>
           </div>
@@ -534,7 +524,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
           color: #666;
           font-size: 10px;
           font-weight: bold;
-          padding: 6px 10px;
+          padding: 6px 12px;
           cursor: pointer;
           border-radius: 2px;
           white-space: nowrap;
@@ -562,6 +552,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
           padding: 6px 8px;
           border-radius: 2px;
           outline: none;
+          width: 100%;
         }
 
         .two-column-grid {
@@ -586,8 +577,8 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
 
         .filter-toggle-btn {
           background: #111;
-          border: 1px solid #333;
-          color: #aaa;
+          border: 1px solid #222;
+          color: #777;
           font-size: 9px;
           padding: 4px 8px;
           cursor: pointer;
@@ -611,19 +602,21 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
             justify-content: space-between;
             align-items: center;
           }
+          .custom-date-inputs { width: auto; }
+          .date-input { width: 135px; }
         }
       `}</style>
 
-      {/* Date Filter & Presets (Added 1Y, 3Y, 5Y) */}
+      {/* Clean Presets Filter Bar */}
       <div className="date-filter-container">
         <div className="preset-buttons">
-          {['ALL', 'TODAY', '7D', '30D', 'THIS_MONTH', '1Y', '3Y', '5Y'].map((p) => (
+          {['ALL', 'TODAY', '7D', '30D'].map((p) => (
             <button
               key={p}
               className={`preset-btn ${selectedPreset === p ? 'active' : ''}`}
               onClick={() => handlePresetSelect(p)}
             >
-              {p === 'THIS_MONTH' ? 'THIS MONTH' : p}
+              {p === 'ALL' ? 'ALL TIME' : p === '7D' ? '7 DAYS' : p === '30D' ? '30 DAYS' : p}
             </button>
           ))}
         </div>
@@ -638,7 +631,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
               setSelectedPreset('CUSTOM');
             }}
           />
-          <span style={{ color: '#666', fontSize: '11px' }}>TO</span>
+          <span style={{ color: '#666', fontSize: '11px', fontWeight: 'bold' }}>TO</span>
           <input
             type="date"
             className="date-input"
@@ -651,7 +644,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
         </div>
       </div>
 
-      {/* Fulfillment Status Bar */}
+      {/* Fulfillment Status */}
       <div style={{ backgroundColor: '#080808', border: '1px solid #222', padding: '14px', borderRadius: '2px' }}>
         <span style={{ fontSize: '14px', color: '#CBD5E0', letterSpacing: '1px', fontWeight: 'bold', display: 'block', marginBottom: '10px' }}>
           FULFILLMENT STATUS
@@ -681,7 +674,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
         </div>
       </div>
 
-      {/* Core Metrics */}
+      {/* Metric Cards */}
       {canViewSensitiveData && (
         <div className="two-column-grid">
           <div className="metric-card">
@@ -719,17 +712,16 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
         </div>
       </div>
 
-      {/* Advanced Interactive SVG Graph */}
+      {/* Graph Section */}
       {canViewSensitiveData && (
         <div style={{ backgroundColor: '#080808', border: '1px solid #222', padding: '14px', borderRadius: '2px', marginTop: '10px' }}>
           
-          {/* Custom Filters Bar on Top of Graph */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '15px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginBottom: '12px' }}>
             <span style={{ fontSize: '13px', color: '#CBD5E0', fontWeight: 'bold', letterSpacing: '1px' }}>
               ANALYTICS TREND
             </span>
 
-            {/* Metric Switcher */}
+            {/* Metric Mode Switcher */}
             <div style={{ display: 'flex', gap: '4px' }}>
               {(['REVENUE', 'ORDERS', 'AOV'] as MetricType[]).map((m) => (
                 <button
@@ -738,19 +730,6 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
                   onClick={() => setSelectedMetric(m)}
                 >
                   {m}
-                </button>
-              ))}
-            </div>
-
-            {/* Granularity Switcher */}
-            <div style={{ display: 'flex', gap: '4px' }}>
-              {(['DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY'] as GranularityType[]).map((g) => (
-                <button
-                  key={g}
-                  className={`filter-toggle-btn ${granularity === g ? 'active' : ''}`}
-                  onClick={() => setGranularity(g)}
-                >
-                  {g[0]} {/* D / W / M / Y */}
                 </button>
               ))}
             </div>
