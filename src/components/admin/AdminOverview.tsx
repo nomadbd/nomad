@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+ import React, { useEffect, useState, useMemo } from 'react';
 import { supabase } from '../../supabaseClient';
 
 interface AdminOverviewProps {
@@ -40,6 +40,8 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   const [totalRevenue, setTotalRevenue] = useState<number>(0);
+  const [cancelledRevenue, setCancelledRevenue] = useState<number>(0);
+  
   const [totalOrders, setTotalOrders] = useState<number>(0);
   const [pendingOrders, setPendingOrders] = useState<number>(0);
   const [processingOrders, setProcessingOrders] = useState<number>(0);
@@ -47,13 +49,15 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
   const [shippedOrders, setShippedOrders] = useState<number>(0);
   const [deliveredOrders, setDeliveredOrders] = useState<number>(0);
   const [cancelledOrders, setCancelledOrders] = useState<number>(0);
-  
+
   // Catalog & Stock States
   const [activeCatalogItems, setActiveCatalogItems] = useState<number>(0);
   const [outOfStockItems, setOutOfStockItems] = useState<number>(0);
   const [lowStockItems, setLowStockItems] = useState<number>(0);
-  
+
+  // Users States
   const [totalUsers, setTotalUsers] = useState<number>(0);
+  const [newUsers, setNewUsers] = useState<number>(0); // Users joined in the selected period
 
   const [rawOrdersData, setRawOrdersData] = useState<any[]>([]);
 
@@ -140,6 +144,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
         setRawOrdersData(orders);
 
         let revenue = 0;
+        let c_revenue = 0;
         let pending = 0;
         let processing = 0;
         let received = 0;
@@ -160,11 +165,14 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
 
           if (!st.includes('cancel')) {
             revenue += Number(o.total_amount || 0);
+          } else {
+            c_revenue += Number(o.total_amount || 0);
           }
         });
 
         setTotalOrders(orders.length);
         setTotalRevenue(revenue);
+        setCancelledRevenue(c_revenue);
         setPendingOrders(pending);
         setProcessingOrders(processing);
         setReceivedOrders(received);
@@ -173,26 +181,25 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
         setCancelledOrders(cancelled);
       }
 
-      // Catalog Items & Stock Alerts (Updated to use 'stock_quantity' column)
-      // 1. Total Items
+      // Catalog Items & Stock Alerts
       const { count: productCount } = await supabase.from('products').select('*', { count: 'exact', head: true });
       if (productCount !== null) setActiveCatalogItems(productCount);
 
-      // 2. Out of Stock Items (stock_quantity ০ বা তার কম হলে)
       const { count: outOfStockCount } = await supabase.from('products').select('*', { count: 'exact', head: true }).lte('stock_quantity', 0);
       if (outOfStockCount !== null) setOutOfStockItems(outOfStockCount);
 
-      // 3. Low Stock Items (stock_quantity ১ থেকে ৫ এর মধ্যে হলে)
       const { count: lowStockCount } = await supabase.from('products').select('*', { count: 'exact', head: true }).gt('stock_quantity', 0).lte('stock_quantity', 5);
       if (lowStockCount !== null) setLowStockItems(lowStockCount);
 
-      // Users Count
-      let usersQuery = supabase.from('profiles').select('*', { count: 'exact', head: true }).not('role', 'in', '("admin","manager")');
-      if (startDate) usersQuery = usersQuery.gte('created_at', `${startDate}T00:00:00.000Z`);
-      if (endDate) usersQuery = usersQuery.lte('created_at', `${endDate}T23:59:59.999Z`);
+      // Users Count (All Time vs New in Period)
+      const { count: allUsersCount } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).not('role', 'in', '("admin","manager")');
+      if (allUsersCount !== null) setTotalUsers(allUsersCount);
 
-      const { count: usersCount } = await usersQuery;
-      if (usersCount !== null) setTotalUsers(usersCount);
+      let newUsersQuery = supabase.from('profiles').select('*', { count: 'exact', head: true }).not('role', 'in', '("admin","manager")');
+      if (startDate) newUsersQuery = newUsersQuery.gte('created_at', `${startDate}T00:00:00.000Z`);
+      if (endDate) newUsersQuery = newUsersQuery.lte('created_at', `${endDate}T23:59:59.999Z`);
+      const { count: newUsersCount } = await newUsersQuery;
+      if (newUsersCount !== null) setNewUsers(newUsersCount);
 
     } catch (err) {
       console.error('Error fetching analytics:', err);
@@ -233,7 +240,6 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
       startD.setDate(startD.getDate() - 30);
     }
 
-    // 1. Group real sales data
     const dateMap: { [key: string]: { revenue: number; orders: number } } = {};
 
     rawOrdersData.forEach((o) => {
@@ -262,7 +268,6 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
       dateMap[key].orders += 1;
     });
 
-    // 2. Generate continuous bucket keys to fill zero-data points
     const resultKeys: string[] = [];
     const curr = new Date(startD);
 
@@ -319,7 +324,6 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
     { key: 'CANCELLED', label: 'CANCELLED', count: cancelledOrders, color: '#f87171' },
   ];
 
-  // Bezier Curve Generator
   const getSmoothPath = (pts: { x: number; y: number }[]) => {
     if (pts.length === 0) return '';
     if (pts.length === 1) return `M ${pts[0].x} ${pts[0].y}`;
@@ -369,7 +373,6 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
     const displayValues = chartData.map(getValue);
     const rawMax = Math.max(...displayValues, 0);
 
-    // Dynamic Headroom to prevent flat horizontal line
     const maxValue = selectedMetric === 'ORDERS' 
       ? Math.max(rawMax * 1.3, 4) 
       : Math.max(rawMax * 1.25, 100);
@@ -407,48 +410,24 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
             </linearGradient>
           </defs>
 
-          {/* Grid lines */}
           {[0, 0.5, 1].map((ratio, idx) => {
             const yPos = svgHeight - paddingBottom - ratio * chartInnerHeight;
             const gridVal = Math.round(ratio * maxValue);
             return (
               <g key={idx}>
-                <line
-                  x1={paddingLeft}
-                  y1={yPos}
-                  x2={svgWidth - paddingRight}
-                  y2={yPos}
-                  stroke="#1b1b1b"
-                  strokeDasharray="3 3"
-                />
-                <text
-                  x={paddingLeft - 8}
-                  y={yPos + 3}
-                  fill="#555"
-                  fontSize="9"
-                  textAnchor="end"
-                  fontFamily="monospace"
-                >
+                <line x1={paddingLeft} y1={yPos} x2={svgWidth - paddingRight} y2={yPos} stroke="#1b1b1b" strokeDasharray="3 3" />
+                <text x={paddingLeft - 8} y={yPos + 3} fill="#555" fontSize="9" textAnchor="end" fontFamily="monospace">
                   {selectedMetric === 'ORDERS' ? formatNumber(gridVal) : `৳${formatNumber(gridVal)}`}
                 </text>
               </g>
             );
           })}
 
-          {/* Area & Line */}
           {areaD && <path d={areaD} fill="url(#chartGradient)" />}
           {smoothPathD && (
-            <path
-              d={smoothPathD}
-              fill="none"
-              stroke="#22d3ee"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
+            <path d={smoothPathD} fill="none" stroke="#22d3ee" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           )}
 
-          {/* Points & Hitboxes */}
           {points.map((p, i) => {
             const isHovered = hoveredIndex === i;
             const step = Math.max(1, Math.ceil(points.length / 8));
@@ -457,34 +436,20 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
             return (
               <g key={i}>
                 <circle
-                  cx={p.x}
-                  cy={p.y}
-                  r={isHovered ? '4.5' : p.val > 0 ? '2.5' : '1.5'}
+                  cx={p.x} cy={p.y} r={isHovered ? '4.5' : p.val > 0 ? '2.5' : '1.5'}
                   fill={isHovered ? '#22d3ee' : p.val > 0 ? '#22d3ee' : '#111'}
-                  stroke="#22d3ee"
-                  strokeWidth={isHovered ? '2.5' : '1'}
+                  stroke="#22d3ee" strokeWidth={isHovered ? '2.5' : '1'}
                   style={{ transition: 'all 0.15s ease' }}
                 />
 
                 <rect
-                  x={p.x - Math.max(chartInnerWidth / points.length / 2, 6)}
-                  y={paddingTop}
-                  width={Math.max(chartInnerWidth / points.length, 12)}
-                  height={chartInnerHeight}
-                  fill="transparent"
-                  style={{ cursor: 'pointer' }}
-                  onMouseEnter={() => setHoveredIndex(i)}
+                  x={p.x - Math.max(chartInnerWidth / points.length / 2, 6)} y={paddingTop}
+                  width={Math.max(chartInnerWidth / points.length, 12)} height={chartInnerHeight}
+                  fill="transparent" style={{ cursor: 'pointer' }} onMouseEnter={() => setHoveredIndex(i)}
                 />
 
                 {showLabel && (
-                  <text
-                    x={p.x}
-                    y={svgHeight - 8}
-                    fill="#718096"
-                    fontSize="8"
-                    textAnchor="middle"
-                    fontFamily="monospace"
-                  >
+                  <text x={p.x} y={svgHeight - 8} fill="#718096" fontSize="8" textAnchor="middle" fontFamily="monospace">
                     {p.pt.label}
                   </text>
                 )}
@@ -492,52 +457,27 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
             );
           })}
 
-          {/* Hover Line */}
           {activePoint && (
-            <line
-              x1={activePoint.x}
-              y1={paddingTop}
-              x2={activePoint.x}
-              y2={svgHeight - paddingBottom}
-              stroke="#22d3ee"
-              strokeWidth="1"
-              strokeDasharray="2 2"
-            />
+            <line x1={activePoint.x} y1={paddingTop} x2={activePoint.x} y2={svgHeight - paddingBottom} stroke="#22d3ee" strokeWidth="1" strokeDasharray="2 2" />
           )}
         </svg>
 
-        {/* Hover Tooltip */}
         {activePoint && (
           <div
             style={{
               position: 'absolute',
               top: `${(activePoint.y / svgHeight) * 100}%`,
               left: `${Math.min(Math.max((activePoint.x / svgWidth) * 100, 15), 85)}%`,
-              transform: activePoint.y < 80 
-                ? 'translate(-50%, 12px)' 
-                : 'translate(-50%, calc(-100% - 12px))',
-              backgroundColor: '#111',
-              border: '1px solid #22d3ee',
-              padding: '6px 10px',
-              borderRadius: '2px',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.6)',
-              pointerEvents: 'none',
-              zIndex: 10,
-              minWidth: '120px',
+              transform: activePoint.y < 80 ? 'translate(-50%, 12px)' : 'translate(-50%, calc(-100% - 12px))',
+              backgroundColor: '#111', border: '1px solid #22d3ee', padding: '6px 10px',
+              borderRadius: '2px', boxShadow: '0 4px 12px rgba(0,0,0,0.6)', pointerEvents: 'none',
+              zIndex: 10, minWidth: '120px',
             }}
           >
-            <div style={{ fontSize: '9px', color: '#888', fontWeight: 'bold', marginBottom: '3px' }}>
-              {activePoint.pt.label}
-            </div>
-            <div style={{ fontSize: '11px', color: '#22d3ee', fontWeight: 'bold' }}>
-              REV: ৳{formatNumber(activePoint.pt.revenue)}
-            </div>
-            <div style={{ fontSize: '10px', color: '#A0AEC0' }}>
-              ORDERS: {activePoint.pt.orders}
-            </div>
-            <div style={{ fontSize: '10px', color: '#A0AEC0' }}>
-              AOV: ৳{formatNumber(activePoint.pt.aov)}
-            </div>
+            <div style={{ fontSize: '9px', color: '#888', fontWeight: 'bold', marginBottom: '3px' }}>{activePoint.pt.label}</div>
+            <div style={{ fontSize: '11px', color: '#22d3ee', fontWeight: 'bold' }}>REV: ৳{formatNumber(activePoint.pt.revenue)}</div>
+            <div style={{ fontSize: '10px', color: '#A0AEC0' }}>ORDERS: {activePoint.pt.orders}</div>
+            <div style={{ fontSize: '10px', color: '#A0AEC0' }}>AOV: ৳{formatNumber(activePoint.pt.aov)}</div>
           </div>
         )}
       </div>
@@ -735,11 +675,21 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
         <div className="two-column-grid">
           <div className="metric-card">
             <span style={{ fontSize: '12px', color: '#A0AEC0' }}>TOTAL REVENUE</span>
-            <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF', marginTop: '4px' }}>৳{formatNumber(totalRevenue)}</div>
+            <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF', marginTop: '4px' }}>
+              ৳{formatNumber(totalRevenue)}
+              <span style={{ fontSize: '11px', marginLeft: '8px', fontWeight: 'normal' }}>
+                <span style={{ color: '#f87171' }}>৳{formatNumber(cancelledRevenue)} Cancelled</span>
+              </span>
+            </div>
           </div>
           <div className="metric-card">
-            <span style={{ fontSize: '12px', color: '#A0AEC0' }}>AVG ORDER VALUE (AOV)</span>
-            <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF', marginTop: '4px' }}>৳{formatNumber(avgOrderValue)}</div>
+            <span style={{ fontSize: '12px', color: '#A0AEC0' }}>AVG ORDER VALUE</span>
+            <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF', marginTop: '4px' }}>
+              ৳{formatNumber(avgOrderValue)}
+              <span style={{ fontSize: '11px', marginLeft: '8px', fontWeight: 'normal' }}>
+                <span style={{ color: '#4ade80' }}>{validOrderCount} Valid Orders</span>
+              </span>
+            </div>
           </div>
         </div>
       )}
@@ -747,12 +697,26 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
       <div className="two-column-grid">
         <div className="metric-card">
           <span style={{ fontSize: '12px', color: '#A0AEC0' }}>TOTAL ORDERS</span>
-          <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF', marginTop: '4px' }}>{formatNumber(totalOrders)}</div>
+          <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF', marginTop: '4px' }}>
+            {formatNumber(totalOrders)}
+            <span style={{ fontSize: '11px', marginLeft: '8px', fontWeight: 'normal' }}>
+              <span style={{ color: '#4ade80' }}>{validOrderCount} Valid</span>
+              <span style={{ color: '#666', margin: '0 4px' }}>/</span>
+              <span style={{ color: '#f87171' }}>{cancelledOrders} Cancelled</span>
+            </span>
+          </div>
         </div>
         <div className="metric-card">
           <span style={{ fontSize: '12px', color: '#A0AEC0' }}>ACTIVE QUEUE</span>
           <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF', marginTop: '4px' }}>
-            {formatNumber(pendingOrders + processingOrders)} <span style={{ fontSize: '12px', color: '#718096' }}>/ {formatNumber(receivedOrders)} REC</span>
+            {formatNumber(pendingOrders + processingOrders)}
+            <span style={{ fontSize: '11px', marginLeft: '8px', fontWeight: 'normal' }}>
+              <span style={{ color: '#facc15' }}>{pendingOrders} Pen</span>
+              <span style={{ color: '#666', margin: '0 4px' }}>/</span>
+              <span style={{ color: '#c084fc' }}>{processingOrders} Proc</span>
+              <span style={{ color: '#666', margin: '0 4px' }}>/</span>
+              <span style={{ color: '#60a5fa' }}>{receivedOrders} Rec</span>
+            </span>
           </div>
         </div>
       </div>
@@ -771,7 +735,12 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
         </div>
         <div className="metric-card">
           <span style={{ fontSize: '12px', color: '#A0AEC0' }}>TOTAL USERS</span>
-          <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF', marginTop: '4px' }}>{formatNumber(totalUsers)}</div>
+          <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF', marginTop: '4px' }}>
+            {formatNumber(totalUsers)}
+            <span style={{ fontSize: '11px', marginLeft: '8px', fontWeight: 'normal' }}>
+              <span style={{ color: '#4ade80' }}>+{newUsers} New in period</span>
+            </span>
+          </div>
         </div>
       </div>
 
