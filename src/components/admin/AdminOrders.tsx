@@ -292,6 +292,9 @@ const AdminOrders: React.FC = () => {
             const isExpanded = expandedOrderId === order.id;
             const statusColor = getStatusColor(order.status);
             const isUpdating = updatingOrderId === order.id;
+            
+            // Calculate total quantities across all items
+            const totalItemsCount = order.items.reduce((sum, item) => sum + (item.quantity || 0), 0);
 
             return (
               <div key={order.id} style={{ 
@@ -336,7 +339,7 @@ const AdminOrders: React.FC = () => {
                         ৳{order.total_amount}
                       </div>
                       <div style={{ fontSize: '9px', color: '#666' }}>
-                        {order.items.length} ITEM(S)
+                        {totalItemsCount} ITEM(S)
                       </div>
                     </div>
                   </div>
