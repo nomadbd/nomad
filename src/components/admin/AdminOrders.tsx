@@ -176,12 +176,137 @@ const AdminOrders: React.FC = () => {
     return '#a855f7';
   };
 
+  // ----- UPDATE: New Print Functionality -----
   const handlePrintInvoice = (order: Order) => {
-    // ... (আপনার প্রিন্ট ফাংশন আগের মতোই রাখা যেতে পারে)
-    // এখানে কোনো লেআউট পরিবর্তন করা হয়নি
-    console.log("Print functionality triggered for order:", order.id);
-    // আপনার পুরানো প্রিন্ট কোড এখানে রাখুন
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      alert("Please allow pop-ups in your browser to print the invoice.");
+      return;
+    }
+
+    const subtotal = order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const deliveryCharge = order.delivery_charge || 0;
+    const vat = order.vat_amount || 0;
+    const orderDate = new Date(order.created_at).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' });
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <title>Invoice #${order.id.slice(0, 8)}</title>
+        <style>
+          body { font-family: 'Courier New', Courier, monospace; color: #000; padding: 30px; line-height: 1.6; max-width: 800px; margin: 0 auto; }
+          .header { text-align: center; margin-bottom: 40px; border-bottom: 2px dashed #000; padding-bottom: 20px; }
+          .header h1 { margin: 0; font-size: 28px; letter-spacing: 2px; }
+          .header p { margin: 5px 0 0; font-size: 14px; color: #555; }
+          .info-container { display: flex; justify-content: space-between; margin-bottom: 40px; }
+          .info-box { width: 45%; }
+          .info-box p { margin: 5px 0; font-size: 14px; }
+          .bold { font-weight: bold; }
+          table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+          th, td { border-bottom: 1px solid #ccc; padding: 12px 8px; text-align: left; font-size: 14px; }
+          th { background-color: #f9f9f9; font-weight: bold; }
+          .text-right { text-align: right; }
+          .text-center { text-align: center; }
+          .totals { width: 50%; margin-left: auto; border-top: 2px solid #000; padding-top: 15px; }
+          .totals-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px; }
+          .grand-total { font-weight: bold; font-size: 18px; margin-top: 10px; border-top: 1px solid #000; padding-top: 10px; }
+          .footer { margin-top: 60px; text-align: center; font-size: 12px; color: #666; border-top: 1px dashed #ccc; padding-top: 20px; }
+          @media print {
+            body { padding: 0; }
+            @page { margin: 1cm; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>NOMAD APPAREL</h1>
+          <p>The one. Everywhere.</p>
+          <h2>INVOICE</h2>
+        </div>
+
+        <div class="info-container">
+          <div class="info-box">
+            <p class="bold">Order Details:</p>
+            <p>Order ID: <strong>#${order.id.slice(0, 8).toUpperCase()}</strong></p>
+            <p>Date: ${orderDate}</p>
+            <p>Status: ${order.status.toUpperCase()}</p>
+          </div>
+          <div class="info-box" style="text-align: right;">
+            <p class="bold">Bill To / Ship To:</p>
+            <p><strong>${order.customer_name || 'Guest Customer'}</strong></p>
+            <p>${order.customer_phone || 'No phone provided'}</p>
+            <p style="white-space: pre-wrap;">${order.shipping_address || 'No address provided'}</p>
+          </div>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Item Description</th>
+              <th class="text-center">Qty</th>
+              <th class="text-right">Unit Price</th>
+              <th class="text-right">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${order.items.map(item => `
+              <tr>
+                <td>
+                  <strong>${item.product_name}</strong><br/>
+                  <span style="font-size: 12px; color: #555;">Size: ${item.size} | Color: ${item.color}</span>
+                </td>
+                <td class="text-center">${item.quantity}</td>
+                <td class="text-right">৳${item.price}</td>
+                <td class="text-right">৳${item.price * item.quantity}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+
+        <div class="totals">
+          <div class="totals-row">
+            <span>Subtotal:</span>
+            <span>৳${subtotal}</span>
+          </div>
+          <div class="totals-row">
+            <span>Delivery Charge:</span>
+            <span>৳${deliveryCharge}</span>
+          </div>
+          ${vat > 0 ? `
+          <div class="totals-row">
+            <span>VAT:</span>
+            <span>৳${vat}</span>
+          </div>
+          ` : ''}
+          <div class="totals-row grand-total">
+            <span>Total Amount:</span>
+            <span>৳${order.total_amount}</span>
+          </div>
+        </div>
+
+        <div class="footer">
+          <p>Thank you for shopping with Nomad Apparel!</p>
+          <p>If you have any questions about this invoice, please contact our support.</p>
+        </div>
+
+        <script>
+          window.onload = function() {
+            window.print();
+            // Optional: Close window after printing
+            // setTimeout(function() { window.close(); }, 500); 
+          }
+        </script>
+      </body>
+      </html>
+    `;
+
+    printWindow.document.open();
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
   };
+  // ----- END UPDATE -----
 
   const filteredOrders = useMemo(() => {
     return orders.filter(order => {
@@ -292,7 +417,7 @@ const AdminOrders: React.FC = () => {
             const isExpanded = expandedOrderId === order.id;
             const statusColor = getStatusColor(order.status);
             const isUpdating = updatingOrderId === order.id;
-            
+
             // Calculate total quantities across all items
             const totalItemsCount = order.items.reduce((sum, item) => sum + (item.quantity || 0), 0);
 
@@ -375,13 +500,13 @@ const AdminOrders: React.FC = () => {
                       ))}
                     </select>
 
-                    <button onClick={() => handlePrintInvoice(order)} style={{ padding: '9px 16px', background: '#111', border: '1px solid #333', color: '#fff', fontSize: '10px' }}>
+                    <button onClick={() => handlePrintInvoice(order)} style={{ padding: '9px 16px', background: '#111', border: '1px solid #333', color: '#fff', fontSize: '10px', cursor: 'pointer' }}>
                       PRINT
                     </button>
 
                     <button
                       onClick={() => setExpandedOrderId(isExpanded ? null : order.id)}
-                      style={{ padding: '9px 16px', background: '#111', border: '1px solid #333', color: '#fff', fontSize: '10px' }}
+                      style={{ padding: '9px 16px', background: '#111', border: '1px solid #333', color: '#fff', fontSize: '10px', cursor: 'pointer' }}
                     >
                       {isExpanded ? 'HIDE' : 'VIEW'}
                     </button>
