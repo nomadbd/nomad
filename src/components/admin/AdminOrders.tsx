@@ -167,8 +167,7 @@ const AdminOrders: React.FC = () => {
   };
 
   const handlePrintInvoice = (order: Order) => {
-    // পপ-আপ উইন্ডোটি ডেক্সটপ সাইজে ওপেন করার জন্য নির্দিষ্ট ডাইমেনশন
-    const printWindow = window.open('', '_blank', 'width=800,height=800,left=200,top=100');
+    const printWindow = window.open('', '_blank', 'width=850,height=900,left=150,top=50');
     if (!printWindow) {
       alert("Please allow pop-ups in your browser to print the invoice.");
       return;
@@ -194,12 +193,12 @@ const AdminOrders: React.FC = () => {
         <style>
           @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
           
-          /* বডির width 800px ফিক্সড করা হয়েছে যাতে উইন্ডো ছোট হলেও মোবাইল ভিউতে না যায় */
           body { 
             font-family: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif; 
             color: #000; 
-            padding: 40px; 
-            width: 800px; 
+            padding: 30px; 
+            max-width: 800px; 
+            width: 100%;
             margin: 0 auto; 
             font-size: 11px; 
             line-height: 1.5;
@@ -207,16 +206,16 @@ const AdminOrders: React.FC = () => {
             box-sizing: border-box;
           }
           
-          .header { text-align: center; margin-bottom: 50px; }
+          .header { text-align: center; margin-bottom: 40px; }
           .header h1 { font-size: 20px; letter-spacing: 6px; margin: 0 0 5px 0; font-weight: 700; }
-          .header p { font-size: 10px; letter-spacing: 2px; margin: 0; color: #333; text-transform: uppercase; }
-          .header h2 { font-size: 9px; letter-spacing: 2px; margin: 15px 0 0 0; color: #555; text-transform: uppercase; font-weight: 600;}
+          .header h2 { font-size: 9px; letter-spacing: 2px; margin: 10px 0 0 0; color: #555; text-transform: uppercase; font-weight: 600;}
           
-          .top-section { display: flex; justify-content: space-between; margin-bottom: 40px; }
-          .shipping-info p, .order-info p { margin: 3px 0; }
+          .top-section { display: flex; justify-content: space-between; gap: 20px; margin-bottom: 30px; flex-wrap: wrap; }
+          .shipping-info { flex: 1; min-width: 220px; }
+          .order-info { text-align: right; flex: 1; min-width: 250px; }
+          .shipping-info p, .order-info p { margin: 3px 0; word-break: break-word; }
           .bold { font-weight: 700; }
-          .small-title { font-size: 10px; font-weight: 700; margin-bottom: 10px; text-transform: uppercase; }
-          .order-info { text-align: right; }
+          .small-title { font-size: 10px; font-weight: 700; margin-bottom: 8px; text-transform: uppercase; }
           .text-red { color: #d93025; }
           
           .table-header { 
@@ -229,34 +228,33 @@ const AdminOrders: React.FC = () => {
             font-size: 11px; 
             text-transform: uppercase;
           }
-          .item-row { display: flex; justify-content: space-between; margin-bottom: 15px; }
-          .item-details { display: flex; flex-direction: column; }
+          .item-row { display: flex; justify-content: space-between; gap: 15px; margin-bottom: 15px; }
+          .item-details { display: flex; flexDirection: column; flex: 1; }
           .item-meta { color: #555; font-size: 10px; margin-top: 4px; text-transform: uppercase; }
           
-          .totals-section { display: flex; justify-content: flex-end; margin-top: 40px; }
-          .totals-table { width: 280px; }
+          .totals-section { display: flex; justify-content: flex-end; margin-top: 30px; }
+          .totals-table { width: 100%; max-width: 300px; }
           .totals-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 11px; text-transform: uppercase; }
           .totals-border { border-top: 1px solid #000; margin: 10px 0; }
           .grand-total { font-weight: 700; font-size: 12px; }
           
           .footer { 
-            margin-top: 80px; 
+            margin-top: 50px; 
             text-align: center; 
             font-size: 9px; 
             color: #333; 
             line-height: 1.5; 
           }
           
-          /* প্রিন্ট করার সময় যেন ব্রাউজারের তারিখ এবং URL না আসে */
           @media print {
             @page {
-              margin: 0; /* ব্রাউজারের ডিফল্ট হেডার/ফুটার অফ করে দেয় */
+              margin: 0;
             }
             body { 
               width: 100% !important; 
               max-width: 100% !important;
-              padding: 0 !important; 
-              margin: 1.5cm !important; /* কনটেন্ট পেপারের কিনারায় যেন না লেগে যায় */
+              padding: 1cm !important; 
+              margin: 0 !important; 
             }
           }
         </style>
@@ -273,13 +271,13 @@ const AdminOrders: React.FC = () => {
             <div class="small-title">SHIPPING TO</div>
             <p class="bold" style="text-transform: uppercase;">${order.customer_name || 'GUEST CUSTOMER'}</p>
             <p>${order.customer_phone || ''}</p>
-            <p style="text-transform: uppercase; white-space: pre-wrap; max-width: 250px;">${order.shipping_address || ''}</p>
+            <p style="text-transform: uppercase; white-space: pre-wrap;">${order.shipping_address || ''}</p>
           </div>
           <div class="order-info">
             <p><span class="bold">ORDER ID:</span> #${order.id}</p>
-            <p><span class="bold">DATE:</span> ${dateStr} &nbsp;&nbsp;&nbsp; <span class="bold">TIME:</span> ${timeStr}</p>
+            <p><span class="bold">DATE:</span> ${dateStr} &nbsp;&nbsp; <span class="bold">TIME:</span> ${timeStr}</p>
             <p><span class="bold">PAYMENT:</span> ${paymentMethod}</p>
-            <p class="bold text-red" style="margin-top: 8px;">STATUS: ${order.status.toUpperCase()}</p>
+            <p class="bold text-red" style="margin-top: 6px;">STATUS: ${order.status.toUpperCase()}</p>
           </div>
         </div>
 
@@ -292,9 +290,9 @@ const AdminOrders: React.FC = () => {
           <div class="item-row">
             <div class="item-details">
               <span class="bold" style="text-transform: uppercase;">${item.product_name}</span>
-              <span class="item-meta">SIZE: ${item.size} &nbsp;|&nbsp; COLOR: ${item.color} &nbsp;|&nbsp; QTY: ${item.quantity} x ৳${item.price}</span>
+              <span class="item-meta">SIZE: ${item.size} | COLOR: ${item.color} | QTY: ${item.quantity} x ৳${item.price}</span>
             </div>
-            <div>৳${item.price * item.quantity}</div>
+            <div style="font-weight: 600; white-space: nowrap;">৳${item.price * item.quantity}</div>
           </div>
         `).join('')}
 
@@ -332,7 +330,6 @@ const AdminOrders: React.FC = () => {
               window.print();
             }, 300);
             
-            // প্রিন্ট ডায়লগ ক্যানসেল করলে বা প্রিন্ট হয়ে গেলে অটোমেটিক উইন্ডোটি ক্লোজ হয়ে যাবে
             window.onafterprint = function() {
               window.close();
             };
@@ -368,7 +365,8 @@ const AdminOrders: React.FC = () => {
         border: '1px solid #1a1a1a', 
         padding: '16px', 
         borderRadius: '2px',
-        width: '100%'
+        width: '100%',
+        boxSizing: 'border-box'
       }}>
 
         {/* Search */}
