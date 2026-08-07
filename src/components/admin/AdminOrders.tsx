@@ -176,7 +176,6 @@ const AdminOrders: React.FC = () => {
     return '#a855f7';
   };
 
-  // ----- UPDATE: New Print Functionality -----
   const handlePrintInvoice = (order: Order) => {
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
@@ -187,7 +186,14 @@ const AdminOrders: React.FC = () => {
     const subtotal = order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     const deliveryCharge = order.delivery_charge || 0;
     const vat = order.vat_amount || 0;
-    const orderDate = new Date(order.created_at).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' });
+    
+    // Formatting Date and Time separately to match the design
+    const dateObj = new Date(order.created_at);
+    const dateStr = dateObj.toLocaleDateString('en-CA'); // Format: YYYY-MM-DD
+    const timeStr = dateObj.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
+
+    // Assuming COD by default for this template
+    const paymentMethod = "CASH ON DELIVERY";
 
     const htmlContent = `
       <!DOCTYPE html>
@@ -196,106 +202,140 @@ const AdminOrders: React.FC = () => {
         <meta charset="UTF-8">
         <title>Invoice #${order.id.slice(0, 8)}</title>
         <style>
-          body { font-family: 'Courier New', Courier, monospace; color: #000; padding: 30px; line-height: 1.6; max-width: 800px; margin: 0 auto; }
-          .header { text-align: center; margin-bottom: 40px; border-bottom: 2px dashed #000; padding-bottom: 20px; }
-          .header h1 { margin: 0; font-size: 28px; letter-spacing: 2px; }
-          .header p { margin: 5px 0 0; font-size: 14px; color: #555; }
-          .info-container { display: flex; justify-content: space-between; margin-bottom: 40px; }
-          .info-box { width: 45%; }
-          .info-box p { margin: 5px 0; font-size: 14px; }
-          .bold { font-weight: bold; }
-          table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
-          th, td { border-bottom: 1px solid #ccc; padding: 12px 8px; text-align: left; font-size: 14px; }
-          th { background-color: #f9f9f9; font-weight: bold; }
-          .text-right { text-align: right; }
-          .text-center { text-align: center; }
-          .totals { width: 50%; margin-left: auto; border-top: 2px solid #000; padding-top: 15px; }
-          .totals-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px; }
-          .grand-total { font-weight: bold; font-size: 18px; margin-top: 10px; border-top: 1px solid #000; padding-top: 10px; }
-          .footer { margin-top: 60px; text-align: center; font-size: 12px; color: #666; border-top: 1px dashed #ccc; padding-top: 20px; }
+          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+          
+          body { 
+            font-family: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif; 
+            color: #000; 
+            padding: 40px; 
+            max-width: 800px; 
+            margin: 0 auto; 
+            font-size: 11px; 
+            line-height: 1.5;
+            background-color: #fff;
+          }
+          
+          /* Header */
+          .header { text-align: center; margin-bottom: 50px; }
+          .header h1 { font-size: 20px; letter-spacing: 6px; margin: 0 0 5px 0; font-weight: 700; }
+          .header p { font-size: 10px; letter-spacing: 2px; margin: 0; color: #333; text-transform: uppercase; }
+          .header h2 { font-size: 9px; letter-spacing: 2px; margin: 15px 0 0 0; color: #555; text-transform: uppercase; font-weight: 600;}
+          
+          /* Top Info Section */
+          .top-section { display: flex; justify-content: space-between; margin-bottom: 40px; }
+          .shipping-info p, .order-info p { margin: 3px 0; }
+          .bold { font-weight: 700; }
+          .small-title { font-size: 10px; font-weight: 700; margin-bottom: 10px; text-transform: uppercase; }
+          .order-info { text-align: right; }
+          .text-red { color: #d93025; }
+          
+          /* Table Section */
+          .table-header { 
+            display: flex; 
+            justify-content: space-between; 
+            border-bottom: 2px solid #000; 
+            padding-bottom: 8px; 
+            margin-bottom: 15px; 
+            font-weight: 700; 
+            font-size: 11px; 
+            text-transform: uppercase;
+          }
+          .item-row { display: flex; justify-content: space-between; margin-bottom: 15px; }
+          .item-details { display: flex; flex-direction: column; }
+          .item-meta { color: #555; font-size: 10px; margin-top: 4px; text-transform: uppercase; }
+          
+          /* Totals Section */
+          .totals-section { display: flex; justify-content: flex-end; margin-top: 40px; }
+          .totals-table { width: 280px; }
+          .totals-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 11px; text-transform: uppercase; }
+          .totals-border { border-top: 1px solid #000; margin: 10px 0; }
+          .grand-total { font-weight: 700; font-size: 12px; }
+          
+          /* Footer Legal Notice */
+          .footer { 
+            margin-top: 80px; 
+            text-align: center; 
+            font-size: 9px; 
+            color: #333; 
+            line-height: 1.5; 
+          }
+          
           @media print {
-            body { padding: 0; }
-            @page { margin: 1cm; }
+            body { padding: 0; margin: 0; }
+            @page { margin: 10mm; }
           }
         </style>
       </head>
       <body>
+        
         <div class="header">
-          <h1>NOMAD APPAREL</h1>
-          <p>The one. Everywhere.</p>
-          <h2>INVOICE</h2>
+          <h1>N O M A D</h1>
+          <h2>PROFORMA INVOICE / ORDER MEMORANDUM</h2>
         </div>
 
-        <div class="info-container">
-          <div class="info-box">
-            <p class="bold">Order Details:</p>
-            <p>Order ID: <strong>#${order.id.slice(0, 8).toUpperCase()}</strong></p>
-            <p>Date: ${orderDate}</p>
-            <p>Status: ${order.status.toUpperCase()}</p>
+        <div class="top-section">
+          <div class="shipping-info">
+            <div class="small-title">SHIPPING TO</div>
+            <p class="bold" style="text-transform: uppercase;">${order.customer_name || 'GUEST CUSTOMER'}</p>
+            <p>${order.customer_phone || ''}</p>
+            <p style="text-transform: uppercase; white-space: pre-wrap; max-width: 250px;">${order.shipping_address || ''}</p>
           </div>
-          <div class="info-box" style="text-align: right;">
-            <p class="bold">Bill To / Ship To:</p>
-            <p><strong>${order.customer_name || 'Guest Customer'}</strong></p>
-            <p>${order.customer_phone || 'No phone provided'}</p>
-            <p style="white-space: pre-wrap;">${order.shipping_address || 'No address provided'}</p>
+          <div class="order-info">
+            <p><span class="bold">ORDER ID:</span> #${order.id}</p>
+            <p><span class="bold">DATE:</span> ${dateStr} &nbsp;&nbsp;&nbsp; <span class="bold">TIME:</span> ${timeStr}</p>
+            <p><span class="bold">PAYMENT:</span> ${paymentMethod}</p>
+            <p class="bold text-red" style="margin-top: 8px;">STATUS: ${order.status.toUpperCase()}</p>
           </div>
         </div>
 
-        <table>
-          <thead>
-            <tr>
-              <th>Item Description</th>
-              <th class="text-center">Qty</th>
-              <th class="text-right">Unit Price</th>
-              <th class="text-right">Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${order.items.map(item => `
-              <tr>
-                <td>
-                  <strong>${item.product_name}</strong><br/>
-                  <span style="font-size: 12px; color: #555;">Size: ${item.size} | Color: ${item.color}</span>
-                </td>
-                <td class="text-center">${item.quantity}</td>
-                <td class="text-right">৳${item.price}</td>
-                <td class="text-right">৳${item.price * item.quantity}</td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
+        <div class="table-header">
+          <div>DESCRIPTION</div>
+          <div>TOTAL</div>
+        </div>
 
-        <div class="totals">
-          <div class="totals-row">
-            <span>Subtotal:</span>
-            <span>৳${subtotal}</span>
+        ${order.items.map(item => `
+          <div class="item-row">
+            <div class="item-details">
+              <span class="bold" style="text-transform: uppercase;">${item.product_name}</span>
+              <span class="item-meta">SIZE: ${item.size} &nbsp;|&nbsp; COLOR: ${item.color} &nbsp;|&nbsp; QTY: ${item.quantity} x ৳${item.price}</span>
+            </div>
+            <div>৳${item.price * item.quantity}</div>
           </div>
-          <div class="totals-row">
-            <span>Delivery Charge:</span>
-            <span>৳${deliveryCharge}</span>
-          </div>
-          ${vat > 0 ? `
-          <div class="totals-row">
-            <span>VAT:</span>
-            <span>৳${vat}</span>
-          </div>
-          ` : ''}
-          <div class="totals-row grand-total">
-            <span>Total Amount:</span>
-            <span>৳${order.total_amount}</span>
+        `).join('')}
+
+        <div class="totals-section">
+          <div class="totals-table">
+            <div class="totals-row">
+              <span>SUBTOTAL</span>
+              <span>৳${subtotal}</span>
+            </div>
+            <div class="totals-row">
+              <span>SHIPPING</span>
+              <span>৳${deliveryCharge}</span>
+            </div>
+            ${vat > 0 ? `
+            <div class="totals-row">
+              <span>VAT</span>
+              <span>৳${vat}</span>
+            </div>
+            ` : ''}
+            <div class="totals-border"></div>
+            <div class="totals-row grand-total text-red">
+              <span>AMOUNT DUE</span>
+              <span>৳${order.total_amount}</span>
+            </div>
           </div>
         </div>
 
         <div class="footer">
-          <p>Thank you for shopping with Nomad Apparel!</p>
-          <p>If you have any questions about this invoice, please contact our support.</p>
+          <span class="bold">LEGAL NOTICE:</span> This is a computer-generated order memorandum. It does not constitute a proof of final payment, sales receipt, or legal ownership of goods. Physical products will remain property of NOMAD until the full invoice amount is successfully collected by our authorized delivery agent.
         </div>
 
         <script>
           window.onload = function() {
-            window.print();
-            // Optional: Close window after printing
-            // setTimeout(function() { window.close(); }, 500); 
+            setTimeout(function() {
+              window.print();
+            }, 300); // Slight delay ensures fonts load before printing
           }
         </script>
       </body>
@@ -306,7 +346,6 @@ const AdminOrders: React.FC = () => {
     printWindow.document.write(htmlContent);
     printWindow.document.close();
   };
-  // ----- END UPDATE -----
 
   const filteredOrders = useMemo(() => {
     return orders.filter(order => {
