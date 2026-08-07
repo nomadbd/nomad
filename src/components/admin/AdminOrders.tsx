@@ -157,16 +157,6 @@ const AdminOrders: React.FC = () => {
     }
   };
 
-  const getUnifiedStatus = (rawStatus: string) => {
-    if (!rawStatus) return 'PENDING';
-    const s = rawStatus.trim().toLowerCase();
-    if (s === 'received') return 'RECEIVED';
-    if (s === 'shipped') return 'SHIPPED';
-    if (s === 'delivered' || s === 'completed' || s === 'delivered / completed') return 'DELIVERED';
-    if (s === 'cancelled') return 'CANCELLED';
-    return rawStatus.trim().toUpperCase();
-  };
-
   const getStatusColor = (rawStatus: string) => {
     const s = rawStatus.trim().toLowerCase();
     if (s === 'received') return '#3b82f6';
@@ -177,51 +167,51 @@ const AdminOrders: React.FC = () => {
   };
 
   const handlePrintInvoice = (order: Order) => {
-    const printWindow = window.open('', '_blank');
+    // পপ-আপ উইন্ডোটি ডেক্সটপ সাইজে ওপেন করার জন্য নির্দিষ্ট ডাইমেনশন
+    const printWindow = window.open('', '_blank', 'width=800,height=800,left=200,top=100');
     if (!printWindow) {
       alert("Please allow pop-ups in your browser to print the invoice.");
       return;
     }
 
     const subtotal = order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    const deliveryCharge = order.delivery_charge || 0;
-    const vat = order.vat_amount || 0;
+    const deliveryCharge = order.delivery_charge || 0; 
+    const vat = order.vat_amount || 0; 
     
-    // Formatting Date and Time separately to match the design
     const dateObj = new Date(order.created_at);
-    const dateStr = dateObj.toLocaleDateString('en-CA'); // Format: YYYY-MM-DD
+    const dateStr = dateObj.toLocaleDateString('en-CA'); 
     const timeStr = dateObj.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
 
-    // Assuming COD by default for this template
-    const paymentMethod = "CASH ON DELIVERY";
+    const paymentMethod = "CASH ON DELIVERY"; 
 
     const htmlContent = `
       <!DOCTYPE html>
       <html lang="en">
       <head>
         <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Invoice #${order.id.slice(0, 8)}</title>
         <style>
           @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
           
+          /* বডির width 800px ফিক্সড করা হয়েছে যাতে উইন্ডো ছোট হলেও মোবাইল ভিউতে না যায় */
           body { 
             font-family: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif; 
             color: #000; 
             padding: 40px; 
-            max-width: 800px; 
+            width: 800px; 
             margin: 0 auto; 
             font-size: 11px; 
             line-height: 1.5;
             background-color: #fff;
+            box-sizing: border-box;
           }
           
-          /* Header */
           .header { text-align: center; margin-bottom: 50px; }
           .header h1 { font-size: 20px; letter-spacing: 6px; margin: 0 0 5px 0; font-weight: 700; }
           .header p { font-size: 10px; letter-spacing: 2px; margin: 0; color: #333; text-transform: uppercase; }
           .header h2 { font-size: 9px; letter-spacing: 2px; margin: 15px 0 0 0; color: #555; text-transform: uppercase; font-weight: 600;}
           
-          /* Top Info Section */
           .top-section { display: flex; justify-content: space-between; margin-bottom: 40px; }
           .shipping-info p, .order-info p { margin: 3px 0; }
           .bold { font-weight: 700; }
@@ -229,7 +219,6 @@ const AdminOrders: React.FC = () => {
           .order-info { text-align: right; }
           .text-red { color: #d93025; }
           
-          /* Table Section */
           .table-header { 
             display: flex; 
             justify-content: space-between; 
@@ -244,14 +233,12 @@ const AdminOrders: React.FC = () => {
           .item-details { display: flex; flex-direction: column; }
           .item-meta { color: #555; font-size: 10px; margin-top: 4px; text-transform: uppercase; }
           
-          /* Totals Section */
           .totals-section { display: flex; justify-content: flex-end; margin-top: 40px; }
           .totals-table { width: 280px; }
           .totals-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 11px; text-transform: uppercase; }
           .totals-border { border-top: 1px solid #000; margin: 10px 0; }
           .grand-total { font-weight: 700; font-size: 12px; }
           
-          /* Footer Legal Notice */
           .footer { 
             margin-top: 80px; 
             text-align: center; 
@@ -260,9 +247,17 @@ const AdminOrders: React.FC = () => {
             line-height: 1.5; 
           }
           
+          /* প্রিন্ট করার সময় যেন ব্রাউজারের তারিখ এবং URL না আসে */
           @media print {
-            body { padding: 0; margin: 0; }
-            @page { margin: 10mm; }
+            @page {
+              margin: 0; /* ব্রাউজারের ডিফল্ট হেডার/ফুটার অফ করে দেয় */
+            }
+            body { 
+              width: 100% !important; 
+              max-width: 100% !important;
+              padding: 0 !important; 
+              margin: 1.5cm !important; /* কনটেন্ট পেপারের কিনারায় যেন না লেগে যায় */
+            }
           }
         </style>
       </head>
@@ -335,7 +330,12 @@ const AdminOrders: React.FC = () => {
           window.onload = function() {
             setTimeout(function() {
               window.print();
-            }, 300); // Slight delay ensures fonts load before printing
+            }, 300);
+            
+            // প্রিন্ট ডায়লগ ক্যানসেল করলে বা প্রিন্ট হয়ে গেলে অটোমেটিক উইন্ডোটি ক্লোজ হয়ে যাবে
+            window.onafterprint = function() {
+              window.close();
+            };
           }
         </script>
       </body>
@@ -457,7 +457,6 @@ const AdminOrders: React.FC = () => {
             const statusColor = getStatusColor(order.status);
             const isUpdating = updatingOrderId === order.id;
 
-            // Calculate total quantities across all items
             const totalItemsCount = order.items.reduce((sum, item) => sum + (item.quantity || 0), 0);
 
             return (
@@ -555,13 +554,11 @@ const AdminOrders: React.FC = () => {
                 {/* Expanded Content */}
                 {isExpanded && (
                   <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #222' }}>
-                    {/* Shipping Address */}
                     <div style={{ background: '#0a0a0a', padding: '12px', fontSize: '11px', color: '#ccc', marginBottom: '12px' }}>
                       <strong>SHIPPING ADDRESS:</strong><br />
                       {order.shipping_address || 'No address provided'}
                     </div>
 
-                    {/* Items */}
                     {order.items.map((item, idx) => (
                       <div key={idx} style={{ 
                         display: 'flex', 
