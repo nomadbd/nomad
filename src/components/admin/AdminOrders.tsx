@@ -80,7 +80,9 @@ const AdminOrders: React.FC = () => {
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
 
-  // Local state for editing order details in the expanded view
+  // Custom Toast Notification State
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
   const [editForm, setEditForm] = useState({
     payment_status: '',
     courier_name: '',
@@ -88,10 +90,17 @@ const AdminOrders: React.FC = () => {
     admin_notes: ''
   });
 
+  // Helper function to show custom notifications
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => {
+      setToast(null);
+    }, 3000); // Auto hide after 3 seconds
+  };
+
   const fetchAdminOrders = async () => {
     try {
       setLoading(true);
-      // 'select(*)' ensures we get the new columns if they exist, without crashing if they don't yet
       const { data, error } = await supabase
         .from('orders')
         .select(`
@@ -120,7 +129,6 @@ const AdminOrders: React.FC = () => {
             product_image: item.products?.product_media?.[0]?.media_url || 'https://via.placeholder.com/80x100',
             size: item.size || 'N/A',
             color: item.color || 'N/A',
-            // Default to 1 if quantity is completely missing
             quantity: item.quantity ? Number(item.quantity) : 1, 
             price: item.price_at_purchase || 0
           }));
@@ -146,6 +154,7 @@ const AdminOrders: React.FC = () => {
       }
     } catch (err) {
       console.error('Error fetching admin orders:', err);
+      showToast('Failed to fetch orders.', 'error');
     } finally {
       setLoading(false);
     }
@@ -184,12 +193,11 @@ const AdminOrders: React.FC = () => {
 
       if (error) throw error;
 
-      // Update local state
       setOrders(prev => prev.map(o => o.id === orderId ? { ...o, ...editForm } : o));
-      alert('Order details updated successfully!');
+      showToast('Order details updated successfully!', 'success');
     } catch (err) {
       console.error('Failed to update order details:', err);
-      alert('Failed to update details. Make sure you added the new columns in Supabase.');
+      showToast('Failed to update details. Please check database columns.', 'error');
     } finally {
       setUpdatingOrderId(null);
     }
@@ -206,9 +214,10 @@ const AdminOrders: React.FC = () => {
       if (error) throw error;
 
       setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
+      showToast(`Order marked as ${newStatus}`, 'success');
     } catch (err) {
       console.error('Failed to update status:', err);
-      alert('Failed to update status. Please try again.');
+      showToast('Failed to update status.', 'error');
     } finally {
       setUpdatingOrderId(null);
     }
@@ -226,7 +235,7 @@ const AdminOrders: React.FC = () => {
   const handlePrintInvoice = (order: Order) => {
     const printWindow = window.open('', '_blank', 'width=850,height=900,left=150,top=50');
     if (!printWindow) {
-      alert("Please allow pop-ups in your browser to print the invoice.");
+      showToast("Please allow pop-ups in your browser to print the invoice.", 'error');
       return;
     }
 
@@ -304,9 +313,7 @@ const AdminOrders: React.FC = () => {
           }
           
           @media print {
-            @page {
-              margin: 0;
-            }
+            @page { margin: 0; }
             body { 
               width: 100% !important; 
               max-width: 100% !important;
@@ -383,13 +390,8 @@ const AdminOrders: React.FC = () => {
 
         <script>
           window.onload = function() {
-            setTimeout(function() {
-              window.print();
-            }, 300);
-            
-            window.onafterprint = function() {
-              window.close();
-            };
+            setTimeout(function() { window.print(); }, 300);
+            window.onafterprint = function() { window.close(); };
           }
         </script>
       </body>
@@ -401,19 +403,15 @@ const AdminOrders: React.FC = () => {
     printWindow.document.close();
   };
 
-  // Filter Logics
   const filteredOrders = useMemo(() => {
     return orders.filter(order => {
-      // Search Logic
       const matchesSearch = 
         order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (order.customer_name && order.customer_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (order.customer_phone && order.customer_phone.includes(searchTerm));
 
-      // Status Logic
       const matchesStatus = selectedStatusFilter === 'ALL' || order.status.toLowerCase().trim() === selectedStatusFilter.toLowerCase().trim();
 
-      // Date Logic
       const orderDate = new Date(order.created_at);
       const today = new Date();
       let matchesDate = true;
@@ -433,7 +431,39 @@ const AdminOrders: React.FC = () => {
   }, [orders, searchTerm, selectedStatusFilter, selectedDateFilter]);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%', maxWidth: '100%' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%', maxWidth: '100%', position: 'relative' }}>
+      
+      {/* Toast Notification */}
+      {toast && (
+        <div style={{
+          position: 'fixed',
+          bottom: '30px',
+          right: '30px',
+          backgroundColor: toast.type === 'success' ? '#22c55e' : '#ef4444',
+          color: '#fff',
+          padding: '12px 20px',
+          borderRadius: '4px',
+          fontSize: '12px',
+          fontWeight: 'bold',
+          letterSpacing: '0.5px',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+          zIndex: 9999,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          animation: 'fadeIn 0.3s ease-in-out'
+        }}>
+          {toast.type === 'success' ? '✓' : '⚠'} {toast.message}
+        </div>
+      )}
+
+      {/* Internal Style for Animations */}
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
 
       {/* Top Controls Container */}
       <div style={{ 
@@ -555,9 +585,8 @@ const AdminOrders: React.FC = () => {
             const statusColor = getStatusColor(order.status);
             const isUpdating = updatingOrderId === order.id;
             
-            // Fix for 0 Items Bug
             const totalItemsCount = order.items.reduce((sum, item) => sum + (item.quantity || 0), 0);
-            const displayItemCount = totalItemsCount > 0 ? totalItemsCount : '1+'; // Fallback if data is missing
+            const displayItemCount = totalItemsCount > 0 ? totalItemsCount : '1+'; 
             
             const isPaid = order.payment_status?.toLowerCase().includes('paid') && !order.payment_status?.toLowerCase().includes('unpaid');
 
@@ -617,12 +646,51 @@ const AdminOrders: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Customer Info */}
-                  <div style={{ fontSize: '12px', color: '#ddd' }}>
-                    {order.customer_name || 'GUEST CUSTOMER'} 
-                    <span style={{ color: '#666', marginLeft: '8px' }}>
-                      {order.customer_phone || ''}
-                    </span>
+                  {/* Customer Info & Contact Actions */}
+                  <div style={{ fontSize: '12px', color: '#ddd', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    <span>{order.customer_name || 'GUEST CUSTOMER'}</span>
+                    
+                    {order.customer_phone && (() => {
+                      const messageBody = encodeURIComponent(
+                        `Hello ${order.customer_name || 'Customer'},\nYour NOMAD order (#${order.id.slice(0, 8)}) status is: ${order.status}.\nCourier: ${order.courier_name || 'N/A'}\nTracking ID: ${order.tracking_id || 'N/A'}\nThank you!`
+                      );
+                      
+                      const cleanPhone = order.customer_phone.replace(/[^0-9]/g, '');
+                      const waPhone = cleanPhone.startsWith('0') ? `88${cleanPhone}` : cleanPhone;
+
+                      const btnStyle = {
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        backgroundColor: '#111',
+                        border: '1px solid #333',
+                        padding: '4px 8px',
+                        borderRadius: '2px',
+                        textDecoration: 'none',
+                        fontSize: '10px',
+                        fontWeight: 'bold',
+                        cursor: 'pointer'
+                      };
+
+                      return (
+                        <div style={{ display: 'flex', gap: '6px', marginLeft: '4px' }}>
+                          {/* Click-to-Call */}
+                          <a href={`tel:${order.customer_phone}`} title="Call Customer" style={{ ...btnStyle, color: '#22c55e' }}>
+                            📞 কল
+                          </a>
+                          
+                          {/* Click-to-SMS */}
+                          <a href={`sms:${order.customer_phone}?body=${messageBody}`} title="Send SMS" style={{ ...btnStyle, color: '#3b82f6' }}>
+                            💬 SMS
+                          </a>
+
+                          {/* Click-to-WhatsApp */}
+                          <a href={`https://wa.me/${waPhone}?text=${messageBody}`} target="_blank" rel="noopener noreferrer" title="WhatsApp Customer" style={{ ...btnStyle, color: '#22c55e' }}>
+                            📱 WhatsApp
+                          </a>
+                        </div>
+                      );
+                    })()}
                   </div>
 
                   {/* Action Buttons */}
@@ -640,7 +708,8 @@ const AdminOrders: React.FC = () => {
                         fontWeight: 'bold',
                         borderRadius: '2px',
                         flex: 1,
-                        minWidth: '140px'
+                        minWidth: '140px',
+                        cursor: 'pointer'
                       }}
                     >
                       {STATUS_OPTIONS.map((opt) => (
@@ -694,7 +763,9 @@ const AdminOrders: React.FC = () => {
                           </div>
                         </div>
                       )) : (
-                        <div style={{ color: '#555', fontSize: '11px', fontStyle: 'italic', padding: '10px', background: '#000' }}>No items found for this order.</div>
+                        <div style={{ color: '#555', fontSize: '11px', fontStyle: 'italic', padding: '10px', background: '#000', border: '1px solid #111' }}>
+                          No items found for this order.
+                        </div>
                       )}
                     </div>
 
