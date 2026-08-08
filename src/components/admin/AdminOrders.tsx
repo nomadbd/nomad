@@ -436,7 +436,7 @@ const AdminOrders: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Customer Info & Contact Actions (CALL, SMS, WHATSAPP - No Icons) */}
+                  {/* Customer Info & Contact Actions (Icons Removed, No SMS) */}
                   <div style={{ fontSize: '12px', color: '#ddd', display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
                     <span>{order.customer_name || 'GUEST CUSTOMER'}</span>
                     
@@ -462,9 +462,6 @@ const AdminOrders: React.FC = () => {
                         <div style={{ display: 'flex', gap: '6px' }}>
                           <a href={`tel:${order.customer_phone}`} style={{ ...textBtnStyle, color: '#22c55e' }}>
                             CALL
-                          </a>
-                          <a href={`sms:${order.customer_phone}?body=${messageBody}`} style={{ ...textBtnStyle, color: '#3b82f6' }}>
-                            SMS
                           </a>
                           <a href={`https://wa.me/${waPhone}?text=${messageBody}`} target="_blank" rel="noopener noreferrer" style={{ ...textBtnStyle, color: '#22c55e' }}>
                             WHATSAPP
