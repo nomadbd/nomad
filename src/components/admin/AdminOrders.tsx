@@ -28,6 +28,10 @@ interface SupabaseOrderResponse {
   shipping_address?: string;
   delivery_charge?: number;
   vat_amount?: number;
+  payment_status?: string;
+  courier_name?: string;
+  tracking_id?: string;
+  admin_notes?: string;
   order_items: SupabaseOrderItem[];
 }
 
@@ -50,6 +54,10 @@ interface Order {
   shipping_address?: string;
   delivery_charge?: number;
   vat_amount?: number;
+  payment_status?: string;
+  courier_name?: string;
+  tracking_id?: string;
+  admin_notes?: string;
   items: OrderItem[];
 }
 
@@ -57,33 +65,37 @@ const STATUS_OPTIONS = [
   'Pending',
   'Received',
   'Shipped',
-  'Delivered / Completed',
+  'Delivered',
   'Cancelled'
 ];
+
+const DATE_FILTERS = ['ALL TIME', 'TODAY', 'LAST 7 DAYS', 'THIS MONTH'];
 
 const AdminOrders: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<string>('ALL');
+  const [selectedDateFilter, setSelectedDateFilter] = useState<string>('ALL TIME');
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
+
+  // Local state for editing order details in the expanded view
+  const [editForm, setEditForm] = useState({
+    payment_status: '',
+    courier_name: '',
+    tracking_id: '',
+    admin_notes: ''
+  });
 
   const fetchAdminOrders = async () => {
     try {
       setLoading(true);
+      // 'select(*)' ensures we get the new columns if they exist, without crashing if they don't yet
       const { data, error } = await supabase
         .from('orders')
         .select(`
-          id, 
-          created_at, 
-          total_amount, 
-          status,
-          customer_name,
-          customer_phone,
-          shipping_address,
-          delivery_charge,
-          vat_amount,
+          *,
           order_items (
             quantity, 
             size, 
@@ -108,7 +120,8 @@ const AdminOrders: React.FC = () => {
             product_image: item.products?.product_media?.[0]?.media_url || 'https://via.placeholder.com/80x100',
             size: item.size || 'N/A',
             color: item.color || 'N/A',
-            quantity: item.quantity || 1,
+            // Default to 1 if quantity is completely missing
+            quantity: item.quantity ? Number(item.quantity) : 1, 
             price: item.price_at_purchase || 0
           }));
 
@@ -116,12 +129,16 @@ const AdminOrders: React.FC = () => {
             id: order.id,
             created_at: order.created_at,
             total_amount: order.total_amount,
-            status: order.status || 'Pending',
+            status: order.status === 'Delivered / Completed' ? 'Delivered' : (order.status || 'Pending'),
             customer_name: order.customer_name,
             customer_phone: order.customer_phone,
             shipping_address: order.shipping_address,
             delivery_charge: order.delivery_charge,
             vat_amount: order.vat_amount,
+            payment_status: order.payment_status || 'Unpaid / COD',
+            courier_name: order.courier_name || '',
+            tracking_id: order.tracking_id || '',
+            admin_notes: order.admin_notes || '',
             items: items
           };
         });
@@ -137,6 +154,46 @@ const AdminOrders: React.FC = () => {
   useEffect(() => {
     fetchAdminOrders();
   }, []);
+
+  const handleExpandClick = (order: Order) => {
+    if (expandedOrderId === order.id) {
+      setExpandedOrderId(null);
+    } else {
+      setExpandedOrderId(order.id);
+      setEditForm({
+        payment_status: order.payment_status || 'Unpaid / COD',
+        courier_name: order.courier_name || '',
+        tracking_id: order.tracking_id || '',
+        admin_notes: order.admin_notes || ''
+      });
+    }
+  };
+
+  const handleUpdateDetails = async (orderId: string) => {
+    try {
+      setUpdatingOrderId(orderId);
+      const { error } = await supabase
+        .from('orders')
+        .update({ 
+          payment_status: editForm.payment_status,
+          courier_name: editForm.courier_name,
+          tracking_id: editForm.tracking_id,
+          admin_notes: editForm.admin_notes
+        })
+        .eq('id', orderId);
+
+      if (error) throw error;
+
+      // Update local state
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, ...editForm } : o));
+      alert('Order details updated successfully!');
+    } catch (err) {
+      console.error('Failed to update order details:', err);
+      alert('Failed to update details. Make sure you added the new columns in Supabase.');
+    } finally {
+      setUpdatingOrderId(null);
+    }
+  };
 
   const handleStatusChange = async (orderId: string, newStatus: string) => {
     try {
@@ -161,9 +218,9 @@ const AdminOrders: React.FC = () => {
     const s = rawStatus.trim().toLowerCase();
     if (s === 'received') return '#3b82f6';
     if (s === 'shipped') return '#eab308';
-    if (s === 'delivered' || s === 'completed' || s === 'delivered / completed') return '#22c55e';
+    if (s === 'delivered') return '#22c55e';
     if (s === 'cancelled') return '#ef4444';
-    return '#a855f7';
+    return '#a855f7'; // Pending
   };
 
   const handlePrintInvoice = (order: Order) => {
@@ -181,7 +238,7 @@ const AdminOrders: React.FC = () => {
     const dateStr = dateObj.toLocaleDateString('en-CA'); 
     const timeStr = dateObj.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
 
-    const paymentMethod = "CASH ON DELIVERY"; 
+    const paymentMethodText = order.payment_status?.toUpperCase() || "CASH ON DELIVERY"; 
 
     const htmlContent = `
       <!DOCTYPE html>
@@ -276,7 +333,7 @@ const AdminOrders: React.FC = () => {
           <div class="order-info">
             <p><span class="bold">ORDER ID:</span> #${order.id}</p>
             <p><span class="bold">DATE:</span> ${dateStr} &nbsp;&nbsp; <span class="bold">TIME:</span> ${timeStr}</p>
-            <p><span class="bold">PAYMENT:</span> ${paymentMethod}</p>
+            <p><span class="bold">PAYMENT:</span> ${paymentMethodText}</p>
             <p class="bold text-red" style="margin-top: 6px;">STATUS: ${order.status.toUpperCase()}</p>
           </div>
         </div>
@@ -286,7 +343,7 @@ const AdminOrders: React.FC = () => {
           <div>TOTAL</div>
         </div>
 
-        ${order.items.map(item => `
+        ${order.items.length > 0 ? order.items.map(item => `
           <div class="item-row">
             <div class="item-details">
               <span class="bold" style="text-transform: uppercase;">${item.product_name}</span>
@@ -294,13 +351,13 @@ const AdminOrders: React.FC = () => {
             </div>
             <div style="font-weight: 600; white-space: nowrap;">৳${item.price * item.quantity}</div>
           </div>
-        `).join('')}
+        `).join('') : '<div style="margin-bottom: 15px;">No item details available.</div>'}
 
         <div class="totals-section">
           <div class="totals-table">
             <div class="totals-row">
               <span>SUBTOTAL</span>
-              <span>৳${subtotal}</span>
+              <span>৳${subtotal > 0 ? subtotal : order.total_amount - deliveryCharge - vat}</span>
             </div>
             <div class="totals-row">
               <span>SHIPPING</span>
@@ -344,33 +401,54 @@ const AdminOrders: React.FC = () => {
     printWindow.document.close();
   };
 
+  // Filter Logics
   const filteredOrders = useMemo(() => {
     return orders.filter(order => {
+      // Search Logic
       const matchesSearch = 
         order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (order.customer_name && order.customer_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (order.customer_phone && order.customer_phone.includes(searchTerm));
 
-      if (selectedStatusFilter === 'ALL') return matchesSearch;
-      return matchesSearch && order.status.toLowerCase().trim() === selectedStatusFilter.toLowerCase().trim();
+      // Status Logic
+      const matchesStatus = selectedStatusFilter === 'ALL' || order.status.toLowerCase().trim() === selectedStatusFilter.toLowerCase().trim();
+
+      // Date Logic
+      const orderDate = new Date(order.created_at);
+      const today = new Date();
+      let matchesDate = true;
+
+      if (selectedDateFilter === 'TODAY') {
+        matchesDate = orderDate.toDateString() === today.toDateString();
+      } else if (selectedDateFilter === 'LAST 7 DAYS') {
+        const sevenDaysAgo = new Date(today);
+        sevenDaysAgo.setDate(today.getDate() - 7);
+        matchesDate = orderDate >= sevenDaysAgo;
+      } else if (selectedDateFilter === 'THIS MONTH') {
+        matchesDate = orderDate.getMonth() === today.getMonth() && orderDate.getFullYear() === today.getFullYear();
+      }
+
+      return matchesSearch && matchesStatus && matchesDate;
     });
-  }, [orders, searchTerm, selectedStatusFilter]);
+  }, [orders, searchTerm, selectedStatusFilter, selectedDateFilter]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%', maxWidth: '100%' }}>
 
-      {/* Top Controls */}
+      {/* Top Controls Container */}
       <div style={{ 
         backgroundColor: '#050505', 
         border: '1px solid #1a1a1a', 
         padding: '16px', 
         borderRadius: '2px',
         width: '100%',
-        boxSizing: 'border-box'
+        boxSizing: 'border-box',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '12px'
       }}>
-
         {/* Search */}
-        <div style={{ marginBottom: '12px' }}>
+        <div>
           <input
             type="text"
             placeholder="SEARCH BY ID, NAME OR PHONE..."
@@ -391,14 +469,36 @@ const AdminOrders: React.FC = () => {
           />
         </div>
 
+        {/* Date Filters */}
+        <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', scrollbarWidth: 'none' }}>
+          {DATE_FILTERS.map((dateFilter) => {
+            const isActive = selectedDateFilter === dateFilter;
+            return (
+              <button
+                key={dateFilter}
+                onClick={() => setSelectedDateFilter(dateFilter)}
+                style={{
+                  backgroundColor: isActive ? '#333' : '#000',
+                  color: isActive ? '#fff' : '#666',
+                  border: isActive ? '1px solid #555' : '1px solid #111',
+                  padding: '6px 12px',
+                  fontSize: '9px',
+                  fontFamily: 'monospace',
+                  letterSpacing: '1px',
+                  cursor: 'pointer',
+                  textTransform: 'uppercase',
+                  whiteSpace: 'nowrap',
+                  borderRadius: '2px'
+                }}
+              >
+                {dateFilter}
+              </button>
+            );
+          })}
+        </div>
+
         {/* Status Filters */}
-        <div style={{ 
-          display: 'flex', 
-          gap: '6px', 
-          overflowX: 'auto', 
-          paddingBottom: '6px',
-          scrollbarWidth: 'none'
-        }}>
+        <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '4px' }}>
           {['ALL', ...STATUS_OPTIONS].map((status) => {
             const isActive = selectedStatusFilter === status;
             return (
@@ -428,7 +528,7 @@ const AdminOrders: React.FC = () => {
         </div>
       </div>
 
-      {/* Order Count */}
+      {/* Order Count / Refresh */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', color: '#666' }}>
         <span>SHOWING {filteredOrders.length} OF {orders.length} ORDERS</span>
         <button 
@@ -454,8 +554,12 @@ const AdminOrders: React.FC = () => {
             const isExpanded = expandedOrderId === order.id;
             const statusColor = getStatusColor(order.status);
             const isUpdating = updatingOrderId === order.id;
-
+            
+            // Fix for 0 Items Bug
             const totalItemsCount = order.items.reduce((sum, item) => sum + (item.quantity || 0), 0);
+            const displayItemCount = totalItemsCount > 0 ? totalItemsCount : '1+'; // Fallback if data is missing
+            
+            const isPaid = order.payment_status?.toLowerCase().includes('paid') && !order.payment_status?.toLowerCase().includes('unpaid');
 
             return (
               <div key={order.id} style={{ 
@@ -466,18 +570,14 @@ const AdminOrders: React.FC = () => {
               }}>
 
                 {/* Card Header */}
-                <div style={{ 
-                  display: 'flex', 
-                  flexDirection: 'column', 
-                  gap: '12px' 
-                }}>
-
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                         <span style={{ fontSize: '13px', fontWeight: 'bold', letterSpacing: '1px' }}>
                           #{order.id.slice(0, 8)}...
                         </span>
+                        {/* Status Badge */}
                         <span style={{ 
                           backgroundColor: `${statusColor}22`, 
                           color: statusColor, 
@@ -488,6 +588,18 @@ const AdminOrders: React.FC = () => {
                           fontWeight: 'bold'
                         }}>
                           ● {order.status.toUpperCase()}
+                        </span>
+                        {/* Payment Badge */}
+                        <span style={{ 
+                          backgroundColor: isPaid ? '#22c55e22' : '#f9731622', 
+                          color: isPaid ? '#22c55e' : '#f97316', 
+                          border: `1px solid ${isPaid ? '#22c55e55' : '#f9731655'}`, 
+                          padding: '2px 8px', 
+                          borderRadius: '2px', 
+                          fontSize: '9px',
+                          fontWeight: 'bold'
+                        }}>
+                          {order.payment_status?.toUpperCase() || 'UNPAID'}
                         </span>
                       </div>
                       <div style={{ fontSize: '10px', color: '#666', marginTop: '4px' }}>
@@ -500,7 +612,7 @@ const AdminOrders: React.FC = () => {
                         ৳{order.total_amount}
                       </div>
                       <div style={{ fontSize: '9px', color: '#666' }}>
-                        {totalItemsCount} ITEM(S)
+                        {displayItemCount} ITEM(S)
                       </div>
                     </div>
                   </div>
@@ -536,52 +648,131 @@ const AdminOrders: React.FC = () => {
                       ))}
                     </select>
 
-                    <button onClick={() => handlePrintInvoice(order)} style={{ padding: '9px 16px', background: '#111', border: '1px solid #333', color: '#fff', fontSize: '10px', cursor: 'pointer' }}>
+                    <button onClick={() => handlePrintInvoice(order)} style={{ padding: '9px 16px', background: '#111', border: '1px solid #333', color: '#fff', fontSize: '10px', cursor: 'pointer', borderRadius: '2px' }}>
                       PRINT
                     </button>
 
                     <button
-                      onClick={() => setExpandedOrderId(isExpanded ? null : order.id)}
-                      style={{ padding: '9px 16px', background: '#111', border: '1px solid #333', color: '#fff', fontSize: '10px', cursor: 'pointer' }}
+                      onClick={() => handleExpandClick(order)}
+                      style={{ padding: '9px 16px', background: '#111', border: '1px solid #333', color: '#fff', fontSize: '10px', cursor: 'pointer', borderRadius: '2px' }}
                     >
                       {isExpanded ? 'HIDE' : 'VIEW'}
                     </button>
                   </div>
                 </div>
 
-                {/* Expanded Content */}
+                {/* Expanded Content View */}
                 {isExpanded && (
-                  <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #222' }}>
-                    <div style={{ background: '#0a0a0a', padding: '12px', fontSize: '11px', color: '#ccc', marginBottom: '12px' }}>
-                      <strong>SHIPPING ADDRESS:</strong><br />
-                      {order.shipping_address || 'No address provided'}
-                    </div>
-
-                    {order.items.map((item, idx) => (
-                      <div key={idx} style={{ 
-                        display: 'flex', 
-                        gap: '12px', 
-                        background: '#000', 
-                        padding: '10px', 
-                        marginBottom: '8px',
-                        border: '1px solid #151515'
-                      }}>
-                        <img 
-                          src={item.product_image} 
-                          alt="" 
-                          style={{ width: '45px', height: '55px', objectFit: 'cover' }} 
-                        />
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontWeight: 'bold', fontSize: '11px' }}>{item.product_name}</div>
-                          <div style={{ fontSize: '9.5px', color: '#777' }}>
-                            {item.size} • {item.color} • QTY: {item.quantity}
+                  <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #222', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    
+                    {/* Item List */}
+                    <div>
+                      <h4 style={{ color: '#888', fontSize: '10px', letterSpacing: '1px', marginBottom: '8px', marginTop: '0' }}>ORDERED ITEMS</h4>
+                      {order.items.length > 0 ? order.items.map((item, idx) => (
+                        <div key={idx} style={{ 
+                          display: 'flex', 
+                          gap: '12px', 
+                          background: '#000', 
+                          padding: '10px', 
+                          marginBottom: '8px',
+                          border: '1px solid #151515',
+                          borderRadius: '2px'
+                        }}>
+                          <img 
+                            src={item.product_image} 
+                            alt="" 
+                            style={{ width: '45px', height: '55px', objectFit: 'cover' }} 
+                          />
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontWeight: 'bold', fontSize: '11px' }}>{item.product_name}</div>
+                            <div style={{ fontSize: '9.5px', color: '#777', marginTop: '4px' }}>
+                              SIZE: {item.size} • COLOR: {item.color} • QTY: {item.quantity}
+                            </div>
+                          </div>
+                          <div style={{ fontWeight: 'bold', fontSize: '12px', alignSelf: 'center' }}>
+                            ৳{item.price * item.quantity}
                           </div>
                         </div>
-                        <div style={{ fontWeight: 'bold', fontSize: '12px', alignSelf: 'center' }}>
-                          ৳{item.price * item.quantity}
-                        </div>
-                      </div>
-                    ))}
+                      )) : (
+                        <div style={{ color: '#555', fontSize: '11px', fontStyle: 'italic', padding: '10px', background: '#000' }}>No items found for this order.</div>
+                      )}
+                    </div>
+
+                    {/* Order Details Edit Form */}
+                    <div style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', padding: '12px', borderRadius: '2px' }}>
+                       <h4 style={{ color: '#888', fontSize: '10px', letterSpacing: '1px', marginBottom: '12px', marginTop: '0' }}>MANAGEMENT DETAILS</h4>
+                       
+                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginBottom: '12px' }}>
+                         <div>
+                            <label style={{ display: 'block', fontSize: '9px', color: '#555', marginBottom: '4px' }}>PAYMENT STATUS</label>
+                            <select 
+                              value={editForm.payment_status}
+                              onChange={e => setEditForm({...editForm, payment_status: e.target.value})}
+                              style={{ width: '100%', background: '#000', color: '#fff', border: '1px solid #333', padding: '8px', fontSize: '11px', outline: 'none' }}
+                            >
+                              <option value="Unpaid / COD">UNPAID / COD</option>
+                              <option value="Paid">PAID</option>
+                              <option value="Partial Paid">PARTIAL PAID</option>
+                            </select>
+                         </div>
+                         <div>
+                            <label style={{ display: 'block', fontSize: '9px', color: '#555', marginBottom: '4px' }}>COURIER NAME</label>
+                            <input 
+                              type="text" 
+                              placeholder="e.g. Steadfast, Pathao" 
+                              value={editForm.courier_name}
+                              onChange={e => setEditForm({...editForm, courier_name: e.target.value})}
+                              style={{ width: '100%', boxSizing: 'border-box', background: '#000', color: '#fff', border: '1px solid #333', padding: '8px', fontSize: '11px', outline: 'none' }} 
+                            />
+                         </div>
+                         <div>
+                            <label style={{ display: 'block', fontSize: '9px', color: '#555', marginBottom: '4px' }}>TRACKING ID</label>
+                            <input 
+                              type="text" 
+                              placeholder="Tracking / Memo No." 
+                              value={editForm.tracking_id}
+                              onChange={e => setEditForm({...editForm, tracking_id: e.target.value})}
+                              style={{ width: '100%', boxSizing: 'border-box', background: '#000', color: '#fff', border: '1px solid #333', padding: '8px', fontSize: '11px', outline: 'none' }} 
+                            />
+                         </div>
+                       </div>
+
+                       <div style={{ marginBottom: '12px' }}>
+                          <label style={{ display: 'block', fontSize: '9px', color: '#555', marginBottom: '4px' }}>ADMIN NOTES / CUSTOMER REQUESTS</label>
+                          <textarea 
+                            rows={2} 
+                            placeholder="Add notes here..." 
+                            value={editForm.admin_notes}
+                            onChange={e => setEditForm({...editForm, admin_notes: e.target.value})}
+                            style={{ width: '100%', boxSizing: 'border-box', background: '#000', color: '#fff', border: '1px solid #333', padding: '8px', fontSize: '11px', outline: 'none', resize: 'vertical' }}
+                          />
+                       </div>
+
+                       <div style={{ fontSize: '11px', color: '#ccc', marginBottom: '12px', background: '#000', padding: '10px', border: '1px dashed #333' }}>
+                          <strong style={{ color: '#888' }}>SHIPPING ADDRESS:</strong><br />
+                          <span style={{ color: '#fff', display: 'block', marginTop: '4px', lineHeight: '1.4' }}>{order.shipping_address || 'No address provided'}</span>
+                       </div>
+
+                       <button 
+                          onClick={() => handleUpdateDetails(order.id)}
+                          disabled={isUpdating}
+                          style={{ 
+                            width: '100%', 
+                            padding: '10px', 
+                            background: '#fff', 
+                            color: '#000', 
+                            fontWeight: 'bold', 
+                            border: 'none', 
+                            fontSize: '10px', 
+                            letterSpacing: '1px', 
+                            cursor: 'pointer',
+                            borderRadius: '2px'
+                          }}
+                        >
+                          {isUpdating ? 'SAVING...' : 'SAVE DETAILS'}
+                        </button>
+                    </div>
+
                   </div>
                 )}
               </div>
