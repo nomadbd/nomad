@@ -25,6 +25,7 @@ interface SupabaseOrderResponse {
   status: string;
   customer_name?: string;
   customer_phone?: string;
+  customer_email?: string; // Added customer_email
   shipping_address?: string;
   delivery_charge?: number;
   vat_amount?: number;
@@ -51,6 +52,7 @@ interface Order {
   status: string;
   customer_name?: string;
   customer_phone?: string;
+  customer_email?: string; // Added customer_email
   shipping_address?: string;
   delivery_charge?: number;
   vat_amount?: number;
@@ -70,42 +72,6 @@ const STATUS_OPTIONS = [
 ];
 
 const DATE_FILTERS = ['ALL TIME', 'TODAY', 'LAST 7 DAYS', 'THIS MONTH'];
-
-// ---------- Phone helpers (Bangladesh) ----------
-const normalizeBdPhone = (raw: string): string => {
-  let digits = (raw || '').replace(/\D/g, '');
-
-  // 01XXXXXXXXX (11 digit local)
-  if (digits.length === 11 && digits.startsWith('0')) {
-    return digits;
-  }
-  // 8801XXXXXXXXX → 01XXXXXXXXX
-  if (digits.length === 13 && digits.startsWith('880')) {
-    return '0' + digits.slice(3);
-  }
-  // 1XXXXXXXXX (10 digit) → 01XXXXXXXXX
-  if (digits.length === 10 && digits.startsWith('1')) {
-    return '0' + digits;
-  }
-  // longer with 880 prefix
-  if (digits.startsWith('880') && digits.length >= 13) {
-    return '0' + digits.slice(3);
-  }
-
-  return digits;
-};
-
-const getWhatsAppPhone = (raw: string): string => {
-  let digits = (raw || '').replace(/\D/g, '');
-
-  if (digits.startsWith('0') && digits.length === 11) {
-    digits = '88' + digits; // 8801...
-  } else if (digits.length === 10 && digits.startsWith('1')) {
-    digits = '880' + digits;
-  }
-
-  return digits;
-};
 
 const AdminOrders: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -131,7 +97,7 @@ const AdminOrders: React.FC = () => {
     setToast({ message, type });
     setTimeout(() => {
       setToast(null);
-    }, 3000);
+    }, 3000); // Auto hide after 3 seconds
   };
 
   const fetchAdminOrders = async () => {
@@ -165,7 +131,7 @@ const AdminOrders: React.FC = () => {
             product_image: item.products?.product_media?.[0]?.media_url || 'https://via.placeholder.com/80x100',
             size: item.size || 'N/A',
             color: item.color || 'N/A',
-            quantity: item.quantity ? Number(item.quantity) : 1,
+            quantity: item.quantity ? Number(item.quantity) : 1, 
             price: item.price_at_purchase || 0
           }));
 
@@ -176,6 +142,7 @@ const AdminOrders: React.FC = () => {
             status: order.status === 'Delivered / Completed' ? 'Delivered' : (order.status || 'Pending'),
             customer_name: order.customer_name,
             customer_phone: order.customer_phone,
+            customer_email: order.customer_email, // Fetching customer email
             shipping_address: order.shipping_address,
             delivery_charge: order.delivery_charge,
             vat_amount: order.vat_amount,
@@ -219,7 +186,7 @@ const AdminOrders: React.FC = () => {
       setUpdatingOrderId(orderId);
       const { error } = await supabase
         .from('orders')
-        .update({
+        .update({ 
           payment_status: editForm.payment_status,
           courier_name: editForm.courier_name,
           tracking_id: editForm.tracking_id,
@@ -276,14 +243,14 @@ const AdminOrders: React.FC = () => {
     }
 
     const subtotal = order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    const deliveryCharge = order.delivery_charge || 0;
-    const vat = order.vat_amount || 0;
+    const deliveryCharge = order.delivery_charge || 0; 
+    const vat = order.vat_amount || 0; 
 
     const dateObj = new Date(order.created_at);
-    const dateStr = dateObj.toLocaleDateString('en-CA');
+    const dateStr = dateObj.toLocaleDateString('en-CA'); 
     const timeStr = dateObj.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
 
-    const paymentMethodText = order.payment_status?.toUpperCase() || "CASH ON DELIVERY";
+    const paymentMethodText = order.payment_status?.toUpperCase() || "CASH ON DELIVERY"; 
 
     const htmlContent = `
       <!DOCTYPE html>
@@ -441,7 +408,7 @@ const AdminOrders: React.FC = () => {
 
   const filteredOrders = useMemo(() => {
     return orders.filter(order => {
-      const matchesSearch =
+      const matchesSearch = 
         order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (order.customer_name && order.customer_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (order.customer_phone && order.customer_phone.includes(searchTerm));
@@ -502,10 +469,10 @@ const AdminOrders: React.FC = () => {
       `}</style>
 
       {/* Top Controls Container */}
-      <div style={{
-        backgroundColor: '#050505',
-        border: '1px solid #1a1a1a',
-        padding: '16px',
+      <div style={{ 
+        backgroundColor: '#050505', 
+        border: '1px solid #1a1a1a', 
+        padding: '16px', 
         borderRadius: '2px',
         width: '100%',
         boxSizing: 'border-box',
@@ -597,7 +564,7 @@ const AdminOrders: React.FC = () => {
       {/* Order Count / Refresh */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', color: '#666' }}>
         <span>SHOWING {filteredOrders.length} OF {orders.length} ORDERS</span>
-        <button
+        <button 
           onClick={fetchAdminOrders}
           style={{ background: 'none', border: 'none', color: '#fff', fontSize: '11px', textDecoration: 'underline', cursor: 'pointer' }}
         >
@@ -622,15 +589,15 @@ const AdminOrders: React.FC = () => {
             const isUpdating = updatingOrderId === order.id;
 
             const totalItemsCount = order.items.reduce((sum, item) => sum + (item.quantity || 0), 0);
-            const displayItemCount = totalItemsCount > 0 ? totalItemsCount : '1+';
+            const displayItemCount = totalItemsCount > 0 ? totalItemsCount : '1+'; 
 
             const isPaid = order.payment_status?.toLowerCase().includes('paid') && !order.payment_status?.toLowerCase().includes('unpaid');
 
             return (
-              <div key={order.id} style={{
-                backgroundColor: '#050505',
-                border: '1px solid #222',
-                padding: '16px',
+              <div key={order.id} style={{ 
+                backgroundColor: '#050505', 
+                border: '1px solid #222', 
+                padding: '16px', 
                 borderRadius: '2px'
               }}>
 
@@ -643,24 +610,24 @@ const AdminOrders: React.FC = () => {
                           #{order.id.slice(0, 8)}...
                         </span>
                         {/* Status Badge */}
-                        <span style={{
-                          backgroundColor: `${statusColor}22`,
-                          color: statusColor,
-                          border: `1px solid ${statusColor}55`,
-                          padding: '2px 8px',
-                          borderRadius: '2px',
+                        <span style={{ 
+                          backgroundColor: `${statusColor}22`, 
+                          color: statusColor, 
+                          border: `1px solid ${statusColor}55`, 
+                          padding: '2px 8px', 
+                          borderRadius: '2px', 
                           fontSize: '9px',
                           fontWeight: 'bold'
                         }}>
                           ● {order.status.toUpperCase()}
                         </span>
                         {/* Payment Badge */}
-                        <span style={{
-                          backgroundColor: isPaid ? '#22c55e22' : '#f9731622',
-                          color: isPaid ? '#22c55e' : '#f97316',
-                          border: `1px solid ${isPaid ? '#22c55e55' : '#f9731655'}`,
-                          padding: '2px 8px',
-                          borderRadius: '2px',
+                        <span style={{ 
+                          backgroundColor: isPaid ? '#22c55e22' : '#f9731622', 
+                          color: isPaid ? '#22c55e' : '#f97316', 
+                          border: `1px solid ${isPaid ? '#22c55e55' : '#f9731655'}`, 
+                          padding: '2px 8px', 
+                          borderRadius: '2px', 
                           fontSize: '9px',
                           fontWeight: 'bold'
                         }}>
@@ -686,35 +653,14 @@ const AdminOrders: React.FC = () => {
                   <div style={{ fontSize: '12px', color: '#ddd', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                     <span>{order.customer_name || 'GUEST CUSTOMER'}</span>
 
-                    {order.customer_phone && (() => {
-                      const phoneLocal = normalizeBdPhone(order.customer_phone);
-                      const waPhone = getWhatsAppPhone(order.customer_phone);
+                    {(() => {
+                      const messageBody = encodeURIComponent(
+                        `Hello ${order.customer_name || 'Customer'},\nYour NOMAD order (#${order.id.slice(0, 8)}) status is: ${order.status}.\nCourier: ${order.courier_name || 'N/A'}\nTracking ID: ${order.tracking_id || 'N/A'}\nThank you!`
+                      );
+                      
+                      const emailSubject = encodeURIComponent(`Order Update #${order.id.slice(0, 8)} - NOMAD`);
 
-                      if (!phoneLocal || phoneLocal.length < 10) {
-                        return (
-                          <span style={{ fontSize: '10px', color: '#f97316' }}>
-                            (Invalid phone)
-                          </span>
-                        );
-                      }
-
-                      const rawMessage = `Hello ${order.customer_name || 'Customer'},
-
-Your NOMAD order (#${order.id.slice(0, 8)}) status is: ${order.status}.
-
-Courier: ${order.courier_name || 'N/A'}
-Tracking ID: ${order.tracking_id || 'N/A'}
-
-Thank you for shopping with us!`;
-
-                      const messageBody = encodeURIComponent(rawMessage);
-
-                      // Universal SMS format (works on both iOS & Android)
-                      const smsUrl = `sms:${phoneLocal}?&body=${messageBody}`;
-                      const telUrl = `tel:${phoneLocal}`;
-                      const waUrl = `https://wa.me/${waPhone}?text=${messageBody}`;
-
-                      const btnStyle: React.CSSProperties = {
+                      const btnStyle = {
                         display: 'inline-flex',
                         alignItems: 'center',
                         gap: '4px',
@@ -725,46 +671,35 @@ Thank you for shopping with us!`;
                         textDecoration: 'none',
                         fontSize: '10px',
                         fontWeight: 'bold',
-                        cursor: 'pointer',
-                        color: '#22c55e',
-                        fontFamily: 'inherit'
-                      };
-
-                      const openLink = (url: string) => {
-                        window.location.href = url;
+                        cursor: 'pointer'
                       };
 
                       return (
-                        <div style={{ display: 'flex', gap: '6px', marginLeft: '4px', flexWrap: 'wrap' }}>
-                          {/* Call */}
-                          <button
-                            type="button"
-                            title={`Call ${phoneLocal}`}
-                            style={btnStyle}
-                            onClick={() => openLink(telUrl)}
-                          >
-                            Call
-                          </button>
+                        <div style={{ display: 'flex', gap: '6px', marginLeft: '4px' }}>
+                          {/* Click-to-Call */}
+                          {order.customer_phone && (
+                            <a href={`tel:${order.customer_phone}`} title="Call Customer" style={{ ...btnStyle, color: '#22c55e' }}>
+                              Call
+                            </a>
+                          )}
 
-                          {/* SMS */}
-                          <button
-                            type="button"
-                            title={`SMS ${phoneLocal}`}
-                            style={btnStyle}
-                            onClick={() => openLink(smsUrl)}
-                          >
-                            SMS
-                          </button>
+                          {/* Click-to-Email (Replaced SMS) */}
+                          {order.customer_email && (
+                            <a href={`mailto:${order.customer_email}?subject=${emailSubject}&body=${messageBody}`} title="Email Customer" style={{ ...btnStyle, color: '#3b82f6' }}>
+                              Email
+                            </a>
+                          )}
 
-                          {/* WhatsApp */}
-                          <button
-                            type="button"
-                            title="WhatsApp"
-                            style={btnStyle}
-                            onClick={() => window.open(waUrl, '_blank', 'noopener,noreferrer')}
-                          >
-                            WhatsApp
-                          </button>
+                          {/* Click-to-WhatsApp */}
+                          {order.customer_phone && (() => {
+                             const cleanPhone = order.customer_phone.replace(/[^0-9]/g, '');
+                             const waPhone = cleanPhone.startsWith('0') ? `88${cleanPhone}` : cleanPhone;
+                             return (
+                              <a href={`https://wa.me/${waPhone}?text=${messageBody}`} target="_blank" rel="noopener noreferrer" title="WhatsApp Customer" style={{ ...btnStyle, color: '#22c55e' }}>
+                                 WhatsApp
+                              </a>
+                             );
+                          })()}
                         </div>
                       );
                     })()}
@@ -815,19 +750,19 @@ Thank you for shopping with us!`;
                     <div>
                       <h4 style={{ color: '#888', fontSize: '10px', letterSpacing: '1px', marginBottom: '8px', marginTop: '0' }}>ORDERED ITEMS</h4>
                       {order.items.length > 0 ? order.items.map((item, idx) => (
-                        <div key={idx} style={{
-                          display: 'flex',
-                          gap: '12px',
-                          background: '#000',
-                          padding: '10px',
+                        <div key={idx} style={{ 
+                          display: 'flex', 
+                          gap: '12px', 
+                          background: '#000', 
+                          padding: '10px', 
                           marginBottom: '8px',
                           border: '1px solid #151515',
                           borderRadius: '2px'
                         }}>
-                          <img
-                            src={item.product_image}
-                            alt=""
-                            style={{ width: '45px', height: '55px', objectFit: 'cover' }}
+                          <img 
+                            src={item.product_image} 
+                            alt="" 
+                            style={{ width: '45px', height: '55px', objectFit: 'cover' }} 
                           />
                           <div style={{ flex: 1 }}>
                             <div style={{ fontWeight: 'bold', fontSize: '11px' }}>{item.product_name}</div>
@@ -848,77 +783,77 @@ Thank you for shopping with us!`;
 
                     {/* Order Details Edit Form */}
                     <div style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', padding: '12px', borderRadius: '2px' }}>
-                      <h4 style={{ color: '#888', fontSize: '10px', letterSpacing: '1px', marginBottom: '12px', marginTop: '0' }}>MANAGEMENT DETAILS</h4>
+                       <h4 style={{ color: '#888', fontSize: '10px', letterSpacing: '1px', marginBottom: '12px', marginTop: '0' }}>MANAGEMENT DETAILS</h4>
 
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginBottom: '12px' }}>
-                        <div>
-                          <label style={{ display: 'block', fontSize: '9px', color: '#555', marginBottom: '4px' }}>PAYMENT STATUS</label>
-                          <select
-                            value={editForm.payment_status}
-                            onChange={e => setEditForm({ ...editForm, payment_status: e.target.value })}
-                            style={{ width: '100%', background: '#000', color: '#fff', border: '1px solid #333', padding: '8px', fontSize: '11px', outline: 'none' }}
-                          >
-                            <option value="Unpaid / COD">UNPAID / COD</option>
-                            <option value="Paid">PAID</option>
-                            <option value="Partial Paid">PARTIAL PAID</option>
-                          </select>
-                        </div>
-                        <div>
-                          <label style={{ display: 'block', fontSize: '9px', color: '#555', marginBottom: '4px' }}>COURIER NAME</label>
-                          <input
-                            type="text"
-                            placeholder="e.g. Steadfast, Pathao"
-                            value={editForm.courier_name}
-                            onChange={e => setEditForm({ ...editForm, courier_name: e.target.value })}
-                            style={{ width: '100%', boxSizing: 'border-box', background: '#000', color: '#fff', border: '1px solid #333', padding: '8px', fontSize: '11px', outline: 'none' }}
+                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginBottom: '12px' }}>
+                         <div>
+                            <label style={{ display: 'block', fontSize: '9px', color: '#555', marginBottom: '4px' }}>PAYMENT STATUS</label>
+                            <select 
+                              value={editForm.payment_status}
+                              onChange={e => setEditForm({...editForm, payment_status: e.target.value})}
+                              style={{ width: '100%', background: '#000', color: '#fff', border: '1px solid #333', padding: '8px', fontSize: '11px', outline: 'none' }}
+                            >
+                              <option value="Unpaid / COD">UNPAID / COD</option>
+                              <option value="Paid">PAID</option>
+                              <option value="Partial Paid">PARTIAL PAID</option>
+                            </select>
+                         </div>
+                         <div>
+                            <label style={{ display: 'block', fontSize: '9px', color: '#555', marginBottom: '4px' }}>COURIER NAME</label>
+                            <input 
+                              type="text" 
+                              placeholder="e.g. Steadfast, Pathao" 
+                              value={editForm.courier_name}
+                              onChange={e => setEditForm({...editForm, courier_name: e.target.value})}
+                              style={{ width: '100%', boxSizing: 'border-box', background: '#000', color: '#fff', border: '1px solid #333', padding: '8px', fontSize: '11px', outline: 'none' }} 
+                            />
+                         </div>
+                         <div>
+                            <label style={{ display: 'block', fontSize: '9px', color: '#555', marginBottom: '4px' }}>TRACKING ID</label>
+                            <input 
+                              type="text" 
+                              placeholder="Tracking / Memo No." 
+                              value={editForm.tracking_id}
+                              onChange={e => setEditForm({...editForm, tracking_id: e.target.value})}
+                              style={{ width: '100%', boxSizing: 'border-box', background: '#000', color: '#fff', border: '1px solid #333', padding: '8px', fontSize: '11px', outline: 'none' }} 
+                            />
+                         </div>
+                       </div>
+
+                       <div style={{ marginBottom: '12px' }}>
+                          <label style={{ display: 'block', fontSize: '9px', color: '#555', marginBottom: '4px' }}>ADMIN NOTES / CUSTOMER REQUESTS</label>
+                          <textarea 
+                            rows={2} 
+                            placeholder="Add notes here..." 
+                            value={editForm.admin_notes}
+                            onChange={e => setEditForm({...editForm, admin_notes: e.target.value})}
+                            style={{ width: '100%', boxSizing: 'border-box', background: '#000', color: '#fff', border: '1px solid #333', padding: '8px', fontSize: '11px', outline: 'none', resize: 'vertical' }}
                           />
-                        </div>
-                        <div>
-                          <label style={{ display: 'block', fontSize: '9px', color: '#555', marginBottom: '4px' }}>TRACKING ID</label>
-                          <input
-                            type="text"
-                            placeholder="Tracking / Memo No."
-                            value={editForm.tracking_id}
-                            onChange={e => setEditForm({ ...editForm, tracking_id: e.target.value })}
-                            style={{ width: '100%', boxSizing: 'border-box', background: '#000', color: '#fff', border: '1px solid #333', padding: '8px', fontSize: '11px', outline: 'none' }}
-                          />
-                        </div>
-                      </div>
+                       </div>
 
-                      <div style={{ marginBottom: '12px' }}>
-                        <label style={{ display: 'block', fontSize: '9px', color: '#555', marginBottom: '4px' }}>ADMIN NOTES / CUSTOMER REQUESTS</label>
-                        <textarea
-                          rows={2}
-                          placeholder="Add notes here..."
-                          value={editForm.admin_notes}
-                          onChange={e => setEditForm({ ...editForm, admin_notes: e.target.value })}
-                          style={{ width: '100%', boxSizing: 'border-box', background: '#000', color: '#fff', border: '1px solid #333', padding: '8px', fontSize: '11px', outline: 'none', resize: 'vertical' }}
-                        />
-                      </div>
+                       <div style={{ fontSize: '11px', color: '#ccc', marginBottom: '12px', background: '#000', padding: '10px', border: '1px dashed #333' }}>
+                          <strong style={{ color: '#888' }}>SHIPPING ADDRESS:</strong><br />
+                          <span style={{ color: '#fff', display: 'block', marginTop: '4px', lineHeight: '1.4' }}>{order.shipping_address || 'No address provided'}</span>
+                       </div>
 
-                      <div style={{ fontSize: '11px', color: '#ccc', marginBottom: '12px', background: '#000', padding: '10px', border: '1px dashed #333' }}>
-                        <strong style={{ color: '#888' }}>SHIPPING ADDRESS:</strong><br />
-                        <span style={{ color: '#fff', display: 'block', marginTop: '4px', lineHeight: '1.4' }}>{order.shipping_address || 'No address provided'}</span>
-                      </div>
-
-                      <button
-                        onClick={() => handleUpdateDetails(order.id)}
-                        disabled={isUpdating}
-                        style={{
-                          width: '100%',
-                          padding: '10px',
-                          background: '#fff',
-                          color: '#000',
-                          fontWeight: 'bold',
-                          border: 'none',
-                          fontSize: '10px',
-                          letterSpacing: '1px',
-                          cursor: 'pointer',
-                          borderRadius: '2px'
-                        }}
-                      >
-                        {isUpdating ? 'SAVING...' : 'SAVE DETAILS'}
-                      </button>
+                       <button 
+                          onClick={() => handleUpdateDetails(order.id)}
+                          disabled={isUpdating}
+                          style={{ 
+                            width: '100%', 
+                            padding: '10px', 
+                            background: '#fff', 
+                            color: '#000', 
+                            fontWeight: 'bold', 
+                            border: 'none', 
+                            fontSize: '10px', 
+                            letterSpacing: '1px', 
+                            cursor: 'pointer',
+                            borderRadius: '2px'
+                          }}
+                        >
+                          {isUpdating ? 'SAVING...' : 'SAVE DETAILS'}
+                        </button>
                     </div>
 
                   </div>
