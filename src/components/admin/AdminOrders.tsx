@@ -651,7 +651,6 @@ const AdminOrders: React.FC = () => {
                     <span>{order.customer_name || 'GUEST CUSTOMER'}</span>
 
                     {order.customer_phone && (() => {
-                      // সুন্দর গ্যাপ এবং লাইন ব্রেক দিয়ে মেসেজ তৈরি করা হলো
                       const rawMessage = `Hello ${order.customer_name || 'Customer'},
 
 Your NOMAD order (#${order.id.slice(0, 8)}) status is: ${order.status}.
@@ -663,12 +662,15 @@ Thank you for shopping with us!`;
 
                       const messageBody = encodeURIComponent(rawMessage);
 
-                      // ফোন নম্বর থেকে স্পেস ও হাইফেন রিমুভ করা
-                      const cleanPhone = order.customer_phone.replace(/[^0-9]/g, '');
-                      const waPhone = cleanPhone.startsWith('0') ? `88${cleanPhone}` : cleanPhone;
+                      // FIX: Call/SMS এর জন্য '+' সহ নম্বর রাখা হচ্ছে
+                      const rawPhone = order.customer_phone || '';
+                      const callAndSmsPhone = rawPhone.replace(/[^\d+]/g, ''); 
 
-                      // iOS ডিভাইস চেক করা যেন SMS লিংক ঠিকমতো কাজ করে
-                      const isIOS = typeof window !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent);
+                      // FIX: WhatsApp এর জন্য শুধু ডিজিট রাখা হচ্ছে
+                      const digitOnlyPhone = rawPhone.replace(/[^\d]/g, '');
+                      const waPhone = digitOnlyPhone.startsWith('0') ? `88${digitOnlyPhone}` : digitOnlyPhone;
+
+                      const isIOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod|Mac/.test(navigator.userAgent);
                       const smsSeparator = isIOS ? '&' : '?';
 
                       const btnStyle = {
@@ -688,12 +690,12 @@ Thank you for shopping with us!`;
                       return (
                         <div style={{ display: 'flex', gap: '6px', marginLeft: '4px' }}>
                           {/* Click-to-Call */}
-                          <a href={`tel:${cleanPhone}`} title="Call Customer" style={{ ...btnStyle, color: '#22c55e' }}>
+                          <a href={`tel:${callAndSmsPhone}`} title="Call Customer" style={{ ...btnStyle, color: '#22c55e' }}>
                             Call
                           </a>
 
-                          {/* Click-to-SMS (iOS & Android Supported) */}
-                          <a href={`sms:${cleanPhone}${smsSeparator}body=${messageBody}`} title="Send SMS" style={{ ...btnStyle, color: '#22c55e' }}>
+                          {/* Click-to-SMS */}
+                          <a href={`sms:${callAndSmsPhone}${smsSeparator}body=${messageBody}`} title="Send SMS" style={{ ...btnStyle, color: '#22c55e' }}>
                             SMS
                           </a>
 
