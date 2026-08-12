@@ -15,7 +15,9 @@ interface SupabaseOrderItem {
   size: string;
   color: string;
   price_at_purchase: number;
-  products: SupabaseProduct;
+  product_name?: string;
+  product_image?: string;
+  products?: SupabaseProduct;
 }
 
 interface SupabaseOrderResponse {
@@ -25,7 +27,7 @@ interface SupabaseOrderResponse {
   status: string;
   customer_name?: string;
   customer_phone?: string;
-  customer_email?: string; // Added customer_email
+  customer_email?: string;
   shipping_address?: string;
   delivery_charge?: number;
   vat_amount?: number;
@@ -52,7 +54,7 @@ interface Order {
   status: string;
   customer_name?: string;
   customer_phone?: string;
-  customer_email?: string; // Added customer_email
+  customer_email?: string;
   shipping_address?: string;
   delivery_charge?: number;
   vat_amount?: number;
@@ -97,7 +99,7 @@ const AdminOrders: React.FC = () => {
     setToast({ message, type });
     setTimeout(() => {
       setToast(null);
-    }, 3000); // Auto hide after 3 seconds
+    }, 3000);
   };
 
   const fetchAdminOrders = async () => {
@@ -112,6 +114,8 @@ const AdminOrders: React.FC = () => {
             size, 
             color, 
             price_at_purchase,
+            product_name,
+            product_image,
             products:product_id (
               name,
               product_media (
@@ -127,8 +131,8 @@ const AdminOrders: React.FC = () => {
       if (data) {
         const formatted = (data as unknown as SupabaseOrderResponse[]).map((order) => {
           const items = (order.order_items || []).map((item) => ({
-            product_name: item.products?.name || 'NOMAD APPAREL',
-            product_image: item.products?.product_media?.[0]?.media_url || 'https://via.placeholder.com/80x100',
+            product_name: item.product_name || item.products?.name || 'NOMAD APPAREL',
+            product_image: item.product_image || item.products?.product_media?.[0]?.media_url || 'https://via.placeholder.com/80x100',
             size: item.size || 'N/A',
             color: item.color || 'N/A',
             quantity: item.quantity ? Number(item.quantity) : 1, 
@@ -142,7 +146,7 @@ const AdminOrders: React.FC = () => {
             status: order.status === 'Delivered / Completed' ? 'Delivered' : (order.status || 'Pending'),
             customer_name: order.customer_name,
             customer_phone: order.customer_phone,
-            customer_email: order.customer_email, // Fetching customer email
+            customer_email: order.customer_email,
             shipping_address: order.shipping_address,
             delivery_charge: order.delivery_charge,
             vat_amount: order.vat_amount,
@@ -200,7 +204,7 @@ const AdminOrders: React.FC = () => {
       showToast('Order details updated successfully!', 'success');
     } catch (err) {
       console.error('Failed to update order details:', err);
-      showToast('Failed to update details. Please check database columns.', 'error');
+      showToast('Failed to update details.', 'error');
     } finally {
       setUpdatingOrderId(null);
     }
@@ -298,7 +302,7 @@ const AdminOrders: React.FC = () => {
             text-transform: uppercase;
           }
           .item-row { display: flex; justify-content: space-between; gap: 15px; margin-bottom: 15px; }
-          .item-details { display: flex; flexDirection: column; flex: 1; }
+          .item-details { display: flex; flex-direction: column; flex: 1; }
           .item-meta { color: #555; font-size: 10px; margin-top: 4px; text-transform: uppercase; }
           
           .totals-section { display: flex; justify-content: flex-end; margin-top: 30px; }
@@ -445,8 +449,8 @@ const AdminOrders: React.FC = () => {
           backgroundColor: toast.type === 'success' ? '#22c55e' : '#ef4444',
           color: '#fff',
           padding: '12px 20px',
-          borderRadius: '4px',
-          fontSize: '12px',
+          borderRadius: '2px',
+          fontSize: '11px',
           fontWeight: 'bold',
           letterSpacing: '0.5px',
           boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
@@ -650,56 +654,83 @@ const AdminOrders: React.FC = () => {
                   </div>
 
                   {/* Customer Info & Contact Actions */}
-                  <div style={{ fontSize: '12px', color: '#ddd', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                    <span>{order.customer_name || 'GUEST CUSTOMER'}</span>
+                  <div style={{ fontSize: '12px', color: '#ddd', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                    <span style={{ fontWeight: '500' }}>{order.customer_name || 'GUEST CUSTOMER'}</span>
 
                     {(() => {
+                      const rawPhone = order.customer_phone || '';
+                      // Clean phone for call dialer
+                      const cleanPhoneForDial = rawPhone.replace(/[^0-9+]/g, '');
+
+                      // Clean phone for WhatsApp
+                      const cleanDigits = rawPhone.replace(/[^0-9]/g, '');
+                      let waPhone = cleanDigits;
+                      if (cleanDigits.length === 11 && cleanDigits.startsWith('0')) {
+                        waPhone = '88' + cleanDigits;
+                      } else if (cleanDigits.length === 10) {
+                        waPhone = '880' + cleanDigits;
+                      }
+
                       const messageBody = encodeURIComponent(
                         `Hello ${order.customer_name || 'Customer'},\nYour NOMAD order (#${order.id.slice(0, 8)}) status is: ${order.status}.\nCourier: ${order.courier_name || 'N/A'}\nTracking ID: ${order.tracking_id || 'N/A'}\nThank you!`
                       );
-                      
+
                       const emailSubject = encodeURIComponent(`Order Update #${order.id.slice(0, 8)} - NOMAD`);
 
-                      const btnStyle = {
+                      // Shared button style for ALL contact buttons (Same color & uniform look)
+                      const contactBtnStyle: React.CSSProperties = {
                         display: 'inline-flex',
                         alignItems: 'center',
-                        gap: '4px',
+                        justifyContent: 'center',
                         backgroundColor: '#111',
                         border: '1px solid #333',
-                        padding: '4px 8px',
+                        color: '#fff', // Uniform white color for all
+                        padding: '4px 9px',
                         borderRadius: '2px',
                         textDecoration: 'none',
                         fontSize: '10px',
                         fontWeight: 'bold',
-                        cursor: 'pointer'
+                        letterSpacing: '0.5px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease'
                       };
 
                       return (
                         <div style={{ display: 'flex', gap: '6px', marginLeft: '4px' }}>
-                          {/* Click-to-Call */}
-                          {order.customer_phone && (
-                            <a href={`tel:${order.customer_phone}`} title="Call Customer" style={{ ...btnStyle, color: '#22c55e' }}>
+                          {/* Click-to-Call (Fix applied for phone opening) */}
+                          {rawPhone && (
+                            <a 
+                              href={`tel:${cleanPhoneForDial}`} 
+                              title={`Call ${rawPhone}`} 
+                              style={contactBtnStyle}
+                            >
                               Call
                             </a>
                           )}
 
-                          {/* Click-to-Email (Replaced SMS) */}
+                          {/* Click-to-Email */}
                           {order.customer_email && (
-                            <a href={`mailto:${order.customer_email}?subject=${emailSubject}&body=${messageBody}`} title="Email Customer" style={{ ...btnStyle, color: '#3b82f6' }}>
+                            <a 
+                              href={`mailto:${order.customer_email}?subject=${emailSubject}&body=${messageBody}`} 
+                              title={`Email ${order.customer_email}`} 
+                              style={contactBtnStyle}
+                            >
                               Email
                             </a>
                           )}
 
                           {/* Click-to-WhatsApp */}
-                          {order.customer_phone && (() => {
-                             const cleanPhone = order.customer_phone.replace(/[^0-9]/g, '');
-                             const waPhone = cleanPhone.startsWith('0') ? `88${cleanPhone}` : cleanPhone;
-                             return (
-                              <a href={`https://wa.me/${waPhone}?text=${messageBody}`} target="_blank" rel="noopener noreferrer" title="WhatsApp Customer" style={{ ...btnStyle, color: '#22c55e' }}>
-                                 WhatsApp
-                              </a>
-                             );
-                          })()}
+                          {rawPhone && (
+                            <a 
+                              href={`https://wa.me/${waPhone}?text=${messageBody}`} 
+                              target="_blank" 
+                              rel="noopener noreferrer" 
+                              title="WhatsApp Customer" 
+                              style={contactBtnStyle}
+                            >
+                              WhatsApp
+                            </a>
+                          )}
                         </div>
                       );
                     })()}
