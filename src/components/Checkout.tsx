@@ -26,7 +26,7 @@ export default function Checkout({
 
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [formData, setFormData] = useState({ name: '', phone: '', address: '' });
+  const [formData, setFormData] = useState({ name: '', email: '', phone: '', address: '' });
   const [isMobile, setIsMobile] = useState(false);
   const [isOrderPlacedState, setIsOrderPlacedState] = useState(false); 
 
@@ -76,8 +76,14 @@ export default function Checkout({
     e.preventDefault();
     setErrorMessage(null);
 
-    if (!formData.name.trim() || !formData.phone.trim() || !formData.address.trim()) {
+    if (!formData.name.trim() || !formData.email.trim() || !formData.phone.trim() || !formData.address.trim()) {
       return setErrorMessage('PLEASE FILL IN ALL REQUIRED SHIPPING FIELDS.');
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const cleanEmail = formData.email.trim();
+    if (!emailRegex.test(cleanEmail)) {
+      return setErrorMessage('INVALID EMAIL ADDRESS. PLEASE ENTER A VALID EMAIL.');
     }
 
     const bdPhoneRegex = /^01[3-9]\d{8}$/;
@@ -90,12 +96,12 @@ export default function Checkout({
     try {
       const { data: { user } } = await supabase.auth.getUser();
 
-      // orders টেবিল থেকে transaction_id কলামটি সম্পূর্ণ রিমুভ করা হয়েছে
       const { data: order, error: orderError } = await supabase
         .from('orders')
         .insert([{
           user_id: user?.id || null, 
           customer_name: formData.name,
+          customer_email: cleanEmail,
           customer_phone: cleanPhone,
           shipping_address: formData.address, 
           payment_method: 'cod',
@@ -108,7 +114,6 @@ export default function Checkout({
 
       if (orderError) throw orderError;
 
-      // order_items এ পাঠানোর জন্য আইটেম অবজেক্ট ম্যাপিং (নতুন দুটি স্ন্যাপশট কলামসহ)
       const items = selectedItems.map((item: CartItem) => ({
         order_id: order.id,
         product_id: item.id,
@@ -116,8 +121,8 @@ export default function Checkout({
         price_at_purchase: item.price,
         size: item.size || null,   
         color: item.color || null,
-        product_name: item.name || 'NOMAD PREMIUM APPAREL', // 📸 প্রোডাক্ট নামের স্ন্যাপশট
-        product_image: item.image_url || 'https://via.placeholder.com/65x80' // 📸 প্রোডাক্ট ইমেজের স্ন্যাপশট
+        product_name: item.name || 'NOMAD PREMIUM APPAREL',
+        product_image: item.image_url || 'https://via.placeholder.com/65x80'
       }));
 
       const { error: itemsError } = await supabase.from('order_items').insert(items);
@@ -126,6 +131,7 @@ export default function Checkout({
       setPlacedOrderDetails({
         orderId: order.id,
         customerName: formData.name,
+        customerEmail: cleanEmail,
         customerPhone: cleanPhone,
         shippingAddress: formData.address,
         items: [...selectedItems],
@@ -361,6 +367,7 @@ export default function Checkout({
           <div style={styles.leftColumn}>
             <h2 style={styles.sectionHeading}>SHIPPING ADDRESS</h2>
             <input style={styles.input} placeholder="FULL NAME" required value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
+            <input style={styles.input} placeholder="EMAIL ADDRESS" required type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
             <input style={styles.input} placeholder="CONTACT NUMBER" required type="tel" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} />
             <textarea style={styles.textarea} placeholder="COMPLETE SHIPPING ADDRESS" required value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} />
             <div style={styles.paymentRow}>
