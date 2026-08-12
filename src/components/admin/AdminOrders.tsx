@@ -85,6 +85,23 @@ const formatWhatsAppNumber = (phone: string): string => {
   return digits;
 };
 
+// Safe open helper (works on all browsers & devices)
+const safeOpenLink = (url: string) => {
+  try {
+    const link = document.createElement('a');
+    link.href = url;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  } catch (err) {
+    // Fallback
+    window.open(url, '_blank', 'noopener,noreferrer');
+  }
+};
+
 // -------------------------------------------------------------
 // INDIVIDUAL ORDER CARD COMPONENT
 // -------------------------------------------------------------
@@ -135,14 +152,52 @@ const OrderCard: React.FC<OrderCardProps> = ({
   const encodedMessage = encodeURIComponent(messageText);
   const emailSubject = encodeURIComponent(`Order Update #${order.id.slice(0, 8)} - NOMAD`);
 
+  // ---------------- Reliable Communication Handlers ----------------
+  const handleCall = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    if (!cleanPhoneForDial) return;
+
+    // Most reliable cross-browser method for tel:
+    const link = document.createElement('a');
+    link.href = `tel:${cleanPhoneForDial}`;
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleEmail = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    if (!order.customer_email) return;
+
+    const mailtoUrl = `mailto:${order.customer_email}?subject=${emailSubject}&body=${encodedMessage}`;
+    
+    const link = document.createElement('a');
+    link.href = mailtoUrl;
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleWhatsApp = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    if (!waPhone) return;
+
+    // wa.me is the most reliable way to open WhatsApp app (or web fallback)
+    const url = `https://wa.me/${waPhone}?text=${encodedMessage}`;
+    safeOpenLink(url);
+  };
+
   const handleStatusSelect = async (e: React.ChangeEvent<HTMLSelectElement>) => {
     e.stopPropagation();
     const newStatus = e.target.value;
     setIsUpdating(true);
     try {
       await onStatusChange(order.id, newStatus);
-    } catch (err) {
-      console.error(err);
     } finally {
       setIsUpdating(false);
     }
@@ -153,8 +208,6 @@ const OrderCard: React.FC<OrderCardProps> = ({
     setIsUpdating(true);
     try {
       await onUpdateDetails(order.id, editForm);
-    } catch (err) {
-      console.error(err);
     } finally {
       setIsUpdating(false);
     }
@@ -174,9 +227,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
     letterSpacing: '0.5px',
     cursor: 'pointer',
     userSelect: 'none',
-    outline: 'none',
-    textDecoration: 'none',
-    boxSizing: 'border-box'
+    outline: 'none'
   };
 
   return (
@@ -227,42 +278,42 @@ const OrderCard: React.FC<OrderCardProps> = ({
           </div>
         </div>
 
-        {/* Customer Info & Direct Native Communication Links */}
+        {/* Customer Info & Communication Buttons */}
         <div style={{ fontSize: '12px', color: '#ddd', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
           <span style={{ fontWeight: '500' }}>{order.customer_name || 'GUEST CUSTOMER'}</span>
 
           <div style={{ display: 'flex', gap: '6px', marginLeft: '4px' }}>
             {cleanPhoneForDial && (
-              <a 
-                href={`tel:${cleanPhoneForDial}`} 
-                onClick={(e) => e.stopPropagation()} 
-                title={`Call ${rawPhone}`} 
+              <button
+                type="button"
+                onClick={handleCall}
+                title={`Call ${rawPhone}`}
                 style={actionButtonStyle}
               >
                 Call
-              </a>
+              </button>
             )}
 
             {order.customer_email && (
-              <a 
-                href={`mailto:${order.customer_email}?subject=${emailSubject}&body=${encodedMessage}`} 
-                onClick={(e) => e.stopPropagation()} 
-                title={`Email ${order.customer_email}`} 
+              <button
+                type="button"
+                onClick={handleEmail}
+                title={`Email ${order.customer_email}`}
                 style={actionButtonStyle}
               >
                 Email
-              </a>
+              </button>
             )}
 
             {waPhone && (
-              <a 
-                href={`https://wa.me/${waPhone}?text=${encodedMessage}`} 
-                onClick={(e) => e.stopPropagation()} 
-                title="WhatsApp Customer" 
+              <button
+                type="button"
+                onClick={handleWhatsApp}
+                title="WhatsApp Customer"
                 style={actionButtonStyle}
               >
                 WhatsApp
-              </a>
+              </button>
             )}
           </div>
         </div>
@@ -293,9 +344,9 @@ const OrderCard: React.FC<OrderCardProps> = ({
             ))}
           </select>
 
-          <button 
+          <button
             type="button"
-            onClick={(e) => { e.stopPropagation(); onPrintInvoice(order); }} 
+            onClick={(e) => { e.stopPropagation(); onPrintInvoice(order); }}
             style={{ padding: '9px 16px', background: '#111', border: '1px solid #333', color: '#fff', fontSize: '10px', cursor: 'pointer', borderRadius: '2px' }}
           >
             PRINT
@@ -540,7 +591,6 @@ const AdminOrders: React.FC = () => {
     } catch (err) {
       console.error('Failed to update order details:', err);
       showToast('Failed to update details.', 'error');
-      throw err;
     }
   };
 
@@ -558,7 +608,6 @@ const AdminOrders: React.FC = () => {
     } catch (err) {
       console.error('Failed to update status:', err);
       showToast('Failed to update status.', 'error');
-      throw err;
     }
   };
 
