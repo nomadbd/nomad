@@ -102,6 +102,24 @@ const AdminOrders: React.FC = () => {
     }, 3000);
   };
 
+  // Smart WhatsApp Click Handler (Direct App First -> Web Fallback)
+  const handleWhatsAppClick = (e: React.MouseEvent<HTMLAnchorElement>, waPhone: string, messageBody: string) => {
+    e.preventDefault();
+    const appUrl = `whatsapp://send?phone=${waPhone}&text=${messageBody}`;
+    const webUrl = `https://wa.me/${waPhone}?text=${messageBody}`;
+
+    const startTime = Date.now();
+    // 1. Try to open native WhatsApp App directly
+    window.location.href = appUrl;
+
+    // 2. If app is not installed, fallback to browser link after 1.5 seconds
+    setTimeout(() => {
+      if (Date.now() - startTime < 2000) {
+        window.open(webUrl, '_blank');
+      }
+    }, 1500);
+  };
+
   const fetchAdminOrders = async () => {
     try {
       setLoading(true);
@@ -677,14 +695,14 @@ const AdminOrders: React.FC = () => {
 
                       const emailSubject = encodeURIComponent(`Order Update #${order.id.slice(0, 8)} - NOMAD`);
 
-                      // Shared button style for ALL contact buttons (Same color & uniform look)
+                      // Shared button style for ALL contact buttons
                       const contactBtnStyle: React.CSSProperties = {
                         display: 'inline-flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         backgroundColor: '#111',
                         border: '1px solid #333',
-                        color: '#fff', // Uniform white color for all
+                        color: '#fff',
                         padding: '4px 9px',
                         borderRadius: '2px',
                         textDecoration: 'none',
@@ -697,7 +715,7 @@ const AdminOrders: React.FC = () => {
 
                       return (
                         <div style={{ display: 'flex', gap: '6px', marginLeft: '4px' }}>
-                          {/* Click-to-Call (Fix applied for phone opening) */}
+                          {/* Click-to-Call */}
                           {rawPhone && (
                             <a 
                               href={`tel:${cleanPhoneForDial}`} 
@@ -719,12 +737,11 @@ const AdminOrders: React.FC = () => {
                             </a>
                           )}
 
-                          {/* Click-to-WhatsApp */}
+                          {/* Click-to-WhatsApp (Direct Native App -> Web Link Fallback) */}
                           {rawPhone && (
                             <a 
-                              href={`https://wa.me/${waPhone}?text=${messageBody}`} 
-                              target="_blank" 
-                              rel="noopener noreferrer" 
+                              href={`whatsapp://send?phone=${waPhone}&text=${messageBody}`} 
+                              onClick={(e) => handleWhatsAppClick(e, waPhone, messageBody)}
                               title="WhatsApp Customer" 
                               style={contactBtnStyle}
                             >
