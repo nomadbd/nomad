@@ -135,35 +135,14 @@ const OrderCard: React.FC<OrderCardProps> = ({
   const encodedMessage = encodeURIComponent(messageText);
   const emailSubject = encodeURIComponent(`Order Update #${order.id.slice(0, 8)} - NOMAD`);
 
-  // Cross-browser & Cross-device direct triggers
-  const handleCall = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
-    if (!cleanPhoneForDial) return;
-    window.location.href = `tel:${cleanPhoneForDial}`;
-  };
-
-  const handleEmail = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
-    if (!order.customer_email) return;
-    window.location.href = `mailto:${order.customer_email}?subject=${emailSubject}&body=${encodedMessage}`;
-  };
-
-  const handleWhatsApp = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
-    if (!waPhone) return;
-    const url = `https://api.whatsapp.com/send?phone=${waPhone}&text=${encodedMessage}`;
-    window.open(url, '_blank', 'noopener,noreferrer');
-  };
-
   const handleStatusSelect = async (e: React.ChangeEvent<HTMLSelectElement>) => {
     e.stopPropagation();
     const newStatus = e.target.value;
     setIsUpdating(true);
     try {
       await onStatusChange(order.id, newStatus);
+    } catch (err) {
+      console.error(err);
     } finally {
       setIsUpdating(false);
     }
@@ -174,6 +153,8 @@ const OrderCard: React.FC<OrderCardProps> = ({
     setIsUpdating(true);
     try {
       await onUpdateDetails(order.id, editForm);
+    } catch (err) {
+      console.error(err);
     } finally {
       setIsUpdating(false);
     }
@@ -193,7 +174,9 @@ const OrderCard: React.FC<OrderCardProps> = ({
     letterSpacing: '0.5px',
     cursor: 'pointer',
     userSelect: 'none',
-    outline: 'none'
+    outline: 'none',
+    textDecoration: 'none',
+    boxSizing: 'border-box'
   };
 
   return (
@@ -244,42 +227,42 @@ const OrderCard: React.FC<OrderCardProps> = ({
           </div>
         </div>
 
-        {/* Customer Info & Dynamic Communication Buttons */}
+        {/* Customer Info & Direct Native Communication Links */}
         <div style={{ fontSize: '12px', color: '#ddd', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
           <span style={{ fontWeight: '500' }}>{order.customer_name || 'GUEST CUSTOMER'}</span>
 
           <div style={{ display: 'flex', gap: '6px', marginLeft: '4px' }}>
             {cleanPhoneForDial && (
-              <button 
-                type="button" 
-                onClick={handleCall} 
+              <a 
+                href={`tel:${cleanPhoneForDial}`} 
+                onClick={(e) => e.stopPropagation()} 
                 title={`Call ${rawPhone}`} 
                 style={actionButtonStyle}
               >
                 Call
-              </button>
+              </a>
             )}
 
             {order.customer_email && (
-              <button 
-                type="button" 
-                onClick={handleEmail} 
+              <a 
+                href={`mailto:${order.customer_email}?subject=${emailSubject}&body=${encodedMessage}`} 
+                onClick={(e) => e.stopPropagation()} 
                 title={`Email ${order.customer_email}`} 
                 style={actionButtonStyle}
               >
                 Email
-              </button>
+              </a>
             )}
 
             {waPhone && (
-              <button 
-                type="button" 
-                onClick={handleWhatsApp} 
+              <a 
+                href={`https://wa.me/${waPhone}?text=${encodedMessage}`} 
+                onClick={(e) => e.stopPropagation()} 
                 title="WhatsApp Customer" 
                 style={actionButtonStyle}
               >
                 WhatsApp
-              </button>
+              </a>
             )}
           </div>
         </div>
@@ -557,6 +540,7 @@ const AdminOrders: React.FC = () => {
     } catch (err) {
       console.error('Failed to update order details:', err);
       showToast('Failed to update details.', 'error');
+      throw err;
     }
   };
 
@@ -574,6 +558,7 @@ const AdminOrders: React.FC = () => {
     } catch (err) {
       console.error('Failed to update status:', err);
       showToast('Failed to update status.', 'error');
+      throw err;
     }
   };
 
