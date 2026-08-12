@@ -680,7 +680,7 @@ const AdminOrders: React.FC = () => {
                           </a>
                           
                           {/* Click-to-SMS */}
-                          <a href={`sms:${order.customer_phone}?body=${messageBody}`} title="Send SMS" style={{ ...btnStyle, color: '#3b82f6' }}>
+                          <a href={`sms:${order.customer_phone}?body=${messageBody}`} title="Send SMS" style={{ ...btnStyle, color: '#22c55e' }}>
                             SMS
                           </a>
 
