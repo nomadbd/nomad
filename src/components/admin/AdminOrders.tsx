@@ -75,7 +75,7 @@ const STATUS_OPTIONS = [
 
 const DATE_FILTERS = ['ALL TIME', 'TODAY', 'LAST 7 DAYS', 'THIS MONTH'];
 
-// Helper to reliably format Bangladesh phone numbers for WhatsApp
+// Format phone number safely for BD numbers
 const formatWhatsAppNumber = (phone: string): string => {
   const digits = phone.replace(/[^0-9]/g, '');
   if (!digits) return '';
@@ -135,8 +135,28 @@ const OrderCard: React.FC<OrderCardProps> = ({
   const encodedMessage = encodeURIComponent(messageText);
   const emailSubject = encodeURIComponent(`Order Update #${order.id.slice(0, 8)} - NOMAD`);
 
-  // Universal WhatsApp Link
-  const whatsappUrl = waPhone ? `https://api.whatsapp.com/send?phone=${waPhone}&text=${encodedMessage}` : '#';
+  // Cross-browser & Cross-device direct triggers
+  const handleCall = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    if (!cleanPhoneForDial) return;
+    window.location.href = `tel:${cleanPhoneForDial}`;
+  };
+
+  const handleEmail = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    if (!order.customer_email) return;
+    window.location.href = `mailto:${order.customer_email}?subject=${emailSubject}&body=${encodedMessage}`;
+  };
+
+  const handleWhatsApp = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    if (!waPhone) return;
+    const url = `https://api.whatsapp.com/send?phone=${waPhone}&text=${encodedMessage}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
 
   const handleStatusSelect = async (e: React.ChangeEvent<HTMLSelectElement>) => {
     e.stopPropagation();
@@ -159,27 +179,26 @@ const OrderCard: React.FC<OrderCardProps> = ({
     }
   };
 
-  const contactBtnStyle: React.CSSProperties = {
+  const actionButtonStyle: React.CSSProperties = {
     display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#111',
     border: '1px solid #333',
     color: '#fff',
-    padding: '4px 9px',
+    padding: '5px 10px',
     borderRadius: '2px',
-    textDecoration: 'none',
     fontSize: '10px',
     fontWeight: 'bold',
     letterSpacing: '0.5px',
     cursor: 'pointer',
-    transition: 'all 0.2s ease',
-    userSelect: 'none'
+    userSelect: 'none',
+    outline: 'none'
   };
 
   return (
     <div style={{ backgroundColor: '#050505', border: '1px solid #222', padding: '16px', borderRadius: '2px' }}>
-      {/* Card Header */}
+      {/* Header */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
           <div>
@@ -225,52 +244,47 @@ const OrderCard: React.FC<OrderCardProps> = ({
           </div>
         </div>
 
-        {/* Customer Info & Contact Actions */}
+        {/* Customer Info & Dynamic Communication Buttons */}
         <div style={{ fontSize: '12px', color: '#ddd', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
           <span style={{ fontWeight: '500' }}>{order.customer_name || 'GUEST CUSTOMER'}</span>
 
           <div style={{ display: 'flex', gap: '6px', marginLeft: '4px' }}>
-            {/* Click-to-Call */}
-            {rawPhone && (
-              <a 
-                href={`tel:${cleanPhoneForDial}`} 
-                onClick={(e) => e.stopPropagation()} 
+            {cleanPhoneForDial && (
+              <button 
+                type="button" 
+                onClick={handleCall} 
                 title={`Call ${rawPhone}`} 
-                style={contactBtnStyle}
+                style={actionButtonStyle}
               >
                 Call
-              </a>
+              </button>
             )}
 
-            {/* Click-to-Email */}
             {order.customer_email && (
-              <a 
-                href={`mailto:${order.customer_email}?subject=${emailSubject}&body=${encodedMessage}`} 
-                onClick={(e) => e.stopPropagation()} 
+              <button 
+                type="button" 
+                onClick={handleEmail} 
                 title={`Email ${order.customer_email}`} 
-                style={contactBtnStyle}
+                style={actionButtonStyle}
               >
                 Email
-              </a>
+              </button>
             )}
 
-            {/* Click-to-WhatsApp */}
             {waPhone && (
-              <a 
-                href={whatsappUrl} 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                onClick={(e) => e.stopPropagation()} 
+              <button 
+                type="button" 
+                onClick={handleWhatsApp} 
                 title="WhatsApp Customer" 
-                style={contactBtnStyle}
+                style={actionButtonStyle}
               >
                 WhatsApp
-              </a>
+              </button>
             )}
           </div>
         </div>
 
-        {/* Action Buttons */}
+        {/* Status Selectors & Main Actions */}
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
           <select
             value={order.status}
@@ -297,6 +311,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
           </select>
 
           <button 
+            type="button"
             onClick={(e) => { e.stopPropagation(); onPrintInvoice(order); }} 
             style={{ padding: '9px 16px', background: '#111', border: '1px solid #333', color: '#fff', fontSize: '10px', cursor: 'pointer', borderRadius: '2px' }}
           >
@@ -304,6 +319,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
           </button>
 
           <button
+            type="button"
             onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }}
             style={{ padding: '9px 16px', background: '#111', border: '1px solid #333', color: '#fff', fontSize: '10px', cursor: 'pointer', borderRadius: '2px' }}
           >
@@ -312,11 +328,11 @@ const OrderCard: React.FC<OrderCardProps> = ({
         </div>
       </div>
 
-      {/* Expanded Content View */}
+      {/* Expanded Details Section */}
       {isExpanded && (
         <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #222', display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
-          {/* Item List */}
+          {/* Ordered Items */}
           <div>
             <h4 style={{ color: '#888', fontSize: '10px', letterSpacing: '1px', marginBottom: '8px', marginTop: '0' }}>ORDERED ITEMS</h4>
             {order.items.length > 0 ? order.items.map((item, idx) => (
@@ -351,7 +367,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
             )}
           </div>
 
-          {/* Order Details Edit Form */}
+          {/* Management Form */}
           <div style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', padding: '12px', borderRadius: '2px' }}>
             <h4 style={{ color: '#888', fontSize: '10px', letterSpacing: '1px', marginBottom: '12px', marginTop: '0' }}>MANAGEMENT DETAILS</h4>
 
@@ -407,6 +423,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
             </div>
 
             <button
+              type="button"
               onClick={handleSaveDetails}
               disabled={isUpdating}
               style={{
@@ -566,7 +583,7 @@ const AdminOrders: React.FC = () => {
     if (s === 'shipped') return '#eab308';
     if (s === 'delivered') return '#22c55e';
     if (s === 'cancelled') return '#ef4444';
-    return '#a855f7'; // Pending
+    return '#a855f7';
   };
 
   const handlePrintInvoice = (order: Order) => {
@@ -799,7 +816,7 @@ const AdminOrders: React.FC = () => {
         }
       `}</style>
 
-      {/* Top Controls Container */}
+      {/* Control Bar */}
       <div style={{
         backgroundColor: '#050505',
         border: '1px solid #1a1a1a',
@@ -833,12 +850,13 @@ const AdminOrders: React.FC = () => {
           />
         </div>
 
-        {/* Date Filters */}
+        {/* Date Filter */}
         <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', scrollbarWidth: 'none' }}>
           {DATE_FILTERS.map((dateFilter) => {
             const isActive = selectedDateFilter === dateFilter;
             return (
               <button
+                type="button"
                 key={dateFilter}
                 onClick={() => setSelectedDateFilter(dateFilter)}
                 style={{
@@ -861,12 +879,13 @@ const AdminOrders: React.FC = () => {
           })}
         </div>
 
-        {/* Status Filters */}
+        {/* Status Filter */}
         <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '4px' }}>
           {['ALL', ...STATUS_OPTIONS].map((status) => {
             const isActive = selectedStatusFilter === status;
             return (
               <button
+                type="button"
                 key={status}
                 onClick={() => setSelectedStatusFilter(status)}
                 style={{
@@ -892,10 +911,11 @@ const AdminOrders: React.FC = () => {
         </div>
       </div>
 
-      {/* Order Count / Refresh */}
+      {/* Orders Count and Refresh */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', color: '#666' }}>
         <span>SHOWING {filteredOrders.length} OF {orders.length} ORDERS</span>
         <button
+          type="button"
           onClick={fetchAdminOrders}
           style={{ background: 'none', border: 'none', color: '#fff', fontSize: '11px', textDecoration: 'underline', cursor: 'pointer' }}
         >
@@ -903,7 +923,7 @@ const AdminOrders: React.FC = () => {
         </button>
       </div>
 
-      {/* Orders List */}
+      {/* Orders List View */}
       {loading ? (
         <div style={{ textAlign: 'center', padding: '60px 0', color: '#666', fontSize: '11px' }}>
           FETCHING ORDER MEMORANDUMS...
