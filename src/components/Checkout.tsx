@@ -86,10 +86,13 @@ export default function Checkout({
       return setErrorMessage('INVALID EMAIL ADDRESS. PLEASE ENTER A VALID EMAIL.');
     }
 
-    const bdPhoneRegex = /^01[3-9]\d{8}$/;
-    const cleanPhone = formData.phone.trim();
-    if (!bdPhoneRegex.test(cleanPhone)) {
-      return setErrorMessage('INVALID CONTACT NUMBER. PLEASE ENTER A VALID 11-DIGIT NUMBER (EG. 017XXXXXXXX).');
+    // আন্তর্জাতিক ফোন নম্বর ভ্যালিডেশন (E.164 স্ট্যান্ডার্ড: স্পেস, হাইফেন, ব্র্যাকেট ও প্লাস সাইন সাপোর্ট করবে)
+    const rawPhone = formData.phone.trim();
+    const cleanPhone = rawPhone.replace(/[\s\-\(\)]/g, ''); 
+    const intlPhoneRegex = /^\+?[1-9]\d{6,14}$/;
+
+    if (!intlPhoneRegex.test(cleanPhone)) {
+      return setErrorMessage('INVALID CONTACT NUMBER. PLEASE INCLUDE COUNTRY CODE (E.G. +1..., +880...).');
     }
 
     setLoading(true);
@@ -368,7 +371,7 @@ export default function Checkout({
             <h2 style={styles.sectionHeading}>SHIPPING ADDRESS</h2>
             <input style={styles.input} placeholder="FULL NAME" required value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
             <input style={styles.input} placeholder="EMAIL ADDRESS" required type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
-            <input style={styles.input} placeholder="CONTACT NUMBER" required type="tel" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} />
+            <input style={styles.input} placeholder="PHONE NUMBER (WITH COUNTRY CODE, E.G. +1... / +880...)" required type="tel" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} />
             <textarea style={styles.textarea} placeholder="COMPLETE SHIPPING ADDRESS" required value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} />
             <div style={styles.paymentRow}>
               <span style={styles.paymentText}>CASH ON DELIVERY</span>
