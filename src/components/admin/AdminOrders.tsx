@@ -242,7 +242,7 @@ const AdminOrders: React.FC = () => {
     const subtotal = order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     const deliveryCharge = order.delivery_charge || 0; 
     const vat = order.vat_amount || 0; 
-    
+
     const dateObj = new Date(order.created_at);
     const dateStr = dateObj.toLocaleDateString('en-CA'); 
     const timeStr = dateObj.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
@@ -432,7 +432,7 @@ const AdminOrders: React.FC = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%', maxWidth: '100%', position: 'relative' }}>
-      
+
       {/* Toast Notification */}
       {toast && (
         <div style={{
@@ -584,10 +584,10 @@ const AdminOrders: React.FC = () => {
             const isExpanded = expandedOrderId === order.id;
             const statusColor = getStatusColor(order.status);
             const isUpdating = updatingOrderId === order.id;
-            
+
             const totalItemsCount = order.items.reduce((sum, item) => sum + (item.quantity || 0), 0);
             const displayItemCount = totalItemsCount > 0 ? totalItemsCount : '1+'; 
-            
+
             const isPaid = order.payment_status?.toLowerCase().includes('paid') && !order.payment_status?.toLowerCase().includes('unpaid');
 
             return (
@@ -649,14 +649,27 @@ const AdminOrders: React.FC = () => {
                   {/* Customer Info & Contact Actions */}
                   <div style={{ fontSize: '12px', color: '#ddd', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                     <span>{order.customer_name || 'GUEST CUSTOMER'}</span>
-                    
+
                     {order.customer_phone && (() => {
-                      const messageBody = encodeURIComponent(
-                        `Hello ${order.customer_name || 'Customer'},\nYour NOMAD order (#${order.id.slice(0, 8)}) status is: ${order.status}.\nCourier: ${order.courier_name || 'N/A'}\nTracking ID: ${order.tracking_id || 'N/A'}\nThank you!`
-                      );
-                      
+                      // সুন্দর গ্যাপ এবং লাইন ব্রেক দিয়ে মেসেজ তৈরি করা হলো
+                      const rawMessage = `Hello ${order.customer_name || 'Customer'},
+
+Your NOMAD order (#${order.id.slice(0, 8)}) status is: ${order.status}.
+
+Courier: ${order.courier_name || 'N/A'}
+Tracking ID: ${order.tracking_id || 'N/A'}
+
+Thank you for shopping with us!`;
+
+                      const messageBody = encodeURIComponent(rawMessage);
+
+                      // ফোন নম্বর থেকে স্পেস ও হাইফেন রিমুভ করা
                       const cleanPhone = order.customer_phone.replace(/[^0-9]/g, '');
                       const waPhone = cleanPhone.startsWith('0') ? `88${cleanPhone}` : cleanPhone;
+
+                      // iOS ডিভাইস চেক করা যেন SMS লিংক ঠিকমতো কাজ করে
+                      const isIOS = typeof window !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent);
+                      const smsSeparator = isIOS ? '&' : '?';
 
                       const btnStyle = {
                         display: 'inline-flex',
@@ -675,12 +688,12 @@ const AdminOrders: React.FC = () => {
                       return (
                         <div style={{ display: 'flex', gap: '6px', marginLeft: '4px' }}>
                           {/* Click-to-Call */}
-                          <a href={`tel:${order.customer_phone}`} title="Call Customer" style={{ ...btnStyle, color: '#22c55e' }}>
+                          <a href={`tel:${cleanPhone}`} title="Call Customer" style={{ ...btnStyle, color: '#22c55e' }}>
                             Call
                           </a>
-                          
-                          {/* Click-to-SMS */}
-                          <a href={`sms:${order.customer_phone}?body=${messageBody}`} title="Send SMS" style={{ ...btnStyle, color: '#22c55e' }}>
+
+                          {/* Click-to-SMS (iOS & Android Supported) */}
+                          <a href={`sms:${cleanPhone}${smsSeparator}body=${messageBody}`} title="Send SMS" style={{ ...btnStyle, color: '#22c55e' }}>
                             SMS
                           </a>
 
@@ -733,7 +746,7 @@ const AdminOrders: React.FC = () => {
                 {/* Expanded Content View */}
                 {isExpanded && (
                   <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #222', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                    
+
                     {/* Item List */}
                     <div>
                       <h4 style={{ color: '#888', fontSize: '10px', letterSpacing: '1px', marginBottom: '8px', marginTop: '0' }}>ORDERED ITEMS</h4>
@@ -772,7 +785,7 @@ const AdminOrders: React.FC = () => {
                     {/* Order Details Edit Form */}
                     <div style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', padding: '12px', borderRadius: '2px' }}>
                        <h4 style={{ color: '#888', fontSize: '10px', letterSpacing: '1px', marginBottom: '12px', marginTop: '0' }}>MANAGEMENT DETAILS</h4>
-                       
+
                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginBottom: '12px' }}>
                          <div>
                             <label style={{ display: 'block', fontSize: '9px', color: '#555', marginBottom: '4px' }}>PAYMENT STATUS</label>
@@ -855,4 +868,4 @@ const AdminOrders: React.FC = () => {
   );
 };
 
-export default AdminOrders; 
+export default AdminOrders;
