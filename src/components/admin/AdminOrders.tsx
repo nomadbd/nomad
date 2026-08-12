@@ -75,8 +75,18 @@ const STATUS_OPTIONS = [
 
 const DATE_FILTERS = ['ALL TIME', 'TODAY', 'LAST 7 DAYS', 'THIS MONTH'];
 
+// Helper to reliably format Bangladesh phone numbers for WhatsApp
+const formatWhatsAppNumber = (phone: string): string => {
+  const digits = phone.replace(/[^0-9]/g, '');
+  if (!digits) return '';
+  if (digits.startsWith('880')) return digits;
+  if (digits.startsWith('0')) return '88' + digits;
+  if (digits.length === 10) return '880' + digits;
+  return digits;
+};
+
 // -------------------------------------------------------------
-// INDIVIDUAL ORDER CARD COMPONENT (Fixes State & Click Overlaps)
+// INDIVIDUAL ORDER CARD COMPONENT
 // -------------------------------------------------------------
 interface OrderCardProps {
   order: Order;
@@ -96,7 +106,6 @@ const OrderCard: React.FC<OrderCardProps> = ({
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
   const [isUpdating, setIsUpdating] = useState<boolean>(false);
 
-  // Local state for management edit details per order card
   const [editForm, setEditForm] = useState({
     payment_status: order.payment_status || 'Unpaid / COD',
     courier_name: order.courier_name || '',
@@ -104,7 +113,6 @@ const OrderCard: React.FC<OrderCardProps> = ({
     admin_notes: order.admin_notes || ''
   });
 
-  // Sync state if order prop changes externally
   useEffect(() => {
     setEditForm({
       payment_status: order.payment_status || 'Unpaid / COD',
@@ -119,36 +127,36 @@ const OrderCard: React.FC<OrderCardProps> = ({
   const totalItemsCount = order.items.reduce((sum, item) => sum + (item.quantity || 0), 0);
   const displayItemCount = totalItemsCount > 0 ? totalItemsCount : '1+';
 
-  // Format Phone Numbers cleanly
   const rawPhone = order.customer_phone || '';
   const cleanPhoneForDial = rawPhone.replace(/[^0-9+]/g, '');
-  const cleanDigits = rawPhone.replace(/[^0-9]/g, '');
-
-  let waPhone = cleanDigits;
-  if (cleanDigits.length === 11 && cleanDigits.startsWith('0')) {
-    waPhone = '88' + cleanDigits;
-  } else if (cleanDigits.length === 10) {
-    waPhone = '880' + cleanDigits;
-  }
+  const waPhone = formatWhatsAppNumber(rawPhone);
 
   const messageText = `Hello ${order.customer_name || 'Customer'},\nYour NOMAD order (#${order.id.slice(0, 8)}) status is: ${order.status}.\nCourier: ${order.courier_name || 'N/A'}\nTracking ID: ${order.tracking_id || 'N/A'}\nThank you!`;
   const encodedMessage = encodeURIComponent(messageText);
   const emailSubject = encodeURIComponent(`Order Update #${order.id.slice(0, 8)} - NOMAD`);
 
-  // Direct, popup-blocker safe WhatsApp Link
-  const whatsappUrl = `https://wa.me/${waPhone}?text=${encodedMessage}`;
+  // Universal WhatsApp Link
+  const whatsappUrl = waPhone ? `https://api.whatsapp.com/send?phone=${waPhone}&text=${encodedMessage}` : '#';
 
   const handleStatusSelect = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    e.stopPropagation();
     const newStatus = e.target.value;
     setIsUpdating(true);
-    await onStatusChange(order.id, newStatus);
-    setIsUpdating(false);
+    try {
+      await onStatusChange(order.id, newStatus);
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
-  const handleSaveDetails = async () => {
+  const handleSaveDetails = async (e: React.MouseEvent) => {
+    e.stopPropagation();
     setIsUpdating(true);
-    await onUpdateDetails(order.id, editForm);
-    setIsUpdating(false);
+    try {
+      await onUpdateDetails(order.id, editForm);
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   const contactBtnStyle: React.CSSProperties = {
@@ -165,7 +173,8 @@ const OrderCard: React.FC<OrderCardProps> = ({
     fontWeight: 'bold',
     letterSpacing: '0.5px',
     cursor: 'pointer',
-    transition: 'all 0.2s ease'
+    transition: 'all 0.2s ease',
+    userSelect: 'none'
   };
 
   return (
@@ -178,7 +187,6 @@ const OrderCard: React.FC<OrderCardProps> = ({
               <span style={{ fontSize: '13px', fontWeight: 'bold', letterSpacing: '1px' }}>
                 #{order.id.slice(0, 8)}...
               </span>
-              {/* Status Badge */}
               <span style={{
                 backgroundColor: `${statusColor}22`,
                 color: statusColor,
@@ -190,7 +198,6 @@ const OrderCard: React.FC<OrderCardProps> = ({
               }}>
                 ● {order.status.toUpperCase()}
               </span>
-              {/* Payment Badge */}
               <span style={{
                 backgroundColor: isPaid ? '#22c55e22' : '#f9731622',
                 color: isPaid ? '#22c55e' : '#f97316',
@@ -225,21 +232,38 @@ const OrderCard: React.FC<OrderCardProps> = ({
           <div style={{ display: 'flex', gap: '6px', marginLeft: '4px' }}>
             {/* Click-to-Call */}
             {rawPhone && (
-              <a href={`tel:${cleanPhoneForDial}`} title={`Call ${rawPhone}`} style={contactBtnStyle}>
+              <a 
+                href={`tel:${cleanPhoneForDial}`} 
+                onClick={(e) => e.stopPropagation()} 
+                title={`Call ${rawPhone}`} 
+                style={contactBtnStyle}
+              >
                 Call
               </a>
             )}
 
             {/* Click-to-Email */}
             {order.customer_email && (
-              <a href={`mailto:${order.customer_email}?subject=${emailSubject}&body=${encodedMessage}`} title={`Email ${order.customer_email}`} style={contactBtnStyle}>
+              <a 
+                href={`mailto:${order.customer_email}?subject=${emailSubject}&body=${encodedMessage}`} 
+                onClick={(e) => e.stopPropagation()} 
+                title={`Email ${order.customer_email}`} 
+                style={contactBtnStyle}
+              >
                 Email
               </a>
             )}
 
-            {/* Click-to-WhatsApp (Direct URL with Target Blank - Works 100% reliably) */}
-            {rawPhone && (
-              <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" title="WhatsApp Customer" style={contactBtnStyle}>
+            {/* Click-to-WhatsApp */}
+            {waPhone && (
+              <a 
+                href={whatsappUrl} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                onClick={(e) => e.stopPropagation()} 
+                title="WhatsApp Customer" 
+                style={contactBtnStyle}
+              >
                 WhatsApp
               </a>
             )}
@@ -252,6 +276,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
             value={order.status}
             disabled={isUpdating}
             onChange={handleStatusSelect}
+            onClick={(e) => e.stopPropagation()}
             style={{
               backgroundColor: '#000',
               color: statusColor,
@@ -262,7 +287,8 @@ const OrderCard: React.FC<OrderCardProps> = ({
               borderRadius: '2px',
               flex: 1,
               minWidth: '140px',
-              cursor: 'pointer'
+              cursor: isUpdating ? 'not-allowed' : 'pointer',
+              opacity: isUpdating ? 0.6 : 1
             }}
           >
             {STATUS_OPTIONS.map((opt) => (
@@ -270,12 +296,15 @@ const OrderCard: React.FC<OrderCardProps> = ({
             ))}
           </select>
 
-          <button onClick={() => onPrintInvoice(order)} style={{ padding: '9px 16px', background: '#111', border: '1px solid #333', color: '#fff', fontSize: '10px', cursor: 'pointer', borderRadius: '2px' }}>
+          <button 
+            onClick={(e) => { e.stopPropagation(); onPrintInvoice(order); }} 
+            style={{ padding: '9px 16px', background: '#111', border: '1px solid #333', color: '#fff', fontSize: '10px', cursor: 'pointer', borderRadius: '2px' }}
+          >
             PRINT
           </button>
 
           <button
-            onClick={() => setIsExpanded(!isExpanded)}
+            onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }}
             style={{ padding: '9px 16px', background: '#111', border: '1px solid #333', color: '#fff', fontSize: '10px', cursor: 'pointer', borderRadius: '2px' }}
           >
             {isExpanded ? 'HIDE' : 'VIEW'}
@@ -291,7 +320,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
           <div>
             <h4 style={{ color: '#888', fontSize: '10px', letterSpacing: '1px', marginBottom: '8px', marginTop: '0' }}>ORDERED ITEMS</h4>
             {order.items.length > 0 ? order.items.map((item, idx) => (
-              <div key={idx} style={{
+              <div key={`${item.product_name}-${idx}`} style={{
                 display: 'flex',
                 gap: '12px',
                 background: '#000',
@@ -302,7 +331,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
               }}>
                 <img
                   src={item.product_image}
-                  alt=""
+                  alt={item.product_name}
                   style={{ width: '45px', height: '55px', objectFit: 'cover' }}
                 />
                 <div style={{ flex: 1 }}>
@@ -389,7 +418,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
                 border: 'none',
                 fontSize: '10px',
                 letterSpacing: '1px',
-                cursor: 'pointer',
+                cursor: isUpdating ? 'not-allowed' : 'pointer',
                 borderRadius: '2px',
                 opacity: isUpdating ? 0.6 : 1
               }}
@@ -414,7 +443,6 @@ const AdminOrders: React.FC = () => {
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<string>('ALL');
   const [selectedDateFilter, setSelectedDateFilter] = useState<string>('ALL TIME');
 
-  // Custom Toast Notification State
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
@@ -567,9 +595,8 @@ const AdminOrders: React.FC = () => {
         <title>Invoice #${order.id.slice(0, 8)}</title>
         <style>
           @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-          
           body { 
-            font-family: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif; 
+            font-family: 'Inter', sans-serif; 
             color: #000; 
             padding: 30px; 
             max-width: 800px; 
@@ -580,7 +607,6 @@ const AdminOrders: React.FC = () => {
             background-color: #fff;
             box-sizing: border-box;
           }
-          
           .header { text-align: center; margin-bottom: 40px; }
           .header h1 { font-size: 20px; letter-spacing: 6px; margin: 0 0 5px 0; font-weight: 700; }
           .header h2 { font-size: 9px; letter-spacing: 2px; margin: 10px 0 0 0; color: #555; text-transform: uppercase; font-weight: 600;}
@@ -693,12 +719,12 @@ const AdminOrders: React.FC = () => {
         </div>
 
         <div class="footer">
-          <span class="bold">LEGAL NOTICE:</span> This is a computer-generated order memorandum. It does not constitute a proof of final payment, sales receipt, or legal ownership of goods. Physical products will remain property of NOMAD until the full invoice amount is successfully collected by our authorized delivery agent.
+          <span class="bold">LEGAL NOTICE:</span> This is a computer-generated order memorandum.
         </div>
 
         <script>
           window.onload = function() {
-            setTimeout(function() { window.print(); }, 300);
+            setTimeout(function() { window.print(); }, 200);
             window.onafterprint = function() { window.close(); };
           }
         </script>
@@ -709,6 +735,7 @@ const AdminOrders: React.FC = () => {
     printWindow.document.open();
     printWindow.document.write(htmlContent);
     printWindow.document.close();
+    printWindow.focus();
   };
 
   const filteredOrders = useMemo(() => {
@@ -765,7 +792,6 @@ const AdminOrders: React.FC = () => {
         </div>
       )}
 
-      {/* Internal Style for Animations */}
       <style>{`
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(10px); }
