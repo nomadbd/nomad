@@ -676,17 +676,17 @@ const AdminOrders: React.FC = () => {
                         <div style={{ display: 'flex', gap: '6px', marginLeft: '4px' }}>
                           {/* Click-to-Call */}
                           <a href={`tel:${order.customer_phone}`} title="Call Customer" style={{ ...btnStyle, color: '#22c55e' }}>
-                            📞 কল
+                            Call
                           </a>
                           
                           {/* Click-to-SMS */}
                           <a href={`sms:${order.customer_phone}?body=${messageBody}`} title="Send SMS" style={{ ...btnStyle, color: '#3b82f6' }}>
-                            💬 SMS
+                            SMS
                           </a>
 
                           {/* Click-to-WhatsApp */}
                           <a href={`https://wa.me/${waPhone}?text=${messageBody}`} target="_blank" rel="noopener noreferrer" title="WhatsApp Customer" style={{ ...btnStyle, color: '#22c55e' }}>
-                            📱 WhatsApp
+                             WhatsApp
                           </a>
                         </div>
                       );
