@@ -75,49 +75,353 @@ const STATUS_OPTIONS = [
 
 const DATE_FILTERS = ['ALL TIME', 'TODAY', 'LAST 7 DAYS', 'THIS MONTH'];
 
+// -------------------------------------------------------------
+// INDIVIDUAL ORDER CARD COMPONENT (Fixes State & Click Overlaps)
+// -------------------------------------------------------------
+interface OrderCardProps {
+  order: Order;
+  onStatusChange: (orderId: string, newStatus: string) => Promise<void>;
+  onUpdateDetails: (orderId: string, updatedData: { payment_status: string; courier_name: string; tracking_id: string; admin_notes: string }) => Promise<void>;
+  onPrintInvoice: (order: Order) => void;
+  getStatusColor: (status: string) => string;
+}
+
+const OrderCard: React.FC<OrderCardProps> = ({
+  order,
+  onStatusChange,
+  onUpdateDetails,
+  onPrintInvoice,
+  getStatusColor
+}) => {
+  const [isExpanded, setIsExpanded] = useState<boolean>(false);
+  const [isUpdating, setIsUpdating] = useState<boolean>(false);
+
+  // Local state for management edit details per order card
+  const [editForm, setEditForm] = useState({
+    payment_status: order.payment_status || 'Unpaid / COD',
+    courier_name: order.courier_name || '',
+    tracking_id: order.tracking_id || '',
+    admin_notes: order.admin_notes || ''
+  });
+
+  // Sync state if order prop changes externally
+  useEffect(() => {
+    setEditForm({
+      payment_status: order.payment_status || 'Unpaid / COD',
+      courier_name: order.courier_name || '',
+      tracking_id: order.tracking_id || '',
+      admin_notes: order.admin_notes || ''
+    });
+  }, [order]);
+
+  const statusColor = getStatusColor(order.status);
+  const isPaid = order.payment_status?.toLowerCase().includes('paid') && !order.payment_status?.toLowerCase().includes('unpaid');
+  const totalItemsCount = order.items.reduce((sum, item) => sum + (item.quantity || 0), 0);
+  const displayItemCount = totalItemsCount > 0 ? totalItemsCount : '1+';
+
+  // Format Phone Numbers cleanly
+  const rawPhone = order.customer_phone || '';
+  const cleanPhoneForDial = rawPhone.replace(/[^0-9+]/g, '');
+  const cleanDigits = rawPhone.replace(/[^0-9]/g, '');
+
+  let waPhone = cleanDigits;
+  if (cleanDigits.length === 11 && cleanDigits.startsWith('0')) {
+    waPhone = '88' + cleanDigits;
+  } else if (cleanDigits.length === 10) {
+    waPhone = '880' + cleanDigits;
+  }
+
+  const messageText = `Hello ${order.customer_name || 'Customer'},\nYour NOMAD order (#${order.id.slice(0, 8)}) status is: ${order.status}.\nCourier: ${order.courier_name || 'N/A'}\nTracking ID: ${order.tracking_id || 'N/A'}\nThank you!`;
+  const encodedMessage = encodeURIComponent(messageText);
+  const emailSubject = encodeURIComponent(`Order Update #${order.id.slice(0, 8)} - NOMAD`);
+
+  // Direct, popup-blocker safe WhatsApp Link
+  const whatsappUrl = `https://wa.me/${waPhone}?text=${encodedMessage}`;
+
+  const handleStatusSelect = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newStatus = e.target.value;
+    setIsUpdating(true);
+    await onStatusChange(order.id, newStatus);
+    setIsUpdating(false);
+  };
+
+  const handleSaveDetails = async () => {
+    setIsUpdating(true);
+    await onUpdateDetails(order.id, editForm);
+    setIsUpdating(false);
+  };
+
+  const contactBtnStyle: React.CSSProperties = {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#111',
+    border: '1px solid #333',
+    color: '#fff',
+    padding: '4px 9px',
+    borderRadius: '2px',
+    textDecoration: 'none',
+    fontSize: '10px',
+    fontWeight: 'bold',
+    letterSpacing: '0.5px',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease'
+  };
+
+  return (
+    <div style={{ backgroundColor: '#050505', border: '1px solid #222', padding: '16px', borderRadius: '2px' }}>
+      {/* Card Header */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '13px', fontWeight: 'bold', letterSpacing: '1px' }}>
+                #{order.id.slice(0, 8)}...
+              </span>
+              {/* Status Badge */}
+              <span style={{
+                backgroundColor: `${statusColor}22`,
+                color: statusColor,
+                border: `1px solid ${statusColor}55`,
+                padding: '2px 8px',
+                borderRadius: '2px',
+                fontSize: '9px',
+                fontWeight: 'bold'
+              }}>
+                ● {order.status.toUpperCase()}
+              </span>
+              {/* Payment Badge */}
+              <span style={{
+                backgroundColor: isPaid ? '#22c55e22' : '#f9731622',
+                color: isPaid ? '#22c55e' : '#f97316',
+                border: `1px solid ${isPaid ? '#22c55e55' : '#f9731655'}`,
+                padding: '2px 8px',
+                borderRadius: '2px',
+                fontSize: '9px',
+                fontWeight: 'bold'
+              }}>
+                {order.payment_status?.toUpperCase() || 'UNPAID'}
+              </span>
+            </div>
+            <div style={{ fontSize: '10px', color: '#666', marginTop: '4px' }}>
+              {new Date(order.created_at).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}
+            </div>
+          </div>
+
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ fontSize: '15px', fontWeight: '800', color: '#fff' }}>
+              ৳{order.total_amount}
+            </div>
+            <div style={{ fontSize: '9px', color: '#666' }}>
+              {displayItemCount} ITEM(S)
+            </div>
+          </div>
+        </div>
+
+        {/* Customer Info & Contact Actions */}
+        <div style={{ fontSize: '12px', color: '#ddd', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+          <span style={{ fontWeight: '500' }}>{order.customer_name || 'GUEST CUSTOMER'}</span>
+
+          <div style={{ display: 'flex', gap: '6px', marginLeft: '4px' }}>
+            {/* Click-to-Call */}
+            {rawPhone && (
+              <a href={`tel:${cleanPhoneForDial}`} title={`Call ${rawPhone}`} style={contactBtnStyle}>
+                Call
+              </a>
+            )}
+
+            {/* Click-to-Email */}
+            {order.customer_email && (
+              <a href={`mailto:${order.customer_email}?subject=${emailSubject}&body=${encodedMessage}`} title={`Email ${order.customer_email}`} style={contactBtnStyle}>
+                Email
+              </a>
+            )}
+
+            {/* Click-to-WhatsApp (Direct URL with Target Blank - Works 100% reliably) */}
+            {rawPhone && (
+              <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" title="WhatsApp Customer" style={contactBtnStyle}>
+                WhatsApp
+              </a>
+            )}
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <select
+            value={order.status}
+            disabled={isUpdating}
+            onChange={handleStatusSelect}
+            style={{
+              backgroundColor: '#000',
+              color: statusColor,
+              border: `1px solid ${statusColor}`,
+              padding: '9px 12px',
+              fontSize: '10px',
+              fontWeight: 'bold',
+              borderRadius: '2px',
+              flex: 1,
+              minWidth: '140px',
+              cursor: 'pointer'
+            }}
+          >
+            {STATUS_OPTIONS.map((opt) => (
+              <option key={opt} value={opt}>{opt.toUpperCase()}</option>
+            ))}
+          </select>
+
+          <button onClick={() => onPrintInvoice(order)} style={{ padding: '9px 16px', background: '#111', border: '1px solid #333', color: '#fff', fontSize: '10px', cursor: 'pointer', borderRadius: '2px' }}>
+            PRINT
+          </button>
+
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            style={{ padding: '9px 16px', background: '#111', border: '1px solid #333', color: '#fff', fontSize: '10px', cursor: 'pointer', borderRadius: '2px' }}
+          >
+            {isExpanded ? 'HIDE' : 'VIEW'}
+          </button>
+        </div>
+      </div>
+
+      {/* Expanded Content View */}
+      {isExpanded && (
+        <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #222', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
+          {/* Item List */}
+          <div>
+            <h4 style={{ color: '#888', fontSize: '10px', letterSpacing: '1px', marginBottom: '8px', marginTop: '0' }}>ORDERED ITEMS</h4>
+            {order.items.length > 0 ? order.items.map((item, idx) => (
+              <div key={idx} style={{
+                display: 'flex',
+                gap: '12px',
+                background: '#000',
+                padding: '10px',
+                marginBottom: '8px',
+                border: '1px solid #151515',
+                borderRadius: '2px'
+              }}>
+                <img
+                  src={item.product_image}
+                  alt=""
+                  style={{ width: '45px', height: '55px', objectFit: 'cover' }}
+                />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 'bold', fontSize: '11px' }}>{item.product_name}</div>
+                  <div style={{ fontSize: '9.5px', color: '#777', marginTop: '4px' }}>
+                    SIZE: {item.size} • COLOR: {item.color} • QTY: {item.quantity}
+                  </div>
+                </div>
+                <div style={{ fontWeight: 'bold', fontSize: '12px', alignSelf: 'center' }}>
+                  ৳{item.price * item.quantity}
+                </div>
+              </div>
+            )) : (
+              <div style={{ color: '#555', fontSize: '11px', fontStyle: 'italic', padding: '10px', background: '#000', border: '1px solid #111' }}>
+                No items found for this order.
+              </div>
+            )}
+          </div>
+
+          {/* Order Details Edit Form */}
+          <div style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', padding: '12px', borderRadius: '2px' }}>
+            <h4 style={{ color: '#888', fontSize: '10px', letterSpacing: '1px', marginBottom: '12px', marginTop: '0' }}>MANAGEMENT DETAILS</h4>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginBottom: '12px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '9px', color: '#555', marginBottom: '4px' }}>PAYMENT STATUS</label>
+                <select
+                  value={editForm.payment_status}
+                  onChange={e => setEditForm({ ...editForm, payment_status: e.target.value })}
+                  style={{ width: '100%', background: '#000', color: '#fff', border: '1px solid #333', padding: '8px', fontSize: '11px', outline: 'none' }}
+                >
+                  <option value="Unpaid / COD">UNPAID / COD</option>
+                  <option value="Paid">PAID</option>
+                  <option value="Partial Paid">PARTIAL PAID</option>
+                </select>
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '9px', color: '#555', marginBottom: '4px' }}>COURIER NAME</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Steadfast, Pathao"
+                  value={editForm.courier_name}
+                  onChange={e => setEditForm({ ...editForm, courier_name: e.target.value })}
+                  style={{ width: '100%', boxSizing: 'border-box', background: '#000', color: '#fff', border: '1px solid #333', padding: '8px', fontSize: '11px', outline: 'none' }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '9px', color: '#555', marginBottom: '4px' }}>TRACKING ID</label>
+                <input
+                  type="text"
+                  placeholder="Tracking / Memo No."
+                  value={editForm.tracking_id}
+                  onChange={e => setEditForm({ ...editForm, tracking_id: e.target.value })}
+                  style={{ width: '100%', boxSizing: 'border-box', background: '#000', color: '#fff', border: '1px solid #333', padding: '8px', fontSize: '11px', outline: 'none' }}
+                />
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ display: 'block', fontSize: '9px', color: '#555', marginBottom: '4px' }}>ADMIN NOTES / CUSTOMER REQUESTS</label>
+              <textarea
+                rows={2}
+                placeholder="Add notes here..."
+                value={editForm.admin_notes}
+                onChange={e => setEditForm({ ...editForm, admin_notes: e.target.value })}
+                style={{ width: '100%', boxSizing: 'border-box', background: '#000', color: '#fff', border: '1px solid #333', padding: '8px', fontSize: '11px', outline: 'none', resize: 'vertical' }}
+              />
+            </div>
+
+            <div style={{ fontSize: '11px', color: '#ccc', marginBottom: '12px', background: '#000', padding: '10px', border: '1px dashed #333' }}>
+              <strong style={{ color: '#888' }}>SHIPPING ADDRESS:</strong><br />
+              <span style={{ color: '#fff', display: 'block', marginTop: '4px', lineHeight: '1.4' }}>{order.shipping_address || 'No address provided'}</span>
+            </div>
+
+            <button
+              onClick={handleSaveDetails}
+              disabled={isUpdating}
+              style={{
+                width: '100%',
+                padding: '10px',
+                background: '#fff',
+                color: '#000',
+                fontWeight: 'bold',
+                border: 'none',
+                fontSize: '10px',
+                letterSpacing: '1px',
+                cursor: 'pointer',
+                borderRadius: '2px',
+                opacity: isUpdating ? 0.6 : 1
+              }}
+            >
+              {isUpdating ? 'SAVING...' : 'SAVE DETAILS'}
+            </button>
+          </div>
+
+        </div>
+      )}
+    </div>
+  );
+};
+
+// -------------------------------------------------------------
+// MAIN ADMIN ORDERS CONTAINER
+// -------------------------------------------------------------
 const AdminOrders: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<string>('ALL');
   const [selectedDateFilter, setSelectedDateFilter] = useState<string>('ALL TIME');
-  const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
-  const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
 
   // Custom Toast Notification State
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
-  const [editForm, setEditForm] = useState({
-    payment_status: '',
-    courier_name: '',
-    tracking_id: '',
-    admin_notes: ''
-  });
-
-  // Helper function to show custom notifications
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
     setToast({ message, type });
     setTimeout(() => {
       setToast(null);
     }, 3000);
-  };
-
-  // Smart WhatsApp Click Handler (Direct App First -> Web Fallback)
-  const handleWhatsAppClick = (e: React.MouseEvent<HTMLAnchorElement>, waPhone: string, messageBody: string) => {
-    e.preventDefault();
-    const appUrl = `whatsapp://send?phone=${waPhone}&text=${messageBody}`;
-    const webUrl = `https://wa.me/${waPhone}?text=${messageBody}`;
-
-    const startTime = Date.now();
-    // 1. Try to open native WhatsApp App directly
-    window.location.href = appUrl;
-
-    // 2. If app is not installed, fallback to browser link after 1.5 seconds
-    setTimeout(() => {
-      if (Date.now() - startTime < 2000) {
-        window.open(webUrl, '_blank');
-      }
-    }, 1500);
   };
 
   const fetchAdminOrders = async () => {
@@ -153,7 +457,7 @@ const AdminOrders: React.FC = () => {
             product_image: item.product_image || item.products?.product_media?.[0]?.media_url || 'https://via.placeholder.com/80x100',
             size: item.size || 'N/A',
             color: item.color || 'N/A',
-            quantity: item.quantity ? Number(item.quantity) : 1, 
+            quantity: item.quantity ? Number(item.quantity) : 1,
             price: item.price_at_purchase || 0
           }));
 
@@ -189,48 +493,30 @@ const AdminOrders: React.FC = () => {
     fetchAdminOrders();
   }, []);
 
-  const handleExpandClick = (order: Order) => {
-    if (expandedOrderId === order.id) {
-      setExpandedOrderId(null);
-    } else {
-      setExpandedOrderId(order.id);
-      setEditForm({
-        payment_status: order.payment_status || 'Unpaid / COD',
-        courier_name: order.courier_name || '',
-        tracking_id: order.tracking_id || '',
-        admin_notes: order.admin_notes || ''
-      });
-    }
-  };
-
-  const handleUpdateDetails = async (orderId: string) => {
+  const handleUpdateDetails = async (orderId: string, updatedFields: { payment_status: string; courier_name: string; tracking_id: string; admin_notes: string }) => {
     try {
-      setUpdatingOrderId(orderId);
       const { error } = await supabase
         .from('orders')
-        .update({ 
-          payment_status: editForm.payment_status,
-          courier_name: editForm.courier_name,
-          tracking_id: editForm.tracking_id,
-          admin_notes: editForm.admin_notes
+        .update({
+          payment_status: updatedFields.payment_status,
+          courier_name: updatedFields.courier_name,
+          tracking_id: updatedFields.tracking_id,
+          admin_notes: updatedFields.admin_notes
         })
         .eq('id', orderId);
 
       if (error) throw error;
 
-      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, ...editForm } : o));
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, ...updatedFields } : o));
       showToast('Order details updated successfully!', 'success');
     } catch (err) {
       console.error('Failed to update order details:', err);
       showToast('Failed to update details.', 'error');
-    } finally {
-      setUpdatingOrderId(null);
     }
   };
 
   const handleStatusChange = async (orderId: string, newStatus: string) => {
     try {
-      setUpdatingOrderId(orderId);
       const { error } = await supabase
         .from('orders')
         .update({ status: newStatus })
@@ -243,8 +529,6 @@ const AdminOrders: React.FC = () => {
     } catch (err) {
       console.error('Failed to update status:', err);
       showToast('Failed to update status.', 'error');
-    } finally {
-      setUpdatingOrderId(null);
     }
   };
 
@@ -265,14 +549,14 @@ const AdminOrders: React.FC = () => {
     }
 
     const subtotal = order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    const deliveryCharge = order.delivery_charge || 0; 
-    const vat = order.vat_amount || 0; 
+    const deliveryCharge = order.delivery_charge || 0;
+    const vat = order.vat_amount || 0;
 
     const dateObj = new Date(order.created_at);
-    const dateStr = dateObj.toLocaleDateString('en-CA'); 
+    const dateStr = dateObj.toLocaleDateString('en-CA');
     const timeStr = dateObj.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
 
-    const paymentMethodText = order.payment_status?.toUpperCase() || "CASH ON DELIVERY"; 
+    const paymentMethodText = order.payment_status?.toUpperCase() || "CASH ON DELIVERY";
 
     const htmlContent = `
       <!DOCTYPE html>
@@ -349,7 +633,6 @@ const AdminOrders: React.FC = () => {
         </style>
       </head>
       <body>
-        
         <div class="header">
           <h1>N O M A D</h1>
           <h2>PROFORMA INVOICE / ORDER MEMORANDUM</h2>
@@ -430,7 +713,7 @@ const AdminOrders: React.FC = () => {
 
   const filteredOrders = useMemo(() => {
     return orders.filter(order => {
-      const matchesSearch = 
+      const matchesSearch =
         order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (order.customer_name && order.customer_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (order.customer_phone && order.customer_phone.includes(searchTerm));
@@ -491,10 +774,10 @@ const AdminOrders: React.FC = () => {
       `}</style>
 
       {/* Top Controls Container */}
-      <div style={{ 
-        backgroundColor: '#050505', 
-        border: '1px solid #1a1a1a', 
-        padding: '16px', 
+      <div style={{
+        backgroundColor: '#050505',
+        border: '1px solid #1a1a1a',
+        padding: '16px',
         borderRadius: '2px',
         width: '100%',
         boxSizing: 'border-box',
@@ -586,7 +869,7 @@ const AdminOrders: React.FC = () => {
       {/* Order Count / Refresh */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', color: '#666' }}>
         <span>SHOWING {filteredOrders.length} OF {orders.length} ORDERS</span>
-        <button 
+        <button
           onClick={fetchAdminOrders}
           style={{ background: 'none', border: 'none', color: '#fff', fontSize: '11px', textDecoration: 'underline', cursor: 'pointer' }}
         >
@@ -605,310 +888,16 @@ const AdminOrders: React.FC = () => {
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-          {filteredOrders.map((order) => {
-            const isExpanded = expandedOrderId === order.id;
-            const statusColor = getStatusColor(order.status);
-            const isUpdating = updatingOrderId === order.id;
-
-            const totalItemsCount = order.items.reduce((sum, item) => sum + (item.quantity || 0), 0);
-            const displayItemCount = totalItemsCount > 0 ? totalItemsCount : '1+'; 
-
-            const isPaid = order.payment_status?.toLowerCase().includes('paid') && !order.payment_status?.toLowerCase().includes('unpaid');
-
-            return (
-              <div key={order.id} style={{ 
-                backgroundColor: '#050505', 
-                border: '1px solid #222', 
-                padding: '16px', 
-                borderRadius: '2px'
-              }}>
-
-                {/* Card Header */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
-                    <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                        <span style={{ fontSize: '13px', fontWeight: 'bold', letterSpacing: '1px' }}>
-                          #{order.id.slice(0, 8)}...
-                        </span>
-                        {/* Status Badge */}
-                        <span style={{ 
-                          backgroundColor: `${statusColor}22`, 
-                          color: statusColor, 
-                          border: `1px solid ${statusColor}55`, 
-                          padding: '2px 8px', 
-                          borderRadius: '2px', 
-                          fontSize: '9px',
-                          fontWeight: 'bold'
-                        }}>
-                          ● {order.status.toUpperCase()}
-                        </span>
-                        {/* Payment Badge */}
-                        <span style={{ 
-                          backgroundColor: isPaid ? '#22c55e22' : '#f9731622', 
-                          color: isPaid ? '#22c55e' : '#f97316', 
-                          border: `1px solid ${isPaid ? '#22c55e55' : '#f9731655'}`, 
-                          padding: '2px 8px', 
-                          borderRadius: '2px', 
-                          fontSize: '9px',
-                          fontWeight: 'bold'
-                        }}>
-                          {order.payment_status?.toUpperCase() || 'UNPAID'}
-                        </span>
-                      </div>
-                      <div style={{ fontSize: '10px', color: '#666', marginTop: '4px' }}>
-                        {new Date(order.created_at).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}
-                      </div>
-                    </div>
-
-                    <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontSize: '15px', fontWeight: '800', color: '#fff' }}>
-                        ৳{order.total_amount}
-                      </div>
-                      <div style={{ fontSize: '9px', color: '#666' }}>
-                        {displayItemCount} ITEM(S)
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Customer Info & Contact Actions */}
-                  <div style={{ fontSize: '12px', color: '#ddd', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                    <span style={{ fontWeight: '500' }}>{order.customer_name || 'GUEST CUSTOMER'}</span>
-
-                    {(() => {
-                      const rawPhone = order.customer_phone || '';
-                      // Clean phone for call dialer
-                      const cleanPhoneForDial = rawPhone.replace(/[^0-9+]/g, '');
-
-                      // Clean phone for WhatsApp
-                      const cleanDigits = rawPhone.replace(/[^0-9]/g, '');
-                      let waPhone = cleanDigits;
-                      if (cleanDigits.length === 11 && cleanDigits.startsWith('0')) {
-                        waPhone = '88' + cleanDigits;
-                      } else if (cleanDigits.length === 10) {
-                        waPhone = '880' + cleanDigits;
-                      }
-
-                      const messageBody = encodeURIComponent(
-                        `Hello ${order.customer_name || 'Customer'},\nYour NOMAD order (#${order.id.slice(0, 8)}) status is: ${order.status}.\nCourier: ${order.courier_name || 'N/A'}\nTracking ID: ${order.tracking_id || 'N/A'}\nThank you!`
-                      );
-
-                      const emailSubject = encodeURIComponent(`Order Update #${order.id.slice(0, 8)} - NOMAD`);
-
-                      // Shared button style for ALL contact buttons
-                      const contactBtnStyle: React.CSSProperties = {
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        backgroundColor: '#111',
-                        border: '1px solid #333',
-                        color: '#fff',
-                        padding: '4px 9px',
-                        borderRadius: '2px',
-                        textDecoration: 'none',
-                        fontSize: '10px',
-                        fontWeight: 'bold',
-                        letterSpacing: '0.5px',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease'
-                      };
-
-                      return (
-                        <div style={{ display: 'flex', gap: '6px', marginLeft: '4px' }}>
-                          {/* Click-to-Call */}
-                          {rawPhone && (
-                            <a 
-                              href={`tel:${cleanPhoneForDial}`} 
-                              title={`Call ${rawPhone}`} 
-                              style={contactBtnStyle}
-                            >
-                              Call
-                            </a>
-                          )}
-
-                          {/* Click-to-Email */}
-                          {order.customer_email && (
-                            <a 
-                              href={`mailto:${order.customer_email}?subject=${emailSubject}&body=${messageBody}`} 
-                              title={`Email ${order.customer_email}`} 
-                              style={contactBtnStyle}
-                            >
-                              Email
-                            </a>
-                          )}
-
-                          {/* Click-to-WhatsApp (Direct Native App -> Web Link Fallback) */}
-                          {rawPhone && (
-                            <a 
-                              href={`whatsapp://send?phone=${waPhone}&text=${messageBody}`} 
-                              onClick={(e) => handleWhatsAppClick(e, waPhone, messageBody)}
-                              title="WhatsApp Customer" 
-                              style={contactBtnStyle}
-                            >
-                              WhatsApp
-                            </a>
-                          )}
-                        </div>
-                      );
-                    })()}
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                    <select
-                      value={order.status}
-                      disabled={isUpdating}
-                      onChange={(e) => handleStatusChange(order.id, e.target.value)}
-                      style={{
-                        backgroundColor: '#000',
-                        color: statusColor,
-                        border: `1px solid ${statusColor}`,
-                        padding: '9px 12px',
-                        fontSize: '10px',
-                        fontWeight: 'bold',
-                        borderRadius: '2px',
-                        flex: 1,
-                        minWidth: '140px',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      {STATUS_OPTIONS.map((opt) => (
-                        <option key={opt} value={opt}>{opt.toUpperCase()}</option>
-                      ))}
-                    </select>
-
-                    <button onClick={() => handlePrintInvoice(order)} style={{ padding: '9px 16px', background: '#111', border: '1px solid #333', color: '#fff', fontSize: '10px', cursor: 'pointer', borderRadius: '2px' }}>
-                      PRINT
-                    </button>
-
-                    <button
-                      onClick={() => handleExpandClick(order)}
-                      style={{ padding: '9px 16px', background: '#111', border: '1px solid #333', color: '#fff', fontSize: '10px', cursor: 'pointer', borderRadius: '2px' }}
-                    >
-                      {isExpanded ? 'HIDE' : 'VIEW'}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Expanded Content View */}
-                {isExpanded && (
-                  <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #222', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-
-                    {/* Item List */}
-                    <div>
-                      <h4 style={{ color: '#888', fontSize: '10px', letterSpacing: '1px', marginBottom: '8px', marginTop: '0' }}>ORDERED ITEMS</h4>
-                      {order.items.length > 0 ? order.items.map((item, idx) => (
-                        <div key={idx} style={{ 
-                          display: 'flex', 
-                          gap: '12px', 
-                          background: '#000', 
-                          padding: '10px', 
-                          marginBottom: '8px',
-                          border: '1px solid #151515',
-                          borderRadius: '2px'
-                        }}>
-                          <img 
-                            src={item.product_image} 
-                            alt="" 
-                            style={{ width: '45px', height: '55px', objectFit: 'cover' }} 
-                          />
-                          <div style={{ flex: 1 }}>
-                            <div style={{ fontWeight: 'bold', fontSize: '11px' }}>{item.product_name}</div>
-                            <div style={{ fontSize: '9.5px', color: '#777', marginTop: '4px' }}>
-                              SIZE: {item.size} • COLOR: {item.color} • QTY: {item.quantity}
-                            </div>
-                          </div>
-                          <div style={{ fontWeight: 'bold', fontSize: '12px', alignSelf: 'center' }}>
-                            ৳{item.price * item.quantity}
-                          </div>
-                        </div>
-                      )) : (
-                        <div style={{ color: '#555', fontSize: '11px', fontStyle: 'italic', padding: '10px', background: '#000', border: '1px solid #111' }}>
-                          No items found for this order.
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Order Details Edit Form */}
-                    <div style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', padding: '12px', borderRadius: '2px' }}>
-                       <h4 style={{ color: '#888', fontSize: '10px', letterSpacing: '1px', marginBottom: '12px', marginTop: '0' }}>MANAGEMENT DETAILS</h4>
-
-                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginBottom: '12px' }}>
-                         <div>
-                            <label style={{ display: 'block', fontSize: '9px', color: '#555', marginBottom: '4px' }}>PAYMENT STATUS</label>
-                            <select 
-                              value={editForm.payment_status}
-                              onChange={e => setEditForm({...editForm, payment_status: e.target.value})}
-                              style={{ width: '100%', background: '#000', color: '#fff', border: '1px solid #333', padding: '8px', fontSize: '11px', outline: 'none' }}
-                            >
-                              <option value="Unpaid / COD">UNPAID / COD</option>
-                              <option value="Paid">PAID</option>
-                              <option value="Partial Paid">PARTIAL PAID</option>
-                            </select>
-                         </div>
-                         <div>
-                            <label style={{ display: 'block', fontSize: '9px', color: '#555', marginBottom: '4px' }}>COURIER NAME</label>
-                            <input 
-                              type="text" 
-                              placeholder="e.g. Steadfast, Pathao" 
-                              value={editForm.courier_name}
-                              onChange={e => setEditForm({...editForm, courier_name: e.target.value})}
-                              style={{ width: '100%', boxSizing: 'border-box', background: '#000', color: '#fff', border: '1px solid #333', padding: '8px', fontSize: '11px', outline: 'none' }} 
-                            />
-                         </div>
-                         <div>
-                            <label style={{ display: 'block', fontSize: '9px', color: '#555', marginBottom: '4px' }}>TRACKING ID</label>
-                            <input 
-                              type="text" 
-                              placeholder="Tracking / Memo No." 
-                              value={editForm.tracking_id}
-                              onChange={e => setEditForm({...editForm, tracking_id: e.target.value})}
-                              style={{ width: '100%', boxSizing: 'border-box', background: '#000', color: '#fff', border: '1px solid #333', padding: '8px', fontSize: '11px', outline: 'none' }} 
-                            />
-                         </div>
-                       </div>
-
-                       <div style={{ marginBottom: '12px' }}>
-                          <label style={{ display: 'block', fontSize: '9px', color: '#555', marginBottom: '4px' }}>ADMIN NOTES / CUSTOMER REQUESTS</label>
-                          <textarea 
-                            rows={2} 
-                            placeholder="Add notes here..." 
-                            value={editForm.admin_notes}
-                            onChange={e => setEditForm({...editForm, admin_notes: e.target.value})}
-                            style={{ width: '100%', boxSizing: 'border-box', background: '#000', color: '#fff', border: '1px solid #333', padding: '8px', fontSize: '11px', outline: 'none', resize: 'vertical' }}
-                          />
-                       </div>
-
-                       <div style={{ fontSize: '11px', color: '#ccc', marginBottom: '12px', background: '#000', padding: '10px', border: '1px dashed #333' }}>
-                          <strong style={{ color: '#888' }}>SHIPPING ADDRESS:</strong><br />
-                          <span style={{ color: '#fff', display: 'block', marginTop: '4px', lineHeight: '1.4' }}>{order.shipping_address || 'No address provided'}</span>
-                       </div>
-
-                       <button 
-                          onClick={() => handleUpdateDetails(order.id)}
-                          disabled={isUpdating}
-                          style={{ 
-                            width: '100%', 
-                            padding: '10px', 
-                            background: '#fff', 
-                            color: '#000', 
-                            fontWeight: 'bold', 
-                            border: 'none', 
-                            fontSize: '10px', 
-                            letterSpacing: '1px', 
-                            cursor: 'pointer',
-                            borderRadius: '2px'
-                          }}
-                        >
-                          {isUpdating ? 'SAVING...' : 'SAVE DETAILS'}
-                        </button>
-                    </div>
-
-                  </div>
-                )}
-              </div>
-            );
-          })}
+          {filteredOrders.map((order) => (
+            <OrderCard
+              key={order.id}
+              order={order}
+              onStatusChange={handleStatusChange}
+              onUpdateDetails={handleUpdateDetails}
+              onPrintInvoice={handlePrintInvoice}
+              getStatusColor={getStatusColor}
+            />
+          ))}
         </div>
       )}
     </div>
