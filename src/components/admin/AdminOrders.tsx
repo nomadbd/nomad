@@ -71,6 +71,48 @@ const STATUS_OPTIONS = [
 
 const DATE_FILTERS = ['ALL TIME', 'TODAY', 'LAST 7 DAYS', 'THIS MONTH'];
 
+// ---------- Phone helpers (BD numbers) ----------
+const normalizeBdPhone = (raw: string) => {
+  // শুধু ডিজিট ও + রাখা
+  let cleaned = (raw || '').replace(/[^\d+]/g, '');
+
+  // + থাকলে শুধু শুরুতে রাখা
+  if (cleaned.includes('+')) {
+    cleaned = '+' + cleaned.replace(/\+/g, '');
+  }
+
+  // local 01XXXXXXXXX → +8801XXXXXXXXX
+  if (/^0\d{10}$/.test(cleaned)) {
+    cleaned = '+88' + cleaned;
+  }
+  // 8801XXXXXXXXX → +8801XXXXXXXXX
+  else if (/^880\d{10}$/.test(cleaned)) {
+    cleaned = '+' + cleaned;
+  }
+  // 01 ছাড়া 10 ডিজিট (1XXXXXXXXX) → +8801XXXXXXXXX
+  else if (/^1\d{9}$/.test(cleaned)) {
+    cleaned = '+880' + cleaned;
+  }
+  // ইতিমধ্যে +880... থাকলে ঠিক আছে
+
+  return cleaned;
+};
+
+const getWhatsAppPhone = (raw: string) => {
+  // wa.me শুধু ডিজিট চায়, + ছাড়া
+  let digits = (raw || '').replace(/\D/g, '');
+
+  if (digits.startsWith('0') && digits.length === 11) {
+    digits = '88' + digits; // 8801...
+  } else if (digits.startsWith('880') && digits.length === 13) {
+    // already correct
+  } else if (digits.startsWith('1') && digits.length === 10) {
+    digits = '880' + digits;
+  }
+
+  return digits;
+};
+
 const AdminOrders: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -662,16 +704,19 @@ Thank you for shopping with us!`;
 
                       const messageBody = encodeURIComponent(rawMessage);
 
-                      // FIX: Call/SMS এর জন্য '+' সহ নম্বর রাখা হচ্ছে
-                      const rawPhone = order.customer_phone || '';
-                      const callAndSmsPhone = rawPhone.replace(/[^\d+]/g, ''); 
+                      const callAndSmsPhone = normalizeBdPhone(order.customer_phone);
+                      const waPhone = getWhatsAppPhone(order.customer_phone);
 
-                      // FIX: WhatsApp এর জন্য শুধু ডিজিট রাখা হচ্ছে
-                      const digitOnlyPhone = rawPhone.replace(/[^\d]/g, '');
-                      const waPhone = digitOnlyPhone.startsWith('0') ? `88${digitOnlyPhone}` : digitOnlyPhone;
+                      // Invalid number হলে বাটন না দেখানো
+                      if (!callAndSmsPhone || callAndSmsPhone.replace(/\D/g, '').length < 10) {
+                        return null;
+                      }
 
-                      const isIOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod|Mac/.test(navigator.userAgent);
-                      const smsSeparator = isIOS ? '&' : '?';
+                      // iOS (iPhone/iPad) → &body=  |  Android/others → ?body=
+                      const isIOS = typeof navigator !== 'undefined' && /iPhone|iPad|iPod/i.test(navigator.userAgent);
+                      const smsHref = isIOS
+                        ? `sms:${callAndSmsPhone}&body=${messageBody}`
+                        : `sms:${callAndSmsPhone}?body=${messageBody}`;
 
                       const btnStyle = {
                         display: 'inline-flex',
@@ -690,18 +735,32 @@ Thank you for shopping with us!`;
                       return (
                         <div style={{ display: 'flex', gap: '6px', marginLeft: '4px' }}>
                           {/* Click-to-Call */}
-                          <a href={`tel:${callAndSmsPhone}`} title="Call Customer" style={{ ...btnStyle, color: '#22c55e' }}>
+                          <a
+                            href={`tel:${callAndSmsPhone}`}
+                            title="Call Customer"
+                            style={{ ...btnStyle, color: '#22c55e' }}
+                          >
                             Call
                           </a>
 
                           {/* Click-to-SMS */}
-                          <a href={`sms:${callAndSmsPhone}${smsSeparator}body=${messageBody}`} title="Send SMS" style={{ ...btnStyle, color: '#22c55e' }}>
+                          <a
+                            href={smsHref}
+                            title="Send SMS"
+                            style={{ ...btnStyle, color: '#22c55e' }}
+                          >
                             SMS
                           </a>
 
                           {/* Click-to-WhatsApp */}
-                          <a href={`https://wa.me/${waPhone}?text=${messageBody}`} target="_blank" rel="noopener noreferrer" title="WhatsApp Customer" style={{ ...btnStyle, color: '#22c55e' }}>
-                             WhatsApp
+                          <a
+                            href={`https://wa.me/${waPhone}?text=${messageBody}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title="WhatsApp Customer"
+                            style={{ ...btnStyle, color: '#22c55e' }}
+                          >
+                            WhatsApp
                           </a>
                         </div>
                       );
