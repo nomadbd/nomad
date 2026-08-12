@@ -13,6 +13,37 @@ interface CartItem {
   image_url?: string;
 }
 
+// গ্লোবাল কান্ট্রি লিস্ট
+const ALL_COUNTRIES = [
+  { name: 'Bangladesh', code: '+880', flag: '🇧🇩' },
+  { name: 'United States', code: '+1', flag: '🇺🇸' },
+  { name: 'United Kingdom', code: '+44', flag: '🇬🇧' },
+  { name: 'United Arab Emirates', code: '+971', flag: '🇦🇪' },
+  { name: 'Saudi Arabia', code: '+966', flag: '🇸🇦' },
+  { name: 'Canada', code: '+1', flag: '🇨🇦' },
+  { name: 'Australia', code: '+61', flag: '🇦🇺' },
+  { name: 'India', code: '+91', flag: '🇮🇳' },
+  { name: 'Malaysia', code: '+60', flag: '🇲🇾' },
+  { name: 'Singapore', code: '+65', flag: '🇸🇬' },
+  { name: 'Germany', code: '+49', flag: '🇩🇪' },
+  { name: 'France', code: '+33', flag: '🇫🇷' },
+  { name: 'Italy', code: '+39', flag: '🇮🇹' },
+  { name: 'Japan', code: '+81', flag: '🇯🇵' },
+  { name: 'South Korea', code: '+82', flag: '🇰🇷' },
+  { name: 'Qatar', code: '+974', flag: '🇶🇦' },
+  { name: 'Kuwait', code: '+965', flag: '🇰🇼' },
+  { name: 'Oman', code: '+968', flag: '🇴🇲' },
+  { name: 'Bahrain', code: '+973', flag: '🇧🇭' },
+  { name: 'Turkey', code: '+90', flag: '🇹🇷' },
+  { name: 'Pakistan', code: '+92', flag: '🇵🇰' },
+  { name: 'Netherlands', code: '+31', flag: '🇳🇱' },
+  { name: 'Spain', code: '+34', flag: '🇪🇸' },
+  { name: 'Switzerland', code: '+41', flag: '🇨🇭' },
+  { name: 'Sweden', code: '+46', flag: '🇸🇪' },
+  { name: 'China', code: '+86', flag: '🇨🇳' },
+  { name: 'South Africa', code: '+27', flag: '🇿🇦' },
+];
+
 export default function Checkout({ 
   selectedItems, 
   onSuccess, 
@@ -26,6 +57,12 @@ export default function Checkout({
 
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  
+  // কান্ট্রি ও সার্চ স্টেট
+  const [selectedCountry, setSelectedCountry] = useState(ALL_COUNTRIES[0]);
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
+  const [countrySearch, setCountrySearch] = useState('');
+
   const [formData, setFormData] = useState({ name: '', email: '', phone: '', address: '' });
   const [isMobile, setIsMobile] = useState(false);
   const [isOrderPlacedState, setIsOrderPlacedState] = useState(false); 
@@ -72,6 +109,12 @@ export default function Checkout({
   const vatAmount = Math.round(subtotal * vatRate);
   const grandTotal = subtotal + deliveryCharge + vatAmount;
 
+  // সার্চ অনুযায়ী ফিল্টারড দেশ
+  const filteredCountries = ALL_COUNTRIES.filter(c => 
+    c.name.toLowerCase().includes(countrySearch.toLowerCase()) || 
+    c.code.includes(countrySearch)
+  );
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
@@ -86,13 +129,13 @@ export default function Checkout({
       return setErrorMessage('INVALID EMAIL ADDRESS. PLEASE ENTER A VALID EMAIL.');
     }
 
-    // আন্তর্জাতিক ফোন নম্বর ভ্যালিডেশন (E.164 স্ট্যান্ডার্ড: স্পেস, হাইফেন, ব্র্যাকেট ও প্লাস সাইন সাপোর্ট করবে)
-    const rawPhone = formData.phone.trim();
-    const cleanPhone = rawPhone.replace(/[\s\-\(\)]/g, ''); 
-    const intlPhoneRegex = /^\+?[1-9]\d{6,14}$/;
+    // নম্বর প্রসেসিং
+    const rawDigits = formData.phone.replace(/[^0-9]/g, '');
+    const cleanDigits = rawDigits.startsWith('0') ? rawDigits.substring(1) : rawDigits;
+    const fullPhone = `${selectedCountry.code}${cleanDigits}`;
 
-    if (!intlPhoneRegex.test(cleanPhone)) {
-      return setErrorMessage('INVALID CONTACT NUMBER. PLEASE INCLUDE COUNTRY CODE (E.G. +1..., +880...).');
+    if (cleanDigits.length < 6 || cleanDigits.length > 13) {
+      return setErrorMessage('PLEASE ENTER A VALID PHONE NUMBER.');
     }
 
     setLoading(true);
@@ -105,7 +148,7 @@ export default function Checkout({
           user_id: user?.id || null, 
           customer_name: formData.name,
           customer_email: cleanEmail,
-          customer_phone: cleanPhone,
+          customer_phone: fullPhone,
           shipping_address: formData.address, 
           payment_method: 'cod',
           delivery_charge: deliveryCharge, 
@@ -135,7 +178,7 @@ export default function Checkout({
         orderId: order.id,
         customerName: formData.name,
         customerEmail: cleanEmail,
-        customerPhone: cleanPhone,
+        customerPhone: fullPhone,
         shippingAddress: formData.address,
         items: [...selectedItems],
         subtotal,
@@ -228,6 +271,97 @@ export default function Checkout({
       marginBottom: '10px', 
       outline: 'none',
       borderRadius: 0,
+    },
+    phoneContainer: {
+      display: 'flex',
+      alignItems: 'center',
+      borderBottom: '1px solid #161616',
+      marginBottom: '10px',
+      gap: '12px',
+      position: 'relative' as const,
+    },
+    countryBtn: {
+      background: 'transparent',
+      border: 'none',
+      color: '#fff',
+      fontSize: '11px',
+      letterSpacing: '1px',
+      padding: '12px 0',
+      cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '6px',
+      outline: 'none',
+      whiteSpace: 'nowrap' as const,
+    },
+    phoneInput: {
+      flex: 1,
+      background: 'transparent',
+      border: 'none',
+      padding: '12px 0',
+      color: '#fff',
+      fontSize: '11px',
+      letterSpacing: '2px',
+      outline: 'none',
+      borderRadius: 0,
+    },
+    // কাস্টম সার্চ ড্রপডাউন বা মোডাল
+    pickerModal: {
+      position: 'fixed' as const,
+      top: 0,
+      left: 0,
+      width: '100vw',
+      height: '100vh',
+      backgroundColor: 'rgba(0,0,0,0.85)',
+      backdropFilter: 'blur(5px)',
+      zIndex: 999999,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '20px',
+      boxSizing: 'border-box' as const,
+    },
+    pickerBox: {
+      width: '100%',
+      maxWidth: '380px',
+      background: '#0a0a0a',
+      border: '1px solid #222',
+      padding: '20px',
+      maxHeight: '450px',
+      display: 'flex',
+      flexDirection: 'column' as const,
+    },
+    searchInput: {
+      width: '100%',
+      background: '#111',
+      border: '1px solid #222',
+      padding: '10px 12px',
+      color: '#fff',
+      fontSize: '11px',
+      letterSpacing: '1px',
+      outline: 'none',
+      marginBottom: '15px',
+      boxSizing: 'border-box' as const,
+    },
+    countryList: {
+      overflowY: 'auto' as const,
+      flex: 1,
+      display: 'flex',
+      flexDirection: 'column' as const,
+      gap: '4px',
+    },
+    countryItem: {
+      padding: '10px',
+      background: '#050505',
+      border: '1px solid #111',
+      color: '#ddd',
+      fontSize: '11px',
+      letterSpacing: '1px',
+      cursor: 'pointer',
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      transition: 'all 0.2s ease',
     },
     textarea: {
       width: '100%',
@@ -365,13 +499,80 @@ export default function Checkout({
 
   return (
     <div style={styles.container}>
+      {/* কাস্টম সার্চযোগ্য দেশ বাছাই করার পপআপ/মোডাল */}
+      {isPickerOpen && (
+        <div style={styles.pickerModal} onClick={() => setIsPickerOpen(false)}>
+          <div style={styles.pickerBox} onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+              <span style={{ fontSize: '10px', letterSpacing: '2px', color: '#888' }}>SELECT COUNTRY</span>
+              <button 
+                onClick={() => setIsPickerOpen(false)} 
+                style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '14px' }}
+              >✕</button>
+            </div>
+            
+            <input 
+              style={styles.searchInput} 
+              placeholder="SEARCH COUNTRY OR CODE..." 
+              value={countrySearch}
+              onChange={(e) => setCountrySearch(e.target.value)}
+              autoFocus
+            />
+
+            <div style={styles.countryList}>
+              {filteredCountries.map((c, i) => (
+                <div 
+                  key={i} 
+                  style={styles.countryItem}
+                  onClick={() => {
+                    setSelectedCountry(c);
+                    setIsPickerOpen(false);
+                    setCountrySearch('');
+                  }}
+                >
+                  <span>{c.flag} {c.name}</span>
+                  <span style={{ color: '#888', fontFamily: 'monospace' }}>{c.code}</span>
+                </div>
+              ))}
+              {filteredCountries.length === 0 && (
+                <div style={{ padding: '15px', color: '#555', fontSize: '10px', textAlign: 'center' }}>
+                  NO COUNTRY FOUND
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} noValidate style={{ width: '100%' }}>
         <div style={styles.layoutGrid}>
           <div style={styles.leftColumn}>
             <h2 style={styles.sectionHeading}>SHIPPING ADDRESS</h2>
             <input style={styles.input} placeholder="FULL NAME" required value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
             <input style={styles.input} placeholder="EMAIL ADDRESS" required type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
-            <input style={styles.input} placeholder="PHONE NUMBER (WITH COUNTRY CODE, E.G. +1... / +880...)" required type="tel" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} />
+            
+            {/* কাস্টম ডায়ালগ ট্রিগার বাটন */}
+            <div style={styles.phoneContainer}>
+              <button 
+                type="button"
+                style={styles.countryBtn} 
+                onClick={() => setIsPickerOpen(true)}
+              >
+                <span>{selectedCountry.flag}</span>
+                <span>{selectedCountry.code}</span>
+                <span style={{ fontSize: '8px', color: '#666' }}>▼</span>
+              </button>
+
+              <input 
+                style={styles.phoneInput} 
+                placeholder="PHONE NUMBER" 
+                required 
+                type="tel" 
+                value={formData.phone} 
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })} 
+              />
+            </div>
+
             <textarea style={styles.textarea} placeholder="COMPLETE SHIPPING ADDRESS" required value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} />
             <div style={styles.paymentRow}>
               <span style={styles.paymentText}>CASH ON DELIVERY</span>
