@@ -94,11 +94,6 @@ const formatWhatsAppNumber = (phone: string): string => {
   return digits;
 };
 
-// Open native protocol directly (mailto:, tel:) without tab/popup blocking
-const triggerNativeApp = (url: string) => {
-  window.location.href = url;
-};
-
 // Dynamic text replacer helper
 const renderPersonalizedText = (template: string, order: Order): string => {
   return template
@@ -163,27 +158,6 @@ const OrderCard: React.FC<OrderCardProps> = ({
   const encodedMessage = encodeURIComponent(messageText);
   const emailSubject = encodeURIComponent(`Update Regarding Your NOMAD Order #${order.id.slice(0, 8)}`);
 
-  const handleCall = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
-    if (!cleanPhoneForDial) return;
-    triggerNativeApp(`tel:${cleanPhoneForDial}`);
-  };
-
-  const handleEmail = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
-    if (!order.customer_email) return;
-    triggerNativeApp(`mailto:${order.customer_email}?subject=${emailSubject}&body=${encodedMessage}`);
-  };
-
-  const handleWhatsApp = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
-    if (!waPhone) return;
-    window.open(`https://wa.me/${waPhone}?text=${encodedMessage}`, '_blank');
-  };
-
   const handleStatusSelect = async (e: React.ChangeEvent<HTMLSelectElement>) => {
     e.stopPropagation();
     const newStatus = e.target.value;
@@ -205,7 +179,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
     }
   };
 
-  const actionButtonStyle: React.CSSProperties = {
+  const actionLinkStyle: React.CSSProperties = {
     display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -285,42 +259,44 @@ const OrderCard: React.FC<OrderCardProps> = ({
           </div>
         </div>
 
-        {/* Customer Info & Communication Buttons */}
+        {/* Customer Info & Direct Native Communication Links */}
         <div style={{ fontSize: '12px', color: '#ddd', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
           <span style={{ fontWeight: '500' }}>{order.customer_name || 'GUEST CUSTOMER'}</span>
 
           <div style={{ display: 'flex', gap: '6px', marginLeft: '4px' }}>
             {cleanPhoneForDial && (
-              <button
-                type="button"
-                onClick={handleCall}
+              <a
+                href={`tel:${cleanPhoneForDial}`}
+                onClick={(e) => e.stopPropagation()}
                 title={`Call ${rawPhone}`}
-                style={actionButtonStyle}
+                style={actionLinkStyle}
               >
                 Call
-              </button>
+              </a>
             )}
 
             {order.customer_email && (
-              <button
-                type="button"
-                onClick={handleEmail}
+              <a
+                href={`mailto:${order.customer_email}?subject=${emailSubject}&body=${encodedMessage}`}
+                onClick={(e) => e.stopPropagation()}
                 title={`Email ${order.customer_email}`}
-                style={actionButtonStyle}
+                style={actionLinkStyle}
               >
                 Email
-              </button>
+              </a>
             )}
 
             {waPhone && (
-              <button
-                type="button"
-                onClick={handleWhatsApp}
+              <a
+                href={`https://wa.me/${waPhone}?text=${encodedMessage}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
                 title="WhatsApp Customer"
-                style={actionButtonStyle}
+                style={actionLinkStyle}
               >
                 WhatsApp
-              </button>
+              </a>
             )}
           </div>
         </div>
@@ -870,22 +846,6 @@ const AdminOrders: React.FC = () => {
       .filter((email): email is string => Boolean(email && email.trim()));
   };
 
-  const handleTriggerBulkEmail = () => {
-    const emails = getSelectedEmailsList();
-
-    if (emails.length === 0) {
-      showToast("No valid email addresses found in selected orders.", 'error');
-      return;
-    }
-
-    const bccList = Array.from(new Set(emails)).join(',');
-    const mailtoUrl = `mailto:?bcc=${encodeURIComponent(bccList)}&subject=${encodeURIComponent(bulkEmailSubject)}&body=${encodeURIComponent(bulkMessageText.replace(/{{name}}/g, 'Valued Customer').replace(/{{status}}/g, selectedStatusFilter !== 'ALL' ? selectedStatusFilter : 'Updated'))}`;
-    
-    // Direct native protocol invocation
-    triggerNativeApp(mailtoUrl);
-    showToast(`Opening default mail app for ${emails.length} recipients...`, 'success');
-  };
-
   const handleSendSingleWhatsApp = (order: Order) => {
     const waPhone = formatWhatsAppNumber(order.customer_phone || '');
     if (!waPhone) {
@@ -899,6 +859,9 @@ const AdminOrders: React.FC = () => {
 
     setSentIndexes(prev => ({ ...prev, [order.id]: true }));
   };
+
+  const bulkEmailBccList = Array.from(new Set(getSelectedEmailsList())).join(',');
+  const bulkEmailHref = `mailto:?bcc=${encodeURIComponent(bulkEmailBccList)}&subject=${encodeURIComponent(bulkEmailSubject)}&body=${encodeURIComponent(bulkMessageText.replace(/{{name}}/g, 'Valued Customer').replace(/{{status}}/g, selectedStatusFilter !== 'ALL' ? selectedStatusFilter : 'Updated'))}`;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%', maxWidth: '100%', position: 'relative' }}>
@@ -1238,13 +1201,26 @@ const AdminOrders: React.FC = () => {
 
             {bulkMessageType === 'email' ? (
               <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <button
-                  type="button"
-                  onClick={handleTriggerBulkEmail}
-                  style={{ width: '100%', padding: '12px', background: '#fff', color: '#000', fontWeight: 'bold', border: 'none', fontSize: '11px', cursor: 'pointer', borderRadius: '2px' }}
+                <a
+                  href={bulkEmailHref}
+                  style={{
+                    display: 'block',
+                    textAlign: 'center',
+                    width: '100%',
+                    padding: '12px',
+                    background: '#fff',
+                    color: '#000',
+                    fontWeight: 'bold',
+                    border: 'none',
+                    fontSize: '11px',
+                    cursor: 'pointer',
+                    borderRadius: '2px',
+                    textDecoration: 'none',
+                    boxSizing: 'border-box'
+                  }}
                 >
                   OPEN DEFAULT MAIL APP ({getSelectedEmailsList().length} RECIPIENTS VIA BCC)
-                </button>
+                </a>
 
                 <div style={{ fontSize: '9.5px', color: '#888', textAlign: 'center' }}>
                   Found {getSelectedEmailsList().length} valid emails out of {selectedOrdersList.length} selected orders.
