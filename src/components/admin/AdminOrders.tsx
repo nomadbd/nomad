@@ -800,6 +800,7 @@ const AdminOrders: React.FC = () => {
             <div class="small-title">SHIPPING TO</div>
             <p class="bold" style="text-transform: uppercase;">${order.customer_name || 'GUEST CUSTOMER'}</p>
             <p>${order.customer_phone || ''}</p>
+            ${order.customer_email ? `<p>${order.customer_email}</p>` : ''}
             <p style="text-transform: uppercase; white-space: pre-wrap;">${order.shipping_address || ''}</p>
           </div>
           <div class="order-info">
@@ -904,6 +905,7 @@ const AdminOrders: React.FC = () => {
               <div class="small-title">SHIPPING TO</div>
               <p class="bold" style="text-transform: uppercase;">${order.customer_name || 'GUEST CUSTOMER'}</p>
               <p>${order.customer_phone || ''}</p>
+              ${order.customer_email ? `<p>${order.customer_email}</p>` : ''}
               <p style="text-transform: uppercase; white-space: pre-wrap;">${order.shipping_address || ''}</p>
             </div>
             <div class="order-info">
