@@ -128,7 +128,6 @@ const OrderCard: React.FC<OrderCardProps> = ({
 }) => {
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
   const [isUpdating, setIsUpdating] = useState<boolean>(false);
-  const [isCopied, setIsCopied] = useState<boolean>(false);
 
   const [editForm, setEditForm] = useState({
     payment_status: order.payment_status || 'Unpaid / COD',
@@ -158,14 +157,6 @@ const OrderCard: React.FC<OrderCardProps> = ({
   const messageText = renderPersonalizedText(TEMPLATE_PRESETS.DEFAULT, order);
   const encodedMessage = encodeURIComponent(messageText);
   const emailSubject = encodeURIComponent(`Update Regarding Your NOMAD Order #${order.id.slice(0, 8)}`);
-
-  const handleCopyInfo = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    const copyText = `Name: ${order.customer_name || 'N/A'}\nPhone: ${order.customer_phone || 'N/A'}\nAddress: ${order.shipping_address || 'N/A'}\nAmount: ৳${order.total_amount}`;
-    navigator.clipboard.writeText(copyText);
-    setIsCopied(true);
-    setTimeout(() => setIsCopied(false), 2000);
-  };
 
   const handleStatusSelect = async (e: React.ChangeEvent<HTMLSelectElement>) => {
     e.stopPropagation();
@@ -321,15 +312,6 @@ const OrderCard: React.FC<OrderCardProps> = ({
                 WhatsApp
               </a>
             )}
-
-            <button
-              type="button"
-              onClick={handleCopyInfo}
-              title="Copy Order Info"
-              style={actionLinkStyle}
-            >
-              {isCopied ? 'Copied ✓' : '📋 Copy Info'}
-            </button>
           </div>
         </div>
 
