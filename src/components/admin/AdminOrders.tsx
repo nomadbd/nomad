@@ -278,8 +278,6 @@ const OrderCard: React.FC<OrderCardProps> = ({
             {order.customer_email && (
               <a
                 href={`mailto:${order.customer_email}?subject=${emailSubject}&body=${encodedMessage}`}
-                target="_blank"
-                rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}
                 title={`Email ${order.customer_email}`}
                 style={actionLinkStyle}
@@ -1205,8 +1203,6 @@ const AdminOrders: React.FC = () => {
               <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <a
                   href={bulkEmailHref}
-                  target="_blank"
-                  rel="noopener noreferrer"
                   style={{
                     display: 'block',
                     textAlign: 'center',
