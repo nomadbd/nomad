@@ -128,6 +128,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
 }) => {
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
   const [isUpdating, setIsUpdating] = useState<boolean>(false);
+  const [isCopied, setIsCopied] = useState<boolean>(false);
 
   const [editForm, setEditForm] = useState({
     payment_status: order.payment_status || 'Unpaid / COD',
@@ -157,6 +158,14 @@ const OrderCard: React.FC<OrderCardProps> = ({
   const messageText = renderPersonalizedText(TEMPLATE_PRESETS.DEFAULT, order);
   const encodedMessage = encodeURIComponent(messageText);
   const emailSubject = encodeURIComponent(`Update Regarding Your NOMAD Order #${order.id.slice(0, 8)}`);
+
+  const handleCopyCustomerInfo = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const infoText = `Name: ${order.customer_name || 'N/A'}\nPhone: ${order.customer_phone || 'N/A'}\nAddress: ${order.shipping_address || 'N/A'}`;
+    navigator.clipboard.writeText(infoText);
+    setIsCopied(true);
+    setTimeout(() => setIsCopied(false), 1500);
+  };
 
   const handleStatusSelect = async (e: React.ChangeEvent<HTMLSelectElement>) => {
     e.stopPropagation();
@@ -243,7 +252,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
                   {order.payment_status?.toUpperCase() || 'UNPAID'}
                 </span>
               </div>
-              <div style={{ fontSize: '10px', color: '#666', marginTop: '4px' }}>
+              <div style={{ fontSize: '10px', color: '#aaa', marginTop: '4px' }}>
                 {new Date(order.created_at).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}
               </div>
             </div>
@@ -265,13 +274,40 @@ const OrderCard: React.FC<OrderCardProps> = ({
             <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#fff' }}>
               {order.customer_name || 'GUEST CUSTOMER'}
             </span>
+
+            {/* SVG Copy Button */}
+            <button
+              type="button"
+              onClick={handleCopyCustomerInfo}
+              title="Copy Customer Details"
+              style={{
+                background: '#111',
+                border: '1px solid #333',
+                color: isCopied ? '#22c55e' : '#aaa',
+                padding: '3px 6px',
+                borderRadius: '2px',
+                fontSize: '9px',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+                outline: 'none'
+              }}
+            >
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+              {isCopied ? 'COPIED ✓' : 'COPY'}
+            </button>
+
             {order.customer_phone && (
               <span style={{ fontSize: '11px', color: '#aaa', fontFamily: 'monospace' }}>
                 {order.customer_phone}
               </span>
             )}
             {order.customer_email && (
-              <span style={{ fontSize: '10px', color: '#666' }}>
+              <span style={{ fontSize: '11px', color: '#aaa', fontFamily: 'monospace' }}>
                 • {order.customer_email}
               </span>
             )}
