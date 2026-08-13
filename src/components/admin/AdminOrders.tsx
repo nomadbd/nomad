@@ -94,20 +94,9 @@ const formatWhatsAppNumber = (phone: string): string => {
   return digits;
 };
 
-// Safe open helper
-const safeOpenLink = (url: string) => {
-  try {
-    const link = document.createElement('a');
-    link.href = url;
-    link.target = '_blank';
-    link.rel = 'noopener noreferrer';
-    link.style.display = 'none';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  } catch (err) {
-    window.open(url, '_blank', 'noopener,noreferrer');
-  }
+// Open native protocol directly (mailto:, tel:) without tab/popup blocking
+const triggerNativeApp = (url: string) => {
+  window.location.href = url;
 };
 
 // Dynamic text replacer helper
@@ -172,31 +161,27 @@ const OrderCard: React.FC<OrderCardProps> = ({
 
   const messageText = renderPersonalizedText(TEMPLATE_PRESETS.DEFAULT, order);
   const encodedMessage = encodeURIComponent(messageText);
-  const emailSubject = encodeURIComponent(`Order Update #${order.id.slice(0, 8)} - NOMAD`);
+  const emailSubject = encodeURIComponent(`Update Regarding Your NOMAD Order #${order.id.slice(0, 8)}`);
 
   const handleCall = (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
     if (!cleanPhoneForDial) return;
-    window.location.href = `tel:${cleanPhoneForDial}`;
+    triggerNativeApp(`tel:${cleanPhoneForDial}`);
   };
 
   const handleEmail = (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
     if (!order.customer_email) return;
-
-    const mailtoUrl = `mailto:${order.customer_email}?subject=${emailSubject}&body=${encodedMessage}`;
-    window.location.href = mailtoUrl;
+    triggerNativeApp(`mailto:${order.customer_email}?subject=${emailSubject}&body=${encodedMessage}`);
   };
 
   const handleWhatsApp = (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
     if (!waPhone) return;
-
-    const url = `https://wa.me/${waPhone}?text=${encodedMessage}`;
-    safeOpenLink(url);
+    window.open(`https://wa.me/${waPhone}?text=${encodedMessage}`, '_blank');
   };
 
   const handleStatusSelect = async (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -234,7 +219,8 @@ const OrderCard: React.FC<OrderCardProps> = ({
     letterSpacing: '0.5px',
     cursor: 'pointer',
     userSelect: 'none',
-    outline: 'none'
+    outline: 'none',
+    textDecoration: 'none'
   };
 
   return (
@@ -877,10 +863,15 @@ const AdminOrders: React.FC = () => {
     return orders.filter(o => selectedOrderIds.includes(o.id));
   }, [orders, selectedOrderIds]);
 
-  const handleTriggerBulkEmail = () => {
-    const emails = selectedOrdersList
+  // Bulk Email Handlers
+  const getSelectedEmailsList = () => {
+    return selectedOrdersList
       .map(o => o.customer_email)
       .filter((email): email is string => Boolean(email && email.trim()));
+  };
+
+  const handleTriggerBulkEmail = () => {
+    const emails = getSelectedEmailsList();
 
     if (emails.length === 0) {
       showToast("No valid email addresses found in selected orders.", 'error');
@@ -888,10 +879,11 @@ const AdminOrders: React.FC = () => {
     }
 
     const bccList = Array.from(new Set(emails)).join(',');
-    const mailtoUrl = `mailto:?bcc=${bccList}&subject=${encodeURIComponent(bulkEmailSubject)}&body=${encodeURIComponent(bulkMessageText.replace(/{{name}}/g, 'Valued Customer').replace(/{{status}}/g, selectedStatusFilter !== 'ALL' ? selectedStatusFilter : 'Updated'))}`;
+    const mailtoUrl = `mailto:?bcc=${encodeURIComponent(bccList)}&subject=${encodeURIComponent(bulkEmailSubject)}&body=${encodeURIComponent(bulkMessageText.replace(/{{name}}/g, 'Valued Customer').replace(/{{status}}/g, selectedStatusFilter !== 'ALL' ? selectedStatusFilter : 'Updated'))}`;
     
-    window.location.href = mailtoUrl;
-    showToast(`Opened email client with ${emails.length} recipients in BCC`, 'success');
+    // Direct native protocol invocation
+    triggerNativeApp(mailtoUrl);
+    showToast(`Opening default mail app for ${emails.length} recipients...`, 'success');
   };
 
   const handleSendSingleWhatsApp = (order: Order) => {
@@ -901,11 +893,9 @@ const AdminOrders: React.FC = () => {
       return;
     }
 
-    // Dynamic replacement per order
     const personalizedMessage = renderPersonalizedText(bulkMessageText, order);
-
     const url = `https://wa.me/${waPhone}?text=${encodeURIComponent(personalizedMessage)}`;
-    safeOpenLink(url);
+    window.open(url, '_blank');
 
     setSentIndexes(prev => ({ ...prev, [order.id]: true }));
   };
@@ -1247,18 +1237,22 @@ const AdminOrders: React.FC = () => {
             </div>
 
             {bulkMessageType === 'email' ? (
-              <div style={{ marginTop: '10px' }}>
+              <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <button
                   type="button"
                   onClick={handleTriggerBulkEmail}
                   style={{ width: '100%', padding: '12px', background: '#fff', color: '#000', fontWeight: 'bold', border: 'none', fontSize: '11px', cursor: 'pointer', borderRadius: '2px' }}
                 >
-                  OPEN EMAIL CLIENT (SEND TO {selectedOrdersList.length} VIA BCC)
+                  OPEN DEFAULT MAIL APP ({getSelectedEmailsList().length} RECIPIENTS VIA BCC)
                 </button>
+
+                <div style={{ fontSize: '9.5px', color: '#888', textAlign: 'center' }}>
+                  Found {getSelectedEmailsList().length} valid emails out of {selectedOrdersList.length} selected orders.
+                </div>
               </div>
             ) : (
               <div>
-                <label style={{ display: 'block', fontSize: '10px', color: '#888', marginBottom: '8px' }}>RECIPIENT DISPATCH QUEUE (AUTO DYNAMIC MESSAGE PREVIEW)</label>
+                <label style={{ display: 'block', fontSize: '10px', color: '#888', marginBottom: '8px' }}>RECIPIENT DISPATCH QUEUE</label>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '280px', overflowY: 'auto' }}>
                   {selectedOrdersList.map((ord) => {
                     const isSent = Boolean(sentIndexes[ord.id]);
@@ -1289,7 +1283,6 @@ const AdminOrders: React.FC = () => {
                             {isSent ? 'SENT ✓' : 'SEND WHATSAPP'}
                           </button>
                         </div>
-                        {/* Dynamic Message Preview */}
                         <div style={{ fontSize: '9.5px', color: '#22c55e', background: '#050505', padding: '6px', border: '1px dashed #222', borderRadius: '2px', whiteSpace: 'pre-wrap' }}>
                           {personalizedPreview}
                         </div>
