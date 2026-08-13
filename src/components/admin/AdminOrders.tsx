@@ -75,6 +75,15 @@ const STATUS_OPTIONS = [
 
 const DATE_FILTERS = ['ALL TIME', 'TODAY', 'LAST 7 DAYS', 'THIS MONTH'];
 
+// Status specific message presets
+const TEMPLATE_PRESETS: { [key: string]: string } = {
+  DEFAULT: "Hello {{name}},\nThank you for choosing NOMAD. Your order status is: {{status}}.\nOrder ID: #{{order_id}}",
+  Pending: "Hello {{name}},\nYour NOMAD order (#{{order_id}}) is currently PENDING. We are processing it soon!\nThank you.",
+  Shipped: "Hello {{name}},\nYour NOMAD order (#{{order_id}}) has been SHIPPED via {{courier}}.\nTracking ID: {{tracking}}\nThank you!",
+  Delivered: "Hello {{name}},\nYour NOMAD order (#{{order_id}}) has been DELIVERED successfully!\nThank you for shopping with NOMAD.",
+  Cancelled: "Hello {{name}},\nYour NOMAD order (#{{order_id}}) status is CANCELLED. Please contact us for details."
+};
+
 // Format phone number safely for BD numbers
 const formatWhatsAppNumber = (phone: string): string => {
   const digits = phone.replace(/[^0-9]/g, '');
@@ -85,7 +94,7 @@ const formatWhatsAppNumber = (phone: string): string => {
   return digits;
 };
 
-// Safe open helper (works on all browsers & devices)
+// Safe open helper
 const safeOpenLink = (url: string) => {
   try {
     const link = document.createElement('a');
@@ -99,6 +108,16 @@ const safeOpenLink = (url: string) => {
   } catch (err) {
     window.open(url, '_blank', 'noopener,noreferrer');
   }
+};
+
+// Dynamic text replacer helper
+const renderPersonalizedText = (template: string, order: Order): string => {
+  return template
+    .replace(/{{name}}/g, order.customer_name || 'Customer')
+    .replace(/{{status}}/g, (order.status || 'Updated').toUpperCase())
+    .replace(/{{order_id}}/g, order.id.slice(0, 8))
+    .replace(/{{courier}}/g, order.courier_name || 'N/A')
+    .replace(/{{tracking}}/g, order.tracking_id || 'N/A');
 };
 
 // -------------------------------------------------------------
@@ -151,12 +170,10 @@ const OrderCard: React.FC<OrderCardProps> = ({
   const cleanPhoneForDial = rawPhone.replace(/[^0-9+]/g, '');
   const waPhone = formatWhatsAppNumber(rawPhone);
 
-  const messageText = `Hello ${order.customer_name || 'Customer'},\nYour NOMAD order (#${order.id.slice(0, 8)}) status is: ${order.status}.\nCourier: ${order.courier_name || 'N/A'}\nTracking ID: ${order.tracking_id || 'N/A'}\nThank you!`;
+  const messageText = renderPersonalizedText(TEMPLATE_PRESETS.DEFAULT, order);
   const encodedMessage = encodeURIComponent(messageText);
   const emailSubject = encodeURIComponent(`Order Update #${order.id.slice(0, 8)} - NOMAD`);
 
-  // ---------------- Reliable Communication Handlers ----------------
-  // Fixed Call issue: Direct location jump prevents browser tab/event blocking
   const handleCall = (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
@@ -232,7 +249,6 @@ const OrderCard: React.FC<OrderCardProps> = ({
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-            {/* Checkbox for Bulk Actions */}
             <input
               type="checkbox"
               checked={isSelected}
@@ -503,7 +519,7 @@ const AdminOrders: React.FC = () => {
   const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
   const [isBulkModalOpen, setIsBulkModalOpen] = useState<boolean>(false);
   const [bulkMessageType, setBulkMessageType] = useState<'whatsapp' | 'email'>('whatsapp');
-  const [bulkMessageText, setBulkMessageText] = useState<string>('Hello {{name}},\nThank you for choosing NOMAD. Your order status is: {{status}}.');
+  const [bulkMessageText, setBulkMessageText] = useState<string>(TEMPLATE_PRESETS.DEFAULT);
   const [bulkEmailSubject, setBulkEmailSubject] = useState<string>('Update Regarding Your NOMAD Order');
   const [sentIndexes, setSentIndexes] = useState<{ [key: string]: boolean }>({});
 
@@ -584,6 +600,15 @@ const AdminOrders: React.FC = () => {
   useEffect(() => {
     fetchAdminOrders();
   }, []);
+
+  // Update preset when status filter changes
+  useEffect(() => {
+    if (selectedStatusFilter !== 'ALL' && TEMPLATE_PRESETS[selectedStatusFilter]) {
+      setBulkMessageText(TEMPLATE_PRESETS[selectedStatusFilter]);
+    } else {
+      setBulkMessageText(TEMPLATE_PRESETS.DEFAULT);
+    }
+  }, [selectedStatusFilter]);
 
   const handleUpdateDetails = async (orderId: string, updatedFields: { payment_status: string; courier_name: string; tracking_id: string; admin_notes: string }) => {
     try {
@@ -829,14 +854,12 @@ const AdminOrders: React.FC = () => {
     });
   }, [orders, searchTerm, selectedStatusFilter, selectedDateFilter]);
 
-  // Handle individual selection toggle
   const handleSelectToggle = (orderId: string) => {
     setSelectedOrderIds(prev =>
       prev.includes(orderId) ? prev.filter(id => id !== orderId) : [...prev, orderId]
     );
   };
 
-  // Handle select all filtered
   const isAllFilteredSelected = filteredOrders.length > 0 && filteredOrders.every(o => selectedOrderIds.includes(o.id));
 
   const handleSelectAllFiltered = () => {
@@ -850,12 +873,10 @@ const AdminOrders: React.FC = () => {
     }
   };
 
-  // Get selected order objects
   const selectedOrdersList = useMemo(() => {
     return orders.filter(o => selectedOrderIds.includes(o.id));
   }, [orders, selectedOrderIds]);
 
-  // Trigger Bulk Email App / Client with BCC
   const handleTriggerBulkEmail = () => {
     const emails = selectedOrdersList
       .map(o => o.customer_email)
@@ -867,13 +888,12 @@ const AdminOrders: React.FC = () => {
     }
 
     const bccList = Array.from(new Set(emails)).join(',');
-    const mailtoUrl = `mailto:?bcc=${bccList}&subject=${encodeURIComponent(bulkEmailSubject)}&body=${encodeURIComponent(bulkMessageText.replace(/{{name}}/g, 'Customer').replace(/{{status}}/g, 'Update'))}`;
+    const mailtoUrl = `mailto:?bcc=${bccList}&subject=${encodeURIComponent(bulkEmailSubject)}&body=${encodeURIComponent(bulkMessageText.replace(/{{name}}/g, 'Valued Customer').replace(/{{status}}/g, selectedStatusFilter !== 'ALL' ? selectedStatusFilter : 'Updated'))}`;
     
     window.location.href = mailtoUrl;
     showToast(`Opened email client with ${emails.length} recipients in BCC`, 'success');
   };
 
-  // Send single WhatsApp in Bulk Queue Modal
   const handleSendSingleWhatsApp = (order: Order) => {
     const waPhone = formatWhatsAppNumber(order.customer_phone || '');
     if (!waPhone) {
@@ -881,14 +901,10 @@ const AdminOrders: React.FC = () => {
       return;
     }
 
-    const text = bulkMessageText
-      .replace(/{{name}}/g, order.customer_name || 'Customer')
-      .replace(/{{status}}/g, order.status || 'Updated')
-      .replace(/{{order_id}}/g, order.id.slice(0, 8))
-      .replace(/{{courier}}/g, order.courier_name || 'N/A')
-      .replace(/{{tracking}}/g, order.tracking_id || 'N/A');
+    // Dynamic replacement per order
+    const personalizedMessage = renderPersonalizedText(bulkMessageText, order);
 
-    const url = `https://wa.me/${waPhone}?text=${encodeURIComponent(text)}`;
+    const url = `https://wa.me/${waPhone}?text=${encodeURIComponent(personalizedMessage)}`;
     safeOpenLink(url);
 
     setSentIndexes(prev => ({ ...prev, [order.id]: true }));
@@ -1135,9 +1151,7 @@ const AdminOrders: React.FC = () => {
         </div>
       )}
 
-      {/* ------------------------------------------------------------- */}
       {/* BULK MESSAGE MODAL */}
-      {/* ------------------------------------------------------------- */}
       {isBulkModalOpen && (
         <div style={{
           position: 'fixed',
@@ -1159,7 +1173,7 @@ const AdminOrders: React.FC = () => {
             border: '1px solid #333',
             borderRadius: '4px',
             width: '100%',
-            maxWidth: '600px',
+            maxWidth: '650px',
             maxHeight: '90vh',
             display: 'flex',
             flexDirection: 'column',
@@ -1179,6 +1193,32 @@ const AdminOrders: React.FC = () => {
               >
                 ✕
               </button>
+            </div>
+
+            {/* Quick Status Presets */}
+            <div>
+              <label style={{ display: 'block', fontSize: '9px', color: '#888', marginBottom: '6px' }}>LOAD STATUS TEMPLATE PRESET</label>
+              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                {Object.keys(TEMPLATE_PRESETS).map((key) => (
+                  <button
+                    type="button"
+                    key={key}
+                    onClick={() => setBulkMessageText(TEMPLATE_PRESETS[key])}
+                    style={{
+                      backgroundColor: '#111',
+                      color: '#ddd',
+                      border: '1px solid #333',
+                      padding: '4px 8px',
+                      fontSize: '9px',
+                      fontWeight: 'bold',
+                      cursor: 'pointer',
+                      borderRadius: '2px'
+                    }}
+                  >
+                    {key.toUpperCase()}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {bulkMessageType === 'email' && (
@@ -1218,33 +1258,41 @@ const AdminOrders: React.FC = () => {
               </div>
             ) : (
               <div>
-                <label style={{ display: 'block', fontSize: '10px', color: '#888', marginBottom: '8px' }}>RECIPIENT DISPATCH QUEUE</label>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '250px', overflowY: 'auto' }}>
+                <label style={{ display: 'block', fontSize: '10px', color: '#888', marginBottom: '8px' }}>RECIPIENT DISPATCH QUEUE (AUTO DYNAMIC MESSAGE PREVIEW)</label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '280px', overflowY: 'auto' }}>
                   {selectedOrdersList.map((ord) => {
                     const isSent = Boolean(sentIndexes[ord.id]);
                     const phone = ord.customer_phone || 'No phone';
+                    const personalizedPreview = renderPersonalizedText(bulkMessageText, ord);
+
                     return (
-                      <div key={ord.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#000', padding: '8px 12px', border: '1px solid #1a1a1a', borderRadius: '2px' }}>
-                        <div>
-                          <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#fff' }}>{ord.customer_name || 'Customer'} (#{ord.id.slice(0, 8)})</div>
-                          <div style={{ fontSize: '9px', color: '#666' }}>{phone} • {ord.status}</div>
+                      <div key={ord.id} style={{ display: 'flex', flexDirection: 'column', gap: '6px', background: '#000', padding: '10px', border: '1px solid #1a1a1a', borderRadius: '2px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div>
+                            <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#fff' }}>{ord.customer_name || 'Customer'} (#{ord.id.slice(0, 8)})</span>
+                            <span style={{ fontSize: '9px', color: '#666', marginLeft: '6px' }}>{phone} • {ord.status.toUpperCase()}</span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleSendSingleWhatsApp(ord)}
+                            style={{
+                              backgroundColor: isSent ? '#333' : '#25D366',
+                              color: isSent ? '#aaa' : '#000',
+                              border: 'none',
+                              padding: '6px 12px',
+                              fontSize: '9px',
+                              fontWeight: 'bold',
+                              cursor: 'pointer',
+                              borderRadius: '2px'
+                            }}
+                          >
+                            {isSent ? 'SENT ✓' : 'SEND WHATSAPP'}
+                          </button>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => handleSendSingleWhatsApp(ord)}
-                          style={{
-                            backgroundColor: isSent ? '#333' : '#25D366',
-                            color: isSent ? '#aaa' : '#000',
-                            border: 'none',
-                            padding: '6px 12px',
-                            fontSize: '9px',
-                            fontWeight: 'bold',
-                            cursor: 'pointer',
-                            borderRadius: '2px'
-                          }}
-                        >
-                          {isSent ? 'SENT ✓' : 'SEND WHATSAPP'}
-                        </button>
+                        {/* Dynamic Message Preview */}
+                        <div style={{ fontSize: '9.5px', color: '#22c55e', background: '#050505', padding: '6px', border: '1px dashed #222', borderRadius: '2px', whiteSpace: 'pre-wrap' }}>
+                          {personalizedPreview}
+                        </div>
                       </div>
                     );
                   })}
