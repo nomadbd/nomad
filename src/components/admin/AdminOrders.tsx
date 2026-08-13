@@ -97,7 +97,6 @@ const safeOpenLink = (url: string) => {
     link.click();
     document.body.removeChild(link);
   } catch (err) {
-    // Fallback
     window.open(url, '_blank', 'noopener,noreferrer');
   }
 };
@@ -107,6 +106,8 @@ const safeOpenLink = (url: string) => {
 // -------------------------------------------------------------
 interface OrderCardProps {
   order: Order;
+  isSelected: boolean;
+  onSelectToggle: (orderId: string) => void;
   onStatusChange: (orderId: string, newStatus: string) => Promise<void>;
   onUpdateDetails: (orderId: string, updatedData: { payment_status: string; courier_name: string; tracking_id: string; admin_notes: string }) => Promise<void>;
   onPrintInvoice: (order: Order) => void;
@@ -115,6 +116,8 @@ interface OrderCardProps {
 
 const OrderCard: React.FC<OrderCardProps> = ({
   order,
+  isSelected,
+  onSelectToggle,
   onStatusChange,
   onUpdateDetails,
   onPrintInvoice,
@@ -153,18 +156,12 @@ const OrderCard: React.FC<OrderCardProps> = ({
   const emailSubject = encodeURIComponent(`Order Update #${order.id.slice(0, 8)} - NOMAD`);
 
   // ---------------- Reliable Communication Handlers ----------------
+  // Fixed Call issue: Direct location jump prevents browser tab/event blocking
   const handleCall = (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
     if (!cleanPhoneForDial) return;
-
-    // Most reliable cross-browser method for tel:
-    const link = document.createElement('a');
-    link.href = `tel:${cleanPhoneForDial}`;
-    link.style.display = 'none';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    window.location.href = `tel:${cleanPhoneForDial}`;
   };
 
   const handleEmail = (e: React.MouseEvent) => {
@@ -173,13 +170,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
     if (!order.customer_email) return;
 
     const mailtoUrl = `mailto:${order.customer_email}?subject=${emailSubject}&body=${encodedMessage}`;
-    
-    const link = document.createElement('a');
-    link.href = mailtoUrl;
-    link.style.display = 'none';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    window.location.href = mailtoUrl;
   };
 
   const handleWhatsApp = (e: React.MouseEvent) => {
@@ -187,7 +178,6 @@ const OrderCard: React.FC<OrderCardProps> = ({
     e.preventDefault();
     if (!waPhone) return;
 
-    // wa.me is the most reliable way to open WhatsApp app (or web fallback)
     const url = `https://wa.me/${waPhone}?text=${encodedMessage}`;
     safeOpenLink(url);
   };
@@ -231,40 +221,55 @@ const OrderCard: React.FC<OrderCardProps> = ({
   };
 
   return (
-    <div style={{ backgroundColor: '#050505', border: '1px solid #222', padding: '16px', borderRadius: '2px' }}>
+    <div style={{
+      backgroundColor: '#050505',
+      border: isSelected ? '1px solid #3b82f6' : '1px solid #222',
+      padding: '16px',
+      borderRadius: '2px',
+      transition: 'border-color 0.2s ease'
+    }}>
       {/* Header */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-              <span style={{ fontSize: '13px', fontWeight: 'bold', letterSpacing: '1px' }}>
-                #{order.id.slice(0, 8)}...
-              </span>
-              <span style={{
-                backgroundColor: `${statusColor}22`,
-                color: statusColor,
-                border: `1px solid ${statusColor}55`,
-                padding: '2px 8px',
-                borderRadius: '2px',
-                fontSize: '9px',
-                fontWeight: 'bold'
-              }}>
-                ● {order.status.toUpperCase()}
-              </span>
-              <span style={{
-                backgroundColor: isPaid ? '#22c55e22' : '#f9731622',
-                color: isPaid ? '#22c55e' : '#f97316',
-                border: `1px solid ${isPaid ? '#22c55e55' : '#f9731655'}`,
-                padding: '2px 8px',
-                borderRadius: '2px',
-                fontSize: '9px',
-                fontWeight: 'bold'
-              }}>
-                {order.payment_status?.toUpperCase() || 'UNPAID'}
-              </span>
-            </div>
-            <div style={{ fontSize: '10px', color: '#666', marginTop: '4px' }}>
-              {new Date(order.created_at).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+            {/* Checkbox for Bulk Actions */}
+            <input
+              type="checkbox"
+              checked={isSelected}
+              onChange={() => onSelectToggle(order.id)}
+              style={{ marginTop: '3px', cursor: 'pointer', width: '15px', height: '15px', accentColor: '#fff' }}
+            />
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '13px', fontWeight: 'bold', letterSpacing: '1px' }}>
+                  #{order.id.slice(0, 8)}...
+                </span>
+                <span style={{
+                  backgroundColor: `${statusColor}22`,
+                  color: statusColor,
+                  border: `1px solid ${statusColor}55`,
+                  padding: '2px 8px',
+                  borderRadius: '2px',
+                  fontSize: '9px',
+                  fontWeight: 'bold'
+                }}>
+                  ● {order.status.toUpperCase()}
+                </span>
+                <span style={{
+                  backgroundColor: isPaid ? '#22c55e22' : '#f9731622',
+                  color: isPaid ? '#22c55e' : '#f97316',
+                  border: `1px solid ${isPaid ? '#22c55e55' : '#f9731655'}`,
+                  padding: '2px 8px',
+                  borderRadius: '2px',
+                  fontSize: '9px',
+                  fontWeight: 'bold'
+                }}>
+                  {order.payment_status?.toUpperCase() || 'UNPAID'}
+                </span>
+              </div>
+              <div style={{ fontSize: '10px', color: '#666', marginTop: '4px' }}>
+                {new Date(order.created_at).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}
+              </div>
             </div>
           </div>
 
@@ -493,6 +498,14 @@ const AdminOrders: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<string>('ALL');
   const [selectedDateFilter, setSelectedDateFilter] = useState<string>('ALL TIME');
+
+  // Multi-select & Bulk messaging states
+  const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
+  const [isBulkModalOpen, setIsBulkModalOpen] = useState<boolean>(false);
+  const [bulkMessageType, setBulkMessageType] = useState<'whatsapp' | 'email'>('whatsapp');
+  const [bulkMessageText, setBulkMessageText] = useState<string>('Hello {{name}},\nThank you for choosing NOMAD. Your order status is: {{status}}.');
+  const [bulkEmailSubject, setBulkEmailSubject] = useState<string>('Update Regarding Your NOMAD Order');
+  const [sentIndexes, setSentIndexes] = useState<{ [key: string]: boolean }>({});
 
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
@@ -816,6 +829,71 @@ const AdminOrders: React.FC = () => {
     });
   }, [orders, searchTerm, selectedStatusFilter, selectedDateFilter]);
 
+  // Handle individual selection toggle
+  const handleSelectToggle = (orderId: string) => {
+    setSelectedOrderIds(prev =>
+      prev.includes(orderId) ? prev.filter(id => id !== orderId) : [...prev, orderId]
+    );
+  };
+
+  // Handle select all filtered
+  const isAllFilteredSelected = filteredOrders.length > 0 && filteredOrders.every(o => selectedOrderIds.includes(o.id));
+
+  const handleSelectAllFiltered = () => {
+    if (isAllFilteredSelected) {
+      const filteredIds = filteredOrders.map(o => o.id);
+      setSelectedOrderIds(prev => prev.filter(id => !filteredIds.includes(id)));
+    } else {
+      const filteredIds = filteredOrders.map(o => o.id);
+      const newSet = new Set([...selectedOrderIds, ...filteredIds]);
+      setSelectedOrderIds(Array.from(newSet));
+    }
+  };
+
+  // Get selected order objects
+  const selectedOrdersList = useMemo(() => {
+    return orders.filter(o => selectedOrderIds.includes(o.id));
+  }, [orders, selectedOrderIds]);
+
+  // Trigger Bulk Email App / Client with BCC
+  const handleTriggerBulkEmail = () => {
+    const emails = selectedOrdersList
+      .map(o => o.customer_email)
+      .filter((email): email is string => Boolean(email && email.trim()));
+
+    if (emails.length === 0) {
+      showToast("No valid email addresses found in selected orders.", 'error');
+      return;
+    }
+
+    const bccList = Array.from(new Set(emails)).join(',');
+    const mailtoUrl = `mailto:?bcc=${bccList}&subject=${encodeURIComponent(bulkEmailSubject)}&body=${encodeURIComponent(bulkMessageText.replace(/{{name}}/g, 'Customer').replace(/{{status}}/g, 'Update'))}`;
+    
+    window.location.href = mailtoUrl;
+    showToast(`Opened email client with ${emails.length} recipients in BCC`, 'success');
+  };
+
+  // Send single WhatsApp in Bulk Queue Modal
+  const handleSendSingleWhatsApp = (order: Order) => {
+    const waPhone = formatWhatsAppNumber(order.customer_phone || '');
+    if (!waPhone) {
+      showToast("Invalid phone number", 'error');
+      return;
+    }
+
+    const text = bulkMessageText
+      .replace(/{{name}}/g, order.customer_name || 'Customer')
+      .replace(/{{status}}/g, order.status || 'Updated')
+      .replace(/{{order_id}}/g, order.id.slice(0, 8))
+      .replace(/{{courier}}/g, order.courier_name || 'N/A')
+      .replace(/{{tracking}}/g, order.tracking_id || 'N/A');
+
+    const url = `https://wa.me/${waPhone}?text=${encodeURIComponent(text)}`;
+    safeOpenLink(url);
+
+    setSentIndexes(prev => ({ ...prev, [order.id]: true }));
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%', maxWidth: '100%', position: 'relative' }}>
 
@@ -945,6 +1023,80 @@ const AdminOrders: React.FC = () => {
         </div>
       </div>
 
+      {/* Selection & Bulk Action Toolbar */}
+      <div style={{
+        display: 'flex',
+        justify: 'space-between',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: '10px',
+        backgroundColor: selectedOrderIds.length > 0 ? '#111' : '#050505',
+        border: '1px solid #222',
+        padding: '12px 16px',
+        borderRadius: '2px'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <input
+            type="checkbox"
+            id="selectAllFiltered"
+            checked={isAllFilteredSelected}
+            onChange={handleSelectAllFiltered}
+            style={{ cursor: 'pointer', width: '16px', height: '16px', accentColor: '#fff' }}
+          />
+          <label htmlFor="selectAllFiltered" style={{ fontSize: '11px', color: '#fff', cursor: 'pointer', fontWeight: 'bold' }}>
+            SELECT ALL FILTERED ({filteredOrders.length})
+          </label>
+        </div>
+
+        {selectedOrderIds.length > 0 && (
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '10px', color: '#3b82f6', fontWeight: 'bold' }}>
+              {selectedOrderIds.length} SELECTED
+            </span>
+
+            <button
+              type="button"
+              onClick={() => {
+                setBulkMessageType('whatsapp');
+                setIsBulkModalOpen(true);
+              }}
+              style={{
+                backgroundColor: '#25D366',
+                color: '#000',
+                border: 'none',
+                padding: '7px 12px',
+                fontSize: '10px',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                borderRadius: '2px'
+              }}
+            >
+              BULK WHATSAPP ({selectedOrderIds.length})
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setBulkMessageType('email');
+                setIsBulkModalOpen(true);
+              }}
+              style={{
+                backgroundColor: '#fff',
+                color: '#000',
+                border: 'none',
+                padding: '7px 12px',
+                fontSize: '10px',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                borderRadius: '2px'
+              }}
+            >
+              BULK EMAIL ({selectedOrderIds.length})
+            </button>
+          </div>
+        )}
+      </div>
+
       {/* Orders Count and Refresh */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', color: '#666' }}>
         <span>SHOWING {filteredOrders.length} OF {orders.length} ORDERS</span>
@@ -972,6 +1124,8 @@ const AdminOrders: React.FC = () => {
             <OrderCard
               key={order.id}
               order={order}
+              isSelected={selectedOrderIds.includes(order.id)}
+              onSelectToggle={handleSelectToggle}
               onStatusChange={handleStatusChange}
               onUpdateDetails={handleUpdateDetails}
               onPrintInvoice={handlePrintInvoice}
@@ -980,6 +1134,127 @@ const AdminOrders: React.FC = () => {
           ))}
         </div>
       )}
+
+      {/* ------------------------------------------------------------- */}
+      {/* BULK MESSAGE MODAL */}
+      {/* ------------------------------------------------------------- */}
+      {isBulkModalOpen && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          backgroundColor: 'rgba(0, 0, 0, 0.85)',
+          backdropFilter: 'blur(4px)',
+          zIndex: 10000,
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          padding: '20px',
+          boxSizing: 'border-box'
+        }}>
+          <div style={{
+            backgroundColor: '#0a0a0a',
+            border: '1px solid #333',
+            borderRadius: '4px',
+            width: '100%',
+            maxWidth: '600px',
+            maxHeight: '90vh',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px',
+            padding: '20px',
+            boxSizing: 'border-box',
+            overflowY: 'auto'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #222', paddingBottom: '12px' }}>
+              <h3 style={{ margin: 0, fontSize: '14px', color: '#fff', letterSpacing: '1px' }}>
+                BULK {bulkMessageType.toUpperCase()} BROADCAST ({selectedOrdersList.length} RECIPIENTS)
+              </h3>
+              <button
+                type="button"
+                onClick={() => setIsBulkModalOpen(false)}
+                style={{ background: 'none', border: 'none', color: '#888', fontSize: '16px', cursor: 'pointer' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {bulkMessageType === 'email' && (
+              <div>
+                <label style={{ display: 'block', fontSize: '10px', color: '#888', marginBottom: '4px' }}>EMAIL SUBJECT</label>
+                <input
+                  type="text"
+                  value={bulkEmailSubject}
+                  onChange={(e) => setBulkEmailSubject(e.target.value)}
+                  style={{ width: '100%', background: '#000', color: '#fff', border: '1px solid #333', padding: '8px', fontSize: '11px', outline: 'none', boxSizing: 'border-box' }}
+                />
+              </div>
+            )}
+
+            <div>
+              <label style={{ display: 'block', fontSize: '10px', color: '#888', marginBottom: '4px' }}>MESSAGE TEMPLATE</label>
+              <textarea
+                rows={4}
+                value={bulkMessageText}
+                onChange={(e) => setBulkMessageText(e.target.value)}
+                style={{ width: '100%', background: '#000', color: '#fff', border: '1px solid #333', padding: '8px', fontSize: '11px', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }}
+              />
+              <div style={{ fontSize: '9px', color: '#666', marginTop: '4px' }}>
+                Variables: <code>{"{{name}}"}</code>, <code>{"{{status}}"}</code>, <code>{"{{order_id}}"}</code>, <code>{"{{courier}}"}</code>, <code>{"{{tracking}}"}</code>
+              </div>
+            </div>
+
+            {bulkMessageType === 'email' ? (
+              <div style={{ marginTop: '10px' }}>
+                <button
+                  type="button"
+                  onClick={handleTriggerBulkEmail}
+                  style={{ width: '100%', padding: '12px', background: '#fff', color: '#000', fontWeight: 'bold', border: 'none', fontSize: '11px', cursor: 'pointer', borderRadius: '2px' }}
+                >
+                  OPEN EMAIL CLIENT (SEND TO {selectedOrdersList.length} VIA BCC)
+                </button>
+              </div>
+            ) : (
+              <div>
+                <label style={{ display: 'block', fontSize: '10px', color: '#888', marginBottom: '8px' }}>RECIPIENT DISPATCH QUEUE</label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '250px', overflowY: 'auto' }}>
+                  {selectedOrdersList.map((ord) => {
+                    const isSent = Boolean(sentIndexes[ord.id]);
+                    const phone = ord.customer_phone || 'No phone';
+                    return (
+                      <div key={ord.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#000', padding: '8px 12px', border: '1px solid #1a1a1a', borderRadius: '2px' }}>
+                        <div>
+                          <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#fff' }}>{ord.customer_name || 'Customer'} (#{ord.id.slice(0, 8)})</div>
+                          <div style={{ fontSize: '9px', color: '#666' }}>{phone} • {ord.status}</div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleSendSingleWhatsApp(ord)}
+                          style={{
+                            backgroundColor: isSent ? '#333' : '#25D366',
+                            color: isSent ? '#aaa' : '#000',
+                            border: 'none',
+                            padding: '6px 12px',
+                            fontSize: '9px',
+                            fontWeight: 'bold',
+                            cursor: 'pointer',
+                            borderRadius: '2px'
+                          }}
+                        >
+                          {isSent ? 'SENT ✓' : 'SEND WHATSAPP'}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
