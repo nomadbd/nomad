@@ -159,6 +159,9 @@ const OrderCard: React.FC<OrderCardProps> = ({
   const encodedMessage = encodeURIComponent(messageText);
   const emailSubject = encodeURIComponent(`Update Regarding Your NOMAD Order #${order.id.slice(0, 8)}`);
 
+  // Customer information formatted for copy & share
+  const customerInfoText = `Name: ${order.customer_name || 'N/A'}\nPhone: ${order.customer_phone || 'N/A'}\nAddress: ${order.shipping_address || 'N/A'}`;
+
   const handleStatusSelect = async (e: React.ChangeEvent<HTMLSelectElement>) => {
     e.stopPropagation();
     const newStatus = e.target.value;
@@ -183,7 +186,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
   const handleCopy = async (e: React.MouseEvent) => {
     e.stopPropagation();
     try {
-      await navigator.clipboard.writeText(messageText);
+      await navigator.clipboard.writeText(customerInfoText);
       setIsCopied(true);
       setTimeout(() => setIsCopied(false), 2000);
     } catch (err) {
@@ -196,8 +199,8 @@ const OrderCard: React.FC<OrderCardProps> = ({
     if (navigator.share) {
       try {
         await navigator.share({
-          title: `NOMAD Order #${order.id.slice(0, 8)}`,
-          text: messageText,
+          title: `Customer Details - ${order.customer_name || 'NOMAD Order'}`,
+          text: customerInfoText,
         });
       } catch (err) {
         console.error('Error sharing order:', err);
@@ -341,31 +344,30 @@ const OrderCard: React.FC<OrderCardProps> = ({
               </a>
             )}
 
-            {/* SHARE BUTTON */}
+            {/* SHARE BUTTON (SVG Only) */}
             <button
               type="button"
               onClick={handleShare}
-              title="Share Order Details"
-              style={actionLinkStyle}
+              title="Share Customer Info"
+              style={{ ...actionLinkStyle, padding: '5px 8px' }}
             >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '4px' }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="18" cy="5" r="3"></circle>
                 <circle cx="6" cy="12" r="3"></circle>
                 <circle cx="18" cy="19" r="3"></circle>
                 <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
                 <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
               </svg>
-              Share
             </button>
 
-            {/* COPY BUTTON */}
+            {/* COPY BUTTON (SVG Only) */}
             <button
               type="button"
               onClick={handleCopy}
-              title="Copy Order Details"
-              style={{ ...actionLinkStyle, color: isCopied ? '#22c55e' : '#fff' }}
+              title={isCopied ? "Copied!" : "Copy Customer Info"}
+              style={{ ...actionLinkStyle, padding: '5px 8px', color: isCopied ? '#22c55e' : '#fff' }}
             >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '4px' }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 {isCopied ? (
                   <polyline points="20 6 9 17 4 12"></polyline>
                 ) : (
@@ -375,7 +377,6 @@ const OrderCard: React.FC<OrderCardProps> = ({
                   </>
                 )}
               </svg>
-              {isCopied ? 'Copied ✓' : 'Copy'}
             </button>
           </div>
         </div>
