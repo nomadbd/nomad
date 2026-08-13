@@ -7,8 +7,19 @@ import AdminProducts from '../components/admin/AdminProducts';
 import AdminSettings from '../components/admin/AdminSettings';
 import StaffProfile from '../components/admin/StaffProfile';
 
+type TabType = 'overview' | 'orders' | 'products' | 'settings';
+
 const AdminDashboard: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'orders' | 'products' | 'settings'>('overview');
+  // 🌐 ১. URL থেকে বর্তমান activeTab পড়ার হেলপার ফাংশন
+  const getTabFromURL = (): TabType => {
+    if (typeof window === 'undefined') return 'overview';
+    const params = new URLSearchParams(window.location.search);
+    const tab = params.get('tab') as TabType;
+    const validTabs: TabType[] = ['overview', 'orders', 'products', 'settings'];
+    return validTabs.includes(tab) ? tab : 'overview';
+  };
+
+  const [activeTab, setActiveTab] = useState<TabType>(getTabFromURL);
   const [menuOpen, setMenuOpen] = useState<boolean>(false);
   const [userName, setUserName] = useState<string>('');
   const [userEmail, setUserEmail] = useState<string>('');
@@ -20,6 +31,29 @@ const AdminDashboard: React.FC = () => {
   // 📜 Hide on Scroll State for Mobile Header
   const [isHeaderVisible, setIsHeaderVisible] = useState<boolean>(true);
   const [lastScrollY, setLastScrollY] = useState<number>(0);
+
+  // 🔗 ২. প্রফেশনাল ট্যাব চেঞ্জ হ্যান্ডলার (URL সিঙ্কসহ)
+  const handleTabChange = (tab: TabType) => {
+    setActiveTab(tab);
+    setMenuOpen(false);
+
+    const searchParams = new URLSearchParams(window.location.search);
+    searchParams.set('tab', tab);
+    const newPath = `${window.location.pathname}?${searchParams.toString()}`;
+    
+    // পেজ রিফ্রেশ না করেই ব্রাউজার URL আপডেট করা
+    window.history.pushState({ path: newPath }, '', newPath);
+  };
+
+  // 🔄 ৩. ব্রাউজারের Back (←) ও Forward (→) বাটন প্রেস করলে ট্যাব সিঙ্ক রাখা
+  useEffect(() => {
+    const handlePopState = () => {
+      setActiveTab(getTabFromURL());
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   // 📱 Mobile Scroll Listener
   useEffect(() => {
@@ -62,7 +96,6 @@ const AdminDashboard: React.FC = () => {
           setProfileData({ email: user.email });
         }
       } else {
-        // ইউজার না থাকলে হোমপেজ বা লগইনে পাঠিয়ে দেওয়া
         window.location.href = '/';
       }
     } catch (err) {
@@ -78,7 +111,7 @@ const AdminDashboard: React.FC = () => {
 
   // 🔐 সিকিউরিটি গার্ড লজিক (Case and whitespace normalization)
   const normalizedRole = userRole.toUpperCase().trim();
-  
+
   // 👑 শুধুমাত্র SUPER_ADMIN সেটিংস নিয়ন্ত্রণ করতে পারবে
   const isSuperAdmin = normalizedRole === 'SUPER_ADMIN';
 
@@ -88,14 +121,14 @@ const AdminDashboard: React.FC = () => {
   // সিকিউরিটি গার্ড: Super Admin ছাড়া কেউ Settings এ ঢুকতে চাইলে Overview-তে পাঠাবে
   useEffect(() => {
     if (!loading && !isSuperAdmin && activeTab === 'settings') {
-      setActiveTab('overview');
+      handleTabChange('overview');
     }
   }, [isSuperAdmin, loading, activeTab]);
 
   // 🛑 সিকিউরিটি রিডাইরেক্ট: কোনো সাধারণ CUSTOMER এই পেজে আসলে তাকে ইউজার প্রোফাইল/হোমপেজে পাঠিয়ে দিবে
   useEffect(() => {
     if (!loading && !hasAdminAccess) {
-      window.location.href = '/profile'; // আপনার কাস্টমার প্রোফাইল রুটের লিংক এখানে দিন
+      window.location.href = '/profile';
     }
   }, [loading, hasAdminAccess]);
 
@@ -116,7 +149,7 @@ const AdminDashboard: React.FC = () => {
     );
   }
 
-  // এক্সেস না থাকলে কিছুই রেন্ডার করবে না (রিডাইরেক্ট হওয়া পর্যন্ত)
+  // এক্সেস না থাকলে কিছুই রেন্ডার করবে না
   if (!hasAdminAccess) {
     return null;
   }
@@ -347,21 +380,21 @@ const AdminDashboard: React.FC = () => {
 
               <button
                 className={`nav-btn ${activeTab === 'overview' ? 'active' : ''}`}
-                onClick={() => { setActiveTab('overview'); setMenuOpen(false); }}
+                onClick={() => handleTabChange('overview')}
               >
                 OVERVIEW & ANALYTICS
               </button>
 
               <button
                 className={`nav-btn ${activeTab === 'orders' ? 'active' : ''}`}
-                onClick={() => { setActiveTab('orders'); setMenuOpen(false); }}
+                onClick={() => handleTabChange('orders')}
               >
                 ORDER MANAGEMENT
               </button>
 
               <button
                 className={`nav-btn ${activeTab === 'products' ? 'active' : ''}`}
-                onClick={() => { setActiveTab('products'); setMenuOpen(false); }}
+                onClick={() => handleTabChange('products')}
               >
                 PRODUCTS & STOCK
               </button>
@@ -370,7 +403,7 @@ const AdminDashboard: React.FC = () => {
               {isSuperAdmin && (
                 <button
                   className={`nav-btn ${activeTab === 'settings' ? 'active' : ''}`}
-                  onClick={() => { setActiveTab('settings'); setMenuOpen(false); }}
+                  onClick={() => handleTabChange('settings')}
                 >
                   ROLES & SETTINGS
                 </button>
