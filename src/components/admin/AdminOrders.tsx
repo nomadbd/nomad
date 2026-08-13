@@ -260,10 +260,24 @@ const OrderCard: React.FC<OrderCardProps> = ({
         </div>
 
         {/* Customer Info & Direct Native Communication Links */}
-        <div style={{ fontSize: '12px', color: '#ddd', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-          <span style={{ fontWeight: '500' }}>{order.customer_name || 'GUEST CUSTOMER'}</span>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#fff' }}>
+              {order.customer_name || 'GUEST CUSTOMER'}
+            </span>
+            {order.customer_phone && (
+              <span style={{ fontSize: '11px', color: '#aaa', fontFamily: 'monospace' }}>
+                {order.customer_phone}
+              </span>
+            )}
+            {order.customer_email && (
+              <span style={{ fontSize: '10px', color: '#666' }}>
+                • {order.customer_email}
+              </span>
+            )}
+          </div>
 
-          <div style={{ display: 'flex', gap: '6px', marginLeft: '4px' }}>
+          <div style={{ display: 'flex', gap: '6px' }}>
             {cleanPhoneForDial && (
               <a
                 href={`tel:${cleanPhoneForDial}`}
