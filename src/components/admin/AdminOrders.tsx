@@ -82,7 +82,6 @@ const PAYMENT_STATUS_OPTIONS = [
 
 const DATE_FILTERS = ['ALL TIME', 'TODAY', 'LAST 7 DAYS', 'THIS MONTH'];
 
-// Status specific message presets
 const TEMPLATE_PRESETS: { [key: string]: string } = {
   DEFAULT: "Hello {{name}},\nThank you for choosing NOMAD. Your order status is: {{status}}.\nOrder ID: #{{order_id}}",
   Pending: "Hello {{name}},\nYour NOMAD order (#{{order_id}}) is currently PENDING. We are processing it soon!\nThank you.",
@@ -91,7 +90,6 @@ const TEMPLATE_PRESETS: { [key: string]: string } = {
   Cancelled: "Hello {{name}},\nYour NOMAD order (#{{order_id}}) status is CANCELLED. Please contact us for details."
 };
 
-// Format phone number safely for BD numbers
 const formatWhatsAppNumber = (phone: string): string => {
   const digits = phone.replace(/[^0-9]/g, '');
   if (!digits) return '';
@@ -101,7 +99,6 @@ const formatWhatsAppNumber = (phone: string): string => {
   return digits;
 };
 
-// Dynamic text replacer helper
 const renderPersonalizedText = (template: string, order: Order): string => {
   return template
     .replace(/{{name}}/g, order.customer_name || 'Customer')
@@ -111,9 +108,6 @@ const renderPersonalizedText = (template: string, order: Order): string => {
     .replace(/{{tracking}}/g, order.tracking_id || 'N/A');
 };
 
-// -------------------------------------------------------------
-// INDIVIDUAL ORDER CARD COMPONENT
-// -------------------------------------------------------------
 interface OrderCardProps {
   order: Order;
   isSelected: boolean;
@@ -230,7 +224,6 @@ const OrderCard: React.FC<OrderCardProps> = ({
     }
   };
 
-  // Compact action link style so all 5 buttons stay on 1 line on mobile
   const actionLinkStyle: React.CSSProperties = {
     display: 'inline-flex',
     alignItems: 'center',
@@ -258,7 +251,6 @@ const OrderCard: React.FC<OrderCardProps> = ({
       borderRadius: '2px',
       transition: 'border-color 0.2s ease'
     }}>
-      {/* Header */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
@@ -301,7 +293,6 @@ const OrderCard: React.FC<OrderCardProps> = ({
           </div>
         </div>
 
-        {/* Customer Info & Direct Native Communication Links */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
             <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#fff' }}>
@@ -319,7 +310,6 @@ const OrderCard: React.FC<OrderCardProps> = ({
             )}
           </div>
 
-          {/* Action Buttons: All strictly on ONE line */}
           <div style={{ display: 'flex', gap: '4px', alignItems: 'center', flexWrap: 'nowrap', overflowX: 'auto', scrollbarWidth: 'none' }}>
             {cleanPhoneForDial && (
               <a
@@ -391,9 +381,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
           </div>
         </div>
 
-        {/* Status Selectors & Main Actions */}
-        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-          {/* Order Status Select */}
+        <div style={{ display: 'flex', gap: '4px', flexWrap: 'nowrap', width: '100%' }}>
           <select
             value={order.status}
             disabled={isUpdating}
@@ -403,11 +391,11 @@ const OrderCard: React.FC<OrderCardProps> = ({
               backgroundColor: '#000',
               color: statusColor,
               border: `1px solid ${statusColor}`,
-              padding: '6px 8px',
-              fontSize: '10px',
+              padding: '6px 2px 6px 4px',
+              fontSize: '9px',
               fontWeight: 'bold',
               borderRadius: '2px',
-              flex: 1,
+              flex: '1 1 0px',
               minWidth: '0',
               cursor: isUpdating ? 'not-allowed' : 'pointer',
               opacity: isUpdating ? 0.6 : 1
@@ -418,7 +406,6 @@ const OrderCard: React.FC<OrderCardProps> = ({
             ))}
           </select>
 
-          {/* Quick Direct Payment Status Select */}
           <select
             value={order.payment_status || 'Unpaid / COD'}
             disabled={isUpdating}
@@ -428,11 +415,11 @@ const OrderCard: React.FC<OrderCardProps> = ({
               backgroundColor: '#000',
               color: isPaid ? '#22c55e' : '#f97316',
               border: `1px solid ${isPaid ? '#22c55e' : '#f97316'}`,
-              padding: '6px 8px',
-              fontSize: '10px',
+              padding: '6px 2px 6px 4px',
+              fontSize: '9px',
               fontWeight: 'bold',
               borderRadius: '2px',
-              flex: 1,
+              flex: '1 1 0px',
               minWidth: '0',
               cursor: isUpdating ? 'not-allowed' : 'pointer',
               opacity: isUpdating ? 0.6 : 1
@@ -446,7 +433,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); onPrintInvoice(order); }}
-            style={{ padding: '6px 12px', background: '#111', border: '1px solid #333', color: '#fff', fontSize: '10px', cursor: 'pointer', borderRadius: '2px', fontWeight: 'bold' }}
+            style={{ padding: '6px 8px', background: '#111', border: '1px solid #333', color: '#fff', fontSize: '9px', cursor: 'pointer', borderRadius: '2px', fontWeight: 'bold', flexShrink: 0 }}
           >
             PRINT
           </button>
@@ -454,18 +441,16 @@ const OrderCard: React.FC<OrderCardProps> = ({
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }}
-            style={{ padding: '6px 12px', background: '#111', border: '1px solid #333', color: '#fff', fontSize: '10px', cursor: 'pointer', borderRadius: '2px', fontWeight: 'bold' }}
+            style={{ padding: '6px 8px', background: '#111', border: '1px solid #333', color: '#fff', fontSize: '9px', cursor: 'pointer', borderRadius: '2px', fontWeight: 'bold', flexShrink: 0 }}
           >
             {isExpanded ? 'HIDE' : 'VIEW'}
           </button>
         </div>
       </div>
 
-      {/* Expanded Details Section */}
       {isExpanded && (
         <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #222', display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
-          {/* Ordered Items */}
           <div>
             <h4 style={{ color: '#888', fontSize: '10px', letterSpacing: '1px', marginBottom: '8px', marginTop: '0' }}>ORDERED ITEMS</h4>
             {order.items.length > 0 ? order.items.map((item, idx) => (
@@ -500,7 +485,6 @@ const OrderCard: React.FC<OrderCardProps> = ({
             )}
           </div>
 
-          {/* Management Form */}
           <div style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', padding: '12px', borderRadius: '2px' }}>
             <h4 style={{ color: '#888', fontSize: '10px', letterSpacing: '1px', marginBottom: '12px', marginTop: '0' }}>MANAGEMENT DETAILS</h4>
 
@@ -583,9 +567,6 @@ const OrderCard: React.FC<OrderCardProps> = ({
   );
 };
 
-// -------------------------------------------------------------
-// MAIN ADMIN ORDERS CONTAINER
-// -------------------------------------------------------------
 const AdminOrders: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -594,7 +575,6 @@ const AdminOrders: React.FC = () => {
   const [selectedPaymentStatusFilter, setSelectedPaymentStatusFilter] = useState<string>('ALL');
   const [selectedDateFilter, setSelectedDateFilter] = useState<string>('ALL TIME');
 
-  // Multi-select & Bulk messaging states
   const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
   const [isBulkModalOpen, setIsBulkModalOpen] = useState<boolean>(false);
   const [bulkMessageType, setBulkMessageType] = useState<'whatsapp' | 'email'>('whatsapp');
@@ -680,7 +660,6 @@ const AdminOrders: React.FC = () => {
     fetchAdminOrders();
   }, []);
 
-  // Update preset when status filter changes
   useEffect(() => {
     if (selectedStatusFilter !== 'ALL' && TEMPLATE_PRESETS[selectedStatusFilter]) {
       setBulkMessageText(TEMPLATE_PRESETS[selectedStatusFilter]);
@@ -711,7 +690,6 @@ const AdminOrders: React.FC = () => {
     }
   };
 
-  // Bulk Payment Status Change Action
   const handleBulkPaymentStatusChange = async (newPaymentStatus: string) => {
     if (selectedOrderIds.length === 0) return;
     try {
@@ -1128,7 +1106,6 @@ const AdminOrders: React.FC = () => {
     printWindow.focus();
   };
 
-  // Filter Logic Updated
   const filteredOrders = useMemo(() => {
     return orders.filter(order => {
       const matchesSearch =
@@ -1208,7 +1185,6 @@ const AdminOrders: React.FC = () => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%', maxWidth: '100%', position: 'relative' }}>
 
-      {/* Toast Notification */}
       {toast && (
         <div style={{
           position: 'fixed',
@@ -1239,7 +1215,6 @@ const AdminOrders: React.FC = () => {
         }
       `}</style>
 
-      {/* Control Bar */}
       <div style={{
         backgroundColor: '#050505',
         border: '1px solid #1a1a1a',
@@ -1251,7 +1226,6 @@ const AdminOrders: React.FC = () => {
         flexDirection: 'column',
         gap: '12px'
       }}>
-        {/* Search */}
         <div>
           <input
             type="text"
@@ -1273,7 +1247,6 @@ const AdminOrders: React.FC = () => {
           />
         </div>
 
-        {/* Date Filter (Standardized monochrome design) */}
         <div>
           <label style={{ display: 'block', fontSize: '9px', color: '#555', marginBottom: '4px', letterSpacing: '1px' }}>DATE RANGE</label>
           <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '4px' }}>
@@ -1307,7 +1280,6 @@ const AdminOrders: React.FC = () => {
           </div>
         </div>
 
-        {/* Status Filter (Standardized monochrome design) */}
         <div>
           <label style={{ display: 'block', fontSize: '9px', color: '#555', marginBottom: '4px', letterSpacing: '1px' }}>ORDER STATUS</label>
           <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '4px' }}>
@@ -1341,7 +1313,6 @@ const AdminOrders: React.FC = () => {
           </div>
         </div>
 
-        {/* Payment Status Filter (Standardized monochrome design) */}
         <div>
           <label style={{ display: 'block', fontSize: '9px', color: '#555', marginBottom: '4px', letterSpacing: '1px' }}>PAYMENT STATUS</label>
           <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '4px' }}>
@@ -1376,7 +1347,6 @@ const AdminOrders: React.FC = () => {
         </div>
       </div>
 
-      {/* Selection & Bulk Action Toolbar */}
       <div style={{
         display: 'flex',
         justify: 'space-between',
@@ -1403,11 +1373,6 @@ const AdminOrders: React.FC = () => {
 
         {selectedOrderIds.length > 0 && (
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-            <span style={{ fontSize: '10px', color: '#3b82f6', fontWeight: 'bold' }}>
-              {selectedOrderIds.length} SELECTED
-            </span>
-
-            {/* Bulk Payment Status Dropdown */}
             <select
               onChange={(e) => {
                 if (e.target.value) {
@@ -1416,7 +1381,7 @@ const AdminOrders: React.FC = () => {
                 }
               }}
               style={{
-                backgroundColor: '#22c55e',
+                backgroundColor: '#fff',
                 color: '#000',
                 border: 'none',
                 padding: '7px 10px',
@@ -1493,7 +1458,6 @@ const AdminOrders: React.FC = () => {
         )}
       </div>
 
-      {/* Orders Count and Refresh */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', color: '#666' }}>
         <span>SHOWING {filteredOrders.length} OF {orders.length} ORDERS</span>
         <button
@@ -1505,7 +1469,6 @@ const AdminOrders: React.FC = () => {
         </button>
       </div>
 
-      {/* Orders List View */}
       {loading ? (
         <div style={{ textAlign: 'center', padding: '60px 0', color: '#666', fontSize: '11px' }}>
           FETCHING ORDER MEMORANDUMS...
@@ -1531,7 +1494,6 @@ const AdminOrders: React.FC = () => {
         </div>
       )}
 
-      {/* BULK MESSAGE MODAL */}
       {isBulkModalOpen && (
         <div style={{
           position: 'fixed',
@@ -1575,7 +1537,6 @@ const AdminOrders: React.FC = () => {
               </button>
             </div>
 
-            {/* Quick Status Presets */}
             <div>
               <label style={{ display: 'block', fontSize: '9px', color: '#888', marginBottom: '6px' }}>LOAD STATUS TEMPLATE PRESET</label>
               <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
