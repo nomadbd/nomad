@@ -73,6 +73,13 @@ const STATUS_OPTIONS = [
   'Cancelled'
 ];
 
+const PAYMENT_STATUS_OPTIONS = [
+  'ALL',
+  'Paid',
+  'Unpaid / COD',
+  'Partial Paid'
+];
+
 const DATE_FILTERS = ['ALL TIME', 'TODAY', 'LAST 7 DAYS', 'THIS MONTH'];
 
 // Status specific message presets
@@ -159,7 +166,6 @@ const OrderCard: React.FC<OrderCardProps> = ({
   const encodedMessage = encodeURIComponent(messageText);
   const emailSubject = encodeURIComponent(`Update Regarding Your NOMAD Order #${order.id.slice(0, 8)}`);
 
-  // Customer information formatted for copy & share
   const customerInfoText = `Name: ${order.customer_name || 'N/A'}\nPhone: ${order.customer_phone || 'N/A'}\nAddress: ${order.shipping_address || 'N/A'}`;
 
   const handleStatusSelect = async (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -168,6 +174,20 @@ const OrderCard: React.FC<OrderCardProps> = ({
     setIsUpdating(true);
     try {
       await onStatusChange(order.id, newStatus);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handlePaymentStatusSelect = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    e.stopPropagation();
+    const newPaymentStatus = e.target.value;
+    setIsUpdating(true);
+    try {
+      await onUpdateDetails(order.id, {
+        ...editForm,
+        payment_status: newPaymentStatus
+      });
     } finally {
       setIsUpdating(false);
     }
@@ -262,17 +282,6 @@ const OrderCard: React.FC<OrderCardProps> = ({
                 }}>
                   ● {order.status.toUpperCase()}
                 </span>
-                <span style={{
-                  backgroundColor: isPaid ? '#22c55e22' : '#f9731622',
-                  color: isPaid ? '#22c55e' : '#f97316',
-                  border: `1px solid ${isPaid ? '#22c55e55' : '#f9731655'}`,
-                  padding: '2px 8px',
-                  borderRadius: '2px',
-                  fontSize: '9px',
-                  fontWeight: 'bold'
-                }}>
-                  {order.payment_status?.toUpperCase() || 'UNPAID'}
-                </span>
               </div>
               <div style={{ fontSize: '10px', color: '#888', marginTop: '4px' }}>
                 {new Date(order.created_at).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}
@@ -344,7 +353,6 @@ const OrderCard: React.FC<OrderCardProps> = ({
               </a>
             )}
 
-            {/* SHARE BUTTON (SVG Only) */}
             <button
               type="button"
               onClick={handleShare}
@@ -360,7 +368,6 @@ const OrderCard: React.FC<OrderCardProps> = ({
               </svg>
             </button>
 
-            {/* COPY BUTTON (SVG Only) */}
             <button
               type="button"
               onClick={handleCopy}
@@ -383,6 +390,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
 
         {/* Status Selectors & Main Actions */}
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          {/* Order Status Select */}
           <select
             value={order.status}
             disabled={isUpdating}
@@ -397,7 +405,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
               fontWeight: 'bold',
               borderRadius: '2px',
               flex: 1,
-              minWidth: '140px',
+              minWidth: '130px',
               cursor: isUpdating ? 'not-allowed' : 'pointer',
               opacity: isUpdating ? 0.6 : 1
             }}
@@ -405,6 +413,31 @@ const OrderCard: React.FC<OrderCardProps> = ({
             {STATUS_OPTIONS.map((opt) => (
               <option key={opt} value={opt}>{opt.toUpperCase()}</option>
             ))}
+          </select>
+
+          {/* Quick Direct Payment Status Select (VIEW বাটনে ক্লিক না করেই সাথে সাথেই পরিবর্তনের জন্য) */}
+          <select
+            value={order.payment_status || 'Unpaid / COD'}
+            disabled={isUpdating}
+            onChange={handlePaymentStatusSelect}
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              backgroundColor: '#000',
+              color: isPaid ? '#22c55e' : '#f97316',
+              border: `1px solid ${isPaid ? '#22c55e' : '#f97316'}`,
+              padding: '9px 12px',
+              fontSize: '10px',
+              fontWeight: 'bold',
+              borderRadius: '2px',
+              flex: 1,
+              minWidth: '130px',
+              cursor: isUpdating ? 'not-allowed' : 'pointer',
+              opacity: isUpdating ? 0.6 : 1
+            }}
+          >
+            <option value="Unpaid / COD">UNPAID / COD</option>
+            <option value="Paid">PAID</option>
+            <option value="Partial Paid">PARTIAL PAID</option>
           </select>
 
           <button
@@ -555,6 +588,7 @@ const AdminOrders: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<string>('ALL');
+  const [selectedPaymentStatusFilter, setSelectedPaymentStatusFilter] = useState<string>('ALL');
   const [selectedDateFilter, setSelectedDateFilter] = useState<string>('ALL TIME');
 
   // Multi-select & Bulk messaging states
@@ -671,6 +705,31 @@ const AdminOrders: React.FC = () => {
     } catch (err) {
       console.error('Failed to update order details:', err);
       showToast('Failed to update details.', 'error');
+    }
+  };
+
+  // Bulk Payment Status Change Action (একসাথে অনেকগুলো Order Paid/Unpaid করার সুবিধা)
+  const handleBulkPaymentStatusChange = async (newPaymentStatus: string) => {
+    if (selectedOrderIds.length === 0) return;
+    try {
+      setLoading(true);
+      const { error } = await supabase
+        .from('orders')
+        .update({ payment_status: newPaymentStatus })
+        .in('id', selectedOrderIds);
+
+      if (error) throw error;
+
+      setOrders(prev => prev.map(o =>
+        selectedOrderIds.includes(o.id) ? { ...o, payment_status: newPaymentStatus } : o
+      ));
+
+      showToast(`Updated payment status to "${newPaymentStatus}" for ${selectedOrderIds.length} orders.`, 'success');
+    } catch (err) {
+      console.error('Failed to bulk update payment status:', err);
+      showToast('Failed to update payment status.', 'error');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -1066,6 +1125,7 @@ const AdminOrders: React.FC = () => {
     printWindow.focus();
   };
 
+  // Filter Logic Updated (Order Status + Payment Status Filter included)
   const filteredOrders = useMemo(() => {
     return orders.filter(order => {
       const matchesSearch =
@@ -1074,6 +1134,9 @@ const AdminOrders: React.FC = () => {
         (order.customer_phone && order.customer_phone.includes(searchTerm));
 
       const matchesStatus = selectedStatusFilter === 'ALL' || order.status.toLowerCase().trim() === selectedStatusFilter.toLowerCase().trim();
+
+      const orderPaymentStatus = order.payment_status || 'Unpaid / COD';
+      const matchesPaymentStatus = selectedPaymentStatusFilter === 'ALL' || orderPaymentStatus.toLowerCase().trim() === selectedPaymentStatusFilter.toLowerCase().trim();
 
       const orderDate = new Date(order.created_at);
       const today = new Date();
@@ -1089,9 +1152,9 @@ const AdminOrders: React.FC = () => {
         matchesDate = orderDate.getMonth() === today.getMonth() && orderDate.getFullYear() === today.getFullYear();
       }
 
-      return matchesSearch && matchesStatus && matchesDate;
+      return matchesSearch && matchesStatus && matchesPaymentStatus && matchesDate;
     });
-  }, [orders, searchTerm, selectedStatusFilter, selectedDateFilter]);
+  }, [orders, searchTerm, selectedStatusFilter, selectedPaymentStatusFilter, selectedDateFilter]);
 
   const handleSelectToggle = (orderId: string) => {
     setSelectedOrderIds(prev =>
@@ -1116,7 +1179,6 @@ const AdminOrders: React.FC = () => {
     return orders.filter(o => selectedOrderIds.includes(o.id));
   }, [orders, selectedOrderIds]);
 
-  // Bulk Email Handlers
   const getSelectedEmailsList = () => {
     return selectedOrdersList
       .map(o => o.customer_email)
@@ -1238,34 +1300,71 @@ const AdminOrders: React.FC = () => {
         </div>
 
         {/* Status Filter */}
-        <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '4px' }}>
-          {['ALL', ...STATUS_OPTIONS].map((status) => {
-            const isActive = selectedStatusFilter === status;
-            return (
-              <button
-                type="button"
-                key={status}
-                onClick={() => setSelectedStatusFilter(status)}
-                style={{
-                  backgroundColor: isActive ? '#fff' : '#0a0a0a',
-                  color: isActive ? '#000' : '#888',
-                  border: isActive ? '1px solid #fff' : '1px solid #222',
-                  padding: '8px 14px',
-                  fontSize: '10px',
-                  fontFamily: 'monospace',
-                  letterSpacing: '1px',
-                  fontWeight: 'bold',
-                  cursor: 'pointer',
-                  textTransform: 'uppercase',
-                  whiteSpace: 'nowrap',
-                  flexShrink: 0,
-                  borderRadius: '2px'
-                }}
-              >
-                {status}
-              </button>
-            );
-          })}
+        <div>
+          <label style={{ display: 'block', fontSize: '9px', color: '#555', marginBottom: '4px', letterSpacing: '1px' }}>ORDER STATUS</label>
+          <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '4px' }}>
+            {['ALL', ...STATUS_OPTIONS].map((status) => {
+              const isActive = selectedStatusFilter === status;
+              return (
+                <button
+                  type="button"
+                  key={status}
+                  onClick={() => setSelectedStatusFilter(status)}
+                  style={{
+                    backgroundColor: isActive ? '#fff' : '#0a0a0a',
+                    color: isActive ? '#000' : '#888',
+                    border: isActive ? '1px solid #fff' : '1px solid #222',
+                    padding: '8px 14px',
+                    fontSize: '10px',
+                    fontFamily: 'monospace',
+                    letterSpacing: '1px',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    textTransform: 'uppercase',
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0,
+                    borderRadius: '2px'
+                  }}
+                >
+                  {status}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Payment Status Filter (নতুন ফিল্টার যা দিয়ে Paid, Unpaid, Partial Paid ফিল্টার করা যাবে) */}
+        <div>
+          <label style={{ display: 'block', fontSize: '9px', color: '#555', marginBottom: '4px', letterSpacing: '1px' }}>PAYMENT STATUS</label>
+          <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '4px' }}>
+            {PAYMENT_STATUS_OPTIONS.map((pStatus) => {
+              const isActive = selectedPaymentStatusFilter === pStatus;
+              return (
+                <button
+                  type="button"
+                  key={pStatus}
+                  onClick={() => setSelectedPaymentStatusFilter(pStatus)}
+                  style={{
+                    backgroundColor: isActive ? '#22c55e' : '#0a0a0a',
+                    color: isActive ? '#000' : '#888',
+                    border: isActive ? '1px solid #22c55e' : '1px solid #222',
+                    padding: '8px 14px',
+                    fontSize: '10px',
+                    fontFamily: 'monospace',
+                    letterSpacing: '1px',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    textTransform: 'uppercase',
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0,
+                    borderRadius: '2px'
+                  }}
+                >
+                  {pStatus}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
@@ -1299,6 +1398,32 @@ const AdminOrders: React.FC = () => {
             <span style={{ fontSize: '10px', color: '#3b82f6', fontWeight: 'bold' }}>
               {selectedOrderIds.length} SELECTED
             </span>
+
+            {/* Bulk Payment Status Dropdown (একসাথে নির্বাচিত অর্ডারের Paid স্ট্যাটাস পরিবর্তনের জন্য) */}
+            <select
+              onChange={(e) => {
+                if (e.target.value) {
+                  handleBulkPaymentStatusChange(e.target.value);
+                  e.target.value = '';
+                }
+              }}
+              style={{
+                backgroundColor: '#22c55e',
+                color: '#000',
+                border: 'none',
+                padding: '7px 10px',
+                fontSize: '10px',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                borderRadius: '2px',
+                outline: 'none'
+              }}
+            >
+              <option value="">MARK PAYMENT AS...</option>
+              <option value="Paid">PAID</option>
+              <option value="Unpaid / COD">UNPAID / COD</option>
+              <option value="Partial Paid">PARTIAL PAID</option>
+            </select>
 
             <button
               type="button"
