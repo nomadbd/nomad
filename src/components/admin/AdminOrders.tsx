@@ -230,6 +230,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
     }
   };
 
+  // Compact action link style so all 5 buttons stay on 1 line on mobile
   const actionLinkStyle: React.CSSProperties = {
     display: 'inline-flex',
     alignItems: 'center',
@@ -237,15 +238,16 @@ const OrderCard: React.FC<OrderCardProps> = ({
     backgroundColor: '#111',
     border: '1px solid #333',
     color: '#fff',
-    padding: '5px 10px',
+    padding: '4px 7px',
     borderRadius: '2px',
-    fontSize: '10px',
+    fontSize: '9.5px',
     fontWeight: 'bold',
-    letterSpacing: '0.5px',
     cursor: 'pointer',
     userSelect: 'none',
     outline: 'none',
-    textDecoration: 'none'
+    textDecoration: 'none',
+    whiteSpace: 'nowrap',
+    flexShrink: 0
   };
 
   return (
@@ -317,7 +319,8 @@ const OrderCard: React.FC<OrderCardProps> = ({
             )}
           </div>
 
-          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+          {/* Action Buttons: All strictly on ONE line */}
+          <div style={{ display: 'flex', gap: '4px', alignItems: 'center', flexWrap: 'nowrap', overflowX: 'auto', scrollbarWidth: 'none' }}>
             {cleanPhoneForDial && (
               <a
                 href={`tel:${cleanPhoneForDial}`}
@@ -357,9 +360,9 @@ const OrderCard: React.FC<OrderCardProps> = ({
               type="button"
               onClick={handleShare}
               title="Share Customer Info"
-              style={{ ...actionLinkStyle, padding: '5px 8px' }}
+              style={{ ...actionLinkStyle, padding: '4px 6px' }}
             >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="18" cy="5" r="3"></circle>
                 <circle cx="6" cy="12" r="3"></circle>
                 <circle cx="18" cy="19" r="3"></circle>
@@ -372,9 +375,9 @@ const OrderCard: React.FC<OrderCardProps> = ({
               type="button"
               onClick={handleCopy}
               title={isCopied ? "Copied!" : "Copy Customer Info"}
-              style={{ ...actionLinkStyle, padding: '5px 8px', color: isCopied ? '#22c55e' : '#fff' }}
+              style={{ ...actionLinkStyle, padding: '4px 6px', color: isCopied ? '#22c55e' : '#fff' }}
             >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 {isCopied ? (
                   <polyline points="20 6 9 17 4 12"></polyline>
                 ) : (
