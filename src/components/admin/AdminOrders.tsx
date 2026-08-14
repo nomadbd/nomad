@@ -389,7 +389,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
         </div>
 
         {/* Status Selectors & Main Actions */}
-        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
           {/* Order Status Select */}
           <select
             value={order.status}
@@ -400,12 +400,12 @@ const OrderCard: React.FC<OrderCardProps> = ({
               backgroundColor: '#000',
               color: statusColor,
               border: `1px solid ${statusColor}`,
-              padding: '9px 12px',
+              padding: '6px 8px',
               fontSize: '10px',
               fontWeight: 'bold',
               borderRadius: '2px',
               flex: 1,
-              minWidth: '130px',
+              minWidth: '0',
               cursor: isUpdating ? 'not-allowed' : 'pointer',
               opacity: isUpdating ? 0.6 : 1
             }}
@@ -415,7 +415,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
             ))}
           </select>
 
-          {/* Quick Direct Payment Status Select (VIEW বাটনে ক্লিক না করেই সাথে সাথেই পরিবর্তনের জন্য) */}
+          {/* Quick Direct Payment Status Select */}
           <select
             value={order.payment_status || 'Unpaid / COD'}
             disabled={isUpdating}
@@ -425,12 +425,12 @@ const OrderCard: React.FC<OrderCardProps> = ({
               backgroundColor: '#000',
               color: isPaid ? '#22c55e' : '#f97316',
               border: `1px solid ${isPaid ? '#22c55e' : '#f97316'}`,
-              padding: '9px 12px',
+              padding: '6px 8px',
               fontSize: '10px',
               fontWeight: 'bold',
               borderRadius: '2px',
               flex: 1,
-              minWidth: '130px',
+              minWidth: '0',
               cursor: isUpdating ? 'not-allowed' : 'pointer',
               opacity: isUpdating ? 0.6 : 1
             }}
@@ -443,7 +443,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); onPrintInvoice(order); }}
-            style={{ padding: '9px 16px', background: '#111', border: '1px solid #333', color: '#fff', fontSize: '10px', cursor: 'pointer', borderRadius: '2px' }}
+            style={{ padding: '6px 12px', background: '#111', border: '1px solid #333', color: '#fff', fontSize: '10px', cursor: 'pointer', borderRadius: '2px', fontWeight: 'bold' }}
           >
             PRINT
           </button>
@@ -451,7 +451,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }}
-            style={{ padding: '9px 16px', background: '#111', border: '1px solid #333', color: '#fff', fontSize: '10px', cursor: 'pointer', borderRadius: '2px' }}
+            style={{ padding: '6px 12px', background: '#111', border: '1px solid #333', color: '#fff', fontSize: '10px', cursor: 'pointer', borderRadius: '2px', fontWeight: 'bold' }}
           >
             {isExpanded ? 'HIDE' : 'VIEW'}
           </button>
@@ -708,7 +708,7 @@ const AdminOrders: React.FC = () => {
     }
   };
 
-  // Bulk Payment Status Change Action (একসাথে অনেকগুলো Order Paid/Unpaid করার সুবিধা)
+  // Bulk Payment Status Change Action
   const handleBulkPaymentStatusChange = async (newPaymentStatus: string) => {
     if (selectedOrderIds.length === 0) return;
     try {
@@ -1125,7 +1125,7 @@ const AdminOrders: React.FC = () => {
     printWindow.focus();
   };
 
-  // Filter Logic Updated (Order Status + Payment Status Filter included)
+  // Filter Logic Updated
   const filteredOrders = useMemo(() => {
     return orders.filter(order => {
       const matchesSearch =
@@ -1270,36 +1270,41 @@ const AdminOrders: React.FC = () => {
           />
         </div>
 
-        {/* Date Filter */}
-        <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', scrollbarWidth: 'none' }}>
-          {DATE_FILTERS.map((dateFilter) => {
-            const isActive = selectedDateFilter === dateFilter;
-            return (
-              <button
-                type="button"
-                key={dateFilter}
-                onClick={() => setSelectedDateFilter(dateFilter)}
-                style={{
-                  backgroundColor: isActive ? '#333' : '#000',
-                  color: isActive ? '#fff' : '#666',
-                  border: isActive ? '1px solid #555' : '1px solid #111',
-                  padding: '6px 12px',
-                  fontSize: '9px',
-                  fontFamily: 'monospace',
-                  letterSpacing: '1px',
-                  cursor: 'pointer',
-                  textTransform: 'uppercase',
-                  whiteSpace: 'nowrap',
-                  borderRadius: '2px'
-                }}
-              >
-                {dateFilter}
-              </button>
-            );
-          })}
+        {/* Date Filter (Standardized monochrome design) */}
+        <div>
+          <label style={{ display: 'block', fontSize: '9px', color: '#555', marginBottom: '4px', letterSpacing: '1px' }}>DATE RANGE</label>
+          <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '4px' }}>
+            {DATE_FILTERS.map((dateFilter) => {
+              const isActive = selectedDateFilter === dateFilter;
+              return (
+                <button
+                  type="button"
+                  key={dateFilter}
+                  onClick={() => setSelectedDateFilter(dateFilter)}
+                  style={{
+                    backgroundColor: isActive ? '#fff' : '#0a0a0a',
+                    color: isActive ? '#000' : '#888',
+                    border: isActive ? '1px solid #fff' : '1px solid #222',
+                    padding: '8px 14px',
+                    fontSize: '10px',
+                    fontFamily: 'monospace',
+                    letterSpacing: '1px',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    textTransform: 'uppercase',
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0,
+                    borderRadius: '2px'
+                  }}
+                >
+                  {dateFilter}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-        {/* Status Filter */}
+        {/* Status Filter (Standardized monochrome design) */}
         <div>
           <label style={{ display: 'block', fontSize: '9px', color: '#555', marginBottom: '4px', letterSpacing: '1px' }}>ORDER STATUS</label>
           <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '4px' }}>
@@ -1333,7 +1338,7 @@ const AdminOrders: React.FC = () => {
           </div>
         </div>
 
-        {/* Payment Status Filter (নতুন ফিল্টার যা দিয়ে Paid, Unpaid, Partial Paid ফিল্টার করা যাবে) */}
+        {/* Payment Status Filter (Standardized monochrome design) */}
         <div>
           <label style={{ display: 'block', fontSize: '9px', color: '#555', marginBottom: '4px', letterSpacing: '1px' }}>PAYMENT STATUS</label>
           <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '4px' }}>
@@ -1345,9 +1350,9 @@ const AdminOrders: React.FC = () => {
                   key={pStatus}
                   onClick={() => setSelectedPaymentStatusFilter(pStatus)}
                   style={{
-                    backgroundColor: isActive ? '#22c55e' : '#0a0a0a',
+                    backgroundColor: isActive ? '#fff' : '#0a0a0a',
                     color: isActive ? '#000' : '#888',
-                    border: isActive ? '1px solid #22c55e' : '1px solid #222',
+                    border: isActive ? '1px solid #fff' : '1px solid #222',
                     padding: '8px 14px',
                     fontSize: '10px',
                     fontFamily: 'monospace',
@@ -1399,7 +1404,7 @@ const AdminOrders: React.FC = () => {
               {selectedOrderIds.length} SELECTED
             </span>
 
-            {/* Bulk Payment Status Dropdown (একসাথে নির্বাচিত অর্ডারের Paid স্ট্যাটাস পরিবর্তনের জন্য) */}
+            {/* Bulk Payment Status Dropdown */}
             <select
               onChange={(e) => {
                 if (e.target.value) {
