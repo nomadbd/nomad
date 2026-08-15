@@ -535,23 +535,23 @@ const OrderCard: React.FC<OrderCardProps> = ({
             </div>
 
             <div style={{ marginBottom: '12px' }}>
-              <label style={{ display: 'block', fontSize: '9px', color: '#555', marginBottom: '4px' }}>ADMIN NOTES (PRIVATE - NOT SENT TO CUSTOMER)</label>
-              <textarea
-                rows={2}
-                placeholder="Add private admin notes here..."
-                value={editForm.admin_notes}
-                onChange={e => setEditForm({ ...editForm, admin_notes: e.target.value })}
-                style={{ width: '100%', boxSizing: 'border-box', background: '#000', color: '#fff', border: '1px solid #333', padding: '8px', fontSize: '11px', outline: 'none', resize: 'vertical' }}
-              />
-            </div>
-
-            <div style={{ marginBottom: '12px' }}>
               <label style={{ display: 'block', fontSize: '9px', color: '#555', marginBottom: '4px' }}>CUSTOMER NOTES (SENT TO CUSTOMER IN MESSAGES/EMAILS)</label>
               <textarea
                 rows={2}
                 placeholder="Add customer note to send in messages..."
                 value={editForm.customer_notes}
                 onChange={e => setEditForm({ ...editForm, customer_notes: e.target.value })}
+                style={{ width: '100%', boxSizing: 'border-box', background: '#000', color: '#fff', border: '1px solid #333', padding: '8px', fontSize: '11px', outline: 'none', resize: 'vertical' }}
+              />
+            </div>
+
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ display: 'block', fontSize: '9px', color: '#555', marginBottom: '4px' }}>ADMIN NOTES (PRIVATE - NOT SENT TO CUSTOMER)</label>
+              <textarea
+                rows={2}
+                placeholder="Add private admin notes here..."
+                value={editForm.admin_notes}
+                onChange={e => setEditForm({ ...editForm, admin_notes: e.target.value })}
                 style={{ width: '100%', boxSizing: 'border-box', background: '#000', color: '#fff', border: '1px solid #333', padding: '8px', fontSize: '11px', outline: 'none', resize: 'vertical' }}
               />
             </div>
