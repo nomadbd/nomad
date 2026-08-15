@@ -84,12 +84,13 @@ const PAYMENT_STATUS_OPTIONS = [
 
 const DATE_FILTERS = ['ALL TIME', 'TODAY', 'LAST 7 DAYS', 'THIS MONTH'];
 
+// মেসেজ ও ইমেইলকে বিষয়বস্তু অনুসারে একাধিক প্যারাগ্রাফে ভাগ করা হয়েছে এবং সব জায়গায় ট্র্যাকিং আইডি দেওয়া হয়েছে
 const TEMPLATE_PRESETS: { [key: string]: string } = {
-  DEFAULT: "Hello {{name}},\nThank you for choosing NOMAD. Your order status is: {{status}}.\nOrder ID: #{{order_id}}\nCourier: {{courier}}\nTracking ID: {{tracking}}",
-  Pending: "Hello {{name}},\nYour NOMAD order (#{{order_id}}) is currently PENDING. We are processing it soon!\nThank you.",
-  Shipped: "Hello {{name}},\nYour NOMAD order (#{{order_id}}) has been SHIPPED via {{courier}}.\nTracking ID: {{tracking}}\nThank you!",
-  Delivered: "Hello {{name}},\nYour NOMAD order (#{{order_id}}) has been DELIVERED successfully!\nThank you for shopping with NOMAD.",
-  Cancelled: "Hello {{name}},\nYour NOMAD order (#{{order_id}}) status is CANCELLED. Please contact us for details."
+  DEFAULT: "Hello {{name}},\n\nThank you for choosing NOMAD. Your order status is: {{status}}.\n\nOrder ID: #{{order_id}}\nCourier: {{courier}}\nTracking ID: {{tracking}}\n\nThank you for shopping with us!",
+  Pending: "Hello {{name}},\n\nYour NOMAD order (#{{order_id}}) is currently PENDING. We are processing it soon!\n\nThank you for shopping with NOMAD.",
+  Shipped: "Hello {{name}},\n\nYour NOMAD order (#{{order_id}}) has been SHIPPED!\n\nCourier: {{courier}}\nTracking ID: {{tracking}}\n\nThank you for shopping with NOMAD!",
+  Delivered: "Hello {{name}},\n\nYour NOMAD order (#{{order_id}}) has been DELIVERED successfully!\n\nCourier: {{courier}}\nTracking ID: {{tracking}}\n\nThank you for shopping with NOMAD.",
+  Cancelled: "Hello {{name}},\n\nYour NOMAD order (#{{order_id}}) status is CANCELLED. Please contact us for further details."
 };
 
 const formatWhatsAppNumber = (phone: string): string => {
@@ -110,7 +111,7 @@ const renderPersonalizedText = (template: string, order: Order): string => {
     .replace(/{{tracking}}/g, order.tracking_id || 'N/A');
 
   if (order.customer_notes && order.customer_notes.trim() !== '') {
-    text += `\nNote: ${order.customer_notes}`;
+    text += `\n\nNote:\n${order.customer_notes.trim()}`;
   }
 
   return text;
@@ -288,7 +289,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
                   ● {order.status.toUpperCase()}
                 </span>
               </div>
-              <div style={{ fontSize: '10px', color: '#888', marginTop: '4px' }}>
+              <div style={{ fontSize: '10px', color: '#ccc', marginTop: '4px' }}>
                 {new Date(order.created_at).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}
               </div>
             </div>
@@ -298,7 +299,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
             <div style={{ fontSize: '15px', fontWeight: '800', color: '#fff' }}>
               ৳{order.total_amount}
             </div>
-            <div style={{ fontSize: '9px', color: '#666' }}>
+            <div style={{ fontSize: '9px', color: '#aaa' }}>
               {displayItemCount} ITEM(S)
             </div>
           </div>
@@ -310,12 +311,12 @@ const OrderCard: React.FC<OrderCardProps> = ({
               {order.customer_name || 'GUEST CUSTOMER'}
             </span>
             {order.customer_phone && (
-              <span style={{ fontSize: '11px', color: '#888', fontFamily: 'monospace' }}>
+              <span style={{ fontSize: '11px', color: '#bbb', fontFamily: 'monospace' }}>
                 {order.customer_phone}
               </span>
             )}
             {order.customer_email && (
-              <span style={{ fontSize: '10px', color: '#888' }}>
+              <span style={{ fontSize: '10px', color: '#bbb' }}>
                 • {order.customer_email}
               </span>
             )}
@@ -463,7 +464,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
         <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #222', display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
           <div>
-            <h4 style={{ color: '#888', fontSize: '10px', letterSpacing: '1px', marginBottom: '8px', marginTop: '0' }}>ORDERED ITEMS</h4>
+            <h4 style={{ color: '#ccc', fontSize: '10px', letterSpacing: '1px', marginBottom: '8px', marginTop: '0' }}>ORDERED ITEMS</h4>
             {order.items.length > 0 ? order.items.map((item, idx) => (
               <div key={`${item.product_name}-${idx}`} style={{
                 display: 'flex',
@@ -480,28 +481,28 @@ const OrderCard: React.FC<OrderCardProps> = ({
                   style={{ width: '45px', height: '55px', objectFit: 'cover' }}
                 />
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 'bold', fontSize: '11px' }}>{item.product_name}</div>
-                  <div style={{ fontSize: '9.5px', color: '#777', marginTop: '4px' }}>
+                  <div style={{ fontWeight: 'bold', fontSize: '11px', color: '#fff' }}>{item.product_name}</div>
+                  <div style={{ fontSize: '9.5px', color: '#bbb', marginTop: '4px' }}>
                     SIZE: {item.size} • COLOR: {item.color} • QTY: {item.quantity}
                   </div>
                 </div>
-                <div style={{ fontWeight: 'bold', fontSize: '12px', alignSelf: 'center' }}>
+                <div style={{ fontWeight: 'bold', fontSize: '12px', alignSelf: 'center', color: '#fff' }}>
                   ৳{item.price * item.quantity}
                 </div>
               </div>
             )) : (
-              <div style={{ color: '#555', fontSize: '11px', fontStyle: 'italic', padding: '10px', background: '#000', border: '1px solid #111' }}>
+              <div style={{ color: '#aaa', fontSize: '11px', fontStyle: 'italic', padding: '10px', background: '#000', border: '1px solid #111' }}>
                 No items found for this order.
               </div>
             )}
           </div>
 
           <div style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', padding: '12px', borderRadius: '2px' }}>
-            <h4 style={{ color: '#888', fontSize: '10px', letterSpacing: '1px', marginBottom: '12px', marginTop: '0' }}>MANAGEMENT DETAILS</h4>
+            <h4 style={{ color: '#ccc', fontSize: '10px', letterSpacing: '1px', marginBottom: '12px', marginTop: '0' }}>MANAGEMENT DETAILS</h4>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginBottom: '12px' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '9px', color: '#555', marginBottom: '4px' }}>PAYMENT STATUS</label>
+                <label style={{ display: 'block', fontSize: '9px', color: '#aaa', marginBottom: '4px' }}>PAYMENT STATUS</label>
                 <select
                   value={editForm.payment_status}
                   onChange={e => setEditForm({ ...editForm, payment_status: e.target.value })}
@@ -513,7 +514,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
                 </select>
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: '9px', color: '#555', marginBottom: '4px' }}>COURIER NAME</label>
+                <label style={{ display: 'block', fontSize: '9px', color: '#aaa', marginBottom: '4px' }}>COURIER NAME</label>
                 <input
                   type="text"
                   placeholder="e.g. Steadfast, Pathao"
@@ -523,7 +524,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
                 />
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: '9px', color: '#555', marginBottom: '4px' }}>TRACKING ID</label>
+                <label style={{ display: 'block', fontSize: '9px', color: '#aaa', marginBottom: '4px' }}>TRACKING ID</label>
                 <input
                   type="text"
                   placeholder="Tracking / Memo No."
@@ -535,7 +536,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
             </div>
 
             <div style={{ marginBottom: '12px' }}>
-              <label style={{ display: 'block', fontSize: '9px', color: '#555', marginBottom: '4px' }}>CUSTOMER NOTES (SENT TO CUSTOMER IN MESSAGES/EMAILS)</label>
+              <label style={{ display: 'block', fontSize: '9px', color: '#aaa', marginBottom: '4px' }}>CUSTOMER NOTES</label>
               <textarea
                 rows={2}
                 placeholder="Add customer note to send in messages..."
@@ -546,7 +547,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
             </div>
 
             <div style={{ marginBottom: '12px' }}>
-              <label style={{ display: 'block', fontSize: '9px', color: '#555', marginBottom: '4px' }}>ADMIN NOTES (PRIVATE - NOT SENT TO CUSTOMER)</label>
+              <label style={{ display: 'block', fontSize: '9px', color: '#aaa', marginBottom: '4px' }}>ADMIN NOTES</label>
               <textarea
                 rows={2}
                 placeholder="Add private admin notes here..."
@@ -557,7 +558,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
             </div>
 
             <div style={{ fontSize: '11px', color: '#ccc', marginBottom: '12px', background: '#000', padding: '10px', border: '1px dashed #333' }}>
-              <strong style={{ color: '#888' }}>SHIPPING ADDRESS:</strong><br />
+              <strong style={{ color: '#aaa' }}>SHIPPING ADDRESS:</strong><br />
               <span style={{ color: '#fff', display: 'block', marginTop: '4px', lineHeight: '1.4' }}>{order.shipping_address || 'No address provided'}</span>
             </div>
 
@@ -1275,7 +1276,7 @@ const AdminOrders: React.FC = () => {
         </div>
 
         <div>
-          <label style={{ display: 'block', fontSize: '9px', color: '#555', marginBottom: '4px', letterSpacing: '1px' }}>DATE RANGE</label>
+          <label style={{ display: 'block', fontSize: '9px', color: '#aaa', marginBottom: '4px', letterSpacing: '1px' }}>DATE RANGE</label>
           <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '4px' }}>
             {DATE_FILTERS.map((dateFilter) => {
               const isActive = selectedDateFilter === dateFilter;
@@ -1286,7 +1287,7 @@ const AdminOrders: React.FC = () => {
                   onClick={() => setSelectedDateFilter(dateFilter)}
                   style={{
                     backgroundColor: isActive ? '#fff' : '#0a0a0a',
-                    color: isActive ? '#000' : '#888',
+                    color: isActive ? '#000' : '#bbb',
                     border: isActive ? '1px solid #fff' : '1px solid #222',
                     padding: '8px 14px',
                     fontSize: '10px',
@@ -1308,7 +1309,7 @@ const AdminOrders: React.FC = () => {
         </div>
 
         <div>
-          <label style={{ display: 'block', fontSize: '9px', color: '#555', marginBottom: '4px', letterSpacing: '1px' }}>ORDER STATUS</label>
+          <label style={{ display: 'block', fontSize: '9px', color: '#aaa', marginBottom: '4px', letterSpacing: '1px' }}>ORDER STATUS</label>
           <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '4px' }}>
             {['ALL', ...STATUS_OPTIONS].map((status) => {
               const isActive = selectedStatusFilter === status;
@@ -1319,7 +1320,7 @@ const AdminOrders: React.FC = () => {
                   onClick={() => setSelectedStatusFilter(status)}
                   style={{
                     backgroundColor: isActive ? '#fff' : '#0a0a0a',
-                    color: isActive ? '#000' : '#888',
+                    color: isActive ? '#000' : '#bbb',
                     border: isActive ? '1px solid #fff' : '1px solid #222',
                     padding: '8px 14px',
                     fontSize: '10px',
@@ -1341,7 +1342,7 @@ const AdminOrders: React.FC = () => {
         </div>
 
         <div>
-          <label style={{ display: 'block', fontSize: '9px', color: '#555', marginBottom: '4px', letterSpacing: '1px' }}>PAYMENT STATUS</label>
+          <label style={{ display: 'block', fontSize: '9px', color: '#aaa', marginBottom: '4px', letterSpacing: '1px' }}>PAYMENT STATUS</label>
           <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '4px' }}>
             {PAYMENT_STATUS_OPTIONS.map((pStatus) => {
               const isActive = selectedPaymentStatusFilter === pStatus;
@@ -1352,7 +1353,7 @@ const AdminOrders: React.FC = () => {
                   onClick={() => setSelectedPaymentStatusFilter(pStatus)}
                   style={{
                     backgroundColor: isActive ? '#fff' : '#0a0a0a',
-                    color: isActive ? '#000' : '#888',
+                    color: isActive ? '#000' : '#bbb',
                     border: isActive ? '1px solid #fff' : '1px solid #222',
                     padding: '8px 14px',
                     fontSize: '10px',
@@ -1485,7 +1486,7 @@ const AdminOrders: React.FC = () => {
         )}
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', color: '#666' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', color: '#aaa' }}>
         <span>SHOWING {filteredOrders.length} OF {orders.length} ORDERS</span>
         <button
           type="button"
@@ -1497,11 +1498,11 @@ const AdminOrders: React.FC = () => {
       </div>
 
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '60px 0', color: '#666', fontSize: '11px' }}>
+        <div style={{ textAlign: 'center', padding: '60px 0', color: '#aaa', fontSize: '11px' }}>
           FETCHING ORDER MEMORANDUMS...
         </div>
       ) : filteredOrders.length === 0 ? (
-        <div style={{ backgroundColor: '#050505', border: '1px solid #111', padding: '50px 20px', textAlign: 'center', color: '#666' }}>
+        <div style={{ backgroundColor: '#050505', border: '1px solid #111', padding: '50px 20px', textAlign: 'center', color: '#aaa' }}>
           NO MATCHING ORDERS FOUND
         </div>
       ) : (
@@ -1558,14 +1559,14 @@ const AdminOrders: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setIsBulkModalOpen(false)}
-                style={{ background: 'none', border: 'none', color: '#888', fontSize: '16px', cursor: 'pointer' }}
+                style={{ background: 'none', border: 'none', color: '#aaa', fontSize: '16px', cursor: 'pointer' }}
               >
                 ✕
               </button>
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '9px', color: '#888', marginBottom: '6px' }}>LOAD STATUS TEMPLATE PRESET</label>
+              <label style={{ display: 'block', fontSize: '9px', color: '#aaa', marginBottom: '6px' }}>LOAD STATUS TEMPLATE PRESET</label>
               <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                 {Object.keys(TEMPLATE_PRESETS).map((key) => {
                   const isPresetActive = selectedPresetKey === key || bulkMessageText === TEMPLATE_PRESETS[key];
@@ -1597,7 +1598,7 @@ const AdminOrders: React.FC = () => {
 
             {bulkMessageType === 'email' && (
               <div>
-                <label style={{ display: 'block', fontSize: '10px', color: '#888', marginBottom: '4px' }}>EMAIL SUBJECT</label>
+                <label style={{ display: 'block', fontSize: '10px', color: '#aaa', marginBottom: '4px' }}>EMAIL SUBJECT</label>
                 <input
                   type="text"
                   value={bulkEmailSubject}
@@ -1608,7 +1609,7 @@ const AdminOrders: React.FC = () => {
             )}
 
             <div>
-              <label style={{ display: 'block', fontSize: '10px', color: '#888', marginBottom: '4px' }}>MESSAGE TEMPLATE</label>
+              <label style={{ display: 'block', fontSize: '10px', color: '#aaa', marginBottom: '4px' }}>MESSAGE TEMPLATE</label>
               <textarea
                 rows={4}
                 value={bulkMessageText}
@@ -1618,7 +1619,7 @@ const AdminOrders: React.FC = () => {
                 }}
                 style={{ width: '100%', background: '#000', color: '#fff', border: '1px solid #333', padding: '8px', fontSize: '11px', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }}
               />
-              <div style={{ fontSize: '9px', color: '#666', marginTop: '4px' }}>
+              <div style={{ fontSize: '9px', color: '#aaa', marginTop: '4px' }}>
                 Variables: <code>{"{{name}}"}</code>, <code>{"{{status}}"}</code>, <code>{"{{order_id}}"}</code>, <code>{"{{courier}}"}</code>, <code>{"{{tracking}}"}</code>
               </div>
             </div>
@@ -1646,13 +1647,13 @@ const AdminOrders: React.FC = () => {
                   OPEN DEFAULT MAIL APP ({getSelectedEmailsList().length} RECIPIENTS VIA BCC)
                 </a>
 
-                <div style={{ fontSize: '9.5px', color: '#888', textAlign: 'center' }}>
+                <div style={{ fontSize: '9.5px', color: '#aaa', textAlign: 'center' }}>
                   Found {getSelectedEmailsList().length} valid emails out of {selectedOrdersList.length} selected orders.
                 </div>
               </div>
             ) : (
               <div>
-                <label style={{ display: 'block', fontSize: '10px', color: '#888', marginBottom: '8px' }}>RECIPIENT DISPATCH QUEUE</label>
+                <label style={{ display: 'block', fontSize: '10px', color: '#aaa', marginBottom: '8px' }}>RECIPIENT DISPATCH QUEUE</label>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '280px', overflowY: 'auto' }}>
                   {selectedOrdersList.map((ord) => {
                     const isSent = Boolean(sentIndexes[ord.id]);
@@ -1664,7 +1665,7 @@ const AdminOrders: React.FC = () => {
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <div>
                             <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#fff' }}>{ord.customer_name || 'Customer'} (#{ord.id.slice(0, 8)})</span>
-                            <span style={{ fontSize: '9px', color: '#666', marginLeft: '6px' }}>{phone} • {ord.status.toUpperCase()}</span>
+                            <span style={{ fontSize: '9px', color: '#aaa', marginLeft: '6px' }}>{phone} • {ord.status.toUpperCase()}</span>
                           </div>
                           <button
                             type="button"
