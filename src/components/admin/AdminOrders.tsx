@@ -35,6 +35,7 @@ interface SupabaseOrderResponse {
   courier_name?: string;
   tracking_id?: string;
   admin_notes?: string;
+  customer_notes?: string;
   order_items: SupabaseOrderItem[];
 }
 
@@ -62,6 +63,7 @@ interface Order {
   courier_name?: string;
   tracking_id?: string;
   admin_notes?: string;
+  customer_notes?: string;
   items: OrderItem[];
 }
 
@@ -83,7 +85,7 @@ const PAYMENT_STATUS_OPTIONS = [
 const DATE_FILTERS = ['ALL TIME', 'TODAY', 'LAST 7 DAYS', 'THIS MONTH'];
 
 const TEMPLATE_PRESETS: { [key: string]: string } = {
-  DEFAULT: "Hello {{name}},\nThank you for choosing NOMAD. Your order status is: {{status}}.\nOrder ID: #{{order_id}}",
+  DEFAULT: "Hello {{name}},\nThank you for choosing NOMAD. Your order status is: {{status}}.\nOrder ID: #{{order_id}}\nCourier: {{courier}}\nTracking ID: {{tracking}}",
   Pending: "Hello {{name}},\nYour NOMAD order (#{{order_id}}) is currently PENDING. We are processing it soon!\nThank you.",
   Shipped: "Hello {{name}},\nYour NOMAD order (#{{order_id}}) has been SHIPPED via {{courier}}.\nTracking ID: {{tracking}}\nThank you!",
   Delivered: "Hello {{name}},\nYour NOMAD order (#{{order_id}}) has been DELIVERED successfully!\nThank you for shopping with NOMAD.",
@@ -100,12 +102,18 @@ const formatWhatsAppNumber = (phone: string): string => {
 };
 
 const renderPersonalizedText = (template: string, order: Order): string => {
-  return template
+  let text = template
     .replace(/{{name}}/g, order.customer_name || 'Customer')
     .replace(/{{status}}/g, (order.status || 'Updated').toUpperCase())
     .replace(/{{order_id}}/g, order.id.slice(0, 8))
     .replace(/{{courier}}/g, order.courier_name || 'N/A')
     .replace(/{{tracking}}/g, order.tracking_id || 'N/A');
+
+  if (order.customer_notes && order.customer_notes.trim() !== '') {
+    text += `\nNote: ${order.customer_notes}`;
+  }
+
+  return text;
 };
 
 interface OrderCardProps {
@@ -113,7 +121,7 @@ interface OrderCardProps {
   isSelected: boolean;
   onSelectToggle: (orderId: string) => void;
   onStatusChange: (orderId: string, newStatus: string) => Promise<void>;
-  onUpdateDetails: (orderId: string, updatedData: { payment_status: string; courier_name: string; tracking_id: string; admin_notes: string }) => Promise<void>;
+  onUpdateDetails: (orderId: string, updatedData: { payment_status: string; courier_name: string; tracking_id: string; admin_notes: string; customer_notes: string }) => Promise<void>;
   onPrintInvoice: (order: Order) => void;
   getStatusColor: (status: string) => string;
 }
@@ -135,7 +143,8 @@ const OrderCard: React.FC<OrderCardProps> = ({
     payment_status: order.payment_status || 'Unpaid / COD',
     courier_name: order.courier_name || '',
     tracking_id: order.tracking_id || '',
-    admin_notes: order.admin_notes || ''
+    admin_notes: order.admin_notes || '',
+    customer_notes: order.customer_notes || ''
   });
 
   useEffect(() => {
@@ -143,7 +152,8 @@ const OrderCard: React.FC<OrderCardProps> = ({
       payment_status: order.payment_status || 'Unpaid / COD',
       courier_name: order.courier_name || '',
       tracking_id: order.tracking_id || '',
-      admin_notes: order.admin_notes || ''
+      admin_notes: order.admin_notes || '',
+      customer_notes: order.customer_notes || ''
     });
   }, [order]);
 
@@ -156,7 +166,8 @@ const OrderCard: React.FC<OrderCardProps> = ({
   const cleanPhoneForDial = rawPhone.replace(/[^0-9+]/g, '');
   const waPhone = formatWhatsAppNumber(rawPhone);
 
-  const messageText = renderPersonalizedText(TEMPLATE_PRESETS.DEFAULT, order);
+  const activeTemplate = TEMPLATE_PRESETS[order.status] || TEMPLATE_PRESETS.DEFAULT;
+  const messageText = renderPersonalizedText(activeTemplate, order);
   const encodedMessage = encodeURIComponent(messageText);
   const emailSubject = encodeURIComponent(`Update Regarding Your NOMAD Order #${order.id.slice(0, 8)}`);
 
@@ -524,12 +535,23 @@ const OrderCard: React.FC<OrderCardProps> = ({
             </div>
 
             <div style={{ marginBottom: '12px' }}>
-              <label style={{ display: 'block', fontSize: '9px', color: '#555', marginBottom: '4px' }}>ADMIN NOTES / CUSTOMER REQUESTS</label>
+              <label style={{ display: 'block', fontSize: '9px', color: '#555', marginBottom: '4px' }}>ADMIN NOTES (PRIVATE - NOT SENT TO CUSTOMER)</label>
               <textarea
                 rows={2}
-                placeholder="Add notes here..."
+                placeholder="Add private admin notes here..."
                 value={editForm.admin_notes}
                 onChange={e => setEditForm({ ...editForm, admin_notes: e.target.value })}
+                style={{ width: '100%', boxSizing: 'border-box', background: '#000', color: '#fff', border: '1px solid #333', padding: '8px', fontSize: '11px', outline: 'none', resize: 'vertical' }}
+              />
+            </div>
+
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ display: 'block', fontSize: '9px', color: '#555', marginBottom: '4px' }}>CUSTOMER NOTES (SENT TO CUSTOMER IN MESSAGES/EMAILS)</label>
+              <textarea
+                rows={2}
+                placeholder="Add customer note to send in messages..."
+                value={editForm.customer_notes}
+                onChange={e => setEditForm({ ...editForm, customer_notes: e.target.value })}
                 style={{ width: '100%', boxSizing: 'border-box', background: '#000', color: '#fff', border: '1px solid #333', padding: '8px', fontSize: '11px', outline: 'none', resize: 'vertical' }}
               />
             </div>
@@ -579,6 +601,7 @@ const AdminOrders: React.FC = () => {
   const [isBulkModalOpen, setIsBulkModalOpen] = useState<boolean>(false);
   const [bulkMessageType, setBulkMessageType] = useState<'whatsapp' | 'email'>('whatsapp');
   const [bulkMessageText, setBulkMessageText] = useState<string>(TEMPLATE_PRESETS.DEFAULT);
+  const [selectedPresetKey, setSelectedPresetKey] = useState<string>('DEFAULT');
   const [bulkEmailSubject, setBulkEmailSubject] = useState<string>('Update Regarding Your NOMAD Order');
   const [sentIndexes, setSentIndexes] = useState<{ [key: string]: boolean }>({});
 
@@ -643,6 +666,7 @@ const AdminOrders: React.FC = () => {
             courier_name: order.courier_name || '',
             tracking_id: order.tracking_id || '',
             admin_notes: order.admin_notes || '',
+            customer_notes: order.customer_notes || '',
             items: items
           };
         });
@@ -663,12 +687,14 @@ const AdminOrders: React.FC = () => {
   useEffect(() => {
     if (selectedStatusFilter !== 'ALL' && TEMPLATE_PRESETS[selectedStatusFilter]) {
       setBulkMessageText(TEMPLATE_PRESETS[selectedStatusFilter]);
+      setSelectedPresetKey(selectedStatusFilter);
     } else {
       setBulkMessageText(TEMPLATE_PRESETS.DEFAULT);
+      setSelectedPresetKey('DEFAULT');
     }
   }, [selectedStatusFilter]);
 
-  const handleUpdateDetails = async (orderId: string, updatedFields: { payment_status: string; courier_name: string; tracking_id: string; admin_notes: string }) => {
+  const handleUpdateDetails = async (orderId: string, updatedFields: { payment_status: string; courier_name: string; tracking_id: string; admin_notes: string; customer_notes: string }) => {
     try {
       const { error } = await supabase
         .from('orders')
@@ -676,7 +702,8 @@ const AdminOrders: React.FC = () => {
           payment_status: updatedFields.payment_status,
           courier_name: updatedFields.courier_name,
           tracking_id: updatedFields.tracking_id,
-          admin_notes: updatedFields.admin_notes
+          admin_notes: updatedFields.admin_notes,
+          customer_notes: updatedFields.customer_notes
         })
         .eq('id', orderId);
 
@@ -1349,7 +1376,7 @@ const AdminOrders: React.FC = () => {
 
       <div style={{
         display: 'flex',
-        justify: 'space-between',
+        justifyContent: 'space-between',
         alignItems: 'center',
         flexWrap: 'wrap',
         gap: '10px',
@@ -1540,25 +1567,31 @@ const AdminOrders: React.FC = () => {
             <div>
               <label style={{ display: 'block', fontSize: '9px', color: '#888', marginBottom: '6px' }}>LOAD STATUS TEMPLATE PRESET</label>
               <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                {Object.keys(TEMPLATE_PRESETS).map((key) => (
-                  <button
-                    type="button"
-                    key={key}
-                    onClick={() => setBulkMessageText(TEMPLATE_PRESETS[key])}
-                    style={{
-                      backgroundColor: '#111',
-                      color: '#ddd',
-                      border: '1px solid #333',
-                      padding: '4px 8px',
-                      fontSize: '9px',
-                      fontWeight: 'bold',
-                      cursor: 'pointer',
-                      borderRadius: '2px'
-                    }}
-                  >
-                    {key.toUpperCase()}
-                  </button>
-                ))}
+                {Object.keys(TEMPLATE_PRESETS).map((key) => {
+                  const isPresetActive = selectedPresetKey === key || bulkMessageText === TEMPLATE_PRESETS[key];
+                  return (
+                    <button
+                      type="button"
+                      key={key}
+                      onClick={() => {
+                        setBulkMessageText(TEMPLATE_PRESETS[key]);
+                        setSelectedPresetKey(key);
+                      }}
+                      style={{
+                        backgroundColor: isPresetActive ? '#fff' : '#111',
+                        color: isPresetActive ? '#000' : '#ddd',
+                        border: isPresetActive ? '1px solid #fff' : '1px solid #333',
+                        padding: '4px 8px',
+                        fontSize: '9px',
+                        fontWeight: 'bold',
+                        cursor: 'pointer',
+                        borderRadius: '2px'
+                      }}
+                    >
+                      {key.toUpperCase()}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -1579,7 +1612,10 @@ const AdminOrders: React.FC = () => {
               <textarea
                 rows={4}
                 value={bulkMessageText}
-                onChange={(e) => setBulkMessageText(e.target.value)}
+                onChange={(e) => {
+                  setBulkMessageText(e.target.value);
+                  setSelectedPresetKey('');
+                }}
                 style={{ width: '100%', background: '#000', color: '#fff', border: '1px solid #333', padding: '8px', fontSize: '11px', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }}
               />
               <div style={{ fontSize: '9px', color: '#666', marginTop: '4px' }}>
