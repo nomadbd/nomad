@@ -384,20 +384,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '9px', color: '#777', marginBottom: '6px', letterSpacing: '0.5px' }}>PAYMENT STATUS</label>
-                  <select
-                    value={editForm.payment_status}
-                    onChange={e => setEditForm({ ...editForm, payment_status: e.target.value })}
-                    style={{ ...cleanInputStyle, cursor: 'pointer' }}
-                  >
-                    <option value="Unpaid / COD">UNPAID / COD</option>
-                    <option value="Paid">PAID</option>
-                    <option value="Partial Paid">PARTIAL PAID</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '9px', color: '#777', marginBottom: '6px', letterSpacing: '0.5px' }}>COURIER NAME</label>
+                  <label style={{ display: 'block', fontSize: '9px', color: '#777', marginBottom: '6px', letterSpacing: '0.5px' %>COURIER NAME</label>
                   <input
                     type="text"
                     placeholder="e.g. Steadfast, Pathao"
