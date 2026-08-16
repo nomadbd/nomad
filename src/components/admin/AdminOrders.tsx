@@ -709,6 +709,11 @@ const AdminOrders: React.FC = () => {
     }
   }, [selectedStatusFilter]);
 
+  // ফিল্টার পরিবর্তন হলে সিলেক্টেড অর্ডার রিসেট হবে
+  useEffect(() => {
+    setSelectedOrderIds([]);
+  }, [searchTerm, selectedStatusFilter, selectedPaymentStatusFilter, selectedDateFilter]);
+
   const handleUpdateDetails = async (orderId: string, updatedFields: { payment_status: string; courier_name: string; tracking_id: string; admin_notes: string; customer_notes: string }) => {
     try {
       const { error } = await supabase
@@ -733,21 +738,22 @@ const AdminOrders: React.FC = () => {
   };
 
   const handleBulkPaymentStatusChange = async (newPaymentStatus: string) => {
-    if (selectedOrderIds.length === 0) return;
+    const targetIds = selectedOrdersList.map(o => o.id);
+    if (targetIds.length === 0) return;
     try {
       setLoading(true);
       const { error } = await supabase
         .from('orders')
         .update({ payment_status: newPaymentStatus })
-        .in('id', selectedOrderIds);
+        .in('id', targetIds);
 
       if (error) throw error;
 
       setOrders(prev => prev.map(o =>
-        selectedOrderIds.includes(o.id) ? { ...o, payment_status: newPaymentStatus } : o
+        targetIds.includes(o.id) ? { ...o, payment_status: newPaymentStatus } : o
       ));
 
-      showToast(`Updated payment status to "${newPaymentStatus}" for ${selectedOrderIds.length} orders.`, 'success');
+      showToast(`Updated payment status to "${newPaymentStatus}" for ${targetIds.length} orders.`, 'success');
     } catch (err) {
       console.error('Failed to bulk update payment status:', err);
       showToast('Failed to update payment status.', 'error');
@@ -1178,6 +1184,11 @@ const AdminOrders: React.FC = () => {
     });
   }, [orders, searchTerm, selectedStatusFilter, selectedPaymentStatusFilter, selectedDateFilter]);
 
+  // ফিল্টার করা অর্ডারের সাথেই সিলেকশন মেলানো হচ্ছে
+  const selectedOrdersList = useMemo(() => {
+    return filteredOrders.filter(o => selectedOrderIds.includes(o.id));
+  }, [filteredOrders, selectedOrderIds]);
+
   const handleSelectToggle = (orderId: string) => {
     setSelectedOrderIds(prev =>
       prev.includes(orderId) ? prev.filter(id => id !== orderId) : [...prev, orderId]
@@ -1196,10 +1207,6 @@ const AdminOrders: React.FC = () => {
       setSelectedOrderIds(Array.from(newSet));
     }
   };
-
-  const selectedOrdersList = useMemo(() => {
-    return orders.filter(o => selectedOrderIds.includes(o.id));
-  }, [orders, selectedOrderIds]);
 
   const getSelectedEmailsList = () => {
     return selectedOrdersList
@@ -1395,7 +1402,7 @@ const AdminOrders: React.FC = () => {
         alignItems: 'center',
         flexWrap: 'wrap',
         gap: '10px',
-        backgroundColor: selectedOrderIds.length > 0 ? '#111' : '#050505',
+        backgroundColor: selectedOrdersList.length > 0 ? '#111' : '#050505',
         border: '1px solid #222',
         padding: '12px 16px',
         borderRadius: '2px'
@@ -1409,11 +1416,11 @@ const AdminOrders: React.FC = () => {
             style={{ cursor: 'pointer', width: '16px', height: '16px', accentColor: '#fff' }}
           />
           <label htmlFor="selectAllFiltered" style={{ fontSize: '11px', color: '#fff', cursor: 'pointer', fontWeight: 'bold' }}>
-            SELECT ALL FILTERED {selectedOrderIds.length > 0 ? `(${selectedOrderIds.length})` : ''}
+            SELECT ALL FILTERED ({filteredOrders.length})
           </label>
         </div>
 
-        {selectedOrderIds.length > 0 && (
+        {selectedOrdersList.length > 0 && (
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
             <select
               onChange={(e) => {
@@ -1454,7 +1461,7 @@ const AdminOrders: React.FC = () => {
                 borderRadius: '2px'
               }}
             >
-              BULK PRINT ({selectedOrderIds.length})
+              BULK PRINT ({selectedOrdersList.length})
             </button>
 
             <button
@@ -1474,7 +1481,7 @@ const AdminOrders: React.FC = () => {
                 borderRadius: '2px'
               }}
             >
-              BULK WHATSAPP ({selectedOrderIds.length})
+              BULK WHATSAPP ({selectedOrdersList.length})
             </button>
 
             <button
@@ -1494,14 +1501,14 @@ const AdminOrders: React.FC = () => {
                 borderRadius: '2px'
               }}
             >
-              BULK EMAIL ({selectedOrderIds.length})
+              BULK EMAIL ({selectedOrdersList.length})
             </button>
           </div>
         )}
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', color: '#aaa' }}>
-        <span>SHOWING {filteredOrders.length} ORDERS</span>
+        <span>SHOWING {filteredOrders.length} OF {orders.length} ORDERS</span>
         <button
           type="button"
           onClick={fetchAdminOrders}
