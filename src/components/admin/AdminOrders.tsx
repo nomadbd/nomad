@@ -288,17 +288,25 @@ const OrderCard: React.FC<OrderCardProps> = ({
                 <span style={{ fontSize: '13px', fontWeight: 'bold', letterSpacing: '1px' }}>
                   #{order.id.slice(0, 8)}...
                 </span>
-                <span style={{
-                  backgroundColor: `${statusColor}22`,
-                  color: statusColor,
-                  border: `1px solid ${statusColor}55`,
-                  padding: '2px 8px',
-                  borderRadius: '2px',
-                  fontSize: '9px',
-                  fontWeight: 'bold'
-                }}>
-                  ● {order.status.toUpperCase()}
-                </span>
+                
+                {/* VIEW/HIDE Button placed beside Order ID */}
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }}
+                  style={{
+                    padding: '2px 8px',
+                    background: '#111',
+                    border: '1px solid #333',
+                    color: '#fff',
+                    fontSize: '9px',
+                    cursor: 'pointer',
+                    borderRadius: '2px',
+                    fontWeight: 'bold',
+                    letterSpacing: '0.5px'
+                  }}
+                >
+                  {isExpanded ? 'HIDE' : 'VIEW'}
+                </button>
               </div>
               <div style={{ fontSize: '10px', color: '#ccc', marginTop: '4px' }}>
                 {new Date(order.created_at).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}
@@ -420,8 +428,8 @@ const OrderCard: React.FC<OrderCardProps> = ({
               backgroundColor: '#000',
               color: statusColor,
               border: `1px solid ${statusColor}`,
-              padding: '6px 2px 6px 4px',
-              fontSize: '9px',
+              padding: '6px 4px',
+              fontSize: '8.5px',
               fontWeight: 'bold',
               borderRadius: '2px',
               flex: '1 1 0px',
@@ -435,6 +443,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
             ))}
           </select>
 
+          {/* Adjusted padding and font size for Payment Status select to show Partial Paid fully */}
           <select
             value={order.payment_status || 'Unpaid / COD'}
             disabled={isUpdating}
@@ -444,11 +453,11 @@ const OrderCard: React.FC<OrderCardProps> = ({
               backgroundColor: '#000',
               color: isPaid ? '#22c55e' : '#f97316',
               border: `1px solid ${isPaid ? '#22c55e' : '#f97316'}`,
-              padding: '6px 2px 6px 4px',
-              fontSize: '9px',
+              padding: '6px 4px',
+              fontSize: '8.5px',
               fontWeight: 'bold',
               borderRadius: '2px',
-              flex: '1 1 0px',
+              flex: '1.2 1 0px',
               minWidth: '0',
               cursor: isUpdating ? 'not-allowed' : 'pointer',
               opacity: isUpdating ? 0.6 : 1
@@ -465,14 +474,6 @@ const OrderCard: React.FC<OrderCardProps> = ({
             style={{ padding: '6px 8px', background: '#111', border: '1px solid #333', color: '#fff', fontSize: '9px', cursor: 'pointer', borderRadius: '2px', fontWeight: 'bold', flexShrink: 0 }}
           >
             PRINT
-          </button>
-
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }}
-            style={{ padding: '6px 8px', background: '#111', border: '1px solid #333', color: '#fff', fontSize: '9px', cursor: 'pointer', borderRadius: '2px', fontWeight: 'bold', flexShrink: 0 }}
-          >
-            {isExpanded ? 'HIDE' : 'VIEW'}
           </button>
         </div>
       </div>
@@ -709,11 +710,6 @@ const AdminOrders: React.FC = () => {
     }
   }, [selectedStatusFilter]);
 
-  // ফিল্টার পরিবর্তন হলে সিলেক্টেড অর্ডার রিসেট হবে
-  useEffect(() => {
-    setSelectedOrderIds([]);
-  }, [searchTerm, selectedStatusFilter, selectedPaymentStatusFilter, selectedDateFilter]);
-
   const handleUpdateDetails = async (orderId: string, updatedFields: { payment_status: string; courier_name: string; tracking_id: string; admin_notes: string; customer_notes: string }) => {
     try {
       const { error } = await supabase
@@ -738,22 +734,21 @@ const AdminOrders: React.FC = () => {
   };
 
   const handleBulkPaymentStatusChange = async (newPaymentStatus: string) => {
-    const targetIds = selectedOrdersList.map(o => o.id);
-    if (targetIds.length === 0) return;
+    if (selectedOrderIds.length === 0) return;
     try {
       setLoading(true);
       const { error } = await supabase
         .from('orders')
         .update({ payment_status: newPaymentStatus })
-        .in('id', targetIds);
+        .in('id', selectedOrderIds);
 
       if (error) throw error;
 
       setOrders(prev => prev.map(o =>
-        targetIds.includes(o.id) ? { ...o, payment_status: newPaymentStatus } : o
+        selectedOrderIds.includes(o.id) ? { ...o, payment_status: newPaymentStatus } : o
       ));
 
-      showToast(`Updated payment status to "${newPaymentStatus}" for ${targetIds.length} orders.`, 'success');
+      showToast(`Updated payment status to "${newPaymentStatus}" for ${selectedOrderIds.length} orders.`, 'success');
     } catch (err) {
       console.error('Failed to bulk update payment status:', err);
       showToast('Failed to update payment status.', 'error');
@@ -1184,11 +1179,6 @@ const AdminOrders: React.FC = () => {
     });
   }, [orders, searchTerm, selectedStatusFilter, selectedPaymentStatusFilter, selectedDateFilter]);
 
-  // ফিল্টার করা অর্ডারের সাথেই সিলেকশন মেলানো হচ্ছে
-  const selectedOrdersList = useMemo(() => {
-    return filteredOrders.filter(o => selectedOrderIds.includes(o.id));
-  }, [filteredOrders, selectedOrderIds]);
-
   const handleSelectToggle = (orderId: string) => {
     setSelectedOrderIds(prev =>
       prev.includes(orderId) ? prev.filter(id => id !== orderId) : [...prev, orderId]
@@ -1207,6 +1197,10 @@ const AdminOrders: React.FC = () => {
       setSelectedOrderIds(Array.from(newSet));
     }
   };
+
+  const selectedOrdersList = useMemo(() => {
+    return orders.filter(o => selectedOrderIds.includes(o.id));
+  }, [orders, selectedOrderIds]);
 
   const getSelectedEmailsList = () => {
     return selectedOrdersList
@@ -1402,7 +1396,7 @@ const AdminOrders: React.FC = () => {
         alignItems: 'center',
         flexWrap: 'wrap',
         gap: '10px',
-        backgroundColor: selectedOrdersList.length > 0 ? '#111' : '#050505',
+        backgroundColor: selectedOrderIds.length > 0 ? '#111' : '#050505',
         border: '1px solid #222',
         padding: '12px 16px',
         borderRadius: '2px'
@@ -1420,7 +1414,7 @@ const AdminOrders: React.FC = () => {
           </label>
         </div>
 
-        {selectedOrdersList.length > 0 && (
+        {selectedOrderIds.length > 0 && (
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
             <select
               onChange={(e) => {
@@ -1461,7 +1455,7 @@ const AdminOrders: React.FC = () => {
                 borderRadius: '2px'
               }}
             >
-              BULK PRINT ({selectedOrdersList.length})
+              BULK PRINT ({selectedOrderIds.length})
             </button>
 
             <button
@@ -1481,7 +1475,7 @@ const AdminOrders: React.FC = () => {
                 borderRadius: '2px'
               }}
             >
-              BULK WHATSAPP ({selectedOrdersList.length})
+              BULK WHATSAPP ({selectedOrderIds.length})
             </button>
 
             <button
@@ -1501,7 +1495,7 @@ const AdminOrders: React.FC = () => {
                 borderRadius: '2px'
               }}
             >
-              BULK EMAIL ({selectedOrdersList.length})
+              BULK EMAIL ({selectedOrderIds.length})
             </button>
           </div>
         )}
@@ -1683,7 +1677,7 @@ const AdminOrders: React.FC = () => {
 
                     return (
                       <div key={ord.id} style={{ display: 'flex', flexDirection: 'column', gap: '6px', background: '#000', padding: '10px', border: '1px solid #1a1a1a', borderRadius: '2px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', items: 'center' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <div>
                             <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#fff' }}>{ord.customer_name || 'Customer'} (#{ord.id.slice(0, 8)})</span>
                             <span style={{ fontSize: '9px', color: '#aaa', marginLeft: '6px' }}>{phone} • {ord.status.toUpperCase()}</span>
