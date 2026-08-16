@@ -537,11 +537,23 @@ const OrderCard: React.FC<OrderCardProps> = ({
             <div style={{ marginBottom: '12px' }}>
               <label style={{ display: 'block', fontSize: '9px', color: '#aaa', marginBottom: '4px' }}>CUSTOMER NOTES</label>
               <textarea
-                rows={2}
                 placeholder="Add customer note to send in messages..."
                 value={editForm.customer_notes}
                 onChange={e => setEditForm({ ...editForm, customer_notes: e.target.value })}
-                style={{ width: '100%', boxSizing: 'border-box', background: '#000', color: '#fff', border: '1px solid #333', padding: '8px', fontSize: '11px', outline: 'none', resize: 'vertical' }}
+                style={{
+                  width: '100%',
+                  boxSizing: 'border-box',
+                  background: '#000',
+                  color: '#fff',
+                  border: '1px solid #333',
+                  padding: '8px',
+                  fontSize: '11px',
+                  outline: 'none',
+                  resize: 'vertical',
+                  minHeight: '50px',
+                  maxHeight: '120px',
+                  overflowY: 'auto'
+                }}
               />
             </div>
 
@@ -553,11 +565,23 @@ const OrderCard: React.FC<OrderCardProps> = ({
             <div style={{ marginBottom: '12px' }}>
               <label style={{ display: 'block', fontSize: '9px', color: '#aaa', marginBottom: '4px' }}>ADMIN NOTES</label>
               <textarea
-                rows={2}
                 placeholder="Add private admin notes here..."
                 value={editForm.admin_notes}
                 onChange={e => setEditForm({ ...editForm, admin_notes: e.target.value })}
-                style={{ width: '100%', boxSizing: 'border-box', background: '#000', color: '#fff', border: '1px solid #333', padding: '8px', fontSize: '11px', outline: 'none', resize: 'vertical' }}
+                style={{
+                  width: '100%',
+                  boxSizing: 'border-box',
+                  background: '#000',
+                  color: '#fff',
+                  border: '1px solid #333',
+                  padding: '8px',
+                  fontSize: '11px',
+                  outline: 'none',
+                  resize: 'vertical',
+                  minHeight: '50px',
+                  maxHeight: '120px',
+                  overflowY: 'auto'
+                }}
               />
             </div>
 
