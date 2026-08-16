@@ -1573,44 +1573,62 @@ const AdminOrders: React.FC = () => {
           width: '100vw',
           height: '100vh',
           backgroundColor: 'rgba(0, 0, 0, 0.85)',
-          backdropFilter: 'blur(4px)',
+          backdropFilter: 'blur(8px)',
           zIndex: 10000,
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
-          padding: '20px',
+          padding: '16px',
           boxSizing: 'border-box'
         }}>
           <div style={{
-            backgroundColor: '#0a0a0a',
-            border: '1px solid #333',
-            borderRadius: '4px',
+            backgroundColor: '#0c0c0c',
+            border: '1px solid #262626',
+            borderRadius: '12px',
             width: '100%',
-            maxWidth: '650px',
+            maxWidth: '580px',
             maxHeight: '90vh',
             display: 'flex',
             flexDirection: 'column',
-            gap: '16px',
-            padding: '20px',
+            gap: '18px',
+            padding: '24px',
             boxSizing: 'border-box',
-            overflowY: 'auto'
+            overflowY: 'auto',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.8)'
           }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #222', paddingBottom: '12px' }}>
-              <h3 style={{ margin: 0, fontSize: '14px', color: '#fff', letterSpacing: '1px' }}>
-                BULK {bulkMessageType.toUpperCase()} BROADCAST ({selectedOrdersList.length} RECIPIENTS)
-              </h3>
+            {/* Modal Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #1f1f1f', paddingBottom: '14px' }}>
+              <div>
+                <span style={{ fontSize: '9.5px', color: '#737373', letterSpacing: '1.5px', fontWeight: 'bold' }}>BROADCAST SYSTEM</span>
+                <h3 style={{ margin: '2px 0 0 0', fontSize: '15px', color: '#fff', letterSpacing: '0.5px' }}>
+                  BULK {bulkMessageType.toUpperCase()} ({selectedOrdersList.length} RECIPIENTS)
+                </h3>
+              </div>
               <button
                 type="button"
                 onClick={() => setIsBulkModalOpen(false)}
-                style={{ background: 'none', border: 'none', color: '#aaa', fontSize: '16px', cursor: 'pointer' }}
+                style={{ 
+                  background: '#161616', 
+                  border: '1px solid #262626', 
+                  color: '#a3a3a3', 
+                  width: '30px', 
+                  height: '30px', 
+                  borderRadius: '50%', 
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '13px'
+                }}
               >
                 ✕
               </button>
             </div>
 
+            {/* Quick Templates Preset */}
             <div>
-              <label style={{ display: 'block', fontSize: '9px', color: '#aaa', marginBottom: '6px' }}>LOAD STATUS TEMPLATE PRESET</label>
-              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+              <label style={{ display: 'block', fontSize: '9.5px', color: '#737373', marginBottom: '8px', fontWeight: 'bold', letterSpacing: '0.5px' }}>QUICK TEMPLATES</label>
+              <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '4px' }}>
                 {Object.keys(TEMPLATE_PRESETS).map((key) => {
                   const isPresetActive = selectedPresetKey === key || bulkMessageText === TEMPLATE_PRESETS[key];
                   return (
@@ -1622,14 +1640,16 @@ const AdminOrders: React.FC = () => {
                         setSelectedPresetKey(key);
                       }}
                       style={{
-                        backgroundColor: '#111',
-                        color: '#ddd',
-                        border: isPresetActive ? '1px solid #fff' : '1px solid #333',
-                        padding: '4px 8px',
-                        fontSize: '9px',
+                        backgroundColor: isPresetActive ? '#fff' : '#141414',
+                        color: isPresetActive ? '#000' : '#a3a3a3',
+                        border: isPresetActive ? '1px solid #fff' : '1px solid #222',
+                        padding: '6px 12px',
+                        fontSize: '9.5px',
                         fontWeight: 'bold',
                         cursor: 'pointer',
-                        borderRadius: '2px'
+                        borderRadius: '20px',
+                        whiteSpace: 'nowrap',
+                        transition: 'all 0.2s'
                       }}
                     >
                       {key.toUpperCase()}
@@ -1641,48 +1661,54 @@ const AdminOrders: React.FC = () => {
 
             {bulkMessageType === 'email' && (
               <div>
-                <label style={{ display: 'block', fontSize: '10px', color: '#aaa', marginBottom: '4px' }}>EMAIL SUBJECT</label>
+                <label style={{ display: 'block', fontSize: '9.5px', color: '#737373', marginBottom: '6px', fontWeight: 'bold' }}>EMAIL SUBJECT</label>
                 <input
                   type="text"
                   value={bulkEmailSubject}
                   onChange={(e) => setBulkEmailSubject(e.target.value)}
-                  style={{ width: '100%', background: '#000', color: '#fff', border: '1px solid #333', padding: '8px', fontSize: '11px', outline: 'none', boxSizing: 'border-box' }}
+                  style={{ width: '100%', background: '#141414', color: '#fff', border: '1px solid #262626', padding: '11px 14px', fontSize: '11px', outline: 'none', borderRadius: '8px', boxSizing: 'border-box' }}
                 />
               </div>
             )}
 
+            {/* Message Template Textarea */}
             <div>
-              <label style={{ display: 'block', fontSize: '10px', color: '#aaa', marginBottom: '4px' }}>MESSAGE TEMPLATE</label>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                <label style={{ fontSize: '9.5px', color: '#737373', fontWeight: 'bold' }}>MESSAGE TEMPLATE</label>
+                <span style={{ fontSize: '9px', color: '#525252' }}>Variables supported</span>
+              </div>
               <textarea
-                rows={4}
+                rows={5}
                 value={bulkMessageText}
                 onChange={(e) => {
                   setBulkMessageText(e.target.value);
                   setSelectedPresetKey('');
                 }}
-                style={{ width: '100%', background: '#000', color: '#fff', border: '1px solid #333', padding: '8px', fontSize: '11px', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }}
+                style={{ width: '100%', background: '#141414', color: '#e5e5e5', border: '1px solid #262626', padding: '12px 14px', fontSize: '11px', outline: 'none', resize: 'vertical', borderRadius: '8px', boxSizing: 'border-box', lineHeight: '1.5' }}
               />
-              <div style={{ fontSize: '9px', color: '#aaa', marginTop: '4px' }}>
-                Variables: <code>{"{{name}}"}</code>, <code>{"{{status}}"}</code>, <code>{"{{order_id}}"}</code>, <code>{"{{courier}}"}</code>, <code>{"{{tracking}}"}</code>
+              <div style={{ fontSize: '9px', color: '#666', marginTop: '6px', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                <span>Tags:</span>
+                <code>{"{{name}}"}</code>, <code>{"{{status}}"}</code>, <code>{"{{order_id}}"}</code>, <code>{"{{courier}}"}</code>, <code>{"{{tracking}}"}</code>
               </div>
             </div>
 
+            {/* Action / Dispatch Section */}
             {bulkMessageType === 'email' ? (
-              <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ marginTop: '4px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <a
                   href={bulkEmailHref}
                   style={{
                     display: 'block',
                     textAlign: 'center',
                     width: '100%',
-                    padding: '12px',
-                    background: 'transparent',
-                    color: '#fff',
+                    padding: '13px',
+                    background: '#fff',
+                    color: '#000',
                     fontWeight: 'bold',
-                    border: '1px solid #fff',
                     fontSize: '11px',
+                    letterSpacing: '0.5px',
                     cursor: 'pointer',
-                    borderRadius: '2px',
+                    borderRadius: '8px',
                     textDecoration: 'none',
                     boxSizing: 'border-box'
                   }}
@@ -1690,44 +1716,53 @@ const AdminOrders: React.FC = () => {
                   OPEN DEFAULT MAIL APP ({getSelectedEmailsList().length} RECIPIENTS VIA BCC)
                 </a>
 
-                <div style={{ fontSize: '9.5px', color: '#aaa', textAlign: 'center' }}>
+                <div style={{ fontSize: '9.5px', color: '#737373', textAlign: 'center' }}>
                   Found {getSelectedEmailsList().length} valid emails out of {selectedOrdersList.length} selected orders.
                 </div>
               </div>
             ) : (
               <div>
-                <label style={{ display: 'block', fontSize: '10px', color: '#aaa', marginBottom: '8px' }}>RECIPIENT DISPATCH QUEUE</label>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '280px', overflowY: 'auto' }}>
+                <label style={{ display: 'block', fontSize: '9.5px', color: '#737373', marginBottom: '8px', fontWeight: 'bold' }}>DISPATCH QUEUE</label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '280px', overflowY: 'auto', paddingRight: '2px' }}>
                   {selectedOrdersList.map((ord) => {
                     const isSent = Boolean(sentIndexes[ord.id]);
                     const phone = ord.customer_phone || 'No phone';
                     const personalizedPreview = renderPersonalizedText(bulkMessageText, ord);
 
                     return (
-                      <div key={ord.id} style={{ display: 'flex', flexDirection: 'column', gap: '6px', background: '#000', padding: '10px', border: '1px solid #1a1a1a', borderRadius: '2px' }}>
+                      <div key={ord.id} style={{ 
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                        gap: '8px', 
+                        background: '#121212', 
+                        padding: '12px', 
+                        border: '1px solid #1f1f1f', 
+                        borderRadius: '8px' 
+                      }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <div>
-                            <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#fff' }}>{ord.customer_name || 'Customer'} (#{ord.id.slice(0, 8)})</span>
-                            <span style={{ fontSize: '9px', color: '#aaa', marginLeft: '6px' }}>{phone} • {ord.status.toUpperCase()}</span>
+                            <div style={{ fontSize: '11.5px', fontWeight: 'bold', color: '#fff' }}>{ord.customer_name || 'Customer'}</div>
+                            <div style={{ fontSize: '9.5px', color: '#888', marginTop: '2px' }}>#{ord.id.slice(0, 8)} • {phone} • <span style={{ color: getStatusColor(ord.status) }}>{ord.status.toUpperCase()}</span></div>
                           </div>
                           <button
                             type="button"
                             onClick={() => handleSendSingleWhatsApp(ord)}
                             style={{
-                              backgroundColor: '#000',
-                              color: isSent ? '#aaa' : '#25D366',
-                              border: isSent ? '1px solid #333' : '1px solid #25D366',
-                              padding: '6px 12px',
-                              fontSize: '9px',
+                              backgroundColor: isSent ? 'transparent' : '#25D366',
+                              color: isSent ? '#737373' : '#000',
+                              border: isSent ? '1px solid #333' : 'none',
+                              padding: '7px 12px',
+                              fontSize: '9.5px',
                               fontWeight: 'bold',
                               cursor: 'pointer',
-                              borderRadius: '2px'
+                              borderRadius: '6px',
+                              transition: 'all 0.2s'
                             }}
                           >
-                            {isSent ? 'SENT ✓' : 'SEND WHATSAPP'}
+                            {isSent ? 'SENT ✓' : 'SEND'}
                           </button>
                         </div>
-                        <div style={{ fontSize: '9.5px', color: '#22c55e', background: '#050505', padding: '6px', border: '1px dashed #222', borderRadius: '2px', whiteSpace: 'pre-wrap' }}>
+                        <div style={{ fontSize: '10px', color: '#a3a3a3', background: '#0a0a0a', padding: '10px', borderRadius: '6px', whiteSpace: 'pre-wrap', border: '1px solid #1a1a1a', lineHeight: '1.4' }}>
                           {personalizedPreview}
                         </div>
                       </div>
@@ -1744,4 +1779,4 @@ const AdminOrders: React.FC = () => {
   );
 };
 
-export default AdminOrders;
+,export default AdminOrders;
