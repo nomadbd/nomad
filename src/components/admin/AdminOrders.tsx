@@ -621,7 +621,7 @@ const AdminOrders: React.FC = () => {
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
 
   const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
-  const [isBulkModalOpen, setIsBulkModalOpen] = useState<boolean>(false);
+  const [isBulkViewOpen, setIsBulkViewOpen] = useState<boolean>(false);
   const [bulkMessageType, setBulkMessageType] = useState<'whatsapp' | 'email'>('whatsapp');
   const [bulkMessageText, setBulkMessageText] = useState<string>(TEMPLATE_PRESETS.DEFAULT);
   const [selectedPresetKey, setSelectedPresetKey] = useState<string>('DEFAULT');
@@ -1236,6 +1236,170 @@ const AdminOrders: React.FC = () => {
   const bulkEmailBccList = Array.from(new Set(getSelectedEmailsList())).join(',');
   const bulkEmailHref = `mailto:?bcc=${encodeURIComponent(bulkEmailBccList)}&subject=${encodeURIComponent(bulkEmailSubject)}&body=${encodeURIComponent(bulkMessageText.replace(/{{name}}/g, 'Valued Customer').replace(/{{status}}/g, selectedStatusFilter !== 'ALL' ? selectedStatusFilter : 'Updated'))}`;
 
+  if (isBulkViewOpen) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%', maxWidth: '100%', position: 'relative', minHeight: '80vh', backgroundColor: '#050505', padding: '20px', boxSizing: 'border-box', borderRadius: '2px', border: '1px solid #222' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #222', paddingBottom: '16px' }}>
+          <div>
+            <h3 style={{ margin: 0, fontSize: '15px', color: '#fff', letterSpacing: '1px', fontWeight: 'bold' }}>
+              BULK {bulkMessageType.toUpperCase()} BROADCAST ({selectedOrdersList.length} RECIPIENTS)
+            </h3>
+            <div style={{ fontSize: '10px', color: '#888', marginTop: '4px' }}>
+              Dedicated broadcast view optimized for desktop & mobile fullscreen usage.
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsBulkViewOpen(false)}
+            style={{
+              backgroundColor: '#111',
+              border: '1px solid #333',
+              color: '#fff',
+              padding: '8px 14px',
+              fontSize: '11px',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              borderRadius: '2px'
+            }}
+          >
+            ← BACK TO ORDERS
+          </button>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxWidth: '800px', width: '100%' }}>
+          <div>
+            <label style={{ display: 'block', fontSize: '9px', color: '#888', marginBottom: '6px', letterSpacing: '1px' }}>LOAD STATUS TEMPLATE PRESET</label>
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+              {Object.keys(TEMPLATE_PRESETS).map((key) => {
+                const isPresetActive = selectedPresetKey === key || bulkMessageText === TEMPLATE_PRESETS[key];
+                return (
+                  <button
+                    type="button"
+                    key={key}
+                    onClick={() => {
+                      setBulkMessageText(TEMPLATE_PRESETS[key]);
+                      setSelectedPresetKey(key);
+                    }}
+                    style={{
+                      backgroundColor: '#111',
+                      color: isPresetActive ? '#fff' : '#ccc',
+                      border: isPresetActive ? '1px solid #fff' : '1px solid #333',
+                      padding: '6px 12px',
+                      fontSize: '9.5px',
+                      fontWeight: 'bold',
+                      cursor: 'pointer',
+                      borderRadius: '2px'
+                    }}
+                  >
+                    {key.toUpperCase()}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {bulkMessageType === 'email' && (
+            <div>
+              <label style={{ display: 'block', fontSize: '10px', color: '#888', marginBottom: '4px' }}>EMAIL SUBJECT</label>
+              <input
+                type="text"
+                value={bulkEmailSubject}
+                onChange={(e) => setBulkEmailSubject(e.target.value)}
+                style={{ width: '100%', background: '#000', color: '#fff', border: '1px solid #333', padding: '10px 12px', fontSize: '11px', outline: 'none', boxSizing: 'border-box', borderRadius: '2px' }}
+              />
+            </div>
+          )}
+
+          <div>
+            <label style={{ display: 'block', fontSize: '10px', color: '#888', marginBottom: '4px' }}>MESSAGE TEMPLATE</label>
+            <textarea
+              rows={5}
+              value={bulkMessageText}
+              onChange={(e) => {
+                setBulkMessageText(e.target.value);
+                setSelectedPresetKey('');
+              }}
+              style={{ width: '100%', background: '#000', color: '#fff', border: '1px solid #333', padding: '10px 12px', fontSize: '11px', outline: 'none', resize: 'vertical', boxSizing: 'border-box', borderRadius: '2px' }}
+            />
+            <div style={{ fontSize: '9px', color: '#888', marginTop: '4px' }}>
+              Variables: <code>{"{{name}}"}</code>, <code>{"{{status}}"}</code>, <code>{"{{order_id}}"}</code>, <code>{"{{courier}}"}</code>, <code>{"{{tracking}}"}</code>
+            </div>
+          </div>
+
+          {bulkMessageType === 'email' ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <a
+                href={bulkEmailHref}
+                style={{
+                  display: 'block',
+                  textAlign: 'center',
+                  width: '100%',
+                  padding: '12px',
+                  background: '#fff',
+                  color: '#000',
+                  fontWeight: 'bold',
+                  border: '1px solid #fff',
+                  fontSize: '11px',
+                  cursor: 'pointer',
+                  borderRadius: '2px',
+                  textDecoration: 'none',
+                  boxSizing: 'border-box'
+                }}
+              >
+                OPEN DEFAULT MAIL APP ({getSelectedEmailsList().length} RECIPIENTS VIA BCC)
+              </a>
+
+              <div style={{ fontSize: '9.5px', color: '#888', textAlign: 'center' }}>
+                Found {getSelectedEmailsList().length} valid emails out of {selectedOrdersList.length} selected orders.
+              </div>
+            </div>
+          ) : (
+            <div>
+              <label style={{ display: 'block', fontSize: '10px', color: '#888', marginBottom: '8px' }}>RECIPIENT DISPATCH QUEUE</label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {selectedOrdersList.map((ord) => {
+                  const isSent = Boolean(sentIndexes[ord.id]);
+                  const phone = ord.customer_phone || 'No phone';
+                  const personalizedPreview = renderPersonalizedText(bulkMessageText, ord);
+
+                  return (
+                    <div key={ord.id} style={{ display: 'flex', flexDirection: 'column', gap: '6px', background: '#000', padding: '12px', border: '1px solid #222', borderRadius: '2px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                        <div>
+                          <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#fff' }}>{ord.customer_name || 'Customer'} (#{ord.id.slice(0, 8)})</span>
+                          <span style={{ fontSize: '9.5px', color: '#888', marginLeft: '6px' }}>{phone} • {ord.status.toUpperCase()}</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleSendSingleWhatsApp(ord)}
+                          style={{
+                            backgroundColor: '#111',
+                            color: isSent ? '#fff' : '#ccc',
+                            border: isSent ? '1px solid #fff' : '1px solid #333',
+                            padding: '6px 14px',
+                            fontSize: '9.5px',
+                            fontWeight: 'bold',
+                            cursor: 'pointer',
+                            borderRadius: '2px'
+                          }}
+                        >
+                          {isSent ? 'SENT' : 'SEND'}
+                        </button>
+                      </div>
+                      <div style={{ fontSize: '10px', color: '#ccc', background: '#050505', padding: '10px', border: '1px solid #1a1a1a', borderRadius: '2px', whiteSpace: 'pre-wrap' }}>
+                        {personalizedPreview}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%', maxWidth: '100%', position: 'relative' }}>
 
@@ -1490,7 +1654,7 @@ const AdminOrders: React.FC = () => {
               type="button"
               onClick={() => {
                 setBulkMessageType('whatsapp');
-                setIsBulkModalOpen(true);
+                setIsBulkViewOpen(true);
               }}
               style={{
                 backgroundColor: '#000',
@@ -1510,7 +1674,7 @@ const AdminOrders: React.FC = () => {
               type="button"
               onClick={() => {
                 setBulkMessageType('email');
-                setIsBulkModalOpen(true);
+                setIsBulkViewOpen(true);
               }}
               style={{
                 backgroundColor: '#000',
@@ -1564,181 +1728,6 @@ const AdminOrders: React.FC = () => {
               getStatusColor={getStatusColor}
             />
           ))}
-        </div>
-      )}
-
-      {isBulkModalOpen && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100vw',
-          height: '100vh',
-          backgroundColor: 'rgba(0, 0, 0, 0.85)',
-          backdropFilter: 'blur(4px)',
-          zIndex: 10000,
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          padding: '20px',
-          boxSizing: 'border-box'
-        }}>
-          <div style={{
-            backgroundColor: '#0a0a0a',
-            border: '1px solid #333',
-            borderRadius: '4px',
-            width: '100%',
-            maxWidth: '650px',
-            maxHeight: '90vh',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '16px',
-            padding: '20px',
-            boxSizing: 'border-box',
-            overflowY: 'auto'
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #222', paddingBottom: '12px' }}>
-              <h3 style={{ margin: 0, fontSize: '14px', color: '#fff', letterSpacing: '1px' }}>
-                BULK {bulkMessageType.toUpperCase()} BROADCAST ({selectedOrdersList.length} RECIPIENTS)
-              </h3>
-              <button
-                type="button"
-                onClick={() => setIsBulkModalOpen(false)}
-                style={{ background: 'none', border: 'none', color: '#aaa', fontSize: '16px', cursor: 'pointer' }}
-              >
-                ✕
-              </button>
-            </div>
-
-            <div>
-              <label style={{ display: 'block', fontSize: '9px', color: '#888', marginBottom: '6px' }}>LOAD STATUS TEMPLATE PRESET</label>
-              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                {Object.keys(TEMPLATE_PRESETS).map((key) => {
-                  const isPresetActive = selectedPresetKey === key || bulkMessageText === TEMPLATE_PRESETS[key];
-                  return (
-                    <button
-                      type="button"
-                      key={key}
-                      onClick={() => {
-                        setBulkMessageText(TEMPLATE_PRESETS[key]);
-                        setSelectedPresetKey(key);
-                      }}
-                      style={{
-                        backgroundColor: '#111',
-                        color: isPresetActive ? '#fff' : '#ccc',
-                        border: isPresetActive ? '1px solid #fff' : '1px solid #333',
-                        padding: '4px 8px',
-                        fontSize: '9px',
-                        fontWeight: 'bold',
-                        cursor: 'pointer',
-                        borderRadius: '2px'
-                      }}
-                    >
-                      {key.toUpperCase()}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {bulkMessageType === 'email' && (
-              <div>
-                <label style={{ display: 'block', fontSize: '10px', color: '#888', marginBottom: '4px' }}>EMAIL SUBJECT</label>
-                <input
-                  type="text"
-                  value={bulkEmailSubject}
-                  onChange={(e) => setBulkEmailSubject(e.target.value)}
-                  style={{ width: '100%', background: '#000', color: '#fff', border: '1px solid #333', padding: '8px', fontSize: '11px', outline: 'none', boxSizing: 'border-box', borderRadius: '2px' }}
-                />
-              </div>
-            )}
-
-            <div>
-              <label style={{ display: 'block', fontSize: '10px', color: '#888', marginBottom: '4px' }}>MESSAGE TEMPLATE</label>
-              <textarea
-                rows={4}
-                value={bulkMessageText}
-                onChange={(e) => {
-                  setBulkMessageText(e.target.value);
-                  setSelectedPresetKey('');
-                }}
-                style={{ width: '100%', background: '#000', color: '#fff', border: '1px solid #333', padding: '8px', fontSize: '11px', outline: 'none', resize: 'vertical', boxSizing: 'border-box', borderRadius: '2px' }}
-              />
-              <div style={{ fontSize: '9px', color: '#888', marginTop: '4px' }}>
-                Variables: <code>{"{{name}}"}</code>, <code>{"{{status}}"}</code>, <code>{"{{order_id}}"}</code>, <code>{"{{courier}}"}</code>, <code>{"{{tracking}}"}</code>
-              </div>
-            </div>
-
-            {bulkMessageType === 'email' ? (
-              <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <a
-                  href={bulkEmailHref}
-                  style={{
-                    display: 'block',
-                    textAlign: 'center',
-                    width: '100%',
-                    padding: '12px',
-                    background: '#fff',
-                    color: '#000',
-                    fontWeight: 'bold',
-                    border: '1px solid #fff',
-                    fontSize: '11px',
-                    cursor: 'pointer',
-                    borderRadius: '2px',
-                    textDecoration: 'none',
-                    boxSizing: 'border-box'
-                  }}
-                >
-                  OPEN DEFAULT MAIL APP ({getSelectedEmailsList().length} RECIPIENTS VIA BCC)
-                </a>
-
-                <div style={{ fontSize: '9.5px', color: '#888', textAlign: 'center' }}>
-                  Found {getSelectedEmailsList().length} valid emails out of {selectedOrdersList.length} selected orders.
-                </div>
-              </div>
-            ) : (
-              <div>
-                <label style={{ display: 'block', fontSize: '10px', color: '#888', marginBottom: '8px' }}>RECIPIENT DISPATCH QUEUE</label>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '280px', overflowY: 'auto' }}>
-                  {selectedOrdersList.map((ord) => {
-                    const isSent = Boolean(sentIndexes[ord.id]);
-                    const phone = ord.customer_phone || 'No phone';
-                    const personalizedPreview = renderPersonalizedText(bulkMessageText, ord);
-
-                    return (
-                      <div key={ord.id} style={{ display: 'flex', flexDirection: 'column', gap: '6px', background: '#000', padding: '10px', border: '1px solid #222', borderRadius: '2px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <div>
-                            <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#fff' }}>{ord.customer_name || 'Customer'} (#{ord.id.slice(0, 8)})</span>
-                            <span style={{ fontSize: '9px', color: '#888', marginLeft: '6px' }}>{phone} • {ord.status.toUpperCase()}</span>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => handleSendSingleWhatsApp(ord)}
-                            style={{
-                              backgroundColor: '#111',
-                              color: isSent ? '#fff' : '#ccc',
-                              border: isSent ? '1px solid #fff' : '1px solid #333',
-                              padding: '6px 12px',
-                              fontSize: '9.5px',
-                              fontWeight: 'bold',
-                              cursor: 'pointer',
-                              borderRadius: '2px'
-                            }}
-                          >
-                            {isSent ? 'SENT' : 'SEND'}
-                          </button>
-                        </div>
-                        <div style={{ fontSize: '9.5px', color: '#ccc', background: '#050505', padding: '8px', border: '1px solid #1a1a1a', borderRadius: '2px', whiteSpace: 'pre-wrap' }}>
-                          {personalizedPreview}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
         </div>
       )}
 
