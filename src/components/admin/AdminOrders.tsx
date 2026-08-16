@@ -119,6 +119,8 @@ const renderPersonalizedText = (template: string, order: Order): string => {
 interface OrderCardProps {
   order: Order;
   isSelected: boolean;
+  isExpanded: boolean;
+  onToggleExpand: (orderId: string) => void;
   onSelectToggle: (orderId: string) => void;
   onStatusChange: (orderId: string, newStatus: string) => Promise<void>;
   onUpdateDetails: (orderId: string, updatedData: { payment_status: string; courier_name: string; tracking_id: string; admin_notes: string; customer_notes: string }) => Promise<void>;
@@ -129,13 +131,14 @@ interface OrderCardProps {
 const OrderCard: React.FC<OrderCardProps> = ({
   order,
   isSelected,
+  isExpanded,
+  onToggleExpand,
   onSelectToggle,
   onStatusChange,
   onUpdateDetails,
   onPrintInvoice,
   getStatusColor
 }) => {
-  const [isExpanded, setIsExpanded] = useState<boolean>(false);
   const [isUpdating, setIsUpdating] = useState<boolean>(false);
   const [isCopied, setIsCopied] = useState<boolean>(false);
 
@@ -275,6 +278,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
       transition: 'border-color 0.2s ease'
     }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        {/* Top Row: Checkbox, ID, Date, Total & VIEW/HIDE Button */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
             <input
@@ -288,25 +292,17 @@ const OrderCard: React.FC<OrderCardProps> = ({
                 <span style={{ fontSize: '13px', fontWeight: 'bold', letterSpacing: '1px' }}>
                   #{order.id.slice(0, 8)}...
                 </span>
-                
-                {/* VIEW/HIDE Button placed beside Order ID */}
-                <button
-                  type="button"
-                  onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }}
-                  style={{
-                    padding: '2px 8px',
-                    background: '#111',
-                    border: '1px solid #333',
-                    color: '#fff',
-                    fontSize: '9px',
-                    cursor: 'pointer',
-                    borderRadius: '2px',
-                    fontWeight: 'bold',
-                    letterSpacing: '0.5px'
-                  }}
-                >
-                  {isExpanded ? 'HIDE' : 'VIEW'}
-                </button>
+                <span style={{
+                  backgroundColor: `${statusColor}22`,
+                  color: statusColor,
+                  border: `1px solid ${statusColor}55`,
+                  padding: '2px 8px',
+                  borderRadius: '2px',
+                  fontSize: '9px',
+                  fontWeight: 'bold'
+                }}>
+                  ● {order.status.toUpperCase()}
+                </span>
               </div>
               <div style={{ fontSize: '10px', color: '#ccc', marginTop: '4px' }}>
                 {new Date(order.created_at).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}
@@ -314,17 +310,86 @@ const OrderCard: React.FC<OrderCardProps> = ({
             </div>
           </div>
 
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: '15px', fontWeight: '800', color: '#fff' }}>
-              ৳{order.total_amount}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: '15px', fontWeight: '800', color: '#fff' }}>
+                ৳{order.total_amount}
+              </div>
+              <div style={{ fontSize: '9px', color: '#aaa' }}>
+                {displayItemCount} ITEM(S)
+              </div>
             </div>
-            <div style={{ fontSize: '9px', color: '#aaa' }}>
-              {displayItemCount} ITEM(S)
-            </div>
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onToggleExpand(order.id); }}
+              style={{ padding: '6px 10px', background: '#111', border: '1px solid #333', color: '#fff', fontSize: '9px', cursor: 'pointer', borderRadius: '2px', fontWeight: 'bold', flexShrink: 0 }}
+            >
+              {isExpanded ? 'HIDE' : 'VIEW'}
+            </button>
           </div>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+        {/* Status & Payment Dropdowns + Print Button */}
+        <div style={{ display: 'flex', gap: '4px', flexWrap: 'nowrap', width: '100%' }}>
+          <select
+            value={order.status}
+            disabled={isUpdating}
+            onChange={handleStatusSelect}
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              backgroundColor: '#000',
+              color: statusColor,
+              border: `1px solid ${statusColor}`,
+              padding: '6px 2px 6px 4px',
+              fontSize: '9px',
+              fontWeight: 'bold',
+              borderRadius: '2px',
+              flex: '1 1 0px',
+              minWidth: '0',
+              cursor: isUpdating ? 'not-allowed' : 'pointer',
+              opacity: isUpdating ? 0.6 : 1
+            }}
+          >
+            {STATUS_OPTIONS.map((opt) => (
+              <option key={opt} value={opt}>{opt.toUpperCase()}</option>
+            ))}
+          </select>
+
+          <select
+            value={order.payment_status || 'Unpaid / COD'}
+            disabled={isUpdating}
+            onChange={handlePaymentStatusSelect}
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              backgroundColor: '#000',
+              color: isPaid ? '#22c55e' : '#f97316',
+              border: `1px solid ${isPaid ? '#22c55e' : '#f97316'}`,
+              padding: '6px 2px 6px 4px',
+              fontSize: '9px',
+              fontWeight: 'bold',
+              borderRadius: '2px',
+              flex: '1 1 0px',
+              minWidth: '0',
+              cursor: isUpdating ? 'not-allowed' : 'pointer',
+              opacity: isUpdating ? 0.6 : 1
+            }}
+          >
+            <option value="Unpaid / COD">UNPAID / COD</option>
+            <option value="Paid">PAID</option>
+            <option value="Partial Paid">PARTIAL PAID</option>
+          </select>
+
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onPrintInvoice(order); }}
+            style={{ padding: '6px 12px', background: '#111', border: '1px solid #333', color: '#fff', fontSize: '9px', cursor: 'pointer', borderRadius: '2px', fontWeight: 'bold', flexShrink: 0, flex: '1 1 0px', textAlign: 'center' }}
+          >
+            PRINT
+          </button>
+        </div>
+
+        {/* Customer Information Section (Moved Below) */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', borderTop: '1px solid #161616', paddingTop: '10px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
             <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#fff' }}>
               {order.customer_name || 'GUEST CUSTOMER'}
@@ -416,65 +481,6 @@ const OrderCard: React.FC<OrderCardProps> = ({
               </svg>
             </button>
           </div>
-        </div>
-
-        <div style={{ display: 'flex', gap: '4px', flexWrap: 'nowrap', width: '100%' }}>
-          <select
-            value={order.status}
-            disabled={isUpdating}
-            onChange={handleStatusSelect}
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              backgroundColor: '#000',
-              color: statusColor,
-              border: `1px solid ${statusColor}`,
-              padding: '6px 4px',
-              fontSize: '8.5px',
-              fontWeight: 'bold',
-              borderRadius: '2px',
-              flex: '1 1 0px',
-              minWidth: '0',
-              cursor: isUpdating ? 'not-allowed' : 'pointer',
-              opacity: isUpdating ? 0.6 : 1
-            }}
-          >
-            {STATUS_OPTIONS.map((opt) => (
-              <option key={opt} value={opt}>{opt.toUpperCase()}</option>
-            ))}
-          </select>
-
-          {/* Adjusted padding and font size for Payment Status select to show Partial Paid fully */}
-          <select
-            value={order.payment_status || 'Unpaid / COD'}
-            disabled={isUpdating}
-            onChange={handlePaymentStatusSelect}
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              backgroundColor: '#000',
-              color: isPaid ? '#22c55e' : '#f97316',
-              border: `1px solid ${isPaid ? '#22c55e' : '#f97316'}`,
-              padding: '6px 4px',
-              fontSize: '8.5px',
-              fontWeight: 'bold',
-              borderRadius: '2px',
-              flex: '1.2 1 0px',
-              minWidth: '0',
-              cursor: isUpdating ? 'not-allowed' : 'pointer',
-              opacity: isUpdating ? 0.6 : 1
-            }}
-          >
-            <option value="Unpaid / COD">UNPAID / COD</option>
-            <option value="Paid">PAID</option>
-            <option value="Partial Paid">PARTIAL PAID</option>
-          </select>
-
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); onPrintInvoice(order); }}
-            style={{ padding: '6px 8px', background: '#111', border: '1px solid #333', color: '#fff', fontSize: '9px', cursor: 'pointer', borderRadius: '2px', fontWeight: 'bold', flexShrink: 0 }}
-          >
-            PRINT
-          </button>
         </div>
       </div>
 
@@ -612,6 +618,8 @@ const AdminOrders: React.FC = () => {
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<string>('ALL');
   const [selectedPaymentStatusFilter, setSelectedPaymentStatusFilter] = useState<string>('ALL');
   const [selectedDateFilter, setSelectedDateFilter] = useState<string>('ALL TIME');
+
+  const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
 
   const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
   const [isBulkModalOpen, setIsBulkModalOpen] = useState<boolean>(false);
@@ -781,6 +789,10 @@ const AdminOrders: React.FC = () => {
     if (s === 'delivered') return '#22c55e';
     if (s === 'cancelled') return '#ef4444';
     return '#a855f7';
+  };
+
+  const handleToggleExpand = (orderId: string) => {
+    setExpandedOrderId(prevId => (prevId === orderId ? null : orderId));
   };
 
   const handlePrintInvoice = (order: Order) => {
@@ -1527,6 +1539,8 @@ const AdminOrders: React.FC = () => {
               key={order.id}
               order={order}
               isSelected={selectedOrderIds.includes(order.id)}
+              isExpanded={expandedOrderId === order.id}
+              onToggleExpand={handleToggleExpand}
               onSelectToggle={handleSelectToggle}
               onStatusChange={handleStatusChange}
               onUpdateDetails={handleUpdateDetails}
