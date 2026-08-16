@@ -453,7 +453,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
             <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#fff' }}>
-              {order.customer_name || 'GUEST CUSTOMER'}
+              {order.customer_name || 'GUEST CUSTOMER'} #{order.id.slice(0, 8)}
             </span>
             {order.customer_phone && (
               <span style={{ fontSize: '11px', color: '#bbb', fontFamily: 'monospace' }}>
@@ -1368,7 +1368,7 @@ const AdminOrders: React.FC = () => {
                     <div key={ord.id} style={{ display: 'flex', flexDirection: 'column', gap: '6px', background: '#000', padding: '12px', border: '1px solid #222', borderRadius: '2px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
                         <div>
-                          <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#fff' }}>{ord.customer_name || 'Customer'}</div>
+                          <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#fff' }}>{ord.customer_name || 'Customer'} #{ord.id.slice(0, 8)}</div>
                           <div style={{ fontSize: '10px', color: '#888', marginTop: '2px', fontFamily: 'monospace' }}>{phone}</div>
                         </div>
                         <button
