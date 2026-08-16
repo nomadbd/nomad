@@ -496,16 +496,17 @@ const OrderCard: React.FC<OrderCardProps> = ({
             )}
           </div>
 
-          <div style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', padding: '12px', borderRadius: '2px' }}>
-            <h4 style={{ color: '#ccc', fontSize: '10px', letterSpacing: '1px', marginBottom: '12px', marginTop: '0' }}>MANAGEMENT DETAILS</h4>
+          {/* Clean Management Details Layout (Without Outer Box Container) */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', paddingTop: '4px' }}>
+            <h4 style={{ color: '#ccc', fontSize: '10px', letterSpacing: '1px', marginBottom: '4px', marginTop: '0' }}>MANAGEMENT DETAILS</h4>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginBottom: '12px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '9px', color: '#aaa', marginBottom: '4px' }}>PAYMENT STATUS</label>
                 <select
                   value={editForm.payment_status}
                   onChange={e => setEditForm({ ...editForm, payment_status: e.target.value })}
-                  style={{ width: '100%', background: '#000', color: '#fff', border: '1px solid #333', padding: '8px', fontSize: '11px', outline: 'none' }}
+                  style={{ width: '100%', background: '#000', color: '#fff', border: '1px solid #333', padding: '8px', fontSize: '11px', outline: 'none', borderRadius: '2px' }}
                 >
                   <option value="Unpaid / COD">UNPAID / COD</option>
                   <option value="Paid">PAID</option>
@@ -519,7 +520,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
                   placeholder="e.g. Steadfast, Pathao"
                   value={editForm.courier_name}
                   onChange={e => setEditForm({ ...editForm, courier_name: e.target.value })}
-                  style={{ width: '100%', boxSizing: 'border-box', background: '#000', color: '#fff', border: '1px solid #333', padding: '8px', fontSize: '11px', outline: 'none' }}
+                  style={{ width: '100%', boxSizing: 'border-box', background: '#000', color: '#fff', border: '1px solid #333', padding: '8px', fontSize: '11px', outline: 'none', borderRadius: '2px' }}
                 />
               </div>
               <div>
@@ -529,35 +530,35 @@ const OrderCard: React.FC<OrderCardProps> = ({
                   placeholder="Tracking / Memo No."
                   value={editForm.tracking_id}
                   onChange={e => setEditForm({ ...editForm, tracking_id: e.target.value })}
-                  style={{ width: '100%', boxSizing: 'border-box', background: '#000', color: '#fff', border: '1px solid #333', padding: '8px', fontSize: '11px', outline: 'none' }}
+                  style={{ width: '100%', boxSizing: 'border-box', background: '#000', color: '#fff', border: '1px solid #333', padding: '8px', fontSize: '11px', outline: 'none', borderRadius: '2px' }}
                 />
               </div>
             </div>
 
-            <div style={{ marginBottom: '12px' }}>
+            <div>
               <label style={{ display: 'block', fontSize: '9px', color: '#aaa', marginBottom: '4px' }}>CUSTOMER NOTES</label>
               <textarea
                 rows={2}
                 placeholder="Add customer note to send in messages..."
                 value={editForm.customer_notes}
                 onChange={e => setEditForm({ ...editForm, customer_notes: e.target.value })}
-                style={{ width: '100%', boxSizing: 'border-box', background: '#000', color: '#fff', border: '1px solid #333', padding: '8px', fontSize: '11px', outline: 'none', resize: 'vertical' }}
+                style={{ width: '100%', boxSizing: 'border-box', background: '#000', color: '#fff', border: '1px solid #333', padding: '8px', fontSize: '11px', outline: 'none', resize: 'vertical', borderRadius: '2px' }}
               />
             </div>
 
-            <div style={{ fontSize: '11px', color: '#ccc', marginBottom: '12px', background: '#000', padding: '10px', border: '1px dashed #333' }}>
-              <strong style={{ color: '#aaa' }}>SHIPPING ADDRESS:</strong><br />
+            <div style={{ fontSize: '11px', color: '#ccc', background: '#000', padding: '10px 12px', borderLeft: '2px solid #fff', borderRadius: '0 2px 2px 0' }}>
+              <strong style={{ color: '#aaa', fontSize: '9px', letterSpacing: '0.5px' }}>SHIPPING ADDRESS:</strong>
               <span style={{ color: '#fff', display: 'block', marginTop: '4px', lineHeight: '1.4' }}>{order.shipping_address || 'No address provided'}</span>
             </div>
 
-            <div style={{ marginBottom: '12px' }}>
+            <div>
               <label style={{ display: 'block', fontSize: '9px', color: '#aaa', marginBottom: '4px' }}>ADMIN NOTES</label>
               <textarea
                 rows={2}
                 placeholder="Add private admin notes here..."
                 value={editForm.admin_notes}
                 onChange={e => setEditForm({ ...editForm, admin_notes: e.target.value })}
-                style={{ width: '100%', boxSizing: 'border-box', background: '#000', color: '#fff', border: '1px solid #333', padding: '8px', fontSize: '11px', outline: 'none', resize: 'vertical' }}
+                style={{ width: '100%', boxSizing: 'border-box', background: '#000', color: '#fff', border: '1px solid #333', padding: '8px', fontSize: '11px', outline: 'none', resize: 'vertical', borderRadius: '2px' }}
               />
             </div>
 
