@@ -1236,17 +1236,16 @@ const AdminOrders: React.FC = () => {
   const bulkEmailBccList = Array.from(new Set(getSelectedEmailsList())).join(',');
   const bulkEmailHref = `mailto:?bcc=${encodeURIComponent(bulkEmailBccList)}&subject=${encodeURIComponent(bulkEmailSubject)}&body=${encodeURIComponent(bulkMessageText.replace(/{{name}}/g, 'Valued Customer').replace(/{{status}}/g, selectedStatusFilter !== 'ALL' ? selectedStatusFilter : 'Updated'))}`;
 
+  const validEmailsCount = getSelectedEmailsList().length;
+
   if (isBulkViewOpen) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%', maxWidth: '100%', position: 'relative', minHeight: '80vh', backgroundColor: '#050505', padding: '20px', boxSizing: 'border-box', borderRadius: '2px', border: '1px solid #222' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%', maxWidth: '100%', position: 'relative', minHeight: '80vh', backgroundColor: '#050505', padding: '0px', boxSizing: 'border-box', borderRadius: '0px', border: 'none' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #222', paddingBottom: '16px' }}>
           <div>
             <h3 style={{ margin: 0, fontSize: '15px', color: '#fff', letterSpacing: '1px', fontWeight: 'bold' }}>
-              BULK {bulkMessageType.toUpperCase()} BROADCAST ({selectedOrdersList.length} RECIPIENTS)
+              BULK {bulkMessageType === 'whatsapp' ? 'WHATSAPP' : 'EMAIL'} ({selectedOrdersList.length})
             </h3>
-            <div style={{ fontSize: '10px', color: '#888', marginTop: '4px' }}>
-              Dedicated broadcast view optimized for desktop & mobile fullscreen usage.
-            </div>
           </div>
           <button
             type="button"
@@ -1255,18 +1254,21 @@ const AdminOrders: React.FC = () => {
               backgroundColor: '#111',
               border: '1px solid #333',
               color: '#fff',
-              padding: '8px 14px',
-              fontSize: '11px',
+              padding: '6px 10px',
+              fontSize: '12px',
               fontWeight: 'bold',
               cursor: 'pointer',
-              borderRadius: '2px'
+              borderRadius: '2px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
             }}
           >
-            ← BACK TO ORDERS
+            ✕
           </button>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxWidth: '800px', width: '100%' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%' }}>
           <div>
             <label style={{ display: 'block', fontSize: '9px', color: '#888', marginBottom: '6px', letterSpacing: '1px' }}>LOAD STATUS TEMPLATE PRESET</label>
             <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
@@ -1335,8 +1337,8 @@ const AdminOrders: React.FC = () => {
                   textAlign: 'center',
                   width: '100%',
                   padding: '12px',
-                  background: '#fff',
-                  color: '#000',
+                  background: 'transparent',
+                  color: '#fff',
                   fontWeight: 'bold',
                   border: '1px solid #fff',
                   fontSize: '11px',
@@ -1346,11 +1348,11 @@ const AdminOrders: React.FC = () => {
                   boxSizing: 'border-box'
                 }}
               >
-                OPEN DEFAULT MAIL APP ({getSelectedEmailsList().length} RECIPIENTS VIA BCC)
+                Send Email ({validEmailsCount})
               </a>
 
               <div style={{ fontSize: '9.5px', color: '#888', textAlign: 'center' }}>
-                Found {getSelectedEmailsList().length} valid emails out of {selectedOrdersList.length} selected orders.
+                Found {validEmailsCount} valid emails out of {selectedOrdersList.length} selected orders.
               </div>
             </div>
           ) : (
@@ -1366,16 +1368,16 @@ const AdminOrders: React.FC = () => {
                     <div key={ord.id} style={{ display: 'flex', flexDirection: 'column', gap: '6px', background: '#000', padding: '12px', border: '1px solid #222', borderRadius: '2px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
                         <div>
-                          <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#fff' }}>{ord.customer_name || 'Customer'} (#{ord.id.slice(0, 8)})</span>
-                          <span style={{ fontSize: '9.5px', color: '#888', marginLeft: '6px' }}>{phone} • {ord.status.toUpperCase()}</span>
+                          <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#fff' }}>{ord.customer_name || 'Customer'}</div>
+                          <div style={{ fontSize: '10px', color: '#888', marginTop: '2px', fontFamily: 'monospace' }}>{phone}</div>
                         </div>
                         <button
                           type="button"
                           onClick={() => handleSendSingleWhatsApp(ord)}
                           style={{
-                            backgroundColor: '#111',
-                            color: isSent ? '#fff' : '#ccc',
-                            border: isSent ? '1px solid #fff' : '1px solid #333',
+                            backgroundColor: isSent ? '#222' : '#111',
+                            color: isSent ? '#888' : '#ccc',
+                            border: isSent ? '1px solid #444' : '1px solid #333',
                             padding: '6px 14px',
                             fontSize: '9.5px',
                             fontWeight: 'bold',
@@ -1667,7 +1669,7 @@ const AdminOrders: React.FC = () => {
                 borderRadius: '2px'
               }}
             >
-              BULK WHATSAPP ({selectedOrderIds.length})
+              WhatsApp ({selectedOrderIds.length})
             </button>
 
             <button
@@ -1687,7 +1689,7 @@ const AdminOrders: React.FC = () => {
                 borderRadius: '2px'
               }}
             >
-              BULK EMAIL ({selectedOrderIds.length})
+              Email ({selectedOrderIds.length})
             </button>
           </div>
         )}
