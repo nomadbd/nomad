@@ -293,8 +293,22 @@ const OrderCard: React.FC<OrderCardProps> = ({
             />
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                <span style={{ fontSize: '13px', fontWeight: 'bold', letterSpacing: '1px' }}>
-                  #{order.id.slice(0, 8)}...
+                {/* ORDER ID CLICKABLE TO TOGGLE VIEW/HIDE */}
+                <span
+                  onClick={() => onToggleExpand(order.id)}
+                  title="Click to toggle details"
+                  style={{
+                    fontSize: '13px',
+                    fontWeight: 'bold',
+                    letterSpacing: '1px',
+                    cursor: 'pointer',
+                    color: '#fff',
+                    textDecoration: 'underline',
+                    textDecorationColor: '#555',
+                    textUnderlineOffset: '3px'
+                  }}
+                >
+                  #{order.id.slice(0, 8)}... {isExpanded ? '▲' : '▼'}
                 </span>
               </div>
               <div style={{ fontSize: '10px', color: '#ccc', marginTop: '4px' }}>
@@ -313,7 +327,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
           </div>
         </div>
 
-        {/* VIEW SECTION PLACED BETWEEN ORDER ID AND CUSTOMER INFO */}
+        {/* EXPANDABLE VIEW SECTION */}
         {isExpanded && (
           <div style={{ paddingTop: '4px', paddingBottom: '4px', borderTop: '1px solid #1a1a1a', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '20px' }}>
             <div>
@@ -530,7 +544,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
           </div>
         </div>
 
-        {/* EQUAL SIZED DROPDOWNS AND VIEW BUTTON */}
+        {/* DROPDOWNS AND PRINT BUTTON (VIEW/HIDE BUTTON REMOVED) */}
         <div style={{ display: 'flex', gap: '4px', flexWrap: 'nowrap', width: '100%' }}>
           <select
             value={order.status}
@@ -586,16 +600,8 @@ const OrderCard: React.FC<OrderCardProps> = ({
 
           <button
             type="button"
-            onClick={(e) => { e.stopPropagation(); onToggleExpand(order.id); }}
-            style={{ padding: '6px 8px', background: '#111', border: '1px solid #333', color: '#fff', fontSize: '9px', cursor: 'pointer', borderRadius: '2px', fontWeight: 'bold', flexShrink: 0 }}
-          >
-            {isExpanded ? 'HIDE' : 'VIEW'}
-          </button>
-
-          <button
-            type="button"
             onClick={(e) => { e.stopPropagation(); onPrintInvoice(order); }}
-            style={{ padding: '6px 8px', background: '#111', border: '1px solid #333', color: '#fff', fontSize: '9px', cursor: 'pointer', borderRadius: '2px', fontWeight: 'bold', flexShrink: 0 }}
+            style={{ padding: '6px 12px', background: '#111', border: '1px solid #333', color: '#fff', fontSize: '9px', cursor: 'pointer', borderRadius: '2px', fontWeight: 'bold', flexShrink: 0 }}
           >
             PRINT
           </button>
