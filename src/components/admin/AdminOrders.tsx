@@ -1409,7 +1409,7 @@ const AdminOrders: React.FC = () => {
             style={{ cursor: 'pointer', width: '16px', height: '16px', accentColor: '#fff' }}
           />
           <label htmlFor="selectAllFiltered" style={{ fontSize: '11px', color: '#fff', cursor: 'pointer', fontWeight: 'bold' }}>
-            SELECT ALL FILTERED ({filteredOrders.length})
+            SELECT ALL FILTERED {selectedOrderIds.length > 0 ? `(${selectedOrderIds.length})` : ''}
           </label>
         </div>
 
@@ -1501,7 +1501,7 @@ const AdminOrders: React.FC = () => {
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', color: '#aaa' }}>
-        <span>SHOWING {filteredOrders.length} OF {orders.length} ORDERS</span>
+        <span>SHOWING {filteredOrders.length} ORDERS</span>
         <button
           type="button"
           onClick={fetchAdminOrders}
