@@ -285,7 +285,6 @@ const OrderCard: React.FC<OrderCardProps> = ({
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-            {/* STYLISH CUSTOM CHECKBOX */}
             <div
               onClick={() => onSelectToggle(order.id)}
               style={{
@@ -312,7 +311,6 @@ const OrderCard: React.FC<OrderCardProps> = ({
 
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                {/* ORDER ID CLICKABLE TO TOGGLE VIEW/HIDE (NO UNDERLINE) */}
                 <span
                   onClick={() => onToggleExpand(order.id)}
                   title="Click to toggle details"
@@ -343,7 +341,6 @@ const OrderCard: React.FC<OrderCardProps> = ({
           </div>
         </div>
 
-        {/* EXPANDABLE VIEW SECTION */}
         {isExpanded && (
           <div style={{ paddingTop: '4px', paddingBottom: '4px', borderTop: '1px solid #1a1a1a', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '20px' }}>
             <div>
@@ -383,19 +380,6 @@ const OrderCard: React.FC<OrderCardProps> = ({
               <h4 style={{ color: '#888', fontSize: '10px', letterSpacing: '1.5px', margin: 0, fontWeight: 'bold' }}>MANAGEMENT DETAILS</h4>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '9px', color: '#777', marginBottom: '6px', letterSpacing: '0.5px' }}>PAYMENT STATUS</label>
-                  <select
-                    value={editForm.payment_status}
-                    onChange={e => setEditForm({ ...editForm, payment_status: e.target.value })}
-                    style={{ ...cleanInputStyle, cursor: 'pointer' }}
-                  >
-                    <option value="Unpaid / COD">UNPAID / COD</option>
-                    <option value="Paid">PAID</option>
-                    <option value="Partial Paid">PARTIAL PAID</option>
-                  </select>
-                </div>
-
                 <div>
                   <label style={{ display: 'block', fontSize: '9px', color: '#777', marginBottom: '6px', letterSpacing: '0.5px' }}>COURIER NAME</label>
                   <input
@@ -1429,7 +1413,6 @@ const AdminOrders: React.FC = () => {
         borderRadius: '2px'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          {/* STYLISH CUSTOM CHECKBOX FOR SELECT ALL */}
           <div
             onClick={handleSelectAllFiltered}
             style={{
