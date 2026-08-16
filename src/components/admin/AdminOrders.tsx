@@ -1314,8 +1314,8 @@ const AdminOrders: React.FC = () => {
                   key={dateFilter}
                   onClick={() => setSelectedDateFilter(dateFilter)}
                   style={{
-                    backgroundColor: isActive ? '#fff' : '#000',
-                    color: isActive ? '#000' : '#ccc',
+                    backgroundColor: '#000',
+                    color: isActive ? '#fff' : '#ccc',
                     border: isActive ? '1px solid #fff' : '1px solid #333',
                     padding: '8px 14px',
                     fontSize: '10px',
@@ -1347,8 +1347,8 @@ const AdminOrders: React.FC = () => {
                   key={status}
                   onClick={() => setSelectedStatusFilter(status)}
                   style={{
-                    backgroundColor: isActive ? '#fff' : '#000',
-                    color: isActive ? '#000' : '#ccc',
+                    backgroundColor: '#000',
+                    color: isActive ? '#fff' : '#ccc',
                     border: isActive ? '1px solid #fff' : '1px solid #333',
                     padding: '8px 14px',
                     fontSize: '10px',
@@ -1380,8 +1380,8 @@ const AdminOrders: React.FC = () => {
                   key={pStatus}
                   onClick={() => setSelectedPaymentStatusFilter(pStatus)}
                   style={{
-                    backgroundColor: isActive ? '#fff' : '#000',
-                    color: isActive ? '#000' : '#ccc',
+                    backgroundColor: '#000',
+                    color: isActive ? '#fff' : '#ccc',
                     border: isActive ? '1px solid #fff' : '1px solid #333',
                     padding: '8px 14px',
                     fontSize: '10px',
@@ -1624,8 +1624,8 @@ const AdminOrders: React.FC = () => {
                         setSelectedPresetKey(key);
                       }}
                       style={{
-                        backgroundColor: isPresetActive ? '#fff' : '#111',
-                        color: isPresetActive ? '#000' : '#ccc',
+                        backgroundColor: '#111',
+                        color: isPresetActive ? '#fff' : '#ccc',
                         border: isPresetActive ? '1px solid #fff' : '1px solid #333',
                         padding: '4px 8px',
                         fontSize: '9px',
@@ -1716,9 +1716,9 @@ const AdminOrders: React.FC = () => {
                             type="button"
                             onClick={() => handleSendSingleWhatsApp(ord)}
                             style={{
-                              backgroundColor: isSent ? '#111' : '#fff',
-                              color: isSent ? '#888' : '#000',
-                              border: isSent ? '1px solid #333' : '1px solid #fff',
+                              backgroundColor: '#111',
+                              color: isSent ? '#fff' : '#ccc',
+                              border: isSent ? '1px solid #fff' : '1px solid #333',
                               padding: '6px 12px',
                               fontSize: '9.5px',
                               fontWeight: 'bold',
@@ -1726,7 +1726,7 @@ const AdminOrders: React.FC = () => {
                               borderRadius: '2px'
                             }}
                           >
-                            {isSent ? 'SENT ✓' : 'SEND'}
+                            {isSent ? 'SENT' : 'SEND'}
                           </button>
                         </div>
                         <div style={{ fontSize: '9.5px', color: '#ccc', background: '#050505', padding: '8px', border: '1px solid #1a1a1a', borderRadius: '2px', whiteSpace: 'pre-wrap' }}>
