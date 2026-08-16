@@ -84,7 +84,6 @@ const PAYMENT_STATUS_OPTIONS = [
 
 const DATE_FILTERS = ['ALL TIME', 'TODAY', 'LAST 7 DAYS', 'THIS MONTH'];
 
-// মেসেজ ও ইমেইলকে বিষয়বস্তু অনুসারে একাধিক প্যারাগ্রাফে ভাগ করা হয়েছে এবং সব জায়গায় ট্র্যাকিং আইডি দেওয়া হয়েছে
 const TEMPLATE_PRESETS: { [key: string]: string } = {
   DEFAULT: "Hello {{name}},\n\nThank you for choosing NOMAD. Your order status is: {{status}}.\n\nOrder ID: #{{order_id}}\nCourier: {{courier}}\nTracking ID: {{tracking}}\n\nThank you for shopping with us!",
   Pending: "Hello {{name}},\n\nYour NOMAD order (#{{order_id}}) is currently PENDING. We are processing it soon!\n\nThank you for shopping with NOMAD.",
@@ -546,6 +545,11 @@ const OrderCard: React.FC<OrderCardProps> = ({
               />
             </div>
 
+            <div style={{ fontSize: '11px', color: '#ccc', marginBottom: '12px', background: '#000', padding: '10px', border: '1px dashed #333' }}>
+              <strong style={{ color: '#aaa' }}>SHIPPING ADDRESS:</strong><br />
+              <span style={{ color: '#fff', display: 'block', marginTop: '4px', lineHeight: '1.4' }}>{order.shipping_address || 'No address provided'}</span>
+            </div>
+
             <div style={{ marginBottom: '12px' }}>
               <label style={{ display: 'block', fontSize: '9px', color: '#aaa', marginBottom: '4px' }}>ADMIN NOTES</label>
               <textarea
@@ -555,11 +559,6 @@ const OrderCard: React.FC<OrderCardProps> = ({
                 onChange={e => setEditForm({ ...editForm, admin_notes: e.target.value })}
                 style={{ width: '100%', boxSizing: 'border-box', background: '#000', color: '#fff', border: '1px solid #333', padding: '8px', fontSize: '11px', outline: 'none', resize: 'vertical' }}
               />
-            </div>
-
-            <div style={{ fontSize: '11px', color: '#ccc', marginBottom: '12px', background: '#000', padding: '10px', border: '1px dashed #333' }}>
-              <strong style={{ color: '#aaa' }}>SHIPPING ADDRESS:</strong><br />
-              <span style={{ color: '#fff', display: 'block', marginTop: '4px', lineHeight: '1.4' }}>{order.shipping_address || 'No address provided'}</span>
             </div>
 
             <button
