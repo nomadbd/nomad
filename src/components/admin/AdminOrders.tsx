@@ -333,6 +333,12 @@ const OrderCard: React.FC<OrderCardProps> = ({
             )}
           </div>
 
+          {order.shipping_address && (
+            <div style={{ fontSize: '11px', color: '#ccc', lineHeight: '1.4' }}>
+              {order.shipping_address}
+            </div>
+          )}
+
           <div style={{ display: 'flex', gap: '4px', alignItems: 'center', flexWrap: 'nowrap', overflowX: 'auto', scrollbarWidth: 'none' }}>
             {cleanPhoneForDial && (
               <a
@@ -1677,7 +1683,7 @@ const AdminOrders: React.FC = () => {
 
                     return (
                       <div key={ord.id} style={{ display: 'flex', flexDirection: 'column', gap: '6px', background: '#000', padding: '10px', border: '1px solid #1a1a1a', borderRadius: '2px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', items: 'center' }}>
                           <div>
                             <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#fff' }}>{ord.customer_name || 'Customer'} (#{ord.id.slice(0, 8)})</span>
                             <span style={{ fontSize: '9px', color: '#aaa', marginLeft: '6px' }}>{phone} • {ord.status.toUpperCase()}</span>
