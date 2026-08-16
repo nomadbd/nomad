@@ -88,7 +88,7 @@ const TEMPLATE_PRESETS: { [key: string]: string } = {
   DEFAULT: "Hello {{name}},\n\nThank you for choosing NOMAD. Your order status is: {{status}}.\n\nOrder ID: #{{order_id}}\nCourier: {{courier}}\nTracking ID: {{tracking}}\n\nThank you for shopping with us!",
   Pending: "Hello {{name}},\n\nYour NOMAD order (#{{order_id}}) is currently PENDING. We are processing it soon!\n\nThank you for shopping with NOMAD.",
   Shipped: "Hello {{name}},\n\nYour NOMAD order (#{{order_id}}) has been SHIPPED!\n\nCourier: {{courier}}\nTracking ID: {{tracking}}\n\nThank you for shopping with NOMAD!",
-  Delivered: "Hello {{name}},\n\nYour NOMAD order (#{{order_id}}) has been DELIVERED successfully!\n\nCourier: {{courier}}\nTracking ID: {{tracking}}\n\nThank you for shopping with NOMAD.",
+  Delivered: "Hello {{name}},\n\nYour NOMAD order (#{{order_id}}) has been DELIVERED successfully!\n\nCourier: {{courier}}\nTracking ID: {{tracking}}\n\nThank you for shopping with NOMAD!",
   Cancelled: "Hello {{name}},\n\nYour NOMAD order (#{{order_id}}) status is CANCELLED. Please contact us for further details."
 };
 
@@ -164,7 +164,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
   const paymentStatusVal = order.payment_status || 'Unpaid / COD';
   const isPaid = paymentStatusVal.toLowerCase().includes('paid') && !paymentStatusVal.toLowerCase().includes('unpaid');
   const isPartial = paymentStatusVal.toLowerCase().includes('partial');
-  
+
   const paymentColor = isPaid ? '#22c55e' : isPartial ? '#3b82f6' : '#f97316';
 
   const totalItemsCount = order.items.reduce((sum, item) => sum + (item.quantity || 0), 0);
@@ -541,14 +541,16 @@ const OrderCard: React.FC<OrderCardProps> = ({
               backgroundColor: '#000',
               color: statusColor,
               border: `1px solid ${statusColor}`,
-              padding: '6px 2px 6px 4px',
-              fontSize: '9px',
+              padding: '6px 4px',
+              fontSize: '8.5px',
               fontWeight: 'bold',
               borderRadius: '2px',
               flex: '1 1 0px',
               minWidth: '0',
               cursor: isUpdating ? 'not-allowed' : 'pointer',
-              opacity: isUpdating ? 0.6 : 1
+              opacity: isUpdating ? 0.6 : 1,
+              textAlign: 'center',
+              textOverflow: 'ellipsis'
             }}
           >
             {STATUS_OPTIONS.map((opt) => (
@@ -565,14 +567,16 @@ const OrderCard: React.FC<OrderCardProps> = ({
               backgroundColor: '#000',
               color: paymentColor,
               border: `1px solid ${paymentColor}`,
-              padding: '6px 2px 6px 4px',
-              fontSize: '9px',
+              padding: '6px 4px',
+              fontSize: '8.5px',
               fontWeight: 'bold',
               borderRadius: '2px',
               flex: '1 1 0px',
               minWidth: '0',
               cursor: isUpdating ? 'not-allowed' : 'pointer',
-              opacity: isUpdating ? 0.6 : 1
+              opacity: isUpdating ? 0.6 : 1,
+              textAlign: 'center',
+              textOverflow: 'ellipsis'
             }}
           >
             <option value="Unpaid / COD">UNPAID / COD</option>
@@ -582,18 +586,18 @@ const OrderCard: React.FC<OrderCardProps> = ({
 
           <button
             type="button"
-            onClick={(e) => { e.stopPropagation(); onPrintInvoice(order); }}
-            style={{ padding: '6px 8px', background: '#111', border: '1px solid #333', color: '#fff', fontSize: '9px', cursor: 'pointer', borderRadius: '2px', fontWeight: 'bold', flexShrink: 0 }}
-          >
-            PRINT
-          </button>
-
-          <button
-            type="button"
             onClick={(e) => { e.stopPropagation(); onToggleExpand(order.id); }}
             style={{ padding: '6px 8px', background: '#111', border: '1px solid #333', color: '#fff', fontSize: '9px', cursor: 'pointer', borderRadius: '2px', fontWeight: 'bold', flexShrink: 0 }}
           >
             {isExpanded ? 'HIDE' : 'VIEW'}
+          </button>
+
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onPrintInvoice(order); }}
+            style={{ padding: '6px 8px', background: '#111', border: '1px solid #333', color: '#fff', fontSize: '9px', cursor: 'pointer', borderRadius: '2px', fontWeight: 'bold', flexShrink: 0 }}
+          >
+            PRINT
           </button>
         </div>
       </div>
