@@ -254,6 +254,18 @@ const OrderCard: React.FC<OrderCardProps> = ({
     flexShrink: 0
   };
 
+  const cleanInputStyle: React.CSSProperties = {
+    width: '100%',
+    boxSizing: 'border-box',
+    background: '#121212',
+    color: '#fff',
+    border: 'none',
+    padding: '10px 12px',
+    fontSize: '11px',
+    outline: 'none',
+    borderRadius: '3px'
+  };
+
   return (
     <div style={{
       backgroundColor: '#050505',
@@ -460,24 +472,23 @@ const OrderCard: React.FC<OrderCardProps> = ({
       </div>
 
       {isExpanded && (
-        <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #222', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
           <div>
-            <h4 style={{ color: '#ccc', fontSize: '10px', letterSpacing: '1px', marginBottom: '8px', marginTop: '0' }}>ORDERED ITEMS</h4>
+            <h4 style={{ color: '#888', fontSize: '10px', letterSpacing: '1px', marginBottom: '10px', marginTop: '0', fontWeight: 'bold' }}>ORDERED ITEMS</h4>
             {order.items.length > 0 ? order.items.map((item, idx) => (
               <div key={`${item.product_name}-${idx}`} style={{
                 display: 'flex',
                 gap: '12px',
-                background: '#000',
+                background: '#0a0a0a',
                 padding: '10px',
                 marginBottom: '8px',
-                border: '1px solid #151515',
-                borderRadius: '2px'
+                borderRadius: '3px'
               }}>
                 <img
                   src={item.product_image}
                   alt={item.product_name}
-                  style={{ width: '45px', height: '55px', objectFit: 'cover' }}
+                  style={{ width: '45px', height: '55px', objectFit: 'cover', borderRadius: '2px' }}
                 />
                 <div style={{ flex: 1 }}>
                   <div style={{ fontWeight: 'bold', fontSize: '11px', color: '#fff' }}>{item.product_name}</div>
@@ -490,75 +501,78 @@ const OrderCard: React.FC<OrderCardProps> = ({
                 </div>
               </div>
             )) : (
-              <div style={{ color: '#aaa', fontSize: '11px', fontStyle: 'italic', padding: '10px', background: '#000', border: '1px solid #111' }}>
+              <div style={{ color: '#666', fontSize: '11px', fontStyle: 'italic', padding: '10px' }}>
                 No items found for this order.
               </div>
             )}
           </div>
 
-          {/* Clean Management Details Layout (Without Outer Box Container) */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', paddingTop: '4px' }}>
-            <h4 style={{ color: '#ccc', fontSize: '10px', letterSpacing: '1px', marginBottom: '4px', marginTop: '0' }}>MANAGEMENT DETAILS</h4>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <h4 style={{ color: '#888', fontSize: '10px', letterSpacing: '1.5px', margin: 0, fontWeight: 'bold' }}>MANAGEMENT DETAILS</h4>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '9px', color: '#aaa', marginBottom: '4px' }}>PAYMENT STATUS</label>
+                <label style={{ display: 'block', fontSize: '9px', color: '#777', marginBottom: '6px', letterSpacing: '0.5px' }}>PAYMENT STATUS</label>
                 <select
                   value={editForm.payment_status}
                   onChange={e => setEditForm({ ...editForm, payment_status: e.target.value })}
-                  style={{ width: '100%', background: '#000', color: '#fff', border: '1px solid #333', padding: '8px', fontSize: '11px', outline: 'none', borderRadius: '2px' }}
+                  style={{ ...cleanInputStyle, cursor: 'pointer' }}
                 >
                   <option value="Unpaid / COD">UNPAID / COD</option>
                   <option value="Paid">PAID</option>
                   <option value="Partial Paid">PARTIAL PAID</option>
                 </select>
               </div>
+
               <div>
-                <label style={{ display: 'block', fontSize: '9px', color: '#aaa', marginBottom: '4px' }}>COURIER NAME</label>
+                <label style={{ display: 'block', fontSize: '9px', color: '#777', marginBottom: '6px', letterSpacing: '0.5px' }}>COURIER NAME</label>
                 <input
                   type="text"
                   placeholder="e.g. Steadfast, Pathao"
                   value={editForm.courier_name}
                   onChange={e => setEditForm({ ...editForm, courier_name: e.target.value })}
-                  style={{ width: '100%', boxSizing: 'border-box', background: '#000', color: '#fff', border: '1px solid #333', padding: '8px', fontSize: '11px', outline: 'none', borderRadius: '2px' }}
+                  style={cleanInputStyle}
                 />
               </div>
+
               <div>
-                <label style={{ display: 'block', fontSize: '9px', color: '#aaa', marginBottom: '4px' }}>TRACKING ID</label>
+                <label style={{ display: 'block', fontSize: '9px', color: '#777', marginBottom: '6px', letterSpacing: '0.5px' }}>TRACKING ID</label>
                 <input
                   type="text"
                   placeholder="Tracking / Memo No."
                   value={editForm.tracking_id}
                   onChange={e => setEditForm({ ...editForm, tracking_id: e.target.value })}
-                  style={{ width: '100%', boxSizing: 'border-box', background: '#000', color: '#fff', border: '1px solid #333', padding: '8px', fontSize: '11px', outline: 'none', borderRadius: '2px' }}
+                  style={cleanInputStyle}
                 />
               </div>
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '9px', color: '#aaa', marginBottom: '4px' }}>CUSTOMER NOTES</label>
+              <label style={{ display: 'block', fontSize: '9px', color: '#777', marginBottom: '6px', letterSpacing: '0.5px' }}>CUSTOMER NOTES</label>
               <textarea
                 rows={2}
                 placeholder="Add customer note to send in messages..."
                 value={editForm.customer_notes}
                 onChange={e => setEditForm({ ...editForm, customer_notes: e.target.value })}
-                style={{ width: '100%', boxSizing: 'border-box', background: '#000', color: '#fff', border: '1px solid #333', padding: '8px', fontSize: '11px', outline: 'none', resize: 'vertical', borderRadius: '2px' }}
+                style={{ ...cleanInputStyle, resize: 'vertical' }}
               />
             </div>
 
-            <div style={{ fontSize: '11px', color: '#ccc', background: '#000', padding: '10px 12px', borderLeft: '2px solid #fff', borderRadius: '0 2px 2px 0' }}>
-              <strong style={{ color: '#aaa', fontSize: '9px', letterSpacing: '0.5px' }}>SHIPPING ADDRESS:</strong>
-              <span style={{ color: '#fff', display: 'block', marginTop: '4px', lineHeight: '1.4' }}>{order.shipping_address || 'No address provided'}</span>
+            <div style={{ background: '#0a0a0a', padding: '12px 14px', borderRadius: '3px', borderLeft: '3px solid #333' }}>
+              <div style={{ fontSize: '9px', color: '#777', letterSpacing: '0.5px', fontWeight: 'bold' }}>SHIPPING ADDRESS (READ-ONLY)</div>
+              <div style={{ color: '#eee', fontSize: '11px', marginTop: '6px', lineHeight: '1.4', whiteSpace: 'pre-wrap' }}>
+                {order.shipping_address || 'No address provided'}
+              </div>
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '9px', color: '#aaa', marginBottom: '4px' }}>ADMIN NOTES</label>
+              <label style={{ display: 'block', fontSize: '9px', color: '#777', marginBottom: '6px', letterSpacing: '0.5px' }}>ADMIN NOTES</label>
               <textarea
                 rows={2}
                 placeholder="Add private admin notes here..."
                 value={editForm.admin_notes}
                 onChange={e => setEditForm({ ...editForm, admin_notes: e.target.value })}
-                style={{ width: '100%', boxSizing: 'border-box', background: '#000', color: '#fff', border: '1px solid #333', padding: '8px', fontSize: '11px', outline: 'none', resize: 'vertical', borderRadius: '2px' }}
+                style={{ ...cleanInputStyle, resize: 'vertical' }}
               />
             </div>
 
@@ -568,7 +582,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
               disabled={isUpdating}
               style={{
                 width: '100%',
-                padding: '10px',
+                padding: '12px',
                 background: '#fff',
                 color: '#000',
                 fontWeight: 'bold',
@@ -576,8 +590,9 @@ const OrderCard: React.FC<OrderCardProps> = ({
                 fontSize: '10px',
                 letterSpacing: '1px',
                 cursor: isUpdating ? 'not-allowed' : 'pointer',
-                borderRadius: '2px',
-                opacity: isUpdating ? 0.6 : 1
+                borderRadius: '3px',
+                opacity: isUpdating ? 0.6 : 1,
+                marginTop: '4px'
               }}
             >
               {isUpdating ? 'SAVING...' : 'SAVE DETAILS'}
