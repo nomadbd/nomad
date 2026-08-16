@@ -277,23 +277,42 @@ const OrderCard: React.FC<OrderCardProps> = ({
   return (
     <div style={{
       backgroundColor: '#050505',
-      border: isSelected ? '1px solid #3b82f6' : '1px solid #222',
+      border: isSelected ? '1px solid #fff' : '1px solid #222',
       padding: '16px',
       borderRadius: '2px',
-      transition: 'border-color 0.2s ease'
+      transition: 'all 0.2s ease'
     }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-            <input
-              type="checkbox"
-              checked={isSelected}
-              onChange={() => onSelectToggle(order.id)}
-              style={{ marginTop: '3px', cursor: 'pointer', width: '15px', height: '15px', accentColor: '#fff' }}
-            />
+            {/* STYLISH CUSTOM CHECKBOX */}
+            <div
+              onClick={() => onSelectToggle(order.id)}
+              style={{
+                width: '18px',
+                height: '18px',
+                borderRadius: '3px',
+                border: isSelected ? '1px solid #fff' : '1px solid #444',
+                backgroundColor: isSelected ? '#fff' : '#000',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                marginTop: '2px',
+                transition: 'all 0.15s ease',
+                flexShrink: 0
+              }}
+            >
+              {isSelected && (
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+              )}
+            </div>
+
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                {/* ORDER ID CLICKABLE TO TOGGLE VIEW/HIDE */}
+                {/* ORDER ID CLICKABLE TO TOGGLE VIEW/HIDE (NO UNDERLINE) */}
                 <span
                   onClick={() => onToggleExpand(order.id)}
                   title="Click to toggle details"
@@ -302,10 +321,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
                     fontWeight: 'bold',
                     letterSpacing: '1px',
                     cursor: 'pointer',
-                    color: '#fff',
-                    textDecoration: 'underline',
-                    textDecorationColor: '#555',
-                    textUnderlineOffset: '3px'
+                    color: '#fff'
                   }}
                 >
                   #{order.id.slice(0, 8)}... {isExpanded ? '▲' : '▼'}
@@ -544,7 +560,6 @@ const OrderCard: React.FC<OrderCardProps> = ({
           </div>
         </div>
 
-        {/* DROPDOWNS AND PRINT BUTTON (VIEW/HIDE BUTTON REMOVED) */}
         <div style={{ display: 'flex', gap: '4px', flexWrap: 'nowrap', width: '100%' }}>
           <select
             value={order.status}
@@ -1414,16 +1429,32 @@ const AdminOrders: React.FC = () => {
         borderRadius: '2px'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <input
-            type="checkbox"
-            id="selectAllFiltered"
-            checked={isAllFilteredSelected}
-            onChange={handleSelectAllFiltered}
-            style={{ cursor: 'pointer', width: '16px', height: '16px', accentColor: '#fff' }}
-          />
-          <label htmlFor="selectAllFiltered" style={{ fontSize: '11px', color: '#fff', cursor: 'pointer', fontWeight: 'bold' }}>
+          {/* STYLISH CUSTOM CHECKBOX FOR SELECT ALL */}
+          <div
+            onClick={handleSelectAllFiltered}
+            style={{
+              width: '18px',
+              height: '18px',
+              borderRadius: '3px',
+              border: isAllFilteredSelected ? '1px solid #fff' : '1px solid #444',
+              backgroundColor: isAllFilteredSelected ? '#fff' : '#000',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              transition: 'all 0.15s ease',
+              flexShrink: 0
+            }}
+          >
+            {isAllFilteredSelected && (
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            )}
+          </div>
+          <span onClick={handleSelectAllFiltered} style={{ fontSize: '11px', color: '#fff', cursor: 'pointer', fontWeight: 'bold' }}>
             SELECT ALL FILTERED ({filteredOrders.length})
-          </label>
+          </span>
         </div>
 
         {selectedOrderIds.length > 0 && (
@@ -1518,7 +1549,7 @@ const AdminOrders: React.FC = () => {
         <button
           type="button"
           onClick={fetchAdminOrders}
-          style={{ background: 'none', border: 'none', color: '#fff', fontSize: '11px', textDecoration: 'underline', cursor: 'pointer' }}
+          style={{ background: 'none', border: 'none', color: '#fff', fontSize: '11px', cursor: 'pointer' }}
         >
           REFRESH
         </button>
