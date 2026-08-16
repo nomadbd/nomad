@@ -432,10 +432,10 @@ const OrderCard: React.FC<OrderCardProps> = ({
                 style={{
                   width: '100%',
                   padding: '12px',
-                  background: '#fff',
-                  color: '#000',
+                  background: 'transparent',
+                  color: '#fff',
                   fontWeight: 'bold',
-                  border: 'none',
+                  border: '1px solid #fff',
                   fontSize: '10px',
                   letterSpacing: '1px',
                   cursor: isUpdating ? 'not-allowed' : 'pointer',
@@ -1312,8 +1312,8 @@ const AdminOrders: React.FC = () => {
                   key={dateFilter}
                   onClick={() => setSelectedDateFilter(dateFilter)}
                   style={{
-                    backgroundColor: isActive ? '#fff' : '#0a0a0a',
-                    color: isActive ? '#000' : '#bbb',
+                    backgroundColor: '#0a0a0a',
+                    color: '#fff',
                     border: isActive ? '1px solid #fff' : '1px solid #222',
                     padding: '8px 14px',
                     fontSize: '10px',
@@ -1345,8 +1345,8 @@ const AdminOrders: React.FC = () => {
                   key={status}
                   onClick={() => setSelectedStatusFilter(status)}
                   style={{
-                    backgroundColor: isActive ? '#fff' : '#0a0a0a',
-                    color: isActive ? '#000' : '#bbb',
+                    backgroundColor: '#0a0a0a',
+                    color: '#fff',
                     border: isActive ? '1px solid #fff' : '1px solid #222',
                     padding: '8px 14px',
                     fontSize: '10px',
@@ -1378,8 +1378,8 @@ const AdminOrders: React.FC = () => {
                   key={pStatus}
                   onClick={() => setSelectedPaymentStatusFilter(pStatus)}
                   style={{
-                    backgroundColor: isActive ? '#fff' : '#0a0a0a',
-                    color: isActive ? '#000' : '#bbb',
+                    backgroundColor: '#0a0a0a',
+                    color: '#fff',
                     border: isActive ? '1px solid #fff' : '1px solid #222',
                     padding: '8px 14px',
                     fontSize: '10px',
@@ -1450,9 +1450,9 @@ const AdminOrders: React.FC = () => {
                 }
               }}
               style={{
-                backgroundColor: '#fff',
-                color: '#000',
-                border: 'none',
+                backgroundColor: 'transparent',
+                color: '#fff',
+                border: '1px solid #fff',
                 padding: '7px 10px',
                 fontSize: '10px',
                 fontWeight: 'bold',
@@ -1461,19 +1461,19 @@ const AdminOrders: React.FC = () => {
                 outline: 'none'
               }}
             >
-              <option value="">MARK PAYMENT AS...</option>
-              <option value="Paid">PAID</option>
-              <option value="Unpaid / COD">UNPAID / COD</option>
-              <option value="Partial Paid">PARTIAL PAID</option>
+              <option value="" style={{ background: '#000', color: '#fff' }}>MARK PAYMENT AS...</option>
+              <option value="Paid" style={{ background: '#000', color: '#fff' }}>PAID</option>
+              <option value="Unpaid / COD" style={{ background: '#000', color: '#fff' }}>UNPAID / COD</option>
+              <option value="Partial Paid" style={{ background: '#000', color: '#fff' }}>PARTIAL PAID</option>
             </select>
 
             <button
               type="button"
               onClick={() => handlePrintBulkInvoices(selectedOrdersList)}
               style={{
-                backgroundColor: '#fff',
-                color: '#000',
-                border: 'none',
+                backgroundColor: 'transparent',
+                color: '#fff',
+                border: '1px solid #fff',
                 padding: '7px 12px',
                 fontSize: '10px',
                 fontWeight: 'bold',
@@ -1491,9 +1491,9 @@ const AdminOrders: React.FC = () => {
                 setIsBulkModalOpen(true);
               }}
               style={{
-                backgroundColor: '#fff',
-                color: '#000',
-                border: 'none',
+                backgroundColor: 'transparent',
+                color: '#fff',
+                border: '1px solid #fff',
                 padding: '7px 12px',
                 fontSize: '10px',
                 fontWeight: 'bold',
@@ -1511,9 +1511,9 @@ const AdminOrders: React.FC = () => {
                 setIsBulkModalOpen(true);
               }}
               style={{
-                backgroundColor: '#fff',
-                color: '#000',
-                border: 'none',
+                backgroundColor: 'transparent',
+                color: '#fff',
+                border: '1px solid #fff',
                 padding: '7px 12px',
                 fontSize: '10px',
                 fontWeight: 'bold',
@@ -1622,8 +1622,8 @@ const AdminOrders: React.FC = () => {
                         setSelectedPresetKey(key);
                       }}
                       style={{
-                        backgroundColor: isPresetActive ? '#fff' : '#111',
-                        color: isPresetActive ? '#000' : '#ddd',
+                        backgroundColor: '#111',
+                        color: '#ddd',
                         border: isPresetActive ? '1px solid #fff' : '1px solid #333',
                         padding: '4px 8px',
                         fontSize: '9px',
@@ -1676,10 +1676,10 @@ const AdminOrders: React.FC = () => {
                     textAlign: 'center',
                     width: '100%',
                     padding: '12px',
-                    background: '#fff',
-                    color: '#000',
+                    background: 'transparent',
+                    color: '#fff',
                     fontWeight: 'bold',
-                    border: 'none',
+                    border: '1px solid #fff',
                     fontSize: '11px',
                     cursor: 'pointer',
                     borderRadius: '2px',
@@ -1714,9 +1714,9 @@ const AdminOrders: React.FC = () => {
                             type="button"
                             onClick={() => handleSendSingleWhatsApp(ord)}
                             style={{
-                              backgroundColor: isSent ? '#333' : '#25D366',
-                              color: isSent ? '#aaa' : '#000',
-                              border: 'none',
+                              backgroundColor: '#000',
+                              color: isSent ? '#aaa' : '#25D366',
+                              border: isSent ? '1px solid #333' : '1px solid #25D366',
                               padding: '6px 12px',
                               fontSize: '9px',
                               fontWeight: 'bold',
