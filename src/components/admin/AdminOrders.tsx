@@ -553,13 +553,6 @@ const OrderCard: React.FC<OrderCardProps> = ({
               </div>
             </div>
 
-            <div style={{ background: '#0a0a0a', padding: '12px 14px', borderRadius: '3px' }}>
-              <div style={{ fontSize: '9px', color: '#777', letterSpacing: '0.5px', fontWeight: 'bold' }}>SHIPPING ADDRESS</div>
-              <div style={{ color: '#eee', fontSize: '11px', marginTop: '6px', lineHeight: '1.4', whiteSpace: 'pre-wrap' }}>
-                {order.shipping_address || 'No address provided'}
-              </div>
-            </div>
-
             <div>
               <label style={{ display: 'block', fontSize: '9px', color: '#777', marginBottom: '6px', letterSpacing: '0.5px' }}>CUSTOMER NOTES</label>
               <textarea
