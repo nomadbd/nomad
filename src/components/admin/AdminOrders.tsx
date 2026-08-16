@@ -119,6 +119,8 @@ const renderPersonalizedText = (template: string, order: Order): string => {
 interface OrderCardProps {
   order: Order;
   isSelected: boolean;
+  isExpanded: boolean;
+  onToggleExpand: (orderId: string) => void;
   onSelectToggle: (orderId: string) => void;
   onStatusChange: (orderId: string, newStatus: string) => Promise<void>;
   onUpdateDetails: (orderId: string, updatedData: { payment_status: string; courier_name: string; tracking_id: string; admin_notes: string; customer_notes: string }) => Promise<void>;
@@ -129,13 +131,14 @@ interface OrderCardProps {
 const OrderCard: React.FC<OrderCardProps> = ({
   order,
   isSelected,
+  isExpanded,
+  onToggleExpand,
   onSelectToggle,
   onStatusChange,
   onUpdateDetails,
   onPrintInvoice,
   getStatusColor
 }) => {
-  const [isExpanded, setIsExpanded] = useState<boolean>(false);
   const [isUpdating, setIsUpdating] = useState<boolean>(false);
   const [isCopied, setIsCopied] = useState<boolean>(false);
 
@@ -158,7 +161,12 @@ const OrderCard: React.FC<OrderCardProps> = ({
   }, [order]);
 
   const statusColor = getStatusColor(order.status);
-  const isPaid = order.payment_status?.toLowerCase().includes('paid') && !order.payment_status?.toLowerCase().includes('unpaid');
+  const paymentStatusVal = order.payment_status || 'Unpaid / COD';
+  const isPaid = paymentStatusVal.toLowerCase().includes('paid') && !paymentStatusVal.toLowerCase().includes('unpaid');
+  const isPartial = paymentStatusVal.toLowerCase().includes('partial');
+  
+  const paymentColor = isPaid ? '#22c55e' : isPartial ? '#3b82f6' : '#f97316';
+
   const totalItemsCount = order.items.reduce((sum, item) => sum + (item.quantity || 0), 0);
   const displayItemCount = totalItemsCount > 0 ? totalItemsCount : '1+';
 
@@ -288,17 +296,6 @@ const OrderCard: React.FC<OrderCardProps> = ({
                 <span style={{ fontSize: '13px', fontWeight: 'bold', letterSpacing: '1px' }}>
                   #{order.id.slice(0, 8)}...
                 </span>
-                <span style={{
-                  backgroundColor: `${statusColor}22`,
-                  color: statusColor,
-                  border: `1px solid ${statusColor}55`,
-                  padding: '2px 8px',
-                  borderRadius: '2px',
-                  fontSize: '9px',
-                  fontWeight: 'bold'
-                }}>
-                  ● {order.status.toUpperCase()}
-                </span>
               </div>
               <div style={{ fontSize: '10px', color: '#ccc', marginTop: '4px' }}>
                 {new Date(order.created_at).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}
@@ -315,6 +312,129 @@ const OrderCard: React.FC<OrderCardProps> = ({
             </div>
           </div>
         </div>
+
+        {/* VIEW SECTION PLACED BETWEEN ORDER ID AND CUSTOMER INFO */}
+        {isExpanded && (
+          <div style={{ paddingTop: '4px', paddingBottom: '4px', borderTop: '1px solid #1a1a1a', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <div>
+              <h4 style={{ color: '#888', fontSize: '10px', letterSpacing: '1px', marginBottom: '10px', marginTop: '10px', fontWeight: 'bold' }}>ORDERED ITEMS</h4>
+              {order.items.length > 0 ? order.items.map((item, idx) => (
+                <div key={`${item.product_name}-${idx}`} style={{
+                  display: 'flex',
+                  gap: '12px',
+                  background: '#0a0a0a',
+                  padding: '10px',
+                  marginBottom: '8px',
+                  borderRadius: '3px'
+                }}>
+                  <img
+                    src={item.product_image}
+                    alt={item.product_name}
+                    style={{ width: '45px', height: '55px', objectFit: 'cover', borderRadius: '2px' }}
+                  />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 'bold', fontSize: '11px', color: '#fff' }}>{item.product_name}</div>
+                    <div style={{ fontSize: '9.5px', color: '#bbb', marginTop: '4px' }}>
+                      SIZE: {item.size} • COLOR: {item.color} • QTY: {item.quantity}
+                    </div>
+                  </div>
+                  <div style={{ fontWeight: 'bold', fontSize: '12px', alignSelf: 'center', color: '#fff' }}>
+                    ৳{item.price * item.quantity}
+                  </div>
+                </div>
+              )) : (
+                <div style={{ color: '#666', fontSize: '11px', fontStyle: 'italic', padding: '10px' }}>
+                  No items found for this order.
+                </div>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '10px' }}>
+              <h4 style={{ color: '#888', fontSize: '10px', letterSpacing: '1.5px', margin: 0, fontWeight: 'bold' }}>MANAGEMENT DETAILS</h4>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '9px', color: '#777', marginBottom: '6px', letterSpacing: '0.5px' }}>PAYMENT STATUS</label>
+                  <select
+                    value={editForm.payment_status}
+                    onChange={e => setEditForm({ ...editForm, payment_status: e.target.value })}
+                    style={{ ...cleanInputStyle, cursor: 'pointer' }}
+                  >
+                    <option value="Unpaid / COD">UNPAID / COD</option>
+                    <option value="Paid">PAID</option>
+                    <option value="Partial Paid">PARTIAL PAID</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '9px', color: '#777', marginBottom: '6px', letterSpacing: '0.5px' }}>COURIER NAME</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Steadfast, Pathao"
+                    value={editForm.courier_name}
+                    onChange={e => setEditForm({ ...editForm, courier_name: e.target.value })}
+                    style={cleanInputStyle}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '9px', color: '#777', marginBottom: '6px', letterSpacing: '0.5px' }}>TRACKING ID</label>
+                  <input
+                    type="text"
+                    placeholder="Tracking / Memo No."
+                    value={editForm.tracking_id}
+                    onChange={e => setEditForm({ ...editForm, tracking_id: e.target.value })}
+                    style={cleanInputStyle}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '9px', color: '#777', marginBottom: '6px', letterSpacing: '0.5px' }}>CUSTOMER NOTES</label>
+                <textarea
+                  rows={2}
+                  placeholder="Add customer note to send in messages..."
+                  value={editForm.customer_notes}
+                  onChange={e => setEditForm({ ...editForm, customer_notes: e.target.value })}
+                  style={{ ...cleanInputStyle, resize: 'vertical' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '9px', color: '#777', marginBottom: '6px', letterSpacing: '0.5px' }}>ADMIN NOTES</label>
+                <textarea
+                  rows={2}
+                  placeholder="Add private admin notes here..."
+                  value={editForm.admin_notes}
+                  onChange={e => setEditForm({ ...editForm, admin_notes: e.target.value })}
+                  style={{ ...cleanInputStyle, resize: 'vertical' }}
+                />
+              </div>
+
+              <button
+                type="button"
+                onClick={handleSaveDetails}
+                disabled={isUpdating}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  background: '#fff',
+                  color: '#000',
+                  fontWeight: 'bold',
+                  border: 'none',
+                  fontSize: '10px',
+                  letterSpacing: '1px',
+                  cursor: isUpdating ? 'not-allowed' : 'pointer',
+                  borderRadius: '3px',
+                  opacity: isUpdating ? 0.6 : 1,
+                  marginTop: '4px'
+                }}
+              >
+                {isUpdating ? 'SAVING...' : 'SAVE DETAILS'}
+              </button>
+            </div>
+          </div>
+        )}
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
@@ -410,6 +530,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
           </div>
         </div>
 
+        {/* EQUAL SIZED DROPDOWNS AND VIEW BUTTON */}
         <div style={{ display: 'flex', gap: '4px', flexWrap: 'nowrap', width: '100%' }}>
           <select
             value={order.status}
@@ -436,14 +557,14 @@ const OrderCard: React.FC<OrderCardProps> = ({
           </select>
 
           <select
-            value={order.payment_status || 'Unpaid / COD'}
+            value={paymentStatusVal}
             disabled={isUpdating}
             onChange={handlePaymentStatusSelect}
             onClick={(e) => e.stopPropagation()}
             style={{
               backgroundColor: '#000',
-              color: isPaid ? '#22c55e' : '#f97316',
-              border: `1px solid ${isPaid ? '#22c55e' : '#f97316'}`,
+              color: paymentColor,
+              border: `1px solid ${paymentColor}`,
               padding: '6px 2px 6px 4px',
               fontSize: '9px',
               fontWeight: 'bold',
@@ -469,137 +590,13 @@ const OrderCard: React.FC<OrderCardProps> = ({
 
           <button
             type="button"
-            onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }}
+            onClick={(e) => { e.stopPropagation(); onToggleExpand(order.id); }}
             style={{ padding: '6px 8px', background: '#111', border: '1px solid #333', color: '#fff', fontSize: '9px', cursor: 'pointer', borderRadius: '2px', fontWeight: 'bold', flexShrink: 0 }}
           >
             {isExpanded ? 'HIDE' : 'VIEW'}
           </button>
         </div>
       </div>
-
-      {isExpanded && (
-        <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-
-          <div>
-            <h4 style={{ color: '#888', fontSize: '10px', letterSpacing: '1px', marginBottom: '10px', marginTop: '0', fontWeight: 'bold' }}>ORDERED ITEMS</h4>
-            {order.items.length > 0 ? order.items.map((item, idx) => (
-              <div key={`${item.product_name}-${idx}`} style={{
-                display: 'flex',
-                gap: '12px',
-                background: '#0a0a0a',
-                padding: '10px',
-                marginBottom: '8px',
-                borderRadius: '3px'
-              }}>
-                <img
-                  src={item.product_image}
-                  alt={item.product_name}
-                  style={{ width: '45px', height: '55px', objectFit: 'cover', borderRadius: '2px' }}
-                />
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 'bold', fontSize: '11px', color: '#fff' }}>{item.product_name}</div>
-                  <div style={{ fontSize: '9.5px', color: '#bbb', marginTop: '4px' }}>
-                    SIZE: {item.size} • COLOR: {item.color} • QTY: {item.quantity}
-                  </div>
-                </div>
-                <div style={{ fontWeight: 'bold', fontSize: '12px', alignSelf: 'center', color: '#fff' }}>
-                  ৳{item.price * item.quantity}
-                </div>
-              </div>
-            )) : (
-              <div style={{ color: '#666', fontSize: '11px', fontStyle: 'italic', padding: '10px' }}>
-                No items found for this order.
-              </div>
-            )}
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <h4 style={{ color: '#888', fontSize: '10px', letterSpacing: '1.5px', margin: 0, fontWeight: 'bold' }}>MANAGEMENT DETAILS</h4>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '9px', color: '#777', marginBottom: '6px', letterSpacing: '0.5px' }}>PAYMENT STATUS</label>
-                <select
-                  value={editForm.payment_status}
-                  onChange={e => setEditForm({ ...editForm, payment_status: e.target.value })}
-                  style={{ ...cleanInputStyle, cursor: 'pointer' }}
-                >
-                  <option value="Unpaid / COD">UNPAID / COD</option>
-                  <option value="Paid">PAID</option>
-                  <option value="Partial Paid">PARTIAL PAID</option>
-                </select>
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '9px', color: '#777', marginBottom: '6px', letterSpacing: '0.5px' }}>COURIER NAME</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Steadfast, Pathao"
-                  value={editForm.courier_name}
-                  onChange={e => setEditForm({ ...editForm, courier_name: e.target.value })}
-                  style={cleanInputStyle}
-                />
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '9px', color: '#777', marginBottom: '6px', letterSpacing: '0.5px' }}>TRACKING ID</label>
-                <input
-                  type="text"
-                  placeholder="Tracking / Memo No."
-                  value={editForm.tracking_id}
-                  onChange={e => setEditForm({ ...editForm, tracking_id: e.target.value })}
-                  style={cleanInputStyle}
-                />
-              </div>
-            </div>
-
-            <div>
-              <label style={{ display: 'block', fontSize: '9px', color: '#777', marginBottom: '6px', letterSpacing: '0.5px' }}>CUSTOMER NOTES</label>
-              <textarea
-                rows={2}
-                placeholder="Add customer note to send in messages..."
-                value={editForm.customer_notes}
-                onChange={e => setEditForm({ ...editForm, customer_notes: e.target.value })}
-                style={{ ...cleanInputStyle, resize: 'vertical' }}
-              />
-            </div>
-
-            <div>
-              <label style={{ display: 'block', fontSize: '9px', color: '#777', marginBottom: '6px', letterSpacing: '0.5px' }}>ADMIN NOTES</label>
-              <textarea
-                rows={2}
-                placeholder="Add private admin notes here..."
-                value={editForm.admin_notes}
-                onChange={e => setEditForm({ ...editForm, admin_notes: e.target.value })}
-                style={{ ...cleanInputStyle, resize: 'vertical' }}
-              />
-            </div>
-
-            <button
-              type="button"
-              onClick={handleSaveDetails}
-              disabled={isUpdating}
-              style={{
-                width: '100%',
-                padding: '12px',
-                background: '#fff',
-                color: '#000',
-                fontWeight: 'bold',
-                border: 'none',
-                fontSize: '10px',
-                letterSpacing: '1px',
-                cursor: isUpdating ? 'not-allowed' : 'pointer',
-                borderRadius: '3px',
-                opacity: isUpdating ? 0.6 : 1,
-                marginTop: '4px'
-              }}
-            >
-              {isUpdating ? 'SAVING...' : 'SAVE DETAILS'}
-            </button>
-          </div>
-
-        </div>
-      )}
     </div>
   );
 };
@@ -611,6 +608,8 @@ const AdminOrders: React.FC = () => {
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<string>('ALL');
   const [selectedPaymentStatusFilter, setSelectedPaymentStatusFilter] = useState<string>('ALL');
   const [selectedDateFilter, setSelectedDateFilter] = useState<string>('ALL TIME');
+
+  const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
 
   const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
   const [isBulkModalOpen, setIsBulkModalOpen] = useState<boolean>(false);
@@ -627,6 +626,10 @@ const AdminOrders: React.FC = () => {
     setTimeout(() => {
       setToast(null);
     }, 3000);
+  };
+
+  const handleToggleExpand = (orderId: string) => {
+    setExpandedOrderId(prevId => (prevId === orderId ? null : orderId));
   };
 
   const fetchAdminOrders = async () => {
@@ -1526,6 +1529,8 @@ const AdminOrders: React.FC = () => {
               key={order.id}
               order={order}
               isSelected={selectedOrderIds.includes(order.id)}
+              isExpanded={expandedOrderId === order.id}
+              onToggleExpand={handleToggleExpand}
               onSelectToggle={handleSelectToggle}
               onStatusChange={handleStatusChange}
               onUpdateDetails={handleUpdateDetails}
@@ -1676,7 +1681,7 @@ const AdminOrders: React.FC = () => {
 
                     return (
                       <div key={ord.id} style={{ display: 'flex', flexDirection: 'column', gap: '6px', background: '#000', padding: '10px', border: '1px solid #1a1a1a', borderRadius: '2px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', items: 'center' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <div>
                             <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#fff' }}>{ord.customer_name || 'Customer'} (#{ord.id.slice(0, 8)})</span>
                             <span style={{ fontSize: '9px', color: '#aaa', marginLeft: '6px' }}>{phone} • {ord.status.toUpperCase()}</span>
