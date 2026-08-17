@@ -10,7 +10,6 @@ import StaffProfile from '../components/admin/StaffProfile';
 type TabType = 'overview' | 'orders' | 'products' | 'settings';
 
 const AdminDashboard: React.FC = () => {
-  // 🌐 ১. URL থেকে বর্তমান activeTab পড়ার হেলপার ফাংশন
   const getTabFromURL = (): TabType => {
     if (typeof window === 'undefined') return 'overview';
     const params = new URLSearchParams(window.location.search);
@@ -28,11 +27,9 @@ const AdminDashboard: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [isProfileOpen, setIsProfileOpen] = useState<boolean>(false);
 
-  // 📜 Hide on Scroll State for Mobile Header
   const [isHeaderVisible, setIsHeaderVisible] = useState<boolean>(true);
   const [lastScrollY, setLastScrollY] = useState<number>(0);
 
-  // 🔗 ২. প্রফেশনাল ট্যাব চেঞ্জ হ্যান্ডলার (URL সিঙ্কসহ)
   const handleTabChange = (tab: TabType) => {
     setActiveTab(tab);
     setMenuOpen(false);
@@ -40,12 +37,10 @@ const AdminDashboard: React.FC = () => {
     const searchParams = new URLSearchParams(window.location.search);
     searchParams.set('tab', tab);
     const newPath = `${window.location.pathname}?${searchParams.toString()}`;
-    
-    // পেজ রিফ্রেশ না করেই ব্রাউজার URL আপডেট করা
+
     window.history.pushState({ path: newPath }, '', newPath);
   };
 
-  // 🔄 ৩. ব্রাউজারের Back (←) ও Forward (→) বাটন প্রেস করলে ট্যাব সিঙ্ক রাখা
   useEffect(() => {
     const handlePopState = () => {
       setActiveTab(getTabFromURL());
@@ -55,7 +50,6 @@ const AdminDashboard: React.FC = () => {
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  // 📱 Mobile Scroll Listener
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
@@ -109,23 +103,16 @@ const AdminDashboard: React.FC = () => {
     fetchCurrentUserAndRole();
   }, []);
 
-  // 🔐 সিকিউরিটি গার্ড লজিক (Case and whitespace normalization)
   const normalizedRole = userRole.toUpperCase().trim();
-
-  // 👑 শুধুমাত্র SUPER_ADMIN সেটিংস নিয়ন্ত্রণ করতে পারবে
   const isSuperAdmin = normalizedRole === 'SUPER_ADMIN';
-
-  // 🛡️ ড্যাশবোর্ড এক্সেস রোলস: SUPER_ADMIN, ADMIN, এবং STAFF
   const hasAdminAccess = ['SUPER_ADMIN', 'ADMIN', 'STAFF'].includes(normalizedRole);
 
-  // সিকিউরিটি গার্ড: Super Admin ছাড়া কেউ Settings এ ঢুকতে চাইলে Overview-তে পাঠাবে
   useEffect(() => {
     if (!loading && !isSuperAdmin && activeTab === 'settings') {
       handleTabChange('overview');
     }
   }, [isSuperAdmin, loading, activeTab]);
 
-  // 🛑 সিকিউরিটি রিডাইরেক্ট: কোনো সাধারণ CUSTOMER এই পেজে আসলে তাকে ইউজার প্রোফাইল/হোমপেজে পাঠিয়ে দিবে
   useEffect(() => {
     if (!loading && !hasAdminAccess) {
       window.location.href = '/profile';
@@ -140,7 +127,6 @@ const AdminDashboard: React.FC = () => {
     display: 'block',
   };
 
-  // লোডিং স্টেটে খালি বা স্পিনার দেখানো
   if (loading) {
     return (
       <div style={{ backgroundColor: '#030303', color: '#fff', minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'monospace' }}>
@@ -149,7 +135,6 @@ const AdminDashboard: React.FC = () => {
     );
   }
 
-  // এক্সেস না থাকলে কিছুই রেন্ডার করবে না
   if (!hasAdminAccess) {
     return null;
   }
@@ -164,8 +149,6 @@ const AdminDashboard: React.FC = () => {
       maxWidth: '100vw',
       overflowX: 'hidden'
     }}>
-
-      {/* CSS Overrides */}
       <style>{`
         *, *::before, *::after { 
           box-sizing: border-box !important; 
@@ -309,10 +292,10 @@ const AdminDashboard: React.FC = () => {
         }
 
         .nav-btn.active {
-          background-color: #ffffff !important;
-          color: #000000 !important;
+          background-color: transparent !important;
+          color: #ffffff !important;
           border-color: #ffffff !important;
-          box-shadow: 0 0 10px rgba(255, 255, 255, 0.15);
+          box-shadow: 0 0 10px rgba(255, 255, 255, 0.08);
         }
 
         .user-text-container {
@@ -348,11 +331,7 @@ const AdminDashboard: React.FC = () => {
       `}</style>
 
       <div className="nomad-layout">
-
-        {/* SIDEBAR / MOBILE HEADER */}
         <aside className="nomad-sidebar">
-
-          {/* TOP SECTION: BRAND & NAVIGATION */}
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <a href="/" className="nomad-brand-link" title="Go to Store Homepage">
@@ -399,7 +378,6 @@ const AdminDashboard: React.FC = () => {
                 PRODUCTS & STOCK
               </button>
 
-              {/* 🔒 শুধুমাত্র SUPER_ADMIN ব্যক্তিদের জন্য দৃশ্যমান */}
               {isSuperAdmin && (
                 <button
                   className={`nav-btn ${activeTab === 'settings' ? 'active' : ''}`}
@@ -411,7 +389,6 @@ const AdminDashboard: React.FC = () => {
             </nav>
           </div>
 
-          {/* BOTTOM SECTION: USER ACCOUNT FOOTER */}
           <div className="user-footer-block">
             <div 
               onClick={() => setIsProfileOpen(true)}
@@ -448,10 +425,8 @@ const AdminDashboard: React.FC = () => {
               </div>
             </div>
           </div>
-
         </aside>
 
-        {/* MAIN CONTENT AREA */}
         <main className="nomad-main">
           {activeTab === 'overview' && <AdminOverview key="overview" userRole={userRole} />}
           {activeTab === 'orders' && <AdminOrders key="orders" />}
@@ -467,17 +442,14 @@ const AdminDashboard: React.FC = () => {
             )
           )}
         </main>
-
       </div>
 
-      {/* 👤 STAFF PROFILE MODAL */}
       <StaffProfile 
         isOpen={isProfileOpen} 
         onClose={() => setIsProfileOpen(false)} 
         profile={profileData}
         onRefreshProfile={fetchCurrentUserAndRole}
       />
-
     </div>
   );
 };
