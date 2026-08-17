@@ -6,6 +6,9 @@ interface Product {
   id: string;
   name: string;
   description?: string;
+  details?: any;
+  sizes?: string[];
+  colors?: string[];
   price: number;
   stock_quantity: number;
   category?: string;
@@ -19,11 +22,21 @@ const AdminProducts: React.FC = () => {
   const [showAddModal, setShowAddModal] = useState<boolean>(false);
   const [submitting, setSubmitting] = useState<boolean>(false);
 
+  // Form States
   const [newName, setNewName] = useState<string>('');
   const [newPrice, setNewPrice] = useState<string>('');
   const [newStock, setNewStock] = useState<string>('');
   const [newCategory, setNewCategory] = useState<string>('APPAREL');
   const [newDescription, setNewDescription] = useState<string>('');
+  
+  // New Fields for Details, Sizes & Colors
+  const [newFit, setNewFit] = useState<string>('Regular Fit');
+  const [newGsm, setNewGsm] = useState<string>('180');
+  const [newMadeIn, setNewMadeIn] = useState<string>('Bangladesh');
+  const [newMaterial, setNewMaterial] = useState<string>('100% Premium Cotton');
+  
+  const [newSizes, setNewSizes] = useState<string>('S, M, L, XL');
+  const [newColors, setNewColors] = useState<string>('BLACK, WHITE');
   
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
@@ -48,6 +61,9 @@ const AdminProducts: React.FC = () => {
           id,
           name,
           description,
+          details,
+          sizes,
+          colors,
           price,
           stock_quantity,
           category,
@@ -65,6 +81,9 @@ const AdminProducts: React.FC = () => {
           id: p.id,
           name: p.name,
           description: p.description || '',
+          details: p.details || {},
+          sizes: p.sizes || [],
+          colors: p.colors || [],
           price: p.price,
           stock_quantity: p.stock_quantity ?? 0,
           category: p.category || 'GENERAL',
@@ -109,6 +128,18 @@ const AdminProducts: React.FC = () => {
         setUploadingImage(false);
       }
 
+      // Format details object for JSONB column
+      const detailsJson = {
+        FIT: newFit,
+        GSM: newGsm,
+        "MADE IN": newMadeIn,
+        MATERIAL: newMaterial
+      };
+
+      // Format sizes and colors arrays from comma-separated strings
+      const sizesArray = newSizes.split(',').map(s => s.trim()).filter(Boolean);
+      const colorsArray = newColors.split(',').map(c => c.trim().toUpperCase()).filter(Boolean);
+
       const { data: newProd, error: prodError } = await supabase
         .from('products')
         .insert([{
@@ -116,7 +147,10 @@ const AdminProducts: React.FC = () => {
           price: parseFloat(newPrice),
           stock_quantity: parseInt(newStock || '0', 10),
           category: newCategory,
-          description: newDescription
+          description: newDescription,
+          details: detailsJson,
+          sizes: sizesArray,
+          colors: colorsArray
         }])
         .select()
         .single();
@@ -148,6 +182,12 @@ const AdminProducts: React.FC = () => {
     setNewStock('');
     setNewDescription('');
     setNewCategory('APPAREL');
+    setNewFit('Regular Fit');
+    setNewGsm('180');
+    setNewMadeIn('Bangladesh');
+    setNewMaterial('100% Premium Cotton');
+    setNewSizes('S, M, L, XL');
+    setNewColors('BLACK, WHITE');
     setImageFile(null);
     setImagePreview('');
   };
@@ -402,7 +442,7 @@ const AdminProducts: React.FC = () => {
             backgroundColor: '#050505', 
             border: '1px solid #333', 
             width: '100%', 
-            maxWidth: '480px', 
+            maxWidth: '520px', 
             padding: '25px', 
             borderRadius: '2px',
             maxHeight: '90vh',
@@ -453,7 +493,7 @@ const AdminProducts: React.FC = () => {
                   type="text"
                   value={newCategory}
                   onChange={(e) => setNewCategory(e.target.value)}
-                  placeholder="APPAREL, etc."
+                  placeholder="APPAREL, T Shirt, etc."
                   style={{ width: '100%', backgroundColor: '#000', border: '1px solid #333', padding: '10px', color: '#fff', fontSize: '11px', boxSizing: 'border-box' }}
                 />
               </div>
@@ -474,14 +514,89 @@ const AdminProducts: React.FC = () => {
               </div>
 
               <div>
-                <label style={{ fontSize: '10px', color: '#888', display: 'block', marginBottom: '5px', fontFamily: 'monospace' }}>DESCRIPTION</label>
+                <label style={{ fontSize: '10px', color: '#888', display: 'block', marginBottom: '5px', fontFamily: 'monospace' }}>DESCRIPTION (Bio)</label>
                 <textarea
                   value={newDescription}
                   onChange={(e) => setNewDescription(e.target.value)}
-                  placeholder="Product description..."
-                  rows={3}
+                  placeholder="Short description..."
+                  rows={2}
                   style={{ width: '100%', backgroundColor: '#000', border: '1px solid #333', padding: '10px', color: '#fff', fontSize: '11px', boxSizing: 'border-box', resize: 'vertical' }}
                 />
+              </div>
+
+              {/* SPECIFICATION DETAILS (JSONB) */}
+              <div style={{ border: '1px dashed #333', padding: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <span style={{ fontSize: '10px', color: '#aaa', fontFamily: 'monospace', fontWeight: 'bold' }}>DETAILS / SPECIFICATIONS (JSONB)</span>
+                
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: '9px', color: '#888', display: 'block', marginBottom: '3px', fontFamily: 'monospace' }}>FIT</label>
+                    <input
+                      type="text"
+                      value={newFit}
+                      onChange={(e) => setNewFit(e.target.value)}
+                      placeholder="Regular Fit"
+                      style={{ width: '100%', backgroundColor: '#000', border: '1px solid #333', padding: '8px', color: '#fff', fontSize: '11px', boxSizing: 'border-box' }}
+                    />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: '9px', color: '#888', display: 'block', marginBottom: '3px', fontFamily: 'monospace' }}>GSM</label>
+                    <input
+                      type="text"
+                      value={newGsm}
+                      onChange={(e) => setNewGsm(e.target.value)}
+                      placeholder="180"
+                      style={{ width: '100%', backgroundColor: '#000', border: '1px solid #333', padding: '8px', color: '#fff', fontSize: '11px', boxSizing: 'border-box' }}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: '9px', color: '#888', display: 'block', marginBottom: '3px', fontFamily: 'monospace' }}>MADE IN</label>
+                    <input
+                      type="text"
+                      value={newMadeIn}
+                      onChange={(e) => setNewMadeIn(e.target.value)}
+                      placeholder="Bangladesh"
+                      style={{ width: '100%', backgroundColor: '#000', border: '1px solid #333', padding: '8px', color: '#fff', fontSize: '11px', boxSizing: 'border-box' }}
+                    />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: '9px', color: '#888', display: 'block', marginBottom: '3px', fontFamily: 'monospace' }}>MATERIAL</label>
+                    <input
+                      type="text"
+                      value={newMaterial}
+                      onChange={(e) => setNewMaterial(e.target.value)}
+                      placeholder="100% Premium Cotton"
+                      style={{ width: '100%', backgroundColor: '#000', border: '1px solid #333', padding: '8px', color: '#fff', fontSize: '11px', boxSizing: 'border-box' }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* SIZES & COLORS */}
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ fontSize: '10px', color: '#888', display: 'block', marginBottom: '5px', fontFamily: 'monospace' }}>SIZES (Comma separated)</label>
+                  <input
+                    type="text"
+                    value={newSizes}
+                    onChange={(e) => setNewSizes(e.target.value)}
+                    placeholder="S, M, L, XL"
+                    style={{ width: '100%', backgroundColor: '#000', border: '1px solid #333', padding: '10px', color: '#fff', fontSize: '11px', boxSizing: 'border-box' }}
+                  />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={{ fontSize: '10px', color: '#888', display: 'block', marginBottom: '5px', fontFamily: 'monospace' }}>COLORS (Comma separated)</label>
+                  <input
+                    type="text"
+                    value={newColors}
+                    onChange={(e) => setNewColors(e.target.value)}
+                    placeholder="BLACK, WHITE"
+                    style={{ width: '100%', backgroundColor: '#000', border: '1px solid #333', padding: '10px', color: '#fff', fontSize: '11px', boxSizing: 'border-box' }}
+                  />
+                </div>
               </div>
 
               <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
