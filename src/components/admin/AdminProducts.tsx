@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
+import { uploadToCloudinary } from '../utils/cloudinary'; // পাথ আপনার প্রজেক্ট অনুযায়ী অ্যাডজাস্ট করে নেবেন
 
 interface Product {
   id: string;
@@ -22,8 +23,11 @@ const AdminProducts: React.FC = () => {
   const [newPrice, setNewPrice] = useState<string>('');
   const [newStock, setNewStock] = useState<string>('');
   const [newCategory, setNewCategory] = useState<string>('APPAREL');
-  const [newImage, setNewImage] = useState<string>('');
   const [newDescription, setNewDescription] = useState<string>('');
+  
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>('');
+  const [uploadingImage, setUploadingImage] = useState<boolean>(false);
 
   const [searchTerm, setSearchTerm] = useState<string>('');
 
@@ -72,6 +76,14 @@ const AdminProducts: React.FC = () => {
     fetchProducts();
   }, []);
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      setImagePreview(URL.createObjectURL(file));
+    }
+  };
+
   const handleAddProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newName || !newPrice) {
@@ -81,6 +93,13 @@ const AdminProducts: React.FC = () => {
 
     try {
       setSubmitting(true);
+      let uploadedImageUrl = '';
+
+      if (imageFile) {
+        setUploadingImage(true);
+        uploadedImageUrl = await uploadToCloudinary(imageFile);
+        setUploadingImage(false);
+      }
 
       const { data: newProd, error: prodError } = await supabase
         .from('products')
@@ -96,10 +115,10 @@ const AdminProducts: React.FC = () => {
 
       if (prodError) throw prodError;
 
-      if (newImage && newProd) {
+      if (uploadedImageUrl && newProd) {
         await supabase
           .from('product_media')
-          .insert([{ product_id: newProd.id, media_url: newImage }]);
+          .insert([{ product_id: newProd.id, media_url: uploadedImageUrl }]);
       }
 
       alert('PRODUCT CREATED SUCCESSFULLY');
@@ -111,6 +130,7 @@ const AdminProducts: React.FC = () => {
       alert(err.message || 'Failed to create product.');
     } finally {
       setSubmitting(false);
+      setUploadingImage(false);
     }
   };
 
@@ -118,9 +138,10 @@ const AdminProducts: React.FC = () => {
     setNewName('');
     setNewPrice('');
     setNewStock('');
-    setNewImage('');
     setNewDescription('');
     setNewCategory('APPAREL');
+    setImageFile(null);
+    setImagePreview('');
   };
 
   const handleStockUpdate = async (productId: string, currentStock: number, change: number) => {
@@ -161,8 +182,6 @@ const AdminProducts: React.FC = () => {
 
   return (
     <div style={{ width: '100%', maxWidth: '100%', overflowX: 'hidden' }}>
-
-      {/* Header */}
       <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '15px', marginBottom: '20px' }}>
         <div>
           <h2 style={{ fontSize: '18px', fontWeight: '900', letterSpacing: '3px', margin: 0, color: '#fff' }}>
@@ -192,7 +211,6 @@ const AdminProducts: React.FC = () => {
         </button>
       </div>
 
-      {/* Search Bar */}
       <div style={{ backgroundColor: '#050505', border: '1px solid #1a1a1a', padding: '15px', marginBottom: '25px', borderRadius: '2px' }}>
         <input
           type="text"
@@ -214,7 +232,6 @@ const AdminProducts: React.FC = () => {
         />
       </div>
 
-      {/* Products Grid */}
       {loading ? (
         <div style={{ textAlign: 'center', padding: '60px 0', color: '#666', fontSize: '11px' }}>
           LOADING CATALOG ARCHIVES...
@@ -332,7 +349,6 @@ const AdminProducts: React.FC = () => {
         </div>
       )}
 
-      {/* Add Product Modal */}
       {showAddModal && (
         <div style={{ 
           position: 'fixed', 
@@ -404,15 +420,20 @@ const AdminProducts: React.FC = () => {
                 />
               </div>
 
+              {/* File input for Cloudinary upload */}
               <div>
-                <label style={{ fontSize: '10px', color: '#888', display: 'block', marginBottom: '5px', fontFamily: 'monospace' }}>IMAGE URL</label>
+                <label style={{ fontSize: '10px', color: '#888', display: 'block', marginBottom: '5px', fontFamily: 'monospace' }}>PRODUCT IMAGE</label>
                 <input
-                  type="text"
-                  value={newImage}
-                  onChange={(e) => setNewImage(e.target.value)}
-                  placeholder="https://..."
-                  style={{ width: '100%', backgroundColor: '#000', border: '1px solid #333', padding: '10px', color: '#fff', fontSize: '11px', boxSizing: 'border-box' }}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  style={{ width: '100%', backgroundColor: '#000', border: '1px solid #333', padding: '8px', color: '#fff', fontSize: '11px', boxSizing: 'border-box', cursor: 'pointer' }}
                 />
+                {imagePreview && (
+                  <div style={{ marginTop: '10px', width: '80px', height: '80px', border: '1px solid #333' }}>
+                    <img src={imagePreview} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  </div>
+                )}
               </div>
 
               <div>
@@ -436,17 +457,16 @@ const AdminProducts: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  disabled={submitting}
+                  disabled={submitting || uploadingImage}
                   style={{ flex: 1, backgroundColor: '#fff', border: 'none', color: '#000', padding: '10px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', fontFamily: 'monospace' }}
                 >
-                  {submitting ? 'SAVING...' : 'CREATE PRODUCT'}
+                  {uploadingImage ? 'UPLOADING IMAGE...' : submitting ? 'SAVING...' : 'CREATE PRODUCT'}
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
-
     </div>
   );
 };
