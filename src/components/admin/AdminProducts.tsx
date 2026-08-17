@@ -64,7 +64,7 @@ const AdminProducts: React.FC = () => {
         const formatted = data.map((p: any) => ({
           id: p.id,
           name: p.name,
-          description: p.description,
+          description: p.description || '',
           price: p.price,
           stock_quantity: p.stock_quantity ?? 0,
           category: p.category || 'GENERAL',
@@ -208,8 +208,7 @@ const AdminProducts: React.FC = () => {
           letterSpacing: '1px',
           display: 'flex',
           alignItems: 'center',
-          gap: '10px',
-          animation: 'fadeInOut 0.3s ease'
+          gap: '10px'
         }}>
           <span style={{ color: notification.type === 'error' ? '#ef4444' : '#22c55e', fontWeight: 'bold' }}>
             {notification.type === 'error' ? '✕' : '✓'}
@@ -327,6 +326,9 @@ const AdminProducts: React.FC = () => {
                   <h3 style={{ fontSize: '13px', fontWeight: 'bold', color: '#fff', margin: '0 0 4px 0', letterSpacing: '0.5px' }}>
                     {product.name}
                   </h3>
+                  <div style={{ fontSize: '10px', color: '#888', marginBottom: '8px', lineHeight: '1.4', minHeight: '28px', overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+                    {product.description || 'No description provided.'}
+                  </div>
                   <span style={{ fontSize: '15px', fontWeight: '800', color: '#fff', fontFamily: 'monospace' }}>
                     ৳{product.price}
                   </span>
