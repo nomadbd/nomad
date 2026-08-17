@@ -30,6 +30,14 @@ const AdminProducts: React.FC = () => {
   const [uploadingImage, setUploadingImage] = useState<boolean>(false);
 
   const [searchTerm, setSearchTerm] = useState<string>('');
+  const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  const showNotification = (message: string, type: 'success' | 'error' = 'success') => {
+    setNotification({ message, type });
+    setTimeout(() => {
+      setNotification(null);
+    }, 4000);
+  };
 
   const fetchProducts = async () => {
     try {
@@ -87,7 +95,7 @@ const AdminProducts: React.FC = () => {
   const handleAddProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newName || !newPrice) {
-      alert('Product Name and Price are required.');
+      showNotification('PRODUCT NAME AND PRICE ARE REQUIRED.', 'error');
       return;
     }
 
@@ -121,13 +129,13 @@ const AdminProducts: React.FC = () => {
           .insert([{ product_id: newProd.id, media_url: uploadedImageUrl }]);
       }
 
-      alert('PRODUCT CREATED SUCCESSFULLY');
       setShowAddModal(false);
       resetForm();
       fetchProducts();
+      showNotification('PRODUCT CREATED & CATALOG UPDATED SUCCESSFULLY.');
     } catch (err: any) {
       console.error('Error creating product:', err);
-      alert(err.message || 'Failed to create product.');
+      showNotification(err.message || 'FAILED TO CREATE PRODUCT.', 'error');
     } finally {
       setSubmitting(false);
       setUploadingImage(false);
@@ -168,9 +176,10 @@ const AdminProducts: React.FC = () => {
       setProducts(prev => prev.filter(p => p.id !== productId));
       const { error } = await supabase.from('products').delete().eq('id', productId);
       if (error) throw error;
+      showNotification('PRODUCT REMOVED FROM CATALOG.');
     } catch (err) {
       console.error('Failed to delete product:', err);
-      alert('Could not delete product. It may be linked to existing orders.');
+      showNotification('COULD NOT DELETE PRODUCT. LINKED TO ORDERS.', 'error');
       fetchProducts();
     }
   };
@@ -181,7 +190,34 @@ const AdminProducts: React.FC = () => {
   );
 
   return (
-    <div style={{ width: '100%', maxWidth: '100%', overflowX: 'hidden' }}>
+    <div style={{ width: '100%', maxWidth: '100%', overflowX: 'hidden', position: 'relative' }}>
+      {notification && (
+        <div style={{
+          position: 'fixed',
+          top: '20px',
+          right: '20px',
+          zIndex: 9999,
+          backgroundColor: '#0a0a0a',
+          border: `1px solid ${notification.type === 'error' ? '#ef4444' : '#ffffff'}`,
+          color: '#ffffff',
+          padding: '14px 20px',
+          borderRadius: '2px',
+          boxShadow: '0 10px 30px rgba(0,0,0,0.8)',
+          fontFamily: 'monospace',
+          fontSize: '11px',
+          letterSpacing: '1px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+          animation: 'fadeInOut 0.3s ease'
+        }}>
+          <span style={{ color: notification.type === 'error' ? '#ef4444' : '#22c55e', fontWeight: 'bold' }}>
+            {notification.type === 'error' ? '✕' : '✓'}
+          </span>
+          <span>{notification.message}</span>
+        </div>
+      )}
+
       <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '15px', marginBottom: '20px' }}>
         <div>
           <h2 style={{ fontSize: '18px', fontWeight: '900', letterSpacing: '3px', margin: 0, color: '#fff' }}>
