@@ -300,11 +300,11 @@ const AdminProducts: React.FC = () => {
 
                   <div style={{ display: 'flex', gap: '6px' }}>
                     <button onClick={() => handleStockUpdate(product.id, product.stock_quantity, -1)} 
-                      style={{ width: '32px', height: '32px', background: '#111', border: '1px solid #333', color: '#fff', fontSize: '16px' }}>
+                      style={{ width: '32px', height: '32px', background: '#111', border: '1px solid #333', color: '#fff', fontSize: '16px', cursor: 'pointer' }}>
                       −
                     </button>
                     <button onClick={() => handleStockUpdate(product.id, product.stock_quantity, 1)} 
-                      style={{ width: '32px', height: '32px', background: '#111', border: '1px solid #333', color: '#fff', fontSize: '16px' }}>
+                      style={{ width: '32px', height: '32px', background: '#111', border: '1px solid #333', color: '#fff', fontSize: '16px', cursor: 'pointer' }}>
                       +
                     </button>
                   </div>
@@ -350,11 +350,99 @@ const AdminProducts: React.FC = () => {
             width: '100%', 
             maxWidth: '480px', 
             padding: '25px', 
-            borderRadius: '2px' 
+            borderRadius: '2px',
+            maxHeight: '90vh',
+            overflowY: 'auto'
           }}>
-            {/* Modal Content - আগের মতোই রাখা যেতে পারে, শুধু width কমানো হয়েছে */}
-            {/* ... আপনার পুরানো মোডাল কোড এখানে রাখুন ... */}
-            {/* (স্পেস বাঁচানোর জন্য এখানে সংক্ষেপে রাখলাম। আপনার আগের মোডাল কোড পেস্ট করে নিন) */}
+            <h3 style={{ color: '#fff', fontSize: '14px', letterSpacing: '2px', marginBottom: '20px', marginTop: 0 }}>
+              ADD NEW PRODUCT
+            </h3>
+            
+            <form onSubmit={handleAddProduct} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+              <div>
+                <label style={{ fontSize: '10px', color: '#888', display: 'block', marginBottom: '5px', fontFamily: 'monospace' }}>PRODUCT NAME *</label>
+                <input
+                  type="text"
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  placeholder="Enter product name"
+                  style={{ width: '100%', backgroundColor: '#000', border: '1px solid #333', padding: '10px', color: '#fff', fontSize: '11px', boxSizing: 'border-box' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ fontSize: '10px', color: '#888', display: 'block', marginBottom: '5px', fontFamily: 'monospace' }}>PRICE (৳) *</label>
+                  <input
+                    type="number"
+                    value={newPrice}
+                    onChange={(e) => setNewPrice(e.target.value)}
+                    placeholder="0.00"
+                    style={{ width: '100%', backgroundColor: '#000', border: '1px solid #333', padding: '10px', color: '#fff', fontSize: '11px', boxSizing: 'border-box' }}
+                  />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={{ fontSize: '10px', color: '#888', display: 'block', marginBottom: '5px', fontFamily: 'monospace' }}>STOCK QUANTITY</label>
+                  <input
+                    type="number"
+                    value={newStock}
+                    onChange={(e) => setNewStock(e.target.value)}
+                    placeholder="0"
+                    style={{ width: '100%', backgroundColor: '#000', border: '1px solid #333', padding: '10px', color: '#fff', fontSize: '11px', boxSizing: 'border-box' }}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label style={{ fontSize: '10px', color: '#888', display: 'block', marginBottom: '5px', fontFamily: 'monospace' }}>CATEGORY</label>
+                <input
+                  type="text"
+                  value={newCategory}
+                  onChange={(e) => setNewCategory(e.target.value)}
+                  placeholder="APPAREL, etc."
+                  style={{ width: '100%', backgroundColor: '#000', border: '1px solid #333', padding: '10px', color: '#fff', fontSize: '11px', boxSizing: 'border-box' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: '10px', color: '#888', display: 'block', marginBottom: '5px', fontFamily: 'monospace' }}>IMAGE URL</label>
+                <input
+                  type="text"
+                  value={newImage}
+                  onChange={(e) => setNewImage(e.target.value)}
+                  placeholder="https://..."
+                  style={{ width: '100%', backgroundColor: '#000', border: '1px solid #333', padding: '10px', color: '#fff', fontSize: '11px', boxSizing: 'border-box' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: '10px', color: '#888', display: 'block', marginBottom: '5px', fontFamily: 'monospace' }}>DESCRIPTION</label>
+                <textarea
+                  value={newDescription}
+                  onChange={(e) => setNewDescription(e.target.value)}
+                  placeholder="Product description..."
+                  rows={3}
+                  style={{ width: '100%', backgroundColor: '#000', border: '1px solid #333', padding: '10px', color: '#fff', fontSize: '11px', boxSizing: 'border-box', resize: 'vertical' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                <button
+                  type="button"
+                  onClick={() => setShowAddModal(false)}
+                  style={{ flex: 1, backgroundColor: 'transparent', border: '1px solid #444', color: '#fff', padding: '10px', fontSize: '11px', cursor: 'pointer', fontFamily: 'monospace' }}
+                >
+                  CANCEL
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  style={{ flex: 1, backgroundColor: '#fff', border: 'none', color: '#000', padding: '10px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', fontFamily: 'monospace' }}
+                >
+                  {submitting ? 'SAVING...' : 'CREATE PRODUCT'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
