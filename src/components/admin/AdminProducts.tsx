@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
-import { uploadToCloudinary } from '../utils/cloudinary'; // পাথ আপনার প্রজেক্ট অনুযায়ী অ্যাডজাস্ট করে নেবেন
+import { uploadToCloudinary } from '../../cloudinary';
 
 interface Product {
   id: string;
@@ -420,7 +420,6 @@ const AdminProducts: React.FC = () => {
                 />
               </div>
 
-              {/* File input for Cloudinary upload */}
               <div>
                 <label style={{ fontSize: '10px', color: '#888', display: 'block', marginBottom: '5px', fontFamily: 'monospace' }}>PRODUCT IMAGE</label>
                 <input
