@@ -37,6 +37,7 @@ const AdminDashboard: React.FC = () => {
   const handleTabChange = (tab: TabType) => {
     setActiveTab(tab);
     setMenuOpen(false);
+    setIsSearchOpen(false); // ট্যাব পরিবর্তন করলে সার্চ বন্ধ হবে
 
     const searchParams = new URLSearchParams(window.location.search);
     searchParams.set('tab', tab);
@@ -327,6 +328,11 @@ const AdminDashboard: React.FC = () => {
           -webkit-tap-highlight-color: transparent;
         }
 
+        .nomad-action-btn.active {
+          background-color: rgba(255, 255, 255, 0.15);
+          opacity: 1;
+        }
+
         .nomad-action-btn:hover,
         .nomad-action-btn:active,
         .nomad-menu-toggle-btn:hover,
@@ -334,49 +340,70 @@ const AdminDashboard: React.FC = () => {
           background-color: rgba(255, 255, 255, 0.08);
           opacity: 1;
         }
+
+        .header-search-bar {
+          margin-top: 12px;
+          padding-top: 10px;
+          border-top: 1px solid #1f1f1f;
+        }
+
+        .header-search-input {
+          width: 100%;
+          background: #090909;
+          border: 1px solid #222;
+          color: #fff;
+          padding: 8px 12px;
+          font-family: monospace;
+          font-size: 11px;
+          border-radius: 2px;
+          outline: none;
+          letter-spacing: 1px;
+        }
+
+        .header-search-input:focus {
+          border-color: #555;
+        }
       `}</style>
 
       <div className="nomad-layout">
         <aside className="nomad-sidebar">
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              {/* বাম পাশে শুধুমাত্র NOMAD টেক্সট */}
               <a href="/" className="nomad-brand-link" title="Go to Store Homepage">
                 <h1 style={{ fontSize: '18px', fontWeight: '900', letterSpacing: '4px', margin: 0, color: '#fff' }}>
                   NOMAD
                 </h1>
               </a>
 
-              {/* ডান পাশে সার্চ আইকন, ফিল্টার আইকন এবং ২ টি ছোট-বড় দাগের ন্যাভিগেশন বার */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                {/* সার্চ আইকন (SVG) */}
-                <button
-                  className="nomad-action-btn"
-                  onClick={() => setIsSearchOpen(!isSearchOpen)}
-                  aria-label="Search"
-                  title="Search"
-                >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="11" cy="11" r="8"></circle>
-                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                  </svg>
-                </button>
-
-                {/* ফিল্টার আইকন (SVG) - ওভারভিউ ছাড়া বাকি ট্যাবে দেখাবে */}
+                {/* ১. ওভারভিউ ট্যাবে সার্চ আইকন থাকবে না, বাকি সব ট্যাবে থাকবে */}
                 {activeTab !== 'overview' && (
                   <button
-                    className="nomad-action-btn"
-                    onClick={() => setIsFilterOpen(!isFilterOpen)}
-                    aria-label="Filter"
-                    title="Filter Options"
+                    className={`nomad-action-btn ${isSearchOpen ? 'active' : ''}`}
+                    onClick={() => setIsSearchOpen(!isSearchOpen)}
+                    aria-label="Search"
+                    title="Search"
                   >
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                      <circle cx="11" cy="11" r="8"></circle>
+                      <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                     </svg>
                   </button>
                 )}
 
-                {/* ২ টি ছোট-বড় দাগের ন্যাভিগেশন আইকন (SVG) */}
+                {/* ২. ফিল্টার আইকন সকল ট্যাবেই দৃশ্যমান থাকবে */}
+                <button
+                  className={`nomad-action-btn ${isFilterOpen ? 'active' : ''}`}
+                  onClick={() => setIsFilterOpen(!isFilterOpen)}
+                  aria-label="Filter"
+                  title="Toggle Filter Panel"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                  </svg>
+                </button>
+
+                {/* ৩. ২ টি ছোট-বড় দাগের ন্যাভিগেশন আইকন */}
                 <button
                   className="nomad-menu-toggle nomad-menu-toggle-btn"
                   onClick={() => setMenuOpen(!menuOpen)}
@@ -384,13 +411,11 @@ const AdminDashboard: React.FC = () => {
                   title="Toggle Navigation"
                 >
                   {menuOpen ? (
-                    /* মেনু ওপেন থাকলে ক্রস আইকন */
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <line x1="18" y1="6" x2="6" y2="18"></line>
                       <line x1="6" y1="6" x2="18" y2="18"></line>
                     </svg>
                   ) : (
-                    /* ২টি ছোট ও বড় সমান্তরাল দাগ */
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <line x1="3" y1="8" x2="21" y2="8"></line>
                       <line x1="9" y1="16" x2="21" y2="16"></line>
@@ -399,6 +424,20 @@ const AdminDashboard: React.FC = () => {
                 </button>
               </div>
             </div>
+
+            {/* সার্চ আইকনে ক্লিক করলে পপআপ ইনপুট বক্স */}
+            {isSearchOpen && activeTab !== 'overview' && (
+              <div className="header-search-bar">
+                <input
+                  type="text"
+                  className="header-search-input"
+                  placeholder={`SEARCH IN ${activeTab.toUpperCase()}...`}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  autoFocus
+                />
+              </div>
+            )}
 
             <nav className="nomad-nav">
               <span style={{ fontSize: '9px', color: '#888888', letterSpacing: '2px', marginBottom: '8px', fontWeight: 'bold' }}>
@@ -476,9 +515,16 @@ const AdminDashboard: React.FC = () => {
         </aside>
 
         <main className="nomad-main">
-          {activeTab === 'overview' && <AdminOverview key="overview" userRole={userRole} />}
-          {activeTab === 'orders' && <AdminOrders key="orders" />}
-          {activeTab === 'products' && <AdminProducts key="products" />}
+          {/* চাইল্ড ফাইলসমূহে Filter & Search প্রপস পাঠানো হচ্ছে */}
+          {activeTab === 'overview' && (
+            <AdminOverview key="overview" userRole={userRole} isFilterOpen={isFilterOpen} />
+          )}
+          {activeTab === 'orders' && (
+            <AdminOrders key="orders" searchQuery={searchQuery} isFilterOpen={isFilterOpen} />
+          )}
+          {activeTab === 'products' && (
+            <AdminProducts key="products" searchQuery={searchQuery} isFilterOpen={isFilterOpen} />
+          )}
 
           {activeTab === 'settings' && (
             isSuperAdmin ? (
