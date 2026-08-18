@@ -434,7 +434,7 @@ const AdminProducts: React.FC = () => {
   const filteredCategories = Array.from(new Set(filteredProducts.map(p => p.category)));
 
   return (
-    <div style={{ width: '100%', maxWidth: '100%', overflowX: 'hidden', position: 'relative', backgroundColor: '#000', minHeight: '100vh', padding: '0 20px 20px 20px', boxSizing: 'border-box' }}>
+    <div style={{ width: '100%', maxWidth: '100%', overflow: 'clip', position: 'relative', backgroundColor: '#000', minHeight: '100vh', padding: '0 20px 20px 20px', boxSizing: 'border-box' }}>
       {notification && (
         <div style={{ position: 'fixed', top: '20px', right: '20px', zIndex: 9999, backgroundColor: '#0a0a0a', border: `1px solid ${notification.type === 'error' ? '#ef4444' : '#ffffff'}`, color: '#ffffff', padding: '14px 20px', borderRadius: '2px', fontFamily: 'monospace', fontSize: '11px', letterSpacing: '1px' }}>
           <span style={{ color: notification.type === 'error' ? '#ef4444' : '#22c55e', marginRight: '8px' }}>
