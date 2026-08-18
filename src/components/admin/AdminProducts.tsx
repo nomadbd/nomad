@@ -492,15 +492,16 @@ const AdminProducts: React.FC = () => {
         </div>
       )}
 
-      {/* Sticky Smart Header Bar — z-index lowered so it never overlays the main menu */}
+      {/* Sticky Smart Header Bar */}
+      {/* top: 56px → মেইন NOMAD হেডারের ঠিক নিচে বসবে, আর চাপা পড়বে না */}
       <div style={{
         position: 'sticky',
-        top: '0',
-        zIndex: 40, // lowered from 9999 → main menu can sit above it
+        top: '56px',          // ← মূল পরিবর্তন
+        zIndex: 40,
         backgroundColor: '#000',
         paddingBottom: '15px',
         transition: 'transform 0.3s ease-in-out',
-        transform: isVisibleHeader ? 'translateY(0)' : 'translateY(-120%)',
+        transform: isVisibleHeader ? 'translateY(0)' : 'translateY(-150%)',
         willChange: 'transform'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', backgroundColor: '#050505', border: '1px solid #ffffff', borderRadius: '30px', padding: '6px 12px 6px 15px', boxSizing: 'border-box' }}>
