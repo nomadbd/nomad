@@ -483,7 +483,7 @@ const AdminProducts: React.FC = () => {
         </div>
       )}
 
-      {/* Sticky Smart Header Bar (Pill Search Bar with Icons Inside & Without Borders) */}
+      {/* Sticky Main Header Including Brand Logo, Menu and Search Bar */}
       <div style={{
         position: 'sticky',
         top: '0',
@@ -493,6 +493,24 @@ const AdminProducts: React.FC = () => {
         transition: 'transform 0.3s ease-in-out',
         transform: isVisibleHeader ? 'translateY(0)' : 'translateY(-120%)'
       }}>
+        {/* Brand Top Row */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+          <div>
+            <h1 style={{ color: '#fff', fontSize: '18px', letterSpacing: '4px', margin: '0 0 2px 0', fontWeight: 'bold' }}>NOMAD</h1>
+            <span style={{ color: '#888', fontSize: '10px', letterSpacing: '1px' }}>The one. Everywhere.</span>
+          </div>
+
+          <button 
+            style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '5px', padding: '5px' }}
+            onClick={() => {}}
+          >
+            <div style={{ width: '20px', height: '2px', backgroundColor: '#fff' }}></div>
+            <div style={{ width: '20px', height: '2px', backgroundColor: '#fff' }}></div>
+            <div style={{ width: '20px', height: '2px', backgroundColor: '#fff' }}></div>
+          </button>
+        </div>
+
+        {/* Pill Search Bar with Filter & Add Icons Inside */}
         <div style={{ display: 'flex', alignItems: 'center', backgroundColor: '#050505', border: '1px solid #ffffff', borderRadius: '30px', padding: '6px 12px 6px 15px', boxSizing: 'border-box' }}>
           <input
             type="text"
