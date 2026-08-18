@@ -3,6 +3,7 @@ import { supabase } from '../../supabaseClient';
 
 interface AdminOverviewProps {
   userRole?: string;
+  showFilter?: boolean; // হেডার ফিল্টার আইকনের স্টেট কন্ট্রোল করার জন্য
 }
 
 interface ChartPoint {
@@ -26,7 +27,7 @@ const formatNumber = (num: number): string => {
   return num.toLocaleString();
 };
 
-const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
+const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '', showFilter = false }) => {
   const normalizedRole = userRole.toUpperCase().trim();
   const canViewSensitiveData = ['SUPER_ADMIN', 'ADMIN'].includes(normalizedRole);
 
@@ -57,7 +58,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
 
   // Users States
   const [totalUsers, setTotalUsers] = useState<number>(0);
-  const [newUsers, setNewUsers] = useState<number>(0); // Users joined in the selected period
+  const [newUsers, setNewUsers] = useState<number>(0);
 
   const [rawOrdersData, setRawOrdersData] = useState<any[]>([]);
 
@@ -81,7 +82,6 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase();
   };
 
-  // Preset Handlers (ALL, TODAY, 7D, 30D)
   const handlePresetSelect = (preset: string) => {
     setSelectedPreset(preset);
     const now = new Date();
@@ -106,7 +106,6 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
     }
   };
 
-  // Auto-detect Granularity
   useEffect(() => {
     if (!startDate || !endDate) {
       setGranularity('MONTHLY');
@@ -181,7 +180,6 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
         setCancelledOrders(cancelled);
       }
 
-      // Catalog Items & Stock Alerts
       const { count: productCount } = await supabase.from('products').select('*', { count: 'exact', head: true });
       if (productCount !== null) setActiveCatalogItems(productCount);
 
@@ -191,7 +189,6 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
       const { count: lowStockCount } = await supabase.from('products').select('*', { count: 'exact', head: true }).gt('stock_quantity', 0).lte('stock_quantity', 5);
       if (lowStockCount !== null) setLowStockItems(lowStockCount);
 
-      // Users Count (All Time vs New in Period)
       const { count: allUsersCount } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).not('role', 'in', '("admin","manager")');
       if (allUsersCount !== null) setTotalUsers(allUsersCount);
 
@@ -219,7 +216,6 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
     };
   }, [startDate, endDate]);
 
-  // Continuous Date Bucket Generator with Zero-Filling
   const chartData = useMemo(() => {
     if (!rawOrdersData) return [];
 
@@ -497,10 +493,9 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
         * { box-sizing: border-box; }
         
         .date-filter-container {
-          background-color: #080808;
-          border: 1px solid #222222;
-          padding: 12px;
-          border-radius: 2px;
+          background-color: transparent;
+          border: none;
+          padding: 8px 0;
           margin-bottom: 12px;
           display: flex;
           flex-direction: column;
@@ -509,28 +504,32 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
 
         .preset-buttons {
           display: flex;
-          gap: 6px;
+          gap: 10px;
           overflow-x: auto;
           scrollbar-width: none;
         }
 
         .preset-btn {
-          background: #111;
-          border: 1px solid #222;
-          color: #666;
-          font-size: 10px;
-          font-weight: bold;
-          padding: 6px 12px;
+          background: transparent;
+          border: none;
+          color: #666666;
+          font-size: 11px;
+          font-weight: 600;
+          padding: 4px 6px;
           cursor: pointer;
-          border-radius: 2px;
           white-space: nowrap;
-          transition: all 0.2s ease;
+          transition: color 0.2s ease;
+        }
+
+        .preset-btn:hover {
+          color: #A0AEC0;
         }
 
         .preset-btn.active {
-          background: #111;
-          color: #22d3ee;
-          border-color: #FFFFFF;
+          background: transparent;
+          color: #FFFFFF;
+          font-weight: 700;
+          border: none;
         }
 
         .custom-date-inputs {
@@ -540,15 +539,25 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
         }
 
         .date-input {
-          background: #111;
-          border: 1px solid #222;
-          color: #FFFFFF;
+          background: transparent;
+          border: none;
+          color: #666666;
           font-family: monospace;
           font-size: 11px;
-          padding: 6px 8px;
-          border-radius: 2px;
+          padding: 4px 6px;
           outline: none;
           width: 100%;
+          cursor: pointer;
+          transition: color 0.2s ease;
+        }
+
+        .date-input::-webkit-calendar-picker-indicator {
+          filter: invert(0.5);
+          cursor: pointer;
+        }
+
+        .date-input:focus, .date-input:active, .date-input.active-input {
+          color: #FFFFFF;
         }
 
         .two-column-grid {
@@ -572,19 +581,19 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
         }
 
         .filter-toggle-btn {
-          background: #111;
-          border: 1px solid #222;
-          color: #777;
-          font-size: 9px;
+          background: transparent;
+          border: none;
+          color: #666666;
+          font-size: 10px;
           padding: 4px 8px;
           cursor: pointer;
-          border-radius: 2px;
+          transition: color 0.2s ease;
         }
 
         .filter-toggle-btn.active {
-          background: #22d3ee;
-          color: #000;
-          border-color: #FFFFFF;
+          background: transparent;
+          color: #FFFFFF;
+          border: none;
           font-weight: bold;
         }
 
@@ -603,42 +612,44 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
         }
       `}</style>
 
-      {/* Date Filter Bar */}
-      <div className="date-filter-container">
-        <div className="preset-buttons">
-          {['ALL', 'TODAY', '7D', '30D'].map((p) => (
-            <button
-              key={p}
-              className={`preset-btn ${selectedPreset === p ? 'active' : ''}`}
-              onClick={() => handlePresetSelect(p)}
-            >
-              {p === 'ALL' ? 'ALL TIME' : p === '7D' ? '7 DAYS' : p === '30D' ? '30 DAYS' : p}
-            </button>
-          ))}
-        </div>
+      {/* Date Filter Bar - শুধু showFilter true থাকলেই দেখাবে */}
+      {showFilter && (
+        <div className="date-filter-container">
+          <div className="preset-buttons">
+            {['ALL', 'TODAY', '7D', '30D'].map((p) => (
+              <button
+                key={p}
+                className={`preset-btn ${selectedPreset === p ? 'active' : ''}`}
+                onClick={() => handlePresetSelect(p)}
+              >
+                {p === 'ALL' ? 'ALL TIME' : p === '7D' ? '7 DAYS' : p === '30D' ? '30 DAYS' : p}
+              </button>
+            ))}
+          </div>
 
-        <div className="custom-date-inputs">
-          <input
-            type="date"
-            className="date-input"
-            value={startDate}
-            onChange={(e) => {
-              setStartDate(e.target.value);
-              setSelectedPreset('CUSTOM');
-            }}
-          />
-          <span style={{ color: '#666', fontSize: '11px', fontWeight: 'bold' }}>TO</span>
-          <input
-            type="date"
-            className="date-input"
-            value={endDate}
-            onChange={(e) => {
-              setEndDate(e.target.value);
-              setSelectedPreset('CUSTOM');
-            }}
-          />
+          <div className="custom-date-inputs">
+            <input
+              type="date"
+              className={`date-input ${selectedPreset === 'CUSTOM' ? 'active-input' : ''}`}
+              value={startDate}
+              onChange={(e) => {
+                setStartDate(e.target.value);
+                setSelectedPreset('CUSTOM');
+              }}
+            />
+            <span style={{ color: '#444', fontSize: '11px', fontWeight: 'bold' }}>TO</span>
+            <input
+              type="date"
+              className={`date-input ${selectedPreset === 'CUSTOM' ? 'active-input' : ''}`}
+              value={endDate}
+              onChange={(e) => {
+                setEndDate(e.target.value);
+                setSelectedPreset('CUSTOM');
+              }}
+            />
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Fulfillment Status */}
       <div style={{ backgroundColor: '#080808', border: '1px solid #222', padding: '14px', borderRadius: '2px' }}>
