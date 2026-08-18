@@ -483,7 +483,7 @@ const AdminProducts: React.FC = () => {
         </div>
       )}
 
-      {/* Sticky Smart Header Bar (Pill Search Bar + Filter Icon + Add Button) */}
+      {/* Sticky Smart Header Bar (Pill Search Bar with Icons Inside & Without Borders) */}
       <div style={{
         position: 'sticky',
         top: '0',
@@ -493,66 +493,61 @@ const AdminProducts: React.FC = () => {
         transition: 'transform 0.3s ease-in-out',
         transform: isVisibleHeader ? 'translateY(0)' : 'translateY(-120%)'
       }}>
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', backgroundColor: '#000', boxSizing: 'border-box' }}>
-          {/* Pill-shaped Search Bar */}
-          <div style={{ flex: 1, display: 'flex', alignItems: 'center', backgroundColor: '#050505', border: '1px solid #ffffff', borderRadius: '30px', padding: '6px 15px', boxSizing: 'border-box' }}>
-            <input
-              type="text"
-              placeholder="SEARCH PRODUCTS..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              style={{ width: '100%', backgroundColor: 'transparent', border: 'none', padding: '4px 0', color: '#fff', fontSize: '11px', fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box' }}
-            />
+        <div style={{ display: 'flex', alignItems: 'center', backgroundColor: '#050505', border: '1px solid #ffffff', borderRadius: '30px', padding: '6px 12px 6px 15px', boxSizing: 'border-box' }}>
+          <input
+            type="text"
+            placeholder="SEARCH PRODUCTS..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            style={{ flex: 1, backgroundColor: 'transparent', border: 'none', padding: '4px 0', color: '#fff', fontSize: '11px', fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box' }}
+          />
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            {/* Filter Toggle Icon Button */}
+            <button
+              onClick={() => setShowFilters(prev => !prev)}
+              title="Toggle Filters"
+              style={{ 
+                backgroundColor: showFilters ? '#222' : 'transparent', 
+                color: '#fff', 
+                border: 'none', 
+                width: '32px', 
+                height: '32px', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                cursor: 'pointer', 
+                boxSizing: 'border-box' 
+              }}
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+              </svg>
+            </button>
+
+            {/* Add Product Button */}
+            <button
+              onClick={() => setShowAddModal(true)}
+              title="Add New Product"
+              style={{ 
+                backgroundColor: 'transparent', 
+                color: '#fff', 
+                border: 'none', 
+                width: '32px', 
+                height: '32px', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                cursor: 'pointer', 
+                boxSizing: 'border-box' 
+              }}
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+            </button>
           </div>
-
-          {/* Filter Toggle Icon Button */}
-          <button
-            onClick={() => setShowFilters(prev => !prev)}
-            title="Toggle Filters"
-            style={{ 
-              backgroundColor: showFilters ? '#222' : 'transparent', 
-              color: '#fff', 
-              border: '1px solid #ffffff', 
-              width: '42px', 
-              height: '42px', 
-              minWidth: '42px', 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              cursor: 'pointer', 
-              borderRadius: '4px', 
-              boxSizing: 'border-box' 
-            }}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
-            </svg>
-          </button>
-
-          {/* Add Product Button */}
-          <button
-            onClick={() => setShowAddModal(true)}
-            title="Add New Product"
-            style={{ 
-              backgroundColor: 'transparent', 
-              color: '#fff', 
-              border: '1px solid #ffffff', 
-              width: '42px', 
-              height: '42px', 
-              minWidth: '42px', 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              cursor: 'pointer', 
-              borderRadius: '50%', 
-              boxSizing: 'border-box' 
-            }}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="12" y1="5" x2="12" y2="19"></line>
-              <line x1="5" y1="12" x2="19" y2="12"></line>
-            </svg>
-          </button>
         </div>
 
         {/* Dropdown Filters Panel */}
