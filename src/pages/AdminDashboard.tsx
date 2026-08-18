@@ -147,7 +147,7 @@ const AdminDashboard: React.FC = () => {
       fontFamily: 'monospace, sans-serif', 
       width: '100%',
       maxWidth: '100vw',
-      overflowX: 'hidden'
+      overflowX: 'clip'
     }}>
       <style>{`
         *, *::before, *::after { 
@@ -159,7 +159,7 @@ const AdminDashboard: React.FC = () => {
         html, body {
           width: 100% !important;
           max-width: 100% !important;
-          overflow-x: hidden !important;
+          overflow-x: clip !important;
           background-color: #030303;
         }
 
@@ -270,7 +270,7 @@ const AdminDashboard: React.FC = () => {
           flex: 1;
           background-color: #030303;
           box-sizing: border-box;
-          overflow-x: hidden;
+          overflow-x: clip;
         }
 
         .nav-btn {
