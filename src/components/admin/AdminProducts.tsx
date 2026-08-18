@@ -3,67 +3,18 @@ import { supabase } from '../../supabaseClient';
 import { uploadToCloudinary } from '../../cloudinary';
 
 interface Product {
-  id: string | number;
+  id: string;
   name: string;
-  description: string;
+  description?: string;
+  details?: any;
+  sizes?: string[];
+  colors?: string[];
   price: number;
-  category: string;
   stock_quantity: number;
-  status: 'active' | 'sold_out' | string;
-  sizes: string[];  
-  colors: string[]; 
-  created_at: string;
-  product_media: { media_url: string; media_type: string }[];
-  details?: Record<string, string> | null;
+  category?: string;
+  created_at?: string;
+  image_url?: string;
 }
-
-// 📸 প্রোডাক্ট গ্যালারি কম্পোনেন্ট (প্রথম কোড থেকে নেওয়া)
-const ProductGallery = ({ images, productName }: { images: string[], productName: string }) => {
-  const [currentIndex, setCurrentIndex] = useState(0);
-
-  const handlePrev = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setCurrentIndex(prev => (prev > 0 ? prev - 1 : images.length - 1));
-  };
-
-  const handleNext = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setCurrentIndex(prev => (prev < images.length - 1 ? prev + 1 : 0));
-  };
-
-  return (
-    <div style={{ width: '100%', aspectRatio: '3/4', position: 'relative', overflow: 'hidden', backgroundColor: '#111' }}>
-      {images.length > 0 ? (
-        <img 
-          src={images[currentIndex]} 
-          alt={productName} 
-          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-        />
-      ) : (
-        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#333' }}>No Image</div>
-      )}
-
-      {images.length > 1 && (
-        <>
-          <div style={{ position: 'absolute', top: 0, left: 0, width: '50%', height: '100%', cursor: 'pointer' }} onClick={handlePrev} />
-          <div style={{ position: 'absolute', top: 0, right: 0, width: '50%', height: '100%', cursor: 'pointer' }} onClick={handleNext} />
-
-          <div style={{ position: 'absolute', bottom: '15px', left: 0, width: '100%', display: 'flex', justifyContent: 'center', gap: '6px' }}>
-            {images.map((_, idx) => (
-              <div 
-                key={idx}
-                style={{ 
-                  width: '6px', height: '6px', borderRadius: '50%', 
-                  background: currentIndex === idx ? '#fff' : 'rgba(255,255,255,0.4)',
-                }}
-              />
-            ))}
-          </div>
-        </>
-      )}
-    </div>
-  );
-};
 
 const AdminProducts: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -108,7 +59,16 @@ const AdminProducts: React.FC = () => {
       const { data, error } = await supabase
         .from('products')
         .select(`
-          *,
+          id,
+          name,
+          description,
+          details,
+          sizes,
+          colors,
+          price,
+          stock_quantity,
+          category,
+          created_at,
           product_media (
             media_url,
             media_type,
@@ -123,14 +83,20 @@ const AdminProducts: React.FC = () => {
         const formatted = data.map((p: any) => {
           // Sort media by sort_order if available
           const sortedMedia = p.product_media?.sort((a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+          const primaryImage = sortedMedia?.[0]?.media_url || 'https://via.placeholder.com/100x120?text=NO+IMAGE';
+
           return {
-            ...p,
+            id: p.id,
+            name: p.name,
             description: p.description || '',
             details: p.details || {},
             sizes: p.sizes || [],
             colors: p.colors || [],
+            price: p.price,
             stock_quantity: p.stock_quantity ?? 0,
-            product_media: sortedMedia || []
+            category: p.category || 'GENERAL',
+            created_at: p.created_at,
+            image_url: primaryImage
           };
         });
         setProducts(formatted);
@@ -173,6 +139,7 @@ const AdminProducts: React.FC = () => {
     try {
       setSubmitting(true);
 
+      // 1. Format details object for JSONB column
       const detailsJson = {
         FIT: newFit,
         GSM: newGsm,
@@ -180,9 +147,11 @@ const AdminProducts: React.FC = () => {
         MATERIAL: newMaterial
       };
 
+      // 2. Format sizes and colors arrays
       const sizesArray = newSizes.split(',').map(s => s.trim()).filter(Boolean);
       const colorsArray = newColors.split(',').map(c => c.trim().toUpperCase()).filter(Boolean);
 
+      // 3. Insert Product basic info
       const { data: newProd, error: prodError } = await supabase
         .from('products')
         .insert([{
@@ -200,6 +169,7 @@ const AdminProducts: React.FC = () => {
 
       if (prodError) throw prodError;
 
+      // 4. Upload Multiple Images & Videos to Cloudinary and insert into product_media
       if (mediaFiles.length > 0 && newProd) {
         setUploadingMedia(true);
         for (let i = 0; i < mediaFiles.length; i++) {
@@ -246,7 +216,7 @@ const AdminProducts: React.FC = () => {
     setMediaPreviews([]);
   };
 
-  const handleStockUpdate = async (productId: string | number, currentStock: number, change: number) => {
+  const handleStockUpdate = async (productId: string, currentStock: number, change: number) => {
     const updated = Math.max(0, currentStock + change);
     try {
       setProducts(prev => prev.map(p => p.id === productId ? { ...p, stock_quantity: updated } : p));
@@ -258,7 +228,7 @@ const AdminProducts: React.FC = () => {
     }
   };
 
-  const handleDeleteProduct = async (productId: string | number) => {
+  const handleDeleteProduct = async (productId: string) => {
     if (!window.confirm('ARE YOU SURE YOU WANT TO REMOVE THIS PRODUCT?')) return;
 
     try {
@@ -279,7 +249,7 @@ const AdminProducts: React.FC = () => {
   );
 
   return (
-    <div style={{ width: '100%', maxWidth: '100%', overflowX: 'hidden', position: 'relative', padding: '20px', boxSizing: 'border-box', backgroundColor: '#000', color: '#fff' }}>
+    <div style={{ width: '100%', maxWidth: '100%', overflowX: 'hidden', position: 'relative' }}>
       {notification && (
         <div style={{
           position: 'fixed', top: '20px', right: '20px', zIndex: 9999,
@@ -319,41 +289,24 @@ const AdminProducts: React.FC = () => {
       {loading ? (
         <div style={{ textAlign: 'center', padding: '60px 0', color: '#666', fontSize: '11px' }}>LOADING...</div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '18px' }}>
           {filteredProducts.map((product) => (
-            <div key={product.id} style={{ backgroundColor: '#050505', border: '1px solid #1a1a1a', padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px', boxSizing: 'border-box' }}>
-              
-              {/* Product Gallery Integration */}
-              <ProductGallery 
-                images={product.product_media?.map(m => m.media_url) || []} 
-                productName={product.name} 
-              />
-
+            <div key={product.id} style={{ backgroundColor: '#050505', border: '1px solid #1a1a1a', padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ position: 'relative', width: '100%', height: '180px', backgroundColor: '#000' }}>
+                <img src={product.image_url} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              </div>
               <div>
-                <h3 style={{ fontSize: '14px', fontWeight: '600', color: '#fff', margin: '0 0 4px 0' }}>{product.name}</h3>
-                <span style={{ fontSize: '15px', fontWeight: '600', color: '#fff', fontFamily: 'monospace' }}>৳{product.price}</span>
+                <h3 style={{ fontSize: '13px', fontWeight: 'bold', color: '#fff', margin: '0 0 4px 0' }}>{product.name}</h3>
+                <span style={{ fontSize: '15px', fontWeight: '800', color: '#fff', fontFamily: 'monospace' }}>৳{product.price}</span>
               </div>
-
-              {/* Details & Specs preview if available */}
-              {product.details && Object.keys(product.details).length > 0 && (
-                <div style={{ borderTop: '1px solid #1a1a1a', paddingTop: '8px', fontSize: '11px', fontFamily: 'monospace', color: '#888' }}>
-                  {Object.entries(product.details).slice(0, 2).map(([k, v]) => (
-                    <div key={k}>{k}: {String(v)}</div>
-                  ))}
-                </div>
-              )}
-
               <div style={{ backgroundColor: '#000', border: '1px solid #111', padding: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '11px', color: product.stock_quantity > 0 ? '#22c55e' : '#ef4444' }}>
-                  Stock: {product.stock_quantity}
-                </span>
+                <span style={{ fontSize: '11px', color: '#22c55e' }}>Stock: {product.stock_quantity}</span>
                 <div style={{ display: 'flex', gap: '5px' }}>
-                  <button onClick={() => handleStockUpdate(product.id, product.stock_quantity, -1)} style={{ width: '28px', height: '28px', background: '#111', color: '#fff', border: '1px solid #333', cursor: 'pointer' }}>-</button>
-                  <button onClick={() => handleStockUpdate(product.id, product.stock_quantity, 1)} style={{ width: '28px', height: '28px', background: '#111', color: '#fff', border: '1px solid #333', cursor: 'pointer' }}>+</button>
+                  <button onClick={() => handleStockUpdate(product.id, product.stock_quantity, -1)} style={{ width: '28px', height: '28px', background: '#111', color: '#fff', cursor: 'pointer' }}>-</button>
+                  <button onClick={() => handleStockUpdate(product.id, product.stock_quantity, 1)} style={{ width: '28px', height: '28px', background: '#111', color: '#fff', cursor: 'pointer' }}>+</button>
                 </div>
               </div>
-
-              <button onClick={() => handleDeleteProduct(product.id)} style={{ backgroundColor: 'transparent', border: '1px solid #ef444455', color: '#ef4444', padding: '8px', fontSize: '10px', cursor: 'pointer', fontWeight: 'bold' }}>REMOVE PRODUCT</button>
+              <button onClick={() => handleDeleteProduct(product.id)} style={{ backgroundColor: 'transparent', border: '1px solid #ef444455', color: '#ef4444', padding: '8px', fontSize: '10px', cursor: 'pointer' }}>REMOVE</button>
             </div>
           ))}
         </div>
@@ -361,7 +314,7 @@ const AdminProducts: React.FC = () => {
 
       {showAddModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
-          <div style={{ backgroundColor: '#050505', border: '1px solid #333', width: '100%', maxWidth: '520px', padding: '25px', maxHeight: '90vh', overflowY: 'auto', boxSizing: 'border-box' }}>
+          <div style={{ backgroundColor: '#050505', border: '1px solid #333', width: '100%', maxWidth: '520px', padding: '25px', maxHeight: '90vh', overflowY: 'auto' }}>
             <h3 style={{ color: '#fff', fontSize: '14px', letterSpacing: '2px', marginBottom: '20px', marginTop: 0 }}>ADD NEW PRODUCT</h3>
 
             <form onSubmit={handleAddProduct} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
