@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 import { uploadToCloudinary } from '../../cloudinary';
 
@@ -263,10 +263,8 @@ const AdminProducts: React.FC = () => {
     return matchesSearch && matchesCategory && matchesStock;
   });
 
-  // Unique categories list for filters
   const categories = ['ALL', ...Array.from(new Set(products.map(p => p.category || 'GENERAL')))];
 
-  // Group products by category for category-wise display
   const groupedProducts: { [key: string]: Product[] } = {};
   filteredProducts.forEach(p => {
     const cat = p.category || 'GENERAL';
@@ -279,7 +277,7 @@ const AdminProducts: React.FC = () => {
   };
 
   return (
-    <div style={{ width: '100%', maxWidth: '100%', overflowX: 'hidden', position: 'relative', fontFamily: 'monospace' }}>
+    <div style={{ width: '100%', maxWidth: '100%', overflowX: 'hidden', position: 'relative', fontFamily: 'monospace', paddingBottom: '40px' }}>
       {notification && (
         <div style={{
           position: 'fixed', top: '20px', right: '20px', zIndex: 9999,
@@ -293,12 +291,8 @@ const AdminProducts: React.FC = () => {
         </div>
       )}
 
-      {/* Header */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '15px', marginBottom: '20px' }}>
-        <div>
-          <h2 style={{ fontSize: '18px', fontWeight: '900', letterSpacing: '3px', margin: 0, color: '#fff' }}>PRODUCT CATALOG</h2>
-          <span style={{ fontSize: '10px', color: '#666', letterSpacing: '1px' }}>MINIMAL INVENTORY & MEDIA CONTROL</span>
-        </div>
+      {/* Top Action Bar */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '15px' }}>
         <button
           onClick={() => setShowAddModal(true)}
           style={{ backgroundColor: '#fff', color: '#000', border: 'none', padding: '11px 20px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
@@ -307,8 +301,8 @@ const AdminProducts: React.FC = () => {
         </button>
       </div>
 
-      {/* Advanced Filters & Search Bar */}
-      <div style={{ backgroundColor: '#050505', border: '1px solid #1a1a1a', padding: '15px', marginBottom: '25px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      {/* Advanced Filters & Search Bar (Border Highlight Style) */}
+      <div style={{ backgroundColor: '#050505', border: '1px solid #1a1a1a', padding: '15px', marginBottom: '25px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
         <input
           type="text"
           placeholder="SEARCH BY NAME, ID, OR CATEGORY..."
@@ -316,39 +310,48 @@ const AdminProducts: React.FC = () => {
           onChange={(e) => setSearchTerm(e.target.value)}
           style={{ width: '100%', backgroundColor: '#000', border: '1px solid #333', padding: '11px 15px', color: '#fff', fontSize: '11px', outline: 'none', boxSizing: 'border-box' }}
         />
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', justifyContent: 'space-between' }}>
+        
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '15px', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
             <span style={{ fontSize: '10px', color: '#888' }}>CATEGORY:</span>
-            {categories.map(cat => (
-              <button
-                key={cat}
-                onClick={() => setSelectedCategoryFilter(cat)}
-                style={{
-                  background: selectedCategoryFilter === cat ? '#fff' : '#000',
-                  color: selectedCategoryFilter === cat ? '#000' : '#888',
-                  border: '1px solid #333', padding: '6px 10px', fontSize: '10px', cursor: 'pointer'
-                }}
-              >
-                {cat}
-              </button>
-            ))}
+            {categories.map(cat => {
+              const isSelected = selectedCategoryFilter === cat;
+              return (
+                <button
+                  key={cat}
+                  onClick={() => setSelectedCategoryFilter(cat)}
+                  style={{
+                    background: '#000',
+                    color: '#fff',
+                    border: isSelected ? '1px solid #fff' : '1px solid #333',
+                    padding: '6px 10px', fontSize: '10px', cursor: 'pointer'
+                  }}
+                >
+                  {cat}
+                </button>
+              );
+            })}
           </div>
 
-          <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
             <span style={{ fontSize: '10px', color: '#888' }}>STOCK:</span>
-            {['ALL', 'IN_STOCK', 'OUT_OF_STOCK'].map(st => (
-              <button
-                key={st}
-                onClick={() => setStockFilter(st)}
-                style={{
-                  background: stockFilter === st ? '#fff' : '#000',
-                  color: stockFilter === st ? '#000' : '#888',
-                  border: '1px solid #333', padding: '6px 10px', fontSize: '10px', cursor: 'pointer'
-                }}
-              >
-                {st.replace(/_/g, ' ')}
-              </button>
-            ))}
+            {['ALL', 'IN_STOCK', 'OUT_OF_STOCK'].map(st => {
+              const isSelected = stockFilter === st;
+              return (
+                <button
+                  key={st}
+                  onClick={() => setStockFilter(st)}
+                  style={{
+                    background: '#000',
+                    color: '#fff',
+                    border: isSelected ? '1px solid #fff' : '1px solid #333',
+                    padding: '6px 10px', fontSize: '10px', cursor: 'pointer'
+                  }}
+                >
+                  {st.replace(/_/g, ' ')}
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -370,7 +373,7 @@ const AdminProducts: React.FC = () => {
                   <h3 style={{ fontSize: '12px', fontWeight: 'bold', color: '#fff', letterSpacing: '2px', margin: 0 }}>
                     {categoryName} ({catProducts.length})
                   </h3>
-                  {catProducts.length > 3 && (
+                  {catProducts.length > 4 && (
                     <button
                       onClick={() => toggleCategoryExpand(categoryName)}
                       style={{ background: 'transparent', border: '1px solid #333', color: '#aaa', padding: '4px 10px', fontSize: '10px', cursor: 'pointer' }}
@@ -380,48 +383,48 @@ const AdminProducts: React.FC = () => {
                   )}
                 </div>
 
-                {/* Products Grid for Desktop / Horizontal Scroll for Mobile */}
+                {/* Horizontal Scroll Layout for Desktop & Mobile */}
                 <style>{`
-                  .category-row-${categoryName} {
-                    display: grid;
-                    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+                  .category-scroll-container-${categoryName} {
+                    display: flex;
+                    overflow-x: auto;
                     gap: 15px;
+                    padding-bottom: 10px;
+                    scroll-snap-type: x mandatory;
                   }
-                  @media (max-width: 768px) {
-                    .category-row-${categoryName} {
-                      display: flex;
-                      overflow-x: auto;
-                      gap: 12px;
-                      padding-bottom: 10px;
-                      scroll-snap-type: x mandatory;
-                    }
-                    .category-row-${categoryName} > div {
-                      min-width: 220px;
-                      max-width: 220px;
-                      scroll-snap-align: start;
-                    }
+                  .category-scroll-container-${categoryName}::-webkit-scrollbar {
+                    height: 4px;
+                  }
+                  .category-scroll-container-${categoryName}::-webkit-scrollbar-thumb {
+                    background: #333;
+                  }
+                  .product-card-item {
+                    min-width: 230px;
+                    max-width: 230px;
+                    flex: 0 0 auto;
+                    scroll-snap-align: start;
                   }
                 `}</style>
 
-                <div className={`category-row-${categoryName}`}>
-                  {(isExpanded ? catProducts : catProducts.slice(0, 4)).map((product) => (
-                    <div key={product.id} style={{ backgroundColor: '#050505', border: '1px solid #1a1a1a', padding: '12px', display: 'flex', flexDirection: 'column', gap: '10px', boxSizing: 'border-box' }}>
+                <div className={`category-scroll-container-${categoryName}`}>
+                  {(isExpanded ? catProducts : catProducts.slice(0, 6)).map((product) => (
+                    <div key={product.id} className="product-card-item" style={{ backgroundColor: '#050505', border: '1px solid #1a1a1a', padding: '12px', display: 'flex', flexDirection: 'column', gap: '10px', boxSizing: 'border-box' }}>
                       
                       {/* Product Image */}
-                      <div style={{ position: 'relative', width: '100%', height: '160px', backgroundColor: '#000' }}>
+                      <div style={{ position: 'relative', width: '100%', height: '180px', backgroundColor: '#000' }}>
                         <img src={product.image_url} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        <span style={{ position: 'absolute', top: '6px', left: '6px', background: 'rgba(0,0,0,0.8)', color: product.stock_quantity > 0 ? '#22c55e' : '#ef4444', fontSize: '9px', padding: '2px 6px', border: '1px solid #333' }}>
+                        <span style={{ position: 'absolute', top: '6px', left: '6px', background: 'rgba(0,0,0,0.85)', color: product.stock_quantity > 0 ? '#22c55e' : '#ef4444', fontSize: '9px', padding: '2px 6px', border: '1px solid #333' }}>
                           {product.stock_quantity > 0 ? `${product.stock_quantity} IN STOCK` : 'OUT OF STOCK'}
                         </span>
                       </div>
 
                       {/* Details & ID */}
                       <div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
                           <span 
                             onClick={() => copyToClipboard(product.id)}
                             title="Click to copy ID"
-                            style={{ fontSize: '9px', color: '#666', cursor: 'pointer', background: '#000', padding: '2px 4px', border: '1px solid #222' }}
+                            style={{ fontSize: '9px', color: '#888', cursor: 'pointer', background: '#000', padding: '2px 5px', border: '1px solid #333' }}
                           >
                             ID: {product.id.slice(0, 6)}... 📋
                           </span>
@@ -431,8 +434,8 @@ const AdminProducts: React.FC = () => {
                       </div>
 
                       {/* Stock Adjustment Controls */}
-                      <div style={{ backgroundColor: '#000', border: '1px solid #111', padding: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ fontSize: '10px', color: '#888' }}>STOCK: {product.stock_quantity}</span>
+                      <div style={{ backgroundColor: '#000', border: '1px solid #1a1a1a', padding: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '10px', color: '#aaa' }}>STOCK: {product.stock_quantity}</span>
                         <div style={{ display: 'flex', gap: '4px' }}>
                           <button onClick={() => handleStockUpdate(product.id, product.stock_quantity, -1)} style={{ width: '24px', height: '24px', background: '#111', color: '#fff', border: '1px solid #333', cursor: 'pointer', fontSize: '10px' }}>-</button>
                           <button onClick={() => handleStockUpdate(product.id, product.stock_quantity, 1)} style={{ width: '24px', height: '24px', background: '#111', color: '#fff', border: '1px solid #333', cursor: 'pointer', fontSize: '10px' }}>+</button>
