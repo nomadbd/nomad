@@ -351,9 +351,9 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '', showFilter
     }
 
     const svgWidth = 650;
-    const svgHeight = 180;
-    const paddingTop = 25;
-    const paddingBottom = 30;
+    const svgHeight = 200; // উচ্চতা বাড়ানো হয়েছে যেন কার্ড তথ্য সুন্দরভাবে দেখায়
+    const paddingTop = 32;
+    const paddingBottom = 32;
     const paddingLeft = 45;
     const paddingRight = 20;
 
@@ -393,7 +393,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '', showFilter
     const activePoint = hoveredIndex !== null ? points[hoveredIndex] : null;
 
     return (
-      <div style={{ position: 'relative', width: '100%', overflowX: 'auto' }}>
+      <div style={{ position: 'relative', width: '100%', overflowX: 'auto', padding: '4px 0' }}>
         <svg
           viewBox={`0 0 ${svgWidth} ${svgHeight}`}
           style={{ width: '100%', height: 'auto', display: 'block', overflow: 'visible' }}
@@ -463,17 +463,31 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '', showFilter
             style={{
               position: 'absolute',
               top: `${(activePoint.y / svgHeight) * 100}%`,
-              left: `${Math.min(Math.max((activePoint.x / svgWidth) * 100, 15), 85)}%`,
-              transform: activePoint.y < 80 ? 'translate(-50%, 12px)' : 'translate(-50%, calc(-100% - 12px))',
-              backgroundColor: '#111', border: '1px solid #22d3ee', padding: '6px 10px',
-              borderRadius: '2px', boxShadow: '0 4px 12px rgba(0,0,0,0.6)', pointerEvents: 'none',
-              zIndex: 10, minWidth: '120px',
+              left: `${Math.min(Math.max((activePoint.x / svgWidth) * 100, 18), 82)}%`,
+              transform: activePoint.y < 90 ? 'translate(-50%, 14px)' : 'translate(-50%, calc(-100% - 14px))',
+              backgroundColor: '#0c0c0c', 
+              border: '1px solid #22d3ee', 
+              padding: '8px 12px',
+              borderRadius: '3px', 
+              boxShadow: '0 8px 24px rgba(0,0,0,0.85)', 
+              pointerEvents: 'none',
+              zIndex: 20, 
+              minWidth: '135px',
+              backdropFilter: 'blur(6px)'
             }}
           >
-            <div style={{ fontSize: '9px', color: '#888', fontWeight: 'bold', marginBottom: '3px' }}>{activePoint.pt.label}</div>
-            <div style={{ fontSize: '11px', color: '#22d3ee', fontWeight: 'bold' }}>REV: ৳{formatNumber(activePoint.pt.revenue)}</div>
-            <div style={{ fontSize: '10px', color: '#A0AEC0' }}>ORDERS: {activePoint.pt.orders}</div>
-            <div style={{ fontSize: '10px', color: '#A0AEC0' }}>AOV: ৳{formatNumber(activePoint.pt.aov)}</div>
+            <div style={{ fontSize: '10px', color: '#888', fontWeight: 'bold', marginBottom: '4px', letterSpacing: '0.5px' }}>
+              {activePoint.pt.label}
+            </div>
+            <div style={{ fontSize: '12px', color: '#22d3ee', fontWeight: 'bold', marginBottom: '2px' }}>
+              REV: ৳{formatNumber(activePoint.pt.revenue)}
+            </div>
+            <div style={{ fontSize: '10px', color: '#A0AEC0', marginBottom: '1px' }}>
+              ORDERS: {activePoint.pt.orders}
+            </div>
+            <div style={{ fontSize: '10px', color: '#A0AEC0' }}>
+              AOV: ৳{formatNumber(activePoint.pt.aov)}
+            </div>
           </div>
         )}
       </div>
@@ -492,11 +506,31 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '', showFilter
       <style>{`
         * { box-sizing: border-box; }
         
+        /* সম্পূর্ণ ঝাকুনিমুক্ত CSS Grid Expandable Filter Wrapper */
+        .filter-expand-wrapper {
+          display: grid;
+          grid-template-rows: 0fr;
+          opacity: 0;
+          transition: grid-template-rows 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+                      opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+                      margin-bottom 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+          margin-bottom: 0px;
+        }
+
+        .filter-expand-wrapper.open {
+          grid-template-rows: 1fr;
+          opacity: 1;
+          margin-bottom: 14px;
+        }
+
+        .filter-expand-content {
+          overflow: hidden;
+        }
+
         .date-filter-container {
           background-color: transparent;
           border: none;
-          padding: 8px 0;
-          margin-bottom: 12px;
+          padding: 4px 0;
           display: flex;
           flex-direction: column;
           gap: 10px;
@@ -612,44 +646,46 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '', showFilter
         }
       `}</style>
 
-      {/* Date Filter Bar - শুধু showFilter true থাকলেই দেখাবে */}
-      {showFilter && (
-        <div className="date-filter-container">
-          <div className="preset-buttons">
-            {['ALL', 'TODAY', '7D', '30D'].map((p) => (
-              <button
-                key={p}
-                className={`preset-btn ${selectedPreset === p ? 'active' : ''}`}
-                onClick={() => handlePresetSelect(p)}
-              >
-                {p === 'ALL' ? 'ALL TIME' : p === '7D' ? '7 DAYS' : p === '30D' ? '30 DAYS' : p}
-              </button>
-            ))}
-          </div>
+      {/* Smooth Collapsible Filter Container */}
+      <div className={`filter-expand-wrapper ${showFilter ? 'open' : ''}`}>
+        <div className="filter-expand-content">
+          <div className="date-filter-container">
+            <div className="preset-buttons">
+              {['ALL', 'TODAY', '7D', '30D'].map((p) => (
+                <button
+                  key={p}
+                  className={`preset-btn ${selectedPreset === p ? 'active' : ''}`}
+                  onClick={() => handlePresetSelect(p)}
+                >
+                  {p === 'ALL' ? 'ALL TIME' : p === '7D' ? '7 DAYS' : p === '30D' ? '30 DAYS' : p}
+                </button>
+              ))}
+            </div>
 
-          <div className="custom-date-inputs">
-            <input
-              type="date"
-              className={`date-input ${selectedPreset === 'CUSTOM' ? 'active-input' : ''}`}
-              value={startDate}
-              onChange={(e) => {
-                setStartDate(e.target.value);
-                setSelectedPreset('CUSTOM');
-              }}
-            />
-            <span style={{ color: '#444', fontSize: '11px', fontWeight: 'bold' }}>TO</span>
-            <input
-              type="date"
-              className={`date-input ${selectedPreset === 'CUSTOM' ? 'active-input' : ''}`}
-              value={endDate}
-              onChange={(e) => {
-                setEndDate(e.target.value);
-                setSelectedPreset('CUSTOM');
-              }}
-            />
+            <div className="custom-date-inputs">
+              <input
+                type="date"
+                className={`date-input ${selectedPreset === 'CUSTOM' ? 'active-input' : ''}`}
+                value={startDate}
+                onChange={(e) => {
+                  setStartDate(e.target.value);
+                  setSelectedPreset('CUSTOM');
+                }}
+              />
+              <span style={{ color: '#444', fontSize: '11px', fontWeight: 'bold' }}>TO</span>
+              <input
+                type="date"
+                className={`date-input ${selectedPreset === 'CUSTOM' ? 'active-input' : ''}`}
+                value={endDate}
+                onChange={(e) => {
+                  setEndDate(e.target.value);
+                  setSelectedPreset('CUSTOM');
+                }}
+              />
+            </div>
           </div>
         </div>
-      )}
+      </div>
 
       {/* Fulfillment Status */}
       <div style={{ backgroundColor: '#080808', border: '1px solid #222', padding: '14px', borderRadius: '2px' }}>
@@ -755,11 +791,11 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '', showFilter
         </div>
       </div>
 
-      {/* Graph Section */}
+      {/* Graph Section (স্পেসিয়াস ও রেসপনসিভ কন্টেইনার) */}
       {canViewSensitiveData && (
-        <div style={{ backgroundColor: '#080808', border: '1px solid #222', padding: '14px', borderRadius: '2px', marginTop: '10px' }}>
+        <div style={{ backgroundColor: '#080808', border: '1px solid #222', padding: '18px 16px', borderRadius: '2px', marginTop: '10px' }}>
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginBottom: '12px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginBottom: '14px' }}>
             <span style={{ fontSize: '13px', color: '#CBD5E0', fontWeight: 'bold', letterSpacing: '1px' }}>
               ANALYTICS TREND
             </span>
