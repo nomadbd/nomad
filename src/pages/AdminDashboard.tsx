@@ -179,18 +179,20 @@ const AdminDashboard: React.FC = () => {
           .nomad-sidebar {
             width: 100% !important;
             height: auto !important;
+            max-height: 100dvh !important;
             position: fixed !important;
             top: 0;
             left: 0;
             right: 0;
             z-index: 1000;
-            background-color: rgba(6, 6, 6, 0.95);
-            backdrop-filter: blur(10px);
+            background-color: rgba(6, 6, 6, 0.98);
+            backdrop-filter: blur(12px);
             border-bottom: 1px solid #141414;
             padding: 14px 16px;
             box-sizing: border-box;
             transform: ${isHeaderVisible ? 'translateY(0)' : 'translateY(-100%)'};
             transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            overflow-y: auto;
           }
 
           .nomad-menu-toggle {
@@ -221,24 +223,26 @@ const AdminDashboard: React.FC = () => {
 
         @media screen and (min-width: 768px) {
           .nomad-layout {
-            display: grid !important;
-            grid-template-columns: 220px minmax(0, 1fr) !important;
+            display: flex !important;
             min-height: 100dvh;
+            width: 100%;
           }
 
           .nomad-sidebar {
             width: 220px !important;
-            height: 100dvh;
-            position: sticky;
+            height: 100dvh !important;
+            position: fixed !important;
             top: 0;
+            left: 0;
+            bottom: 0;
+            z-index: 100;
             border-bottom: none;
             border-right: 1px solid #1a1a1a;
             padding: 20px 14px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: space-between !important;
             overflow-y: auto;
-            transform: none !important;
             background-color: #060606;
           }
 
@@ -261,7 +265,10 @@ const AdminDashboard: React.FC = () => {
           }
 
           .nomad-main {
+            margin-left: 220px !important;
+            width: calc(100% - 220px) !important;
             padding: 24px 28px !important;
+            min-height: 100dvh;
           }
         }
 
@@ -290,7 +297,7 @@ const AdminDashboard: React.FC = () => {
           cursor: pointer;
           letter-spacing: 1px;
           background: transparent;
-          color: #cccccc;
+          color: #888888;
           border-radius: 2px;
           transition: all 0.2s ease;
           width: 100%;
@@ -312,33 +319,33 @@ const AdminDashboard: React.FC = () => {
 
         .nomad-action-btn,
         .nomad-menu-toggle-btn {
-          background: transparent;
+          background: transparent !important;
           border: none !important;
           outline: none;
-          color: #ffffff;
+          color: #888888;
           width: 36px;
           height: 36px;
           cursor: pointer;
           display: flex;
           align-items: center;
           justify-content: center;
-          border-radius: 4px;
-          transition: background-color 0.2s ease, opacity 0.2s ease;
-          opacity: 0.85;
+          transition: color 0.2s ease, opacity 0.2s ease;
+          opacity: 0.8;
           -webkit-tap-highlight-color: transparent;
         }
 
-        .nomad-action-btn.active {
-          background-color: rgba(255, 255, 255, 0.15);
-          opacity: 1;
+        .nomad-action-btn.active,
+        .nomad-menu-toggle-btn.active {
+          color: #ffffff !important;
+          opacity: 1 !important;
+          background: transparent !important;
         }
 
         .nomad-action-btn:hover,
-        .nomad-action-btn:active,
-        .nomad-menu-toggle-btn:hover,
-        .nomad-menu-toggle-btn:active {
-          background-color: rgba(255, 255, 255, 0.08);
-          opacity: 1;
+        .nomad-menu-toggle-btn:hover {
+          color: #ffffff !important;
+          opacity: 1 !important;
+          background: transparent !important;
         }
 
         .header-search-bar {
@@ -402,7 +409,7 @@ const AdminDashboard: React.FC = () => {
                 </button>
 
                 <button
-                  className="nomad-menu-toggle nomad-menu-toggle-btn"
+                  className={`nomad-menu-toggle nomad-menu-toggle-btn ${menuOpen ? 'active' : ''}`}
                   onClick={() => setMenuOpen(!menuOpen)}
                   aria-label="Toggle Menu"
                   title="Toggle Navigation"
