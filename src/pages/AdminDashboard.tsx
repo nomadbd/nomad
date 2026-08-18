@@ -20,6 +20,10 @@ const AdminDashboard: React.FC = () => {
 
   const [activeTab, setActiveTab] = useState<TabType>(getTabFromURL);
   const [menuOpen, setMenuOpen] = useState<boolean>(false);
+  const [isSearchOpen, setIsSearchOpen] = useState<boolean>(false);
+  const [isFilterOpen, setIsFilterOpen] = useState<boolean>(false);
+  const [searchQuery, setSearchQuery] = useState<string>('');
+
   const [userName, setUserName] = useState<string>('');
   const [userEmail, setUserEmail] = useState<string>('');
   const [userRole, setUserRole] = useState<string>('');
@@ -305,6 +309,7 @@ const AdminDashboard: React.FC = () => {
           white-space: nowrap;
         }
 
+        .nomad-action-btn,
         .nomad-menu-toggle-btn {
           background: transparent;
           border: none !important;
@@ -312,7 +317,6 @@ const AdminDashboard: React.FC = () => {
           color: #ffffff;
           width: 36px;
           height: 36px;
-          font-size: 20px;
           cursor: pointer;
           display: flex;
           align-items: center;
@@ -323,6 +327,8 @@ const AdminDashboard: React.FC = () => {
           -webkit-tap-highlight-color: transparent;
         }
 
+        .nomad-action-btn:hover,
+        .nomad-action-btn:active,
         .nomad-menu-toggle-btn:hover,
         .nomad-menu-toggle-btn:active {
           background-color: rgba(255, 255, 255, 0.08);
@@ -334,22 +340,64 @@ const AdminDashboard: React.FC = () => {
         <aside className="nomad-sidebar">
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              {/* বাম পাশে শুধুমাত্র NOMAD টেক্সট */}
               <a href="/" className="nomad-brand-link" title="Go to Store Homepage">
                 <h1 style={{ fontSize: '18px', fontWeight: '900', letterSpacing: '4px', margin: 0, color: '#fff' }}>
                   NOMAD
                 </h1>
-                <span style={{ ...subTextStyle, marginTop: '2px', color: '#cccccc' }}>
-                  The one. Everywhere.
-                </span>
               </a>
 
-              <button
-                className="nomad-menu-toggle nomad-menu-toggle-btn"
-                onClick={() => setMenuOpen(!menuOpen)}
-                aria-label="Toggle Menu"
-              >
-                {menuOpen ? '✕' : '☰'}
-              </button>
+              {/* ডান পাশে সার্চ আইকন, ফিল্টার আইকন এবং ২ টি ছোট-বড় দাগের ন্যাভিগেশন বার */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                {/* সার্চ আইকন (SVG) */}
+                <button
+                  className="nomad-action-btn"
+                  onClick={() => setIsSearchOpen(!isSearchOpen)}
+                  aria-label="Search"
+                  title="Search"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                  </svg>
+                </button>
+
+                {/* ফিল্টার আইকন (SVG) - ওভারভিউ ছাড়া বাকি ট্যাবে দেখাবে */}
+                {activeTab !== 'overview' && (
+                  <button
+                    className="nomad-action-btn"
+                    onClick={() => setIsFilterOpen(!isFilterOpen)}
+                    aria-label="Filter"
+                    title="Filter Options"
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                    </svg>
+                  </button>
+                )}
+
+                {/* ২ টি ছোট-বড় দাগের ন্যাভিগেশন আইকন (SVG) */}
+                <button
+                  className="nomad-menu-toggle nomad-menu-toggle-btn"
+                  onClick={() => setMenuOpen(!menuOpen)}
+                  aria-label="Toggle Menu"
+                  title="Toggle Navigation"
+                >
+                  {menuOpen ? (
+                    /* মেনু ওপেন থাকলে ক্রস আইকন */
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="18" y1="6" x2="6" y2="18"></line>
+                      <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                  ) : (
+                    /* ২টি ছোট ও বড় সমান্তরাল দাগ */
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="3" y1="8" x2="21" y2="8"></line>
+                      <line x1="9" y1="16" x2="21" y2="16"></line>
+                    </svg>
+                  )}
+                </button>
+              </div>
             </div>
 
             <nav className="nomad-nav">
