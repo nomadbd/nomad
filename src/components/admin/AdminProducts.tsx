@@ -483,7 +483,7 @@ const AdminProducts: React.FC = () => {
         </div>
       )}
 
-      {/* Sticky Smart Header Bar (Search Bar + Filter Icon + Add Button) */}
+      {/* Sticky Smart Header Bar (Pill Search Bar + Filter Icon + Add Button) */}
       <div style={{
         position: 'sticky',
         top: '0',
@@ -493,15 +493,17 @@ const AdminProducts: React.FC = () => {
         transition: 'transform 0.3s ease-in-out',
         transform: isVisibleHeader ? 'translateY(0)' : 'translateY(-120%)'
       }}>
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', backgroundColor: '#050505', border: '1px solid #ffffff', padding: '6px 10px', boxSizing: 'border-box' }}>
-          {/* Search Input */}
-          <input
-            type="text"
-            placeholder="SEARCH PRODUCTS..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            style={{ flex: 1, backgroundColor: 'transparent', border: 'none', padding: '8px 5px', color: '#fff', fontSize: '11px', fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box' }}
-          />
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', backgroundColor: '#000', boxSizing: 'border-box' }}>
+          {/* Pill-shaped Search Bar */}
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', backgroundColor: '#050505', border: '1px solid #ffffff', borderRadius: '30px', padding: '6px 15px', boxSizing: 'border-box' }}>
+            <input
+              type="text"
+              placeholder="SEARCH PRODUCTS..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              style={{ width: '100%', backgroundColor: 'transparent', border: 'none', padding: '4px 0', color: '#fff', fontSize: '11px', fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box' }}
+            />
+          </div>
 
           {/* Filter Toggle Icon Button */}
           <button
@@ -511,9 +513,9 @@ const AdminProducts: React.FC = () => {
               backgroundColor: showFilters ? '#222' : 'transparent', 
               color: '#fff', 
               border: '1px solid #ffffff', 
-              width: '36px', 
-              height: '36px', 
-              minWidth: '36px', 
+              width: '42px', 
+              height: '42px', 
+              minWidth: '42px', 
               display: 'flex', 
               alignItems: 'center', 
               justifyContent: 'center', 
@@ -522,7 +524,7 @@ const AdminProducts: React.FC = () => {
               boxSizing: 'border-box' 
             }}
           >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
             </svg>
           </button>
@@ -535,9 +537,9 @@ const AdminProducts: React.FC = () => {
               backgroundColor: 'transparent', 
               color: '#fff', 
               border: '1px solid #ffffff', 
-              width: '36px', 
-              height: '36px', 
-              minWidth: '36px', 
+              width: '42px', 
+              height: '42px', 
+              minWidth: '42px', 
               display: 'flex', 
               alignItems: 'center', 
               justifyContent: 'center', 
