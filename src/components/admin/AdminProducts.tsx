@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../supabaseClient';
 import { uploadToCloudinary } from '../../cloudinary';
 
@@ -216,7 +216,7 @@ const AdminProducts: React.FC = () => {
 
   // Scroll direction state for smart sticky header
   const [isVisibleHeader, setIsVisibleHeader] = useState<boolean>(true);
-  const [lastScrollY, setLastScrollY] = useState<number>(0);
+  const lastScrollY = useRef<number>(0);
 
   // Filters State
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -253,25 +253,31 @@ const AdminProducts: React.FC = () => {
     }, 4000);
   };
 
-  // Smart Header Scroll Listener (Improved threshold & sensitivity)
+  // Smart Header Scroll Listener (fixed with useRef)
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
-      
-      // সামান্য উপরে স্ক্রল করলেই (যেমন: ৫ পিক্সেল বা তার বেশি) হেডার দৃশ্যমান হবে
-      if (currentScrollY > lastScrollY && currentScrollY > 60) {
-        setIsVisibleHeader(false); // নিচের দিকে স্ক্রল করলে হাইড হবে
-        setShowFilters(false);     
-      } else if (currentScrollY < lastScrollY || currentScrollY <= 10) {
-        setIsVisibleHeader(true);  // ওপরের দিকে স্ক্রল করলেই সাথে সাথে শো করবে
+
+      // Always show when near the very top
+      if (currentScrollY < 40) {
+        setIsVisibleHeader(true);
+      } 
+      // Hide when scrolling down (and past threshold)
+      else if (currentScrollY > lastScrollY.current && currentScrollY > 80) {
+        setIsVisibleHeader(false);
+        setShowFilters(false);
+      } 
+      // Show when scrolling up
+      else if (currentScrollY < lastScrollY.current) {
+        setIsVisibleHeader(true);
       }
-      
-      setLastScrollY(currentScrollY);
+
+      lastScrollY.current = currentScrollY;
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [lastScrollY]);
+  }, []);
 
   const fetchProducts = async () => {
     try {
@@ -486,15 +492,16 @@ const AdminProducts: React.FC = () => {
         </div>
       )}
 
-      {/* Sticky Smart Header Bar (z-index কমিয়ে দেয়া হয়েছে যাতে মেইন মেনু ওপেন হলে এর নিচে ঢাকা থাকে) */}
+      {/* Sticky Smart Header Bar — z-index lowered so it never overlays the main menu */}
       <div style={{
         position: 'sticky',
         top: '0',
-        zIndex: 10, 
+        zIndex: 40, // lowered from 9999 → main menu can sit above it
         backgroundColor: '#000',
         paddingBottom: '15px',
         transition: 'transform 0.3s ease-in-out',
-        transform: isVisibleHeader ? 'translateY(0)' : 'translateY(-120%)'
+        transform: isVisibleHeader ? 'translateY(0)' : 'translateY(-120%)',
+        willChange: 'transform'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', backgroundColor: '#050505', border: '1px solid #ffffff', borderRadius: '30px', padding: '6px 12px 6px 15px', boxSizing: 'border-box' }}>
           <input
