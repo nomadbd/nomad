@@ -253,16 +253,18 @@ const AdminProducts: React.FC = () => {
     }, 4000);
   };
 
-  // Smart Header Scroll Listener
+  // Smart Header Scroll Listener (Updated to show header quickly on scroll up)
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
+      
       if (currentScrollY > lastScrollY && currentScrollY > 80) {
         setIsVisibleHeader(false); // Scrolling down
         setShowFilters(false);     // Hide filters on scroll down
-      } else {
-        setIsVisibleHeader(true);  // Scrolling up
+      } else if (currentScrollY < lastScrollY || currentScrollY <= 10) {
+        setIsVisibleHeader(true);  // Scrolling up or at the top
       }
+      
       setLastScrollY(currentScrollY);
     };
 
@@ -452,7 +454,7 @@ const AdminProducts: React.FC = () => {
   let filteredProducts = products.filter(p => {
     const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       p.category?.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     if (stockFilter === 'in_stock') return matchesSearch && p.stock_quantity > 0;
     if (stockFilter === 'sold_out') return matchesSearch && p.stock_quantity <= 0;
     return matchesSearch;
