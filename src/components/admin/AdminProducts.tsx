@@ -10,8 +10,8 @@ interface Product {
   category: string;
   stock_quantity: number;
   status: 'active' | 'sold_out' | string;
-  sizes: string[];  
-  colors: string[]; 
+  sizes: string[];
+  colors: string[];
   created_at: string;
   product_media: { media_url: string; media_type: string; sort_order?: number }[];
   details?: Record<string, string> | null;
@@ -35,11 +35,7 @@ const ProductGallery = ({ images, productName }: { images: string[], productName
   return (
     <div style={{ width: '100%', position: 'relative', overflow: 'hidden', backgroundColor: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       {images.length > 0 ? (
-        <img 
-          src={images[currentIndex]} 
-          alt={productName} 
-          style={{ width: '100%', height: 'auto', maxHeight: '450px', objectFit: 'contain', display: 'block' }}
-        />
+        <img src={images[currentIndex]} alt={productName} style={{ width: '100%', height: 'auto', maxHeight: '450px', objectFit: 'contain', display: 'block' }} />
       ) : (
         <div style={{ width: '100%', height: '250px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#333' }}>No Image</div>
       )}
@@ -48,13 +44,14 @@ const ProductGallery = ({ images, productName }: { images: string[], productName
         <>
           <div style={{ position: 'absolute', top: 0, left: 0, width: '50%', height: '100%', cursor: 'pointer' }} onClick={handlePrev} />
           <div style={{ position: 'absolute', top: 0, right: 0, width: '50%', height: '100%', cursor: 'pointer' }} onClick={handleNext} />
-
           <div style={{ position: 'absolute', bottom: '15px', left: 0, width: '100%', display: 'flex', justifyContent: 'center', gap: '6px', zIndex: 2 }}>
             {images.map((_, idx) => (
-              <div 
+              <div
                 key={idx}
-                style={{ 
-                  width: '6px', height: '6px', borderRadius: '50%', 
+                style={{
+                  width: '6px',
+                  height: '6px',
+                  borderRadius: '50%',
                   background: currentIndex === idx ? '#fff' : 'rgba(255,255,255,0.4)',
                 }}
               />
@@ -76,7 +73,6 @@ const ProductAdminActionRow = ({ product, onUpdateStock, onDelete }: { product: 
       {step === 'idle' && (
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', animation: 'swapFadeIn 0.25s ease-in-out' }}>
           <span style={{ fontSize: '15px', color: isSoldOut ? '#555' : '#fff', fontWeight: 500, fontFamily: 'monospace' }}>৳{product.price}</span>
-
           <div style={{ display: 'flex', gap: '8px' }}>
             <button
               onClick={() => setStep('manage')}
@@ -85,7 +81,7 @@ const ProductAdminActionRow = ({ product, onUpdateStock, onDelete }: { product: 
                 padding: '0 12px',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
+                justify: 'center',
                 boxSizing: 'border-box',
                 background: 'transparent',
                 border: '1px solid #333',
@@ -106,7 +102,7 @@ const ProductAdminActionRow = ({ product, onUpdateStock, onDelete }: { product: 
                 width: '36px',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
+                justify: 'center',
                 background: 'transparent',
                 border: '1px solid #ef444455',
                 color: '#ef4444',
@@ -139,10 +135,7 @@ const ProductCard = ({ product, onUpdateStock, onDelete }: { product: Product; o
 
   return (
     <div className="showroom-card-item" style={{ scrollSnapAlign: 'start', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', backgroundColor: '#050505', border: '1px solid #1a1a1a', padding: '12px' }}>
-      <ProductGallery 
-        images={product.product_media?.map(m => m.media_url) || []} 
-        productName={product.name} 
-      />
+      <ProductGallery images={product.product_media?.map(m => m.media_url) || []} productName={product.name} />
 
       <div style={{ marginTop: '15px', padding: '0 5px', display: 'flex', flexDirection: 'column', flex: 1 }}>
         <h3 style={{ fontSize: '14px', color: '#fff', margin: '0 0 6px 0', fontWeight: '600' }}>{product.name}</h3>
@@ -150,17 +143,15 @@ const ProductCard = ({ product, onUpdateStock, onDelete }: { product: Product; o
         <div style={{ margin: '0 0 15px 0' }}>
           {(() => {
             const descriptionText = product.description || '';
-            const characterLimit = 75; 
+            const characterLimit = 75;
             const isLongText = descriptionText.length > characterLimit;
-            const displayedText = isLongText 
-              ? descriptionText.slice(0, characterLimit) + '...' 
-              : descriptionText;
+            const displayedText = isLongText ? descriptionText.slice(0, characterLimit) + '...' : descriptionText;
 
             return !isDescExpanded ? (
               <p style={{ fontSize: '13px', color: '#aaa', margin: 0, lineHeight: '1.4' }}>
                 {displayedText || 'No description provided.'}
                 {isLongText && (
-                  <span 
+                  <span
                     onClick={() => setIsDescExpanded(true)}
                     style={{ fontSize: '12px', color: '#fff', cursor: 'pointer', marginLeft: '6px', fontWeight: '500', display: 'inline' }}
                   >
@@ -173,7 +164,6 @@ const ProductCard = ({ product, onUpdateStock, onDelete }: { product: Product; o
                 <p style={{ fontSize: '13px', color: '#aaa', margin: 0, lineHeight: '1.4' }}>
                   {descriptionText}
                 </p>
-
                 {product.details && Object.keys(product.details).length > 0 && (
                   <div style={{ borderTop: '1px solid #1a1a1a', marginTop: '12px', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px', fontFamily: 'monospace', fontSize: '12px' }}>
                     {Object.entries(product.details).map(([key, value]) => (
@@ -185,8 +175,7 @@ const ProductCard = ({ product, onUpdateStock, onDelete }: { product: Product; o
                     ))}
                   </div>
                 )}
-
-                <span 
+                <span
                   onClick={() => setIsDescExpanded(false)}
                   style={{ fontSize: '11px', color: '#fff', cursor: 'pointer', marginTop: '12px', display: 'inline-block', letterSpacing: '0.5px' }}
                 >
@@ -231,7 +220,6 @@ const AdminProducts: React.FC = () => {
   const [newGsm, setNewGsm] = useState<string>('180');
   const [newMadeIn, setNewMadeIn] = useState<string>('Bangladesh');
   const [newMaterial, setNewMaterial] = useState<string>('100% Premium Cotton');
-
   const [newSizes, setNewSizes] = useState<string>('S, M, L, XL');
   const [newColors, setNewColors] = useState<string>('BLACK, WHITE');
 
@@ -414,7 +402,6 @@ const AdminProducts: React.FC = () => {
 
   const handleDeleteProduct = async (productId: string | number) => {
     if (!window.confirm('ARE YOU SURE YOU WANT TO REMOVE THIS PRODUCT?')) return;
-
     try {
       setProducts(prev => prev.filter(p => p.id !== productId));
       const { error } = await supabase.from('products').delete().eq('id', productId);
@@ -430,8 +417,7 @@ const AdminProducts: React.FC = () => {
   // Filtering and Sorting Logic
   let filteredProducts = products.filter(p => {
     const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.category?.toLowerCase().includes(searchTerm.toLowerCase());
-
+                          p.category?.toLowerCase().includes(searchTerm.toLowerCase());
     if (stockFilter === 'in_stock') return matchesSearch && p.stock_quantity > 0;
     if (stockFilter === 'sold_out') return matchesSearch && p.stock_quantity <= 0;
     return matchesSearch;
@@ -448,13 +434,9 @@ const AdminProducts: React.FC = () => {
   const filteredCategories = Array.from(new Set(filteredProducts.map(p => p.category)));
 
   return (
-    <div style={{ width: '100%', maxWidth: '100%', overflowX: 'hidden', position: 'relative', backgroundColor: '#000', minHeight: '100vh', padding: '20px', boxSizing: 'border-box', paddingTop: '90px' }}>
+    <div style={{ width: '100%', maxWidth: '100%', overflowX: 'hidden', position: 'relative', backgroundColor: '#000', minHeight: '100vh', padding: '0 20px 20px 20px', boxSizing: 'border-box' }}>
       {notification && (
-        <div style={{
-          position: 'fixed', top: '20px', right: '20px', zIndex: 9999,
-          backgroundColor: '#0a0a0a', border: `1px solid ${notification.type === 'error' ? '#ef4444' : '#ffffff'}`,
-          color: '#ffffff', padding: '14px 20px', borderRadius: '2px', fontFamily: 'monospace', fontSize: '11px', letterSpacing: '1px'
-        }}>
+        <div style={{ position: 'fixed', top: '20px', right: '20px', zIndex: 9999, backgroundColor: '#0a0a0a', border: `1px solid ${notification.type === 'error' ? '#ef4444' : '#ffffff'}`, color: '#ffffff', padding: '14px 20px', borderRadius: '2px', fontFamily: 'monospace', fontSize: '11px', letterSpacing: '1px' }}>
           <span style={{ color: notification.type === 'error' ? '#ef4444' : '#22c55e', marginRight: '8px' }}>
             {notification.type === 'error' ? '✕' : '✓'}
           </span>
@@ -462,17 +444,8 @@ const AdminProducts: React.FC = () => {
         </div>
       )}
 
-      {/* Fixed Search Bar - সবসময় মেইন হেডারের ঠিক নিচে দৃশ্যমান */}
-      <div style={{
-        position: 'fixed',
-        top: '60px',                // মেইন NOMAD হেডারের ঠিক নিচে
-        left: 0,
-        right: 0,
-        zIndex: 40,
-        backgroundColor: '#000',
-        padding: '12px 20px 15px 20px',
-        boxSizing: 'border-box'
-      }}>
+      {/* Sticky Search Bar - হেডার স্ক্রল করে হাইড হলেও এটি একদম উপরে মসৃণভাবে আটকে থাকবে */}
+      <div style={{ position: 'sticky', top: 0, zIndex: 40, backgroundColor: '#000', padding: '12px 0 15px 0', boxSizing: 'border-box' }}>
         <div style={{ display: 'flex', alignItems: 'center', backgroundColor: '#050505', border: '1px solid #ffffff', borderRadius: '30px', padding: '6px 12px 6px 15px', boxSizing: 'border-box' }}>
           <input
             type="text"
@@ -481,44 +454,20 @@ const AdminProducts: React.FC = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
             style={{ flex: 1, backgroundColor: 'transparent', border: 'none', padding: '4px 0', color: '#fff', fontSize: '11px', fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box' }}
           />
-
           <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
             <button
               onClick={() => setShowFilters(prev => !prev)}
               title="Toggle Filters"
-              style={{ 
-                backgroundColor: showFilters ? '#222' : 'transparent', 
-                color: '#fff', 
-                border: 'none', 
-                width: '32px', 
-                height: '32px', 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center', 
-                cursor: 'pointer', 
-                boxSizing: 'border-box' 
-              }}
+              style={{ backgroundColor: showFilters ? '#222' : 'transparent', color: '#fff', border: 'none', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxSizing: 'border-box' }}
             >
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
               </svg>
             </button>
-
             <button
               onClick={() => setShowAddModal(true)}
               title="Add New Product"
-              style={{ 
-                backgroundColor: 'transparent', 
-                color: '#fff', 
-                border: 'none', 
-                width: '32px', 
-                height: '32px', 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center', 
-                cursor: 'pointer', 
-                boxSizing: 'border-box' 
-              }}
+              style={{ backgroundColor: 'transparent', color: '#fff', border: 'none', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxSizing: 'border-box' }}
             >
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -560,7 +509,6 @@ const AdminProducts: React.FC = () => {
                 );
               })}
             </div>
-
             <div style={{ display: 'flex', gap: '6px' }}>
               {[
                 { id: 'newest', label: 'NEWEST' },
@@ -609,12 +557,22 @@ const AdminProducts: React.FC = () => {
                 <div key={category} className="showroom-section" style={{ marginBottom: '50px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 15px 12px 15px', borderBottom: '1px solid #141414' }}>
                     <h3 style={{ margin: 0, fontSize: '13px', letterSpacing: '3px', color: '#b3b3b3', textTransform: 'uppercase' }}>{category}</h3>
-
-                    <button 
-                      onClick={() => setExpandedCategories(prev => ({ ...prev, [category]: !isExpanded }))} 
-                      style={{ 
-                        background: 'none', border: 'none', color: '#fff', fontSize: '11px', letterSpacing: '2px', cursor: 'pointer', opacity: 0.7,
-                        display: 'flex', padding: 0, alignItems: 'center', minWidth: '85px', justifyContent: 'flex-end', whiteSpace: 'nowrap'
+                    <button
+                      onClick={() => setExpandedCategories(prev => ({ ...prev, [category]: !isExpanded }))}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#fff',
+                        fontSize: '11px',
+                        letterSpacing: '2px',
+                        cursor: 'pointer',
+                        opacity: 0.7,
+                        display: 'flex',
+                        padding: 0,
+                        alignItems: 'center',
+                        minWidth: '85px',
+                        justify: 'flex-end',
+                        whiteSpace: 'nowrap'
                       }}
                     >
                       <span>SEE&nbsp;</span>
@@ -626,7 +584,12 @@ const AdminProducts: React.FC = () => {
 
                   <div className="showroom-row-container" style={{ display: 'flex', flexWrap: isExpanded ? 'wrap' : 'nowrap', width: '100%', scrollSnapType: 'x mandatory', overflowX: 'auto', scrollBehavior: 'smooth' }}>
                     {categoryProducts.map((product) => (
-                      <ProductCard key={product.id} product={product} onUpdateStock={handleStockUpdate} onDelete={handleDeleteProduct} />
+                      <ProductCard
+                        key={product.id}
+                        product={product}
+                        onUpdateStock={handleStockUpdate}
+                        onDelete={handleDeleteProduct}
+                      />
                     ))}
                   </div>
                 </div>
@@ -640,7 +603,6 @@ const AdminProducts: React.FC = () => {
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
           <div style={{ backgroundColor: '#050505', border: '1px solid #333', width: '100%', maxWidth: '520px', padding: '25px', maxHeight: '90vh', overflowY: 'auto' }}>
             <h3 style={{ color: '#fff', fontSize: '14px', letterSpacing: '2px', marginBottom: '20px', marginTop: 0 }}>ADD NEW PRODUCT</h3>
-
             <form onSubmit={handleAddProduct} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
               <div>
                 <label style={{ fontSize: '10px', color: '#888', display: 'block', marginBottom: '5px' }}>PRODUCT NAME *</label>
@@ -666,7 +628,6 @@ const AdminProducts: React.FC = () => {
               <div>
                 <label style={{ fontSize: '10px', color: '#888', display: 'block', marginBottom: '5px' }}>PRODUCT IMAGES & VIDEOS (Multiple allowed)</label>
                 <input type="file" multiple accept="image/*,video/*" onChange={handleMediaChange} style={{ width: '100%', backgroundColor: '#000', border: '1px solid #333', padding: '8px', color: '#fff', fontSize: '11px', boxSizing: 'border-box', cursor: 'pointer' }} />
-
                 {mediaPreviews.length > 0 && (
                   <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '10px' }}>
                     {mediaPreviews.map((media, idx) => (
@@ -729,12 +690,28 @@ const AdminProducts: React.FC = () => {
           scrollbar-width: none;
         }
         @media (max-width: 767px) {
-          .showroom-section { margin-left: calc(-20px); margin-right: calc(-20px); width: calc(100vw); }
-          .showroom-card-item { width: 100vw !important; min-width: 100vw !important; padding: 0 15px !important; }
+          .showroom-section {
+            margin-left: calc(-20px);
+            margin-right: calc(-20px);
+            width: calc(100vw);
+          }
+          .showroom-card-item {
+            width: 100vw !important;
+            min-width: 100vw !important;
+            padding: 0 15px !important;
+          }
         }
         @media (min-width: 768px) {
-          .showroom-section { padding: 0; }
-          .showroom-card-item { width: 300px; min-width: 300px; padding: 12px; margin-right: 15px; margin-bottom: 20px; }
+          .showroom-section {
+            padding: 0;
+          }
+          .showroom-card-item {
+            width: 300px;
+            min-width: 300px;
+            padding: 12px;
+            margin-right: 15px;
+            margin-bottom: 20px;
+          }
         }
       `}</style>
     </div>
