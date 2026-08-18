@@ -37,7 +37,7 @@ const AdminDashboard: React.FC = () => {
   const handleTabChange = (tab: TabType) => {
     setActiveTab(tab);
     setMenuOpen(false);
-    setIsSearchOpen(false); // ট্যাব পরিবর্তন করলে সার্চ বন্ধ হবে
+    setIsSearchOpen(false);
 
     const searchParams = new URLSearchParams(window.location.search);
     searchParams.set('tab', tab);
@@ -376,7 +376,6 @@ const AdminDashboard: React.FC = () => {
               </a>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                {/* ১. ওভারভিউ ট্যাবে সার্চ আইকন থাকবে না, বাকি সব ট্যাবে থাকবে */}
                 {activeTab !== 'overview' && (
                   <button
                     className={`nomad-action-btn ${isSearchOpen ? 'active' : ''}`}
@@ -391,7 +390,6 @@ const AdminDashboard: React.FC = () => {
                   </button>
                 )}
 
-                {/* ২. ফিল্টার আইকন সকল ট্যাবেই দৃশ্যমান থাকবে */}
                 <button
                   className={`nomad-action-btn ${isFilterOpen ? 'active' : ''}`}
                   onClick={() => setIsFilterOpen(!isFilterOpen)}
@@ -403,7 +401,6 @@ const AdminDashboard: React.FC = () => {
                   </svg>
                 </button>
 
-                {/* ৩. ২ টি ছোট-বড় দাগের ন্যাভিগেশন আইকন */}
                 <button
                   className="nomad-menu-toggle nomad-menu-toggle-btn"
                   onClick={() => setMenuOpen(!menuOpen)}
@@ -425,7 +422,6 @@ const AdminDashboard: React.FC = () => {
               </div>
             </div>
 
-            {/* সার্চ আইকনে ক্লিক করলে পপআপ ইনপুট বক্স */}
             {isSearchOpen && activeTab !== 'overview' && (
               <div className="header-search-bar">
                 <input
@@ -515,9 +511,8 @@ const AdminDashboard: React.FC = () => {
         </aside>
 
         <main className="nomad-main">
-          {/* চাইল্ড ফাইলসমূহে Filter & Search প্রপস পাঠানো হচ্ছে */}
           {activeTab === 'overview' && (
-            <AdminOverview key="overview" userRole={userRole} isFilterOpen={isFilterOpen} />
+            <AdminOverview key="overview" userRole={userRole} showFilter={isFilterOpen} />
           )}
           {activeTab === 'orders' && (
             <AdminOrders key="orders" searchQuery={searchQuery} isFilterOpen={isFilterOpen} />
