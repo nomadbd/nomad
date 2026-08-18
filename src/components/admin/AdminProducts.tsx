@@ -18,7 +18,7 @@ interface Product {
   image_url?: string;
 }
 
-// 📸 প্রোডাক্ট গ্যালারি কম্পোনেন্ট (ন্যাচারাল রেশিও বা অরিজিনাল ফরম্যাট বজায় রাখার জন্য আপডেট করা)
+// 📸 প্রোডাক্ট গ্যালারি কম্পোনেন্ট
 const ProductGallery = ({ images, productName }: { images: string[], productName: string }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -459,54 +459,93 @@ const AdminProducts: React.FC = () => {
         </div>
       )}
 
-      {/* Top Bar with Minimal SVG Add Button */}
-      <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '15px' }}>
+      {/* Search Bar & Round Border Add Button */}
+      <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '15px' }}>
+        <input
+          type="text"
+          placeholder="SEARCH PRODUCTS..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          style={{ flex: 1, backgroundColor: '#050505', border: '1px solid #1a1a1a', padding: '11px 15px', color: '#fff', fontSize: '11px', fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box' }}
+        />
         <button
           onClick={() => setShowAddModal(true)}
           title="Add New Product"
           style={{ 
-            backgroundColor: '#fff', color: '#000', border: 'none', 
-            width: '42px', height: '42px', display: 'flex', alignItems: 'center', 
-            justifyContent: 'center', cursor: 'pointer', borderRadius: '2px' 
+            backgroundColor: 'transparent', color: '#fff', border: '1px solid #333', 
+            width: '42px', height: '42px', minWidth: '42px', display: 'flex', alignItems: 'center', 
+            justifyContent: 'center', cursor: 'pointer', borderRadius: '50%', boxSizing: 'border-box' 
           }}
         >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <line x1="12" y1="5" x2="12" y2="19"></line>
             <line x1="5" y1="12" x2="19" y2="12"></line>
           </svg>
         </button>
       </div>
 
-      {/* Search & Advanced Filters Bar */}
-      <div style={{ backgroundColor: '#050505', border: '1px solid #1a1a1a', padding: '15px', marginBottom: '25px', display: 'flex', flexDirection: 'column', gap: '12px', boxSizing: 'border-box' }}>
-        <input
-          type="text"
-          placeholder="SEARCH PRODUCTS..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          style={{ width: '100%', backgroundColor: '#000', border: '1px solid #333', padding: '11px 15px', color: '#fff', fontSize: '11px', fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box' }}
-        />
+      {/* Two Lines Filter Buttons Bar */}
+      <div style={{ backgroundColor: '#050505', border: '1px solid #1a1a1a', padding: '12px', marginBottom: '25px', display: 'flex', flexDirection: 'column', gap: '8px', boxSizing: 'border-box' }}>
+        {/* Line 1: Stock Filters */}
+        <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '2px' }} className="showroom-row-container">
+          {[
+            { id: 'all', label: 'ALL STOCK' },
+            { id: 'in_stock', label: 'IN STOCK' },
+            { id: 'sold_out', label: 'SOLD OUT' }
+          ].map(item => {
+            const isSelected = stockFilter === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => setStockFilter(item.id as any)}
+                style={{
+                  flex: 1,
+                  padding: '8px 10px',
+                  backgroundColor: '#000',
+                  border: `1px solid ${isSelected ? '#fff' : '#333'}`,
+                  color: isSelected ? '#fff' : '#888',
+                  fontSize: '10px',
+                  fontFamily: 'monospace',
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                  letterSpacing: '0.5px'
+                }}
+              >
+                {item.label}
+              </button>
+            );
+          })}
+        </div>
 
-        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-          <select 
-            value={stockFilter} 
-            onChange={(e) => setStockFilter(e.target.value as any)}
-            style={{ flex: 1, minWidth: '130px', backgroundColor: '#000', border: '1px solid #333', padding: '10px', color: '#fff', fontSize: '10px', fontFamily: 'monospace', outline: 'none' }}
-          >
-            <option value="all">ALL STOCK</option>
-            <option value="in_stock">IN STOCK</option>
-            <option value="sold_out">SOLD OUT</option>
-          </select>
-
-          <select 
-            value={sortBy} 
-            onChange={(e) => setSortBy(e.target.value as any)}
-            style={{ flex: 1, minWidth: '130px', backgroundColor: '#000', border: '1px solid #333', padding: '10px', color: '#fff', fontSize: '10px', fontFamily: 'monospace', outline: 'none' }}
-          >
-            <option value="newest">NEWEST FIRST</option>
-            <option value="price_low">PRICE: LOW TO HIGH</option>
-            <option value="price_high">PRICE: HIGH TO LOW</option>
-          </select>
+        {/* Line 2: Sort Filters */}
+        <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '2px' }} className="showroom-row-container">
+          {[
+            { id: 'newest', label: 'NEWEST FIRST' },
+            { id: 'price_low', label: 'PRICE: LOW-HIGH' },
+            { id: 'price_high', label: 'PRICE: HIGH-LOW' }
+          ].map(item => {
+            const isSelected = sortBy === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => setSortBy(item.id as any)}
+                style={{
+                  flex: 1,
+                  padding: '8px 10px',
+                  backgroundColor: '#000',
+                  border: `1px solid ${isSelected ? '#fff' : '#333'}`,
+                  color: isSelected ? '#fff' : '#888',
+                  fontSize: '10px',
+                  fontFamily: 'monospace',
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                  letterSpacing: '0.5px'
+                }}
+              >
+                {item.label}
+              </button>
+            );
+          })}
         </div>
       </div>
 
