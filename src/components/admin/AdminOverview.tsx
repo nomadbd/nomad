@@ -3,7 +3,7 @@ import { supabase } from '../../supabaseClient';
 
 interface AdminOverviewProps {
   userRole?: string;
-  showFilter?: boolean; // হেডার ফিল্টার আইকনের স্টেট কন্ট্রোল করার জন্য
+  showFilter?: boolean;
 }
 
 interface ChartPoint {
@@ -35,7 +35,6 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '', showFilter
   const [endDate, setEndDate] = useState<string>('');
   const [selectedPreset, setSelectedPreset] = useState<string>('30D');
 
-  // Custom Filter & Graph States
   const [selectedMetric, setSelectedMetric] = useState<MetricType>('REVENUE');
   const [granularity, setGranularity] = useState<GranularityType>('DAILY');
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
@@ -51,12 +50,10 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '', showFilter
   const [deliveredOrders, setDeliveredOrders] = useState<number>(0);
   const [cancelledOrders, setCancelledOrders] = useState<number>(0);
 
-  // Catalog & Stock States
   const [activeCatalogItems, setActiveCatalogItems] = useState<number>(0);
   const [outOfStockItems, setOutOfStockItems] = useState<number>(0);
   const [lowStockItems, setLowStockItems] = useState<number>(0);
 
-  // Users States
   const [totalUsers, setTotalUsers] = useState<number>(0);
   const [newUsers, setNewUsers] = useState<number>(0);
 
@@ -351,8 +348,8 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '', showFilter
     }
 
     const svgWidth = 650;
-    const svgHeight = 200; // উচ্চতা বাড়ানো হয়েছে যেন কার্ড তথ্য সুন্দরভাবে দেখায়
-    const paddingTop = 32;
+    const svgHeight = 220;
+    const paddingTop = 40;
     const paddingBottom = 32;
     const paddingLeft = 45;
     const paddingRight = 20;
@@ -391,9 +388,10 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '', showFilter
         : '';
 
     const activePoint = hoveredIndex !== null ? points[hoveredIndex] : null;
+    const showBelow = activePoint ? activePoint.y < 110 : false;
 
     return (
-      <div style={{ position: 'relative', width: '100%', overflowX: 'auto', padding: '4px 0' }}>
+      <div style={{ position: 'relative', width: '100%', padding: '8px 0' }}>
         <svg
           viewBox={`0 0 ${svgWidth} ${svgHeight}`}
           style={{ width: '100%', height: 'auto', display: 'block', overflow: 'visible' }}
@@ -432,7 +430,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '', showFilter
             return (
               <g key={i}>
                 <circle
-                  cx={p.x} cy={p.y} r={isHovered ? '4.5' : p.val > 0 ? '2.5' : '1.5'}
+                  cx={p.x} cy={p.y} r={isHovered ? '5' : p.val > 0 ? '2.5' : '1.5'}
                   fill={isHovered ? '#22d3ee' : p.val > 0 ? '#22d3ee' : '#111'}
                   stroke="#22d3ee" strokeWidth={isHovered ? '2.5' : '1'}
                   style={{ transition: 'all 0.15s ease' }}
@@ -462,18 +460,18 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '', showFilter
           <div
             style={{
               position: 'absolute',
-              top: `${(activePoint.y / svgHeight) * 100}%`,
-              left: `${Math.min(Math.max((activePoint.x / svgWidth) * 100, 18), 82)}%`,
-              transform: activePoint.y < 90 ? 'translate(-50%, 14px)' : 'translate(-50%, calc(-100% - 14px))',
+              top: showBelow ? `${(activePoint.y / svgHeight) * 100}%` : `${(activePoint.y / svgHeight) * 100}%`,
+              left: `${Math.min(Math.max((activePoint.x / svgWidth) * 100, 22), 78)}%`,
+              transform: showBelow ? 'translate(-50%, 12px)' : 'translate(-50%, calc(-100% - 12px))',
               backgroundColor: '#0c0c0c', 
               border: '1px solid #22d3ee', 
               padding: '8px 12px',
-              borderRadius: '3px', 
-              boxShadow: '0 8px 24px rgba(0,0,0,0.85)', 
+              borderRadius: '4px', 
+              boxShadow: '0 8px 24px rgba(0,0,0,0.95)', 
               pointerEvents: 'none',
-              zIndex: 20, 
-              minWidth: '135px',
-              backdropFilter: 'blur(6px)'
+              zIndex: 30, 
+              minWidth: '140px',
+              backdropFilter: 'blur(8px)'
             }}
           >
             <div style={{ fontSize: '10px', color: '#888', fontWeight: 'bold', marginBottom: '4px', letterSpacing: '0.5px' }}>
@@ -506,7 +504,6 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '', showFilter
       <style>{`
         * { box-sizing: border-box; }
         
-        /* সম্পূর্ণ ঝাকুনিমুক্ত CSS Grid Expandable Filter Wrapper */
         .filter-expand-wrapper {
           display: grid;
           grid-template-rows: 0fr;
@@ -646,7 +643,6 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '', showFilter
         }
       `}</style>
 
-      {/* Smooth Collapsible Filter Container */}
       <div className={`filter-expand-wrapper ${showFilter ? 'open' : ''}`}>
         <div className="filter-expand-content">
           <div className="date-filter-container">
@@ -687,7 +683,6 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '', showFilter
         </div>
       </div>
 
-      {/* Fulfillment Status */}
       <div style={{ backgroundColor: '#080808', border: '1px solid #222', padding: '14px', borderRadius: '2px' }}>
         <span style={{ fontSize: '14px', color: '#CBD5E0', letterSpacing: '1px', fontWeight: 'bold', display: 'block', marginBottom: '10px' }}>
           FULFILLMENT STATUS
@@ -717,7 +712,6 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '', showFilter
         </div>
       </div>
 
-      {/* Metric Cards */}
       {canViewSensitiveData && (
         <div className="two-column-grid">
           <div className="metric-card">
@@ -791,9 +785,8 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '', showFilter
         </div>
       </div>
 
-      {/* Graph Section (স্পেসিয়াস ও রেসপনসিভ কন্টেইনার) */}
       {canViewSensitiveData && (
-        <div style={{ backgroundColor: '#080808', border: '1px solid #222', padding: '18px 16px', borderRadius: '2px', marginTop: '10px' }}>
+        <div style={{ backgroundColor: '#080808', border: '1px solid #222', padding: '18px 16px', borderRadius: '2px', marginTop: '10px', position: 'relative' }}>
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginBottom: '14px' }}>
             <span style={{ fontSize: '13px', color: '#CBD5E0', fontWeight: 'bold', letterSpacing: '1px' }}>
