@@ -321,31 +321,35 @@ const AdminDashboard: React.FC = () => {
         .nomad-menu-toggle-btn {
           background: transparent !important;
           border: none !important;
-          outline: none;
-          color: #888888;
+          outline: none !important;
+          color: #888888 !important;
           width: 36px;
           height: 36px;
           cursor: pointer;
           display: flex;
           align-items: center;
           justify-content: center;
-          transition: color 0.2s ease, opacity 0.2s ease;
-          opacity: 0.8;
+          transition: color 0.15s ease, opacity 0.15s ease;
+          opacity: 0.75;
           -webkit-tap-highlight-color: transparent;
+        }
+
+        .nomad-action-btn:hover:not(.active),
+        .nomad-menu-toggle-btn:hover:not(.active) {
+          color: #aaaaaa !important;
+          opacity: 0.9 !important;
         }
 
         .nomad-action-btn.active,
         .nomad-menu-toggle-btn.active {
           color: #ffffff !important;
           opacity: 1 !important;
-          background: transparent !important;
         }
 
-        .nomad-action-btn:hover,
-        .nomad-menu-toggle-btn:hover {
-          color: #ffffff !important;
-          opacity: 1 !important;
-          background: transparent !important;
+        .nomad-action-btn:focus,
+        .nomad-menu-toggle-btn:focus {
+          outline: none !important;
+          box-shadow: none !important;
         }
 
         .header-search-bar {
