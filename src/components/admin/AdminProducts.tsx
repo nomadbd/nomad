@@ -487,13 +487,13 @@ const AdminProducts: React.FC = () => {
       <div style={{
         position: 'sticky',
         top: '0',
-        zIndex: 999,
+        zIndex: 9999,
         backgroundColor: '#000',
         paddingBottom: '15px',
         transition: 'transform 0.3s ease-in-out',
         transform: isVisibleHeader ? 'translateY(0)' : 'translateY(-120%)'
       }}>
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', backgroundColor: '#050505', border: '1px solid #1a1a1a', padding: '6px 10px', boxSizing: 'border-box' }}>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', backgroundColor: '#050505', border: '1px solid #ffffff', padding: '6px 10px', boxSizing: 'border-box' }}>
           {/* Search Input */}
           <input
             type="text"
@@ -510,7 +510,7 @@ const AdminProducts: React.FC = () => {
             style={{ 
               backgroundColor: showFilters ? '#222' : 'transparent', 
               color: '#fff', 
-              border: '1px solid #333', 
+              border: '1px solid #ffffff', 
               width: '36px', 
               height: '36px', 
               minWidth: '36px', 
@@ -534,7 +534,7 @@ const AdminProducts: React.FC = () => {
             style={{ 
               backgroundColor: 'transparent', 
               color: '#fff', 
-              border: '1px solid #333', 
+              border: '1px solid #ffffff', 
               width: '36px', 
               height: '36px', 
               minWidth: '36px', 
@@ -555,7 +555,7 @@ const AdminProducts: React.FC = () => {
 
         {/* Dropdown Filters Panel */}
         {showFilters && (
-          <div style={{ backgroundColor: '#0a0a0a', border: '1px solid #222', padding: '12px', marginTop: '6px', display: 'flex', flexDirection: 'column', gap: '8px', boxSizing: 'border-box', animation: 'swapFadeIn 0.2s ease-in-out' }}>
+          <div style={{ backgroundColor: '#0a0a0a', border: '1px solid #ffffff', padding: '12px', marginTop: '6px', display: 'flex', flexDirection: 'column', gap: '8px', boxSizing: 'border-box', animation: 'swapFadeIn 0.2s ease-in-out' }}>
             {/* Stock Filters */}
             <div style={{ display: 'flex', gap: '6px' }}>
               {[
@@ -572,7 +572,7 @@ const AdminProducts: React.FC = () => {
                       flex: 1,
                       padding: '8px 6px',
                       backgroundColor: '#000',
-                      border: `1px solid ${isSelected ? '#fff' : '#333'}`,
+                      border: `1px solid ${isSelected ? '#fff' : '#444'}`,
                       color: isSelected ? '#fff' : '#888',
                       fontSize: '9px',
                       fontFamily: 'monospace',
@@ -603,7 +603,7 @@ const AdminProducts: React.FC = () => {
                       flex: 1,
                       padding: '8px 6px',
                       backgroundColor: '#000',
-                      border: `1px solid ${isSelected ? '#fff' : '#333'}`,
+                      border: `1px solid ${isSelected ? '#fff' : '#444'}`,
                       color: isSelected ? '#fff' : '#888',
                       fontSize: '9px',
                       fontFamily: 'monospace',
