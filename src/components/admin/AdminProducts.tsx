@@ -211,6 +211,13 @@ const AdminProducts: React.FC = () => {
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
 
+  // Filter Dropdown Toggle State
+  const [showFilters, setShowFilters] = useState<boolean>(false);
+
+  // Scroll direction state for smart sticky header
+  const [isVisibleHeader, setIsVisibleHeader] = useState<boolean>(true);
+  const [lastScrollY, setLastScrollY] = useState<number>(0);
+
   // Filters State
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [stockFilter, setStockFilter] = useState<'all' | 'in_stock' | 'sold_out'>('all');
@@ -245,6 +252,23 @@ const AdminProducts: React.FC = () => {
       setNotification(null);
     }, 4000);
   };
+
+  // Smart Header Scroll Listener
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      if (currentScrollY > lastScrollY && currentScrollY > 80) {
+        setIsVisibleHeader(false); // Scrolling down
+        setShowFilters(false);     // Hide filters on scroll down
+      } else {
+        setIsVisibleHeader(true);  // Scrolling up
+      }
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [lastScrollY]);
 
   const fetchProducts = async () => {
     try {
@@ -459,100 +483,148 @@ const AdminProducts: React.FC = () => {
         </div>
       )}
 
-      {/* Search Bar & Round Border Add Button */}
-      <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '15px' }}>
-        <input
-          type="text"
-          placeholder="SEARCH PRODUCTS..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          style={{ flex: 1, backgroundColor: '#050505', border: '1px solid #1a1a1a', padding: '11px 15px', color: '#fff', fontSize: '11px', fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box' }}
-        />
-        <button
-          onClick={() => setShowAddModal(true)}
-          title="Add New Product"
-          style={{ 
-            backgroundColor: 'transparent', color: '#fff', border: '1px solid #333', 
-            width: '42px', height: '42px', minWidth: '42px', display: 'flex', alignItems: 'center', 
-            justifyContent: 'center', cursor: 'pointer', borderRadius: '50%', boxSizing: 'border-box' 
-          }}
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="12" y1="5" x2="12" y2="19"></line>
-            <line x1="5" y1="12" x2="19" y2="12"></line>
-          </svg>
-        </button>
-      </div>
+      {/* Sticky Smart Header Bar (Search Bar + Filter Icon + Add Button) */}
+      <div style={{
+        position: 'sticky',
+        top: '0',
+        zIndex: 999,
+        backgroundColor: '#000',
+        paddingBottom: '15px',
+        transition: 'transform 0.3s ease-in-out',
+        transform: isVisibleHeader ? 'translateY(0)' : 'translateY(-120%)'
+      }}>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', backgroundColor: '#050505', border: '1px solid #1a1a1a', padding: '6px 10px', boxSizing: 'border-box' }}>
+          {/* Search Input */}
+          <input
+            type="text"
+            placeholder="SEARCH PRODUCTS..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            style={{ flex: 1, backgroundColor: 'transparent', border: 'none', padding: '8px 5px', color: '#fff', fontSize: '11px', fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box' }}
+          />
 
-      {/* Two Lines Filter Buttons Bar */}
-      <div style={{ backgroundColor: '#050505', border: '1px solid #1a1a1a', padding: '12px', marginBottom: '25px', display: 'flex', flexDirection: 'column', gap: '8px', boxSizing: 'border-box' }}>
-        {/* Line 1: Stock Filters */}
-        <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '2px' }} className="showroom-row-container">
-          {[
-            { id: 'all', label: 'ALL STOCK' },
-            { id: 'in_stock', label: 'IN STOCK' },
-            { id: 'sold_out', label: 'SOLD OUT' }
-          ].map(item => {
-            const isSelected = stockFilter === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => setStockFilter(item.id as any)}
-                style={{
-                  flex: 1,
-                  padding: '8px 10px',
-                  backgroundColor: '#000',
-                  border: `1px solid ${isSelected ? '#fff' : '#333'}`,
-                  color: isSelected ? '#fff' : '#888',
-                  fontSize: '10px',
-                  fontFamily: 'monospace',
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap',
-                  letterSpacing: '0.5px'
-                }}
-              >
-                {item.label}
-              </button>
-            );
-          })}
+          {/* Filter Toggle Icon Button */}
+          <button
+            onClick={() => setShowFilters(prev => !prev)}
+            title="Toggle Filters"
+            style={{ 
+              backgroundColor: showFilters ? '#222' : 'transparent', 
+              color: '#fff', 
+              border: '1px solid #333', 
+              width: '36px', 
+              height: '36px', 
+              minWidth: '36px', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              cursor: 'pointer', 
+              borderRadius: '4px', 
+              boxSizing: 'border-box' 
+            }}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+            </svg>
+          </button>
+
+          {/* Add Product Button */}
+          <button
+            onClick={() => setShowAddModal(true)}
+            title="Add New Product"
+            style={{ 
+              backgroundColor: 'transparent', 
+              color: '#fff', 
+              border: '1px solid #333', 
+              width: '36px', 
+              height: '36px', 
+              minWidth: '36px', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              cursor: 'pointer', 
+              borderRadius: '50%', 
+              boxSizing: 'border-box' 
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+          </button>
         </div>
 
-        {/* Line 2: Sort Filters */}
-        <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '2px' }} className="showroom-row-container">
-          {[
-            { id: 'newest', label: 'NEWEST FIRST' },
-            { id: 'price_low', label: 'PRICE: LOW-HIGH' },
-            { id: 'price_high', label: 'PRICE: HIGH-LOW' }
-          ].map(item => {
-            const isSelected = sortBy === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => setSortBy(item.id as any)}
-                style={{
-                  flex: 1,
-                  padding: '8px 10px',
-                  backgroundColor: '#000',
-                  border: `1px solid ${isSelected ? '#fff' : '#333'}`,
-                  color: isSelected ? '#fff' : '#888',
-                  fontSize: '10px',
-                  fontFamily: 'monospace',
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap',
-                  letterSpacing: '0.5px'
-                }}
-              >
-                {item.label}
-              </button>
-            );
-          })}
-        </div>
+        {/* Dropdown Filters Panel */}
+        {showFilters && (
+          <div style={{ backgroundColor: '#0a0a0a', border: '1px solid #222', padding: '12px', marginTop: '6px', display: 'flex', flexDirection: 'column', gap: '8px', boxSizing: 'border-box', animation: 'swapFadeIn 0.2s ease-in-out' }}>
+            {/* Stock Filters */}
+            <div style={{ display: 'flex', gap: '6px' }}>
+              {[
+                { id: 'all', label: 'ALL STOCK' },
+                { id: 'in_stock', label: 'IN STOCK' },
+                { id: 'sold_out', label: 'SOLD OUT' }
+              ].map(item => {
+                const isSelected = stockFilter === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => setStockFilter(item.id as any)}
+                    style={{
+                      flex: 1,
+                      padding: '8px 6px',
+                      backgroundColor: '#000',
+                      border: `1px solid ${isSelected ? '#fff' : '#333'}`,
+                      color: isSelected ? '#fff' : '#888',
+                      fontSize: '9px',
+                      fontFamily: 'monospace',
+                      cursor: 'pointer',
+                      whiteSpace: 'nowrap',
+                      letterSpacing: '0.5px'
+                    }}
+                  >
+                    {item.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Sort Filters */}
+            <div style={{ display: 'flex', gap: '6px' }}>
+              {[
+                { id: 'newest', label: 'NEWEST' },
+                { id: 'price_low', label: 'PRICE: LOW' },
+                { id: 'price_high', label: 'PRICE: HIGH' }
+              ].map(item => {
+                const isSelected = sortBy === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => setSortBy(item.id as any)}
+                    style={{
+                      flex: 1,
+                      padding: '8px 6px',
+                      backgroundColor: '#000',
+                      border: `1px solid ${isSelected ? '#fff' : '#333'}`,
+                      color: isSelected ? '#fff' : '#888',
+                      fontSize: '9px',
+                      fontFamily: 'monospace',
+                      cursor: 'pointer',
+                      whiteSpace: 'nowrap',
+                      letterSpacing: '0.5px'
+                    }}
+                  >
+                    {item.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
 
       {loading ? (
         <div style={{ textAlign: 'center', padding: '60px 0', color: '#666', fontSize: '11px' }}>LOADING PRODUCTS...</div>
       ) : (
-        <div>
+        <div style={{ marginTop: '10px' }}>
           {filteredCategories.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '50px 0', color: '#555', fontSize: '11px', fontFamily: 'monospace' }}>NO PRODUCTS FOUND</div>
           ) : (
