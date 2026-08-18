@@ -3,24 +3,215 @@ import { supabase } from '../../supabaseClient';
 import { uploadToCloudinary } from '../../cloudinary';
 
 interface Product {
-  id: string;
+  id: string | number;
   name: string;
-  description?: string;
-  details?: any;
-  sizes?: string[];
-  colors?: string[];
+  description: string;
   price: number;
+  category: string;
   stock_quantity: number;
-  category?: string;
-  created_at?: string;
+  status: 'active' | 'sold_out' | string;
+  sizes: string[];  
+  colors: string[]; 
+  created_at: string;
+  product_media: { media_url: string; media_type: string; sort_order?: number }[];
+  details?: Record<string, string> | null;
   image_url?: string;
 }
 
+// 📸 প্রোডাক্ট গ্যালারি কম্পোনেন্ট
+const ProductGallery = ({ images, productName }: { images: string[], productName: string }) => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  const handlePrev = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCurrentIndex(prev => (prev > 0 ? prev - 1 : images.length - 1));
+  };
+
+  const handleNext = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCurrentIndex(prev => (prev < images.length - 1 ? prev + 1 : 0));
+  };
+
+  return (
+    <div style={{ width: '100%', aspectRatio: '3/4', position: 'relative', overflow: 'hidden', backgroundColor: '#111' }}>
+      {images.length > 0 ? (
+        <img 
+          src={images[currentIndex]} 
+          alt={productName} 
+          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+        />
+      ) : (
+        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#333' }}>No Image</div>
+      )}
+
+      {images.length > 1 && (
+        <>
+          <div style={{ position: 'absolute', top: 0, left: 0, width: '50%', height: '100%', cursor: 'pointer' }} onClick={handlePrev} />
+          <div style={{ position: 'absolute', top: 0, right: 0, width: '50%', height: '100%', cursor: 'pointer' }} onClick={handleNext} />
+
+          <div style={{ position: 'absolute', bottom: '15px', left: 0, width: '100%', display: 'flex', justifyContent: 'center', gap: '6px' }}>
+            {images.map((_, idx) => (
+              <div 
+                key={idx}
+                style={{ 
+                  width: '6px', height: '6px', borderRadius: '50%', 
+                  background: currentIndex === idx ? '#fff' : 'rgba(255,255,255,0.4)',
+                }}
+              />
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
+// 🛒 ১০০% সিমেট্রিক বর্ডার যুক্ত অ্যাকশন রো (অ্যাডমিন প্যানেলের জন্য স্টক কন্ট্রোলসহ আপডেট করা)
+const ProductAdminActionRow = ({ product, onUpdateStock, onDelete }: { product: Product; onUpdateStock: (id: string | number, currentStock: number, change: number) => void; onDelete: (id: string | number) => void }) => {
+  const [step, setStep] = useState<'idle' | 'manage'>('idle');
+  const isSoldOut = product.status === 'sold_out' || product.stock_quantity <= 0;
+
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: '42px', marginTop: 'auto', boxSizing: 'border-box', width: '100%' }}>
+      {step === 'idle' && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', animation: 'swapFadeIn 0.25s ease-in-out' }}>
+          <span style={{ fontSize: '15px', color: isSoldOut ? '#555' : '#fff', fontWeight: 500, fontFamily: 'monospace' }}>৳{product.price}</span>
+
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              onClick={() => setStep('manage')}
+              style={{
+                height: '36px',
+                padding: '0 12px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxSizing: 'border-box',
+                background: 'transparent',
+                border: '1px solid #333',
+                color: '#fff',
+                fontSize: '10px',
+                letterSpacing: '1px',
+                cursor: 'pointer',
+                textTransform: 'uppercase',
+                fontWeight: '600',
+              }}
+            >
+              STOCK ({product.stock_quantity})
+            </button>
+            <button
+              onClick={() => onDelete(product.id)}
+              style={{
+                height: '36px',
+                width: '36px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: 'transparent',
+                border: '1px solid #ef444455',
+                color: '#ef4444',
+                cursor: 'pointer',
+              }}
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+
+      {step === 'manage' && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', height: '100%', animation: 'swapFadeIn 0.25s ease-in-out', backgroundColor: '#111', padding: '0 10px', boxSizing: 'border-box' }}>
+          <span style={{ fontSize: '11px', color: '#aaa', fontFamily: 'monospace' }}>STOCK: {product.stock_quantity}</span>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <button onClick={() => onUpdateStock(product.id, product.stock_quantity, -1)} style={{ width: '24px', height: '24px', background: '#222', color: '#fff', border: 'none', cursor: 'pointer' }}>-</button>
+            <button onClick={() => onUpdateStock(product.id, product.stock_quantity, 1)} style={{ width: '24px', height: '24px', background: '#222', color: '#fff', border: 'none', cursor: 'pointer' }}>+</button>
+            <button onClick={() => setStep('idle')} style={{ background: 'none', border: 'none', color: '#888', fontSize: '10px', cursor: 'pointer', marginLeft: '5px' }}>DONE</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// 💳 ইনডিভিজুয়াল প্রোডাক্ট কার্ড কম্পোনেন্ট
+const ProductCard = ({ product, onUpdateStock, onDelete }: { product: Product; onUpdateStock: any; onDelete: any }) => {
+  const [isDescExpanded, setIsDescExpanded] = useState(false);
+
+  return (
+    <div className="showroom-card-item" style={{ scrollSnapAlign: 'start', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', backgroundColor: '#050505', border: '1px solid #1a1a1a', padding: '12px' }}>
+      <ProductGallery 
+        images={product.product_media?.map(m => m.media_url) || []} 
+        productName={product.name} 
+      />
+
+      <div style={{ marginTop: '15px', padding: '0 5px', display: 'flex', flexDirection: 'column', flex: 1 }}>
+        <h3 style={{ fontSize: '14px', color: '#fff', margin: '0 0 6px 0', fontWeight: '600' }}>{product.name}</h3>
+
+        {/* ⚡ এক্সপ্যান্ডেবল বর্ণনা ও স্পেসিফিকেশন সেকশন */}
+        <div style={{ margin: '0 0 15px 0' }}>
+          {(() => {
+            const descriptionText = product.description || '';
+            const characterLimit = 75; 
+            const isLongText = descriptionText.length > characterLimit;
+            const displayedText = isLongText 
+              ? descriptionText.slice(0, characterLimit) + '...' 
+              : descriptionText;
+
+            return !isDescExpanded ? (
+              <p style={{ fontSize: '13px', color: '#aaa', margin: 0, lineHeight: '1.4' }}>
+                {displayedText || 'No description provided.'}
+                {isLongText && (
+                  <span 
+                    onClick={() => setIsDescExpanded(true)}
+                    style={{ fontSize: '12px', color: '#fff', cursor: 'pointer', marginLeft: '6px', fontWeight: '500', display: 'inline' }}
+                  >
+                    see more
+                  </span>
+                )}
+              </p>
+            ) : (
+              <div style={{ animation: 'swapFadeIn 0.3s ease-in-out' }}>
+                <p style={{ fontSize: '13px', color: '#aaa', margin: 0, lineHeight: '1.4' }}>
+                  {descriptionText}
+                </p>
+
+                {/* 📊 সুপাবেজ JSONB থেকে আসা ডাইনামিক কি-ভ্যালু পেয়ার রেন্ডারিং */}
+                {product.details && Object.keys(product.details).length > 0 && (
+                  <div style={{ borderTop: '1px solid #1a1a1a', marginTop: '12px', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px', fontFamily: 'monospace', fontSize: '12px' }}>
+                    {Object.entries(product.details).map(([key, value]) => (
+                      <div key={key} style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'flex-start' }}>
+                        <span style={{ color: '#fff', width: '95px', flexShrink: 0, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{key}</span>
+                        <span style={{ color: '#555', marginRight: '10px', flexShrink: 0 }}>:</span>
+                        <span style={{ color: '#ccc', fontWeight: '400', flex: 1, overflowWrap: 'break-word', wordBreak: 'break-word', lineHeight: '1.4' }}>{String(value)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <span 
+                  onClick={() => setIsDescExpanded(false)}
+                  style={{ fontSize: '11px', color: '#fff', cursor: 'pointer', marginTop: '12px', display: 'inline-block', letterSpacing: '0.5px' }}
+                >
+                  see less
+                </span>
+              </div>
+            );
+          })()}
+        </div>
+
+        <ProductAdminActionRow product={product} onUpdateStock={onUpdateStock} onDelete={onDelete} />
+      </div>
+    </div>
+  );
+};
+
 const AdminProducts: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [showAddModal, setShowAddModal] = useState<boolean>(false);
   const [submitting, setSubmitting] = useState<boolean>(false);
+  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
 
   // Form States
   const [newName, setNewName] = useState<string>('');
@@ -59,16 +250,7 @@ const AdminProducts: React.FC = () => {
       const { data, error } = await supabase
         .from('products')
         .select(`
-          id,
-          name,
-          description,
-          details,
-          sizes,
-          colors,
-          price,
-          stock_quantity,
-          category,
-          created_at,
+          *,
           product_media (
             media_url,
             media_type,
@@ -81,10 +263,7 @@ const AdminProducts: React.FC = () => {
 
       if (data) {
         const formatted = data.map((p: any) => {
-          // Sort media by sort_order if available
           const sortedMedia = p.product_media?.sort((a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
-          const primaryImage = sortedMedia?.[0]?.media_url || 'https://via.placeholder.com/100x120?text=NO+IMAGE';
-
           return {
             id: p.id,
             name: p.name,
@@ -94,12 +273,16 @@ const AdminProducts: React.FC = () => {
             colors: p.colors || [],
             price: p.price,
             stock_quantity: p.stock_quantity ?? 0,
+            status: p.status || 'active',
             category: p.category || 'GENERAL',
             created_at: p.created_at,
-            image_url: primaryImage
+            product_media: sortedMedia || []
           };
         });
+
         setProducts(formatted);
+        const uniqueCategories = Array.from(new Set(formatted.map((p: Product) => p.category)));
+        setCategories(uniqueCategories);
       }
     } catch (err) {
       console.error('Error fetching admin products:', err);
@@ -139,7 +322,6 @@ const AdminProducts: React.FC = () => {
     try {
       setSubmitting(true);
 
-      // 1. Format details object for JSONB column
       const detailsJson = {
         FIT: newFit,
         GSM: newGsm,
@@ -147,11 +329,9 @@ const AdminProducts: React.FC = () => {
         MATERIAL: newMaterial
       };
 
-      // 2. Format sizes and colors arrays
       const sizesArray = newSizes.split(',').map(s => s.trim()).filter(Boolean);
       const colorsArray = newColors.split(',').map(c => c.trim().toUpperCase()).filter(Boolean);
 
-      // 3. Insert Product basic info
       const { data: newProd, error: prodError } = await supabase
         .from('products')
         .insert([{
@@ -169,7 +349,6 @@ const AdminProducts: React.FC = () => {
 
       if (prodError) throw prodError;
 
-      // 4. Upload Multiple Images & Videos to Cloudinary and insert into product_media
       if (mediaFiles.length > 0 && newProd) {
         setUploadingMedia(true);
         for (let i = 0; i < mediaFiles.length; i++) {
@@ -216,7 +395,7 @@ const AdminProducts: React.FC = () => {
     setMediaPreviews([]);
   };
 
-  const handleStockUpdate = async (productId: string, currentStock: number, change: number) => {
+  const handleStockUpdate = async (productId: string | number, currentStock: number, change: number) => {
     const updated = Math.max(0, currentStock + change);
     try {
       setProducts(prev => prev.map(p => p.id === productId ? { ...p, stock_quantity: updated } : p));
@@ -228,7 +407,7 @@ const AdminProducts: React.FC = () => {
     }
   };
 
-  const handleDeleteProduct = async (productId: string) => {
+  const handleDeleteProduct = async (productId: string | number) => {
     if (!window.confirm('ARE YOU SURE YOU WANT TO REMOVE THIS PRODUCT?')) return;
 
     try {
@@ -248,8 +427,10 @@ const AdminProducts: React.FC = () => {
     p.category?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const filteredCategories = Array.from(new Set(filteredProducts.map(p => p.category)));
+
   return (
-    <div style={{ width: '100%', maxWidth: '100%', overflowX: 'hidden', position: 'relative' }}>
+    <div style={{ width: '100%', maxWidth: '100%', overflowX: 'hidden', position: 'relative', backgroundColor: '#000', minHeight: '100vh', padding: '20px', boxSizing: 'border-box' }}>
       {notification && (
         <div style={{
           position: 'fixed', top: '20px', right: '20px', zIndex: 9999,
@@ -287,28 +468,40 @@ const AdminProducts: React.FC = () => {
       </div>
 
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '60px 0', color: '#666', fontSize: '11px' }}>LOADING...</div>
+        <div style={{ textAlign: 'center', padding: '60px 0', color: '#666', fontSize: '11px' }}>LOADING PRODUCTS...</div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '18px' }}>
-          {filteredProducts.map((product) => (
-            <div key={product.id} style={{ backgroundColor: '#050505', border: '1px solid #1a1a1a', padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div style={{ position: 'relative', width: '100%', height: '180px', backgroundColor: '#000' }}>
-                <img src={product.image_url} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              </div>
-              <div>
-                <h3 style={{ fontSize: '13px', fontWeight: 'bold', color: '#fff', margin: '0 0 4px 0' }}>{product.name}</h3>
-                <span style={{ fontSize: '15px', fontWeight: '800', color: '#fff', fontFamily: 'monospace' }}>৳{product.price}</span>
-              </div>
-              <div style={{ backgroundColor: '#000', border: '1px solid #111', padding: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '11px', color: '#22c55e' }}>Stock: {product.stock_quantity}</span>
-                <div style={{ display: 'flex', gap: '5px' }}>
-                  <button onClick={() => handleStockUpdate(product.id, product.stock_quantity, -1)} style={{ width: '28px', height: '28px', background: '#111', color: '#fff', cursor: 'pointer' }}>-</button>
-                  <button onClick={() => handleStockUpdate(product.id, product.stock_quantity, 1)} style={{ width: '28px', height: '28px', background: '#111', color: '#fff', cursor: 'pointer' }}>+</button>
+        <div>
+          {filteredCategories.map((category) => {
+            const categoryProducts = filteredProducts.filter(p => p.category === category);
+            const isExpanded = !!expandedCategories[category];
+
+            return (
+              <div key={category} className="showroom-section" style={{ marginBottom: '50px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 15px 12px 15px', borderBottom: '1px solid #141414' }}>
+                  <h3 style={{ margin: 0, fontSize: '13px', letterSpacing: '3px', color: '#b3b3b3', textTransform: 'uppercase' }}>{category}</h3>
+
+                  <button 
+                    onClick={() => setExpandedCategories(prev => ({ ...prev, [category]: !isExpanded }))} 
+                    style={{ 
+                      background: 'none', border: 'none', color: '#fff', fontSize: '11px', letterSpacing: '2px', cursor: 'pointer', opacity: 0.7,
+                      display: 'flex', padding: 0, alignItems: 'center', width: '85px', justifyContent: 'flex-end'
+                    }}
+                  >
+                    <span>SEE&nbsp;</span>
+                    <span style={{ display: 'inline-block', width: '35px', textAlign: 'left' }}>
+                      {isExpanded ? 'LESS' : 'MORE'}
+                    </span>
+                  </button>
+                </div>
+
+                <div className="showroom-row-container" style={{ display: 'flex', flexWrap: isExpanded ? 'wrap' : 'nowrap', width: '100%', scrollSnapType: 'x mandatory', overflowX: 'auto', scrollBehavior: 'smooth' }}>
+                  {categoryProducts.map((product) => (
+                    <ProductCard key={product.id} product={product} onUpdateStock={handleStockUpdate} onDelete={handleDeleteProduct} />
+                  ))}
                 </div>
               </div>
-              <button onClick={() => handleDeleteProduct(product.id)} style={{ backgroundColor: 'transparent', border: '1px solid #ef444455', color: '#ef4444', padding: '8px', fontSize: '10px', cursor: 'pointer' }}>REMOVE</button>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -339,7 +532,6 @@ const AdminProducts: React.FC = () => {
                 <input type="text" value={newCategory} onChange={(e) => setNewCategory(e.target.value)} style={{ width: '100%', backgroundColor: '#000', border: '1px solid #333', padding: '10px', color: '#fff', fontSize: '11px', boxSizing: 'border-box' }} />
               </div>
 
-              {/* MULTIPLE IMAGES & VIDEOS UPLOAD SECTION */}
               <div>
                 <label style={{ fontSize: '10px', color: '#888', display: 'block', marginBottom: '5px' }}>PRODUCT IMAGES & VIDEOS (Multiple allowed)</label>
                 <input type="file" multiple accept="image/*,video/*" onChange={handleMediaChange} style={{ width: '100%', backgroundColor: '#000', border: '1px solid #333', padding: '8px', color: '#fff', fontSize: '11px', boxSizing: 'border-box', cursor: 'pointer' }} />
@@ -365,7 +557,6 @@ const AdminProducts: React.FC = () => {
                 <textarea value={newDescription} onChange={(e) => setNewDescription(e.target.value)} rows={2} style={{ width: '100%', backgroundColor: '#000', border: '1px solid #333', padding: '10px', color: '#fff', fontSize: '11px', boxSizing: 'border-box' }} />
               </div>
 
-              {/* DETAILS (JSONB) */}
               <div style={{ border: '1px dashed #333', padding: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 <span style={{ fontSize: '10px', color: '#aaa', fontWeight: 'bold' }}>SPECIFICATIONS (DETAILS)</span>
                 <div style={{ display: 'flex', gap: '10px' }}>
@@ -393,6 +584,28 @@ const AdminProducts: React.FC = () => {
           </div>
         </div>
       )}
+
+      <style>{`
+        @keyframes swapFadeIn {
+          from { opacity: 0; transform: translateY(1px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .showroom-row-container::-webkit-scrollbar {
+          display: none;
+        }
+        .showroom-row-container {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+        @media (max-width: 767px) {
+          .showroom-section { margin-left: calc(-20px); margin-right: calc(-20px); width: calc(100vw); }
+          .showroom-card-item { width: 100vw !important; min-width: 100vw !important; padding: 0 15px !important; }
+        }
+        @media (min-width: 768px) {
+          .showroom-section { padding: 0; }
+          .showroom-card-item { width: 300px; min-width: 300px; padding: 12px; margin-right: 15px; margin-bottom: 20px; }
+        }
+      `}</style>
     </div>
   );
 };
