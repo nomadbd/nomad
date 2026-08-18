@@ -1,4 +1,4 @@
- import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { supabase } from '../../supabaseClient';
 
 interface AdminOverviewProps {
@@ -41,7 +41,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
 
   const [totalRevenue, setTotalRevenue] = useState<number>(0);
   const [cancelledRevenue, setCancelledRevenue] = useState<number>(0);
-  
+
   const [totalOrders, setTotalOrders] = useState<number>(0);
   const [pendingOrders, setPendingOrders] = useState<number>(0);
   const [processingOrders, setProcessingOrders] = useState<number>(0);
@@ -530,7 +530,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
         .preset-btn.active {
           background: #111;
           color: #22d3ee;
-          border-color: #22d3ee;
+          border-color: #FFFFFF;
         }
 
         .custom-date-inputs {
@@ -584,7 +584,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '' }) => {
         .filter-toggle-btn.active {
           background: #22d3ee;
           color: #000;
-          border-color: #22d3ee;
+          border-color: #FFFFFF;
           font-weight: bold;
         }
 
