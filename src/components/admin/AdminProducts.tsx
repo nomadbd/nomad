@@ -253,16 +253,17 @@ const AdminProducts: React.FC = () => {
     }, 4000);
   };
 
-  // Smart Header Scroll Listener (Updated to show header quickly on scroll up)
+  // Smart Header Scroll Listener (Improved threshold & sensitivity)
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
       
-      if (currentScrollY > lastScrollY && currentScrollY > 80) {
-        setIsVisibleHeader(false); // Scrolling down
-        setShowFilters(false);     // Hide filters on scroll down
+      // সামান্য উপরে স্ক্রল করলেই (যেমন: ৫ পিক্সেল বা তার বেশি) হেডার দৃশ্যমান হবে
+      if (currentScrollY > lastScrollY && currentScrollY > 60) {
+        setIsVisibleHeader(false); // নিচের দিকে স্ক্রল করলে হাইড হবে
+        setShowFilters(false);     
       } else if (currentScrollY < lastScrollY || currentScrollY <= 10) {
-        setIsVisibleHeader(true);  // Scrolling up or at the top
+        setIsVisibleHeader(true);  // ওপরের দিকে স্ক্রল করলেই সাথে সাথে শো করবে
       }
       
       setLastScrollY(currentScrollY);
@@ -485,11 +486,11 @@ const AdminProducts: React.FC = () => {
         </div>
       )}
 
-      {/* Sticky Smart Header Bar (Pill Search Bar with Icons Inside & Without Borders) */}
+      {/* Sticky Smart Header Bar (z-index কমিয়ে দেয়া হয়েছে যাতে মেইন মেনু ওপেন হলে এর নিচে ঢাকা থাকে) */}
       <div style={{
         position: 'sticky',
         top: '0',
-        zIndex: 9999,
+        zIndex: 10, 
         backgroundColor: '#000',
         paddingBottom: '15px',
         transition: 'transform 0.3s ease-in-out',
