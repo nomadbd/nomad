@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 import { uploadToCloudinary } from '../../cloudinary';
 
@@ -214,10 +214,6 @@ const AdminProducts: React.FC = () => {
   // Filter Dropdown Toggle State
   const [showFilters, setShowFilters] = useState<boolean>(false);
 
-  // Scroll direction state for smart sticky header
-  const [isVisibleHeader, setIsVisibleHeader] = useState<boolean>(true);
-  const lastScrollY = useRef<number>(0);
-
   // Filters State
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [stockFilter, setStockFilter] = useState<'all' | 'in_stock' | 'sold_out'>('all');
@@ -252,32 +248,6 @@ const AdminProducts: React.FC = () => {
       setNotification(null);
     }, 4000);
   };
-
-  // Smart Header Scroll Listener (fixed with useRef)
-  useEffect(() => {
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-
-      // Always show when near the very top
-      if (currentScrollY < 40) {
-        setIsVisibleHeader(true);
-      } 
-      // Hide when scrolling down (and past threshold)
-      else if (currentScrollY > lastScrollY.current && currentScrollY > 80) {
-        setIsVisibleHeader(false);
-        setShowFilters(false);
-      } 
-      // Show when scrolling up
-      else if (currentScrollY < lastScrollY.current) {
-        setIsVisibleHeader(true);
-      }
-
-      lastScrollY.current = currentScrollY;
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
   const fetchProducts = async () => {
     try {
@@ -478,7 +448,7 @@ const AdminProducts: React.FC = () => {
   const filteredCategories = Array.from(new Set(filteredProducts.map(p => p.category)));
 
   return (
-    <div style={{ width: '100%', maxWidth: '100%', overflowX: 'hidden', position: 'relative', backgroundColor: '#000', minHeight: '100vh', padding: '20px', boxSizing: 'border-box' }}>
+    <div style={{ width: '100%', maxWidth: '100%', overflowX: 'hidden', position: 'relative', backgroundColor: '#000', minHeight: '100vh', padding: '20px', boxSizing: 'border-box', paddingTop: '90px' }}>
       {notification && (
         <div style={{
           position: 'fixed', top: '20px', right: '20px', zIndex: 9999,
@@ -492,17 +462,16 @@ const AdminProducts: React.FC = () => {
         </div>
       )}
 
-      {/* Sticky Smart Header Bar */}
-      {/* top: 56px → মেইন NOMAD হেডারের ঠিক নিচে বসবে, আর চাপা পড়বে না */}
+      {/* Fixed Search Bar - সবসময় মেইন হেডারের ঠিক নিচে দৃশ্যমান */}
       <div style={{
-        position: 'sticky',
-        top: '56px',          // ← মূল পরিবর্তন
+        position: 'fixed',
+        top: '60px',                // মেইন NOMAD হেডারের ঠিক নিচে
+        left: 0,
+        right: 0,
         zIndex: 40,
         backgroundColor: '#000',
-        paddingBottom: '15px',
-        transition: 'transform 0.3s ease-in-out',
-        transform: isVisibleHeader ? 'translateY(0)' : 'translateY(-150%)',
-        willChange: 'transform'
+        padding: '12px 20px 15px 20px',
+        boxSizing: 'border-box'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', backgroundColor: '#050505', border: '1px solid #ffffff', borderRadius: '30px', padding: '6px 12px 6px 15px', boxSizing: 'border-box' }}>
           <input
@@ -514,7 +483,6 @@ const AdminProducts: React.FC = () => {
           />
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-            {/* Filter Toggle Icon Button */}
             <button
               onClick={() => setShowFilters(prev => !prev)}
               title="Toggle Filters"
@@ -536,7 +504,6 @@ const AdminProducts: React.FC = () => {
               </svg>
             </button>
 
-            {/* Add Product Button */}
             <button
               onClick={() => setShowAddModal(true)}
               title="Add New Product"
@@ -564,7 +531,6 @@ const AdminProducts: React.FC = () => {
         {/* Dropdown Filters Panel */}
         {showFilters && (
           <div style={{ backgroundColor: '#0a0a0a', border: '1px solid #ffffff', padding: '12px', marginTop: '6px', display: 'flex', flexDirection: 'column', gap: '8px', boxSizing: 'border-box', animation: 'swapFadeIn 0.2s ease-in-out' }}>
-            {/* Stock Filters */}
             <div style={{ display: 'flex', gap: '6px' }}>
               {[
                 { id: 'all', label: 'ALL STOCK' },
@@ -595,7 +561,6 @@ const AdminProducts: React.FC = () => {
               })}
             </div>
 
-            {/* Sort Filters */}
             <div style={{ display: 'flex', gap: '6px' }}>
               {[
                 { id: 'newest', label: 'NEWEST' },
