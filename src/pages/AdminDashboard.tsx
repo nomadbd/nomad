@@ -404,32 +404,6 @@ const AdminDashboard: React.FC = () => {
           box-shadow: none !important;
         }
 
-        .header-search-bar {
-          margin-top: 12px;
-          padding-top: 10px;
-          border-top: 1px solid #1f1f1f;
-          max-width: 100%;
-        }
-
-        .header-search-input {
-          width: 100%;
-          max-width: 100%;
-          background: #090909;
-          border: 1px solid #222;
-          color: #fff;
-          padding: 10px 12px;
-          font-family: monospace;
-          font-size: 16px;
-          border-radius: 2px;
-          outline: none;
-          letter-spacing: 1px;
-          box-sizing: border-box;
-        }
-
-        .header-search-input:focus {
-          border-color: #555;
-        }
-
         .nomad-layout,
         .nomad-sidebar,
         .nomad-main,
@@ -495,19 +469,6 @@ const AdminDashboard: React.FC = () => {
                 </button>
               </div>
             </div>
-
-            {isSearchOpen && activeTab !== 'overview' && (
-              <div className="header-search-bar">
-                <input
-                  type="text"
-                  className="header-search-input"
-                  placeholder={`SEARCH IN ${activeTab.toUpperCase()}...`}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  autoFocus
-                />
-              </div>
-            )}
 
             <nav className="nomad-nav">
               <span style={{ fontSize: '9px', color: '#888888', letterSpacing: '2px', marginBottom: '8px', fontWeight: 'bold' }}>
@@ -592,10 +553,24 @@ const AdminDashboard: React.FC = () => {
             <AdminOverview key="overview" userRole={userRole} showFilter={isFilterOpen} dateFormat="DD/MM/YYYY" />
           )}
           {activeTab === 'orders' && (
-            <AdminOrders key="orders" searchQuery={searchQuery} isFilterOpen={isFilterOpen} dateFormat="DD/MM/YYYY" />
+            <AdminOrders 
+              key="orders" 
+              isSearchOpen={isSearchOpen}
+              isFilterOpen={isFilterOpen}
+              onToggleSearch={() => setIsSearchOpen(prev => !prev)}
+              onToggleFilter={() => setIsFilterOpen(prev => !prev)}
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              dateFormat="DD/MM/YYYY" 
+            />
           )}
           {activeTab === 'products' && (
-            <AdminProducts key="products" searchQuery={searchQuery} isFilterOpen={isFilterOpen} dateFormat="DD/MM/YYYY" />
+            <AdminProducts 
+              key="products" 
+              searchQuery={searchQuery} 
+              isFilterOpen={isFilterOpen} 
+              dateFormat="DD/MM/YYYY" 
+            />
           )}
 
           {activeTab === 'settings' && (
