@@ -1165,11 +1165,17 @@ const AdminOrders: React.FC = () => {
   };
 
   const filteredOrders = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+
     return orders.filter(order => {
-      const matchesSearch =
-        order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (order.customer_name && order.customer_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (order.customer_phone && order.customer_phone.includes(searchTerm));
+      const matchesSearch = !term ||
+        order.id.toLowerCase().includes(term) ||
+        (order.customer_name && order.customer_name.toLowerCase().includes(term)) ||
+        (order.customer_phone && order.customer_phone.toLowerCase().includes(term)) ||
+        (order.customer_email && order.customer_email.toLowerCase().includes(term)) ||
+        (order.courier_name && order.courier_name.toLowerCase().includes(term)) ||
+        (order.tracking_id && order.tracking_id.toLowerCase().includes(term)) ||
+        order.items.some(item => item.product_name && item.product_name.toLowerCase().includes(term));
 
       const matchesStatus = selectedStatusFilter === 'ALL' || order.status.toLowerCase().trim() === selectedStatusFilter.toLowerCase().trim();
 
@@ -1289,9 +1295,9 @@ const AdminOrders: React.FC = () => {
                       setSelectedPresetKey(key);
                     }}
                     style={{
-                      backgroundColor: '#111',
-                      color: isPresetActive ? '#fff' : '#ccc',
-                      border: isPresetActive ? '1px solid #fff' : '1px solid #333',
+                      backgroundColor: isPresetActive ? '#ffffff' : '#222222',
+                      color: isPresetActive ? '#000000' : '#ccc',
+                      border: 'none',
                       padding: '6px 12px',
                       fontSize: '9.5px',
                       fontWeight: 'bold',
@@ -1453,7 +1459,7 @@ const AdminOrders: React.FC = () => {
         <div>
           <input
             type="text"
-            placeholder="SEARCH BY ID, NAME OR PHONE..."
+            placeholder="SEARCH BY ID, NAME, PHONE, EMAIL, ITEM OR TRACKING..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             style={{
@@ -1484,9 +1490,9 @@ const AdminOrders: React.FC = () => {
                   className="smooth-transition"
                   onClick={() => setSelectedDateFilter(dateFilter)}
                   style={{
-                    backgroundColor: '#000',
-                    color: isActive ? '#fff' : '#ccc',
-                    border: isActive ? '1px solid #fff' : '1px solid #333',
+                    backgroundColor: isActive ? '#ffffff' : '#222222',
+                    color: isActive ? '#000000' : '#ccc',
+                    border: 'none',
                     padding: '8px 14px',
                     fontSize: '10px',
                     fontFamily: 'monospace',
@@ -1518,9 +1524,9 @@ const AdminOrders: React.FC = () => {
                   className="smooth-transition"
                   onClick={() => setSelectedStatusFilter(status)}
                   style={{
-                    backgroundColor: '#000',
-                    color: isActive ? '#fff' : '#ccc',
-                    border: isActive ? '1px solid #fff' : '1px solid #333',
+                    backgroundColor: isActive ? '#ffffff' : '#222222',
+                    color: isActive ? '#000000' : '#ccc',
+                    border: 'none',
                     padding: '8px 14px',
                     fontSize: '10px',
                     fontFamily: 'monospace',
@@ -1552,9 +1558,9 @@ const AdminOrders: React.FC = () => {
                   className="smooth-transition"
                   onClick={() => setSelectedPaymentStatusFilter(pStatus)}
                   style={{
-                    backgroundColor: '#000',
-                    color: isActive ? '#fff' : '#ccc',
-                    border: isActive ? '1px solid #fff' : '1px solid #333',
+                    backgroundColor: isActive ? '#ffffff' : '#222222',
+                    color: isActive ? '#000000' : '#ccc',
+                    border: 'none',
                     padding: '8px 14px',
                     fontSize: '10px',
                     fontFamily: 'monospace',
