@@ -97,6 +97,9 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
     const parts = dateStr.split('-');
     if (parts.length === 1) return parts[0];
     if (parts.length === 2) {
+      if (parts[1].startsWith('W')) {
+        return `${parts[0]} ${parts[1]}`;
+      }
       const date = new Date(Number(parts[0]), Number(parts[1]) - 1, 1);
       return date.toLocaleDateString('en-GB', { month: 'short', year: '2-digit' }).toUpperCase();
     }
@@ -228,10 +231,10 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
       const { count: lowStockCount } = await supabase.from('products').select('*', { count: 'exact', head: true }).gt('stock_quantity', 0).lte('stock_quantity', 5);
       if (lowStockCount !== null) setLowStockItems(lowStockCount);
 
-      const { count: allUsersCount } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).not('role', 'in', '("admin","manager")');
+      const { count: allUsersCount } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).not('role', 'in', '(admin,manager)');
       if (allUsersCount !== null) setTotalUsers(allUsersCount);
 
-      let newUsersQuery = supabase.from('profiles').select('*', { count: 'exact', head: true }).not('role', 'in', '("admin","manager")');
+      let newUsersQuery = supabase.from('profiles').select('*', { count: 'exact', head: true }).not('role', 'in', '(admin,manager)');
       if (startDate) newUsersQuery = newUsersQuery.gte('created_at', `${startDate}T00:00:00.000Z`);
       if (endDate) newUsersQuery = newUsersQuery.lte('created_at', `${endDate}T23:59:59.999Z`);
       const { count: newUsersCount } = await newUsersQuery;
@@ -315,6 +318,11 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
 
     const resultKeys: string[] = [];
     const curr = new Date(startD);
+    if (granularity === 'MONTHLY') {
+      curr.setDate(1);
+    } else if (granularity === 'YEARLY') {
+      curr.setMonth(0, 1);
+    }
 
     while (curr <= endD) {
       let key = '';
@@ -549,7 +557,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
           <div
             style={{
               position: 'absolute',
-              top: showBelow ? `${(activePoint.y / svgHeight) * 100}%` : `${(activePoint.y / svgHeight) * 100}%`,
+              top: `${(activePoint.y / svgHeight) * 100}%`,
               left: `${Math.min(Math.max((activePoint.x / svgWidth) * 100, 22), 78)}%`,
               transform: showBelow ? 'translate(-50%, 12px)' : 'translate(-50%, calc(-100% - 12px))',
               backgroundColor: '#0c0c0c', 
