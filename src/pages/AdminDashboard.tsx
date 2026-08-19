@@ -134,7 +134,7 @@ const AdminDashboard: React.FC = () => {
 
   if (loading) {
     return (
-      <div style={{ backgroundColor: '#030303', color: '#fff', minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'monospace' }}>
+      <div style={{ backgroundColor: '#030303', color: '#fff', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'monospace' }}>
         LOADING DASHBOARD...
       </div>
     );
@@ -150,7 +150,7 @@ const AdminDashboard: React.FC = () => {
       color: '#fff', 
       minHeight: '100vh',
       width: '100%',
-      maxWidth: '100vw',
+      maxWidth: '100%',
       overflowX: 'hidden',
       fontFamily: 'monospace, sans-serif'
     }}>
@@ -163,15 +163,16 @@ const AdminDashboard: React.FC = () => {
         
         html, body {
           width: 100% !important;
-          max-width: 100vw !important;
+          max-width: 100% !important;
           overflow-x: hidden !important;
           background-color: #030303;
+          position: relative;
         }
 
         .nomad-layout {
           display: flex !important;
           width: 100% !important;
-          max-width: 100vw !important;
+          max-width: 100% !important;
           min-height: 100vh;
           overflow-x: hidden !important;
         }
@@ -183,12 +184,11 @@ const AdminDashboard: React.FC = () => {
 
           .nomad-sidebar {
             width: 100% !important;
-            height: ${menuOpen ? '100dvh' : 'auto'} !important;
-            max-height: 100dvh !important;
             position: fixed !important;
             top: 0;
             left: 0;
             right: 0;
+            bottom: ${menuOpen ? '0' : 'auto'} !important;
             z-index: 1000;
             background-color: rgba(6, 6, 6, 0.98);
             backdrop-filter: blur(12px);
@@ -225,7 +225,7 @@ const AdminDashboard: React.FC = () => {
             display: ${menuOpen ? 'block' : 'none'} !important;
             margin-top: auto !important;
             padding-top: 12px;
-            padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px)) !important;
+            padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)) !important;
             border-top: 1px solid #141414;
             flex-shrink: 0;
             background-color: rgba(6, 6, 6, 0.98);
@@ -236,7 +236,7 @@ const AdminDashboard: React.FC = () => {
 
           .nomad-main {
             width: 100% !important;
-            max-width: 100vw !important;
+            max-width: 100% !important;
             padding: 75px 12px 40px 12px !important;
           }
         }
@@ -244,16 +244,14 @@ const AdminDashboard: React.FC = () => {
         @media screen and (min-width: 768px) {
           .nomad-sidebar {
             width: 220px !important;
-            height: 100vh !important;
-            height: 100dvh !important;
             position: fixed !important;
-            top: 0;
-            left: 0;
-            bottom: 0;
+            top: 0 !important;
+            bottom: 0 !important;
+            left: 0 !important;
             z-index: 100;
             border-bottom: none;
             border-right: 1px solid #1a1a1a;
-            padding: 20px 14px 16px 14px !important;
+            padding: 20px 14px calc(20px + env(safe-area-inset-bottom, 0px)) 14px !important;
             display: flex !important;
             flex-direction: column !important;
             justify-content: space-between !important;
@@ -276,9 +274,9 @@ const AdminDashboard: React.FC = () => {
             display: block !important;
             margin-top: auto !important;
             padding-top: 14px;
-            padding-bottom: 8px;
             border-top: 1px solid #1a1a1a;
             flex-shrink: 0;
+            background-color: #060606;
           }
 
           .nomad-main {
@@ -291,17 +289,22 @@ const AdminDashboard: React.FC = () => {
           }
         }
 
-        .nomad-brand-link {
-          text-decoration: none;
-          color: inherit;
-          display: block;
-        }
-
+        /* কন্টেন্ট বা টেবিল যাতে মূল পেজ বড় করে ডানে স্ক্রল না করায় */
         .nomad-main {
           flex: 1;
           background-color: #030303;
           box-sizing: border-box;
           overflow-x: hidden !important;
+        }
+
+        .nomad-main table {
+          max-width: 100% !important;
+        }
+
+        .nomad-brand-link {
+          text-decoration: none;
+          color: inherit;
+          display: block;
         }
 
         .nav-btn {
@@ -394,7 +397,7 @@ const AdminDashboard: React.FC = () => {
         .header-search-input:focus {
           border-color: #555;
         }
-      `}</style>
+      ` Flore`}</style>
 
       <div className="nomad-layout">
         <aside className="nomad-sidebar">
