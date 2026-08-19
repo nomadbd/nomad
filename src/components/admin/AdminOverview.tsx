@@ -372,10 +372,10 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
 
   const statusItems = [
     { key: 'PENDING', label: 'PENDING', count: pendingOrders, color: '#FFB800' },
-    { key: 'REC', label: 'REC', count: receivedOrders, color: '#00E5FF' },
+    { key: 'REC', label: 'REC', count: receivedOrders, color: '#7C4DFF' },
     { key: 'PROC', label: 'PROC', count: processingOrders, color: '#E040FB' },
-    { key: 'SHIPPED', label: 'SHIPPED', count: shippedOrders, color: '#29B6F6' },
-    { key: 'DELIVERED', label: 'DELIVERED', count: deliveredOrders, color: '#00E676' },
+    { key: 'SHIPPED', label: 'SHIPPED', count: shippedOrders, color: '#00B0FF' },
+    { key: 'DELIVERED', label: 'DELIVERED', count: deliveredOrders, color: '#008000' },
     { key: 'CANCELLED', label: 'CANCELLED', count: cancelledOrders, color: '#FF5252' },
   ];
 
@@ -792,10 +792,10 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
 
         <div style={{ display: 'flex', width: '100%', maxWidth: '100%', height: '4px', backgroundColor: '#181818', borderRadius: '2px', overflow: 'hidden', marginBottom: '12px' }}>
           <div className="status-bar-segment" style={{ width: `${calcPercent(pendingOrders)}%`, backgroundColor: '#FFB800', flexShrink: 0 }} />
-          <div className="status-bar-segment" style={{ width: `${calcPercent(receivedOrders)}%`, backgroundColor: '#00E5FF', flexShrink: 0 }} />
+          <div className="status-bar-segment" style={{ width: `${calcPercent(receivedOrders)}%`, backgroundColor: '#7C4DFF', flexShrink: 0 }} />
           <div className="status-bar-segment" style={{ width: `${calcPercent(processingOrders)}%`, backgroundColor: '#E040FB', flexShrink: 0 }} />
-          <div className="status-bar-segment" style={{ width: `${calcPercent(shippedOrders)}%`, backgroundColor: '#29B6F6', flexShrink: 0 }} />
-          <div className="status-bar-segment" style={{ width: `${calcPercent(deliveredOrders)}%`, backgroundColor: '#00E676', flexShrink: 0 }} />
+          <div className="status-bar-segment" style={{ width: `${calcPercent(shippedOrders)}%`, backgroundColor: '#00B0FF', flexShrink: 0 }} />
+          <div className="status-bar-segment" style={{ width: `${calcPercent(deliveredOrders)}%`, backgroundColor: '#008000', flexShrink: 0 }} />
           <div className="status-bar-segment" style={{ width: `${calcPercent(cancelledOrders)}%`, backgroundColor: '#FF5252', flexShrink: 0 }} />
         </div>
 
@@ -830,7 +830,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
             <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF', marginTop: '4px' }}>
               ৳{formatNumber(avgOrderValue)}
               <span style={{ fontSize: '11px', marginLeft: '8px', fontWeight: 'normal' }}>
-                <span style={{ color: '#00E676' }}>{validOrderCount} Valid Orders</span>
+                <span style={{ color: '#008000' }}>{validOrderCount} Valid Orders</span>
               </span>
             </div>
           </div>
@@ -843,7 +843,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
           <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF', marginTop: '4px' }}>
             {formatNumber(totalOrders)}
             <span style={{ fontSize: '11px', marginLeft: '8px', fontWeight: 'normal' }}>
-              <span style={{ color: '#00E676' }}>{validOrderCount} Valid</span>
+              <span style={{ color: '#008000' }}>{validOrderCount} Valid</span>
               <span style={{ color: '#666', margin: '0 4px' }}>/</span>
               <span style={{ color: '#FF5252' }}>{cancelledOrders} Cancelled</span>
             </span>
@@ -858,7 +858,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
               <span style={{ color: '#666', margin: '0 4px' }}>/</span>
               <span style={{ color: '#E040FB' }}>{processingOrders} Proc</span>
               <span style={{ color: '#666', margin: '0 4px' }}>/</span>
-              <span style={{ color: '#00E5FF' }}>{receivedOrders} Rec</span>
+              <span style={{ color: '#7C4DFF' }}>{receivedOrders} Rec</span>
             </span>
           </div>
         </div>
@@ -881,7 +881,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
           <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF', marginTop: '4px' }}>
             {formatNumber(totalUsers)}
             <span style={{ fontSize: '11px', marginLeft: '8px', fontWeight: 'normal' }}>
-              <span style={{ color: '#00E676' }}>+{newUsers} New in period</span>
+              <span style={{ color: '#008000' }}>+{newUsers} New in period</span>
             </span>
           </div>
         </div>
