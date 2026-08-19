@@ -1210,17 +1210,34 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
   };
 
   const filteredOrders = useMemo(() => {
-    const term = searchTerm.trim().toLowerCase();
+    const rawTerm = searchTerm.trim().toLowerCase();
+    const cleanIdTerm = rawTerm.replace(/^#/, ''); // Remove leading '#' for order IDs
+    const digitsOnlyTerm = rawTerm.replace(/\D/g, ''); // Digits only for phone matching
 
     return orders.filter(order => {
-      const matchesSearch = !term ||
-        order.id.toLowerCase().includes(term) ||
-        (order.customer_name && order.customer_name.toLowerCase().includes(term)) ||
-        (order.customer_phone && order.customer_phone.toLowerCase().includes(term)) ||
-        (order.customer_email && order.customer_email.toLowerCase().includes(term)) ||
-        (order.courier_name && order.courier_name.toLowerCase().includes(term)) ||
-        (order.tracking_id && order.tracking_id.toLowerCase().includes(term)) ||
-        order.items.some(item => item.product_name && item.product_name.toLowerCase().includes(term));
+      let matchesSearch = true;
+
+      if (rawTerm) {
+        const matchesId = order.id.toLowerCase().includes(cleanIdTerm);
+        const matchesName = Boolean(order.customer_name && order.customer_name.toLowerCase().includes(rawTerm));
+        
+        const rawPhone = order.customer_phone || '';
+        const phoneDigits = rawPhone.replace(/\D/g, '');
+        const matchesPhone = Boolean(
+          (rawPhone && rawPhone.toLowerCase().includes(rawTerm)) ||
+          (digitsOnlyTerm.length > 2 && phoneDigits.includes(digitsOnlyTerm))
+        );
+
+        const matchesEmail = Boolean(order.customer_email && order.customer_email.toLowerCase().includes(rawTerm));
+        const matchesCourier = Boolean(order.courier_name && order.courier_name.toLowerCase().includes(rawTerm));
+        const matchesTracking = Boolean(order.tracking_id && order.tracking_id.toLowerCase().includes(cleanIdTerm));
+        const matchesAddress = Boolean(order.shipping_address && order.shipping_address.toLowerCase().includes(rawTerm));
+        const matchesItems = order.items.some(item =>
+          item.product_name && item.product_name.toLowerCase().includes(rawTerm)
+        );
+
+        matchesSearch = matchesId || matchesName || matchesPhone || matchesEmail || matchesCourier || matchesTracking || matchesAddress || matchesItems;
+      }
 
       const matchesStatus = selectedStatusFilter === 'ALL' || order.status.toLowerCase().trim() === selectedStatusFilter.toLowerCase().trim();
 
