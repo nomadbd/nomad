@@ -20,6 +20,7 @@ type MetricType = 'REVENUE' | 'ORDERS' | 'AOV';
 type GranularityType = 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY';
 
 const formatNumber = (num: number): string => {
+  if (typeof num !== 'number' || isNaN(num)) return '0';
   if (num >= 1_000_000) {
     return (num / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M';
   }
@@ -362,7 +363,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
   }, [rawOrdersData, granularity, startDate, endDate, dateFormat]);
 
   const calcPercent = (val: number) => {
-    if (!totalOrders || totalOrders <= 0) return 0;
+    if (!totalOrders || totalOrders <= 0 || typeof val !== 'number' || isNaN(val)) return 0;
     return Math.min(Math.max((val / totalOrders) * 100, 0), 100);
   };
 
@@ -370,12 +371,12 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
   const avgOrderValue = validOrderCount > 0 ? Math.round(totalRevenue / validOrderCount) : 0;
 
   const statusItems = [
-    { key: 'PENDING', label: 'PENDING', count: pendingOrders, color: '#f59e0b' },
-    { key: 'REC', label: 'REC', count: receivedOrders, color: '#38bdf8' },
-    { key: 'PROC', label: 'PROC', count: '#3b82f6' },
-    { key: 'SHIPPED', label: 'SHIPPED', count: shippedOrders, color: '#6366f1' },
-    { key: 'DELIVERED', label: 'DELIVERED', count: deliveredOrders, color: '#22c55e' },
-    { key: 'CANCELLED', label: 'CANCELLED', count: cancelledOrders, color: '#ef4444' },
+    { key: 'PENDING', label: 'PENDING', count: pendingOrders, color: '#FFB800' },
+    { key: 'REC', label: 'REC', count: receivedOrders, color: '#00E5FF' },
+    { key: 'PROC', label: 'PROC', count: processingOrders, color: '#E040FB' },
+    { key: 'SHIPPED', label: 'SHIPPED', count: shippedOrders, color: '#29B6F6' },
+    { key: 'DELIVERED', label: 'DELIVERED', count: deliveredOrders, color: '#00E676' },
+    { key: 'CANCELLED', label: 'CANCELLED', count: cancelledOrders, color: '#FF5252' },
   ];
 
   const getSmoothPath = (pts: { x: number; y: number }[]) => {
@@ -790,12 +791,12 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
         </span>
 
         <div style={{ display: 'flex', width: '100%', maxWidth: '100%', height: '4px', backgroundColor: '#181818', borderRadius: '2px', overflow: 'hidden', marginBottom: '12px' }}>
-          <div className="status-bar-segment" style={{ width: `${calcPercent(pendingOrders)}%`, backgroundColor: '#f59e0b', flexShrink: 0 }} />
-          <div className="status-bar-segment" style={{ width: `${calcPercent(receivedOrders)}%`, backgroundColor: '#38bdf8', flexShrink: 0 }} />
-          <div className="status-bar-segment" style={{ width: `${calcPercent(processingOrders)}%`, backgroundColor: '#3b82f6', flexShrink: 0 }} />
-          <div className="status-bar-segment" style={{ width: `${calcPercent(shippedOrders)}%`, backgroundColor: '#6366f1', flexShrink: 0 }} />
-          <div className="status-bar-segment" style={{ width: `${calcPercent(deliveredOrders)}%`, backgroundColor: '#22c55e', flexShrink: 0 }} />
-          <div className="status-bar-segment" style={{ width: `${calcPercent(cancelledOrders)}%`, backgroundColor: '#ef4444', flexShrink: 0 }} />
+          <div className="status-bar-segment" style={{ width: `${calcPercent(pendingOrders)}%`, backgroundColor: '#FFB800', flexShrink: 0 }} />
+          <div className="status-bar-segment" style={{ width: `${calcPercent(receivedOrders)}%`, backgroundColor: '#00E5FF', flexShrink: 0 }} />
+          <div className="status-bar-segment" style={{ width: `${calcPercent(processingOrders)}%`, backgroundColor: '#E040FB', flexShrink: 0 }} />
+          <div className="status-bar-segment" style={{ width: `${calcPercent(shippedOrders)}%`, backgroundColor: '#29B6F6', flexShrink: 0 }} />
+          <div className="status-bar-segment" style={{ width: `${calcPercent(deliveredOrders)}%`, backgroundColor: '#00E676', flexShrink: 0 }} />
+          <div className="status-bar-segment" style={{ width: `${calcPercent(cancelledOrders)}%`, backgroundColor: '#FF5252', flexShrink: 0 }} />
         </div>
 
         <div className="status-grid">
@@ -820,7 +821,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
             <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF', marginTop: '4px' }}>
               ৳{formatNumber(totalRevenue)}
               <span style={{ fontSize: '11px', marginLeft: '8px', fontWeight: 'normal' }}>
-                <span style={{ color: '#f87171' }}>৳{formatNumber(cancelledRevenue)} Cancelled</span>
+                <span style={{ color: '#FF5252' }}>৳{formatNumber(cancelledRevenue)} Cancelled</span>
               </span>
             </div>
           </div>
@@ -829,7 +830,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
             <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF', marginTop: '4px' }}>
               ৳{formatNumber(avgOrderValue)}
               <span style={{ fontSize: '11px', marginLeft: '8px', fontWeight: 'normal' }}>
-                <span style={{ color: '#4ade80' }}>{validOrderCount} Valid Orders</span>
+                <span style={{ color: '#00E676' }}>{validOrderCount} Valid Orders</span>
               </span>
             </div>
           </div>
@@ -842,9 +843,9 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
           <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF', marginTop: '4px' }}>
             {formatNumber(totalOrders)}
             <span style={{ fontSize: '11px', marginLeft: '8px', fontWeight: 'normal' }}>
-              <span style={{ color: '#4ade80' }}>{validOrderCount} Valid</span>
+              <span style={{ color: '#00E676' }}>{validOrderCount} Valid</span>
               <span style={{ color: '#666', margin: '0 4px' }}>/</span>
-              <span style={{ color: '#f87171' }}>{cancelledOrders} Cancelled</span>
+              <span style={{ color: '#FF5252' }}>{cancelledOrders} Cancelled</span>
             </span>
           </div>
         </div>
@@ -853,11 +854,11 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
           <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF', marginTop: '4px' }}>
             {formatNumber(pendingOrders + processingOrders)}
             <span style={{ fontSize: '11px', marginLeft: '8px', fontWeight: 'normal' }}>
-              <span style={{ color: '#facc15' }}>{pendingOrders} Pen</span>
+              <span style={{ color: '#FFB800' }}>{pendingOrders} Pen</span>
               <span style={{ color: '#666', margin: '0 4px' }}>/</span>
-              <span style={{ color: '#c084fc' }}>{processingOrders} Proc</span>
+              <span style={{ color: '#E040FB' }}>{processingOrders} Proc</span>
               <span style={{ color: '#666', margin: '0 4px' }}>/</span>
-              <span style={{ color: '#60a5fa' }}>{receivedOrders} Rec</span>
+              <span style={{ color: '#00E5FF' }}>{receivedOrders} Rec</span>
             </span>
           </div>
         </div>
@@ -869,9 +870,9 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
           <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF', marginTop: '4px' }}>
             {formatNumber(activeCatalogItems)}
             <span style={{ fontSize: '11px', marginLeft: '8px', fontWeight: 'normal' }}>
-              <span style={{ color: '#f87171' }}>{outOfStockItems} Out of stock</span>
+              <span style={{ color: '#FF5252' }}>{outOfStockItems} Out of stock</span>
               <span style={{ color: '#666', margin: '0 4px' }}>/</span>
-              <span style={{ color: '#facc15' }}>{lowStockItems} Low stock</span>
+              <span style={{ color: '#FFB800' }}>{lowStockItems} Low stock</span>
             </span>
           </div>
         </div>
@@ -880,7 +881,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
           <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF', marginTop: '4px' }}>
             {formatNumber(totalUsers)}
             <span style={{ fontSize: '11px', marginLeft: '8px', fontWeight: 'normal' }}>
-              <span style={{ color: '#4ade80' }}>+{newUsers} New in period</span>
+              <span style={{ color: '#00E676' }}>+{newUsers} New in period</span>
             </span>
           </div>
         </div>
