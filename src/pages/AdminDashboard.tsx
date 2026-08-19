@@ -212,6 +212,7 @@ const AdminDashboard: React.FC = () => {
             display: ${menuOpen ? 'block' : 'none'} !important;
             margin-top: 15px;
             padding-top: 12px;
+            padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)) !important;
             border-top: 1px solid #141414;
           }
 
@@ -238,7 +239,7 @@ const AdminDashboard: React.FC = () => {
             z-index: 100;
             border-bottom: none;
             border-right: 1px solid #1a1a1a;
-            padding: 20px 14px;
+            padding: 20px 14px calc(24px + env(safe-area-inset-bottom, 0px)) 14px !important;
             display: flex !important;
             flex-direction: column !important;
             justify-content: space-between !important;
