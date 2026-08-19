@@ -152,7 +152,8 @@ const AdminDashboard: React.FC = () => {
       fontFamily: 'monospace, sans-serif', 
       width: '100%',
       maxWidth: '100vw',
-      overflowX: 'clip'
+      overflowX: 'clip',
+      position: 'relative'
     }}>
       <style>{`
         *, *::before, *::after { 
@@ -161,11 +162,23 @@ const AdminDashboard: React.FC = () => {
           padding: 0; 
         }
         
-        html, body {
+        html {
           width: 100% !important;
           max-width: 100% !important;
-          overflow-x: clip !important;
+          overflow-x: hidden !important;
+          -webkit-text-size-adjust: 100% !important;
+          text-size-adjust: 100% !important;
           background-color: #030303;
+        }
+
+        body {
+          width: 100% !important;
+          max-width: 100% !important;
+          overflow-x: hidden !important;
+          overscroll-behavior-x: none;
+          touch-action: pan-y;
+          background-color: #030303;
+          position: relative;
         }
 
         @media screen and (max-width: 767px) {
@@ -173,34 +186,42 @@ const AdminDashboard: React.FC = () => {
             display: flex !important;
             flex-direction: column !important;
             width: 100% !important;
+            max-width: 100vw !important;
             min-height: 100dvh;
+            overflow-x: hidden !important;
           }
 
           .nomad-sidebar {
             width: 100% !important;
-            height: ${menuOpen ? '100dvh' : 'auto'} !important;
-            max-height: 100dvh !important;
+            max-width: 100vw !important;
+            height: ${menuOpen ? 'auto' : 'auto'} !important;
             position: fixed !important;
             top: 0;
             left: 0;
             right: 0;
+            bottom: ${menuOpen ? '0' : 'auto'};
             z-index: 1000;
             background-color: rgba(6, 6, 6, 0.98);
             backdrop-filter: blur(12px);
             border-bottom: 1px solid #141414;
             padding: 14px 16px;
+            padding-bottom: ${menuOpen ? 'calc(20px + env(safe-area-inset-bottom, 0px))' : '14px'};
             box-sizing: border-box;
             transform: ${isHeaderVisible ? 'translateY(0)' : 'translateY(-100%)'};
             transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            overflow-y: auto;
+            overflow-x: hidden !important;
+            overflow-y: ${menuOpen ? 'auto' : 'visible'};
             display: flex !important;
             flex-direction: column !important;
+            -webkit-overflow-scrolling: touch;
           }
 
           .nomad-sidebar > div:first-child {
             flex: 1 1 auto;
             overflow-y: auto;
+            overflow-x: hidden !important;
             min-height: 0;
+            max-width: 100%;
           }
 
           .nomad-menu-toggle {
@@ -214,24 +235,30 @@ const AdminDashboard: React.FC = () => {
             margin-top: 18px;
             padding-top: 16px;
             border-top: 1px solid #141414;
+            max-width: 100%;
           }
 
           .user-footer-block {
             display: ${menuOpen ? 'block' : 'none'} !important;
             margin-top: auto !important;
             padding-top: 12px;
-            padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)) !important;
+            padding-bottom: calc(28px + env(safe-area-inset-bottom, 12px)) !important;
             border-top: 1px solid #141414;
             flex-shrink: 0;
             background-color: rgba(6, 6, 6, 0.98);
             position: sticky;
             bottom: 0;
             z-index: 2;
+            max-width: 100%;
+            width: 100%;
           }
 
           .nomad-main {
             width: 100% !important;
+            max-width: 100vw !important;
             padding: 75px 12px 40px 12px !important;
+            overflow-x: hidden !important;
+            box-sizing: border-box;
           }
         }
 
@@ -240,10 +267,13 @@ const AdminDashboard: React.FC = () => {
             display: flex !important;
             min-height: 100dvh;
             width: 100%;
+            max-width: 100vw;
+            overflow-x: hidden !important;
           }
 
           .nomad-sidebar {
             width: 220px !important;
+            max-width: 220px !important;
             height: 100dvh !important;
             position: fixed !important;
             top: 0;
@@ -257,6 +287,7 @@ const AdminDashboard: React.FC = () => {
             flex-direction: column !important;
             justify-content: space-between !important;
             overflow-y: auto;
+            overflow-x: hidden !important;
             background-color: #060606;
           }
 
@@ -276,13 +307,17 @@ const AdminDashboard: React.FC = () => {
             margin-top: auto;
             padding-top: 16px;
             border-top: 1px solid #1a1a1a;
+            max-width: 100%;
           }
 
           .nomad-main {
             margin-left: 220px !important;
             width: calc(100% - 220px) !important;
+            max-width: calc(100vw - 220px) !important;
             padding: 24px 28px !important;
             min-height: 100dvh;
+            overflow-x: hidden !important;
+            box-sizing: border-box;
           }
         }
 
@@ -296,7 +331,7 @@ const AdminDashboard: React.FC = () => {
           flex: 1;
           background-color: #030303;
           box-sizing: border-box;
-          overflow-x: clip;
+          overflow-x: hidden !important;
         }
 
         .nav-btn {
@@ -316,6 +351,7 @@ const AdminDashboard: React.FC = () => {
           border-radius: 0 !important;
           transition: all 0.2s ease;
           width: 100%;
+          max-width: 100%;
         }
 
         .nav-btn.active {
@@ -371,30 +407,42 @@ const AdminDashboard: React.FC = () => {
           margin-top: 12px;
           padding-top: 10px;
           border-top: 1px solid #1f1f1f;
+          max-width: 100%;
         }
 
         .header-search-input {
           width: 100%;
+          max-width: 100%;
           background: #090909;
           border: 1px solid #222;
           color: #fff;
-          padding: 8px 12px;
+          padding: 10px 12px;
           font-family: monospace;
-          font-size: 11px;
+          font-size: 16px; /* Prevents auto-zoom on mobile focus */
           border-radius: 2px;
           outline: none;
           letter-spacing: 1px;
+          box-sizing: border-box;
         }
 
         .header-search-input:focus {
           border-color: #555;
+        }
+
+        /* Extra protection against horizontal scroll & residual zoom after desktop mode toggle */
+        .nomad-layout,
+        .nomad-sidebar,
+        .nomad-main,
+        .nomad-nav,
+        .user-footer-block {
+          max-width: 100% !important;
         }
       `}</style>
 
       <div className="nomad-layout">
         <aside className="nomad-sidebar">
           <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: '100%' }}>
               <a href="/" className="nomad-brand-link" title="Go to Store Homepage">
                 <h1 style={{ fontSize: '18px', fontWeight: '900', letterSpacing: '4px', margin: 0, color: '#fff' }}>
                   NOMAD
@@ -508,6 +556,9 @@ const AdminDashboard: React.FC = () => {
                 borderRadius: '2px',
                 cursor: 'pointer',
                 transition: 'border-color 0.2s ease',
+                maxWidth: '100%',
+                width: '100%',
+                boxSizing: 'border-box'
               }}
               title="Click to view Staff Profile & Options"
             >
