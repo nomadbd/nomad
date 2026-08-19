@@ -151,8 +151,8 @@ const AdminDashboard: React.FC = () => {
       minHeight: '100dvh', 
       fontFamily: 'monospace, sans-serif', 
       width: '100%',
-      maxWidth: '100vw',
-      overflowX: 'clip',
+      maxWidth: '100%',
+      overflowX: 'hidden',
       position: 'relative'
     }}>
       <style>{`
@@ -181,20 +181,20 @@ const AdminDashboard: React.FC = () => {
           position: relative;
         }
 
+        /* ========== MOBILE ========== */
         @media screen and (max-width: 767px) {
           .nomad-layout {
             display: flex !important;
             flex-direction: column !important;
             width: 100% !important;
-            max-width: 100vw !important;
+            max-width: 100% !important;
             min-height: 100dvh;
             overflow-x: hidden !important;
           }
 
           .nomad-sidebar {
             width: 100% !important;
-            max-width: 100vw !important;
-            height: ${menuOpen ? 'auto' : 'auto'} !important;
+            max-width: 100% !important;
             position: fixed !important;
             top: 0;
             left: 0;
@@ -205,7 +205,7 @@ const AdminDashboard: React.FC = () => {
             backdrop-filter: blur(12px);
             border-bottom: 1px solid #141414;
             padding: 14px 16px;
-            padding-bottom: ${menuOpen ? 'calc(20px + env(safe-area-inset-bottom, 0px))' : '14px'};
+            padding-bottom: ${menuOpen ? 'calc(24px + env(safe-area-inset-bottom, 0px))' : '14px'};
             box-sizing: border-box;
             transform: ${isHeaderVisible ? 'translateY(0)' : 'translateY(-100%)'};
             transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
@@ -242,37 +242,39 @@ const AdminDashboard: React.FC = () => {
             display: ${menuOpen ? 'block' : 'none'} !important;
             margin-top: auto !important;
             padding-top: 12px;
-            padding-bottom: calc(28px + env(safe-area-inset-bottom, 12px)) !important;
+            padding-bottom: calc(32px + env(safe-area-inset-bottom, 16px)) !important;
             border-top: 1px solid #141414;
             flex-shrink: 0;
             background-color: rgba(6, 6, 6, 0.98);
             position: sticky;
             bottom: 0;
             z-index: 2;
-            max-width: 100%;
             width: 100%;
+            max-width: 100%;
           }
 
           .nomad-main {
             width: 100% !important;
-            max-width: 100vw !important;
+            max-width: 100% !important;
             padding: 75px 12px 40px 12px !important;
             overflow-x: hidden !important;
             box-sizing: border-box;
           }
         }
 
+        /* ========== DESKTOP (Desktop Mode সহ) ========== */
         @media screen and (min-width: 768px) {
           .nomad-layout {
             display: flex !important;
             min-height: 100dvh;
             width: 100%;
-            max-width: 100vw;
+            max-width: 100%;
             overflow-x: hidden !important;
           }
 
           .nomad-sidebar {
             width: 220px !important;
+            min-width: 220px !important;
             max-width: 220px !important;
             height: 100dvh !important;
             position: fixed !important;
@@ -280,7 +282,6 @@ const AdminDashboard: React.FC = () => {
             left: 0;
             bottom: 0;
             z-index: 100;
-            border-bottom: none;
             border-right: 1px solid #1a1a1a;
             padding: 20px 14px calc(24px + env(safe-area-inset-bottom, 0px)) 14px !important;
             display: flex !important;
@@ -307,13 +308,15 @@ const AdminDashboard: React.FC = () => {
             margin-top: auto;
             padding-top: 16px;
             border-top: 1px solid #1a1a1a;
+            width: 100%;
             max-width: 100%;
           }
 
           .nomad-main {
             margin-left: 220px !important;
-            width: calc(100% - 220px) !important;
-            max-width: calc(100vw - 220px) !important;
+            width: auto !important;               /* calc + 100vw সরানো হয়েছে */
+            flex: 1 1 auto !important;
+            max-width: none !important;
             padding: 24px 28px !important;
             min-height: 100dvh;
             overflow-x: hidden !important;
@@ -418,7 +421,7 @@ const AdminDashboard: React.FC = () => {
           color: #fff;
           padding: 10px 12px;
           font-family: monospace;
-          font-size: 16px; /* Prevents auto-zoom on mobile focus */
+          font-size: 16px;
           border-radius: 2px;
           outline: none;
           letter-spacing: 1px;
@@ -429,7 +432,6 @@ const AdminDashboard: React.FC = () => {
           border-color: #555;
         }
 
-        /* Extra protection against horizontal scroll & residual zoom after desktop mode toggle */
         .nomad-layout,
         .nomad-sidebar,
         .nomad-main,
