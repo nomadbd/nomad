@@ -489,9 +489,9 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
             );
           })}
 
-          {areaD && <path d={areaD} fill="url(#chartGradient)" />}
+          {areaD && <path d={areaD} fill="url(#chartGradient)" style={{ transition: 'd 0.8s cubic-bezier(0.16, 1, 0.3, 1)' }} />}
           {smoothPathD && (
-            <path d={smoothPathD} fill="none" stroke="#22d3ee" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            <path d={smoothPathD} fill="none" stroke="#22d3ee" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transition: 'd 0.8s cubic-bezier(0.16, 1, 0.3, 1)' }} />
           )}
 
           {points.map((p, i) => {
@@ -504,7 +504,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
                   cx={p.x} cy={p.y} r={isHovered ? '5' : p.val > 0 ? '2.5' : '1.5'}
                   fill={isHovered ? '#22d3ee' : p.val > 0 ? '#22d3ee' : '#111'}
                   stroke="#22d3ee" strokeWidth={isHovered ? '2.5' : '1'}
-                  style={{ transition: 'all 0.15s ease' }}
+                  style={{ transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)' }}
                 />
 
                 <rect
@@ -547,7 +547,8 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
               pointerEvents: 'none',
               zIndex: 30, 
               minWidth: '140px',
-              backdropFilter: 'blur(8px)'
+              backdropFilter: 'blur(8px)',
+              transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
             }}
           >
             <div style={{ fontSize: '10px', color: '#888', fontWeight: 'bold', marginBottom: '4px', letterSpacing: '0.5px' }}>
@@ -579,6 +580,25 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
     }}>
       <style>{`
         * { box-sizing: border-box; }
+
+        @keyframes fadeInUp {
+          0% {
+            opacity: 0;
+            transform: translateY(18px);
+          }
+          100% {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .animate-card {
+          animation: fadeInUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .status-bar-segment {
+          transition: width 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
 
         .filter-expand-wrapper {
           display: grid;
@@ -698,6 +718,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
           border-radius: 2px;
           width: 100%;
           overflow: hidden;
+          transition: border-color 0.3s ease;
         }
 
         .status-grid {
@@ -791,18 +812,18 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
         </div>
       </div>
 
-      <div style={{ backgroundColor: '#080808', border: '1px solid #222', padding: '14px', borderRadius: '2px', width: '100%', maxWidth: '100%', overflow: 'hidden' }}>
+      <div className="animate-card" style={{ backgroundColor: '#080808', border: '1px solid #222', padding: '14px', borderRadius: '2px', width: '100%', maxWidth: '100%', overflow: 'hidden', animationDelay: '0.05s' }}>
         <span style={{ fontSize: '14px', color: '#CBD5E0', letterSpacing: '1px', fontWeight: 'bold', display: 'block', marginBottom: '10px' }}>
           FULFILLMENT STATUS
         </span>
 
         <div style={{ display: 'flex', width: '100%', maxWidth: '100%', height: '4px', backgroundColor: '#181818', borderRadius: '2px', overflow: 'hidden', marginBottom: '12px' }}>
-          <div style={{ width: `${calcPercent(pendingOrders)}%`, backgroundColor: '#facc15', flexShrink: 0 }} />
-          <div style={{ width: `${calcPercent(processingOrders)}%`, backgroundColor: '#c084fc', flexShrink: 0 }} />
-          <div style={{ width: `${calcPercent(receivedOrders)}%`, backgroundColor: '#60a5fa', flexShrink: 0 }} />
-          <div style={{ width: `${calcPercent(shippedOrders)}%`, backgroundColor: '#22d3ee', flexShrink: 0 }} />
-          <div style={{ width: `${calcPercent(deliveredOrders)}%`, backgroundColor: '#4ade80', flexShrink: 0 }} />
-          <div style={{ width: `${calcPercent(cancelledOrders)}%`, backgroundColor: '#f87171', flexShrink: 0 }} />
+          <div className="status-bar-segment" style={{ width: `${calcPercent(pendingOrders)}%`, backgroundColor: '#facc15', flexShrink: 0 }} />
+          <div className="status-bar-segment" style={{ width: `${calcPercent(processingOrders)}%`, backgroundColor: '#c084fc', flexShrink: 0 }} />
+          <div className="status-bar-segment" style={{ width: `${calcPercent(receivedOrders)}%`, backgroundColor: '#60a5fa', flexShrink: 0 }} />
+          <div className="status-bar-segment" style={{ width: `${calcPercent(shippedOrders)}%`, backgroundColor: '#22d3ee', flexShrink: 0 }} />
+          <div className="status-bar-segment" style={{ width: `${calcPercent(deliveredOrders)}%`, backgroundColor: '#4ade80', flexShrink: 0 }} />
+          <div className="status-bar-segment" style={{ width: `${calcPercent(cancelledOrders)}%`, backgroundColor: '#f87171', flexShrink: 0 }} />
         </div>
 
         <div className="status-grid">
@@ -822,7 +843,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
 
       {canViewSensitiveData && (
         <div className="two-column-grid">
-          <div className="metric-card">
+          <div className="metric-card animate-card" style={{ animationDelay: '0.15s' }}>
             <span style={{ fontSize: '12px', color: '#A0AEC0' }}>TOTAL REVENUE</span>
             <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF', marginTop: '4px' }}>
               ৳{formatNumber(totalRevenue)}
@@ -831,7 +852,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
               </span>
             </div>
           </div>
-          <div className="metric-card">
+          <div className="metric-card animate-card" style={{ animationDelay: '0.2s' }}>
             <span style={{ fontSize: '12px', color: '#A0AEC0' }}>AVG ORDER VALUE</span>
             <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF', marginTop: '4px' }}>
               ৳{formatNumber(avgOrderValue)}
@@ -844,7 +865,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
       )}
 
       <div className="two-column-grid">
-        <div className="metric-card">
+        <div className="metric-card animate-card" style={{ animationDelay: '0.25s' }}>
           <span style={{ fontSize: '12px', color: '#A0AEC0' }}>TOTAL ORDERS</span>
           <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF', marginTop: '4px' }}>
             {formatNumber(totalOrders)}
@@ -855,7 +876,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
             </span>
           </div>
         </div>
-        <div className="metric-card">
+        <div className="metric-card animate-card" style={{ animationDelay: '0.3s' }}>
           <span style={{ fontSize: '12px', color: '#A0AEC0' }}>ACTIVE QUEUE</span>
           <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF', marginTop: '4px' }}>
             {formatNumber(pendingOrders + processingOrders)}
@@ -871,7 +892,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
       </div>
 
       <div className="two-column-grid">
-        <div className="metric-card">
+        <div className="metric-card animate-card" style={{ animationDelay: '0.35s' }}>
           <span style={{ fontSize: '12px', color: '#A0AEC0' }}>CATALOG ITEMS</span>
           <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF', marginTop: '4px' }}>
             {formatNumber(activeCatalogItems)}
@@ -882,7 +903,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
             </span>
           </div>
         </div>
-        <div className="metric-card">
+        <div className="metric-card animate-card" style={{ animationDelay: '0.4s' }}>
           <span style={{ fontSize: '12px', color: '#A0AEC0' }}>TOTAL USERS</span>
           <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF', marginTop: '4px' }}>
             {formatNumber(totalUsers)}
@@ -894,7 +915,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
       </div>
 
       {canViewSensitiveData && (
-        <div style={{ backgroundColor: '#080808', border: '1px solid #222', padding: '18px 16px', borderRadius: '2px', marginTop: '10px', position: 'relative', width: '100%', maxWidth: '100%', overflow: 'hidden' }}>
+        <div className="animate-card" style={{ backgroundColor: '#080808', border: '1px solid #222', padding: '18px 16px', borderRadius: '2px', marginTop: '10px', position: 'relative', width: '100%', maxWidth: '100%', overflow: 'hidden', animationDelay: '0.45s' }}>
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginBottom: '14px' }}>
             <span style={{ fontSize: '13px', color: '#CBD5E0', fontWeight: 'bold', letterSpacing: '1px' }}>
