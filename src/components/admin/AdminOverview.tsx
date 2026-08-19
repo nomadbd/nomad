@@ -371,8 +371,8 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
 
   const statusItems = [
     { key: 'PENDING', label: 'PENDING', count: pendingOrders, color: '#facc15' },
-    { key: 'PROC', label: 'PROC', count: processingOrders, color: '#c084fc' },
     { key: 'REC', label: 'REC', count: receivedOrders, color: '#60a5fa' },
+    { key: 'PROC', label: 'PROC', count: processingOrders, color: '#c084fc' },
     { key: 'SHIPPED', label: 'SHIPPED', count: shippedOrders, color: '#22d3ee' },
     { key: 'DELIVERED', label: 'DELIVERED', count: deliveredOrders, color: '#4ade80' },
     { key: 'CANCELLED', label: 'CANCELLED', count: cancelledOrders, color: '#f87171' },
@@ -791,8 +791,8 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
 
         <div style={{ display: 'flex', width: '100%', maxWidth: '100%', height: '4px', backgroundColor: '#181818', borderRadius: '2px', overflow: 'hidden', marginBottom: '12px' }}>
           <div className="status-bar-segment" style={{ width: `${calcPercent(pendingOrders)}%`, backgroundColor: '#facc15', flexShrink: 0 }} />
-          <div className="status-bar-segment" style={{ width: `${calcPercent(processingOrders)}%`, backgroundColor: '#c084fc', flexShrink: 0 }} />
           <div className="status-bar-segment" style={{ width: `${calcPercent(receivedOrders)}%`, backgroundColor: '#60a5fa', flexShrink: 0 }} />
+          <div className="status-bar-segment" style={{ width: `${calcPercent(processingOrders)}%`, backgroundColor: '#c084fc', flexShrink: 0 }} />
           <div className="status-bar-segment" style={{ width: `${calcPercent(shippedOrders)}%`, backgroundColor: '#22d3ee', flexShrink: 0 }} />
           <div className="status-bar-segment" style={{ width: `${calcPercent(deliveredOrders)}%`, backgroundColor: '#4ade80', flexShrink: 0 }} />
           <div className="status-bar-segment" style={{ width: `${calcPercent(cancelledOrders)}%`, backgroundColor: '#f87171', flexShrink: 0 }} />
