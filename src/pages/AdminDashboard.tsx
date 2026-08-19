@@ -181,7 +181,6 @@ const AdminDashboard: React.FC = () => {
           position: relative;
         }
 
-        /* ========== MOBILE ========== */
         @media screen and (max-width: 767px) {
           .nomad-layout {
             display: flex !important;
@@ -262,7 +261,6 @@ const AdminDashboard: React.FC = () => {
           }
         }
 
-        /* ========== DESKTOP (Desktop Mode সহ) ========== */
         @media screen and (min-width: 768px) {
           .nomad-layout {
             display: flex !important;
@@ -314,7 +312,7 @@ const AdminDashboard: React.FC = () => {
 
           .nomad-main {
             margin-left: 220px !important;
-            width: auto !important;               /* calc + 100vw সরানো হয়েছে */
+            width: auto !important;
             flex: 1 1 auto !important;
             max-width: none !important;
             padding: 24px 28px !important;
