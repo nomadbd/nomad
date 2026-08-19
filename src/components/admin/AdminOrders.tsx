@@ -68,6 +68,13 @@ interface Order {
   items: OrderItem[];
 }
 
+interface AdminOrdersProps {
+  isSearchOpen?: boolean;
+  isFilterOpen?: boolean;
+  onToggleSearch?: () => void;
+  onToggleFilter?: () => void;
+}
+
 const STATUS_OPTIONS = [
   'Pending',
   'Received',
@@ -614,13 +621,24 @@ const OrderCard: React.FC<OrderCardProps> = ({
   );
 };
 
-const AdminOrders: React.FC = () => {
+const AdminOrders: React.FC<AdminOrdersProps> = ({
+  isSearchOpen: propSearchOpen,
+  isFilterOpen: propFilterOpen,
+  onToggleSearch,
+  onToggleFilter
+}) => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<string>('ALL');
   const [selectedPaymentStatusFilter, setSelectedPaymentStatusFilter] = useState<string>('ALL');
   const [selectedDateFilter, setSelectedDateFilter] = useState<string>('ALL TIME');
+
+  const [internalSearchOpen, setInternalSearchOpen] = useState<boolean>(false);
+  const [internalFilterOpen, setInternalFilterOpen] = useState<boolean>(false);
+
+  const searchOpen = propSearchOpen !== undefined ? propSearchOpen : internalSearchOpen;
+  const filterOpen = propFilterOpen !== undefined ? propFilterOpen : internalFilterOpen;
 
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
 
@@ -633,6 +651,32 @@ const AdminOrders: React.FC = () => {
   const [sentIndexes, setSentIndexes] = useState<{ [key: string]: boolean }>({});
 
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  useEffect(() => {
+    const handleGlobalSearchToggle = () => {
+      if (onToggleSearch) {
+        onToggleSearch();
+      } else {
+        setInternalSearchOpen(prev => !prev);
+      }
+    };
+
+    const handleGlobalFilterToggle = () => {
+      if (onToggleFilter) {
+        onToggleFilter();
+      } else {
+        setInternalFilterOpen(prev => !prev);
+      }
+    };
+
+    window.addEventListener('admin-toggle-search', handleGlobalSearchToggle);
+    window.addEventListener('admin-toggle-filter', handleGlobalFilterToggle);
+
+    return () => {
+      window.removeEventListener('admin-toggle-search', handleGlobalSearchToggle);
+      window.removeEventListener('admin-toggle-filter', handleGlobalFilterToggle);
+    };
+  }, [onToggleSearch, onToggleFilter]);
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
     setToast({ message, type });
@@ -1295,14 +1339,13 @@ const AdminOrders: React.FC = () => {
                       setSelectedPresetKey(key);
                     }}
                     style={{
-                      backgroundColor: isPresetActive ? '#ffffff' : '#222222',
-                      color: isPresetActive ? '#000000' : '#ccc',
+                      backgroundColor: 'transparent',
+                      color: isPresetActive ? '#ffffff' : '#666666',
                       border: 'none',
-                      padding: '6px 12px',
+                      padding: '6px 10px',
                       fontSize: '9.5px',
-                      fontWeight: 'bold',
-                      cursor: 'pointer',
-                      borderRadius: '2px'
+                      fontWeight: isPresetActive ? 'bold' : 'normal',
+                      cursor: 'pointer'
                     }}
                   >
                     {key.toUpperCase()}
@@ -1445,23 +1488,14 @@ const AdminOrders: React.FC = () => {
         </div>
       )}
 
-      <div style={{
-        backgroundColor: '#0a0a0a',
-        border: '1px solid #222',
-        padding: '16px',
-        borderRadius: '2px',
-        width: '100%',
-        boxSizing: 'border-box',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '12px'
-      }}>
-        <div>
+      {searchOpen && (
+        <div className="animate-fade-in">
           <input
             type="text"
             placeholder="SEARCH BY ID, NAME, PHONE, EMAIL, ITEM OR TRACKING..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
+            autoFocus
             style={{
               width: '100%',
               backgroundColor: '#000',
@@ -1477,109 +1511,123 @@ const AdminOrders: React.FC = () => {
             }}
           />
         </div>
+      )}
 
-        <div>
-          <label style={{ display: 'block', fontSize: '9px', color: '#888', marginBottom: '6px', letterSpacing: '1px' }}>DATE RANGE</label>
-          <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '4px', width: '100%' }}>
-            {DATE_FILTERS.map((dateFilter) => {
-              const isActive = selectedDateFilter === dateFilter;
-              return (
-                <button
-                  type="button"
-                  key={dateFilter}
-                  className="smooth-transition"
-                  onClick={() => setSelectedDateFilter(dateFilter)}
-                  style={{
-                    backgroundColor: isActive ? '#ffffff' : '#222222',
-                    color: isActive ? '#000000' : '#ccc',
-                    border: 'none',
-                    padding: '8px 14px',
-                    fontSize: '10px',
-                    fontFamily: 'monospace',
-                    letterSpacing: '1px',
-                    fontWeight: 'bold',
-                    cursor: 'pointer',
-                    textTransform: 'uppercase',
-                    whiteSpace: 'nowrap',
-                    flexShrink: 0,
-                    borderRadius: '2px'
-                  }}
-                >
-                  {dateFilter}
-                </button>
-              );
-            })}
+      {filterOpen && (
+        <div
+          className="animate-fade-in"
+          style={{
+            backgroundColor: '#050505',
+            border: '1px solid #222',
+            padding: '16px',
+            borderRadius: '2px',
+            width: '100%',
+            boxSizing: 'border-box',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '14px'
+          }}
+        >
+          <div>
+            <label style={{ display: 'block', fontSize: '9px', color: '#666', marginBottom: '6px', letterSpacing: '1px' }}>DATE RANGE</label>
+            <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '2px', width: '100%' }}>
+              {DATE_FILTERS.map((dateFilter) => {
+                const isActive = selectedDateFilter === dateFilter;
+                return (
+                  <button
+                    type="button"
+                    key={dateFilter}
+                    className="smooth-transition"
+                    onClick={() => setSelectedDateFilter(dateFilter)}
+                    style={{
+                      backgroundColor: 'transparent',
+                      color: isActive ? '#ffffff' : '#666666',
+                      border: 'none',
+                      padding: '4px 0px',
+                      fontSize: '10px',
+                      fontFamily: 'monospace',
+                      letterSpacing: '1px',
+                      fontWeight: isActive ? 'bold' : 'normal',
+                      cursor: 'pointer',
+                      textTransform: 'uppercase',
+                      whiteSpace: 'nowrap',
+                      flexShrink: 0
+                    }}
+                  >
+                    {dateFilter}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontSize: '9px', color: '#666', marginBottom: '6px', letterSpacing: '1px' }}>ORDER STATUS</label>
+            <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '2px', width: '100%' }}>
+              {['ALL', ...STATUS_OPTIONS].map((status) => {
+                const isActive = selectedStatusFilter === status;
+                return (
+                  <button
+                    type="button"
+                    key={status}
+                    className="smooth-transition"
+                    onClick={() => setSelectedStatusFilter(status)}
+                    style={{
+                      backgroundColor: 'transparent',
+                      color: isActive ? '#ffffff' : '#666666',
+                      border: 'none',
+                      padding: '4px 0px',
+                      fontSize: '10px',
+                      fontFamily: 'monospace',
+                      letterSpacing: '1px',
+                      fontWeight: isActive ? 'bold' : 'normal',
+                      cursor: 'pointer',
+                      textTransform: 'uppercase',
+                      whiteSpace: 'nowrap',
+                      flexShrink: 0
+                    }}
+                  >
+                    {status}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontSize: '9px', color: '#666', marginBottom: '6px', letterSpacing: '1px' }}>PAYMENT STATUS</label>
+            <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '2px', width: '100%' }}>
+              {PAYMENT_STATUS_OPTIONS.map((pStatus) => {
+                const isActive = selectedPaymentStatusFilter === pStatus;
+                return (
+                  <button
+                    type="button"
+                    key={pStatus}
+                    className="smooth-transition"
+                    onClick={() => setSelectedPaymentStatusFilter(pStatus)}
+                    style={{
+                      backgroundColor: 'transparent',
+                      color: isActive ? '#ffffff' : '#666666',
+                      border: 'none',
+                      padding: '4px 0px',
+                      fontSize: '10px',
+                      fontFamily: 'monospace',
+                      letterSpacing: '1px',
+                      fontWeight: isActive ? 'bold' : 'normal',
+                      cursor: 'pointer',
+                      textTransform: 'uppercase',
+                      whiteSpace: 'nowrap',
+                      flexShrink: 0
+                    }}
+                  >
+                    {pStatus}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
-
-        <div>
-          <label style={{ display: 'block', fontSize: '9px', color: '#888', marginBottom: '6px', letterSpacing: '1px' }}>ORDER STATUS</label>
-          <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '4px', width: '100%' }}>
-            {['ALL', ...STATUS_OPTIONS].map((status) => {
-              const isActive = selectedStatusFilter === status;
-              return (
-                <button
-                  type="button"
-                  key={status}
-                  className="smooth-transition"
-                  onClick={() => setSelectedStatusFilter(status)}
-                  style={{
-                    backgroundColor: isActive ? '#ffffff' : '#222222',
-                    color: isActive ? '#000000' : '#ccc',
-                    border: 'none',
-                    padding: '8px 14px',
-                    fontSize: '10px',
-                    fontFamily: 'monospace',
-                    letterSpacing: '1px',
-                    fontWeight: 'bold',
-                    cursor: 'pointer',
-                    textTransform: 'uppercase',
-                    whiteSpace: 'nowrap',
-                    flexShrink: 0,
-                    borderRadius: '2px'
-                  }}
-                >
-                  {status}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        <div>
-          <label style={{ display: 'block', fontSize: '9px', color: '#888', marginBottom: '6px', letterSpacing: '1px' }}>PAYMENT STATUS</label>
-          <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '4px', width: '100%' }}>
-            {PAYMENT_STATUS_OPTIONS.map((pStatus) => {
-              const isActive = selectedPaymentStatusFilter === pStatus;
-              return (
-                <button
-                  type="button"
-                  key={pStatus}
-                  className="smooth-transition"
-                  onClick={() => setSelectedPaymentStatusFilter(pStatus)}
-                  style={{
-                    backgroundColor: isActive ? '#ffffff' : '#222222',
-                    color: isActive ? '#000000' : '#ccc',
-                    border: 'none',
-                    padding: '8px 14px',
-                    fontSize: '10px',
-                    fontFamily: 'monospace',
-                    letterSpacing: '1px',
-                    fontWeight: 'bold',
-                    cursor: 'pointer',
-                    textTransform: 'uppercase',
-                    whiteSpace: 'nowrap',
-                    flexShrink: 0,
-                    borderRadius: '2px'
-                  }}
-                >
-                  {pStatus}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
+      )}
 
       <div
         className="smooth-transition"
