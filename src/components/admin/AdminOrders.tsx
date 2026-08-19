@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../../supabaseClient';
+import './admin-animations.css';
 
 interface SupabaseProductMedia {
   media_url: string;
@@ -283,6 +284,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
 
   return (
     <div
+      className="animate-table-row table-row-hover"
       style={{
         backgroundColor: '#050505',
         border: isSelected ? '1px solid #fff' : '1px solid #222',
@@ -349,7 +351,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
         </div>
 
         {isExpanded && (
-          <div style={{ paddingTop: '4px', paddingBottom: '4px', borderTop: '1px solid #1a1a1a', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div className="animate-fade-in" style={{ paddingTop: '4px', paddingBottom: '4px', borderTop: '1px solid #1a1a1a', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '20px' }}>
             <div>
               <h4 style={{ color: '#888', fontSize: '10px', letterSpacing: '1px', marginBottom: '10px', marginTop: '10px', fontWeight: 'bold' }}>ORDERED ITEMS</h4>
               {order.items.length > 0 ? order.items.map((item, idx) => (
@@ -553,6 +555,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
 
         <div style={{ display: 'flex', gap: '4px', flexWrap: 'nowrap', width: '100%' }}>
           <select
+            className="animate-status-change"
             value={order.status}
             disabled={isUpdating}
             onChange={handleStatusSelect}
@@ -1290,7 +1293,7 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
 
   if (isBulkViewOpen) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%', maxWidth: '100%', position: 'relative', minHeight: '80vh', backgroundColor: '#050505', padding: '0px', boxSizing: 'border-box', borderRadius: '0px', border: 'none' }}>
+      <div className="animate-drawer" style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%', maxWidth: '100%', position: 'relative', minHeight: '80vh', backgroundColor: '#050505', padding: '0px', boxSizing: 'border-box', borderRadius: '0px', border: 'none' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #222', paddingBottom: '16px' }}>
           <div>
             <h3 style={{ margin: 0, fontSize: '15px', color: '#fff', letterSpacing: '1px', fontWeight: 'bold' }}>
@@ -1456,6 +1459,7 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
 
       {toast && (
         <div
+          className="animate-pop"
           style={{
             position: 'fixed',
             bottom: '30px',
@@ -1484,7 +1488,8 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
           maxHeight: searchOpen ? '100px' : '0px',
           opacity: searchOpen ? 1 : 0,
           overflow: 'hidden',
-          visibility: searchOpen ? 'visible' : 'hidden'
+          visibility: searchOpen ? 'visible' : 'hidden',
+          transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
         }}
       >
         <input
@@ -1508,18 +1513,8 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
         />
       </div>
 
-      <div
-        style={{
-          maxHeight: filterOpen ? '1000px' : '0px',
-          opacity: filterOpen ? 1 : 0,
-          overflow: 'hidden',
-          visibility: filterOpen ? 'visible' : 'hidden',
-          pointerEvents: filterOpen ? 'auto' : 'none',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '14px'
-        }}
-      >
+      <div className={`filter-expand-wrapper ${filterOpen ? 'open' : ''}`}>
+        <div className="filter-expand-content">
         <div
           style={{
             backgroundColor: '#050505',
@@ -1640,7 +1635,8 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
             backgroundColor: selectedOrderIds.length > 0 ? '#111' : '#0a0a0a',
             border: '1px solid #222',
             padding: '12px 16px',
-            borderRadius: '2px'
+            borderRadius: '2px',
+            marginTop: '14px'
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -1756,6 +1752,7 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
             </div>
           )}
         </div>
+        </div>
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', color: '#888' }}>
@@ -1770,11 +1767,11 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
       </div>
 
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '60px 0', color: '#888', fontSize: '11px' }}>
+        <div className="animate-shimmer" style={{ textAlign: 'center', padding: '60px 0', color: '#888', fontSize: '11px', borderRadius: '4px' }}>
           FETCHING ORDER MEMORANDUMS...
         </div>
       ) : filteredOrders.length === 0 ? (
-        <div style={{ backgroundColor: '#0a0a0a', border: '1px solid #222', padding: '50px 20px', textAlign: 'center', color: '#888' }}>
+        <div className="animate-fade-in" style={{ backgroundColor: '#0a0a0a', border: '1px solid #222', padding: '50px 20px', textAlign: 'center', color: '#888' }}>
           NO MATCHING ORDERS FOUND
         </div>
       ) : (
