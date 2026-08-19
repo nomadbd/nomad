@@ -1,4 +1,4 @@
-Import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient'; 
 
 import AdminOverview from '../components/admin/AdminOverview';
@@ -148,11 +148,11 @@ const AdminDashboard: React.FC = () => {
     <div style={{ 
       backgroundColor: '#030303', 
       color: '#fff', 
-      minHeight: '100vh',
+      minHeight: '100dvh', 
+      fontFamily: 'monospace, sans-serif', 
       width: '100%',
       maxWidth: '100vw',
-      overflowX: 'hidden',
-      fontFamily: 'monospace, sans-serif'
+      overflowX: 'clip'
     }}>
       <style>{`
         *, *::before, *::after { 
@@ -163,22 +163,17 @@ const AdminDashboard: React.FC = () => {
         
         html, body {
           width: 100% !important;
-          max-width: 100vw !important;
-          overflow-x: hidden !important;
+          max-width: 100% !important;
+          overflow-x: clip !important;
           background-color: #030303;
-        }
-
-        .nomad-layout {
-          display: flex !important;
-          width: 100% !important;
-          max-width: 100vw !important;
-          min-height: 100vh;
-          overflow-x: hidden !important;
         }
 
         @media screen and (max-width: 767px) {
           .nomad-layout {
+            display: flex !important;
             flex-direction: column !important;
+            width: 100% !important;
+            min-height: 100dvh;
           }
 
           .nomad-sidebar {
@@ -225,7 +220,7 @@ const AdminDashboard: React.FC = () => {
             display: ${menuOpen ? 'block' : 'none'} !important;
             margin-top: auto !important;
             padding-top: 12px;
-            padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px)) !important;
+            padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)) !important;
             border-top: 1px solid #141414;
             flex-shrink: 0;
             background-color: rgba(6, 6, 6, 0.98);
@@ -236,15 +231,19 @@ const AdminDashboard: React.FC = () => {
 
           .nomad-main {
             width: 100% !important;
-            max-width: 100vw !important;
             padding: 75px 12px 40px 12px !important;
           }
         }
 
         @media screen and (min-width: 768px) {
+          .nomad-layout {
+            display: flex !important;
+            min-height: 100dvh;
+            width: 100%;
+          }
+
           .nomad-sidebar {
             width: 220px !important;
-            height: 100vh !important;
             height: 100dvh !important;
             position: fixed !important;
             top: 0;
@@ -253,7 +252,7 @@ const AdminDashboard: React.FC = () => {
             z-index: 100;
             border-bottom: none;
             border-right: 1px solid #1a1a1a;
-            padding: 20px 14px 16px 14px !important;
+            padding: 20px 14px calc(24px + env(safe-area-inset-bottom, 0px)) 14px !important;
             display: flex !important;
             flex-direction: column !important;
             justify-content: space-between !important;
@@ -274,20 +273,16 @@ const AdminDashboard: React.FC = () => {
 
           .user-footer-block {
             display: block !important;
-            margin-top: auto !important;
-            padding-top: 14px;
-            padding-bottom: 8px;
+            margin-top: auto;
+            padding-top: 16px;
             border-top: 1px solid #1a1a1a;
-            flex-shrink: 0;
           }
 
           .nomad-main {
             margin-left: 220px !important;
             width: calc(100% - 220px) !important;
-            max-width: calc(100% - 220px) !important;
             padding: 24px 28px !important;
-            min-height: 100vh;
-            min-width: 0 !important;
+            min-height: 100dvh;
           }
         }
 
@@ -301,7 +296,7 @@ const AdminDashboard: React.FC = () => {
           flex: 1;
           background-color: #030303;
           box-sizing: border-box;
-          overflow-x: hidden !important;
+          overflow-x: clip;
         }
 
         .nav-btn {
@@ -575,5 +570,3 @@ const AdminDashboard: React.FC = () => {
 };
 
 export default AdminDashboard;
-
-
