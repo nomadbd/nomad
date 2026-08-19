@@ -28,6 +28,14 @@ const formatNumber = (num: number): string => {
   return num.toLocaleString();
 };
 
+const SkeletonBlock: React.FC<{ width?: string; height?: string; style?: React.CSSProperties }> = ({ 
+  width = '100%', 
+  height = '20px', 
+  style = {} 
+}) => (
+  <div className="skeleton" style={{ width, height, ...style }} />
+);
+
 const AdminOverview: React.FC<AdminOverviewProps> = ({ 
   userRole = '', 
   showFilter = false,
@@ -35,6 +43,8 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
 }) => {
   const normalizedRole = userRole.toUpperCase().trim();
   const canViewSensitiveData = ['SUPER_ADMIN', 'ADMIN'].includes(normalizedRole);
+
+  const [loading, setLoading] = useState<boolean>(true);
 
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
@@ -144,58 +154,65 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
   }, []);
 
   const fetchMetricsData = async () => {
+    setLoading(true);
     try {
-      let ordersQuery = supabase.from('orders').select('status, total_amount, created_at');
+      const p_start = startDate && startDate.trim() !== '' ? `${startDate}T00:00:00.000Z` : null;
+      const p_end = endDate && endDate.trim() !== '' ? `${endDate}T23:59:59.999Z` : null;
 
-      if (startDate && startDate.trim() !== '') {
-        ordersQuery = ordersQuery.gte('created_at', `${startDate}T00:00:00.000Z`);
+      let orders: any[] = [];
+      const { data: rpcOrders, error: rpcErr } = await supabase.rpc('get_admin_overview_orders', {
+        p_start_date: p_start,
+        p_end_date: p_end
+      });
+
+      if (!rpcErr && rpcOrders) {
+        orders = rpcOrders;
+      } else {
+        let ordersQuery = supabase.from('orders').select('status, total_amount, created_at');
+        if (p_start) ordersQuery = ordersQuery.gte('created_at', p_start);
+        if (p_end) ordersQuery = ordersQuery.lte('created_at', p_end);
+        const { data: fallbackOrders } = await ordersQuery;
+        if (fallbackOrders) orders = fallbackOrders;
       }
-      if (endDate && endDate.trim() !== '') {
-        ordersQuery = ordersQuery.lte('created_at', `${endDate}T23:59:59.999Z`);
-      }
 
-      const { data: orders, error: orderErr } = await ordersQuery;
+      setRawOrdersData(orders);
 
-      if (!orderErr && orders) {
-        setRawOrdersData(orders);
+      let revenue = 0;
+      let c_revenue = 0;
+      let pending = 0;
+      let processing = 0;
+      let received = 0;
+      let shipped = 0;
+      let delivered = 0;
+      let cancelled = 0;
 
-        let revenue = 0;
-        let c_revenue = 0;
-        let pending = 0;
-        let processing = 0;
-        let received = 0;
-        let shipped = 0;
-        let delivered = 0;
-        let cancelled = 0;
+      orders.forEach((o: any) => {
+        const st = (o.status || '').toLowerCase().trim();
 
-        orders.forEach((o: any) => {
-          const st = (o.status || '').toLowerCase().trim();
+        if (st === 'pending') pending++;
+        else if (st.includes('proc')) processing++;
+        else if (st.includes('rec')) received++;
+        else if (st.includes('shipped')) shipped++;
+        else if (st.includes('delivered') || st.includes('completed')) delivered++;
+        else if (st.includes('cancel')) cancelled++;
+        else pending++;
 
-          if (st === 'pending') pending++;
-          else if (st.includes('proc')) processing++;
-          else if (st.includes('rec')) received++;
-          else if (st.includes('shipped')) shipped++;
-          else if (st.includes('delivered') || st.includes('completed')) delivered++;
-          else if (st.includes('cancel')) cancelled++;
-          else pending++;
+        if (!st.includes('cancel')) {
+          revenue += Number(o.total_amount || 0);
+        } else {
+          c_revenue += Number(o.total_amount || 0);
+        }
+      });
 
-          if (!st.includes('cancel')) {
-            revenue += Number(o.total_amount || 0);
-          } else {
-            c_revenue += Number(o.total_amount || 0);
-          }
-        });
-
-        setTotalOrders(orders.length);
-        setTotalRevenue(revenue);
-        setCancelledRevenue(c_revenue);
-        setPendingOrders(pending);
-        setProcessingOrders(processing);
-        setReceivedOrders(received);
-        setShippedOrders(shipped);
-        setDeliveredOrders(delivered);
-        setCancelledOrders(cancelled);
-      }
+      setTotalOrders(orders.length);
+      setTotalRevenue(revenue);
+      setCancelledRevenue(c_revenue);
+      setPendingOrders(pending);
+      setProcessingOrders(processing);
+      setReceivedOrders(received);
+      setShippedOrders(shipped);
+      setDeliveredOrders(delivered);
+      setCancelledOrders(cancelled);
 
       const { count: productCount } = await supabase.from('products').select('*', { count: 'exact', head: true });
       if (productCount !== null) setActiveCatalogItems(productCount);
@@ -217,6 +234,8 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
 
     } catch (err) {
       console.error('Error fetching analytics:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -359,6 +378,14 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
   };
 
   const renderSVGChart = () => {
+    if (loading) {
+      return (
+        <div style={{ padding: '20px 0' }}>
+          <SkeletonBlock height="180px" />
+        </div>
+      );
+    }
+
     if (chartData.length === 0) {
       return (
         <div style={{ padding: '35px 0', textAlign: 'center', color: '#666', fontSize: '11px', letterSpacing: '1px' }}>
@@ -484,6 +511,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
                   x={p.x - Math.max(chartInnerWidth / points.length / 2, 6)} y={paddingTop}
                   width={Math.max(chartInnerWidth / points.length, 12)} height={chartInnerHeight}
                   fill="transparent" style={{ cursor: 'pointer' }} onMouseEnter={() => setHoveredIndex(i)}
+                  onTouchStart={() => setHoveredIndex(i)}
                 />
 
                 {showLabel && (
@@ -552,6 +580,17 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
       <style>{`
         * { box-sizing: border-box; }
         
+        @keyframes skeleton-pulse {
+          0%, 100% { opacity: 0.25; }
+          50% { opacity: 0.6; }
+        }
+
+        .skeleton {
+          animation: skeleton-pulse 1.4s ease-in-out infinite;
+          background-color: #222222;
+          border-radius: 2px;
+        }
+
         .filter-expand-wrapper {
           display: grid;
           grid-template-rows: 0fr;
@@ -768,28 +807,44 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
           FULFILLMENT STATUS
         </span>
 
-        <div style={{ display: 'flex', width: '100%', maxWidth: '100%', height: '4px', backgroundColor: '#181818', borderRadius: '2px', overflow: 'hidden', marginBottom: '12px' }}>
-          <div style={{ width: `${calcPercent(pendingOrders)}%`, backgroundColor: '#facc15', flexShrink: 0 }} />
-          <div style={{ width: `${calcPercent(processingOrders)}%`, backgroundColor: '#c084fc', flexShrink: 0 }} />
-          <div style={{ width: `${calcPercent(receivedOrders)}%`, backgroundColor: '#60a5fa', flexShrink: 0 }} />
-          <div style={{ width: `${calcPercent(shippedOrders)}%`, backgroundColor: '#22d3ee', flexShrink: 0 }} />
-          <div style={{ width: `${calcPercent(deliveredOrders)}%`, backgroundColor: '#4ade80', flexShrink: 0 }} />
-          <div style={{ width: `${calcPercent(cancelledOrders)}%`, backgroundColor: '#f87171', flexShrink: 0 }} />
-        </div>
-
-        <div className="status-grid">
-          {statusItems.map((item) => (
-            <div key={item.key}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
-                <span style={{ color: item.count === 0 ? '#444' : item.color, fontSize: '10px' }}>●</span>
-                <span style={{ fontSize: '12px', color: '#A0AEC0', fontWeight: 'bold' }}>{item.label}</span>
-              </div>
-              <div style={{ fontSize: '18px', fontWeight: 'bold' }}>
-                {formatNumber(item.count)} <span style={{ fontSize: '10px', color: '#718096' }}>({calcPercent(item.count).toFixed(0)}%)</span>
-              </div>
+        {loading ? (
+          <div>
+            <SkeletonBlock height="4px" style={{ marginBottom: '12px' }} />
+            <div className="status-grid">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div key={i}>
+                  <SkeletonBlock width="60px" height="12px" style={{ marginBottom: '6px' }} />
+                  <SkeletonBlock width="80px" height="20px" />
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          </div>
+        ) : (
+          <>
+            <div style={{ display: 'flex', width: '100%', maxWidth: '100%', height: '4px', backgroundColor: '#181818', borderRadius: '2px', overflow: 'hidden', marginBottom: '12px' }}>
+              <div style={{ width: `${calcPercent(pendingOrders)}%`, backgroundColor: '#facc15', flexShrink: 0 }} />
+              <div style={{ width: `${calcPercent(processingOrders)}%`, backgroundColor: '#c084fc', flexShrink: 0 }} />
+              <div style={{ width: `${calcPercent(receivedOrders)}%`, backgroundColor: '#60a5fa', flexShrink: 0 }} />
+              <div style={{ width: `${calcPercent(shippedOrders)}%`, backgroundColor: '#22d3ee', flexShrink: 0 }} />
+              <div style={{ width: `${calcPercent(deliveredOrders)}%`, backgroundColor: '#4ade80', flexShrink: 0 }} />
+              <div style={{ width: `${calcPercent(cancelledOrders)}%`, backgroundColor: '#f87171', flexShrink: 0 }} />
+            </div>
+
+            <div className="status-grid">
+              {statusItems.map((item) => (
+                <div key={item.key}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+                    <span style={{ color: item.count === 0 ? '#444' : item.color, fontSize: '10px' }}>●</span>
+                    <span style={{ fontSize: '12px', color: '#A0AEC0', fontWeight: 'bold' }}>{item.label}</span>
+                  </div>
+                  <div style={{ fontSize: '18px', fontWeight: 'bold' }}>
+                    {formatNumber(item.count)} <span style={{ fontSize: '10px', color: '#718096' }}>({calcPercent(item.count).toFixed(0)}%)</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
       </div>
 
       {canViewSensitiveData && (
@@ -797,19 +852,31 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
           <div className="metric-card">
             <span style={{ fontSize: '12px', color: '#A0AEC0' }}>TOTAL REVENUE</span>
             <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF', marginTop: '4px' }}>
-              ৳{formatNumber(totalRevenue)}
-              <span style={{ fontSize: '11px', marginLeft: '8px', fontWeight: 'normal' }}>
-                <span style={{ color: '#f87171' }}>৳{formatNumber(cancelledRevenue)} Cancelled</span>
-              </span>
+              {loading ? (
+                <SkeletonBlock width="120px" height="24px" />
+              ) : (
+                <>
+                  ৳{formatNumber(totalRevenue)}
+                  <span style={{ fontSize: '11px', marginLeft: '8px', fontWeight: 'normal' }}>
+                    <span style={{ color: '#f87171' }}>৳{formatNumber(cancelledRevenue)} Cancelled</span>
+                  </span>
+                </>
+              )}
             </div>
           </div>
           <div className="metric-card">
             <span style={{ fontSize: '12px', color: '#A0AEC0' }}>AVG ORDER VALUE</span>
             <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF', marginTop: '4px' }}>
-              ৳{formatNumber(avgOrderValue)}
-              <span style={{ fontSize: '11px', marginLeft: '8px', fontWeight: 'normal' }}>
-                <span style={{ color: '#4ade80' }}>{validOrderCount} Valid Orders</span>
-              </span>
+              {loading ? (
+                <SkeletonBlock width="120px" height="24px" />
+              ) : (
+                <>
+                  ৳{formatNumber(avgOrderValue)}
+                  <span style={{ fontSize: '11px', marginLeft: '8px', fontWeight: 'normal' }}>
+                    <span style={{ color: '#4ade80' }}>{validOrderCount} Valid Orders</span>
+                  </span>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -819,25 +886,37 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
         <div className="metric-card">
           <span style={{ fontSize: '12px', color: '#A0AEC0' }}>TOTAL ORDERS</span>
           <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF', marginTop: '4px' }}>
-            {formatNumber(totalOrders)}
-            <span style={{ fontSize: '11px', marginLeft: '8px', fontWeight: 'normal' }}>
-              <span style={{ color: '#4ade80' }}>{validOrderCount} Valid</span>
-              <span style={{ color: '#666', margin: '0 4px' }}>/</span>
-              <span style={{ color: '#f87171' }}>{cancelledOrders} Cancelled</span>
-            </span>
+            {loading ? (
+              <SkeletonBlock width="100px" height="24px" />
+            ) : (
+              <>
+                {formatNumber(totalOrders)}
+                <span style={{ fontSize: '11px', marginLeft: '8px', fontWeight: 'normal' }}>
+                  <span style={{ color: '#4ade80' }}>{validOrderCount} Valid</span>
+                  <span style={{ color: '#666', margin: '0 4px' }}>/</span>
+                  <span style={{ color: '#f87171' }}>{cancelledOrders} Cancelled</span>
+                </span>
+              </>
+            )}
           </div>
         </div>
         <div className="metric-card">
           <span style={{ fontSize: '12px', color: '#A0AEC0' }}>ACTIVE QUEUE</span>
           <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF', marginTop: '4px' }}>
-            {formatNumber(pendingOrders + processingOrders)}
-            <span style={{ fontSize: '11px', marginLeft: '8px', fontWeight: 'normal' }}>
-              <span style={{ color: '#facc15' }}>{pendingOrders} Pen</span>
-              <span style={{ color: '#666', margin: '0 4px' }}>/</span>
-              <span style={{ color: '#c084fc' }}>{processingOrders} Proc</span>
-              <span style={{ color: '#666', margin: '0 4px' }}>/</span>
-              <span style={{ color: '#60a5fa' }}>{receivedOrders} Rec</span>
-            </span>
+            {loading ? (
+              <SkeletonBlock width="100px" height="24px" />
+            ) : (
+              <>
+                {formatNumber(pendingOrders + processingOrders)}
+                <span style={{ fontSize: '11px', marginLeft: '8px', fontWeight: 'normal' }}>
+                  <span style={{ color: '#facc15' }}>{pendingOrders} Pen</span>
+                  <span style={{ color: '#666', margin: '0 4px' }}>/</span>
+                  <span style={{ color: '#c084fc' }}>{processingOrders} Proc</span>
+                  <span style={{ color: '#666', margin: '0 4px' }}>/</span>
+                  <span style={{ color: '#60a5fa' }}>{receivedOrders} Rec</span>
+                </span>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -846,21 +925,33 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
         <div className="metric-card">
           <span style={{ fontSize: '12px', color: '#A0AEC0' }}>CATALOG ITEMS</span>
           <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF', marginTop: '4px' }}>
-            {formatNumber(activeCatalogItems)}
-            <span style={{ fontSize: '11px', marginLeft: '8px', fontWeight: 'normal' }}>
-              <span style={{ color: '#f87171' }}>{outOfStockItems} Out of stock</span>
-              <span style={{ color: '#666', margin: '0 4px' }}>/</span>
-              <span style={{ color: '#facc15' }}>{lowStockItems} Low stock</span>
-            </span>
+            {loading ? (
+              <SkeletonBlock width="100px" height="24px" />
+            ) : (
+              <>
+                {formatNumber(activeCatalogItems)}
+                <span style={{ fontSize: '11px', marginLeft: '8px', fontWeight: 'normal' }}>
+                  <span style={{ color: '#f87171' }}>{outOfStockItems} Out of stock</span>
+                  <span style={{ color: '#666', margin: '0 4px' }}>/</span>
+                  <span style={{ color: '#facc15' }}>{lowStockItems} Low stock</span>
+                </span>
+              </>
+            )}
           </div>
         </div>
         <div className="metric-card">
           <span style={{ fontSize: '12px', color: '#A0AEC0' }}>TOTAL USERS</span>
           <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF', marginTop: '4px' }}>
-            {formatNumber(totalUsers)}
-            <span style={{ fontSize: '11px', marginLeft: '8px', fontWeight: 'normal' }}>
-              <span style={{ color: '#4ade80' }}>+{newUsers} New in period</span>
-            </span>
+            {loading ? (
+              <SkeletonBlock width="100px" height="24px" />
+            ) : (
+              <>
+                {formatNumber(totalUsers)}
+                <span style={{ fontSize: '11px', marginLeft: '8px', fontWeight: 'normal' }}>
+                  <span style={{ color: '#4ade80' }}>+{newUsers} New in period</span>
+                </span>
+              </>
+            )}
           </div>
         </div>
       </div>
