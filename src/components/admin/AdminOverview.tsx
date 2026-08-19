@@ -371,7 +371,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
     const svgHeight = 240;
     const paddingTop = 35;
     const paddingBottom = 45;
-    const paddingLeft = 45;
+    const paddingLeft = 60;
     const paddingRight = 20;
 
     const chartInnerWidth = svgWidth - paddingLeft - paddingRight;
@@ -410,7 +410,17 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
     const activePoint = hoveredIndex !== null ? points[hoveredIndex] : null;
     const showBelow = activePoint ? activePoint.y < 110 : false;
 
-    const step = points.length > 30 ? 4 : 2;
+    const step = points.length > 30 ? 4 : points.length > 15 ? 2 : 1;
+
+    const getXAxisTickLabel = (pt: ChartPoint) => {
+      if (granularity === 'DAILY') {
+        const parts = pt.dateKey.split('-');
+        if (parts.length === 3) return parts[2];
+      }
+      return pt.label;
+    };
+
+    const yCenter = paddingTop + chartInnerHeight / 2;
 
     return (
       <div style={{ position: 'relative', width: '100%', padding: '8px 0', overflow: 'hidden' }}>
@@ -426,8 +436,17 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
             </linearGradient>
           </defs>
 
-          <text x={paddingLeft} y={18} fill="#718096" fontSize="9" textAnchor="start" fontFamily="monospace" fontWeight="bold">
-            ↑ {selectedMetric} ({selectedMetric === 'ORDERS' ? 'COUNT' : 'AMOUNT ৳'})
+          <text
+            x={12}
+            y={yCenter}
+            fill="#718096"
+            fontSize="9"
+            textAnchor="middle"
+            fontFamily="monospace"
+            fontWeight="bold"
+            transform={`rotate(90, 12, ${yCenter})`}
+          >
+            {selectedMetric} ({selectedMetric === 'ORDERS' ? 'COUNT' : 'AMOUNT ৳'})
           </text>
 
           {[0, 0.5, 1].map((ratio, idx) => {
@@ -450,8 +469,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
 
           {points.map((p, i) => {
             const isHovered = hoveredIndex === i;
-            const pointNumber = i + 1;
-            const showLabel = points.length < 4 ? true : pointNumber % step === 0;
+            const showLabel = points.length < 4 ? true : i % step === 0;
 
             return (
               <g key={i}>
@@ -470,7 +488,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
 
                 {showLabel && (
                   <text x={p.x} y={svgHeight - 24} fill="#718096" fontSize="9" textAnchor="middle" fontFamily="monospace">
-                    {pointNumber}
+                    {getXAxisTickLabel(p.pt)}
                   </text>
                 )}
               </g>
@@ -478,7 +496,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
           })}
 
           <text x={paddingLeft + chartInnerWidth / 2} y={svgHeight - 4} fill="#718096" fontSize="9" textAnchor="middle" fontFamily="monospace" fontWeight="bold">
-            ← TIME INTERVALS (#) →
+            Date
           </text>
 
           {activePoint && (
