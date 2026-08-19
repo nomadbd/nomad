@@ -151,28 +151,52 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
       const p_start = startDate && startDate.trim() !== '' ? `${startDate}T00:00:00.000Z` : null;
       const p_end = endDate && endDate.trim() !== '' ? `${endDate}T23:59:59.999Z` : null;
 
-      let orders: any[] = [];
-      const { data: rpcOrders, error: rpcErr } = await supabase.rpc('get_admin_overview_orders', {
-        p_start_date: p_start,
-        p_end_date: p_end
-      });
+      const ordersPromise = (async () => {
+        const { data: rpcOrders, error: rpcErr } = await supabase.rpc('get_admin_overview_orders', {
+          p_start_date: p_start,
+          p_end_date: p_end
+        });
 
-      if (!rpcErr && rpcOrders) {
-        orders = rpcOrders;
-      } else {
-        let ordersQuery = supabase
-          .from('orders')
-          .select('status, total_amount, created_at')
-          .order('created_at', { ascending: false })
-          .limit(3000);
+        if (!rpcErr && rpcOrders) {
+          return rpcOrders;
+        } else {
+          let ordersQuery = supabase
+            .from('orders')
+            .select('status, total_amount, created_at')
+            .order('created_at', { ascending: false })
+            .limit(3000);
 
-        if (p_start) ordersQuery = ordersQuery.gte('created_at', p_start);
-        if (p_end) ordersQuery = ordersQuery.lte('created_at', p_end);
-        const { data: fallbackOrders } = await ordersQuery;
-        if (fallbackOrders) orders = fallbackOrders;
-      }
+          if (p_start) ordersQuery = ordersQuery.gte('created_at', p_start);
+          if (p_end) ordersQuery = ordersQuery.lte('created_at', p_end);
+          const { data: fallbackOrders } = await ordersQuery;
+          return fallbackOrders || [];
+        }
+      })();
 
-      setRawOrdersData(orders);
+      const productCountPromise = supabase.from('products').select('*', { count: 'exact', head: true });
+      const outOfStockPromise = supabase.from('products').select('*', { count: 'exact', head: true }).lte('stock_quantity', 0);
+      const lowStockPromise = supabase.from('products').select('*', { count: 'exact', head: true }).gt('stock_quantity', 0).lte('stock_quantity', 5);
+      const allUsersPromise = supabase.from('profiles').select('*', { count: 'exact', head: true }).not('role', 'in', '(admin,manager)');
+
+      let newUsersQuery = supabase.from('profiles').select('*', { count: 'exact', head: true }).not('role', 'in', '(admin,manager)');
+      if (startDate) newUsersQuery = newUsersQuery.gte('created_at', `${startDate}T00:00:00.000Z`);
+      if (endDate) newUsersQuery = newUsersQuery.lte('created_at', `${endDate}T23:59:59.999Z`);
+
+      const [
+        orders,
+        { count: productCount },
+        { count: outOfStockCount },
+        { count: lowStockCount },
+        { count: allUsersCount },
+        { count: newUsersCount }
+      ] = await Promise.all([
+        ordersPromise,
+        productCountPromise,
+        outOfStockPromise,
+        lowStockPromise,
+        allUsersPromise,
+        newUsersQuery
+      ]);
 
       let revenue = 0;
       let c_revenue = 0;
@@ -201,6 +225,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
         }
       });
 
+      setRawOrdersData(orders);
       setTotalOrders(orders.length);
       setTotalRevenue(revenue);
       setCancelledRevenue(c_revenue);
@@ -211,22 +236,10 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
       setDeliveredOrders(delivered);
       setCancelledOrders(cancelled);
 
-      const { count: productCount } = await supabase.from('products').select('*', { count: 'exact', head: true });
       if (productCount !== null) setActiveCatalogItems(productCount);
-
-      const { count: outOfStockCount } = await supabase.from('products').select('*', { count: 'exact', head: true }).lte('stock_quantity', 0);
       if (outOfStockCount !== null) setOutOfStockItems(outOfStockCount);
-
-      const { count: lowStockCount } = await supabase.from('products').select('*', { count: 'exact', head: true }).gt('stock_quantity', 0).lte('stock_quantity', 5);
       if (lowStockCount !== null) setLowStockItems(lowStockCount);
-
-      const { count: allUsersCount } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).not('role', 'in', '(admin,manager)');
       if (allUsersCount !== null) setTotalUsers(allUsersCount);
-
-      let newUsersQuery = supabase.from('profiles').select('*', { count: 'exact', head: true }).not('role', 'in', '(admin,manager)');
-      if (startDate) newUsersQuery = newUsersQuery.gte('created_at', `${startDate}T00:00:00.000Z`);
-      if (endDate) newUsersQuery = newUsersQuery.lte('created_at', `${endDate}T23:59:59.999Z`);
-      const { count: newUsersCount } = await newUsersQuery;
       if (newUsersCount !== null) setNewUsers(newUsersCount);
 
     } catch (err) {
@@ -581,19 +594,17 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
       <style>{`
         * { box-sizing: border-box; }
 
-        @keyframes fadeInUp {
+        @keyframes fadeIn {
           0% {
             opacity: 0;
-            transform: translateY(18px);
           }
           100% {
             opacity: 1;
-            transform: translateY(0);
           }
         }
 
         .animate-card {
-          animation: fadeInUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          animation: fadeIn 0.5s ease-in-out forwards;
         }
 
         .status-bar-segment {
@@ -812,7 +823,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
         </div>
       </div>
 
-      <div className="animate-card" style={{ backgroundColor: '#080808', border: '1px solid #222', padding: '14px', borderRadius: '2px', width: '100%', maxWidth: '100%', overflow: 'hidden', animationDelay: '0.05s' }}>
+      <div className="animate-card" style={{ backgroundColor: '#080808', border: '1px solid #222', padding: '14px', borderRadius: '2px', width: '100%', maxWidth: '100%', overflow: 'hidden' }}>
         <span style={{ fontSize: '14px', color: '#CBD5E0', letterSpacing: '1px', fontWeight: 'bold', display: 'block', marginBottom: '10px' }}>
           FULFILLMENT STATUS
         </span>
@@ -843,7 +854,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
 
       {canViewSensitiveData && (
         <div className="two-column-grid">
-          <div className="metric-card animate-card" style={{ animationDelay: '0.15s' }}>
+          <div className="metric-card animate-card">
             <span style={{ fontSize: '12px', color: '#A0AEC0' }}>TOTAL REVENUE</span>
             <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF', marginTop: '4px' }}>
               ৳{formatNumber(totalRevenue)}
@@ -852,7 +863,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
               </span>
             </div>
           </div>
-          <div className="metric-card animate-card" style={{ animationDelay: '0.2s' }}>
+          <div className="metric-card animate-card">
             <span style={{ fontSize: '12px', color: '#A0AEC0' }}>AVG ORDER VALUE</span>
             <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF', marginTop: '4px' }}>
               ৳{formatNumber(avgOrderValue)}
@@ -865,7 +876,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
       )}
 
       <div className="two-column-grid">
-        <div className="metric-card animate-card" style={{ animationDelay: '0.25s' }}>
+        <div className="metric-card animate-card">
           <span style={{ fontSize: '12px', color: '#A0AEC0' }}>TOTAL ORDERS</span>
           <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF', marginTop: '4px' }}>
             {formatNumber(totalOrders)}
@@ -876,7 +887,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
             </span>
           </div>
         </div>
-        <div className="metric-card animate-card" style={{ animationDelay: '0.3s' }}>
+        <div className="metric-card animate-card">
           <span style={{ fontSize: '12px', color: '#A0AEC0' }}>ACTIVE QUEUE</span>
           <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF', marginTop: '4px' }}>
             {formatNumber(pendingOrders + processingOrders)}
@@ -892,7 +903,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
       </div>
 
       <div className="two-column-grid">
-        <div className="metric-card animate-card" style={{ animationDelay: '0.35s' }}>
+        <div className="metric-card animate-card">
           <span style={{ fontSize: '12px', color: '#A0AEC0' }}>CATALOG ITEMS</span>
           <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF', marginTop: '4px' }}>
             {formatNumber(activeCatalogItems)}
@@ -903,7 +914,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
             </span>
           </div>
         </div>
-        <div className="metric-card animate-card" style={{ animationDelay: '0.4s' }}>
+        <div className="metric-card animate-card">
           <span style={{ fontSize: '12px', color: '#A0AEC0' }}>TOTAL USERS</span>
           <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF', marginTop: '4px' }}>
             {formatNumber(totalUsers)}
@@ -915,7 +926,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
       </div>
 
       {canViewSensitiveData && (
-        <div className="animate-card" style={{ backgroundColor: '#080808', border: '1px solid #222', padding: '18px 16px', borderRadius: '2px', marginTop: '10px', position: 'relative', width: '100%', maxWidth: '100%', overflow: 'hidden', animationDelay: '0.45s' }}>
+        <div className="animate-card" style={{ backgroundColor: '#080808', border: '1px solid #222', padding: '18px 16px', borderRadius: '2px', marginTop: '10px', position: 'relative', width: '100%', maxWidth: '100%', overflow: 'hidden' }}>
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginBottom: '14px' }}>
             <span style={{ fontSize: '13px', color: '#CBD5E0', fontWeight: 'bold', letterSpacing: '1px' }}>
