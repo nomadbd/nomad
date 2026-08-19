@@ -73,6 +73,8 @@ interface AdminOrdersProps {
   isFilterOpen?: boolean;
   onToggleSearch?: () => void;
   onToggleFilter?: () => void;
+  searchQuery?: string;
+  onSearchChange?: (query: string) => void;
 }
 
 const STATUS_OPTIONS = [
@@ -626,11 +628,22 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
   isSearchOpen: propSearchOpen,
   isFilterOpen: propFilterOpen,
   onToggleSearch,
-  onToggleFilter
+  onToggleFilter,
+  searchQuery,
+  onSearchChange
 }) => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [internalSearchTerm, setInternalSearchTerm] = useState<string>('');
+  
+  const searchTerm = searchQuery !== undefined ? searchQuery : internalSearchTerm;
+  const setSearchTerm = (val: string) => {
+    setInternalSearchTerm(val);
+    if (onSearchChange) {
+      onSearchChange(val);
+    }
+  };
+
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<string>('ALL');
   const [selectedPaymentStatusFilter, setSelectedPaymentStatusFilter] = useState<string>('ALL');
   const [selectedDateFilter, setSelectedDateFilter] = useState<string>('ALL TIME');
@@ -1231,7 +1244,7 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
         if (order.customer_phone) {
           const rawPhone = order.customer_phone.toLowerCase();
           const cleanPhoneDigits = rawPhone.replace(/[^0-9]/g, '');
-          
+
           phoneMatch = rawPhone.includes(term);
           if (!phoneMatch && cleanTermDigits.length > 0) {
             const termNoLeadingZero = cleanTermDigits.replace(/^0+/, '');
@@ -1520,7 +1533,7 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
       )}
 
       <div className={`filter-expand-wrapper ${searchOpen ? 'open' : ''}`}>
-        <div className="filter-expand-content">
+        <div className="filter-expand-content animate-fade-in">
           <input
             type="text"
             placeholder="SEARCH BY ID, NAME, PHONE, EMAIL, ITEM OR TRACKING..."
@@ -1537,14 +1550,15 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
               letterSpacing: '1px',
               outline: 'none',
               boxSizing: 'border-box',
-              borderRadius: '2px'
+              borderRadius: '2px',
+              transition: 'all 0.3s ease'
             }}
           />
         </div>
       </div>
 
       <div className={`filter-expand-wrapper ${isFilterVisible ? 'open' : ''}`}>
-        <div className="filter-expand-content">
+        <div className="filter-expand-content animate-fade-in">
           <div
             style={{
               backgroundColor: '#050505',
@@ -1695,7 +1709,7 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
             </div>
 
             <div className={`filter-expand-wrapper ${selectedOrderIds.length > 0 ? 'open' : ''}`}>
-              <div className="filter-expand-content">
+              <div className="filter-expand-content animate-fade-in">
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', paddingTop: '6px' }}>
                   <select
                     onChange={(e) => {
