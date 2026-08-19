@@ -502,9 +502,9 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
             );
           })}
 
-          {areaD && <path d={areaD} fill="url(#chartGradient)" style={{ transition: 'd 0.8s cubic-bezier(0.16, 1, 0.3, 1)' }} />}
+          {areaD && <path d={areaD} fill="url(#chartGradient)" style={{ transition: 'd 0.5s cubic-bezier(0.16, 1, 0.3, 1)' }} />}
           {smoothPathD && (
-            <path d={smoothPathD} fill="none" stroke="#22d3ee" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transition: 'd 0.8s cubic-bezier(0.16, 1, 0.3, 1)' }} />
+            <path d={smoothPathD} fill="none" stroke="#22d3ee" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transition: 'd 0.5s cubic-bezier(0.16, 1, 0.3, 1)' }} />
           )}
 
           {points.map((p, i) => {
@@ -604,11 +604,11 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
         }
 
         .animate-card {
-          animation: fadeIn 0.5s ease-in-out forwards;
+          animation: fadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
 
         .status-bar-segment {
-          transition: width 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+          transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         .filter-expand-wrapper {
