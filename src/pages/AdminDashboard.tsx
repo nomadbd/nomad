@@ -99,7 +99,7 @@ const AdminDashboard: React.FC = () => {
       }
     } catch (err) {
       console.error('Error fetching user profile:', err);
-    } ...finally {
+    } finally {
       setLoading(false);
     }
   };
@@ -181,23 +181,7 @@ const AdminDashboard: React.FC = () => {
           position: relative;
         }
 
-        @keyframes tabFadeIn {
-          from {
-            opacity: 0;
-            transform: translateY(6px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        .tab-content-wrapper {
-          animation: tabFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-          width: 100%;
-          will-change: opacity, transform;
-        }
-
+        /* ========== MOBILE ========== */
         @media screen and (max-width: 767px) {
           .nomad-layout {
             display: flex !important;
@@ -278,6 +262,7 @@ const AdminDashboard: React.FC = () => {
           }
         }
 
+        /* ========== DESKTOP (Desktop Mode সহ) ========== */
         @media screen and (min-width: 768px) {
           .nomad-layout {
             display: flex !important;
@@ -329,7 +314,7 @@ const AdminDashboard: React.FC = () => {
 
           .nomad-main {
             margin-left: 220px !important;
-            width: auto !important;
+            width: auto !important;               /* calc + 100vw সরানো হয়েছে */
             flex: 1 1 auto !important;
             max-width: none !important;
             padding: 24px 28px !important;
@@ -605,27 +590,25 @@ const AdminDashboard: React.FC = () => {
         </aside>
 
         <main className="nomad-main">
-          <div key={activeTab} className="tab-content-wrapper">
-            {activeTab === 'overview' && (
-              <AdminOverview key="overview" userRole={userRole} showFilter={isFilterOpen} dateFormat="DD/MM/YYYY" />
-            )}
-            {activeTab === 'orders' && (
-              <AdminOrders key="orders" searchQuery={searchQuery} isFilterOpen={isFilterOpen} dateFormat="DD/MM/YYYY" />
-            )}
-            {activeTab === 'products' && (
-              <AdminProducts key="products" searchQuery={searchQuery} isFilterOpen={isFilterOpen} dateFormat="DD/MM/YYYY" />
-            )}
+          {activeTab === 'overview' && (
+            <AdminOverview key="overview" userRole={userRole} showFilter={isFilterOpen} dateFormat="DD/MM/YYYY" />
+          )}
+          {activeTab === 'orders' && (
+            <AdminOrders key="orders" searchQuery={searchQuery} isFilterOpen={isFilterOpen} dateFormat="DD/MM/YYYY" />
+          )}
+          {activeTab === 'products' && (
+            <AdminProducts key="products" searchQuery={searchQuery} isFilterOpen={isFilterOpen} dateFormat="DD/MM/YYYY" />
+          )}
 
-            {activeTab === 'settings' && (
-              isSuperAdmin ? (
-                <AdminSettings key="settings" />
-              ) : (
-                <div style={{ padding: '40px 0', textAlign: 'center', color: '#ff4d4d', letterSpacing: '2px', fontSize: '12px' }}>
-                  ACCESS DENIED: SUPER ADMIN PRIVILEGES REQUIRED.
-                </div>
-              )
-            )}
-          </div>
+          {activeTab === 'settings' && (
+            isSuperAdmin ? (
+              <AdminSettings key="settings" />
+            ) : (
+              <div style={{ padding: '40px 0', textAlign: 'center', color: '#ff4d4d', letterSpacing: '2px', fontSize: '12px' }}>
+                ACCESS DENIED: SUPER ADMIN PRIVILEGES REQUIRED.
+              </div>
+            )
+          )}
         </main>
       </div>
 
