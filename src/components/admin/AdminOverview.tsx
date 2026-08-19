@@ -168,7 +168,12 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
       if (!rpcErr && rpcOrders) {
         orders = rpcOrders;
       } else {
-        let ordersQuery = supabase.from('orders').select('status, total_amount, created_at');
+        let ordersQuery = supabase
+          .from('orders')
+          .select('status, total_amount, created_at')
+          .order('created_at', { ascending: false })
+          .limit(3000);
+
         if (p_start) ordersQuery = ordersQuery.gte('created_at', p_start);
         if (p_end) ordersQuery = ordersQuery.lte('created_at', p_end);
         const { data: fallbackOrders } = await ordersQuery;
@@ -242,12 +247,20 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
   useEffect(() => {
     fetchMetricsData();
 
+    let debounceTimer: NodeJS.Timeout;
+
     const ordersSubscription = supabase
       .channel('admin-overview-orders')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => fetchMetricsData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+          fetchMetricsData();
+        }, 1500);
+      })
       .subscribe();
 
     return () => {
+      clearTimeout(debounceTimer);
       supabase.removeChannel(ordersSubscription);
     };
   }, [startDate, endDate]);
