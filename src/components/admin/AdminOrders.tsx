@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../../supabaseClient';
+import { motion, AnimatePresence } from 'framer-motion';
+import { fadeIn, cardVariants, slideUp } from './admin-animations';
 
 interface SupabaseProductMedia {
   media_url: string;
@@ -275,13 +277,20 @@ const OrderCard: React.FC<OrderCardProps> = ({
   };
 
   return (
-    <div style={{
-      backgroundColor: '#050505',
-      border: isSelected ? '1px solid #fff' : '1px solid #222',
-      padding: '16px',
-      borderRadius: '2px',
-      transition: 'all 0.2s ease'
-    }}>
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      transition={{ duration: 0.2 }}
+      style={{
+        backgroundColor: '#050505',
+        border: isSelected ? '1px solid #fff' : '1px solid #222',
+        padding: '16px',
+        borderRadius: '2px',
+        transition: 'all 0.2s ease'
+      }}
+    >
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
@@ -341,114 +350,124 @@ const OrderCard: React.FC<OrderCardProps> = ({
           </div>
         </div>
 
-        {isExpanded && (
-          <div style={{ paddingTop: '4px', paddingBottom: '4px', borderTop: '1px solid #1a1a1a', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            <div>
-              <h4 style={{ color: '#888', fontSize: '10px', letterSpacing: '1px', marginBottom: '10px', marginTop: '10px', fontWeight: 'bold' }}>ORDERED ITEMS</h4>
-              {order.items.length > 0 ? order.items.map((item, idx) => (
-                <div key={`${item.product_name}-${idx}`} style={{
-                  display: 'flex',
-                  gap: '12px',
-                  background: '#0a0a0a',
-                  padding: '10px',
-                  marginBottom: '8px',
-                  borderRadius: '3px'
-                }}>
-                  <img
-                    src={item.product_image}
-                    alt={item.product_name}
-                    style={{ width: '45px', height: '55px', objectFit: 'cover', borderRadius: '2px' }}
-                  />
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 'bold', fontSize: '11px', color: '#fff' }}>{item.product_name}</div>
-                    <div style={{ fontSize: '9.5px', color: '#bbb', marginTop: '4px' }}>
-                      SIZE: {item.size} • COLOR: {item.color} • QTY: {item.quantity}
+        <AnimatePresence>
+          {isExpanded && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.25 }}
+              style={{ overflow: 'hidden' }}
+            >
+              <div style={{ paddingTop: '4px', paddingBottom: '4px', borderTop: '1px solid #1a1a1a', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                <div>
+                  <h4 style={{ color: '#888', fontSize: '10px', letterSpacing: '1px', marginBottom: '10px', marginTop: '10px', fontWeight: 'bold' }}>ORDERED ITEMS</h4>
+                  {order.items.length > 0 ? order.items.map((item, idx) => (
+                    <div key={`${item.product_name}-${idx}`} style={{
+                      display: 'flex',
+                      gap: '12px',
+                      background: '#0a0a0a',
+                      padding: '10px',
+                      marginBottom: '8px',
+                      borderRadius: '3px'
+                    }}>
+                      <img
+                        src={item.product_image}
+                        alt={item.product_name}
+                        style={{ width: '45px', height: '55px', objectFit: 'cover', borderRadius: '2px' }}
+                      />
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: 'bold', fontSize: '11px', color: '#fff' }}>{item.product_name}</div>
+                        <div style={{ fontSize: '9.5px', color: '#bbb', marginTop: '4px' }}>
+                          SIZE: {item.size} • COLOR: {item.color} • QTY: {item.quantity}
+                        </div>
+                      </div>
+                      <div style={{ fontWeight: 'bold', fontSize: '12px', alignSelf: 'center', color: '#fff' }}>
+                        ৳{item.price * item.quantity}
+                      </div>
+                    </div>
+                  )) : (
+                    <div style={{ color: '#666', fontSize: '11px', fontStyle: 'italic', padding: '10px' }}>
+                      No items found for this order.
+                    </div>
+                  )}
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '10px' }}>
+                  <h4 style={{ color: '#888', fontSize: '10px', letterSpacing: '1.5px', margin: 0, fontWeight: 'bold' }}>MANAGEMENT DETAILS</h4>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px' }}>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '9px', color: '#777', marginBottom: '6px', letterSpacing: '0.5px' }}>COURIER NAME</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Steadfast, Pathao"
+                        value={editForm.courier_name}
+                        onChange={e => setEditForm({ ...editForm, courier_name: e.target.value })}
+                        style={cleanInputStyle}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', fontSize: '9px', color: '#777', marginBottom: '6px', letterSpacing: '0.5px' }}>TRACKING ID</label>
+                      <input
+                        type="text"
+                        placeholder="Tracking / Memo No."
+                        value={editForm.tracking_id}
+                        onChange={e => setEditForm({ ...editForm, tracking_id: e.target.value })}
+                        style={cleanInputStyle}
+                      />
                     </div>
                   </div>
-                  <div style={{ fontWeight: 'bold', fontSize: '12px', alignSelf: 'center', color: '#fff' }}>
-                    ৳{item.price * item.quantity}
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '9px', color: '#777', marginBottom: '6px', letterSpacing: '0.5px' }}>CUSTOMER NOTES</label>
+                    <textarea
+                      rows={2}
+                      placeholder="Add customer note to send in messages..."
+                      value={editForm.customer_notes}
+                      onChange={e => setEditForm({ ...editForm, customer_notes: e.target.value })}
+                      style={{ ...cleanInputStyle, resize: 'vertical' }}
+                    />
                   </div>
-                </div>
-              )) : (
-                <div style={{ color: '#666', fontSize: '11px', fontStyle: 'italic', padding: '10px' }}>
-                  No items found for this order.
-                </div>
-              )}
-            </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '10px' }}>
-              <h4 style={{ color: '#888', fontSize: '10px', letterSpacing: '1.5px', margin: 0, fontWeight: 'bold' }}>MANAGEMENT DETAILS</h4>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '9px', color: '#777', marginBottom: '6px', letterSpacing: '0.5px' }}>ADMIN NOTES</label>
+                    <textarea
+                      rows={2}
+                      placeholder="Add private admin notes here..."
+                      value={editForm.admin_notes}
+                      onChange={e => setEditForm({ ...editForm, admin_notes: e.target.value })}
+                      style={{ ...cleanInputStyle, resize: 'vertical' }}
+                    />
+                  </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '9px', color: '#777', marginBottom: '6px', letterSpacing: '0.5px' }}>COURIER NAME</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Steadfast, Pathao"
-                    value={editForm.courier_name}
-                    onChange={e => setEditForm({ ...editForm, courier_name: e.target.value })}
-                    style={cleanInputStyle}
-                  />
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '9px', color: '#777', marginBottom: '6px', letterSpacing: '0.5px' }}>TRACKING ID</label>
-                  <input
-                    type="text"
-                    placeholder="Tracking / Memo No."
-                    value={editForm.tracking_id}
-                    onChange={e => setEditForm({ ...editForm, tracking_id: e.target.value })}
-                    style={cleanInputStyle}
-                  />
+                  <button
+                    type="button"
+                    onClick={handleSaveDetails}
+                    disabled={isUpdating}
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      background: 'transparent',
+                      color: '#fff',
+                      fontWeight: 'bold',
+                      border: '1px solid #fff',
+                      fontSize: '10px',
+                      letterSpacing: '1px',
+                      cursor: isUpdating ? 'not-allowed' : 'pointer',
+                      borderRadius: '3px',
+                      opacity: isUpdating ? 0.6 : 1,
+                      marginTop: '4px'
+                    }}
+                  >
+                    {isUpdating ? 'SAVING...' : 'SAVE DETAILS'}
+                  </button>
                 </div>
               </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '9px', color: '#777', marginBottom: '6px', letterSpacing: '0.5px' }}>CUSTOMER NOTES</label>
-                <textarea
-                  rows={2}
-                  placeholder="Add customer note to send in messages..."
-                  value={editForm.customer_notes}
-                  onChange={e => setEditForm({ ...editForm, customer_notes: e.target.value })}
-                  style={{ ...cleanInputStyle, resize: 'vertical' }}
-                />
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '9px', color: '#777', marginBottom: '6px', letterSpacing: '0.5px' }}>ADMIN NOTES</label>
-                <textarea
-                  rows={2}
-                  placeholder="Add private admin notes here..."
-                  value={editForm.admin_notes}
-                  onChange={e => setEditForm({ ...editForm, admin_notes: e.target.value })}
-                  style={{ ...cleanInputStyle, resize: 'vertical' }}
-                />
-              </div>
-
-              <button
-                type="button"
-                onClick={handleSaveDetails}
-                disabled={isUpdating}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  background: 'transparent',
-                  color: '#fff',
-                  fontWeight: 'bold',
-                  border: '1px solid #fff',
-                  fontSize: '10px',
-                  letterSpacing: '1px',
-                  cursor: isUpdating ? 'not-allowed' : 'pointer',
-                  borderRadius: '3px',
-                  opacity: isUpdating ? 0.6 : 1,
-                  marginTop: '4px'
-                }}
-              >
-                {isUpdating ? 'SAVING...' : 'SAVE DETAILS'}
-              </button>
-            </div>
-          </div>
-        )}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
@@ -606,7 +625,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
           </button>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 
@@ -1240,201 +1259,209 @@ const AdminOrders: React.FC = () => {
 
   if (isBulkViewOpen) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%', maxWidth: '100%', position: 'relative', minHeight: '80vh', backgroundColor: '#050505', padding: '0px', boxSizing: 'border-box', borderRadius: '0px', border: 'none' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #222', paddingBottom: '16px' }}>
-          <div>
-            <h3 style={{ margin: 0, fontSize: '15px', color: '#fff', letterSpacing: '1px', fontWeight: 'bold' }}>
-              BULK {bulkMessageType === 'whatsapp' ? 'WHATSAPP' : 'EMAIL'} ({selectedOrdersList.length})
-            </h3>
-          </div>
-          <button
-            type="button"
-            onClick={() => setIsBulkViewOpen(false)}
-            style={{
-              backgroundColor: '#111',
-              border: '1px solid #333',
-              color: '#fff',
-              padding: '6px 10px',
-              fontSize: '12px',
-              fontWeight: 'bold',
-              cursor: 'pointer',
-              borderRadius: '2px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
-          >
-            ✕
-          </button>
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%' }}>
-          <div>
-            <label style={{ display: 'block', fontSize: '9px', color: '#888', marginBottom: '6px', letterSpacing: '1px' }}>LOAD STATUS TEMPLATE PRESET</label>
-            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-              {Object.keys(TEMPLATE_PRESETS).map((key) => {
-                const isPresetActive = selectedPresetKey === key || bulkMessageText === TEMPLATE_PRESETS[key];
-                return (
-                  <button
-                    type="button"
-                    key={key}
-                    onClick={() => {
-                      setBulkMessageText(TEMPLATE_PRESETS[key]);
-                      setSelectedPresetKey(key);
-                    }}
-                    style={{
-                      backgroundColor: '#111',
-                      color: isPresetActive ? '#fff' : '#ccc',
-                      border: isPresetActive ? '1px solid #fff' : '1px solid #333',
-                      padding: '6px 12px',
-                      fontSize: '9.5px',
-                      fontWeight: 'bold',
-                      cursor: 'pointer',
-                      borderRadius: '2px'
-                    }}
-                  >
-                    {key.toUpperCase()}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {bulkMessageType === 'email' && (
+      <AnimatePresence>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.98 }}
+          transition={{ duration: 0.2 }}
+          style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%', maxWidth: '100%', position: 'relative', minHeight: '80vh', backgroundColor: '#050505', padding: '0px', boxSizing: 'border-box', borderRadius: '0px', border: 'none' }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #222', paddingBottom: '16px' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '10px', color: '#888', marginBottom: '4px' }}>EMAIL SUBJECT</label>
-              <input
-                type="text"
-                value={bulkEmailSubject}
-                onChange={(e) => setBulkEmailSubject(e.target.value)}
-                style={{ width: '100%', background: '#000', color: '#fff', border: '1px solid #333', padding: '10px 12px', fontSize: '11px', outline: 'none', boxSizing: 'border-box', borderRadius: '2px' }}
-              />
+              <h3 style={{ margin: 0, fontSize: '15px', color: '#fff', letterSpacing: '1px', fontWeight: 'bold' }}>
+                BULK {bulkMessageType === 'whatsapp' ? 'WHATSAPP' : 'EMAIL'} ({selectedOrdersList.length})
+              </h3>
             </div>
-          )}
-
-          <div>
-            <label style={{ display: 'block', fontSize: '10px', color: '#888', marginBottom: '4px' }}>MESSAGE TEMPLATE</label>
-            <textarea
-              rows={5}
-              value={bulkMessageText}
-              onChange={(e) => {
-                setBulkMessageText(e.target.value);
-                setSelectedPresetKey('');
+            <button
+              type="button"
+              onClick={() => setIsBulkViewOpen(false)}
+              style={{
+                backgroundColor: '#111',
+                border: '1px solid #333',
+                color: '#fff',
+                padding: '6px 10px',
+                fontSize: '12px',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                borderRadius: '2px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
               }}
-              style={{ width: '100%', background: '#000', color: '#fff', border: '1px solid #333', padding: '10px 12px', fontSize: '11px', outline: 'none', resize: 'vertical', boxSizing: 'border-box', borderRadius: '2px' }}
-            />
-            <div style={{ fontSize: '9px', color: '#888', marginTop: '4px' }}>
-              Variables: <code>{"{{name}}"}</code>, <code>{"{{status}}"}</code>, <code>{"{{order_id}}"}</code>, <code>{"{{courier}}"}</code>, <code>{"{{tracking}}"}</code>
-            </div>
+            >
+              ✕
+            </button>
           </div>
 
-          {bulkMessageType === 'email' ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <a
-                href={bulkEmailHref}
-                style={{
-                  display: 'block',
-                  textAlign: 'center',
-                  width: '100%',
-                  padding: '12px',
-                  background: 'transparent',
-                  color: '#fff',
-                  fontWeight: 'bold',
-                  border: '1px solid #fff',
-                  fontSize: '11px',
-                  cursor: 'pointer',
-                  borderRadius: '2px',
-                  textDecoration: 'none',
-                  boxSizing: 'border-box'
-                }}
-              >
-                Send Email ({validEmailsCount})
-              </a>
-
-              <div style={{ fontSize: '9.5px', color: '#888', textAlign: 'center' }}>
-                Found {validEmailsCount} valid emails out of {selectedOrdersList.length} selected orders.
-              </div>
-            </div>
-          ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '10px', color: '#888', marginBottom: '8px' }}>RECIPIENT DISPATCH QUEUE</label>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {selectedOrdersList.map((ord) => {
-                  const isSent = Boolean(sentIndexes[ord.id]);
-                  const phone = ord.customer_phone || 'No phone';
-                  const personalizedPreview = renderPersonalizedText(bulkMessageText, ord);
-
+              <label style={{ display: 'block', fontSize: '9px', color: '#888', marginBottom: '6px', letterSpacing: '1px' }}>LOAD STATUS TEMPLATE PRESET</label>
+              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                {Object.keys(TEMPLATE_PRESETS).map((key) => {
+                  const isPresetActive = selectedPresetKey === key || bulkMessageText === TEMPLATE_PRESETS[key];
                   return (
-                    <div key={ord.id} style={{ display: 'flex', flexDirection: 'column', gap: '6px', background: '#000', padding: '12px', border: '1px solid #222', borderRadius: '2px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-                        <div>
-                          <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#fff' }}>{ord.customer_name || 'Customer'}</div>
-                          <div style={{ fontSize: '10px', color: '#888', marginTop: '2px', fontFamily: 'monospace' }}>{phone}</div>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => handleSendSingleWhatsApp(ord)}
-                          style={{
-                            backgroundColor: isSent ? '#222' : '#111',
-                            color: isSent ? '#888' : '#ccc',
-                            border: isSent ? '1px solid #444' : '1px solid #333',
-                            padding: '6px 14px',
-                            fontSize: '9.5px',
-                            fontWeight: 'bold',
-                            cursor: 'pointer',
-                            borderRadius: '2px'
-                          }}
-                        >
-                          {isSent ? 'SENT' : 'SEND'}
-                        </button>
-                      </div>
-                      <div style={{ fontSize: '10px', color: '#ccc', background: '#050505', padding: '10px', border: '1px solid #1a1a1a', borderRadius: '2px', whiteSpace: 'pre-wrap' }}>
-                        {personalizedPreview}
-                      </div>
-                    </div>
+                    <button
+                      type="button"
+                      key={key}
+                      onClick={() => {
+                        setBulkMessageText(TEMPLATE_PRESETS[key]);
+                        setSelectedPresetKey(key);
+                      }}
+                      style={{
+                        backgroundColor: '#111',
+                        color: isPresetActive ? '#fff' : '#ccc',
+                        border: isPresetActive ? '1px solid #fff' : '1px solid #333',
+                        padding: '6px 12px',
+                        fontSize: '9.5px',
+                        fontWeight: 'bold',
+                        cursor: 'pointer',
+                        borderRadius: '2px'
+                      }}
+                    >
+                      {key.toUpperCase()}
+                    </button>
                   );
                 })}
               </div>
             </div>
-          )}
-        </div>
-      </div>
+
+            {bulkMessageType === 'email' && (
+              <div>
+                <label style={{ display: 'block', fontSize: '10px', color: '#888', marginBottom: '4px' }}>EMAIL SUBJECT</label>
+                <input
+                  type="text"
+                  value={bulkEmailSubject}
+                  onChange={(e) => setBulkEmailSubject(e.target.value)}
+                  style={{ width: '100%', background: '#000', color: '#fff', border: '1px solid #333', padding: '10px 12px', fontSize: '11px', outline: 'none', boxSizing: 'border-box', borderRadius: '2px' }}
+                />
+              </div>
+            )}
+
+            <div>
+              <label style={{ display: 'block', fontSize: '10px', color: '#888', marginBottom: '4px' }}>MESSAGE TEMPLATE</label>
+              <textarea
+                rows={5}
+                value={bulkMessageText}
+                onChange={(e) => {
+                  setBulkMessageText(e.target.value);
+                  setSelectedPresetKey('');
+                }}
+                style={{ width: '100%', background: '#000', color: '#fff', border: '1px solid #333', padding: '10px 12px', fontSize: '11px', outline: 'none', resize: 'vertical', boxSizing: 'border-box', borderRadius: '2px' }}
+              />
+              <div style={{ fontSize: '9px', color: '#888', marginTop: '4px' }}>
+                Variables: <code>{"{{name}}"}</code>, <code>{"{{status}}"}</code>, <code>{"{{order_id}}"}</code>, <code>{"{{courier}}"}</code>, <code>{"{{tracking}}"}</code>
+              </div>
+            </div>
+
+            {bulkMessageType === 'email' ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <a
+                  href={bulkEmailHref}
+                  style={{
+                    display: 'block',
+                    textAlign: 'center',
+                    width: '100%',
+                    padding: '12px',
+                    background: 'transparent',
+                    color: '#fff',
+                    fontWeight: 'bold',
+                    border: '1px solid #fff',
+                    fontSize: '11px',
+                    cursor: 'pointer',
+                    borderRadius: '2px',
+                    textDecoration: 'none',
+                    boxSizing: 'border-box'
+                  }}
+                >
+                  Send Email ({validEmailsCount})
+                </a>
+
+                <div style={{ fontSize: '9.5px', color: '#888', textAlign: 'center' }}>
+                  Found {validEmailsCount} valid emails out of {selectedOrdersList.length} selected orders.
+                </div>
+              </div>
+            ) : (
+              <div>
+                <label style={{ display: 'block', fontSize: '10px', color: '#888', marginBottom: '8px' }}>RECIPIENT DISPATCH QUEUE</label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {selectedOrdersList.map((ord) => {
+                    const isSent = Boolean(sentIndexes[ord.id]);
+                    const phone = ord.customer_phone || 'No phone';
+                    const personalizedPreview = renderPersonalizedText(bulkMessageText, ord);
+
+                    return (
+                      <div key={ord.id} style={{ display: 'flex', flexDirection: 'column', gap: '6px', background: '#000', padding: '12px', border: '1px solid #222', borderRadius: '2px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                          <div>
+                            <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#fff' }}>{ord.customer_name || 'Customer'}</div>
+                            <div style={{ fontSize: '10px', color: '#888', marginTop: '2px', fontFamily: 'monospace' }}>{phone}</div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleSendSingleWhatsApp(ord)}
+                            style={{
+                              backgroundColor: isSent ? '#222' : '#111',
+                              color: isSent ? '#888' : '#ccc',
+                              border: isSent ? '1px solid #444' : '1px solid #333',
+                              padding: '6px 14px',
+                              fontSize: '9.5px',
+                              fontWeight: 'bold',
+                              cursor: 'pointer',
+                              borderRadius: '2px'
+                            }}
+                          >
+                            {isSent ? 'SENT' : 'SEND'}
+                          </button>
+                        </div>
+                        <div style={{ fontSize: '10px', color: '#ccc', background: '#050505', padding: '10px', border: '1px solid #1a1a1a', borderRadius: '2px', whiteSpace: 'pre-wrap' }}>
+                          {personalizedPreview}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        </motion.div>
+      </AnimatePresence>
     );
   }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%', maxWidth: '100%', position: 'relative' }}>
 
-      {toast && (
-        <div style={{
-          position: 'fixed',
-          bottom: '30px',
-          right: '30px',
-          backgroundColor: toast.type === 'success' ? '#fff' : '#333',
-          color: toast.type === 'success' ? '#000' : '#fff',
-          border: '1px solid #444',
-          padding: '12px 20px',
-          borderRadius: '2px',
-          fontSize: '11px',
-          fontWeight: 'bold',
-          letterSpacing: '0.5px',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
-          zIndex: 9999,
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          animation: 'fadeIn 0.3s ease-in-out'
-        }}>
-          {toast.type === 'success' ? '✓' : '⚠'} {toast.message}
-        </div>
-      )}
-
-      <style>{`
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            transition={{ duration: 0.2 }}
+            style={{
+              position: 'fixed',
+              bottom: '30px',
+              right: '30px',
+              backgroundColor: toast.type === 'success' ? '#fff' : '#333',
+              color: toast.type === 'success' ? '#000' : '#fff',
+              border: '1px solid #444',
+              padding: '12px 20px',
+              borderRadius: '2px',
+              fontSize: '11px',
+              fontWeight: 'bold',
+              letterSpacing: '0.5px',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+              zIndex: 9999,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}
+          >
+            {toast.type === 'success' ? '✓' : '⚠'} {toast.message}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div style={{
         backgroundColor: '#0a0a0a',
@@ -1715,22 +1742,24 @@ const AdminOrders: React.FC = () => {
           NO MATCHING ORDERS FOUND
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-          {filteredOrders.map((order) => (
-            <OrderCard
-              key={order.id}
-              order={order}
-              isSelected={selectedOrderIds.includes(order.id)}
-              isExpanded={expandedOrderId === order.id}
-              onToggleExpand={handleToggleExpand}
-              onSelectToggle={handleSelectToggle}
-              onStatusChange={handleStatusChange}
-              onUpdateDetails={handleUpdateDetails}
-              onPrintInvoice={handlePrintInvoice}
-              getStatusColor={getStatusColor}
-            />
-          ))}
-        </div>
+        <motion.div layout style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <AnimatePresence>
+            {filteredOrders.map((order) => (
+              <OrderCard
+                key={order.id}
+                order={order}
+                isSelected={selectedOrderIds.includes(order.id)}
+                isExpanded={expandedOrderId === order.id}
+                onToggleExpand={handleToggleExpand}
+                onSelectToggle={handleSelectToggle}
+                onStatusChange={handleStatusChange}
+                onUpdateDetails={handleUpdateDetails}
+                onPrintInvoice={handlePrintInvoice}
+                getStatusColor={getStatusColor}
+              />
+            ))}
+          </AnimatePresence>
+        </motion.div>
       )}
 
     </div>
