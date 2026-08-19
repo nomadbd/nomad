@@ -284,7 +284,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
 
   return (
     <div
-      className="animate-table-row table-row-hover"
+      className="animate-fade-in table-row-hover"
       style={{
         backgroundColor: '#050505',
         border: isSelected ? '1px solid #fff' : '1px solid #222',
@@ -1210,33 +1210,48 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
   };
 
   const filteredOrders = useMemo(() => {
-    const rawTerm = searchTerm.trim().toLowerCase();
-    const cleanIdTerm = rawTerm.replace(/^#/, ''); // Remove leading '#' for order IDs
-    const digitsOnlyTerm = rawTerm.replace(/\D/g, ''); // Digits only for phone matching
+    const term = searchTerm.trim().toLowerCase();
+    const cleanTermDigits = term.replace(/[^0-9]/g, '');
 
     return orders.filter(order => {
-      let matchesSearch = true;
+      let matchesSearch = !term;
 
-      if (rawTerm) {
-        const matchesId = order.id.toLowerCase().includes(cleanIdTerm);
-        const matchesName = Boolean(order.customer_name && order.customer_name.toLowerCase().includes(rawTerm));
-        
-        const rawPhone = order.customer_phone || '';
-        const phoneDigits = rawPhone.replace(/\D/g, '');
-        const matchesPhone = Boolean(
-          (rawPhone && rawPhone.toLowerCase().includes(rawTerm)) ||
-          (digitsOnlyTerm.length > 2 && phoneDigits.includes(digitsOnlyTerm))
+      if (term) {
+        const idMatch = order.id.toLowerCase().includes(term);
+        const nameMatch = order.customer_name ? order.customer_name.toLowerCase().includes(term) : false;
+        const emailMatch = order.customer_email ? order.customer_email.toLowerCase().includes(term) : false;
+        const addressMatch = order.shipping_address ? order.shipping_address.toLowerCase().includes(term) : false;
+        const courierMatch = order.courier_name ? order.courier_name.toLowerCase().includes(term) : false;
+        const trackingMatch = order.tracking_id ? order.tracking_id.toLowerCase().includes(term) : false;
+        const customerNotesMatch = order.customer_notes ? order.customer_notes.toLowerCase().includes(term) : false;
+        const adminNotesMatch = order.admin_notes ? order.admin_notes.toLowerCase().includes(term) : false;
+        const itemMatch = order.items.some(item => item.product_name && item.product_name.toLowerCase().includes(term));
+
+        let phoneMatch = false;
+        if (order.customer_phone) {
+          const rawPhone = order.customer_phone.toLowerCase();
+          const cleanPhoneDigits = rawPhone.replace(/[^0-9]/g, '');
+          
+          phoneMatch = rawPhone.includes(term);
+          if (!phoneMatch && cleanTermDigits.length > 0) {
+            const termNoLeadingZero = cleanTermDigits.replace(/^0+/, '');
+            phoneMatch = cleanPhoneDigits.includes(cleanTermDigits) || 
+                         (termNoLeadingZero.length >= 3 && cleanPhoneDigits.includes(termNoLeadingZero));
+          }
+        }
+
+        matchesSearch = Boolean(
+          idMatch ||
+          nameMatch ||
+          emailMatch ||
+          addressMatch ||
+          courierMatch ||
+          trackingMatch ||
+          customerNotesMatch ||
+          adminNotesMatch ||
+          itemMatch ||
+          phoneMatch
         );
-
-        const matchesEmail = Boolean(order.customer_email && order.customer_email.toLowerCase().includes(rawTerm));
-        const matchesCourier = Boolean(order.courier_name && order.courier_name.toLowerCase().includes(rawTerm));
-        const matchesTracking = Boolean(order.tracking_id && order.tracking_id.toLowerCase().includes(cleanIdTerm));
-        const matchesAddress = Boolean(order.shipping_address && order.shipping_address.toLowerCase().includes(rawTerm));
-        const matchesItems = order.items.some(item =>
-          item.product_name && item.product_name.toLowerCase().includes(rawTerm)
-        );
-
-        matchesSearch = matchesId || matchesName || matchesPhone || matchesEmail || matchesCourier || matchesTracking || matchesAddress || matchesItems;
       }
 
       const matchesStatus = selectedStatusFilter === 'ALL' || order.status.toLowerCase().trim() === selectedStatusFilter.toLowerCase().trim();
@@ -1314,7 +1329,7 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
 
   if (isBulkViewOpen) {
     return (
-      <div className="animate-drawer" style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%', maxWidth: '100%', position: 'relative', minHeight: '80vh', backgroundColor: '#050505', padding: '0px', boxSizing: 'border-box', borderRadius: '0px', border: 'none' }}>
+      <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%', maxWidth: '100%', position: 'relative', minHeight: '80vh', backgroundColor: '#050505', padding: '0px', boxSizing: 'border-box', borderRadius: '0px', border: 'none' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #222', paddingBottom: '16px' }}>
           <div>
             <h3 style={{ margin: 0, fontSize: '15px', color: '#fff', letterSpacing: '1px', fontWeight: 'bold' }}>
