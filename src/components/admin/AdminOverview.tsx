@@ -4,6 +4,7 @@ import { supabase } from '../../supabaseClient';
 interface AdminOverviewProps {
   userRole?: string;
   showFilter?: boolean;
+  dateFormat?: string;
 }
 
 interface ChartPoint {
@@ -27,7 +28,11 @@ const formatNumber = (num: number): string => {
   return num.toLocaleString();
 };
 
-const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '', showFilter = false }) => {
+const AdminOverview: React.FC<AdminOverviewProps> = ({ 
+  userRole = '', 
+  showFilter = false,
+  dateFormat = 'DD/MM/YYYY'
+}) => {
   const normalizedRole = userRole.toUpperCase().trim();
   const canViewSensitiveData = ['SUPER_ADMIN', 'ADMIN'].includes(normalizedRole);
 
@@ -66,17 +71,32 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '', showFilter
     return `${year}-${month}-${day}`;
   };
 
+  const formatDateForUI = (dateStr: string) => {
+    if (!dateStr) return 'DD / MM / YYYY';
+    const parts = dateStr.split('-');
+    if (parts.length !== 3) return dateStr;
+    const [year, month, day] = parts;
+    if (dateFormat === 'DD/MM/YYYY') {
+      return `${day} / ${month} / ${year}`;
+    }
+    return `${month} / ${day} / ${year}`;
+  };
+
   const formatDisplayDate = (dateStr: string) => {
     if (!dateStr) return '';
     const parts = dateStr.split('-');
     if (parts.length === 1) return parts[0];
     if (parts.length === 2) {
       const date = new Date(Number(parts[0]), Number(parts[1]) - 1, 1);
-      return date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' }).toUpperCase();
+      return date.toLocaleDateString('en-GB', { month: 'short', year: '2-digit' }).toUpperCase();
     }
     const [year, month, day] = parts.map(Number);
-    const date = new Date(year, month - 1, day);
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase();
+    const d = String(day).padStart(2, '0');
+    const m = String(month).padStart(2, '0');
+    if (dateFormat === 'DD/MM/YYYY') {
+      return `${d}/${m}/${year}`;
+    }
+    return `${m}/${d}/${year}`;
   };
 
   const handlePresetSelect = (preset: string) => {
@@ -298,7 +318,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '', showFilter
         aov: ord > 0 ? Math.round(rev / ord) : 0,
       };
     });
-  }, [rawOrdersData, granularity, startDate, endDate]);
+  }, [rawOrdersData, granularity, startDate, endDate, dateFormat]);
 
   const calcPercent = (val: number) => {
     if (!totalOrders || totalOrders <= 0) return 0;
@@ -569,26 +589,34 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '', showFilter
           gap: 8px;
         }
 
-        .date-input {
-          background: transparent;
-          border: none;
+        .date-input-field {
+          position: relative;
+          display: inline-flex;
+          align-items: center;
+        }
+
+        .date-display-label {
           color: #666666;
           font-family: monospace;
           font-size: 11px;
           padding: 4px 6px;
-          outline: none;
-          width: 100%;
           cursor: pointer;
           transition: color 0.2s ease;
+          letter-spacing: 1px;
         }
 
-        .date-input::-webkit-calendar-picker-indicator {
-          filter: invert(0.5);
-          cursor: pointer;
-        }
-
-        .date-input:focus, .date-input:active, .date-input.active-input {
+        .date-display-label.active-input {
           color: #FFFFFF;
+        }
+
+        .date-input-picker {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          opacity: 0;
+          cursor: pointer;
         }
 
         .two-column-grid {
@@ -639,7 +667,6 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '', showFilter
             align-items: center;
           }
           .custom-date-inputs { width: auto; }
-          .date-input { width: 135px; }
         }
       `}</style>
 
@@ -659,25 +686,37 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ userRole = '', showFilter
             </div>
 
             <div className="custom-date-inputs">
-              <input
-                type="date"
-                className={`date-input ${selectedPreset === 'CUSTOM' ? 'active-input' : ''}`}
-                value={startDate}
-                onChange={(e) => {
-                  setStartDate(e.target.value);
-                  setSelectedPreset('CUSTOM');
-                }}
-              />
+              <div className="date-input-field">
+                <span className={`date-display-label ${selectedPreset === 'CUSTOM' ? 'active-input' : ''}`}>
+                  {formatDateForUI(startDate)}
+                </span>
+                <input
+                  type="date"
+                  className="date-input-picker"
+                  value={startDate}
+                  onChange={(e) => {
+                    setStartDate(e.target.value);
+                    setSelectedPreset('CUSTOM');
+                  }}
+                />
+              </div>
+
               <span style={{ color: '#444', fontSize: '11px', fontWeight: 'bold' }}>TO</span>
-              <input
-                type="date"
-                className={`date-input ${selectedPreset === 'CUSTOM' ? 'active-input' : ''}`}
-                value={endDate}
-                onChange={(e) => {
-                  setEndDate(e.target.value);
-                  setSelectedPreset('CUSTOM');
-                }}
-              />
+
+              <div className="date-input-field">
+                <span className={`date-display-label ${selectedPreset === 'CUSTOM' ? 'active-input' : ''}`}>
+                  {formatDateForUI(endDate)}
+                </span>
+                <input
+                  type="date"
+                  className="date-input-picker"
+                  value={endDate}
+                  onChange={(e) => {
+                    setEndDate(e.target.value);
+                    setSelectedPreset('CUSTOM');
+                  }}
+                />
+              </div>
             </div>
           </div>
         </div>
