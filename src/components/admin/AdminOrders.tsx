@@ -636,7 +636,7 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [internalSearchTerm, setInternalSearchTerm] = useState<string>('');
-  
+
   const searchTerm = searchQuery !== undefined ? searchQuery : internalSearchTerm;
   const setSearchTerm = (val: string) => {
     setInternalSearchTerm(val);
@@ -848,14 +848,15 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
     }
   };
 
+  // AdminOverview-এর সাথে মিলিয়ে কালার কোডসমূহ দেওয়া হয়েছে
   const getStatusColor = (rawStatus: string) => {
     const s = rawStatus.trim().toLowerCase();
-    if (s === 'received') return '#3b82f6';
-    if (s === 'processing') return '#0ea5e9';
-    if (s === 'shipped') return '#eab308';
-    if (s === 'delivered') return '#22c55e';
-    if (s === 'cancelled') return '#ef4444';
-    return '#a855f7';
+    if (s.includes('rec')) return '#7C4DFF';      // Received
+    if (s.includes('proc')) return '#E040FB';     // Processing
+    if (s.includes('shipped')) return '#00B0FF';  // Shipped
+    if (s.includes('delivered') || s.includes('completed')) return '#008000'; // Delivered
+    if (s.includes('cancel')) return '#FF5252';   // Cancelled
+    return '#FFB800';                             // Pending (Default)
   };
 
   const handlePrintInvoice = (order: Order) => {
@@ -1801,28 +1802,17 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
         </div>
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', color: '#888' }}>
-        <span>SHOWING {filteredOrders.length} OF {orders.length} ORDERS</span>
-        <button
-          type="button"
-          onClick={fetchAdminOrders}
-          style={{ background: 'none', border: 'none', color: '#ccc', fontSize: '11px', cursor: 'pointer', fontWeight: 'bold' }}
-        >
-          REFRESH
-        </button>
-      </div>
-
-      {loading ? (
-        <div className="animate-shimmer" style={{ textAlign: 'center', padding: '60px 0', color: '#888', fontSize: '11px', borderRadius: '4px' }}>
-          FETCHING ORDER MEMORANDUMS...
-        </div>
-      ) : filteredOrders.length === 0 ? (
-        <div className="animate-fade-in" style={{ backgroundColor: '#0a0a0a', border: '1px solid #222', padding: '50px 20px', textAlign: 'center', color: '#888' }}>
-          NO MATCHING ORDERS FOUND
-        </div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-          {filteredOrders.map((order) => (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        {loading ? (
+          <div style={{ padding: '40px', textAlign: 'center', color: '#666', fontSize: '11px', letterSpacing: '1px' }}>
+            LOADING ORDERS...
+          </div>
+        ) : filteredOrders.length === 0 ? (
+          <div style={{ padding: '40px', textAlign: 'center', color: '#666', fontSize: '11px', letterSpacing: '1px' }}>
+            NO ORDERS FOUND
+          </div>
+        ) : (
+          filteredOrders.map((order) => (
             <OrderCard
               key={order.id}
               order={order}
@@ -1835,10 +1825,9 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
               onPrintInvoice={handlePrintInvoice}
               getStatusColor={getStatusColor}
             />
-          ))}
-        </div>
-      )}
-
+          ))
+        )}
+      </div>
     </div>
   );
 };
