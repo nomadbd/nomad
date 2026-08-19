@@ -368,9 +368,9 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
     }
 
     const svgWidth = 650;
-    const svgHeight = 220;
-    const paddingTop = 40;
-    const paddingBottom = 32;
+    const svgHeight = 240;
+    const paddingTop = 35;
+    const paddingBottom = 45;
     const paddingLeft = 45;
     const paddingRight = 20;
 
@@ -410,8 +410,10 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
     const activePoint = hoveredIndex !== null ? points[hoveredIndex] : null;
     const showBelow = activePoint ? activePoint.y < 110 : false;
 
+    const step = points.length > 30 ? 4 : 2;
+
     return (
-      <div style={{ position: 'relative', width: '100%', padding: '8px 0' }}>
+      <div style={{ position: 'relative', width: '100%', padding: '8px 0', overflow: 'hidden' }}>
         <svg
           viewBox={`0 0 ${svgWidth} ${svgHeight}`}
           style={{ width: '100%', height: 'auto', display: 'block', overflow: 'visible' }}
@@ -423,6 +425,10 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
               <stop offset="100%" stopColor="#22d3ee" stopOpacity="0.0" />
             </linearGradient>
           </defs>
+
+          <text x={paddingLeft} y={18} fill="#718096" fontSize="9" textAnchor="start" fontFamily="monospace" fontWeight="bold">
+            ↑ {selectedMetric} ({selectedMetric === 'ORDERS' ? 'COUNT' : 'AMOUNT ৳'})
+          </text>
 
           {[0, 0.5, 1].map((ratio, idx) => {
             const yPos = svgHeight - paddingBottom - ratio * chartInnerHeight;
@@ -444,8 +450,8 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
 
           {points.map((p, i) => {
             const isHovered = hoveredIndex === i;
-            const step = Math.max(1, Math.ceil(points.length / 8));
-            const showLabel = points.length <= 10 || i === 0 || i === points.length - 1 || i % step === 0;
+            const pointNumber = i + 1;
+            const showLabel = points.length < 4 ? true : pointNumber % step === 0;
 
             return (
               <g key={i}>
@@ -463,13 +469,17 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
                 />
 
                 {showLabel && (
-                  <text x={p.x} y={svgHeight - 8} fill="#718096" fontSize="8" textAnchor="middle" fontFamily="monospace">
-                    {p.pt.label}
+                  <text x={p.x} y={svgHeight - 24} fill="#718096" fontSize="9" textAnchor="middle" fontFamily="monospace">
+                    {pointNumber}
                   </text>
                 )}
               </g>
             );
           })}
+
+          <text x={paddingLeft + chartInnerWidth / 2} y={svgHeight - 4} fill="#718096" fontSize="9" textAnchor="middle" fontFamily="monospace" fontWeight="bold">
+            ← TIME INTERVALS (#) →
+          </text>
 
           {activePoint && (
             <line x1={activePoint.x} y1={paddingTop} x2={activePoint.x} y2={svgHeight - paddingBottom} stroke="#22d3ee" strokeWidth="1" strokeDasharray="2 2" />
@@ -532,6 +542,8 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
                       opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1),
                       margin-bottom 0.4s cubic-bezier(0.16, 1, 0.3, 1);
           margin-bottom: 0px;
+          width: 100%;
+          max-width: 100%;
         }
 
         .filter-expand-wrapper.open {
@@ -542,6 +554,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
 
         .filter-expand-content {
           overflow: hidden;
+          width: 100%;
         }
 
         .date-filter-container {
@@ -551,6 +564,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
           display: flex;
           flex-direction: column;
           gap: 10px;
+          width: 100%;
         }
 
         .preset-buttons {
@@ -558,6 +572,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
           gap: 10px;
           overflow-x: auto;
           scrollbar-width: none;
+          max-width: 100%;
         }
 
         .preset-btn {
@@ -587,6 +602,8 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
           display: flex;
           align-items: center;
           gap: 8px;
+          max-width: 100%;
+          flex-wrap: wrap;
         }
 
         .date-input-field {
@@ -621,9 +638,11 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
 
         .two-column-grid {
           display: grid;
-          grid-template-columns: repeat(2, 1fr);
+          grid-template-columns: repeat(2, minmax(0, 1fr));
           gap: 10px;
           margin-top: 10px;
+          width: 100%;
+          max-width: 100%;
         }
 
         .metric-card {
@@ -631,12 +650,16 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
           border: 1px solid #222222;
           padding: 14px 12px;
           border-radius: 2px;
+          width: 100%;
+          overflow: hidden;
         }
 
         .status-grid {
           display: grid;
-          grid-template-columns: repeat(2, 1fr);
+          grid-template-columns: repeat(2, minmax(0, 1fr));
           gap: 10px;
+          width: 100%;
+          max-width: 100%;
         }
 
         .filter-toggle-btn {
@@ -657,7 +680,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
         }
 
         @media (min-width: 640px) {
-          .status-grid { grid-template-columns: repeat(3, 1fr); }
+          .status-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
         }
 
         @media (min-width: 1024px) {
@@ -722,18 +745,18 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
         </div>
       </div>
 
-      <div style={{ backgroundColor: '#080808', border: '1px solid #222', padding: '14px', borderRadius: '2px' }}>
+      <div style={{ backgroundColor: '#080808', border: '1px solid #222', padding: '14px', borderRadius: '2px', width: '100%', maxWidth: '100%', overflow: 'hidden' }}>
         <span style={{ fontSize: '14px', color: '#CBD5E0', letterSpacing: '1px', fontWeight: 'bold', display: 'block', marginBottom: '10px' }}>
           FULFILLMENT STATUS
         </span>
 
-        <div style={{ display: 'flex', height: '4px', backgroundColor: '#181818', borderRadius: '2px', overflow: 'hidden', marginBottom: '12px' }}>
-          <div style={{ width: `${calcPercent(pendingOrders)}%`, backgroundColor: '#facc15' }} />
-          <div style={{ width: `${calcPercent(processingOrders)}%`, backgroundColor: '#c084fc' }} />
-          <div style={{ width: `${calcPercent(receivedOrders)}%`, backgroundColor: '#60a5fa' }} />
-          <div style={{ width: `${calcPercent(shippedOrders)}%`, backgroundColor: '#22d3ee' }} />
-          <div style={{ width: `${calcPercent(deliveredOrders)}%`, backgroundColor: '#4ade80' }} />
-          <div style={{ width: `${calcPercent(cancelledOrders)}%`, backgroundColor: '#f87171' }} />
+        <div style={{ display: 'flex', width: '100%', maxWidth: '100%', height: '4px', backgroundColor: '#181818', borderRadius: '2px', overflow: 'hidden', marginBottom: '12px' }}>
+          <div style={{ width: `${calcPercent(pendingOrders)}%`, backgroundColor: '#facc15', flexShrink: 0 }} />
+          <div style={{ width: `${calcPercent(processingOrders)}%`, backgroundColor: '#c084fc', flexShrink: 0 }} />
+          <div style={{ width: `${calcPercent(receivedOrders)}%`, backgroundColor: '#60a5fa', flexShrink: 0 }} />
+          <div style={{ width: `${calcPercent(shippedOrders)}%`, backgroundColor: '#22d3ee', flexShrink: 0 }} />
+          <div style={{ width: `${calcPercent(deliveredOrders)}%`, backgroundColor: '#4ade80', flexShrink: 0 }} />
+          <div style={{ width: `${calcPercent(cancelledOrders)}%`, backgroundColor: '#f87171', flexShrink: 0 }} />
         </div>
 
         <div className="status-grid">
@@ -825,7 +848,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
       </div>
 
       {canViewSensitiveData && (
-        <div style={{ backgroundColor: '#080808', border: '1px solid #222', padding: '18px 16px', borderRadius: '2px', marginTop: '10px', position: 'relative' }}>
+        <div style={{ backgroundColor: '#080808', border: '1px solid #222', padding: '18px 16px', borderRadius: '2px', marginTop: '10px', position: 'relative', width: '100%', maxWidth: '100%', overflow: 'hidden' }}>
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginBottom: '14px' }}>
             <span style={{ fontSize: '13px', color: '#CBD5E0', fontWeight: 'bold', letterSpacing: '1px' }}>
