@@ -211,8 +211,9 @@ const AdminDashboard: React.FC = () => {
           .user-footer-block {
             display: ${menuOpen ? 'block' : 'none'} !important;
             margin-top: 15px;
+            flex-shrink: 0 !important;
             padding-top: 12px;
-            padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)) !important;
+            padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px)) !important;
             border-top: 1px solid #141414;
           }
 
@@ -231,7 +232,8 @@ const AdminDashboard: React.FC = () => {
 
           .nomad-sidebar {
             width: 220px !important;
-            height: 100dvh !important;
+            height: 100% !important;
+            max-height: 100dvh !important;
             position: fixed !important;
             top: 0;
             left: 0;
@@ -239,10 +241,9 @@ const AdminDashboard: React.FC = () => {
             z-index: 100;
             border-bottom: none;
             border-right: 1px solid #1a1a1a;
-            padding: 20px 14px calc(24px + env(safe-area-inset-bottom, 0px)) 14px !important;
+            padding: 20px 14px 16px 14px !important;
             display: flex !important;
             flex-direction: column !important;
-            justify-content: space-between !important;
             overflow-y: auto;
             background-color: #060606;
           }
@@ -260,7 +261,8 @@ const AdminDashboard: React.FC = () => {
 
           .user-footer-block {
             display: block !important;
-            margin-top: auto;
+            margin-top: auto !important;
+            flex-shrink: 0 !important;
             padding-top: 16px;
             border-top: 1px solid #1a1a1a;
           }
