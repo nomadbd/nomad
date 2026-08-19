@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../../supabaseClient';
-import './admin-animations.css';
 
 interface SupabaseProductMedia {
   media_url: string;
@@ -284,7 +283,6 @@ const OrderCard: React.FC<OrderCardProps> = ({
 
   return (
     <div
-      className="animate-card smooth-transition"
       style={{
         backgroundColor: '#050505',
         border: isSelected ? '1px solid #fff' : '1px solid #222',
@@ -296,7 +294,6 @@ const OrderCard: React.FC<OrderCardProps> = ({
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
             <div
-              className="smooth-transition"
               onClick={() => onSelectToggle(order.id)}
               style={{
                 width: '18px',
@@ -352,7 +349,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
         </div>
 
         {isExpanded && (
-          <div className="animate-fade-in" style={{ paddingTop: '4px', paddingBottom: '4px', borderTop: '1px solid #1a1a1a', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div style={{ paddingTop: '4px', paddingBottom: '4px', borderTop: '1px solid #1a1a1a', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '20px' }}>
             <div>
               <h4 style={{ color: '#888', fontSize: '10px', letterSpacing: '1px', marginBottom: '10px', marginTop: '10px', fontWeight: 'bold' }}>ORDERED ITEMS</h4>
               {order.items.length > 0 ? order.items.map((item, idx) => (
@@ -437,7 +434,6 @@ const OrderCard: React.FC<OrderCardProps> = ({
 
               <button
                 type="button"
-                className="smooth-transition"
                 onClick={handleSaveDetails}
                 disabled={isUpdating}
                 style={{
@@ -1294,7 +1290,7 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
 
   if (isBulkViewOpen) {
     return (
-      <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%', maxWidth: '100%', position: 'relative', minHeight: '80vh', backgroundColor: '#050505', padding: '0px', boxSizing: 'border-box', borderRadius: '0px', border: 'none' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%', maxWidth: '100%', position: 'relative', minHeight: '80vh', backgroundColor: '#050505', padding: '0px', boxSizing: 'border-box', borderRadius: '0px', border: 'none' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #222', paddingBottom: '16px' }}>
           <div>
             <h3 style={{ margin: 0, fontSize: '15px', color: '#fff', letterSpacing: '1px', fontWeight: 'bold' }}>
@@ -1303,7 +1299,6 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
           </div>
           <button
             type="button"
-            className="smooth-transition"
             onClick={() => setIsBulkViewOpen(false)}
             style={{
               backgroundColor: '#111',
@@ -1333,7 +1328,6 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
                   <button
                     type="button"
                     key={key}
-                    className="smooth-transition"
                     onClick={() => {
                       setBulkMessageText(TEMPLATE_PRESETS[key]);
                       setSelectedPresetKey(key);
@@ -1387,7 +1381,6 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <a
                 href={bulkEmailHref}
-                className="smooth-transition"
                 style={{
                   display: 'block',
                   textAlign: 'center',
@@ -1421,7 +1414,7 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
                   const personalizedPreview = renderPersonalizedText(bulkMessageText, ord);
 
                   return (
-                    <div key={ord.id} className="animate-card" style={{ display: 'flex', flexDirection: 'column', gap: '6px', background: '#000', padding: '12px', border: '1px solid #222', borderRadius: '2px' }}>
+                    <div key={ord.id} style={{ display: 'flex', flexDirection: 'column', gap: '6px', background: '#000', padding: '12px', border: '1px solid #222', borderRadius: '2px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
                         <div>
                           <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#fff' }}>{ord.customer_name || 'Customer'}</div>
@@ -1429,7 +1422,6 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
                         </div>
                         <button
                           type="button"
-                          className="smooth-transition"
                           onClick={() => handleSendSingleWhatsApp(ord)}
                           style={{
                             backgroundColor: isSent ? '#222' : '#111',
@@ -1464,7 +1456,6 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
 
       {toast && (
         <div
-          className="animate-pop"
           style={{
             position: 'fixed',
             bottom: '30px',
@@ -1493,7 +1484,6 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
           maxHeight: searchOpen ? '100px' : '0px',
           opacity: searchOpen ? 1 : 0,
           overflow: 'hidden',
-          transition: 'all 0.3s ease-in-out',
           visibility: searchOpen ? 'visible' : 'hidden'
         }}
       >
@@ -1522,9 +1512,7 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
         style={{
           maxHeight: filterOpen ? '1000px' : '0px',
           opacity: filterOpen ? 1 : 0,
-          transform: filterOpen ? 'translateY(0)' : 'translateY(-10px)',
           overflow: 'hidden',
-          transition: 'all 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
           visibility: filterOpen ? 'visible' : 'hidden',
           pointerEvents: filterOpen ? 'auto' : 'none',
           display: 'flex',
@@ -1554,7 +1542,6 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
                   <button
                     type="button"
                     key={dateFilter}
-                    className="smooth-transition"
                     onClick={() => setSelectedDateFilter(dateFilter)}
                     style={{
                       backgroundColor: 'transparent',
@@ -1587,7 +1574,6 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
                   <button
                     type="button"
                     key={status}
-                    className="smooth-transition"
                     onClick={() => setSelectedStatusFilter(status)}
                     style={{
                       backgroundColor: 'transparent',
@@ -1620,7 +1606,6 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
                   <button
                     type="button"
                     key={pStatus}
-                    className="smooth-transition"
                     onClick={() => setSelectedPaymentStatusFilter(pStatus)}
                     style={{
                       backgroundColor: 'transparent',
@@ -1646,10 +1631,9 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
         </div>
 
         <div
-          className="smooth-transition"
           style={{
             display: 'flex',
-            justify: 'space-between',
+            justifyContent: 'space-between',
             alignItems: 'center',
             flexWrap: 'wrap',
             gap: '10px',
@@ -1661,7 +1645,6 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div
-              className="smooth-transition"
               onClick={handleSelectAllFiltered}
               style={{
                 width: '18px',
@@ -1688,7 +1671,7 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
           </div>
 
           {selectedOrderIds.length > 0 && (
-            <div className="animate-fade-in" style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
               <select
                 onChange={(e) => {
                   if (e.target.value) {
@@ -1716,7 +1699,6 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
 
               <button
                 type="button"
-                className="smooth-transition"
                 onClick={() => handlePrintBulkInvoices(selectedOrdersList)}
                 style={{
                   backgroundColor: '#000',
@@ -1734,7 +1716,6 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
 
               <button
                 type="button"
-                className="smooth-transition"
                 onClick={() => {
                   setBulkMessageType('whatsapp');
                   setIsBulkViewOpen(true);
@@ -1755,7 +1736,6 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
 
               <button
                 type="button"
-                className="smooth-transition"
                 onClick={() => {
                   setBulkMessageType('email');
                   setIsBulkViewOpen(true);
