@@ -1460,7 +1460,7 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%', maxWidth: '100%', position: 'relative' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%', maxWidth: '100%', position: 'relative' }}>
 
       {toast && (
         <div
@@ -1488,34 +1488,51 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
         </div>
       )}
 
-      {searchOpen && (
-        <div className="animate-fade-in">
-          <input
-            type="text"
-            placeholder="SEARCH BY ID, NAME, PHONE, EMAIL, ITEM OR TRACKING..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            autoFocus
-            style={{
-              width: '100%',
-              backgroundColor: '#000',
-              border: '1px solid #333',
-              padding: '11px 14px',
-              color: '#fff',
-              fontSize: '11px',
-              fontFamily: 'monospace',
-              letterSpacing: '1px',
-              outline: 'none',
-              boxSizing: 'border-box',
-              borderRadius: '2px'
-            }}
-          />
-        </div>
-      )}
+      <div
+        style={{
+          maxHeight: searchOpen ? '100px' : '0px',
+          opacity: searchOpen ? 1 : 0,
+          overflow: 'hidden',
+          transition: 'all 0.3s ease-in-out',
+          visibility: searchOpen ? 'visible' : 'hidden'
+        }}
+      >
+        <input
+          type="text"
+          placeholder="SEARCH BY ID, NAME, PHONE, EMAIL, ITEM OR TRACKING..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          style={{
+            width: '100%',
+            backgroundColor: '#000',
+            border: '1px solid #333',
+            padding: '11px 14px',
+            color: '#fff',
+            fontSize: '11px',
+            fontFamily: 'monospace',
+            letterSpacing: '1px',
+            outline: 'none',
+            boxSizing: 'border-box',
+            borderRadius: '2px'
+          }}
+        />
+      </div>
 
-      {filterOpen && (
+      <div
+        style={{
+          maxHeight: filterOpen ? '1000px' : '0px',
+          opacity: filterOpen ? 1 : 0,
+          transform: filterOpen ? 'translateY(0)' : 'translateY(-10px)',
+          overflow: 'hidden',
+          transition: 'all 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
+          visibility: filterOpen ? 'visible' : 'hidden',
+          pointerEvents: filterOpen ? 'auto' : 'none',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '14px'
+        }}
+      >
         <div
-          className="animate-fade-in"
           style={{
             backgroundColor: '#050505',
             border: '1px solid #222',
@@ -1627,138 +1644,138 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
             </div>
           </div>
         </div>
-      )}
 
-      <div
-        className="smooth-transition"
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: '10px',
-          backgroundColor: selectedOrderIds.length > 0 ? '#111' : '#0a0a0a',
-          border: '1px solid #222',
-          padding: '12px 16px',
-          borderRadius: '2px'
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div
-            className="smooth-transition"
-            onClick={handleSelectAllFiltered}
-            style={{
-              width: '18px',
-              height: '18px',
-              borderRadius: '3px',
-              border: isAllFilteredSelected ? '1px solid #fff' : '1px solid #444',
-              backgroundColor: isAllFilteredSelected ? '#fff' : '#000',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              flexShrink: 0
-            }}
-          >
-            {isAllFilteredSelected && (
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="20 6 9 17 4 12"></polyline>
-              </svg>
-            )}
+        <div
+          className="smooth-transition"
+          style={{
+            display: 'flex',
+            justify: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '10px',
+            backgroundColor: selectedOrderIds.length > 0 ? '#111' : '#0a0a0a',
+            border: '1px solid #222',
+            padding: '12px 16px',
+            borderRadius: '2px'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div
+              className="smooth-transition"
+              onClick={handleSelectAllFiltered}
+              style={{
+                width: '18px',
+                height: '18px',
+                borderRadius: '3px',
+                border: isAllFilteredSelected ? '1px solid #fff' : '1px solid #444',
+                backgroundColor: isAllFilteredSelected ? '#fff' : '#000',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                flexShrink: 0
+              }}
+            >
+              {isAllFilteredSelected && (
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+              )}
+            </div>
+            <span onClick={handleSelectAllFiltered} style={{ fontSize: '11px', color: '#fff', cursor: 'pointer', fontWeight: 'bold' }}>
+              SELECT ALL FILTERED ({filteredOrders.length})
+            </span>
           </div>
-          <span onClick={handleSelectAllFiltered} style={{ fontSize: '11px', color: '#fff', cursor: 'pointer', fontWeight: 'bold' }}>
-            SELECT ALL FILTERED ({filteredOrders.length})
-          </span>
+
+          {selectedOrderIds.length > 0 && (
+            <div className="animate-fade-in" style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+              <select
+                onChange={(e) => {
+                  if (e.target.value) {
+                    handleBulkPaymentStatusChange(e.target.value);
+                    e.target.value = '';
+                  }
+                }}
+                style={{
+                  backgroundColor: '#000',
+                  color: '#fff',
+                  border: '1px solid #444',
+                  padding: '7px 10px',
+                  fontSize: '10px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  borderRadius: '2px',
+                  outline: 'none'
+                }}
+              >
+                <option value="" style={{ background: '#000', color: '#fff' }}>MARK PAYMENT AS...</option>
+                <option value="Paid" style={{ background: '#000', color: '#fff' }}>PAID</option>
+                <option value="Unpaid / COD" style={{ background: '#000', color: '#fff' }}>UNPAID / COD</option>
+                <option value="Partial Paid" style={{ background: '#000', color: '#fff' }}>PARTIAL PAID</option>
+              </select>
+
+              <button
+                type="button"
+                className="smooth-transition"
+                onClick={() => handlePrintBulkInvoices(selectedOrdersList)}
+                style={{
+                  backgroundColor: '#000',
+                  color: '#fff',
+                  border: '1px solid #444',
+                  padding: '7px 12px',
+                  fontSize: '10px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  borderRadius: '2px'
+                }}
+              >
+                BULK PRINT ({selectedOrderIds.length})
+              </button>
+
+              <button
+                type="button"
+                className="smooth-transition"
+                onClick={() => {
+                  setBulkMessageType('whatsapp');
+                  setIsBulkViewOpen(true);
+                }}
+                style={{
+                  backgroundColor: '#000',
+                  color: '#fff',
+                  border: '1px solid #444',
+                  padding: '7px 12px',
+                  fontSize: '10px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  borderRadius: '2px'
+                }}
+              >
+                WhatsApp ({selectedOrderIds.length})
+              </button>
+
+              <button
+                type="button"
+                className="smooth-transition"
+                onClick={() => {
+                  setBulkMessageType('email');
+                  setIsBulkViewOpen(true);
+                }}
+                style={{
+                  backgroundColor: '#000',
+                  color: '#fff',
+                  border: '1px solid #444',
+                  padding: '7px 12px',
+                  fontSize: '10px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  borderRadius: '2px'
+                }}
+              >
+                Email ({selectedOrderIds.length})
+              </button>
+            </div>
+          )}
         </div>
-
-        {selectedOrderIds.length > 0 && (
-          <div className="animate-fade-in" style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-            <select
-              onChange={(e) => {
-                if (e.target.value) {
-                  handleBulkPaymentStatusChange(e.target.value);
-                  e.target.value = '';
-                }
-              }}
-              style={{
-                backgroundColor: '#000',
-                color: '#fff',
-                border: '1px solid #444',
-                padding: '7px 10px',
-                fontSize: '10px',
-                fontWeight: 'bold',
-                cursor: 'pointer',
-                borderRadius: '2px',
-                outline: 'none'
-              }}
-            >
-              <option value="" style={{ background: '#000', color: '#fff' }}>MARK PAYMENT AS...</option>
-              <option value="Paid" style={{ background: '#000', color: '#fff' }}>PAID</option>
-              <option value="Unpaid / COD" style={{ background: '#000', color: '#fff' }}>UNPAID / COD</option>
-              <option value="Partial Paid" style={{ background: '#000', color: '#fff' }}>PARTIAL PAID</option>
-            </select>
-
-            <button
-              type="button"
-              className="smooth-transition"
-              onClick={() => handlePrintBulkInvoices(selectedOrdersList)}
-              style={{
-                backgroundColor: '#000',
-                color: '#fff',
-                border: '1px solid #444',
-                padding: '7px 12px',
-                fontSize: '10px',
-                fontWeight: 'bold',
-                cursor: 'pointer',
-                borderRadius: '2px'
-              }}
-            >
-              BULK PRINT ({selectedOrderIds.length})
-            </button>
-
-            <button
-              type="button"
-              className="smooth-transition"
-              onClick={() => {
-                setBulkMessageType('whatsapp');
-                setIsBulkViewOpen(true);
-              }}
-              style={{
-                backgroundColor: '#000',
-                color: '#fff',
-                border: '1px solid #444',
-                padding: '7px 12px',
-                fontSize: '10px',
-                fontWeight: 'bold',
-                cursor: 'pointer',
-                borderRadius: '2px'
-              }}
-            >
-              WhatsApp ({selectedOrderIds.length})
-            </button>
-
-            <button
-              type="button"
-              className="smooth-transition"
-              onClick={() => {
-                setBulkMessageType('email');
-                setIsBulkViewOpen(true);
-              }}
-              style={{
-                backgroundColor: '#000',
-                color: '#fff',
-                border: '1px solid #444',
-                padding: '7px 12px',
-                fontSize: '10px',
-                fontWeight: 'bold',
-                cursor: 'pointer',
-                borderRadius: '2px'
-              }}
-            >
-              Email ({selectedOrderIds.length})
-            </button>
-          </div>
-        )}
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', color: '#888' }}>
