@@ -80,6 +80,7 @@ interface AdminOrdersProps {
 const STATUS_OPTIONS = [
   'Pending',
   'Received',
+  'Processing',
   'Shipped',
   'Delivered',
   'Cancelled'
@@ -850,6 +851,7 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
   const getStatusColor = (rawStatus: string) => {
     const s = rawStatus.trim().toLowerCase();
     if (s === 'received') return '#3b82f6';
+    if (s === 'processing') return '#0ea5e9';
     if (s === 'shipped') return '#eab308';
     if (s === 'delivered') return '#22c55e';
     if (s === 'cancelled') return '#ef4444';
