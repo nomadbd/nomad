@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { supabase } from '../../supabaseClient';
+import './admin-animations.css';
 
 interface AdminOverviewProps {
   userRole?: string;
@@ -593,46 +594,6 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
     }}>
       <style>{`
         * { box-sizing: border-box; }
-
-        @keyframes fadeIn {
-          0% {
-            opacity: 0;
-          }
-          100% {
-            opacity: 1;
-          }
-        }
-
-        .animate-card {
-          animation: fadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-
-        .status-bar-segment {
-          transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .filter-expand-wrapper {
-          display: grid;
-          grid-template-rows: 0fr;
-          opacity: 0;
-          transition: grid-template-rows 0.4s cubic-bezier(0.16, 1, 0.3, 1),
-                      opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1),
-                      margin-bottom 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-          margin-bottom: 0px;
-          width: 100%;
-          max-width: 100%;
-        }
-
-        .filter-expand-wrapper.open {
-          grid-template-rows: 1fr;
-          opacity: 1;
-          margin-bottom: 14px;
-        }
-
-        .filter-expand-content {
-          overflow: hidden;
-          width: 100%;
-        }
 
         .date-filter-container {
           background-color: transparent;
