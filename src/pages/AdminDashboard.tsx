@@ -290,7 +290,8 @@ const AdminDashboard: React.FC = () => {
           align-items: center;
           gap: 12px;
           padding: 12px 14px;
-          border: 1px solid transparent;
+          border: none !important;
+          border-left: 2px solid transparent !important;
           font-weight: bold;
           font-size: 11px;
           text-align: left;
@@ -298,7 +299,7 @@ const AdminDashboard: React.FC = () => {
           letter-spacing: 1px;
           background: transparent;
           color: #888888;
-          border-radius: 2px;
+          border-radius: 0 !important;
           transition: all 0.2s ease;
           width: 100%;
         }
@@ -306,8 +307,8 @@ const AdminDashboard: React.FC = () => {
         .nav-btn.active {
           background-color: transparent !important;
           color: #ffffff !important;
-          border-color: #ffffff !important;
-          box-shadow: 0 0 10px rgba(255, 255, 255, 0.08);
+          border-left: 2px solid #ffffff !important;
+          box-shadow: none !important;
         }
 
         .user-text-container {
@@ -523,13 +524,13 @@ const AdminDashboard: React.FC = () => {
 
         <main className="nomad-main">
           {activeTab === 'overview' && (
-            <AdminOverview key="overview" userRole={userRole} showFilter={isFilterOpen} />
+            <AdminOverview key="overview" userRole={userRole} showFilter={isFilterOpen} dateFormat="DD/MM/YYYY" />
           )}
           {activeTab === 'orders' && (
-            <AdminOrders key="orders" searchQuery={searchQuery} isFilterOpen={isFilterOpen} />
+            <AdminOrders key="orders" searchQuery={searchQuery} isFilterOpen={isFilterOpen} dateFormat="DD/MM/YYYY" />
           )}
           {activeTab === 'products' && (
-            <AdminProducts key="products" searchQuery={searchQuery} isFilterOpen={isFilterOpen} />
+            <AdminProducts key="products" searchQuery={searchQuery} isFilterOpen={isFilterOpen} dateFormat="DD/MM/YYYY" />
           )}
 
           {activeTab === 'settings' && (
