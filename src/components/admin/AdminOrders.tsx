@@ -350,114 +350,117 @@ const OrderCard: React.FC<OrderCardProps> = ({
           </div>
         </div>
 
-        {isExpanded && (
-          <div className="animate-fade-in" style={{ paddingTop: '4px', paddingBottom: '4px', borderTop: '1px solid #1a1a1a', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            <div>
-              <h4 style={{ color: '#888', fontSize: '10px', letterSpacing: '1px', marginBottom: '10px', marginTop: '10px', fontWeight: 'bold' }}>ORDERED ITEMS</h4>
-              {order.items.length > 0 ? order.items.map((item, idx) => (
-                <div key={`${item.product_name}-${idx}`} style={{
-                  display: 'flex',
-                  gap: '12px',
-                  background: '#0a0a0a',
-                  padding: '10px',
-                  marginBottom: '8px',
-                  borderRadius: '3px'
-                }}>
-                  <img
-                    src={item.product_image}
-                    alt={item.product_name}
-                    style={{ width: '45px', height: '55px', objectFit: 'cover', borderRadius: '2px' }}
-                  />
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 'bold', fontSize: '11px', color: '#fff' }}>{item.product_name}</div>
-                    <div style={{ fontSize: '9.5px', color: '#bbb', marginTop: '4px' }}>
-                      SIZE: {item.size} • COLOR: {item.color} • QTY: {item.quantity}
+        <div className={`filter-expand-wrapper ${isExpanded ? 'open' : ''}`}>
+          <div className="filter-expand-content">
+            <div style={{ paddingTop: '8px', paddingBottom: '8px', borderTop: '1px solid #1a1a1a', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div>
+                <h4 style={{ color: '#888', fontSize: '10px', letterSpacing: '1px', marginBottom: '10px', marginTop: '10px', fontWeight: 'bold' }}>ORDERED ITEMS</h4>
+                {order.items.length > 0 ? order.items.map((item, idx) => (
+                  <div key={`${item.product_name}-${idx}`} style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    background: '#0a0a0a',
+                    padding: '10px',
+                    marginBottom: '8px',
+                    borderRadius: '3px'
+                  }}>
+                    <img
+                      src={item.product_image}
+                      alt={item.product_name}
+                      style={{ width: '45px', height: '55px', objectFit: 'cover', borderRadius: '2px', flexShrink: 0 }}
+                    />
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                      <div style={{ fontWeight: 'bold', fontSize: '11px', color: '#fff', lineHeight: '1.3' }}>{item.product_name}</div>
+                      <div style={{ fontSize: '9.5px', color: '#bbb', marginTop: '4px' }}>
+                        SIZE: {item.size} • COLOR: {item.color} • QTY: {item.quantity}
+                      </div>
+                    </div>
+                    <div style={{ fontWeight: 'bold', fontSize: '12px', color: '#fff', whiteSpace: 'nowrap', marginLeft: 'auto' }}>
+                      ৳{item.price * item.quantity}
                     </div>
                   </div>
-                  <div style={{ fontWeight: 'bold', fontSize: '12px', alignSelf: 'center', color: '#fff' }}>
-                    ৳{item.price * item.quantity}
+                )) : (
+                  <div style={{ color: '#666', fontSize: '11px', fontStyle: 'italic', padding: '10px' }}>
+                    No items found for this order.
+                  </div>
+                )}
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '10px' }}>
+                <h4 style={{ color: '#888', fontSize: '10px', letterSpacing: '1.5px', margin: 0, fontWeight: 'bold' }}>MANAGEMENT DETAILS</h4>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '9px', color: '#777', marginBottom: '6px', letterSpacing: '0.5px' }}>COURIER NAME</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Steadfast, Pathao"
+                      value={editForm.courier_name}
+                      onChange={e => setEditForm({ ...editForm, courier_name: e.target.value })}
+                      style={cleanInputStyle}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '9px', color: '#777', marginBottom: '6px', letterSpacing: '0.5px' }}>TRACKING ID</label>
+                    <input
+                      type="text"
+                      placeholder="Tracking / Memo No."
+                      value={editForm.tracking_id}
+                      onChange={e => setEditForm({ ...editForm, tracking_id: e.target.value })}
+                      style={cleanInputStyle}
+                    />
                   </div>
                 </div>
-              )) : (
-                <div style={{ color: '#666', fontSize: '11px', fontStyle: 'italic', padding: '10px' }}>
-                  No items found for this order.
-                </div>
-              )}
-            </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '10px' }}>
-              <h4 style={{ color: '#888', fontSize: '10px', letterSpacing: '1.5px', margin: 0, fontWeight: 'bold' }}>MANAGEMENT DETAILS</h4>
-
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '9px', color: '#777', marginBottom: '6px', letterSpacing: '0.5px' }}>COURIER NAME</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Steadfast, Pathao"
-                    value={editForm.courier_name}
-                    onChange={e => setEditForm({ ...editForm, courier_name: e.target.value })}
-                    style={cleanInputStyle}
+                  <label style={{ display: 'block', fontSize: '9px', color: '#777', marginBottom: '6px', letterSpacing: '0.5px' }}>CUSTOMER NOTES</label>
+                  <textarea
+                    rows={2}
+                    placeholder="Add customer note to send in messages..."
+                    value={editForm.customer_notes}
+                    onChange={e => setEditForm({ ...editForm, customer_notes: e.target.value })}
+                    style={{ ...cleanInputStyle, resize: 'vertical' }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '9px', color: '#777', marginBottom: '6px', letterSpacing: '0.5px' }}>TRACKING ID</label>
-                  <input
-                    type="text"
-                    placeholder="Tracking / Memo No."
-                    value={editForm.tracking_id}
-                    onChange={e => setEditForm({ ...editForm, tracking_id: e.target.value })}
-                    style={cleanInputStyle}
+                  <label style={{ display: 'block', fontSize: '9px', color: '#777', marginBottom: '6px', letterSpacing: '0.5px' }}>ADMIN NOTES</label>
+                  <textarea
+                    rows={2}
+                    placeholder="Add private admin notes here..."
+                    value={editForm.admin_notes}
+                    onChange={e => setEditForm({ ...editForm, admin_notes: e.target.value })}
+                    style={{ ...cleanInputStyle, resize: 'vertical' }}
                   />
                 </div>
-              </div>
 
-              <div>
-                <label style={{ display: 'block', fontSize: '9px', color: '#777', marginBottom: '6px', letterSpacing: '0.5px' }}>CUSTOMER NOTES</label>
-                <textarea
-                  rows={2}
-                  placeholder="Add customer note to send in messages..."
-                  value={editForm.customer_notes}
-                  onChange={e => setEditForm({ ...editForm, customer_notes: e.target.value })}
-                  style={{ ...cleanInputStyle, resize: 'vertical' }}
-                />
+                <button
+                  type="button"
+                  onClick={handleSaveDetails}
+                  disabled={isUpdating}
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    background: 'transparent',
+                    color: '#fff',
+                    fontWeight: 'bold',
+                    border: '1px solid #fff',
+                    fontSize: '10px',
+                    letterSpacing: '1px',
+                    cursor: isUpdating ? 'not-allowed' : 'pointer',
+                    borderRadius: '3px',
+                    opacity: isUpdating ? 0.6 : 1,
+                    marginTop: '4px'
+                  }}
+                >
+                  {isUpdating ? 'SAVING...' : 'SAVE DETAILS'}
+                </button>
               </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '9px', color: '#777', marginBottom: '6px', letterSpacing: '0.5px' }}>ADMIN NOTES</label>
-                <textarea
-                  rows={2}
-                  placeholder="Add private admin notes here..."
-                  value={editForm.admin_notes}
-                  onChange={e => setEditForm({ ...editForm, admin_notes: e.target.value })}
-                  style={{ ...cleanInputStyle, resize: 'vertical' }}
-                />
-              </div>
-
-              <button
-                type="button"
-                onClick={handleSaveDetails}
-                disabled={isUpdating}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  background: 'transparent',
-                  color: '#fff',
-                  fontWeight: 'bold',
-                  border: '1px solid #fff',
-                  fontSize: '10px',
-                  letterSpacing: '1px',
-                  cursor: isUpdating ? 'not-allowed' : 'pointer',
-                  borderRadius: '3px',
-                  opacity: isUpdating ? 0.6 : 1,
-                  marginTop: '4px'
-                }}
-              >
-                {isUpdating ? 'SAVING...' : 'SAVE DETAILS'}
-              </button>
             </div>
           </div>
-        )}
+        </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
@@ -555,7 +558,6 @@ const OrderCard: React.FC<OrderCardProps> = ({
 
         <div style={{ display: 'flex', gap: '4px', flexWrap: 'nowrap', width: '100%' }}>
           <select
-            className="animate-status-change"
             value={order.status}
             disabled={isUpdating}
             onChange={handleStatusSelect}
@@ -1291,6 +1293,8 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
 
   const validEmailsCount = getSelectedEmailsList().length;
 
+  const isFilterVisible = filterOpen || selectedOrderIds.length > 0;
+
   if (isBulkViewOpen) {
     return (
       <div className="animate-drawer" style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%', maxWidth: '100%', position: 'relative', minHeight: '80vh', backgroundColor: '#050505', padding: '0px', boxSizing: 'border-box', borderRadius: '0px', border: 'none' }}>
@@ -1483,275 +1487,269 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
         </div>
       )}
 
-      <div
-        style={{
-          maxHeight: searchOpen ? '100px' : '0px',
-          opacity: searchOpen ? 1 : 0,
-          overflow: 'hidden',
-          visibility: searchOpen ? 'visible' : 'hidden',
-          transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
-        }}
-      >
-        <input
-          type="text"
-          placeholder="SEARCH BY ID, NAME, PHONE, EMAIL, ITEM OR TRACKING..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          style={{
-            width: '100%',
-            backgroundColor: '#000',
-            border: '1px solid #333',
-            padding: '11px 14px',
-            color: '#fff',
-            fontSize: '11px',
-            fontFamily: 'monospace',
-            letterSpacing: '1px',
-            outline: 'none',
-            boxSizing: 'border-box',
-            borderRadius: '2px'
-          }}
-        />
+      <div className={`filter-expand-wrapper ${searchOpen ? 'open' : ''}`}>
+        <div className="filter-expand-content">
+          <input
+            type="text"
+            placeholder="SEARCH BY ID, NAME, PHONE, EMAIL, ITEM OR TRACKING..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            style={{
+              width: '100%',
+              backgroundColor: '#000',
+              border: '1px solid #333',
+              padding: '11px 14px',
+              color: '#fff',
+              fontSize: '11px',
+              fontFamily: 'monospace',
+              letterSpacing: '1px',
+              outline: 'none',
+              boxSizing: 'border-box',
+              borderRadius: '2px'
+            }}
+          />
+        </div>
       </div>
 
-      <div className={`filter-expand-wrapper ${filterOpen ? 'open' : ''}`}>
+      <div className={`filter-expand-wrapper ${isFilterVisible ? 'open' : ''}`}>
         <div className="filter-expand-content">
-        <div
-          style={{
-            backgroundColor: '#050505',
-            border: '1px solid #222',
-            padding: '16px',
-            borderRadius: '2px',
-            width: '100%',
-            boxSizing: 'border-box',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '14px'
-          }}
-        >
-          <div>
-            <label style={{ display: 'block', fontSize: '9px', color: '#666', marginBottom: '6px', letterSpacing: '1px' }}>DATE RANGE</label>
-            <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '2px', width: '100%' }}>
-              {DATE_FILTERS.map((dateFilter) => {
-                const isActive = selectedDateFilter === dateFilter;
-                return (
-                  <button
-                    type="button"
-                    key={dateFilter}
-                    onClick={() => setSelectedDateFilter(dateFilter)}
+          <div
+            style={{
+              backgroundColor: '#050505',
+              border: '1px solid #222',
+              padding: '16px',
+              borderRadius: '2px',
+              width: '100%',
+              boxSizing: 'border-box',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '14px'
+            }}
+          >
+            <div>
+              <label style={{ display: 'block', fontSize: '9px', color: '#666', marginBottom: '6px', letterSpacing: '1px' }}>DATE RANGE</label>
+              <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '2px', width: '100%' }}>
+                {DATE_FILTERS.map((dateFilter) => {
+                  const isActive = selectedDateFilter === dateFilter;
+                  return (
+                    <button
+                      type="button"
+                      key={dateFilter}
+                      onClick={() => setSelectedDateFilter(dateFilter)}
+                      style={{
+                        backgroundColor: 'transparent',
+                        color: isActive ? '#ffffff' : '#666666',
+                        border: 'none',
+                        padding: '4px 0px',
+                        fontSize: '10px',
+                        fontFamily: 'monospace',
+                        letterSpacing: '1px',
+                        fontWeight: isActive ? 'bold' : 'normal',
+                        cursor: 'pointer',
+                        textTransform: 'uppercase',
+                        whiteSpace: 'nowrap',
+                        flexShrink: 0
+                      }}
+                    >
+                      {dateFilter}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: '9px', color: '#666', marginBottom: '6px', letterSpacing: '1px' }}>ORDER STATUS</label>
+              <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '2px', width: '100%' }}>
+                {['ALL', ...STATUS_OPTIONS].map((status) => {
+                  const isActive = selectedStatusFilter === status;
+                  return (
+                    <button
+                      type="button"
+                      key={status}
+                      onClick={() => setSelectedStatusFilter(status)}
+                      style={{
+                        backgroundColor: 'transparent',
+                        color: isActive ? '#ffffff' : '#666666',
+                        border: 'none',
+                        padding: '4px 0px',
+                        fontSize: '10px',
+                        fontFamily: 'monospace',
+                        letterSpacing: '1px',
+                        fontWeight: isActive ? 'bold' : 'normal',
+                        cursor: 'pointer',
+                        textTransform: 'uppercase',
+                        whiteSpace: 'nowrap',
+                        flexShrink: 0
+                      }}
+                    >
+                      {status}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: '9px', color: '#666', marginBottom: '6px', letterSpacing: '1px' }}>PAYMENT STATUS</label>
+              <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '2px', width: '100%' }}>
+                {PAYMENT_STATUS_OPTIONS.map((pStatus) => {
+                  const isActive = selectedPaymentStatusFilter === pStatus;
+                  return (
+                    <button
+                      type="button"
+                      key={pStatus}
+                      onClick={() => setSelectedPaymentStatusFilter(pStatus)}
+                      style={{
+                        backgroundColor: 'transparent',
+                        color: isActive ? '#ffffff' : '#666666',
+                        border: 'none',
+                        padding: '4px 0px',
+                        fontSize: '10px',
+                        fontFamily: 'monospace',
+                        letterSpacing: '1px',
+                        fontWeight: isActive ? 'bold' : 'normal',
+                        cursor: 'pointer',
+                        textTransform: 'uppercase',
+                        whiteSpace: 'nowrap',
+                        flexShrink: 0
+                      }}
+                    >
+                      {pStatus}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '10px',
+              backgroundColor: selectedOrderIds.length > 0 ? '#111' : '#0a0a0a',
+              border: '1px solid #222',
+              padding: '12px 16px',
+              borderRadius: '2px',
+              marginTop: '14px'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div
+                onClick={handleSelectAllFiltered}
+                style={{
+                  width: '18px',
+                  height: '18px',
+                  borderRadius: '3px',
+                  border: isAllFilteredSelected ? '1px solid #fff' : '1px solid #444',
+                  backgroundColor: isAllFilteredSelected ? '#fff' : '#000',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  flexShrink: 0
+                }}
+              >
+                {isAllFilteredSelected && (
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                )}
+              </div>
+              <span onClick={handleSelectAllFiltered} style={{ fontSize: '11px', color: '#fff', cursor: 'pointer', fontWeight: 'bold' }}>
+                SELECT ALL FILTERED ({filteredOrders.length})
+              </span>
+            </div>
+
+            <div className={`filter-expand-wrapper ${selectedOrderIds.length > 0 ? 'open' : ''}`}>
+              <div className="filter-expand-content">
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', paddingTop: '6px' }}>
+                  <select
+                    onChange={(e) => {
+                      if (e.target.value) {
+                        handleBulkPaymentStatusChange(e.target.value);
+                        e.target.value = '';
+                      }
+                    }}
                     style={{
-                      backgroundColor: 'transparent',
-                      color: isActive ? '#ffffff' : '#666666',
-                      border: 'none',
-                      padding: '4px 0px',
+                      backgroundColor: '#000',
+                      color: '#fff',
+                      border: '1px solid #444',
+                      padding: '7px 10px',
                       fontSize: '10px',
-                      fontFamily: 'monospace',
-                      letterSpacing: '1px',
-                      fontWeight: isActive ? 'bold' : 'normal',
+                      fontWeight: 'bold',
                       cursor: 'pointer',
-                      textTransform: 'uppercase',
-                      whiteSpace: 'nowrap',
-                      flexShrink: 0
+                      borderRadius: '2px',
+                      outline: 'none'
                     }}
                   >
-                    {dateFilter}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+                    <option value="" style={{ background: '#000', color: '#fff' }}>MARK PAYMENT AS...</option>
+                    <option value="Paid" style={{ background: '#000', color: '#fff' }}>PAID</option>
+                    <option value="Unpaid / COD" style={{ background: '#000', color: '#fff' }}>UNPAID / COD</option>
+                    <option value="Partial Paid" style={{ background: '#000', color: '#fff' }}>PARTIAL PAID</option>
+                  </select>
 
-          <div>
-            <label style={{ display: 'block', fontSize: '9px', color: '#666', marginBottom: '6px', letterSpacing: '1px' }}>ORDER STATUS</label>
-            <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '2px', width: '100%' }}>
-              {['ALL', ...STATUS_OPTIONS].map((status) => {
-                const isActive = selectedStatusFilter === status;
-                return (
                   <button
                     type="button"
-                    key={status}
-                    onClick={() => setSelectedStatusFilter(status)}
+                    onClick={() => handlePrintBulkInvoices(selectedOrdersList)}
                     style={{
-                      backgroundColor: 'transparent',
-                      color: isActive ? '#ffffff' : '#666666',
-                      border: 'none',
-                      padding: '4px 0px',
+                      backgroundColor: '#000',
+                      color: '#fff',
+                      border: '1px solid #444',
+                      padding: '7px 12px',
                       fontSize: '10px',
-                      fontFamily: 'monospace',
-                      letterSpacing: '1px',
-                      fontWeight: isActive ? 'bold' : 'normal',
+                      fontWeight: 'bold',
                       cursor: 'pointer',
-                      textTransform: 'uppercase',
-                      whiteSpace: 'nowrap',
-                      flexShrink: 0
+                      borderRadius: '2px'
                     }}
                   >
-                    {status}
+                    BULK PRINT ({selectedOrderIds.length})
                   </button>
-                );
-              })}
-            </div>
-          </div>
 
-          <div>
-            <label style={{ display: 'block', fontSize: '9px', color: '#666', marginBottom: '6px', letterSpacing: '1px' }}>PAYMENT STATUS</label>
-            <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '2px', width: '100%' }}>
-              {PAYMENT_STATUS_OPTIONS.map((pStatus) => {
-                const isActive = selectedPaymentStatusFilter === pStatus;
-                return (
                   <button
                     type="button"
-                    key={pStatus}
-                    onClick={() => setSelectedPaymentStatusFilter(pStatus)}
+                    onClick={() => {
+                      setBulkMessageType('whatsapp');
+                      setIsBulkViewOpen(true);
+                    }}
                     style={{
-                      backgroundColor: 'transparent',
-                      color: isActive ? '#ffffff' : '#666666',
-                      border: 'none',
-                      padding: '4px 0px',
+                      backgroundColor: '#000',
+                      color: '#fff',
+                      border: '1px solid #444',
+                      padding: '7px 12px',
                       fontSize: '10px',
-                      fontFamily: 'monospace',
-                      letterSpacing: '1px',
-                      fontWeight: isActive ? 'bold' : 'normal',
+                      fontWeight: 'bold',
                       cursor: 'pointer',
-                      textTransform: 'uppercase',
-                      whiteSpace: 'nowrap',
-                      flexShrink: 0
+                      borderRadius: '2px'
                     }}
                   >
-                    {pStatus}
+                    WhatsApp ({selectedOrderIds.length})
                   </button>
-                );
-              })}
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setBulkMessageType('email');
+                      setIsBulkViewOpen(true);
+                    }}
+                    style={{
+                      backgroundColor: '#000',
+                      color: '#fff',
+                      border: '1px solid #444',
+                      padding: '7px 12px',
+                      fontSize: '10px',
+                      fontWeight: 'bold',
+                      cursor: 'pointer',
+                      borderRadius: '2px'
+                    }}
+                  >
+                    Email ({selectedOrderIds.length})
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: '10px',
-            backgroundColor: selectedOrderIds.length > 0 ? '#111' : '#0a0a0a',
-            border: '1px solid #222',
-            padding: '12px 16px',
-            borderRadius: '2px',
-            marginTop: '14px'
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div
-              onClick={handleSelectAllFiltered}
-              style={{
-                width: '18px',
-                height: '18px',
-                borderRadius: '3px',
-                border: isAllFilteredSelected ? '1px solid #fff' : '1px solid #444',
-                backgroundColor: isAllFilteredSelected ? '#fff' : '#000',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                flexShrink: 0
-              }}
-            >
-              {isAllFilteredSelected && (
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-              )}
-            </div>
-            <span onClick={handleSelectAllFiltered} style={{ fontSize: '11px', color: '#fff', cursor: 'pointer', fontWeight: 'bold' }}>
-              SELECT ALL FILTERED ({filteredOrders.length})
-            </span>
-          </div>
-
-          {selectedOrderIds.length > 0 && (
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-              <select
-                onChange={(e) => {
-                  if (e.target.value) {
-                    handleBulkPaymentStatusChange(e.target.value);
-                    e.target.value = '';
-                  }
-                }}
-                style={{
-                  backgroundColor: '#000',
-                  color: '#fff',
-                  border: '1px solid #444',
-                  padding: '7px 10px',
-                  fontSize: '10px',
-                  fontWeight: 'bold',
-                  cursor: 'pointer',
-                  borderRadius: '2px',
-                  outline: 'none'
-                }}
-              >
-                <option value="" style={{ background: '#000', color: '#fff' }}>MARK PAYMENT AS...</option>
-                <option value="Paid" style={{ background: '#000', color: '#fff' }}>PAID</option>
-                <option value="Unpaid / COD" style={{ background: '#000', color: '#fff' }}>UNPAID / COD</option>
-                <option value="Partial Paid" style={{ background: '#000', color: '#fff' }}>PARTIAL PAID</option>
-              </select>
-
-              <button
-                type="button"
-                onClick={() => handlePrintBulkInvoices(selectedOrdersList)}
-                style={{
-                  backgroundColor: '#000',
-                  color: '#fff',
-                  border: '1px solid #444',
-                  padding: '7px 12px',
-                  fontSize: '10px',
-                  fontWeight: 'bold',
-                  cursor: 'pointer',
-                  borderRadius: '2px'
-                }}
-              >
-                BULK PRINT ({selectedOrderIds.length})
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setBulkMessageType('whatsapp');
-                  setIsBulkViewOpen(true);
-                }}
-                style={{
-                  backgroundColor: '#000',
-                  color: '#fff',
-                  border: '1px solid #444',
-                  padding: '7px 12px',
-                  fontSize: '10px',
-                  fontWeight: 'bold',
-                  cursor: 'pointer',
-                  borderRadius: '2px'
-                }}
-              >
-                WhatsApp ({selectedOrderIds.length})
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setBulkMessageType('email');
-                  setIsBulkViewOpen(true);
-                }}
-                style={{
-                  backgroundColor: '#000',
-                  color: '#fff',
-                  border: '1px solid #444',
-                  padding: '7px 12px',
-                  fontSize: '10px',
-                  fontWeight: 'bold',
-                  cursor: 'pointer',
-                  borderRadius: '2px'
-                }}
-              >
-                Email ({selectedOrderIds.length})
-              </button>
-            </div>
-          )}
-        </div>
         </div>
       </div>
 
