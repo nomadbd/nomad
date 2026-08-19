@@ -176,7 +176,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
   const isPaid = paymentStatusVal.toLowerCase().includes('paid') && !paymentStatusVal.toLowerCase().includes('unpaid');
   const isPartial = paymentStatusVal.toLowerCase().includes('partial');
 
-  const paymentColor = isPaid ? '#22c55e' : isPartial ? '#3b82f6' : '#f97316';
+  const paymentColor = isPaid ? '#008000' : isPartial ? '#3b82f6' : '#FF5252';
 
   const totalItemsCount = order.items.reduce((sum, item) => sum + (item.quantity || 0), 0);
   const displayItemCount = totalItemsCount > 0 ? totalItemsCount : '1+';
@@ -848,15 +848,14 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
     }
   };
 
-  // AdminOverview-এর সাথে মিলিয়ে কালার কোডসমূহ দেওয়া হয়েছে
   const getStatusColor = (rawStatus: string) => {
     const s = rawStatus.trim().toLowerCase();
-    if (s.includes('rec')) return '#7C4DFF';      // Received
-    if (s.includes('proc')) return '#E040FB';     // Processing
-    if (s.includes('shipped')) return '#00B0FF';  // Shipped
-    if (s.includes('delivered') || s.includes('completed')) return '#008000'; // Delivered
-    if (s.includes('cancel')) return '#FF5252';   // Cancelled
-    return '#FFB800';                             // Pending (Default)
+    if (s.includes('rec')) return '#7C4DFF';
+    if (s.includes('proc')) return '#E040FB';
+    if (s.includes('shipped')) return '#00B0FF';
+    if (s.includes('delivered') || s.includes('completed')) return '#008000';
+    if (s.includes('cancel')) return '#FF5252';
+    return '#FFB800';
   };
 
   const handlePrintInvoice = (order: Order) => {
