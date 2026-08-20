@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../supabaseClient';
 import { useCart } from '../context/CartContext';
+import ProductGallery from './ProductGallery';
 
 interface Product {
   id: string | number;
@@ -14,58 +15,9 @@ interface Product {
   colors: string[]; 
   created_at: string;
   product_media: { media_url: string; media_type: string }[];
-  details?: Record<string, string> | null; // ⚡ সুপাবেজের JSONB কলাম টাইপ
+  details?: Record<string, string> | null;
 }
 
-// 📸 প্রোডাক্ট গ্যালারি কম্পোনেন্ট
-const ProductGallery = ({ images, productName }: { images: string[], productName: string }) => {
-  const [currentIndex, setCurrentIndex] = useState(0);
-
-  const handlePrev = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setCurrentIndex(prev => (prev > 0 ? prev - 1 : images.length - 1));
-  };
-
-  const handleNext = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setCurrentIndex(prev => (prev < images.length - 1 ? prev + 1 : 0));
-  };
-
-  return (
-    <div style={{ width: '100%', aspectRatio: '3/4', position: 'relative', overflow: 'hidden', backgroundColor: '#111' }}>
-      {images.length > 0 ? (
-        <img 
-          src={images[currentIndex]} 
-          alt={productName} 
-          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-        />
-      ) : (
-        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#333' }}>No Image</div>
-      )}
-
-      {images.length > 1 && (
-        <>
-          <div style={{ position: 'absolute', top: 0, left: 0, width: '50%', height: '100%', cursor: 'pointer' }} onClick={handlePrev} />
-          <div style={{ position: 'absolute', top: 0, right: 0, width: '50%', height: '100%', cursor: 'pointer' }} onClick={handleNext} />
-
-          <div style={{ position: 'absolute', bottom: '15px', left: 0, width: '100%', display: 'flex', justifyContent: 'center', gap: '6px' }}>
-            {images.map((_, idx) => (
-              <div 
-                key={idx}
-                style={{ 
-                  width: '6px', height: '6px', borderRadius: '50%', 
-                  background: currentIndex === idx ? '#fff' : 'rgba(255,255,255,0.4)',
-                }}
-              />
-            ))}
-          </div>
-        </>
-      )}
-    </div>
-  );
-};
-
-// 🛒 ১০০% সিমেট্রিক বর্ডার যুক্ত অ্যাকশন রো 
 const ProductActionRow = ({ product }: { product: Product }) => {
   const { addToCart } = useCart();
 
@@ -208,21 +160,19 @@ const ProductActionRow = ({ product }: { product: Product }) => {
   );
 };
 
-// 💳 ইনডিভিজুয়াল প্রোডাক্ট কার্ড কম্পোনেন্ট
 const ProductCard = ({ product }: { product: Product }) => {
   const [isDescExpanded, setIsDescExpanded] = useState(false);
 
   return (
     <div className="showroom-card-item" style={{ scrollSnapAlign: 'start', boxSizing: 'border-box', display: 'flex', flexDirection: 'column' }}>
       <ProductGallery 
-        images={product.product_media?.map(m => m.media_url) || []} 
+        media={product.product_media || []} 
         productName={product.name} 
       />
 
       <div style={{ marginTop: '15px', padding: '0 5px', display: 'flex', flexDirection: 'column', flex: 1 }}>
         <h3 style={{ fontSize: '14px', color: '#fff', margin: '0 0 6px 0', fontWeight: '600' }}>{product.name}</h3>
 
-        {/* ⚡ এক্সপ্যান্ডেবল বর্ণনা ও স্পেসিফিকেশন সেকশন */}
         <div style={{ margin: '0 0 15px 0' }}>
           {(() => {
             const characterLimit = 75; 
@@ -247,15 +197,12 @@ const ProductCard = ({ product }: { product: Product }) => {
                   {product.description}
                 </p>
 
-                {/* 📊 সুপাবেজ JSONB থেকে আসা ডাইনামিক কি-ভ্যালু পেয়ার রেন্ডারিং */}
                 {product.details && Object.keys(product.details).length > 0 && (
                   <div style={{ borderTop: '1px solid #1a1a1a', marginTop: '12px', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px', fontFamily: 'monospace', fontSize: '12px' }}>
                     {Object.entries(product.details).map(([key, value]) => (
-                      // ⚡ alignItems: 'flex-start' করা হয়েছে যেন ভ্যালু মাল্টি-লাইন হলেও Key উপরেই এলাইন থাকে
                       <div key={key} style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'flex-start' }}>
                         <span style={{ color: '#fff', width: '95px', flexShrink: 0, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{key}</span>
                         <span style={{ color: '#555', marginRight: '10px', flexShrink: 0 }}>:</span>
-                        {/* ⚡ flex: 1 এবং overflowWrap এর কারণে টেক্সট বড় হলেও কোলনের পরে সুন্দরভাবে ব্রেক হবে */}
                         <span style={{ color: '#fff', fontWeight: '400', flex: 1, overflowWrap: 'break-word', wordBreak: 'break-word', lineHeight: '1.4' }}>{value}</span>
                       </div>
                     ))}
