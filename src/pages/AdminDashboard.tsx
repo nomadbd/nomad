@@ -22,6 +22,8 @@ const AdminDashboard: React.FC = () => {
   const [menuOpen, setMenuOpen] = useState<boolean>(false);
   const [isSearchOpen, setIsSearchOpen] = useState<boolean>(false);
   const [isFilterOpen, setIsFilterOpen] = useState<boolean>(false);
+  const [isTemplateOpen, setIsTemplateOpen] = useState<boolean>(false);
+  const [isCloseActive, setIsCloseActive] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   const [userName, setUserName] = useState<string>('');
@@ -427,7 +429,8 @@ const AdminDashboard: React.FC = () => {
                 {activeTab === 'orders' && (
                   <>
                     <button
-                      className="nomad-action-btn"
+                      className={`nomad-action-btn ${isTemplateOpen ? 'active' : ''}`}
+                      onClick={() => setIsTemplateOpen(!isTemplateOpen)}
                       aria-label="Template"
                       title="Template"
                     >
@@ -438,7 +441,8 @@ const AdminDashboard: React.FC = () => {
                       </svg>
                     </button>
                     <button
-                      className="nomad-action-btn"
+                      className={`nomad-action-btn ${isCloseActive ? 'active' : ''}`}
+                      onClick={() => setIsCloseActive(!isCloseActive)}
                       aria-label="Close"
                       title="Close"
                     >
