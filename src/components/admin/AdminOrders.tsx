@@ -1511,8 +1511,23 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
                   const statusColor = getStatusColor(ord.status);
 
                   return (
-                    <div key={ord.id} style={{ display: 'flex', flexDirection: 'column', gap: '6px', background: '#000', padding: '12px', border: '1px solid #222', borderRadius: '2px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+                    <div
+                      key={ord.id}
+                      onClick={() => toggleBulkItemExpand(ord.id)}
+                      className="table-row-hover"
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '6px',
+                        background: '#000',
+                        padding: '12px',
+                        border: '1px solid #222',
+                        borderRadius: '2px',
+                        cursor: 'pointer',
+                        transition: 'border-color 0.2s ease, background-color 0.2s ease'
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
                             <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>
@@ -1524,55 +1539,26 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
                           </div>
                           <div style={{ fontSize: '10px', color: '#888', marginTop: '4px', fontFamily: 'monospace' }}>{phone}</div>
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-                          <button
-                            type="button"
-                            onClick={() => handleSendSingleWhatsApp(ord)}
-                            style={{
-                              backgroundColor: isSent ? '#222' : '#111',
-                              color: isSent ? '#888' : '#ccc',
-                              border: isSent ? '1px solid #444' : '1px solid #333',
-                              padding: '6px 14px',
-                              fontSize: '9.5px',
-                              fontWeight: 'bold',
-                              cursor: 'pointer',
-                              borderRadius: '2px'
-                            }}
-                          >
-                            {isSent ? 'SENT' : 'SEND'}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => toggleBulkItemExpand(ord.id)}
-                            style={{
-                              backgroundColor: 'transparent',
-                              border: 'none',
-                              color: '#fff',
-                              cursor: 'pointer',
-                              padding: '4px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center'
-                            }}
-                          >
-                            <svg
-                              width="12"
-                              height="12"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              style={{
-                                transform: isItemExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
-                                transition: 'transform 0.3s ease'
-                              }}
-                            >
-                              <polyline points="6 9 12 15 18 9"></polyline>
-                            </svg>
-                          </button>
-                        </div>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSendSingleWhatsApp(ord);
+                          }}
+                          style={{
+                            backgroundColor: isSent ? '#222' : '#111',
+                            color: isSent ? '#888' : '#ccc',
+                            border: isSent ? '1px solid #444' : '1px solid #333',
+                            padding: '6px 14px',
+                            fontSize: '9.5px',
+                            fontWeight: 'bold',
+                            cursor: 'pointer',
+                            borderRadius: '2px',
+                            flexShrink: 0
+                          }}
+                        >
+                          {isSent ? 'SENT' : 'SEND'}
+                        </button>
                       </div>
                       <div className={`filter-expand-wrapper ${isItemExpanded ? 'open' : ''}`}>
                         <div className="filter-expand-content">
