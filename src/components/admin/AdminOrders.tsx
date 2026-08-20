@@ -1306,9 +1306,19 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
   const isFilterVisible = filterOpen || selectedOrderIds.length > 0;
 
   if (isBulkViewOpen) {
-    const activeBulkOrders = selectedPresetKey === 'ALL' || !selectedPresetKey
+    const activeBulkOrders = (selectedPresetKey === 'ALL' || !selectedPresetKey
       ? selectedOrdersList
-      : selectedOrdersList.filter(o => o.status.toLowerCase().trim() === selectedPresetKey.toLowerCase().trim());
+      : selectedOrdersList.filter(o => o.status.toLowerCase().trim() === selectedPresetKey.toLowerCase().trim())
+    ).filter(o => {
+      if (!searchTerm.trim()) return true;
+      const term = searchTerm.trim().toLowerCase();
+      return (
+        (o.customer_name && o.customer_name.toLowerCase().includes(term)) ||
+        (o.customer_phone && o.customer_phone.toLowerCase().includes(term)) ||
+        (o.id && o.id.toLowerCase().includes(term)) ||
+        (o.customer_email && o.customer_email.toLowerCase().includes(term))
+      );
+    });
 
     const activeBulkEmails = activeBulkOrders
       .map(o => o.customer_email)
@@ -1320,26 +1330,49 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
     return (
       <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%', maxWidth: '100%', position: 'relative', minHeight: '80vh', backgroundColor: '#050505', padding: '0px', boxSizing: 'border-box', borderRadius: '0px', border: 'none' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #222', paddingBottom: '16px' }}>
-          <div>
-            <h3 style={{ margin: 0, fontSize: '15px', color: '#fff', letterSpacing: '1px', fontWeight: 'bold' }}>
-              BULK {bulkMessageType === 'whatsapp' ? 'WHATSAPP' : 'EMAIL'} ({activeBulkOrders.length})
-            </h3>
+          <div style={{ flex: 1, marginRight: '10px' }}>
+            {searchOpen ? (
+              <input
+                type="text"
+                placeholder="SEARCH..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                style={{
+                  width: '100%',
+                  maxWidth: '300px',
+                  backgroundColor: '#000',
+                  border: '1px solid #333',
+                  padding: '8px 16px',
+                  color: '#fff',
+                  fontSize: '11px',
+                  fontFamily: 'monospace',
+                  letterSpacing: '1px',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                  borderRadius: '25px'
+                }}
+              />
+            ) : (
+              <h3 style={{ margin: 0, fontSize: '15px', color: '#fff', letterSpacing: '1px', fontWeight: 'bold' }}>
+                ({activeBulkOrders.length})
+              </h3>
+            )}
           </div>
           <button
             type="button"
             onClick={() => setIsBulkViewOpen(false)}
             style={{
-              backgroundColor: '#111',
-              border: '1px solid #333',
+              backgroundColor: 'transparent',
+              border: 'none',
               color: '#fff',
               padding: '6px 10px',
-              fontSize: '12px',
+              fontSize: '16px',
               fontWeight: 'bold',
               cursor: 'pointer',
-              borderRadius: '2px',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center'
+              justifyContent: 'center',
+              outline: 'none'
             }}
           >
             ✕
@@ -1597,14 +1630,14 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
               width: '100%',
               backgroundColor: '#000',
               border: '1px solid #333',
-              padding: '11px 14px',
+              padding: '11px 16px',
               color: '#fff',
               fontSize: '11px',
               fontFamily: 'monospace',
               letterSpacing: '1px',
               outline: 'none',
               boxSizing: 'border-box',
-              borderRadius: '2px',
+              borderRadius: '25px',
               transition: 'all 0.3s ease'
             }}
           />
