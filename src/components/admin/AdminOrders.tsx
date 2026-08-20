@@ -151,7 +151,6 @@ const OrderCard: React.FC<OrderCardProps> = ({
   getStatusColor
 }) => {
   const [isUpdating, setIsUpdating] = useState<boolean>(false);
-  const [isCopied, setIsCopied] = useState<boolean>(false);
 
   const [editForm, setEditForm] = useState({
     payment_status: order.payment_status || 'Unpaid / COD',
@@ -227,17 +226,6 @@ const OrderCard: React.FC<OrderCardProps> = ({
     }
   };
 
-  const handleCopy = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    try {
-      await navigator.clipboard.writeText(customerInfoText);
-      setIsCopied(true);
-      setTimeout(() => setIsCopied(false), 2000);
-    } catch (err) {
-      console.error('Failed to copy text: ', err);
-    }
-  };
-
   const handleShare = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (navigator.share) {
@@ -249,8 +237,6 @@ const OrderCard: React.FC<OrderCardProps> = ({
       } catch (err) {
         console.error('Error sharing order:', err);
       }
-    } else {
-      handleCopy(e);
     }
   };
 
@@ -538,24 +524,6 @@ const OrderCard: React.FC<OrderCardProps> = ({
                 <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
               </svg>
             </button>
-
-            <button
-              type="button"
-              onClick={handleCopy}
-              title={isCopied ? "Copied!" : "Copy Customer Info"}
-              style={{ ...actionLinkStyle, padding: '4px 6px', color: isCopied ? '#22c55e' : '#fff' }}
-            >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                {isCopied ? (
-                  <polyline points="20 6 9 17 4 12"></polyline>
-                ) : (
-                  <>
-                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                  </>
-                )}
-              </svg>
-            </button>
           </div>
         </div>
 
@@ -664,6 +632,7 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
   const [selectedPresetKey, setSelectedPresetKey] = useState<string>('DEFAULT');
   const [bulkEmailSubject, setBulkEmailSubject] = useState<string>('Update Regarding Your NOMAD Order');
   const [sentIndexes, setSentIndexes] = useState<{ [key: string]: boolean }>({});
+  const [expandedBulkItems, setExpandedBulkItems] = useState<{ [key: string]: boolean }>({});
 
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
@@ -702,6 +671,10 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
 
   const handleToggleExpand = (orderId: string) => {
     setExpandedOrderId(prevId => (prevId === orderId ? null : orderId));
+  };
+
+  const toggleBulkItemExpand = (orderId: string) => {
+    setExpandedBulkItems(prev => ({ ...prev, [orderId]: !prev[orderId] }));
   };
 
   const fetchAdminOrders = async () => {
@@ -1464,35 +1437,79 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {selectedOrdersList.map((ord) => {
                   const isSent = Boolean(sentIndexes[ord.id]);
+                  const isItemExpanded = Boolean(expandedBulkItems[ord.id]);
                   const phone = ord.customer_phone || 'No phone';
                   const personalizedPreview = renderPersonalizedText(bulkMessageText, ord);
+                  const statusColor = getStatusColor(ord.status);
 
                   return (
                     <div key={ord.id} style={{ display: 'flex', flexDirection: 'column', gap: '6px', background: '#000', padding: '12px', border: '1px solid #222', borderRadius: '2px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
                         <div>
-                          <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#fff' }}>{ord.customer_name || 'Customer'}</div>
-                          <div style={{ fontSize: '10px', color: '#888', marginTop: '2px', fontFamily: 'monospace' }}>{phone}</div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                            <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#fff' }}>{ord.customer_name || 'Customer'}</span>
+                            <span style={{ fontSize: '9px', fontWeight: 'bold', color: statusColor, border: `1px solid ${statusColor}`, padding: '1px 5px', borderRadius: '2px' }}>
+                              {ord.status.toUpperCase()}
+                            </span>
+                          </div>
+                          <div style={{ fontSize: '10px', color: '#888', marginTop: '4px', fontFamily: 'monospace' }}>{phone}</div>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => handleSendSingleWhatsApp(ord)}
-                          style={{
-                            backgroundColor: isSent ? '#222' : '#111',
-                            color: isSent ? '#888' : '#ccc',
-                            border: isSent ? '1px solid #444' : '1px solid #333',
-                            padding: '6px 14px',
-                            fontSize: '9.5px',
-                            fontWeight: 'bold',
-                            cursor: 'pointer',
-                            borderRadius: '2px'
-                          }}
-                        >
-                          {isSent ? 'SENT' : 'SEND'}
-                        </button>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <button
+                            type="button"
+                            onClick={() => handleSendSingleWhatsApp(ord)}
+                            style={{
+                              backgroundColor: isSent ? '#222' : '#111',
+                              color: isSent ? '#888' : '#ccc',
+                              border: isSent ? '1px solid #444' : '1px solid #333',
+                              padding: '6px 14px',
+                              fontSize: '9.5px',
+                              fontWeight: 'bold',
+                              cursor: 'pointer',
+                              borderRadius: '2px'
+                            }}
+                          >
+                            {isSent ? 'SENT' : 'SEND'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => toggleBulkItemExpand(ord.id)}
+                            style={{
+                              backgroundColor: 'transparent',
+                              border: 'none',
+                              color: '#fff',
+                              cursor: 'pointer',
+                              padding: '4px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center'
+                            }}
+                          >
+                            <svg
+                              width="12"
+                              height="12"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              style={{
+                                transform: isItemExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                                transition: 'transform 0.3s ease'
+                              }}
+                            >
+                              <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                          </button>
+                        </div>
                       </div>
-                      <div style={{ fontSize: '10px', color: '#ccc', background: '#050505', padding: '10px', border: '1px solid #1a1a1a', borderRadius: '2px', whiteSpace: 'pre-wrap' }}>
-                        {personalizedPreview}
+                      <div className={`filter-expand-wrapper ${isItemExpanded ? 'open' : ''}`}>
+                        <div className="filter-expand-content">
+                          <div style={{ fontSize: '10px', color: '#ccc', background: '#050505', padding: '10px', border: '1px solid #1a1a1a', borderRadius: '2px', whiteSpace: 'pre-wrap', marginTop: '6px' }}>
+                            {personalizedPreview}
+                          </div>
+                        </div>
                       </div>
                     </div>
                   );
