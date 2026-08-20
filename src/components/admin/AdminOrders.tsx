@@ -75,10 +75,6 @@ interface AdminOrdersProps {
   onToggleFilter?: () => void;
   searchQuery?: string;
   onSearchChange?: (query: string) => void;
-  isTemplateOpen?: boolean;
-  isCrossOpen?: boolean;
-  onToggleTemplate?: () => void;
-  onToggleCross?: () => void;
 }
 
 const STATUS_OPTIONS = [
@@ -603,11 +599,7 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
   onToggleSearch,
   onToggleFilter,
   searchQuery,
-  onSearchChange,
-  isTemplateOpen: propTemplateOpen,
-  isCrossOpen: propCrossOpen,
-  onToggleTemplate,
-  onToggleCross
+  onSearchChange
 }) => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -627,11 +619,9 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
 
   const [internalSearchOpen, setInternalSearchOpen] = useState<boolean>(false);
   const [internalFilterOpen, setInternalFilterOpen] = useState<boolean>(false);
-  const [internalTemplateOpen, setInternalTemplateOpen] = useState<boolean>(false);
 
   const searchOpen = propSearchOpen !== undefined ? propSearchOpen : internalSearchOpen;
   const filterOpen = propFilterOpen !== undefined ? propFilterOpen : internalFilterOpen;
-  const templateOpen = propTemplateOpen !== undefined ? propTemplateOpen : internalTemplateOpen;
 
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
 
@@ -643,14 +633,9 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
   const [bulkEmailSubject, setBulkEmailSubject] = useState<string>('Update Regarding Your NOMAD Order');
   const [sentIndexes, setSentIndexes] = useState<{ [key: string]: boolean }>({});
   const [expandedBulkItems, setExpandedBulkItems] = useState<{ [key: string]: boolean }>({});
+  const [isMessageTemplateOpen, setIsMessageTemplateOpen] = useState<boolean>(false);
 
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
-
-  useEffect(() => {
-    window.dispatchEvent(new CustomEvent('admin-bulk-mode-change', { 
-      detail: { isBulkOpen: isBulkViewOpen } 
-    }));
-  }, [isBulkViewOpen]);
 
   useEffect(() => {
     const handleGlobalSearchToggle = () => {
@@ -669,33 +654,14 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
       }
     };
 
-    const handleGlobalTemplateToggle = () => {
-      if (onToggleTemplate) {
-        onToggleTemplate();
-      } else {
-        setInternalTemplateOpen(prev => !prev);
-      }
-    };
-
-    const handleGlobalCrossToggle = () => {
-      setIsBulkViewOpen(false);
-      if (onToggleCross) {
-        onToggleCross();
-      }
-    };
-
     window.addEventListener('admin-toggle-search', handleGlobalSearchToggle);
     window.addEventListener('admin-toggle-filter', handleGlobalFilterToggle);
-    window.addEventListener('admin-toggle-template', handleGlobalTemplateToggle);
-    window.addEventListener('admin-toggle-cross', handleGlobalCrossToggle);
 
     return () => {
       window.removeEventListener('admin-toggle-search', handleGlobalSearchToggle);
       window.removeEventListener('admin-toggle-filter', handleGlobalFilterToggle);
-      window.removeEventListener('admin-toggle-template', handleGlobalTemplateToggle);
-      window.removeEventListener('admin-toggle-cross', handleGlobalCrossToggle);
     };
-  }, [onToggleSearch, onToggleFilter, onToggleTemplate, onToggleCross]);
+  }, [onToggleSearch, onToggleFilter]);
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
     setToast({ message, type });
@@ -1359,38 +1325,25 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
               BULK {bulkMessageType === 'whatsapp' ? 'WHATSAPP' : 'EMAIL'} ({activeBulkOrders.length})
             </h3>
           </div>
-        </div>
-
-        <div className={`filter-expand-wrapper ${templateOpen ? 'open' : ''}`}>
-          <div className="filter-expand-content animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%', marginBottom: templateOpen ? '16px' : '0' }}>
-            {bulkMessageType === 'email' && (
-              <div>
-                <label style={{ display: 'block', fontSize: '10px', color: '#888', marginBottom: '4px' }}>EMAIL SUBJECT</label>
-                <input
-                  type="text"
-                  value={bulkEmailSubject}
-                  onChange={(e) => setBulkEmailSubject(e.target.value)}
-                  style={{ width: '100%', background: '#000', color: '#fff', border: '1px solid #333', padding: '10px 12px', fontSize: '11px', outline: 'none', boxSizing: 'border-box', borderRadius: '2px' }}
-                />
-              </div>
-            )}
-
-            <div>
-              <label style={{ display: 'block', fontSize: '10px', color: '#888', marginBottom: '4px' }}>MESSAGE TEMPLATE</label>
-              <textarea
-                rows={5}
-                value={bulkMessageText}
-                onChange={(e) => {
-                  setBulkMessageText(e.target.value);
-                  setSelectedPresetKey('');
-                }}
-                style={{ width: '100%', background: '#000', color: '#fff', border: '1px solid #333', padding: '10px 12px', fontSize: '11px', outline: 'none', resize: 'vertical', boxSizing: 'border-box', borderRadius: '2px' }}
-              />
-              <div style={{ fontSize: '9px', color: '#888', marginTop: '4px' }}>
-                Variables: <code>{"{{name}}"}</code>, <code>{"{{status}}"}</code>, <code>{"{{order_id}}"}</code>, <code>{"{{courier}}"}</code>, <code>{"{{tracking}}"}</code>
-              </div>
-            </div>
-          </div>
+          <button
+            type="button"
+            onClick={() => setIsBulkViewOpen(false)}
+            style={{
+              backgroundColor: '#111',
+              border: '1px solid #333',
+              color: '#fff',
+              padding: '6px 10px',
+              fontSize: '12px',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              borderRadius: '2px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+          >
+            ✕
+          </button>
         </div>
 
         <div className={`filter-expand-wrapper ${filterOpen ? 'open' : ''}`}>
@@ -1424,6 +1377,62 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
                     </button>
                   );
                 })}
+              </div>
+            </div>
+
+            <div>
+              <button
+                type="button"
+                onClick={() => setIsMessageTemplateOpen(prev => !prev)}
+                style={{
+                  backgroundColor: '#111',
+                  border: '1px solid #333',
+                  color: '#fff',
+                  padding: '8px 12px',
+                  fontSize: '10px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  borderRadius: '2px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  width: '100%',
+                  letterSpacing: '1px'
+                }}
+              >
+                <span>MESSAGE TEMPLATE</span>
+                <span style={{ fontSize: '9px' }}>{isMessageTemplateOpen ? '▲' : '▼'}</span>
+              </button>
+
+              <div className={`filter-expand-wrapper ${isMessageTemplateOpen ? 'open' : ''}`}>
+                <div className="filter-expand-content" style={{ paddingTop: '10px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {bulkMessageType === 'email' && (
+                    <div>
+                      <label style={{ display: 'block', fontSize: '10px', color: '#888', marginBottom: '4px' }}>EMAIL SUBJECT</label>
+                      <input
+                        type="text"
+                        value={bulkEmailSubject}
+                        onChange={(e) => setBulkEmailSubject(e.target.value)}
+                        style={{ width: '100%', background: '#000', color: '#fff', border: '1px solid #333', padding: '10px 12px', fontSize: '11px', outline: 'none', boxSizing: 'border-box', borderRadius: '2px' }}
+                      />
+                    </div>
+                  )}
+
+                  <div>
+                    <textarea
+                      rows={5}
+                      value={bulkMessageText}
+                      onChange={(e) => {
+                        setBulkMessageText(e.target.value);
+                        setSelectedPresetKey('');
+                      }}
+                      style={{ width: '100%', background: '#000', color: '#fff', border: '1px solid #333', padding: '10px 12px', fontSize: '11px', outline: 'none', resize: 'vertical', boxSizing: 'border-box', borderRadius: '2px' }}
+                    />
+                    <div style={{ fontSize: '9px', color: '#888', marginTop: '4px' }}>
+                      Variables: <code>{"{{name}}"}</code>, <code>{"{{status}}"}</code>, <code>{"{{order_id}}"}</code>, <code>{"{{courier}}"}</code>, <code>{"{{tracking}}"}</code>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
