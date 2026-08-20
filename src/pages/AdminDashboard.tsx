@@ -24,9 +24,6 @@ const AdminDashboard: React.FC = () => {
   const [isFilterOpen, setIsFilterOpen] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
 
-  const [isBulkWhatsAppOpen, setIsBulkWhatsAppOpen] = useState<boolean>(false);
-  const [isTemplateOpen, setIsTemplateOpen] = useState<boolean>(false);
-
   const [userName, setUserName] = useState<string>('');
   const [userEmail, setUserEmail] = useState<string>('');
   const [userRole, setUserRole] = useState<string>('');
@@ -36,23 +33,6 @@ const AdminDashboard: React.FC = () => {
 
   const [isHeaderVisible, setIsHeaderVisible] = useState<boolean>(true);
   const [lastScrollY, setLastScrollY] = useState<number>(0);
-
-  // 1. AdminOrders থেকে Bulk Mode Change Listen করার জন্য Event Listener
-  useEffect(() => {
-    const handleBulkModeChange = (e: any) => {
-      if (e.detail && typeof e.detail.isBulkOpen === 'boolean') {
-        setIsBulkWhatsAppOpen(e.detail.isBulkOpen);
-        if (!e.detail.isBulkOpen) {
-          setIsTemplateOpen(false);
-        }
-      }
-    };
-
-    window.addEventListener('admin-bulk-mode-change', handleBulkModeChange);
-    return () => {
-      window.removeEventListener('admin-bulk-mode-change', handleBulkModeChange);
-    };
-  }, []);
 
   const handleTabChange = (tab: TabType) => {
     setActiveTab(tab);
@@ -447,10 +427,7 @@ const AdminDashboard: React.FC = () => {
                 {activeTab !== 'overview' && (
                   <button
                     className={`nomad-action-btn ${isSearchOpen ? 'active' : ''}`}
-                    onClick={() => {
-                      setIsSearchOpen(!isSearchOpen);
-                      window.dispatchEvent(new CustomEvent('admin-toggle-search'));
-                    }}
+                    onClick={() => setIsSearchOpen(!isSearchOpen)}
                     aria-label="Search"
                     title="Search"
                   >
@@ -463,10 +440,7 @@ const AdminDashboard: React.FC = () => {
 
                 <button
                   className={`nomad-action-btn ${isFilterOpen ? 'active' : ''}`}
-                  onClick={() => {
-                    setIsFilterOpen(!isFilterOpen);
-                    window.dispatchEvent(new CustomEvent('admin-toggle-filter'));
-                  }}
+                  onClick={() => setIsFilterOpen(!isFilterOpen)}
                   aria-label="Filter"
                   title="Toggle Filter Panel"
                 >
@@ -474,45 +448,6 @@ const AdminDashboard: React.FC = () => {
                     <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
                   </svg>
                 </button>
-
-                {/* 2. Bulk Mode Active হলে হেডার বাটনসমূহ দেখা যাবে */}
-                {activeTab === 'orders' && isBulkWhatsAppOpen && (
-                  <>
-                    <button
-                      className={`nomad-action-btn ${isTemplateOpen ? 'active' : ''}`}
-                      onClick={() => {
-                        setIsTemplateOpen(prev => !prev);
-                        window.dispatchEvent(new CustomEvent('admin-toggle-template'));
-                      }}
-                      aria-label="WhatsApp Templates"
-                      title="WhatsApp Templates"
-                    >
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                        <polyline points="14 2 14 8 20 8"></polyline>
-                        <line x1="16" y1="13" x2="8" y2="13"></line>
-                        <line x1="16" y1="17" x2="8" y2="17"></line>
-                        <polyline points="10 9 9 9 8 9"></polyline>
-                      </svg>
-                    </button>
-
-                    <button
-                      className="nomad-action-btn"
-                      onClick={() => {
-                        setIsBulkWhatsAppOpen(false);
-                        setIsTemplateOpen(false);
-                        window.dispatchEvent(new CustomEvent('admin-toggle-cross'));
-                      }}
-                      aria-label="Close Bulk WhatsApp"
-                      title="Close Bulk WhatsApp"
-                    >
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                      </svg>
-                    </button>
-                  </>
-                )}
 
                 <button
                   className={`nomad-menu-toggle nomad-menu-toggle-btn ${menuOpen ? 'active' : ''}`}
@@ -626,8 +561,7 @@ const AdminDashboard: React.FC = () => {
               onToggleFilter={() => setIsFilterOpen(prev => !prev)}
               searchQuery={searchQuery}
               onSearchChange={setSearchQuery}
-              isTemplateOpen={isTemplateOpen}
-              onToggleTemplate={() => setIsTemplateOpen(prev => !prev)}
+              dateFormat="DD/MM/YYYY" 
             />
           )}
           {activeTab === 'products' && (
