@@ -1354,7 +1354,7 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
               />
             ) : (
               <h3 style={{ margin: 0, fontSize: '15px', color: '#fff', letterSpacing: '1px', fontWeight: 'bold' }}>
-                ({activeBulkOrders.length})
+                {(selectedPresetKey || 'ALL').toUpperCase()} {activeBulkOrders.length}
               </h3>
             )}
           </div>
@@ -1512,17 +1512,19 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
 
                   return (
                     <div key={ord.id} style={{ display: 'flex', flexDirection: 'column', gap: '6px', background: '#000', padding: '12px', border: '1px solid #222', borderRadius: '2px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-                        <div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                            <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#fff' }}>{ord.customer_name || 'Customer'}</span>
-                            <span style={{ fontSize: '9px', fontWeight: 'bold', color: statusColor, border: `1px solid ${statusColor}`, padding: '1px 5px', borderRadius: '2px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                            <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>
+                              {ord.customer_name || 'Customer'}
+                            </span>
+                            <span style={{ fontSize: '9px', fontWeight: 'bold', color: statusColor, border: `1px solid ${statusColor}`, padding: '1px 5px', borderRadius: '2px', whiteSpace: 'nowrap', flexShrink: 0 }}>
                               {ord.status.toUpperCase()}
                             </span>
                           </div>
                           <div style={{ fontSize: '10px', color: '#888', marginTop: '4px', fontFamily: 'monospace' }}>{phone}</div>
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
                           <button
                             type="button"
                             onClick={() => handleSendSingleWhatsApp(ord)}
