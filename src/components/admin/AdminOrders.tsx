@@ -647,6 +647,12 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   useEffect(() => {
+    window.dispatchEvent(new CustomEvent('admin-bulk-mode-change', { 
+      detail: { isBulkOpen: isBulkViewOpen } 
+    }));
+  }, [isBulkViewOpen]);
+
+  useEffect(() => {
     const handleGlobalSearchToggle = () => {
       if (onToggleSearch) {
         onToggleSearch();
@@ -672,10 +678,9 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
     };
 
     const handleGlobalCrossToggle = () => {
+      setIsBulkViewOpen(false);
       if (onToggleCross) {
         onToggleCross();
-      } else {
-        setIsBulkViewOpen(false);
       }
     };
 
