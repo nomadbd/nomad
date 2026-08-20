@@ -96,7 +96,7 @@ const PAYMENT_STATUS_OPTIONS = [
 const DATE_FILTERS = ['ALL TIME', 'TODAY', 'LAST 7 DAYS', 'THIS MONTH'];
 
 const TEMPLATE_PRESETS: { [key: string]: string } = {
-  DEFAULT: "Hello {{name}},\n\nThank you for choosing NOMAD. Your order status is: {{status}}.\n\nOrder ID: #{{order_id}}\nCourier: {{courier}}\nTracking ID: {{tracking}}\n\nThank you for shopping with us!",
+  ALL: "Hello {{name}},\n\nThank you for choosing NOMAD. Your order status is: {{status}}.\n\nOrder ID: #{{order_id}}\nCourier: {{courier}}\nTracking ID: {{tracking}}\n\nThank you for shopping with us!",
   Pending: "Hello {{name}},\n\nYour NOMAD order (#{{order_id}}) is currently PENDING. We are processing it soon!\n\nThank you for shopping with NOMAD.",
   Shipped: "Hello {{name}},\n\nYour NOMAD order (#{{order_id}}) has been SHIPPED!\n\nCourier: {{courier}}\nTracking ID: {{tracking}}\n\nThank you for shopping with NOMAD!",
   Delivered: "Hello {{name}},\n\nYour NOMAD order (#{{order_id}}) has been DELIVERED successfully!\n\nCourier: {{courier}}\nTracking ID: {{tracking}}\n\nThank you for shopping with NOMAD!",
@@ -184,7 +184,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
   const cleanPhoneForDial = rawPhone.replace(/[^0-9+]/g, '');
   const waPhone = formatWhatsAppNumber(rawPhone);
 
-  const activeTemplate = TEMPLATE_PRESETS[order.status] || TEMPLATE_PRESETS.DEFAULT;
+  const activeTemplate = TEMPLATE_PRESETS[order.status] || TEMPLATE_PRESETS.ALL;
   const messageText = renderPersonalizedText(activeTemplate, order);
   const encodedMessage = encodeURIComponent(messageText);
   const emailSubject = encodeURIComponent(`Update Regarding Your NOMAD Order #${order.id.slice(0, 8)}`);
@@ -628,11 +628,12 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
   const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
   const [isBulkViewOpen, setIsBulkViewOpen] = useState<boolean>(false);
   const [bulkMessageType, setBulkMessageType] = useState<'whatsapp' | 'email'>('whatsapp');
-  const [bulkMessageText, setBulkMessageText] = useState<string>(TEMPLATE_PRESETS.DEFAULT);
-  const [selectedPresetKey, setSelectedPresetKey] = useState<string>('DEFAULT');
+  const [bulkMessageText, setBulkMessageText] = useState<string>(TEMPLATE_PRESETS.ALL);
+  const [selectedPresetKey, setSelectedPresetKey] = useState<string>('ALL');
   const [bulkEmailSubject, setBulkEmailSubject] = useState<string>('Update Regarding Your NOMAD Order');
   const [sentIndexes, setSentIndexes] = useState<{ [key: string]: boolean }>({});
   const [expandedBulkItems, setExpandedBulkItems] = useState<{ [key: string]: boolean }>({});
+  const [isMessageTemplateOpen, setIsMessageTemplateOpen] = useState<boolean>(false);
 
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
@@ -752,8 +753,8 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
       setBulkMessageText(TEMPLATE_PRESETS[selectedStatusFilter]);
       setSelectedPresetKey(selectedStatusFilter);
     } else {
-      setBulkMessageText(TEMPLATE_PRESETS.DEFAULT);
-      setSelectedPresetKey('DEFAULT');
+      setBulkMessageText(TEMPLATE_PRESETS.ALL);
+      setSelectedPresetKey('ALL');
     }
   }, [selectedStatusFilter]);
 
@@ -1288,12 +1289,6 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
     return orders.filter(o => selectedOrderIds.includes(o.id));
   }, [orders, selectedOrderIds]);
 
-  const getSelectedEmailsList = () => {
-    return selectedOrdersList
-      .map(o => o.customer_email)
-      .filter((email): email is string => Boolean(email && email.trim()));
-  };
-
   const handleSendSingleWhatsApp = (order: Order) => {
     const waPhone = formatWhatsAppNumber(order.customer_phone || '');
     if (!waPhone) {
@@ -1308,20 +1303,26 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
     setSentIndexes(prev => ({ ...prev, [order.id]: true }));
   };
 
-  const bulkEmailBccList = Array.from(new Set(getSelectedEmailsList())).join(',');
-  const bulkEmailHref = `mailto:?bcc=${encodeURIComponent(bulkEmailBccList)}&subject=${encodeURIComponent(bulkEmailSubject)}&body=${encodeURIComponent(bulkMessageText.replace(/{{name}}/g, 'Valued Customer').replace(/{{status}}/g, selectedStatusFilter !== 'ALL' ? selectedStatusFilter : 'Updated'))}`;
-
-  const validEmailsCount = getSelectedEmailsList().length;
-
   const isFilterVisible = filterOpen || selectedOrderIds.length > 0;
 
   if (isBulkViewOpen) {
+    const activeBulkOrders = selectedPresetKey === 'ALL' || !selectedPresetKey
+      ? selectedOrdersList
+      : selectedOrdersList.filter(o => o.status.toLowerCase().trim() === selectedPresetKey.toLowerCase().trim());
+
+    const activeBulkEmails = activeBulkOrders
+      .map(o => o.customer_email)
+      .filter((email): email is string => Boolean(email && email.trim()));
+
+    const bulkEmailBccList = Array.from(new Set(activeBulkEmails)).join(',');
+    const bulkEmailHref = `mailto:?bcc=${encodeURIComponent(bulkEmailBccList)}&subject=${encodeURIComponent(bulkEmailSubject)}&body=${encodeURIComponent(bulkMessageText.replace(/{{name}}/g, 'Valued Customer').replace(/{{status}}/g, selectedPresetKey !== 'ALL' ? selectedPresetKey : 'Updated'))}`;
+
     return (
       <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%', maxWidth: '100%', position: 'relative', minHeight: '80vh', backgroundColor: '#050505', padding: '0px', boxSizing: 'border-box', borderRadius: '0px', border: 'none' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #222', paddingBottom: '16px' }}>
           <div>
             <h3 style={{ margin: 0, fontSize: '15px', color: '#fff', letterSpacing: '1px', fontWeight: 'bold' }}>
-              BULK {bulkMessageType === 'whatsapp' ? 'WHATSAPP' : 'EMAIL'} ({selectedOrdersList.length})
+              BULK {bulkMessageType === 'whatsapp' ? 'WHATSAPP' : 'EMAIL'} ({activeBulkOrders.length})
             </h3>
           </div>
           <button
@@ -1345,65 +1346,99 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
           </button>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%' }}>
-          <div>
-            <label style={{ display: 'block', fontSize: '9px', color: '#888', marginBottom: '6px', letterSpacing: '1px' }}>LOAD STATUS TEMPLATE PRESET</label>
-            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-              {Object.keys(TEMPLATE_PRESETS).map((key) => {
-                const isPresetActive = selectedPresetKey === key || bulkMessageText === TEMPLATE_PRESETS[key];
-                return (
-                  <button
-                    type="button"
-                    key={key}
-                    onClick={() => {
-                      setBulkMessageText(TEMPLATE_PRESETS[key]);
-                      setSelectedPresetKey(key);
-                    }}
-                    style={{
-                      backgroundColor: 'transparent',
-                      color: isPresetActive ? '#ffffff' : '#666666',
-                      border: 'none',
-                      padding: '6px 10px',
-                      fontSize: '9.5px',
-                      fontWeight: isPresetActive ? 'bold' : 'normal',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    {key.toUpperCase()}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {bulkMessageType === 'email' && (
+        <div className={`filter-expand-wrapper ${filterOpen ? 'open' : ''}`}>
+          <div className="filter-expand-content animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%', marginBottom: filterOpen ? '16px' : '0' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '10px', color: '#888', marginBottom: '4px' }}>EMAIL SUBJECT</label>
-              <input
-                type="text"
-                value={bulkEmailSubject}
-                onChange={(e) => setBulkEmailSubject(e.target.value)}
-                style={{ width: '100%', background: '#000', color: '#fff', border: '1px solid #333', padding: '10px 12px', fontSize: '11px', outline: 'none', boxSizing: 'border-box', borderRadius: '2px' }}
-              />
+              <label style={{ display: 'block', fontSize: '9px', color: '#888', marginBottom: '6px', letterSpacing: '1px' }}>STATUS</label>
+              <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', scrollbarWidth: 'none', whiteSpace: 'nowrap', paddingBottom: '4px', width: '100%' }}>
+                {Object.keys(TEMPLATE_PRESETS).map((key) => {
+                  const isPresetActive = selectedPresetKey === key;
+                  return (
+                    <button
+                      type="button"
+                      key={key}
+                      onClick={() => {
+                        setBulkMessageText(TEMPLATE_PRESETS[key]);
+                        setSelectedPresetKey(key);
+                      }}
+                      style={{
+                        backgroundColor: 'transparent',
+                        color: isPresetActive ? '#ffffff' : '#666666',
+                        border: 'none',
+                        padding: '6px 10px',
+                        fontSize: '9.5px',
+                        fontWeight: isPresetActive ? 'bold' : 'normal',
+                        cursor: 'pointer',
+                        flexShrink: 0,
+                        whiteSpace: 'nowrap'
+                      }}
+                    >
+                      {key.toUpperCase()}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          )}
 
-          <div>
-            <label style={{ display: 'block', fontSize: '10px', color: '#888', marginBottom: '4px' }}>MESSAGE TEMPLATE</label>
-            <textarea
-              rows={5}
-              value={bulkMessageText}
-              onChange={(e) => {
-                setBulkMessageText(e.target.value);
-                setSelectedPresetKey('');
-              }}
-              style={{ width: '100%', background: '#000', color: '#fff', border: '1px solid #333', padding: '10px 12px', fontSize: '11px', outline: 'none', resize: 'vertical', boxSizing: 'border-box', borderRadius: '2px' }}
-            />
-            <div style={{ fontSize: '9px', color: '#888', marginTop: '4px' }}>
-              Variables: <code>{"{{name}}"}</code>, <code>{"{{status}}"}</code>, <code>{"{{order_id}}"}</code>, <code>{"{{courier}}"}</code>, <code>{"{{tracking}}"}</code>
+            <div>
+              <button
+                type="button"
+                onClick={() => setIsMessageTemplateOpen(prev => !prev)}
+                style={{
+                  backgroundColor: '#111',
+                  border: '1px solid #333',
+                  color: '#fff',
+                  padding: '8px 12px',
+                  fontSize: '10px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  borderRadius: '2px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  width: '100%',
+                  letterSpacing: '1px'
+                }}
+              >
+                <span>MESSAGE TEMPLATE</span>
+                <span style={{ fontSize: '9px' }}>{isMessageTemplateOpen ? '▲' : '▼'}</span>
+              </button>
+
+              <div className={`filter-expand-wrapper ${isMessageTemplateOpen ? 'open' : ''}`}>
+                <div className="filter-expand-content" style={{ paddingTop: '10px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {bulkMessageType === 'email' && (
+                    <div>
+                      <label style={{ display: 'block', fontSize: '10px', color: '#888', marginBottom: '4px' }}>EMAIL SUBJECT</label>
+                      <input
+                        type="text"
+                        value={bulkEmailSubject}
+                        onChange={(e) => setBulkEmailSubject(e.target.value)}
+                        style={{ width: '100%', background: '#000', color: '#fff', border: '1px solid #333', padding: '10px 12px', fontSize: '11px', outline: 'none', boxSizing: 'border-box', borderRadius: '2px' }}
+                      />
+                    </div>
+                  )}
+
+                  <div>
+                    <textarea
+                      rows={5}
+                      value={bulkMessageText}
+                      onChange={(e) => {
+                        setBulkMessageText(e.target.value);
+                        setSelectedPresetKey('');
+                      }}
+                      style={{ width: '100%', background: '#000', color: '#fff', border: '1px solid #333', padding: '10px 12px', fontSize: '11px', outline: 'none', resize: 'vertical', boxSizing: 'border-box', borderRadius: '2px' }}
+                    />
+                    <div style={{ fontSize: '9px', color: '#888', marginTop: '4px' }}>
+                      Variables: <code>{"{{name}}"}</code>, <code>{"{{status}}"}</code>, <code>{"{{order_id}}"}</code>, <code>{"{{courier}}"}</code>, <code>{"{{tracking}}"}</code>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
+        </div>
 
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%' }}>
           {bulkMessageType === 'email' ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <a
@@ -1424,18 +1459,18 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
                   boxSizing: 'border-box'
                 }}
               >
-                Send Email ({validEmailsCount})
+                Send Email ({activeBulkEmails.length})
               </a>
 
               <div style={{ fontSize: '9.5px', color: '#888', textAlign: 'center' }}>
-                Found {validEmailsCount} valid emails out of {selectedOrdersList.length} selected orders.
+                Found {activeBulkEmails.length} valid emails out of {activeBulkOrders.length} selected orders.
               </div>
             </div>
           ) : (
             <div>
               <label style={{ display: 'block', fontSize: '10px', color: '#888', marginBottom: '8px' }}>RECIPIENT DISPATCH QUEUE</label>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {selectedOrdersList.map((ord) => {
+                {activeBulkOrders.map((ord) => {
                   const isSent = Boolean(sentIndexes[ord.id]);
                   const isItemExpanded = Boolean(expandedBulkItems[ord.id]);
                   const phone = ord.customer_phone || 'No phone';
