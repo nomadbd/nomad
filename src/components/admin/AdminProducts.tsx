@@ -49,9 +49,9 @@ const ProductGallery = ({ images, productName }: { images: string[], productName
   };
 
   return (
-    <div style={{ width: '100%', position: 'relative', overflow: 'hidden', backgroundColor: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <div style={{ width: '100%', position: 'relative', overflow: 'hidden', backgroundColor: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center', aspectRatio: '1/1' }}>
       {images.length > 0 ? (
-        <img src={images[currentIndex]} alt={productName} style={{ width: '100%', height: 'auto', maxHeight: '450px', objectFit: 'contain', display: 'block' }} />
+        <img src={images[currentIndex]} alt={productName} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
       ) : (
         <div style={{ width: '100%', height: '250px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#333' }}>No Image</div>
       )}
@@ -155,7 +155,7 @@ const ProductCard = ({ product, onUpdateStock, onDelete }: { product: Product; o
     <div className="showroom-card-item" style={{ scrollSnapAlign: 'start', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', backgroundColor: '#050505', border: '1px solid #1a1a1a', padding: '12px' }}>
       <ProductGallery images={imagesList} productName={product.name} />
 
-      <div style={{ marginTop: '15px', padding: '0 5px', display: 'flex', flexDirection: 'column', flex: 1 }}>
+      <div style={{ marginTop: '15px', padding: '0 15px', display: 'flex', flexDirection: 'column', flex: 1 }}>
         <h3 style={{ fontSize: '14px', color: '#fff', margin: '0 0 6px 0', fontWeight: '600' }}>{product.name}</h3>
 
         <div style={{ margin: '0 0 15px 0' }}>
@@ -485,7 +485,7 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
   const filteredCategories = Array.from(new Set(filteredProducts.map(p => p.category)));
 
   return (
-    <div style={{ width: '100%', maxWidth: '100%', overflow: 'hidden', position: 'relative', backgroundColor: '#000', minHeight: '100vh', padding: '0 20px 20px 20px', boxSizing: 'border-box' }}>
+    <div className="admin-products-container" style={{ width: '100%', maxWidth: '100%', overflow: 'hidden', position: 'relative', backgroundColor: '#000', minHeight: '100vh', padding: '0 20px 20px 20px', boxSizing: 'border-box' }}>
       {notification && (
         <div style={{ position: 'fixed', top: '20px', right: '20px', zIndex: 9999, backgroundColor: '#0a0a0a', border: `1px solid ${notification.type === 'error' ? '#ef4444' : '#ffffff'}`, color: '#ffffff', padding: '14px 20px', borderRadius: '2px', fontFamily: 'monospace', fontSize: '11px', letterSpacing: '1px' }}>
           <span style={{ color: notification.type === 'error' ? '#ef4444' : '#22c55e', marginRight: '8px' }}>
@@ -685,13 +685,20 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
           scrollbar-width: none;
         }
         @media (max-width: 767px) {
+          .admin-products-container {
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+          }
           .showroom-section {
             width: 100%;
           }
           .showroom-card-item {
             width: 100% !important;
             min-width: 100% !important;
-            padding: 12px !important;
+            padding: 0 0 15px 0 !important;
+            border-left: none !important;
+            border-right: none !important;
+            border-radius: 0 !important;
           }
         }
         @media (min-width: 768px) {
