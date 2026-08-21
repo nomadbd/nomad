@@ -21,6 +21,13 @@ interface Product {
 interface AdminProductsProps {
   showAddModal?: boolean;
   setShowAddModal?: React.Dispatch<React.SetStateAction<boolean>> | ((value: boolean) => void);
+  searchQuery?: string;
+  onSearchChange?: (query: string) => void;
+  isFilterOpen?: boolean;
+  dateFormat?: string;
+  isAddOpen?: boolean;
+  onToggleAdd?: () => void;
+  onCloseAdd?: () => void;
 }
 
 const ProductGallery = ({ images, productName }: { images: string[], productName: string }) => {
@@ -196,7 +203,14 @@ const ProductCard = ({ product, onUpdateStock, onDelete }: { product: Product; o
 
 const AdminProducts: React.FC<AdminProductsProps> = ({
   showAddModal: externalShowAddModal,
-  setShowAddModal: externalSetShowAddModal
+  setShowAddModal: externalSetShowAddModal,
+  searchQuery = '',
+  onSearchChange,
+  isFilterOpen = false,
+  dateFormat,
+  isAddOpen,
+  onToggleAdd,
+  onCloseAdd
 }) => {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
@@ -204,8 +218,6 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
   const [showAddModal, setShowAddModal] = useState<boolean>(false);
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
-
-  const [showFilters, setShowFilters] = useState<boolean>(false);
 
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [stockFilter, setStockFilter] = useState<'all' | 'in_stock' | 'sold_out'>('all');
@@ -231,15 +243,20 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   useEffect(() => {
-    if (externalShowAddModal !== undefined) {
+    if (isAddOpen !== undefined) {
+      setShowAddModal(isAddOpen);
+    } else if (externalShowAddModal !== undefined) {
       setShowAddModal(externalShowAddModal);
     }
-  }, [externalShowAddModal]);
+  }, [isAddOpen, externalShowAddModal]);
 
   const handleSetShowAddModal = (value: boolean) => {
     setShowAddModal(value);
     if (externalSetShowAddModal) {
       externalSetShowAddModal(value);
+    }
+    if (!value && onCloseAdd) {
+      onCloseAdd();
     }
   };
 
@@ -427,9 +444,11 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
     }
   };
 
+  const activeSearch = searchQuery || searchTerm;
+
   let filteredProducts = products.filter(p => {
-    const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          p.category?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = p.name.toLowerCase().includes(activeSearch.toLowerCase()) ||
+                          p.category?.toLowerCase().includes(activeSearch.toLowerCase());
     if (stockFilter === 'in_stock') return matchesSearch && p.stock_quantity > 0;
     if (stockFilter === 'sold_out') return matchesSearch && p.stock_quantity <= 0;
     return matchesSearch;
@@ -453,6 +472,43 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
             {notification.type === 'error' ? '✕' : '✓'}
           </span>
           {notification.message}
+        </div>
+      )}
+
+      {(isFilterOpen || onSearchChange) && (
+        <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', marginTop: '10px', flexWrap: 'wrap', backgroundColor: '#080808', padding: '12px', border: '1px solid #1a1a1a', alignItems: 'center' }}>
+          {onSearchChange && (
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => onSearchChange(e.target.value)}
+              placeholder="SEARCH PRODUCTS..."
+              style={{ flex: 1, minWidth: '200px', backgroundColor: '#000', border: '1px solid #333', padding: '8px 12px', color: '#fff', fontSize: '11px', fontFamily: 'monospace' }}
+            />
+          )}
+          {isFilterOpen && (
+            <>
+              <select
+                value={stockFilter}
+                onChange={(e) => setStockFilter(e.target.value as any)}
+                style={{ background: '#000', color: '#fff', border: '1px solid #333', padding: '8px', fontSize: '11px', fontFamily: 'monospace' }}
+              >
+                <option value="all">ALL STOCK STATUS</option>
+                <option value="in_stock">IN STOCK ONLY</option>
+                <option value="sold_out">SOLD OUT ONLY</option>
+              </select>
+
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as any)}
+                style={{ background: '#000', color: '#fff', border: '1px solid #333', padding: '8px', fontSize: '11px', fontFamily: 'monospace' }}
+              >
+                <option value="newest">SORT: NEWEST FIRST</option>
+                <option value="price_low">PRICE: LOW TO HIGH</option>
+                <option value="price_high">PRICE: HIGH TO LOW</option>
+              </select>
+            </>
+          )}
         </div>
       )}
 
