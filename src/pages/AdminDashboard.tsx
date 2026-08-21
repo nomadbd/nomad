@@ -22,6 +22,7 @@ const AdminDashboard: React.FC = () => {
   const [menuOpen, setMenuOpen] = useState<boolean>(false);
   const [isSearchOpen, setIsSearchOpen] = useState<boolean>(false);
   const [isFilterOpen, setIsFilterOpen] = useState<boolean>(false);
+  const [isAddOpen, setIsAddOpen] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   const [userName, setUserName] = useState<string>('');
@@ -38,6 +39,7 @@ const AdminDashboard: React.FC = () => {
     setActiveTab(tab);
     setMenuOpen(false);
     setIsSearchOpen(false);
+    setIsAddOpen(false);
 
     const searchParams = new URLSearchParams(window.location.search);
     searchParams.set('tab', tab);
@@ -426,7 +428,8 @@ const AdminDashboard: React.FC = () => {
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                 {activeTab === 'products' && (
                   <button
-                    className="nomad-action-btn"
+                    className={`nomad-action-btn ${isAddOpen ? 'active' : ''}`}
+                    onClick={() => setIsAddOpen(!isAddOpen)}
                     aria-label="Add Product"
                     title="Add Product"
                   >
