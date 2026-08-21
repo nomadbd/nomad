@@ -49,9 +49,9 @@ const ProductGallery = ({ images, productName }: { images: string[], productName
   };
 
   return (
-    <div style={{ width: '100%', position: 'relative', overflow: 'hidden', backgroundColor: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center', aspectRatio: '1/1' }}>
+    <div style={{ width: '100%', position: 'relative', overflow: 'hidden', backgroundColor: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       {images.length > 0 ? (
-        <img src={images[currentIndex]} alt={productName} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+        <img src={images[currentIndex]} alt={productName} style={{ width: '100%', height: 'auto', display: 'block' }} />
       ) : (
         <div style={{ width: '100%', height: '250px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#333' }}>No Image</div>
       )}
