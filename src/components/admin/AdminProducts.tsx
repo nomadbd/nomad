@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+Import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 import { uploadToCloudinary } from '../../cloudinary';
 
@@ -621,3 +621,4 @@ const AdminProducts: React.FC = () => {
 };
 
 export default AdminProducts;
+
