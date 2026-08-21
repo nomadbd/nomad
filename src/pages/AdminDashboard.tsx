@@ -348,7 +348,7 @@ const AdminDashboard: React.FC = () => {
           font-size: 11px;
           text-align: left;
           cursor: pointer;
-          letter-spacing: 1px;
+          letterSpacing: 1px;
           background: transparent;
           color: #888888;
           border-radius: 0 !important;
@@ -584,6 +584,7 @@ const AdminDashboard: React.FC = () => {
             <AdminProducts 
               key="products" 
               searchQuery={searchQuery} 
+              onSearchChange={setSearchQuery}
               isFilterOpen={isFilterOpen} 
               dateFormat="DD/MM/YYYY" 
               isAddOpen={isAddOpen}
