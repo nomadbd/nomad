@@ -24,6 +24,7 @@ interface AdminProductsProps {
   searchQuery?: string;
   onSearchChange?: (query: string) => void;
   isFilterOpen?: boolean;
+  isSearchOpen?: boolean;
   dateFormat?: string;
   isAddOpen?: boolean;
   onToggleAdd?: () => void;
@@ -207,6 +208,7 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
   searchQuery = '',
   onSearchChange,
   isFilterOpen = false,
+  isSearchOpen = true,
   dateFormat,
   isAddOpen,
   onToggleAdd,
@@ -475,13 +477,18 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
         </div>
       )}
 
-      {(isFilterOpen || onSearchChange) && (
+      {(isFilterOpen || isSearchOpen || onSearchChange) && (
         <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', marginTop: '10px', flexWrap: 'wrap', backgroundColor: '#080808', padding: '12px', border: '1px solid #1a1a1a', alignItems: 'center' }}>
-          {onSearchChange && (
+          {(isSearchOpen || onSearchChange) && (
             <input
               type="text"
-              value={searchQuery}
-              onChange={(e) => onSearchChange(e.target.value)}
+              value={searchQuery || searchTerm}
+              onChange={(e) => {
+                if (onSearchChange) {
+                  onSearchChange(e.target.value);
+                }
+                setSearchTerm(e.target.value);
+              }}
               placeholder="SEARCH PRODUCTS..."
               style={{ flex: 1, minWidth: '200px', backgroundColor: '#000', border: '1px solid #333', padding: '8px 12px', color: '#fff', fontSize: '11px', fontFamily: 'monospace' }}
             />
