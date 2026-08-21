@@ -34,6 +34,10 @@ interface AdminProductsProps {
 const ProductGallery = ({ images, productName }: { images: string[], productName: string }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
 
+  useEffect(() => {
+    setCurrentIndex(0);
+  }, [images]);
+
   const handlePrev = (e: React.MouseEvent) => {
     e.stopPropagation();
     setCurrentIndex(prev => (prev > 0 ? prev - 1 : images.length - 1));
@@ -143,9 +147,13 @@ const ProductAdminActionRow = ({ product, onUpdateStock, onDelete }: { product: 
 const ProductCard = ({ product, onUpdateStock, onDelete }: { product: Product; onUpdateStock: any; onDelete: any }) => {
   const [isDescExpanded, setIsDescExpanded] = useState(false);
 
+  const imagesList = (product.product_media && product.product_media.length > 0)
+    ? product.product_media.map(m => m.media_url)
+    : (product.image_url ? [product.image_url] : []);
+
   return (
     <div className="showroom-card-item" style={{ scrollSnapAlign: 'start', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', backgroundColor: '#050505', border: '1px solid #1a1a1a', padding: '12px' }}>
-      <ProductGallery images={product.product_media?.map(m => m.media_url) || []} productName={product.name} />
+      <ProductGallery images={imagesList} productName={product.name} />
 
       <div style={{ marginTop: '15px', padding: '0 5px', display: 'flex', flexDirection: 'column', flex: 1 }}>
         <h3 style={{ fontSize: '14px', color: '#fff', margin: '0 0 6px 0', fontWeight: '600' }}>{product.name}</h3>
@@ -208,7 +216,7 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
   searchQuery = '',
   onSearchChange,
   isFilterOpen = false,
-  isSearchOpen = true,
+  isSearchOpen = false,
   dateFormat,
   isAddOpen,
   onToggleAdd,
@@ -301,7 +309,8 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
             status: p.status || 'active',
             category: p.category || 'GENERAL',
             created_at: p.created_at,
-            product_media: sortedMedia || []
+            product_media: sortedMedia || [],
+            image_url: p.image_url
           };
         });
 
@@ -330,11 +339,36 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
       }));
       setMediaPreviews(prev => [...prev, ...newPreviews]);
     }
+    e.target.value = '';
   };
 
   const removeSelectedMedia = (index: number) => {
+    setMediaPreviews(prev => {
+      if (prev[index]?.url) {
+        URL.revokeObjectURL(prev[index].url);
+      }
+      return prev.filter((_, i) => i !== index);
+    });
     setMediaFiles(prev => prev.filter((_, i) => i !== index));
-    setMediaPreviews(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const resetForm = () => {
+    mediaPreviews.forEach(m => {
+      if (m.url) URL.revokeObjectURL(m.url);
+    });
+    setNewName('');
+    setNewPrice('');
+    setNewStock('');
+    setNewDescription('');
+    setNewCategory('APPAREL');
+    setNewFit('Regular Fit');
+    setNewGsm('180');
+    setNewMadeIn('Bangladesh');
+    setNewMaterial('100% Premium Cotton');
+    setNewSizes('S, M, L, XL');
+    setNewColors('BLACK, WHITE');
+    setMediaFiles([]);
+    setMediaPreviews([]);
   };
 
   const handleAddProduct = async (e: React.FormEvent) => {
@@ -404,22 +438,6 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
     }
   };
 
-  const resetForm = () => {
-    setNewName('');
-    setNewPrice('');
-    setNewStock('');
-    setNewDescription('');
-    setNewCategory('APPAREL');
-    setNewFit('Regular Fit');
-    setNewGsm('180');
-    setNewMadeIn('Bangladesh');
-    setNewMaterial('100% Premium Cotton');
-    setNewSizes('S, M, L, XL');
-    setNewColors('BLACK, WHITE');
-    setMediaFiles([]);
-    setMediaPreviews([]);
-  };
-
   const handleStockUpdate = async (productId: string | number, currentStock: number, change: number) => {
     const updated = Math.max(0, currentStock + change);
     try {
@@ -467,7 +485,7 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
   const filteredCategories = Array.from(new Set(filteredProducts.map(p => p.category)));
 
   return (
-    <div style={{ width: '100%', maxWidth: '100%', overflow: 'clip', position: 'relative', backgroundColor: '#000', minHeight: '100vh', padding: '0 20px 20px 20px', boxSizing: 'border-box' }}>
+    <div style={{ width: '100%', maxWidth: '100%', overflow: 'hidden', position: 'relative', backgroundColor: '#000', minHeight: '100vh', padding: '0 20px 20px 20px', boxSizing: 'border-box' }}>
       {notification && (
         <div style={{ position: 'fixed', top: '20px', right: '20px', zIndex: 9999, backgroundColor: '#0a0a0a', border: `1px solid ${notification.type === 'error' ? '#ef4444' : '#ffffff'}`, color: '#ffffff', padding: '14px 20px', borderRadius: '2px', fontFamily: 'monospace', fontSize: '11px', letterSpacing: '1px' }}>
           <span style={{ color: notification.type === 'error' ? '#ef4444' : '#22c55e', marginRight: '8px' }}>
@@ -477,9 +495,9 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
         </div>
       )}
 
-      {(isFilterOpen || isSearchOpen || onSearchChange) && (
+      {(isFilterOpen || isSearchOpen) && (
         <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', marginTop: '10px', flexWrap: 'wrap', backgroundColor: '#080808', padding: '12px', border: '1px solid #1a1a1a', alignItems: 'center' }}>
-          {(isSearchOpen || onSearchChange) && (
+          {isSearchOpen && (
             <input
               type="text"
               value={searchQuery || searchTerm}
@@ -548,7 +566,7 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
                         padding: 0,
                         alignItems: 'center',
                         minWidth: '85px',
-                        justify: 'flex-end',
+                        justifyContent: 'flex-end',
                         whiteSpace: 'nowrap'
                       }}
                     >
@@ -668,14 +686,12 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
         }
         @media (max-width: 767px) {
           .showroom-section {
-            margin-left: calc(-20px);
-            margin-right: calc(-20px);
-            width: calc(100vw);
+            width: 100%;
           }
           .showroom-card-item {
-            width: 100vw !important;
-            min-width: 100vw !important;
-            padding: 0 15px !important;
+            width: 100% !important;
+            min-width: 100% !important;
+            padding: 12px !important;
           }
         }
         @media (min-width: 768px) {
