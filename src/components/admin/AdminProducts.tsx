@@ -18,7 +18,11 @@ interface Product {
   image_url?: string;
 }
 
-// 📸 প্রোডাক্ট গ্যালারি কম্পোনেন্ট
+interface AdminProductsProps {
+  showAddModal?: boolean;
+  setShowAddModal?: React.Dispatch<React.SetStateAction<boolean>> | ((value: boolean) => void);
+}
+
 const ProductGallery = ({ images, productName }: { images: string[], productName: string }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -63,7 +67,6 @@ const ProductGallery = ({ images, productName }: { images: string[], productName
   );
 };
 
-// 🛒 অ্যাকশন রো
 const ProductAdminActionRow = ({ product, onUpdateStock, onDelete }: { product: Product; onUpdateStock: (id: string | number, currentStock: number, change: number) => void; onDelete: (id: string | number) => void }) => {
   const [step, setStep] = useState<'idle' | 'manage'>('idle');
   const isSoldOut = product.status === 'sold_out' || product.stock_quantity <= 0;
@@ -129,7 +132,6 @@ const ProductAdminActionRow = ({ product, onUpdateStock, onDelete }: { product: 
   );
 };
 
-// 💳 ইনডিভিজুয়াল প্রোডাক্ট কার্ড কম্পোনেন্ট
 const ProductCard = ({ product, onUpdateStock, onDelete }: { product: Product; onUpdateStock: any; onDelete: any }) => {
   const [isDescExpanded, setIsDescExpanded] = useState(false);
 
@@ -192,7 +194,10 @@ const ProductCard = ({ product, onUpdateStock, onDelete }: { product: Product; o
   );
 };
 
-const AdminProducts: React.FC = () => {
+const AdminProducts: React.FC<AdminProductsProps> = ({
+  showAddModal: externalShowAddModal,
+  setShowAddModal: externalSetShowAddModal
+}) => {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -200,22 +205,18 @@ const AdminProducts: React.FC = () => {
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
 
-  // Filter Dropdown Toggle State
   const [showFilters, setShowFilters] = useState<boolean>(false);
 
-  // Filters State
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [stockFilter, setStockFilter] = useState<'all' | 'in_stock' | 'sold_out'>('all');
   const [sortBy, setSortBy] = useState<'newest' | 'price_low' | 'price_high'>('newest');
 
-  // Form States
   const [newName, setNewName] = useState<string>('');
   const [newPrice, setNewPrice] = useState<string>('');
   const [newStock, setNewStock] = useState<string>('');
   const [newCategory, setNewCategory] = useState<string>('APPAREL');
   const [newDescription, setNewDescription] = useState<string>('');
 
-  // Details JSONB Fields
   const [newFit, setNewFit] = useState<string>('Regular Fit');
   const [newGsm, setNewGsm] = useState<string>('180');
   const [newMadeIn, setNewMadeIn] = useState<string>('Bangladesh');
@@ -223,12 +224,24 @@ const AdminProducts: React.FC = () => {
   const [newSizes, setNewSizes] = useState<string>('S, M, L, XL');
   const [newColors, setNewColors] = useState<string>('BLACK, WHITE');
 
-  // Multiple Media Files State
   const [mediaFiles, setMediaFiles] = useState<File[]>([]);
   const [mediaPreviews, setMediaPreviews] = useState<{ url: string; type: 'image' | 'video' }[]>([]);
   const [uploadingMedia, setUploadingMedia] = useState<boolean>(false);
 
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  useEffect(() => {
+    if (externalShowAddModal !== undefined) {
+      setShowAddModal(externalShowAddModal);
+    }
+  }, [externalShowAddModal]);
+
+  const handleSetShowAddModal = (value: boolean) => {
+    setShowAddModal(value);
+    if (externalSetShowAddModal) {
+      externalSetShowAddModal(value);
+    }
+  };
 
   const showNotification = (message: string, type: 'success' | 'error' = 'success') => {
     setNotification({ message, type });
@@ -359,7 +372,7 @@ const AdminProducts: React.FC = () => {
         setUploadingMedia(false);
       }
 
-      setShowAddModal(false);
+      handleSetShowAddModal(false);
       resetForm();
       fetchProducts();
       showNotification('PRODUCT & MULTIPLE MEDIA FILES UPLOADED SUCCESSFULLY.');
@@ -414,7 +427,6 @@ const AdminProducts: React.FC = () => {
     }
   };
 
-  // Filtering and Sorting Logic
   let filteredProducts = products.filter(p => {
     const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           p.category?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -569,7 +581,7 @@ const AdminProducts: React.FC = () => {
               </div>
 
               <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-                <button type="button" onClick={() => setShowAddModal(false)} style={{ flex: 1, background: 'transparent', border: '1px solid #444', color: '#fff', padding: '10px', cursor: 'pointer' }}>CANCEL</button>
+                <button type="button" onClick={() => handleSetShowAddModal(false)} style={{ flex: 1, background: 'transparent', border: '1px solid #444', color: '#fff', padding: '10px', cursor: 'pointer' }}>CANCEL</button>
                 <button type="submit" disabled={submitting || uploadingMedia} style={{ flex: 1, background: '#fff', border: 'none', color: '#000', padding: '10px', fontWeight: 'bold', cursor: 'pointer' }}>
                   {uploadingMedia ? 'UPLOADING MEDIA...' : submitting ? 'SAVING...' : 'CREATE PRODUCT'}
                 </button>
@@ -621,4 +633,3 @@ const AdminProducts: React.FC = () => {
 };
 
 export default AdminProducts;
-
