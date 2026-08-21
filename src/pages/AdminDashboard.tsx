@@ -586,6 +586,9 @@ const AdminDashboard: React.FC = () => {
               searchQuery={searchQuery} 
               isFilterOpen={isFilterOpen} 
               dateFormat="DD/MM/YYYY" 
+              isAddOpen={isAddOpen}
+              onToggleAdd={() => setIsAddOpen(prev => !prev)}
+              onCloseAdd={() => setIsAddOpen(false)}
             />
           )}
 
