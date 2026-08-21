@@ -101,7 +101,7 @@ const AdminDashboard: React.FC = () => {
       }
     } catch (err) {
       console.error('Error fetching user profile:', err);
-    } fontally {
+    } finally {
       setLoading(false);
     }
   };
@@ -586,8 +586,6 @@ const AdminDashboard: React.FC = () => {
               searchQuery={searchQuery} 
               isFilterOpen={isFilterOpen} 
               dateFormat="DD/MM/YYYY" 
-              isAddOpen={isAddOpen}
-              setIsAddOpen={setIsAddOpen}
             />
           )}
 
