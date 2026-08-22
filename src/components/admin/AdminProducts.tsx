@@ -231,7 +231,8 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
 
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [stockFilter, setStockFilter] = useState<'all' | 'in_stock' | 'sold_out'>('all');
-  const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'price_low' | 'price_high'>('newest');
+  const [dateSort, setDateSort] = useState<'newest' | 'oldest'>('newest');
+  const [priceSort, setPriceSort] = useState<'none' | 'price_low' | 'price_high'>('none');
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
   const [minPrice, setMinPrice] = useState<string>('');
@@ -478,33 +479,53 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
     if (stockFilter === 'in_stock' && p.stock_quantity <= 0) return false;
     if (stockFilter === 'sold_out' && p.stock_quantity > 0) return false;
 
-    if (minPrice !== '' && p.price < parseFloat(minPrice)) return false;
-    if (maxPrice !== '' && p.price > parseFloat(maxPrice)) return false;
+    const hasMin = minPrice !== '' && !isNaN(parseFloat(minPrice));
+    const hasMax = maxPrice !== '' && !isNaN(parseFloat(maxPrice));
 
-    if (startDate !== '') {
-      const pDate = new Date(p.created_at).getTime();
-      const sDate = new Date(startDate).setHours(0, 0, 0, 0);
-      if (pDate < sDate) return false;
+    if (hasMin && hasMax) {
+      if (p.price < parseFloat(minPrice) || p.price > parseFloat(maxPrice)) return false;
+    } else if (hasMin) {
+      if (p.price !== parseFloat(minPrice)) return false;
+    } else if (hasMax) {
+      if (p.price !== parseFloat(maxPrice)) return false;
     }
 
-    if (endDate !== '') {
-      const pDate = new Date(p.created_at).getTime();
-      const eDate = new Date(endDate).setHours(23, 59, 59, 999);
-      if (pDate > eDate) return false;
+    const hasStart = startDate !== '';
+    const hasEnd = endDate !== '';
+    const pTime = new Date(p.created_at).getTime();
+
+    if (hasStart && hasEnd) {
+      const sTime = new Date(`${startDate}T00:00:00`).getTime();
+      const eTime = new Date(`${endDate}T23:59:59.999`).getTime();
+      if (pTime < sTime || pTime > eTime) return false;
+    } else if (hasStart) {
+      const sTime = new Date(`${startDate}T00:00:00`).getTime();
+      const eTime = new Date(`${startDate}T23:59:59.999`).getTime();
+      if (pTime < sTime || pTime > eTime) return false;
+    } else if (hasEnd) {
+      const sTime = new Date(`${endDate}T00:00:00`).getTime();
+      const eTime = new Date(`${endDate}T23:59:59.999`).getTime();
+      if (pTime < sTime || pTime > eTime) return false;
     }
 
     return true;
   });
 
-  if (sortBy === 'price_low') {
-    filteredProducts.sort((a, b) => a.price - b.price);
-  } else if (sortBy === 'price_high') {
-    filteredProducts.sort((a, b) => b.price - a.price);
-  } else if (sortBy === 'oldest') {
-    filteredProducts.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-  } else {
-    filteredProducts.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-  }
+  filteredProducts.sort((a, b) => {
+    if (priceSort === 'price_low') {
+      if (a.price !== b.price) return a.price - b.price;
+    } else if (priceSort === 'price_high') {
+      if (a.price !== b.price) return b.price - a.price;
+    }
+
+    const timeA = new Date(a.created_at).getTime();
+    const timeB = new Date(b.created_at).getTime();
+    if (dateSort === 'oldest') {
+      return timeA - timeB;
+    } else {
+      return timeB - timeA;
+    }
+  });
 
   const filteredCategories = Array.from(new Set(filteredProducts.map(p => p.category)));
 
@@ -539,7 +560,7 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%' }}>
               <div>
                 <div style={{ fontSize: '10px', color: '#777', fontFamily: 'monospace', letterSpacing: '1px', marginBottom: '8px' }}>STOCK STATUS</div>
-                <div style={{ display: 'flex', gap: '14px', overflowX: 'auto' }}>
+                <div style={{ display: 'flex', gap: '14px', overflowX: 'auto', whiteSpace: 'nowrap', flexWrap: 'nowrap', scrollbarWidth: 'none' }}>
                   {[
                     { label: 'ALL', value: 'all' },
                     { label: 'IN STOCK', value: 'in_stock' },
@@ -558,7 +579,8 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
                         fontFamily: 'monospace',
                         cursor: 'pointer',
                         fontWeight: stockFilter === item.value ? '700' : 'normal',
-                        textDecoration: stockFilter === item.value ? 'underline' : 'none'
+                        textDecoration: 'none',
+                        flexShrink: 0
                       }}
                     >
                       {item.label}
@@ -569,8 +591,8 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
 
               <div>
                 <div style={{ fontSize: '10px', color: '#777', fontFamily: 'monospace', letterSpacing: '1px', marginBottom: '8px' }}>SORT</div>
-                <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', gap: '14px' }}>
+                <div style={{ display: 'flex', gap: '16px', alignItems: 'center', overflowX: 'auto', whiteSpace: 'nowrap', flexWrap: 'nowrap', scrollbarWidth: 'none' }}>
+                  <div style={{ display: 'flex', gap: '14px', flexShrink: 0 }}>
                     {[
                       { label: 'NEWEST FIRST', value: 'newest' },
                       { label: 'OLDEST FIRST', value: 'oldest' }
@@ -578,24 +600,25 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
                       <button
                         key={item.value}
                         type="button"
-                        onClick={() => setSortBy(item.value as any)}
+                        onClick={() => setDateSort(item.value as any)}
                         style={{
                           background: 'none',
                           border: 'none',
                           padding: '0',
-                          color: sortBy === item.value ? '#fff' : '#666',
+                          color: dateSort === item.value ? '#fff' : '#666',
                           fontSize: '11px',
                           fontFamily: 'monospace',
                           cursor: 'pointer',
-                          fontWeight: sortBy === item.value ? '700' : 'normal',
-                          textDecoration: sortBy === item.value ? 'underline' : 'none'
+                          fontWeight: dateSort === item.value ? '700' : 'normal',
+                          textDecoration: 'none',
+                          flexShrink: 0
                         }}
                       >
                         {item.label}
                       </button>
                     ))}
                   </div>
-                  <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginLeft: 'auto' }}>
+                  <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0 }}>
                     <input
                       type="date"
                       value={startDate}
@@ -615,8 +638,8 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
 
               <div>
                 <div style={{ fontSize: '10px', color: '#777', fontFamily: 'monospace', letterSpacing: '1px', marginBottom: '8px' }}>PRICE</div>
-                <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', gap: '14px' }}>
+                <div style={{ display: 'flex', gap: '16px', alignItems: 'center', overflowX: 'auto', whiteSpace: 'nowrap', flexWrap: 'nowrap', scrollbarWidth: 'none' }}>
+                  <div style={{ display: 'flex', gap: '14px', flexShrink: 0 }}>
                     {[
                       { label: 'HIGH TO LOW', value: 'price_high' },
                       { label: 'LOW TO HIGH', value: 'price_low' }
@@ -624,24 +647,25 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
                       <button
                         key={item.value}
                         type="button"
-                        onClick={() => setSortBy(item.value as any)}
+                        onClick={() => setPriceSort(priceSort === item.value ? 'none' : item.value as any)}
                         style={{
                           background: 'none',
                           border: 'none',
                           padding: '0',
-                          color: sortBy === item.value ? '#fff' : '#666',
+                          color: priceSort === item.value ? '#fff' : '#666',
                           fontSize: '11px',
                           fontFamily: 'monospace',
                           cursor: 'pointer',
-                          fontWeight: sortBy === item.value ? '700' : 'normal',
-                          textDecoration: sortBy === item.value ? 'underline' : 'none'
+                          fontWeight: priceSort === item.value ? '700' : 'normal',
+                          textDecoration: 'none',
+                          flexShrink: 0
                         }}
                       >
                         {item.label}
                       </button>
                     ))}
                   </div>
-                  <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginLeft: 'auto' }}>
+                  <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0 }}>
                     <input
                       type="number"
                       placeholder="MIN"
