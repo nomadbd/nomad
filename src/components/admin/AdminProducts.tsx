@@ -231,7 +231,11 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
 
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [stockFilter, setStockFilter] = useState<'all' | 'in_stock' | 'sold_out'>('all');
-  const [sortBy, setSortBy] = useState<'newest' | 'price_low' | 'price_high'>('newest');
+  const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'price_low' | 'price_high'>('newest');
+  const [startDate, setStartDate] = useState<string>('');
+  const [endDate, setEndDate] = useState<string>('');
+  const [minPrice, setMinPrice] = useState<string>('');
+  const [maxPrice, setMaxPrice] = useState<string>('');
 
   const [newName, setNewName] = useState<string>('');
   const [newPrice, setNewPrice] = useState<string>('');
@@ -469,15 +473,35 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
   let filteredProducts = products.filter(p => {
     const matchesSearch = p.name.toLowerCase().includes(activeSearch.toLowerCase()) ||
                           p.category?.toLowerCase().includes(activeSearch.toLowerCase());
-    if (stockFilter === 'in_stock') return matchesSearch && p.stock_quantity > 0;
-    if (stockFilter === 'sold_out') return matchesSearch && p.stock_quantity <= 0;
-    return matchesSearch;
+    if (!matchesSearch) return false;
+
+    if (stockFilter === 'in_stock' && p.stock_quantity <= 0) return false;
+    if (stockFilter === 'sold_out' && p.stock_quantity > 0) return false;
+
+    if (minPrice !== '' && p.price < parseFloat(minPrice)) return false;
+    if (maxPrice !== '' && p.price > parseFloat(maxPrice)) return false;
+
+    if (startDate !== '') {
+      const pDate = new Date(p.created_at).getTime();
+      const sDate = new Date(startDate).setHours(0, 0, 0, 0);
+      if (pDate < sDate) return false;
+    }
+
+    if (endDate !== '') {
+      const pDate = new Date(p.created_at).getTime();
+      const eDate = new Date(endDate).setHours(23, 59, 59, 999);
+      if (pDate > eDate) return false;
+    }
+
+    return true;
   });
 
   if (sortBy === 'price_low') {
     filteredProducts.sort((a, b) => a.price - b.price);
   } else if (sortBy === 'price_high') {
     filteredProducts.sort((a, b) => b.price - a.price);
+  } else if (sortBy === 'oldest') {
+    filteredProducts.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
   } else {
     filteredProducts.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
   }
@@ -496,7 +520,7 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
       )}
 
       {(isFilterOpen || isSearchOpen) && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px', marginTop: '10px', backgroundColor: '#080808', padding: '12px', border: '1px solid #1a1a1a' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '20px', marginTop: '10px', backgroundColor: '#080808', padding: '16px', border: '1px solid #1a1a1a' }}>
           {isSearchOpen && (
             <input
               type="text"
@@ -512,61 +536,129 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
             />
           )}
           {isFilterOpen && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
-              <div className="showroom-row-container" style={{ display: 'flex', gap: '8px', overflowX: 'auto', width: '100%', paddingBottom: '2px' }}>
-                {[
-                  { label: 'ALL STOCK STATUS', value: 'all' },
-                  { label: 'IN STOCK ONLY', value: 'in_stock' },
-                  { label: 'SOLD OUT ONLY', value: 'sold_out' }
-                ].map((item) => (
-                  <button
-                    key={item.value}
-                    type="button"
-                    onClick={() => setStockFilter(item.value as any)}
-                    style={{
-                      background: 'transparent',
-                      color: stockFilter === item.value ? '#fff' : '#888',
-                      border: stockFilter === item.value ? 'none' : '1px solid #888',
-                      borderRadius: '25px',
-                      padding: '6px 14px',
-                      fontSize: '11px',
-                      fontFamily: 'monospace',
-                      cursor: 'pointer',
-                      whiteSpace: 'nowrap',
-                      fontWeight: stockFilter === item.value ? '600' : 'normal'
-                    }}
-                  >
-                    {item.label}
-                  </button>
-                ))}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%' }}>
+              <div>
+                <div style={{ fontSize: '10px', color: '#777', fontFamily: 'monospace', letterSpacing: '1px', marginBottom: '8px' }}>STOCK STATUS</div>
+                <div style={{ display: 'flex', gap: '14px', overflowX: 'auto' }}>
+                  {[
+                    { label: 'ALL', value: 'all' },
+                    { label: 'IN STOCK', value: 'in_stock' },
+                    { label: 'SOLD OUT', value: 'sold_out' }
+                  ].map((item) => (
+                    <button
+                      key={item.value}
+                      type="button"
+                      onClick={() => setStockFilter(item.value as any)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        padding: '0',
+                        color: stockFilter === item.value ? '#fff' : '#666',
+                        fontSize: '11px',
+                        fontFamily: 'monospace',
+                        cursor: 'pointer',
+                        fontWeight: stockFilter === item.value ? '700' : 'normal',
+                        textDecoration: stockFilter === item.value ? 'underline' : 'none'
+                      }}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              <div className="showroom-row-container" style={{ display: 'flex', gap: '8px', overflowX: 'auto', width: '100%', paddingBottom: '2px' }}>
-                {[
-                  { label: 'SORT: NEWEST FIRST', value: 'newest' },
-                  { label: 'PRICE: LOW TO HIGH', value: 'price_low' },
-                  { label: 'PRICE: HIGH TO LOW', value: 'price_high' }
-                ].map((item) => (
-                  <button
-                    key={item.value}
-                    type="button"
-                    onClick={() => setSortBy(item.value as any)}
-                    style={{
-                      background: 'transparent',
-                      color: sortBy === item.value ? '#fff' : '#888',
-                      border: sortBy === item.value ? 'none' : '1px solid #888',
-                      borderRadius: '25px',
-                      padding: '6px 14px',
-                      fontSize: '11px',
-                      fontFamily: 'monospace',
-                      cursor: 'pointer',
-                      whiteSpace: 'nowrap',
-                      fontWeight: sortBy === item.value ? '600' : 'normal'
-                    }}
-                  >
-                    {item.label}
-                  </button>
-                ))}
+              <div>
+                <div style={{ fontSize: '10px', color: '#777', fontFamily: 'monospace', letterSpacing: '1px', marginBottom: '8px' }}>SORT</div>
+                <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', gap: '14px' }}>
+                    {[
+                      { label: 'NEWEST FIRST', value: 'newest' },
+                      { label: 'OLDEST FIRST', value: 'oldest' }
+                    ].map((item) => (
+                      <button
+                        key={item.value}
+                        type="button"
+                        onClick={() => setSortBy(item.value as any)}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          padding: '0',
+                          color: sortBy === item.value ? '#fff' : '#666',
+                          fontSize: '11px',
+                          fontFamily: 'monospace',
+                          cursor: 'pointer',
+                          fontWeight: sortBy === item.value ? '700' : 'normal',
+                          textDecoration: sortBy === item.value ? 'underline' : 'none'
+                        }}
+                      >
+                        {item.label}
+                      </button>
+                    ))}
+                  </div>
+                  <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginLeft: 'auto' }}>
+                    <input
+                      type="date"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                      style={{ backgroundColor: '#000', border: '1px solid #333', color: '#aaa', fontSize: '10px', fontFamily: 'monospace', padding: '4px 6px', borderRadius: '2px', outline: 'none' }}
+                    />
+                    <span style={{ color: '#555', fontSize: '10px' }}>-</span>
+                    <input
+                      type="date"
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                      style={{ backgroundColor: '#000', border: '1px solid #333', color: '#aaa', fontSize: '10px', fontFamily: 'monospace', padding: '4px 6px', borderRadius: '2px', outline: 'none' }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <div style={{ fontSize: '10px', color: '#777', fontFamily: 'monospace', letterSpacing: '1px', marginBottom: '8px' }}>PRICE</div>
+                <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', gap: '14px' }}>
+                    {[
+                      { label: 'HIGH TO LOW', value: 'price_high' },
+                      { label: 'LOW TO HIGH', value: 'price_low' }
+                    ].map((item) => (
+                      <button
+                        key={item.value}
+                        type="button"
+                        onClick={() => setSortBy(item.value as any)}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          padding: '0',
+                          color: sortBy === item.value ? '#fff' : '#666',
+                          fontSize: '11px',
+                          fontFamily: 'monospace',
+                          cursor: 'pointer',
+                          fontWeight: sortBy === item.value ? '700' : 'normal',
+                          textDecoration: sortBy === item.value ? 'underline' : 'none'
+                        }}
+                      >
+                        {item.label}
+                      </button>
+                    ))}
+                  </div>
+                  <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginLeft: 'auto' }}>
+                    <input
+                      type="number"
+                      placeholder="MIN"
+                      value={minPrice}
+                      onChange={(e) => setMinPrice(e.target.value)}
+                      style={{ width: '60px', backgroundColor: '#000', border: '1px solid #333', color: '#fff', fontSize: '10px', fontFamily: 'monospace', padding: '4px 6px', borderRadius: '2px', outline: 'none' }}
+                    />
+                    <span style={{ color: '#555', fontSize: '10px' }}>-</span>
+                    <input
+                      type="number"
+                      placeholder="MAX"
+                      value={maxPrice}
+                      onChange={(e) => setMaxPrice(e.target.value)}
+                      style={{ width: '60px', backgroundColor: '#000', border: '1px solid #333', color: '#fff', fontSize: '10px', fontFamily: 'monospace', padding: '4px 6px', borderRadius: '2px', outline: 'none' }}
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           )}
