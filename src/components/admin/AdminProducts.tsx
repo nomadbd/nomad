@@ -84,7 +84,7 @@ const ProductAdminActionRow = ({ product, onUpdateStock, onDelete }: { product: 
   const isSoldOut = product.status === 'sold_out' || product.stock_quantity <= 0;
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: '42px', marginTop: 'auto', boxSizing: 'border-box', width: '100%' }}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: '42px', marginTop: '10px', boxSizing: 'border-box', width: '100%' }}>
       {step === 'idle' && (
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', animation: 'swapFadeIn 0.25s ease-in-out' }}>
           <span style={{ fontSize: '15px', color: isSoldOut ? '#555' : '#fff', fontWeight: 500, fontFamily: 'monospace' }}>৳{product.price}</span>
@@ -155,10 +155,10 @@ const ProductCard = ({ product, onUpdateStock, onDelete }: { product: Product; o
     <div className="showroom-card-item" style={{ scrollSnapAlign: 'start', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', backgroundColor: '#050505', border: '1px solid #1a1a1a', padding: '12px' }}>
       <ProductGallery images={imagesList} productName={product.name} />
 
-      <div style={{ marginTop: '15px', padding: '0 15px', display: 'flex', flexDirection: 'column', flex: 1 }}>
+      <div style={{ marginTop: '15px', padding: '0 15px', display: 'flex', flexDirection: 'column' }}>
         <h3 style={{ fontSize: '14px', color: '#fff', margin: '0 0 6px 0', fontWeight: '600' }}>{product.name}</h3>
 
-        <div style={{ margin: '0 0 15px 0' }}>
+        <div style={{ margin: '0 0 10px 0' }}>
           {(() => {
             const descriptionText = product.description || '';
             const characterLimit = 75;
