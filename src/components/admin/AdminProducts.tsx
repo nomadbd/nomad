@@ -496,7 +496,7 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
       )}
 
       {(isFilterOpen || isSearchOpen) && (
-        <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', marginTop: '10px', flexWrap: 'wrap', backgroundColor: '#080808', padding: '12px', border: '1px solid #1a1a1a', alignItems: 'center' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px', marginTop: '10px', backgroundColor: '#080808', padding: '12px', border: '1px solid #1a1a1a' }}>
           {isSearchOpen && (
             <input
               type="text"
@@ -508,31 +508,67 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
                 setSearchTerm(e.target.value);
               }}
               placeholder="SEARCH PRODUCTS..."
-              style={{ flex: 1, minWidth: '200px', backgroundColor: '#000', border: '1px solid #333', padding: '8px 12px', color: '#fff', fontSize: '11px', fontFamily: 'monospace' }}
+              style={{ width: '100%', backgroundColor: '#000', border: '1px solid #888', borderRadius: '25px', padding: '8px 16px', color: '#fff', fontSize: '11px', fontFamily: 'monospace', boxSizing: 'border-box', outline: 'none' }}
             />
           )}
           {isFilterOpen && (
-            <>
-              <select
-                value={stockFilter}
-                onChange={(e) => setStockFilter(e.target.value as any)}
-                style={{ background: '#000', color: '#fff', border: '1px solid #333', padding: '8px', fontSize: '11px', fontFamily: 'monospace' }}
-              >
-                <option value="all">ALL STOCK STATUS</option>
-                <option value="in_stock">IN STOCK ONLY</option>
-                <option value="sold_out">SOLD OUT ONLY</option>
-              </select>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
+              <div className="showroom-row-container" style={{ display: 'flex', gap: '8px', overflowX: 'auto', width: '100%', paddingBottom: '2px' }}>
+                {[
+                  { label: 'ALL STOCK STATUS', value: 'all' },
+                  { label: 'IN STOCK ONLY', value: 'in_stock' },
+                  { label: 'SOLD OUT ONLY', value: 'sold_out' }
+                ].map((item) => (
+                  <button
+                    key={item.value}
+                    type="button"
+                    onClick={() => setStockFilter(item.value as any)}
+                    style={{
+                      background: 'transparent',
+                      color: stockFilter === item.value ? '#fff' : '#888',
+                      border: stockFilter === item.value ? 'none' : '1px solid #888',
+                      borderRadius: '25px',
+                      padding: '6px 14px',
+                      fontSize: '11px',
+                      fontFamily: 'monospace',
+                      cursor: 'pointer',
+                      whiteSpace: 'nowrap',
+                      fontWeight: stockFilter === item.value ? '600' : 'normal'
+                    }}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
 
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as any)}
-                style={{ background: '#000', color: '#fff', border: '1px solid #333', padding: '8px', fontSize: '11px', fontFamily: 'monospace' }}
-              >
-                <option value="newest">SORT: NEWEST FIRST</option>
-                <option value="price_low">PRICE: LOW TO HIGH</option>
-                <option value="price_high">PRICE: HIGH TO LOW</option>
-              </select>
-            </>
+              <div className="showroom-row-container" style={{ display: 'flex', gap: '8px', overflowX: 'auto', width: '100%', paddingBottom: '2px' }}>
+                {[
+                  { label: 'SORT: NEWEST FIRST', value: 'newest' },
+                  { label: 'PRICE: LOW TO HIGH', value: 'price_low' },
+                  { label: 'PRICE: HIGH TO LOW', value: 'price_high' }
+                ].map((item) => (
+                  <button
+                    key={item.value}
+                    type="button"
+                    onClick={() => setSortBy(item.value as any)}
+                    style={{
+                      background: 'transparent',
+                      color: sortBy === item.value ? '#fff' : '#888',
+                      border: sortBy === item.value ? 'none' : '1px solid #888',
+                      borderRadius: '25px',
+                      padding: '6px 14px',
+                      fontSize: '11px',
+                      fontFamily: 'monospace',
+                      cursor: 'pointer',
+                      whiteSpace: 'nowrap',
+                      fontWeight: sortBy === item.value ? '600' : 'normal'
+                    }}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            </div>
           )}
         </div>
       )}
