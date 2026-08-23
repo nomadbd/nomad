@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useSession } from './hooks/useSession';
 import Header from './components/Header';
@@ -8,20 +8,15 @@ import AuthOverlay from './components/auth/AuthOverlay';
 import Profile from './pages/Profile';
 import AuthForm from './components/auth/AuthForm';
 import ProductList from './components/ProductList';
-
-// ⚡ কার্ট সিস্টেমের জন্য ইম্পোর্ট
 import { CartProvider } from './context/CartContext';
 import CartOverlay from './components/CartOverlay';
 
-// (ঐচ্ছিক: যদি আলাদা AdminRoute ব্যবহার করতে চান)
-// import { AdminRoute } from './components/AdminRoute';
-// import { AdminDashboard } from './pages/AdminDashboard';
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 
 const AppContent = ({ session, setIsSearchOpen, setIsAuthOpen }: any) => {
   const location = useLocation();
-  const navigate = useNavigate(); // 👈 স্মুথ নেভিগেশনের জন্য
+  const navigate = useNavigate();
 
-  // ⚡ /profile, /admin এবং /update-password পেজে মেইন হেডার হাইড থাকবে
   const showHeader = !['/profile', '/admin', '/update-password'].includes(location.pathname);
 
   return (
@@ -31,7 +26,7 @@ const AppContent = ({ session, setIsSearchOpen, setIsAuthOpen }: any) => {
           onSearchOpen={() => setIsSearchOpen(true)} 
           onAuthOpen={() => {
             if (session) {
-              navigate('/profile'); // 👈 window.location.href-এর বদলে navigate ব্যবহার করা হলো
+              navigate('/profile');
             } else {
               setIsAuthOpen(true);
             }
@@ -49,32 +44,33 @@ const AppContent = ({ session, setIsSearchOpen, setIsAuthOpen }: any) => {
           </>
         } />
 
-        {/* ⚡ অপশন ১: প্রোফাইল রাউট (Profile.tsx নিজেই AdminDashboard বা ইউজার প্রোফাইল হ্যান্ডেল করে) */}
         <Route path="/profile" element={session ? <Profile /> : <Navigate to="/" replace />} />
 
-        {/* ⚡ অপশন ২: যদি আলাদা /admin রাউট ব্যবহার করতে চান (AdminRoute দিয়ে সুরক্ষার জন্য) */}
-        {/* 
         <Route 
           path="/admin" 
           element={
-            <AdminRoute session={session}>
-              <AdminDashboard session={session} />
-            </AdminRoute>
+            session ? (
+              <Suspense fallback={
+                <div style={{ backgroundColor: '#030303', color: '#fff', minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'monospace' }}>
+                  LOADING DASHBOARD...
+                </div>
+              }>
+                <AdminDashboard />
+              </Suspense>
+            ) : (
+              <Navigate to="/" replace />
+            )
           } 
-        /> 
-        */}
+        />
 
-        {/* Password Update Route */}
         <Route 
           path="/update-password" 
           element={<AuthForm isRecoveryPage={true} />} 
         />
 
-        {/* অজানা যেকোনো লিংকে গেলে হোমে পাঠাবে */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 
-      {/* ওয়ান-পেজ কার্ট ওভারলে */}
       <CartOverlay session={session} />
     </div>
   );
