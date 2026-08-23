@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { supabase } from '../../supabaseClient';
 import { uploadToCloudinary } from '../../cloudinary';
 import './admin-animations.css';
@@ -120,16 +121,18 @@ const ProductAdminActionRow = ({ product, onUpdateStock, onDelete }: { product: 
               style={{
                 height: '36px',
                 width: '36px',
-                display: 'inline-flex',
+                display: 'flex',
                 alignItems: 'center',
                 justify: 'center',
+                padding: 0,
+                lineHeight: 1,
                 background: 'rgba(239, 68, 68, 0.08)',
                 border: '1px solid rgba(239, 68, 68, 0.3)',
                 borderRadius: '6px',
                 color: '#ef4444',
+                fontSize: '13px',
                 cursor: 'pointer',
-                padding: 0,
-                lineHeight: 0
+                fontWeight: 'bold'
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.background = '#ef4444';
@@ -142,10 +145,7 @@ const ProductAdminActionRow = ({ product, onUpdateStock, onDelete }: { product: 
                 e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.3)';
               }}
             >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-              </svg>
+              ✕
             </button>
           </div>
         </div>
@@ -155,8 +155,8 @@ const ProductAdminActionRow = ({ product, onUpdateStock, onDelete }: { product: 
         <div className="animate-fade-in" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', height: '100%', backgroundColor: '#111', padding: '0 10px', borderRadius: '6px', boxSizing: 'border-box' }}>
           <span style={{ fontSize: '11px', color: '#aaa', fontFamily: 'monospace' }}>STOCK: {product.stock_quantity}</span>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <button onClick={() => onUpdateStock(product.id, product.stock_quantity, -1)} className="smooth-transition" style={{ width: '24px', height: '24px', background: '#222', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>-</button>
-            <button onClick={() => onUpdateStock(product.id, product.stock_quantity, 1)} className="smooth-transition" style={{ width: '24px', height: '24px', background: '#222', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>+</button>
+            <button onClick={() => onUpdateStock(product.id, product.stock_quantity, -1)} className="smooth-transition" style={{ width: '24px', height: '24px', background: '#222', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}>-</button>
+            <button onClick={() => onUpdateStock(product.id, product.stock_quantity, 1)} className="smooth-transition" style={{ width: '24px', height: '24px', background: '#222', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}>+</button>
             <button onClick={() => setStep('idle')} className="smooth-transition" style={{ background: 'none', border: 'none', color: '#888', fontSize: '10px', cursor: 'pointer', marginLeft: '5px' }}>DONE</button>
           </div>
         </div>
@@ -251,7 +251,8 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
   const [showAddModal, setShowAddModal] = useState<boolean>(false);
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
-  const [productToDelete, setProductToDelete] = useState<string | number | null>(null);
+
+  const [deletingProductId, setDeletingProductId] = useState<string | number | null>(null);
 
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [stockFilter, setStockFilter] = useState<'all' | 'in_stock' | 'sold_out'>('all');
@@ -288,17 +289,6 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
       setShowAddModal(externalShowAddModal);
     }
   }, [isAddOpen, externalShowAddModal]);
-
-  useEffect(() => {
-    if (showAddModal || productToDelete !== null) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, [showAddModal, productToDelete]);
 
   const handleSetShowAddModal = (value: boolean) => {
     setShowAddModal(value);
@@ -374,7 +364,7 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
     if (files.length > 0) {
       setMediaFiles(prev => [...prev, ...files]);
       const newPreviews = files.map(file => ({
-        url: URL.createObjectURL ? URL.createObjectURL(file) : '',
+        url: URL.createObjectURL(file),
         type: file.type.startsWith('video') ? ('video' as const) : ('image' as const)
       }));
       setMediaPreviews(prev => [...prev, ...newPreviews]);
@@ -490,13 +480,17 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
     }
   };
 
+  const handleDeleteProduct = (productId: string | number) => {
+    setDeletingProductId(productId);
+  };
+
   const confirmDeleteProduct = async () => {
-    if (!productToDelete) return;
-    const targetId = productToDelete;
-    setProductToDelete(null);
+    if (!deletingProductId) return;
+    const productId = deletingProductId;
+    setDeletingProductId(null);
     try {
-      setProducts(prev => prev.filter(p => p.id !== targetId));
-      const { error } = await supabase.from('products').delete().eq('id', targetId);
+      setProducts(prev => prev.filter(p => p.id !== productId));
+      const { error } = await supabase.from('products').delete().eq('id', productId);
       if (error) throw error;
       showNotification('PRODUCT REMOVED FROM CATALOG.');
     } catch (err) {
@@ -568,14 +562,14 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
 
   return (
     <div className="admin-products-container animate-fade-in" style={{ width: '100%', maxWidth: '100%', overflow: 'hidden', position: 'relative', backgroundColor: '#000', minHeight: '100vh', padding: '0 20px 20px 20px', boxSizing: 'border-box' }}>
-      {notification && (
+      {notification && createPortal(
         <div
           className="animate-pop"
           style={{
             position: 'fixed',
             top: '20px',
             right: '20px',
-            zIndex: 99999,
+            zIndex: 10001,
             backgroundColor: '#0d0d0d',
             border: `1px solid ${notification.type === 'error' ? 'rgba(239, 68, 68, 0.4)' : 'rgba(34, 197, 94, 0.4)'}`,
             boxShadow: notification.type === 'error'
@@ -603,21 +597,14 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
             color: notification.type === 'error' ? '#ef4444' : '#22c55e',
             fontSize: '11px',
             fontWeight: 'bold',
-            lineHeight: 0
+            padding: 0,
+            lineHeight: 1
           }}>
-            {notification.type === 'error' ? (
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-              </svg>
-            ) : (
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="20 6 9 17 4 12"></polyline>
-              </svg>
-            )}
+            {notification.type === 'error' ? '✕' : '✓'}
           </span>
           <span>{notification.message}</span>
-        </div>
+        </div>,
+        document.body
       )}
 
       <div className={`filter-expand-wrapper ${isFilterOpen || isSearchOpen ? 'open' : ''}`}>
@@ -634,12 +621,12 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
                   setSearchTerm(e.target.value);
                 }}
                 placeholder="SEARCH PRODUCTS..."
-                className="smooth-transition"
+                className="smooth-transition animate-fade-in"
                 style={{ width: '100%', backgroundColor: '#000', border: '1px solid #333', borderRadius: '25px', padding: '8px 16px', color: '#fff', fontSize: '11px', fontFamily: 'monospace', boxSizing: 'border-box', outline: 'none' }}
               />
             )}
             {isFilterOpen && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%' }}>
+              <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%' }}>
                 <div>
                   <div style={{ fontSize: '10px', color: '#777', fontFamily: 'monospace', letterSpacing: '1px', marginBottom: '8px' }}>STOCK STATUS</div>
                   <div style={{ display: 'flex', gap: '14px', overflowX: 'auto', whiteSpace: 'nowrap', flexWrap: 'nowrap', scrollbarWidth: 'none' }}>
@@ -826,7 +813,7 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
                         key={product.id}
                         product={product}
                         onUpdateStock={handleStockUpdate}
-                        onDelete={(id) => setProductToDelete(id)}
+                        onDelete={handleDeleteProduct}
                       />
                     ))}
                   </div>
@@ -837,44 +824,25 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
         </div>
       )}
 
-      {productToDelete && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100000, padding: '20px' }}>
-          <div className="animate-pop" style={{ backgroundColor: '#0a0a0a', border: '1px solid #222', borderRadius: '12px', width: '100%', maxWidth: '360px', padding: '24px', boxShadow: '0 25px 50px rgba(0,0,0,0.9)', textAlign: 'center' }}>
-            <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: '14px' }}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="3 6 5 6 21 6"></polyline>
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-              </svg>
-            </div>
-            <h4 style={{ color: '#fff', fontSize: '13px', letterSpacing: '1.5px', margin: '0 0 8px 0', fontWeight: '600', textTransform: 'uppercase' }}>REMOVE PRODUCT?</h4>
-            <p style={{ color: '#888', fontSize: '11px', margin: '0 0 20px 0', lineHeight: '1.5', fontFamily: 'sans-serif' }}>Are you sure you want to remove this product from catalog? This action cannot be undone.</p>
+      {deletingProductId && createPortal(
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000, padding: '20px' }}>
+          <div className="animate-pop" style={{ backgroundColor: '#050505', border: '1px solid #262626', borderRadius: '12px', width: '100%', maxWidth: '380px', padding: '24px', textAlign: 'center', boxShadow: '0 20px 40px rgba(0,0,0,0.8)' }}>
+            <h4 style={{ color: '#fff', fontSize: '13px', margin: '0 0 10px 0', letterSpacing: '1px', textTransform: 'uppercase' }}>REMOVE PRODUCT</h4>
+            <p style={{ color: '#aaa', fontSize: '12px', margin: '0 0 20px 0', lineHeight: '1.5' }}>Are you sure you want to remove this product from catalog? This action cannot be undone.</p>
             <div style={{ display: 'flex', gap: '10px' }}>
-              <button
-                type="button"
-                onClick={() => setProductToDelete(null)}
-                className="smooth-transition"
-                style={{ flex: 1, background: 'transparent', border: '1px solid #333', borderRadius: '6px', color: '#fff', padding: '10px', fontSize: '10px', fontWeight: '600', cursor: 'pointer', letterSpacing: '1px' }}
-              >
-                CANCEL
-              </button>
-              <button
-                type="button"
-                onClick={confirmDeleteProduct}
-                className="smooth-transition"
-                style={{ flex: 1, background: '#ef4444', border: 'none', borderRadius: '6px', color: '#fff', padding: '10px', fontSize: '10px', fontWeight: '600', cursor: 'pointer', letterSpacing: '1px' }}
-              >
-                CONFIRM DELETE
-              </button>
+              <button onClick={() => setDeletingProductId(null)} className="smooth-transition" style={{ flex: 1, background: 'transparent', border: '1px solid #333', borderRadius: '6px', color: '#fff', padding: '10px', fontSize: '11px', fontWeight: '600', cursor: 'pointer' }}>CANCEL</button>
+              <button onClick={confirmDeleteProduct} className="smooth-transition" style={{ flex: 1, background: '#ef4444', border: 'none', borderRadius: '6px', color: '#fff', padding: '10px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}>CONFIRM DELETE</button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
-      {showAddModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 99999, padding: '16px', boxSizing: 'border-box' }}>
-          <div className="animate-pop" style={{ backgroundColor: '#0a0a0a', border: '1px solid #222', borderRadius: '12px', width: '100%', maxWidth: '480px', maxHeight: '85vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative', boxShadow: '0 25px 50px rgba(0,0,0,0.9), 0 0 0 1px rgba(255,255,255,0.05)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid #1a1a1a', backgroundColor: '#0a0a0a', flexShrink: 0 }}>
-              <h3 style={{ color: '#fff', fontSize: '12px', letterSpacing: '2px', margin: 0, fontWeight: '600', textTransform: 'uppercase' }}>ADD NEW PRODUCT</h3>
+      {showAddModal && createPortal(
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000, padding: '20px' }}>
+          <div className="animate-pop" style={{ backgroundColor: '#050505', border: '1px solid #262626', borderRadius: '12px', width: '100%', maxWidth: '520px', padding: '25px', maxHeight: '85vh', overflowY: 'auto', position: 'relative', boxShadow: '0 20px 40px rgba(0,0,0,0.8)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h3 style={{ color: '#fff', fontSize: '14px', letterSpacing: '2px', margin: 0, fontWeight: '600' }}>ADD NEW PRODUCT</h3>
               <button
                 type="button"
                 onClick={() => handleSetShowAddModal(false)}
@@ -885,14 +853,14 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
                   borderRadius: '50%',
                   width: '28px',
                   height: '28px',
-                  color: '#888',
+                  color: '#aaa',
                   cursor: 'pointer',
-                  display: 'inline-flex',
+                  display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
+                  justify: 'center',
                   padding: 0,
-                  margin: 0,
-                  lineHeight: 0
+                  lineHeight: 1,
+                  fontSize: '12px'
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.background = '#ef4444';
@@ -901,132 +869,138 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-                  e.currentTarget.style.color = '#888';
+                  e.currentTarget.style.color = '#aaa';
                   e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
                 }}
               >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="18" y1="6" x2="6" y2="18"></line>
-                  <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
+                ✕
               </button>
             </div>
 
-            <div style={{ padding: '20px', overflowY: 'auto', flex: 1 }}>
-              <form onSubmit={handleAddProduct} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                <div>
-                  <label style={{ fontSize: '10px', color: '#777', display: 'block', marginBottom: '6px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>PRODUCT NAME *</label>
-                  <input type="text" value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Enter product name" className="smooth-transition" style={{ width: '100%', backgroundColor: '#121212', border: '1px solid #282828', borderRadius: '6px', padding: '10px 12px', color: '#fff', fontSize: '11px', boxSizing: 'border-box', outline: 'none' }} />
-                </div>
+            <form onSubmit={handleAddProduct} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+              <div>
+                <label style={{ fontSize: '10px', color: '#888', display: 'block', marginBottom: '5px' }}>PRODUCT NAME *</label>
+                <input type="text" value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Product Name" className="smooth-transition" style={{ width: '100%', backgroundColor: '#000', border: '1px solid #333', borderRadius: '6px', padding: '10px', color: '#fff', fontSize: '11px', boxSizing: 'border-box' }} />
+              </div>
 
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ fontSize: '10px', color: '#888', display: 'block', marginBottom: '5px' }}>PRICE (৳) *</label>
+                  <input type="number" value={newPrice} onChange={(e) => setNewPrice(e.target.value)} placeholder="0.00" className="smooth-transition" style={{ width: '100%', backgroundColor: '#000', border: '1px solid #333', borderRadius: '6px', padding: '10px', color: '#fff', fontSize: '11px', boxSizing: 'border-box' }} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={{ fontSize: '10px', color: '#888', display: 'block', marginBottom: '5px' }}>STOCK</label>
+                  <input type="number" value={newStock} onChange={(e) => setNewStock(e.target.value)} placeholder="0" className="smooth-transition" style={{ width: '100%', backgroundColor: '#000', border: '1px solid #333', borderRadius: '6px', padding: '10px', color: '#fff', fontSize: '11px', boxSizing: 'border-box' }} />
+                </div>
+              </div>
+
+              <div>
+                <label style={{ fontSize: '10px', color: '#888', display: 'block', marginBottom: '5px' }}>CATEGORY</label>
+                <input type="text" value={newCategory} onChange={(e) => setNewCategory(e.target.value)} className="smooth-transition" style={{ width: '100%', backgroundColor: '#000', border: '1px solid #333', borderRadius: '6px', padding: '10px', color: '#fff', fontSize: '11px', boxSizing: 'border-box' }} />
+              </div>
+
+              <div>
+                <label style={{ fontSize: '10px', color: '#888', display: 'block', marginBottom: '5px' }}>PRODUCT IMAGES & VIDEOS (Multiple allowed)</label>
+                <input type="file" multiple accept="image/*,video/*" onChange={handleMediaChange} className="smooth-transition" style={{ width: '100%', backgroundColor: '#000', border: '1px solid #333', borderRadius: '6px', padding: '8px', color: '#fff', fontSize: '11px', boxSizing: 'border-box', cursor: 'pointer' }} />
+                {mediaPreviews.length > 0 && (
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '10px' }}>
+                    {mediaPreviews.map((media, idx) => (
+                      <div key={idx} style={{ position: 'relative', width: '60px', height: '60px', border: '1px solid #444', borderRadius: '6px', backgroundColor: '#000', overflow: 'visible' }}>
+                        {media.type === 'video' ? (
+                          <video src={media.url} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '5px' }} />
+                        ) : (
+                          <img src={media.url} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '5px' }} />
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => removeSelectedMedia(idx)}
+                          className="smooth-transition"
+                          style={{
+                            position: 'absolute',
+                            top: '-6px',
+                            right: '-6px',
+                            background: '#ef4444',
+                            color: '#fff',
+                            border: '2px solid #050505',
+                            borderRadius: '50%',
+                            width: '20px',
+                            height: '20px',
+                            fontSize: '11px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justify: 'center',
+                            padding: 0,
+                            lineHeight: 1,
+                            fontWeight: 'bold'
+                          }}
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label style={{ fontSize: '10px', color: '#888', display: 'block', marginBottom: '5px' }}>DESCRIPTION (Bio)</label>
+                <textarea value={newDescription} onChange={(e) => setNewDescription(e.target.value)} rows={2} className="smooth-transition" style={{ width: '100%', backgroundColor: '#000', border: '1px solid #333', borderRadius: '6px', padding: '10px', color: '#fff', fontSize: '11px', boxSizing: 'border-box' }} />
+              </div>
+
+              <div style={{ border: '1px dashed #333', borderRadius: '6px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <span style={{ fontSize: '10px', color: '#aaa', fontWeight: 'bold' }}>SPECIFICATIONS (DETAILS)</span>
                 <div style={{ display: 'flex', gap: '10px' }}>
-                  <div style={{ flex: 1 }}>
-                    <label style={{ fontSize: '10px', color: '#777', display: 'block', marginBottom: '6px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>PRICE (৳) *</label>
-                    <input type="number" value={newPrice} onChange={(e) => setNewPrice(e.target.value)} placeholder="0.00" className="smooth-transition" style={{ width: '100%', backgroundColor: '#121212', border: '1px solid #282828', borderRadius: '6px', padding: '10px 12px', color: '#fff', fontSize: '11px', boxSizing: 'border-box', outline: 'none' }} />
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <label style={{ fontSize: '10px', color: '#777', display: 'block', marginBottom: '6px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>STOCK</label>
-                    <input type="number" value={newStock} onChange={(e) => setNewStock(e.target.value)} placeholder="0" className="smooth-transition" style={{ width: '100%', backgroundColor: '#121212', border: '1px solid #282828', borderRadius: '6px', padding: '10px 12px', color: '#fff', fontSize: '11px', boxSizing: 'border-box', outline: 'none' }} />
-                  </div>
+                  <input type="text" value={newFit} onChange={(e) => setNewFit(e.target.value)} placeholder="Fit" className="smooth-transition" style={{ flex: 1, background: '#000', border: '1px solid #333', borderRadius: '6px', padding: '8px', color: '#fff', fontSize: '11px' }} />
+                  <input type="text" value={newGsm} onChange={(e) => setNewGsm(e.target.value)} placeholder="GSM" className="smooth-transition" style={{ flex: 1, background: '#000', border: '1px solid #333', borderRadius: '6px', padding: '8px', color: '#fff', fontSize: '11px' }} />
                 </div>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <input type="text" value={newMadeIn} onChange={(e) => setNewMadeIn(e.target.value)} placeholder="Made In" className="smooth-transition" style={{ flex: 1, background: '#000', border: '1px solid #333', borderRadius: '6px', padding: '8px', color: '#fff', fontSize: '11px' }} />
+                  <input type="text" value={newMaterial} onChange={(e) => setNewMaterial(e.target.value)} placeholder="Material" className="smooth-transition" style={{ flex: 1, background: '#000', border: '1px solid #333', borderRadius: '6px', padding: '8px', color: '#fff', fontSize: '11px' }} />
+                </div>
+              </div>
 
-                <div>
-                  <label style={{ fontSize: '10px', color: '#777', display: 'block', marginBottom: '6px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>CATEGORY</label>
-                  <input type="text" value={newCategory} onChange={(e) => setNewCategory(e.target.value)} className="smooth-transition" style={{ width: '100%', backgroundColor: '#121212', border: '1px solid #282828', borderRadius: '6px', padding: '10px 12px', color: '#fff', fontSize: '11px', boxSizing: 'border-box', outline: 'none' }} />
-                </div>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <input type="text" value={newSizes} onChange={(e) => setNewSizes(e.target.value)} placeholder="Sizes: S, M, L" className="smooth-transition" style={{ flex: 1, background: '#000', border: '1px solid #333', borderRadius: '6px', padding: '10px', color: '#fff', fontSize: '11px' }} />
+                <input type="text" value={newColors} onChange={(e) => setNewColors(e.target.value)} placeholder="Colors: BLACK, WHITE" className="smooth-transition" style={{ flex: 1, background: '#000', border: '1px solid #333', borderRadius: '6px', padding: '10px', color: '#fff', fontSize: '11px' }} />
+              </div>
 
-                <div>
-                  <label style={{ fontSize: '10px', color: '#777', display: 'block', marginBottom: '6px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>PRODUCT IMAGES & VIDEOS</label>
-                  <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', width: '100%', backgroundColor: '#121212', border: '1px dashed #333', borderRadius: '6px', padding: '12px', color: '#aaa', fontSize: '11px', boxSizing: 'border-box', cursor: 'pointer' }}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                      <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                      <polyline points="21 15 16 10 5 21"></polyline>
-                    </svg>
-                    <span>Choose Media Files</span>
-                    <input type="file" multiple accept="image/*,video/*" onChange={handleMediaChange} style={{ display: 'none' }} />
-                  </label>
-                  {mediaPreviews.length > 0 && (
-                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '10px' }}>
-                      {mediaPreviews.map((media, idx) => (
-                        <div key={idx} style={{ position: 'relative', width: '54px', height: '54px', border: '1px solid #282828', borderRadius: '6px', backgroundColor: '#000', overflow: 'visible' }}>
-                          {media.type === 'video' ? (
-                            <video src={media.url} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '5px' }} />
-                          ) : (
-                            <img src={media.url} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '5px' }} />
-                          )}
-                          <button
-                            type="button"
-                            onClick={() => removeSelectedMedia(idx)}
-                            className="smooth-transition"
-                            style={{
-                              position: 'absolute',
-                              top: '-5px',
-                              right: '-5px',
-                              background: '#ef4444',
-                              color: '#fff',
-                              border: '2px solid #0a0a0a',
-                              borderRadius: '50%',
-                              width: '18px',
-                              height: '18px',
-                              fontSize: '10px',
-                              cursor: 'pointer',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              padding: 0,
-                              lineHeight: 0
-                            }}
-                          >
-                            <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                              <line x1="18" y1="6" x2="6" y2="18"></line>
-                              <line x1="6" y1="6" x2="18" y2="18"></line>
-                            </svg>
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <div>
-                  <label style={{ fontSize: '10px', color: '#777', display: 'block', marginBottom: '6px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>DESCRIPTION (Bio)</label>
-                  <textarea value={newDescription} onChange={(e) => setNewDescription(e.target.value)} rows={2} className="smooth-transition" style={{ width: '100%', backgroundColor: '#121212', border: '1px solid #282828', borderRadius: '6px', padding: '10px 12px', color: '#fff', fontSize: '11px', boxSizing: 'border-box', outline: 'none', resize: 'vertical' }} />
-                </div>
-
-                <div style={{ border: '1px solid #1f1f1f', borderRadius: '6px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '10px', backgroundColor: '#080808' }}>
-                  <span style={{ fontSize: '9px', color: '#888', fontWeight: 'bold', letterSpacing: '1px', fontFamily: 'monospace' }}>SPECIFICATIONS (DETAILS)</span>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <input type="text" value={newFit} onChange={(e) => setNewFit(e.target.value)} placeholder="Fit" className="smooth-transition" style={{ flex: 1, background: '#121212', border: '1px solid #282828', borderRadius: '6px', padding: '8px 10px', color: '#fff', fontSize: '11px', outline: 'none' }} />
-                    <input type="text" value={newGsm} onChange={(e) => setNewGsm(e.target.value)} placeholder="GSM" className="smooth-transition" style={{ flex: 1, background: '#121212', border: '1px solid #282828', borderRadius: '6px', padding: '8px 10px', color: '#fff', fontSize: '11px', outline: 'none' }} />
-                  </div>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <input type="text" value={newMadeIn} onChange={(e) => setNewMadeIn(e.target.value)} placeholder="Made In" className="smooth-transition" style={{ flex: 1, background: '#121212', border: '1px solid #282828', borderRadius: '6px', padding: '8px 10px', color: '#fff', fontSize: '11px', outline: 'none' }} />
-                    <input type="text" value={newMaterial} onChange={(e) => setNewMaterial(e.target.value)} placeholder="Material" className="smooth-transition" style={{ flex: 1, background: '#121212', border: '1px solid #282828', borderRadius: '6px', padding: '8px 10px', color: '#fff', fontSize: '11px', outline: 'none' }} />
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <input type="text" value={newSizes} onChange={(e) => setNewSizes(e.target.value)} placeholder="Sizes: S, M, L" className="smooth-transition" style={{ flex: 1, background: '#121212', border: '1px solid #282828', borderRadius: '6px', padding: '10px 12px', color: '#fff', fontSize: '11px', outline: 'none' }} />
-                  <input type="text" value={newColors} onChange={(e) => setNewColors(e.target.value)} placeholder="Colors: BLACK, WHITE" className="smooth-transition" style={{ flex: 1, background: '#121212', border: '1px solid #282828', borderRadius: '6px', padding: '10px 12px', color: '#fff', fontSize: '11px', outline: 'none' }} />
-                </div>
-
-                <div style={{ display: 'flex', gap: '10px', marginTop: '10px', flexShrink: 0 }}>
-                  <button type="button" onClick={() => handleSetShowAddModal(false)} className="smooth-transition" style={{ flex: 1, background: 'transparent', border: '1px solid #333', borderRadius: '6px', color: '#fff', padding: '10px', cursor: 'pointer', fontSize: '11px', fontWeight: '600', letterSpacing: '0.5px' }}>CANCEL</button>
-                  <button type="submit" disabled={submitting || uploadingMedia} className="smooth-transition" style={{ flex: 1, background: '#fff', border: 'none', borderRadius: '6px', color: '#000', padding: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '11px', letterSpacing: '0.5px' }}>
-                    {uploadingMedia ? 'UPLOADING...' : submitting ? 'SAVING...' : 'CREATE PRODUCT'}
-                  </button>
-                </div>
-              </form>
-            </div>
+              <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                <button type="button" onClick={() => handleSetShowAddModal(false)} className="smooth-transition" style={{ flex: 1, background: 'transparent', border: '1px solid #444', borderRadius: '6px', color: '#fff', padding: '10px', cursor: 'pointer' }}>CANCEL</button>
+                <button type="submit" disabled={submitting || uploadingMedia} className="smooth-transition" style={{ flex: 1, background: '#fff', border: 'none', borderRadius: '6px', color: '#000', padding: '10px', fontWeight: 'bold', cursor: 'pointer' }}>
+                  {uploadingMedia ? 'UPLOADING MEDIA...' : submitting ? 'SAVING...' : 'CREATE PRODUCT'}
+                </button>
+              </div>
+            </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       <style>{`
         @keyframes swapFadeIn {
           from { opacity: 0; transform: translateY(1px); }
           to { opacity: 1; transform: translateY(0); }
+        }
+        .filter-expand-wrapper {
+          display: grid;
+          grid-template-rows: 0fr;
+          transition: grid-template-rows 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+          overflow: hidden;
+        }
+        .filter-expand-wrapper.open {
+          grid-template-rows: 1fr;
+        }
+        .filter-expand-content {
+          min-height: 0;
+          transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+          opacity: 0;
+          transform: translateY(-8px);
+          overflow: hidden;
+        }
+        .filter-expand-wrapper.open .filter-expand-content {
+          opacity: 1;
+          transform: translateY(0);
         }
         .showroom-row-container::-webkit-scrollbar {
           display: none;
