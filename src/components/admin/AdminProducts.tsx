@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 import { uploadToCloudinary } from '../../cloudinary';
+import './admin-animations.css';
 
 interface Product {
   id: string | number;
@@ -64,6 +65,7 @@ const ProductGallery = ({ images, productName }: { images: string[], productName
             {images.map((_, idx) => (
               <div
                 key={idx}
+                className="smooth-transition"
                 style={{
                   width: '6px',
                   height: '6px',
@@ -86,11 +88,12 @@ const ProductAdminActionRow = ({ product, onUpdateStock, onDelete }: { product: 
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: '42px', marginTop: '10px', boxSizing: 'border-box', width: '100%' }}>
       {step === 'idle' && (
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', animation: 'swapFadeIn 0.25s ease-in-out' }}>
+        <div className="animate-fade-in" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
           <span style={{ fontSize: '15px', color: isSoldOut ? '#555' : '#fff', fontWeight: 500, fontFamily: 'monospace' }}>৳{product.price}</span>
           <div style={{ display: 'flex', gap: '8px' }}>
             <button
               onClick={() => setStep('manage')}
+              className="smooth-transition"
               style={{
                 height: '36px',
                 padding: '0 12px',
@@ -100,6 +103,7 @@ const ProductAdminActionRow = ({ product, onUpdateStock, onDelete }: { product: 
                 boxSizing: 'border-box',
                 background: 'transparent',
                 border: '1px solid #333',
+                borderRadius: '6px',
                 color: '#fff',
                 fontSize: '10px',
                 letterSpacing: '1px',
@@ -112,16 +116,30 @@ const ProductAdminActionRow = ({ product, onUpdateStock, onDelete }: { product: 
             </button>
             <button
               onClick={() => onDelete(product.id)}
+              className="smooth-transition"
               style={{
                 height: '36px',
                 width: '36px',
                 display: 'flex',
                 alignItems: 'center',
                 justify: 'center',
-                background: 'transparent',
-                border: '1px solid #ef444455',
+                background: 'rgba(239, 68, 68, 0.08)',
+                border: '1px solid rgba(239, 68, 68, 0.3)',
+                borderRadius: '6px',
                 color: '#ef4444',
+                fontSize: '13px',
                 cursor: 'pointer',
+                fontWeight: 'bold'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = '#ef4444';
+                e.currentTarget.style.color = '#ffffff';
+                e.currentTarget.style.borderColor = '#ef4444';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(239, 68, 68, 0.08)';
+                e.currentTarget.style.color = '#ef4444';
+                e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.3)';
               }}
             >
               ✕
@@ -131,12 +149,12 @@ const ProductAdminActionRow = ({ product, onUpdateStock, onDelete }: { product: 
       )}
 
       {step === 'manage' && (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', height: '100%', animation: 'swapFadeIn 0.25s ease-in-out', backgroundColor: '#111', padding: '0 10px', boxSizing: 'border-box' }}>
+        <div className="animate-fade-in" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', height: '100%', backgroundColor: '#111', padding: '0 10px', borderRadius: '6px', boxSizing: 'border-box' }}>
           <span style={{ fontSize: '11px', color: '#aaa', fontFamily: 'monospace' }}>STOCK: {product.stock_quantity}</span>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <button onClick={() => onUpdateStock(product.id, product.stock_quantity, -1)} style={{ width: '24px', height: '24px', background: '#222', color: '#fff', border: 'none', cursor: 'pointer' }}>-</button>
-            <button onClick={() => onUpdateStock(product.id, product.stock_quantity, 1)} style={{ width: '24px', height: '24px', background: '#222', color: '#fff', border: 'none', cursor: 'pointer' }}>+</button>
-            <button onClick={() => setStep('idle')} style={{ background: 'none', border: 'none', color: '#888', fontSize: '10px', cursor: 'pointer', marginLeft: '5px' }}>DONE</button>
+            <button onClick={() => onUpdateStock(product.id, product.stock_quantity, -1)} className="smooth-transition" style={{ width: '24px', height: '24px', background: '#222', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>-</button>
+            <button onClick={() => onUpdateStock(product.id, product.stock_quantity, 1)} className="smooth-transition" style={{ width: '24px', height: '24px', background: '#222', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>+</button>
+            <button onClick={() => setStep('idle')} className="smooth-transition" style={{ background: 'none', border: 'none', color: '#888', fontSize: '10px', cursor: 'pointer', marginLeft: '5px' }}>DONE</button>
           </div>
         </div>
       )}
@@ -152,7 +170,7 @@ const ProductCard = ({ product, onUpdateStock, onDelete }: { product: Product; o
     : (product.image_url ? [product.image_url] : []);
 
   return (
-    <div className="showroom-card-item" style={{ scrollSnapAlign: 'start', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', backgroundColor: '#050505', border: '1px solid #1a1a1a', padding: '12px' }}>
+    <div className="showroom-card-item animate-card smooth-transition" style={{ scrollSnapAlign: 'start', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', backgroundColor: '#050505', border: '1px solid #1a1a1a', padding: '12px', borderRadius: '8px' }}>
       <ProductGallery images={imagesList} productName={product.name} />
 
       <div style={{ marginTop: '15px', padding: '0 15px', display: 'flex', flexDirection: 'column' }}>
@@ -171,6 +189,7 @@ const ProductCard = ({ product, onUpdateStock, onDelete }: { product: Product; o
                 {isLongText && (
                   <span
                     onClick={() => setIsDescExpanded(true)}
+                    className="smooth-transition"
                     style={{ fontSize: '12px', color: '#fff', cursor: 'pointer', marginLeft: '6px', fontWeight: '500', display: 'inline' }}
                   >
                     see more
@@ -178,7 +197,7 @@ const ProductCard = ({ product, onUpdateStock, onDelete }: { product: Product; o
                 )}
               </p>
             ) : (
-              <div style={{ animation: 'swapFadeIn 0.3s ease-in-out' }}>
+              <div className="animate-fade-in">
                 <p style={{ fontSize: '13px', color: '#aaa', margin: 0, lineHeight: '1.4' }}>
                   {descriptionText}
                 </p>
@@ -195,6 +214,7 @@ const ProductCard = ({ product, onUpdateStock, onDelete }: { product: Product; o
                 )}
                 <span
                   onClick={() => setIsDescExpanded(false)}
+                  className="smooth-transition"
                   style={{ fontSize: '11px', color: '#fff', cursor: 'pointer', marginTop: '12px', display: 'inline-block', letterSpacing: '0.5px' }}
                 >
                   see less
@@ -530,86 +550,91 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
   const filteredCategories = Array.from(new Set(filteredProducts.map(p => p.category)));
 
   return (
-    <div className="admin-products-container" style={{ width: '100%', maxWidth: '100%', overflow: 'hidden', position: 'relative', backgroundColor: '#000', minHeight: '100vh', padding: '0 20px 20px 20px', boxSizing: 'border-box' }}>
+    <div className="admin-products-container animate-fade-in" style={{ width: '100%', maxWidth: '100%', overflow: 'hidden', position: 'relative', backgroundColor: '#000', minHeight: '100vh', padding: '0 20px 20px 20px', boxSizing: 'border-box' }}>
       {notification && (
-        <div style={{ position: 'fixed', top: '20px', right: '20px', zIndex: 9999, backgroundColor: '#0a0a0a', border: `1px solid ${notification.type === 'error' ? '#ef4444' : '#ffffff'}`, color: '#ffffff', padding: '14px 20px', borderRadius: '2px', fontFamily: 'monospace', fontSize: '11px', letterSpacing: '1px' }}>
-          <span style={{ color: notification.type === 'error' ? '#ef4444' : '#22c55e', marginRight: '8px' }}>
+        <div
+          className="animate-pop"
+          style={{
+            position: 'fixed',
+            top: '20px',
+            right: '20px',
+            zIndex: 9999,
+            backgroundColor: '#0d0d0d',
+            border: `1px solid ${notification.type === 'error' ? 'rgba(239, 68, 68, 0.4)' : 'rgba(34, 197, 94, 0.4)'}`,
+            boxShadow: notification.type === 'error'
+              ? '0 10px 30px rgba(239, 68, 68, 0.15)'
+              : '0 10px 30px rgba(34, 197, 94, 0.15)',
+            color: '#ffffff',
+            padding: '12px 18px',
+            borderRadius: '8px',
+            fontFamily: 'monospace',
+            fontSize: '11px',
+            letterSpacing: '0.5px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px'
+          }}
+        >
+          <span style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justify: 'center',
+            width: '20px',
+            height: '20px',
+            borderRadius: '50%',
+            backgroundColor: notification.type === 'error' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(34, 197, 94, 0.15)',
+            color: notification.type === 'error' ? '#ef4444' : '#22c55e',
+            fontSize: '11px',
+            fontWeight: 'bold'
+          }}>
             {notification.type === 'error' ? '✕' : '✓'}
           </span>
-          {notification.message}
+          <span>{notification.message}</span>
         </div>
       )}
 
-      {(isFilterOpen || isSearchOpen) && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '20px', marginTop: '10px', backgroundColor: '#080808', padding: '16px', border: '1px solid #1a1a1a' }}>
-          {isSearchOpen && (
-            <input
-              type="text"
-              value={searchQuery || searchTerm}
-              onChange={(e) => {
-                if (onSearchChange) {
-                  onSearchChange(e.target.value);
-                }
-                setSearchTerm(e.target.value);
-              }}
-              placeholder="SEARCH PRODUCTS..."
-              style={{ width: '100%', backgroundColor: '#000', border: '1px solid #888', borderRadius: '25px', padding: '8px 16px', color: '#fff', fontSize: '11px', fontFamily: 'monospace', boxSizing: 'border-box', outline: 'none' }}
-            />
-          )}
-          {isFilterOpen && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%' }}>
-              <div>
-                <div style={{ fontSize: '10px', color: '#777', fontFamily: 'monospace', letterSpacing: '1px', marginBottom: '8px' }}>STOCK STATUS</div>
-                <div style={{ display: 'flex', gap: '14px', overflowX: 'auto', whiteSpace: 'nowrap', flexWrap: 'nowrap', scrollbarWidth: 'none' }}>
-                  {[
-                    { label: 'ALL', value: 'all' },
-                    { label: 'IN STOCK', value: 'in_stock' },
-                    { label: 'SOLD OUT', value: 'sold_out' }
-                  ].map((item) => (
-                    <button
-                      key={item.value}
-                      type="button"
-                      onClick={() => setStockFilter(item.value as any)}
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        padding: '0',
-                        color: stockFilter === item.value ? '#fff' : '#666',
-                        fontSize: '11px',
-                        fontFamily: 'monospace',
-                        cursor: 'pointer',
-                        fontWeight: stockFilter === item.value ? '700' : 'normal',
-                        textDecoration: 'none',
-                        flexShrink: 0
-                      }}
-                    >
-                      {item.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <div style={{ fontSize: '10px', color: '#777', fontFamily: 'monospace', letterSpacing: '1px', marginBottom: '8px' }}>SORT</div>
-                <div style={{ display: 'flex', gap: '16px', alignItems: 'center', overflowX: 'auto', whiteSpace: 'nowrap', flexWrap: 'nowrap', scrollbarWidth: 'none' }}>
-                  <div style={{ display: 'flex', gap: '14px', flexShrink: 0 }}>
+      <div className={`filter-expand-wrapper ${isFilterOpen || isSearchOpen ? 'open' : ''}`}>
+        <div className="filter-expand-content">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '20px', marginTop: '10px', backgroundColor: '#080808', padding: '16px', border: '1px solid #1a1a1a', borderRadius: '8px' }}>
+            {isSearchOpen && (
+              <input
+                type="text"
+                value={searchQuery || searchTerm}
+                onChange={(e) => {
+                  if (onSearchChange) {
+                    onSearchChange(e.target.value);
+                  }
+                  setSearchTerm(e.target.value);
+                }}
+                placeholder="SEARCH PRODUCTS..."
+                className="smooth-transition"
+                style={{ width: '100%', backgroundColor: '#000', border: '1px solid #333', borderRadius: '25px', padding: '8px 16px', color: '#fff', fontSize: '11px', fontFamily: 'monospace', boxSizing: 'border-box', outline: 'none' }}
+              />
+            )}
+            {isFilterOpen && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%' }}>
+                <div>
+                  <div style={{ fontSize: '10px', color: '#777', fontFamily: 'monospace', letterSpacing: '1px', marginBottom: '8px' }}>STOCK STATUS</div>
+                  <div style={{ display: 'flex', gap: '14px', overflowX: 'auto', whiteSpace: 'nowrap', flexWrap: 'nowrap', scrollbarWidth: 'none' }}>
                     {[
-                      { label: 'NEWEST FIRST', value: 'newest' },
-                      { label: 'OLDEST FIRST', value: 'oldest' }
+                      { label: 'ALL', value: 'all' },
+                      { label: 'IN STOCK', value: 'in_stock' },
+                      { label: 'SOLD OUT', value: 'sold_out' }
                     ].map((item) => (
                       <button
                         key={item.value}
                         type="button"
-                        onClick={() => setDateSort(item.value as any)}
+                        onClick={() => setStockFilter(item.value as any)}
+                        className="smooth-transition"
                         style={{
                           background: 'none',
                           border: 'none',
                           padding: '0',
-                          color: dateSort === item.value ? '#fff' : '#666',
+                          color: stockFilter === item.value ? '#fff' : '#666',
                           fontSize: '11px',
                           fontFamily: 'monospace',
                           cursor: 'pointer',
-                          fontWeight: dateSort === item.value ? '700' : 'normal',
+                          fontWeight: stockFilter === item.value ? '700' : 'normal',
                           textDecoration: 'none',
                           flexShrink: 0
                         }}
@@ -618,76 +643,114 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
                       </button>
                     ))}
                   </div>
-                  <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0 }}>
-                    <input
-                      type="date"
-                      value={startDate}
-                      onChange={(e) => setStartDate(e.target.value)}
-                      style={{ backgroundColor: '#000', border: '1px solid #333', color: '#aaa', fontSize: '10px', fontFamily: 'monospace', padding: '4px 6px', borderRadius: '2px', outline: 'none' }}
-                    />
-                    <span style={{ color: '#555', fontSize: '10px' }}>-</span>
-                    <input
-                      type="date"
-                      value={endDate}
-                      onChange={(e) => setEndDate(e.target.value)}
-                      style={{ backgroundColor: '#000', border: '1px solid #333', color: '#aaa', fontSize: '10px', fontFamily: 'monospace', padding: '4px 6px', borderRadius: '2px', outline: 'none' }}
-                    />
-                  </div>
                 </div>
-              </div>
 
-              <div>
-                <div style={{ fontSize: '10px', color: '#777', fontFamily: 'monospace', letterSpacing: '1px', marginBottom: '8px' }}>PRICE</div>
-                <div style={{ display: 'flex', gap: '16px', alignItems: 'center', overflowX: 'auto', whiteSpace: 'nowrap', flexWrap: 'nowrap', scrollbarWidth: 'none' }}>
-                  <div style={{ display: 'flex', gap: '14px', flexShrink: 0 }}>
-                    {[
-                      { label: 'HIGH TO LOW', value: 'price_high' },
-                      { label: 'LOW TO HIGH', value: 'price_low' }
-                    ].map((item) => (
-                      <button
-                        key={item.value}
-                        type="button"
-                        onClick={() => setPriceSort(priceSort === item.value ? 'none' : item.value as any)}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          padding: '0',
-                          color: priceSort === item.value ? '#fff' : '#666',
-                          fontSize: '11px',
-                          fontFamily: 'monospace',
-                          cursor: 'pointer',
-                          fontWeight: priceSort === item.value ? '700' : 'normal',
-                          textDecoration: 'none',
-                          flexShrink: 0
-                        }}
-                      >
-                        {item.label}
-                      </button>
-                    ))}
+                <div>
+                  <div style={{ fontSize: '10px', color: '#777', fontFamily: 'monospace', letterSpacing: '1px', marginBottom: '8px' }}>SORT</div>
+                  <div style={{ display: 'flex', gap: '16px', alignItems: 'center', overflowX: 'auto', whiteSpace: 'nowrap', flexWrap: 'nowrap', scrollbarWidth: 'none' }}>
+                    <div style={{ display: 'flex', gap: '14px', flexShrink: 0 }}>
+                      {[
+                        { label: 'NEWEST FIRST', value: 'newest' },
+                        { label: 'OLDEST FIRST', value: 'oldest' }
+                      ].map((item) => (
+                        <button
+                          key={item.value}
+                          type="button"
+                          onClick={() => setDateSort(item.value as any)}
+                          className="smooth-transition"
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            padding: '0',
+                            color: dateSort === item.value ? '#fff' : '#666',
+                            fontSize: '11px',
+                            fontFamily: 'monospace',
+                            cursor: 'pointer',
+                            fontWeight: dateSort === item.value ? '700' : 'normal',
+                            textDecoration: 'none',
+                            flexShrink: 0
+                          }}
+                        >
+                          {item.label}
+                        </button>
+                      ))}
+                    </div>
+                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0 }}>
+                      <input
+                        type="date"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                        className="smooth-transition"
+                        style={{ backgroundColor: '#000', border: '1px solid #333', color: '#aaa', fontSize: '10px', fontFamily: 'monospace', padding: '4px 6px', borderRadius: '4px', outline: 'none' }}
+                      />
+                      <span style={{ color: '#555', fontSize: '10px' }}>-</span>
+                      <input
+                        type="date"
+                        value={endDate}
+                        onChange={(e) => setEndDate(e.target.value)}
+                        className="smooth-transition"
+                        style={{ backgroundColor: '#000', border: '1px solid #333', color: '#aaa', fontSize: '10px', fontFamily: 'monospace', padding: '4px 6px', borderRadius: '4px', outline: 'none' }}
+                      />
+                    </div>
                   </div>
-                  <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0 }}>
-                    <input
-                      type="number"
-                      placeholder="MIN"
-                      value={minPrice}
-                      onChange={(e) => setMinPrice(e.target.value)}
-                      style={{ width: '60px', backgroundColor: '#000', border: '1px solid #333', color: '#fff', fontSize: '10px', fontFamily: 'monospace', padding: '4px 6px', borderRadius: '2px', outline: 'none' }}
-                    />
-                    <span style={{ color: '#555', fontSize: '10px' }}>-</span>
-                    <input
-                      type="number"
-                      placeholder="MAX"
-                      value={maxPrice}
-                      onChange={(e) => setMaxPrice(e.target.value)}
-                      style={{ width: '60px', backgroundColor: '#000', border: '1px solid #333', color: '#fff', fontSize: '10px', fontFamily: 'monospace', padding: '4px 6px', borderRadius: '2px', outline: 'none' }}
-                    />
+                </div>
+
+                <div>
+                  <div style={{ fontSize: '10px', color: '#777', fontFamily: 'monospace', letterSpacing: '1px', marginBottom: '8px' }}>PRICE</div>
+                  <div style={{ display: 'flex', gap: '16px', alignItems: 'center', overflowX: 'auto', whiteSpace: 'nowrap', flexWrap: 'nowrap', scrollbarWidth: 'none' }}>
+                    <div style={{ display: 'flex', gap: '14px', flexShrink: 0 }}>
+                      {[
+                        { label: 'HIGH TO LOW', value: 'price_high' },
+                        { label: 'LOW TO HIGH', value: 'price_low' }
+                      ].map((item) => (
+                        <button
+                          key={item.value}
+                          type="button"
+                          onClick={() => setPriceSort(priceSort === item.value ? 'none' : item.value as any)}
+                          className="smooth-transition"
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            padding: '0',
+                            color: priceSort === item.value ? '#fff' : '#666',
+                            fontSize: '11px',
+                            fontFamily: 'monospace',
+                            cursor: 'pointer',
+                            fontWeight: priceSort === item.value ? '700' : 'normal',
+                            textDecoration: 'none',
+                            flexShrink: 0
+                          }}
+                        >
+                          {item.label}
+                        </button>
+                      ))}
+                    </div>
+                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0 }}>
+                      <input
+                        type="number"
+                        placeholder="MIN"
+                        value={minPrice}
+                        onChange={(e) => setMinPrice(e.target.value)}
+                        className="smooth-transition"
+                        style={{ width: '60px', backgroundColor: '#000', border: '1px solid #333', color: '#fff', fontSize: '10px', fontFamily: 'monospace', padding: '4px 6px', borderRadius: '4px', outline: 'none' }}
+                      />
+                      <span style={{ color: '#555', fontSize: '10px' }}>-</span>
+                      <input
+                        type="number"
+                        placeholder="MAX"
+                        value={maxPrice}
+                        onChange={(e) => setMaxPrice(e.target.value)}
+                        className="smooth-transition"
+                        style={{ width: '60px', backgroundColor: '#000', border: '1px solid #333', color: '#fff', fontSize: '10px', fontFamily: 'monospace', padding: '4px 6px', borderRadius: '4px', outline: 'none' }}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
-      )}
+      </div>
 
       {loading ? (
         <div style={{ textAlign: 'center', padding: '60px 0', color: '#666', fontSize: '11px' }}>LOADING PRODUCTS...</div>
@@ -701,11 +764,12 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
               const isExpanded = !!expandedCategories[category];
 
               return (
-                <div key={category} className="showroom-section" style={{ marginBottom: '50px' }}>
+                <div key={category} className="showroom-section animate-fade-in" style={{ marginBottom: '50px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 15px 12px 15px', borderBottom: '1px solid #141414' }}>
                     <h3 style={{ margin: 0, fontSize: '13px', letterSpacing: '3px', color: '#b3b3b3', textTransform: 'uppercase' }}>{category}</h3>
                     <button
                       onClick={() => setExpandedCategories(prev => ({ ...prev, [category]: !isExpanded }))}
+                      className="smooth-transition"
                       style={{
                         background: 'none',
                         border: 'none',
@@ -747,44 +811,100 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
       )}
 
       {showAddModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
-          <div style={{ backgroundColor: '#050505', border: '1px solid #333', width: '100%', maxWidth: '520px', padding: '25px', maxHeight: '90vh', overflowY: 'auto' }}>
-            <h3 style={{ color: '#fff', fontSize: '14px', letterSpacing: '2px', marginBottom: '20px', marginTop: 0 }}>ADD NEW PRODUCT</h3>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
+          <div className="animate-pop" style={{ backgroundColor: '#050505', border: '1px solid #262626', borderRadius: '12px', width: '100%', maxWidth: '520px', padding: '25px', maxHeight: '90vh', overflowY: 'auto', position: 'relative', boxShadow: '0 20px 40px rgba(0,0,0,0.8)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h3 style={{ color: '#fff', fontSize: '14px', letterSpacing: '2px', margin: 0, fontWeight: '600' }}>ADD NEW PRODUCT</h3>
+              <button
+                type="button"
+                onClick={() => handleSetShowAddModal(false)}
+                className="smooth-transition"
+                style={{
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '50%',
+                  width: '28px',
+                  height: '28px',
+                  color: '#aaa',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justify: 'center',
+                  fontSize: '12px'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = '#ef4444';
+                  e.currentTarget.style.color = '#fff';
+                  e.currentTarget.style.borderColor = '#ef4444';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                  e.currentTarget.style.color = '#aaa';
+                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
             <form onSubmit={handleAddProduct} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
               <div>
                 <label style={{ fontSize: '10px', color: '#888', display: 'block', marginBottom: '5px' }}>PRODUCT NAME *</label>
-                <input type="text" value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Product Name" style={{ width: '100%', backgroundColor: '#000', border: '1px solid #333', padding: '10px', color: '#fff', fontSize: '11px', boxSizing: 'border-box' }} />
+                <input type="text" value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Product Name" className="smooth-transition" style={{ width: '100%', backgroundColor: '#000', border: '1px solid #333', borderRadius: '6px', padding: '10px', color: '#fff', fontSize: '11px', boxSizing: 'border-box' }} />
               </div>
 
               <div style={{ display: 'flex', gap: '10px' }}>
                 <div style={{ flex: 1 }}>
                   <label style={{ fontSize: '10px', color: '#888', display: 'block', marginBottom: '5px' }}>PRICE (৳) *</label>
-                  <input type="number" value={newPrice} onChange={(e) => setNewPrice(e.target.value)} placeholder="0.00" style={{ width: '100%', backgroundColor: '#000', border: '1px solid #333', padding: '10px', color: '#fff', fontSize: '11px', boxSizing: 'border-box' }} />
+                  <input type="number" value={newPrice} onChange={(e) => setNewPrice(e.target.value)} placeholder="0.00" className="smooth-transition" style={{ width: '100%', backgroundColor: '#000', border: '1px solid #333', borderRadius: '6px', padding: '10px', color: '#fff', fontSize: '11px', boxSizing: 'border-box' }} />
                 </div>
                 <div style={{ flex: 1 }}>
                   <label style={{ fontSize: '10px', color: '#888', display: 'block', marginBottom: '5px' }}>STOCK</label>
-                  <input type="number" value={newStock} onChange={(e) => setNewStock(e.target.value)} placeholder="0" style={{ width: '100%', backgroundColor: '#000', border: '1px solid #333', padding: '10px', color: '#fff', fontSize: '11px', boxSizing: 'border-box' }} />
+                  <input type="number" value={newStock} onChange={(e) => setNewStock(e.target.value)} placeholder="0" className="smooth-transition" style={{ width: '100%', backgroundColor: '#000', border: '1px solid #333', borderRadius: '6px', padding: '10px', color: '#fff', fontSize: '11px', boxSizing: 'border-box' }} />
                 </div>
               </div>
 
               <div>
                 <label style={{ fontSize: '10px', color: '#888', display: 'block', marginBottom: '5px' }}>CATEGORY</label>
-                <input type="text" value={newCategory} onChange={(e) => setNewCategory(e.target.value)} style={{ width: '100%', backgroundColor: '#000', border: '1px solid #333', padding: '10px', color: '#fff', fontSize: '11px', boxSizing: 'border-box' }} />
+                <input type="text" value={newCategory} onChange={(e) => setNewCategory(e.target.value)} className="smooth-transition" style={{ width: '100%', backgroundColor: '#000', border: '1px solid #333', borderRadius: '6px', padding: '10px', color: '#fff', fontSize: '11px', boxSizing: 'border-box' }} />
               </div>
 
               <div>
                 <label style={{ fontSize: '10px', color: '#888', display: 'block', marginBottom: '5px' }}>PRODUCT IMAGES & VIDEOS (Multiple allowed)</label>
-                <input type="file" multiple accept="image/*,video/*" onChange={handleMediaChange} style={{ width: '100%', backgroundColor: '#000', border: '1px solid #333', padding: '8px', color: '#fff', fontSize: '11px', boxSizing: 'border-box', cursor: 'pointer' }} />
+                <input type="file" multiple accept="image/*,video/*" onChange={handleMediaChange} className="smooth-transition" style={{ width: '100%', backgroundColor: '#000', border: '1px solid #333', borderRadius: '6px', padding: '8px', color: '#fff', fontSize: '11px', boxSizing: 'border-box', cursor: 'pointer' }} />
                 {mediaPreviews.length > 0 && (
                   <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '10px' }}>
                     {mediaPreviews.map((media, idx) => (
-                      <div key={idx} style={{ position: 'relative', width: '60px', height: '60px', border: '1px solid #444', backgroundColor: '#000' }}>
+                      <div key={idx} style={{ position: 'relative', width: '60px', height: '60px', border: '1px solid #444', borderRadius: '6px', backgroundColor: '#000', overflow: 'visible' }}>
                         {media.type === 'video' ? (
-                          <video src={media.url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          <video src={media.url} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '5px' }} />
                         ) : (
-                          <img src={media.url} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          <img src={media.url} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '5px' }} />
                         )}
-                        <button type="button" onClick={() => removeSelectedMedia(idx)} style={{ position: 'absolute', top: '-5px', right: '-5px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '50%', width: '18px', height: '18px', fontSize: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
+                        <button
+                          type="button"
+                          onClick={() => removeSelectedMedia(idx)}
+                          className="smooth-transition"
+                          style={{
+                            position: 'absolute',
+                            top: '-6px',
+                            right: '-6px',
+                            background: '#ef4444',
+                            color: '#fff',
+                            border: '2px solid #050505',
+                            borderRadius: '50%',
+                            width: '20px',
+                            height: '20px',
+                            fontSize: '11px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justify: 'center',
+                            fontWeight: 'bold'
+                          }}
+                        >
+                          ✕
+                        </button>
                       </div>
                     ))}
                   </div>
@@ -793,29 +913,29 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
 
               <div>
                 <label style={{ fontSize: '10px', color: '#888', display: 'block', marginBottom: '5px' }}>DESCRIPTION (Bio)</label>
-                <textarea value={newDescription} onChange={(e) => setNewDescription(e.target.value)} rows={2} style={{ width: '100%', backgroundColor: '#000', border: '1px solid #333', padding: '10px', color: '#fff', fontSize: '11px', boxSizing: 'border-box' }} />
+                <textarea value={newDescription} onChange={(e) => setNewDescription(e.target.value)} rows={2} className="smooth-transition" style={{ width: '100%', backgroundColor: '#000', border: '1px solid #333', borderRadius: '6px', padding: '10px', color: '#fff', fontSize: '11px', boxSizing: 'border-box' }} />
               </div>
 
-              <div style={{ border: '1px dashed #333', padding: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div style={{ border: '1px dashed #333', borderRadius: '6px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 <span style={{ fontSize: '10px', color: '#aaa', fontWeight: 'bold' }}>SPECIFICATIONS (DETAILS)</span>
                 <div style={{ display: 'flex', gap: '10px' }}>
-                  <input type="text" value={newFit} onChange={(e) => setNewFit(e.target.value)} placeholder="Fit" style={{ flex: 1, background: '#000', border: '1px solid #333', padding: '8px', color: '#fff', fontSize: '11px' }} />
-                  <input type="text" value={newGsm} onChange={(e) => setNewGsm(e.target.value)} placeholder="GSM" style={{ flex: 1, background: '#000', border: '1px solid #333', padding: '8px', color: '#fff', fontSize: '11px' }} />
+                  <input type="text" value={newFit} onChange={(e) => setNewFit(e.target.value)} placeholder="Fit" className="smooth-transition" style={{ flex: 1, background: '#000', border: '1px solid #333', borderRadius: '6px', padding: '8px', color: '#fff', fontSize: '11px' }} />
+                  <input type="text" value={newGsm} onChange={(e) => setNewGsm(e.target.value)} placeholder="GSM" className="smooth-transition" style={{ flex: 1, background: '#000', border: '1px solid #333', borderRadius: '6px', padding: '8px', color: '#fff', fontSize: '11px' }} />
                 </div>
                 <div style={{ display: 'flex', gap: '10px' }}>
-                  <input type="text" value={newMadeIn} onChange={(e) => setNewMadeIn(e.target.value)} placeholder="Made In" style={{ flex: 1, background: '#000', border: '1px solid #333', padding: '8px', color: '#fff', fontSize: '11px' }} />
-                  <input type="text" value={newMaterial} onChange={(e) => setNewMaterial(e.target.value)} placeholder="Material" style={{ flex: 1, background: '#000', border: '1px solid #333', padding: '8px', color: '#fff', fontSize: '11px' }} />
+                  <input type="text" value={newMadeIn} onChange={(e) => setNewMadeIn(e.target.value)} placeholder="Made In" className="smooth-transition" style={{ flex: 1, background: '#000', border: '1px solid #333', borderRadius: '6px', padding: '8px', color: '#fff', fontSize: '11px' }} />
+                  <input type="text" value={newMaterial} onChange={(e) => setNewMaterial(e.target.value)} placeholder="Material" className="smooth-transition" style={{ flex: 1, background: '#000', border: '1px solid #333', borderRadius: '6px', padding: '8px', color: '#fff', fontSize: '11px' }} />
                 </div>
               </div>
 
               <div style={{ display: 'flex', gap: '10px' }}>
-                <input type="text" value={newSizes} onChange={(e) => setNewSizes(e.target.value)} placeholder="Sizes: S, M, L" style={{ flex: 1, background: '#000', border: '1px solid #333', padding: '10px', color: '#fff', fontSize: '11px' }} />
-                <input type="text" value={newColors} onChange={(e) => setNewColors(e.target.value)} placeholder="Colors: BLACK, WHITE" style={{ flex: 1, background: '#000', border: '1px solid #333', padding: '10px', color: '#fff', fontSize: '11px' }} />
+                <input type="text" value={newSizes} onChange={(e) => setNewSizes(e.target.value)} placeholder="Sizes: S, M, L" className="smooth-transition" style={{ flex: 1, background: '#000', border: '1px solid #333', borderRadius: '6px', padding: '10px', color: '#fff', fontSize: '11px' }} />
+                <input type="text" value={newColors} onChange={(e) => setNewColors(e.target.value)} placeholder="Colors: BLACK, WHITE" className="smooth-transition" style={{ flex: 1, background: '#000', border: '1px solid #333', borderRadius: '6px', padding: '10px', color: '#fff', fontSize: '11px' }} />
               </div>
 
               <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-                <button type="button" onClick={() => handleSetShowAddModal(false)} style={{ flex: 1, background: 'transparent', border: '1px solid #444', color: '#fff', padding: '10px', cursor: 'pointer' }}>CANCEL</button>
-                <button type="submit" disabled={submitting || uploadingMedia} style={{ flex: 1, background: '#fff', border: 'none', color: '#000', padding: '10px', fontWeight: 'bold', cursor: 'pointer' }}>
+                <button type="button" onClick={() => handleSetShowAddModal(false)} className="smooth-transition" style={{ flex: 1, background: 'transparent', border: '1px solid #444', borderRadius: '6px', color: '#fff', padding: '10px', cursor: 'pointer' }}>CANCEL</button>
+                <button type="submit" disabled={submitting || uploadingMedia} className="smooth-transition" style={{ flex: 1, background: '#fff', border: 'none', borderRadius: '6px', color: '#000', padding: '10px', fontWeight: 'bold', cursor: 'pointer' }}>
                   {uploadingMedia ? 'UPLOADING MEDIA...' : submitting ? 'SAVING...' : 'CREATE PRODUCT'}
                 </button>
               </div>
