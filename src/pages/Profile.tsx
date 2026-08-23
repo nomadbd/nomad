@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import OrderHistory from '../components/OrderHistory'; 
-import AdminDashboard from './AdminDashboard';
 
 export default function Profile() {
+  const navigate = useNavigate();
   const [view, setView] = useState<'profile' | 'settings'>(() => {
     return (localStorage.getItem('currentView') as 'profile' | 'settings') || 'profile';
   });
@@ -44,10 +45,19 @@ export default function Profile() {
     if (user) {
       setSession({ user });
       const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+      
+      const normalizedRole = prof?.role ? String(prof.role).toUpperCase().trim() : '';
+      const isStaff = ['SUPER_ADMIN', 'ADMIN', 'STAFF'].includes(normalizedRole);
+
+      if (isStaff) {
+        navigate('/admin', { replace: true });
+        return;
+      }
+
       setProfile({ ...prof, email: user.email });
       setNewName('');
       setNewEmail('');
-      setNewPassword(''); // ⚡ স্টেট ক্লিয়ার
+      setNewPassword('');
     }
     setLoading(false);
   };
@@ -60,7 +70,6 @@ export default function Profile() {
 
   const handleDeleteAccount = async () => {
     setShowConfirm(false);
-    // 🔒 Supabase RPC ফাংশনে নিশ্চিত করুন যে এটি auth.uid() ব্যবহার করে শুধুমাত্র নিজের অ্যাকাউন্টই মুছে দেয়
     const { error } = await supabase.rpc('delete_user');
     if (error) {
       showToast("Error: " + error.message, "#ff4444");
@@ -76,24 +85,21 @@ export default function Profile() {
       let emailChanged = false;
       let otherChanges = false;
 
-      // 🔒 নাম আপডেট
       if (newName.trim() && newName !== profile?.name) {
         const { error: profileError } = await supabase
           .from('profiles')
           .update({ name: newName.trim() })
-          .eq('id', profile.id); // RLS নিশ্চিত করবে যে শুধুমাত্র নিজের প্রোফাইলই আপডেট হতে পারে
+          .eq('id', profile.id);
         if (profileError) throw profileError;
         otherChanges = true;
       }
 
-      // 🔒 ইমেইল আপডেট
       if (newEmail.trim() && newEmail !== profile?.email) {
         const { error: emailError } = await supabase.auth.updateUser({ email: newEmail.trim() });
         if (emailError) throw emailError;
         emailChanged = true;
       }
 
-      // 🔒 পাসওয়ার্ড আপডেট
       if (newPassword) {
         if (newPassword.length < 6) {
           showToast("Password must be at least 6 characters long.", "#ff4444");
@@ -110,7 +116,7 @@ export default function Profile() {
         showToast("Profile updated successfully!", "#2ecc71");
       }
 
-      setNewPassword(''); // ⚡ সিকিউরিটির জন্য ইনপুট স্টেট ফাঁকা করা
+      setNewPassword('');
       await fetchUserData();
       changeView('profile');
     } catch (error: any) {
@@ -130,15 +136,6 @@ export default function Profile() {
     );
   }
 
-  // ⚡ ১. নতুন রোল সিস্টেম অনুযায়ী অ্যাডমিন প্যানেল এক্সেস চেক (SUPER_ADMIN, ADMIN, STAFF)
-  const normalizedRole = profile?.role ? String(profile.role).toUpperCase().trim() : '';
-  const isStaff = ['SUPER_ADMIN', 'ADMIN', 'STAFF'].includes(normalizedRole);
-
-  if (isStaff) {
-    return <AdminDashboard session={session} profile={profile} onRefreshProfile={fetchUserData} />;
-  }
-
-  // ⚡ ২. সাধারণ কাস্টমার প্রোফাইল (CUSTOMER বা অন্য কোনো রোল হলে এটি দেখাবে)
   return (
     <div style={{ backgroundColor: '#000', minHeight: '100vh', color: '#fff', padding: '40px 20px', fontFamily: "'Inter', sans-serif", width: '100%', boxSizing: 'border-box', overflowX: 'hidden' }}>
 
