@@ -758,10 +758,9 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
       const { error } = await supabase.from('products').update({ status: 'archived' }).eq('id', productId);
       if (error) throw error;
       showNotification('PRODUCT HIDDEN FROM CATALOG.');
-    } catch (err: any) {
+    } catch (err) {
       console.error('Failed to hide product:', err);
-      // ডায়নামিক এরর মেসেজ প্রদর্শনের জন্য
-      showNotification(err?.message || err?.error_description || 'COULD NOT HIDE PRODUCT.', 'error');
+      showNotification('COULD NOT HIDE PRODUCT.', 'error');
       fetchProducts();
     }
   };
@@ -791,10 +790,9 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
       if (error) throw error;
 
       showNotification('PRODUCT PERMANENTLY DELETED FROM DATABASE & CLOUDINARY.');
-    } catch (err: any) {
+    } catch (err) {
       console.error('Failed to delete product:', err);
-      // ডায়নামিক এরর মেসেজ প্রদর্শনের জন্য
-      showNotification(err?.message || err?.error_description || 'COULD NOT DELETE PRODUCT.', 'error');
+      showNotification('COULD NOT DELETE PRODUCT.', 'error');
       fetchProducts();
     }
   };
