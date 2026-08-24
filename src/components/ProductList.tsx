@@ -164,13 +164,13 @@ const ProductCard = ({ product }: { product: Product }) => {
   const [isDescExpanded, setIsDescExpanded] = useState(false);
 
   return (
-    <div className="showroom-card-item" style={{ scrollSnapAlign: 'start', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <div className="showroom-card-item" style={{ scrollSnapAlign: 'start', boxSizing: 'border-box', display: 'flex', flexDirection: 'column' }}>
       <ProductGallery 
         media={product.product_media || []} 
         productName={product.name} 
       />
 
-      <div style={{ marginTop: '15px', padding: '0 5px', display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'space-between' }}>
+      <div style={{ marginTop: '15px', padding: '0 5px', display: 'flex', flexDirection: 'column' }}>
         <div>
           <h3 style={{ fontSize: '14px', color: '#fff', margin: '0 0 6px 0', fontWeight: '600' }}>{product.name}</h3>
 
@@ -329,7 +329,7 @@ export default function ProductList() {
               </button>
             </div>
 
-            <div className="showroom-row-container" style={{ display: 'flex', alignItems: 'stretch', flexWrap: isExpanded ? 'wrap' : 'nowrap', width: '100%', scrollSnapType: 'x mandatory', overflowX: 'auto', scrollBehavior: 'smooth' }}>
+            <div className="showroom-row-container" style={{ display: 'flex', alignItems: 'flex-start', flexWrap: isExpanded ? 'wrap' : 'nowrap', width: '100%', scrollSnapType: 'x mandatory', overflowX: 'auto', scrollBehavior: 'smooth' }}>
               {categoryProducts.map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}
@@ -349,6 +349,12 @@ export default function ProductList() {
         .variant-scroll-container {
           -ms-overflow-style: none;
           scrollbar-width: none;
+        }
+        .showroom-card-item img,
+        .showroom-card-item video {
+          aspect-ratio: 3 / 4 !important;
+          object-fit: cover !important;
+          width: 100% !important;
         }
         @media (max-width: 767px) {
           .showroom-section { margin-left: calc(-50vw + 50%); margin-right: calc(-50vw + 50%); width: 100vw; }
