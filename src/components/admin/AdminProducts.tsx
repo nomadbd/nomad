@@ -356,6 +356,7 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
   const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
 
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [removedMediaUrls, setRemovedMediaUrls] = useState<string[]>([]); // এডিটে বাদ দেওয়া মিডিয়ার URL রাখার স্টেট
   const [editName, setEditName] = useState<string>('');
   const [editPrice, setEditPrice] = useState<string>('');
   const [editStock, setEditStock] = useState<string>('');
@@ -614,6 +615,7 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
 
   const handleOpenEdit = (product: Product) => {
     setEditingProduct(product);
+    setRemovedMediaUrls([]); // রিমুভ হওয়া মিডিয়ার তালিকা রিসেট
     setEditName(product.name || '');
     setEditPrice(product.price ? String(product.price) : '');
     setEditStock(product.stock_quantity !== undefined ? String(product.stock_quantity) : '0');
@@ -669,6 +671,10 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
   };
 
   const removeExistingMedia = (index: number) => {
+    const mediaToRemove = editExistingMedia[index];
+    if (mediaToRemove?.media_url) {
+      setRemovedMediaUrls(prev => [...prev, mediaToRemove.media_url]);
+    }
     setEditExistingMedia(prev => prev.filter((_, i) => i !== index));
   };
 
@@ -720,6 +726,17 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
 
       if (updateError) throw updateError;
 
+      // ক্লাউডিনারি থেকে রিমুভ করা মিডিয়া ফাইলগুলো স্থায়ীভাবে মুছে ফেলা
+      if (removedMediaUrls.length > 0 && typeof deleteFromCloudinary === 'function') {
+        for (const url of removedMediaUrls) {
+          try {
+            await deleteFromCloudinary(url);
+          } catch (e) {
+            console.error('Failed to delete media from Cloudinary during edit:', e);
+          }
+        }
+      }
+
       await supabase.from('product_media').delete().eq('product_id', editingProduct.id);
 
       for (let i = 0; i < editExistingMedia.length; i++) {
@@ -750,6 +767,7 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
       }
 
       setEditingProduct(null);
+      setRemovedMediaUrls([]);
       fetchProducts();
       showNotification('PRODUCT UPDATED SUCCESSFULLY.');
     } catch (err: any) {
@@ -1206,7 +1224,10 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
               <h3 style={{ color: '#fff', fontSize: '13px', letterSpacing: '2px', margin: 0, fontWeight: '600' }}>EDIT PRODUCT</h3>
               <button
                 type="button"
-                onClick={() => setEditingProduct(null)}
+                onClick={() => {
+                  setEditingProduct(null);
+                  setRemovedMediaUrls([]);
+                }}
                 className="smooth-transition"
                 style={{
                   background: 'rgba(255, 255, 255, 0.05)',
@@ -1402,7 +1423,10 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
               <div style={{ display: 'flex', gap: '12px', marginTop: '10px' }}>
                 <button
                   type="button"
-                  onClick={() => setEditingProduct(null)}
+                  onClick={() => {
+                    setEditingProduct(null);
+                    setRemovedMediaUrls([]);
+                  }}
                   className="smooth-transition"
                   style={{
                     flex: 1,
