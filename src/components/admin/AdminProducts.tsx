@@ -91,7 +91,7 @@ const ProductAdminActionRow = ({ product, onUpdateStock, onDelete, onEdit }: { p
       {step === 'idle' && (
         <div className="animate-fade-in" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', gap: '6px' }}>
           <span style={{ fontSize: '14px', color: isSoldOut ? '#555' : '#fff', fontWeight: 500, fontFamily: 'monospace', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0, flexShrink: 1 }}>৳{product.price}</span>
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 }}>
+          <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexShrink: 0 }}>
             <button
               onClick={() => setStep('manage')}
               className="smooth-transition"
@@ -807,6 +807,10 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
   });
 
   filteredProducts.sort((a, b) => {
+    if (a.stock_quantity !== b.stock_quantity) {
+      return a.stock_quantity - b.stock_quantity;
+    }
+
     if (priceSort === 'price_low') {
       if (a.price !== b.price) return a.price - b.price;
     } else if (priceSort === 'price_high') {
