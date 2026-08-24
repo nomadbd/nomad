@@ -82,7 +82,7 @@ const ProductGallery = ({ images, productName }: { images: string[], productName
   );
 };
 
-const ProductAdminActionRow = ({ product, onUpdateStock, onDelete }: { product: Product; onUpdateStock: (id: string | number, currentStock: number, change: number) => void; onDelete: (id: string | number) => void }) => {
+const ProductAdminActionRow = ({ product, onUpdateStock, onDelete, onEdit }: { product: Product; onUpdateStock: (id: string | number, currentStock: number, change: number) => void; onDelete: (id: string | number) => void; onEdit: (product: Product) => void }) => {
   const [step, setStep] = useState<'idle' | 'manage'>('idle');
   const isSoldOut = product.status === 'sold_out' || product.stock_quantity <= 0;
 
@@ -114,6 +114,40 @@ const ProductAdminActionRow = ({ product, onUpdateStock, onDelete }: { product: 
               }}
             >
               STOCK ({product.stock_quantity})
+            </button>
+            <button
+              onClick={() => onEdit(product)}
+              className="smooth-transition"
+              style={{
+                height: '36px',
+                width: '36px',
+                display: 'flex',
+                alignItems: 'center',
+                justify: 'center',
+                padding: 0,
+                lineHeight: 1,
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid rgba(255, 255, 255, 0.15)',
+                borderRadius: '6px',
+                color: '#aaa',
+                fontSize: '13px',
+                cursor: 'pointer'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
+                e.currentTarget.style.color = '#ffffff';
+                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                e.currentTarget.style.color = '#aaa';
+                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+              </svg>
             </button>
             <button
               onClick={() => onDelete(product.id)}
@@ -165,7 +199,7 @@ const ProductAdminActionRow = ({ product, onUpdateStock, onDelete }: { product: 
   );
 };
 
-const ProductCard = ({ product, onUpdateStock, onDelete }: { product: Product; onUpdateStock: any; onDelete: any }) => {
+const ProductCard = ({ product, onUpdateStock, onDelete, onEdit }: { product: Product; onUpdateStock: any; onDelete: any; onEdit: any }) => {
   const [isDescExpanded, setIsDescExpanded] = useState(false);
 
   const imagesList = (product.product_media && product.product_media.length > 0)
@@ -267,7 +301,7 @@ const ProductCard = ({ product, onUpdateStock, onDelete }: { product: Product; o
           })()}
         </div>
 
-        <ProductAdminActionRow product={product} onUpdateStock={onUpdateStock} onDelete={onDelete} />
+        <ProductAdminActionRow product={product} onUpdateStock={onUpdateStock} onDelete={onDelete} onEdit={onEdit} />
       </div>
     </div>
   );
@@ -293,6 +327,27 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
 
   const [deletingProductId, setDeletingProductId] = useState<string | number | null>(null);
+
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [editName, setEditName] = useState<string>('');
+  const [editPrice, setEditPrice] = useState<string>('');
+  const [editStock, setEditStock] = useState<string>('');
+  const [editCategory, setEditCategory] = useState<string>('');
+  const [editDescription, setEditDescription] = useState<string>('');
+  const [editFit, setEditFit] = useState<string>('');
+  const [editGsm, setEditGsm] = useState<string>('');
+  const [editMadeIn, setEditMadeIn] = useState<string>('');
+  const [editMaterial, setEditMaterial] = useState<string>('');
+  const [editCare, setEditCare] = useState<string>('');
+  const [editSleeve, setEditSleeve] = useState<string>('');
+  const [editPattern, setEditPattern] = useState<string>('');
+  const [editOccasion, setEditOccasion] = useState<string>('');
+  const [editSizes, setEditSizes] = useState<string>('');
+  const [editColors, setEditColors] = useState<string>('');
+  const [editDetails, setEditDetails] = useState<string>('');
+  const [editExistingMedia, setEditExistingMedia] = useState<{ id?: string | number; media_url: string; media_type: string }[]>([]);
+  const [editMediaFiles, setEditMediaFiles] = useState<File[]>([]);
+  const [editMediaPreviews, setEditMediaPreviews] = useState<{ url: string; type: 'image' | 'video' }[]>([]);
 
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [stockFilter, setStockFilter] = useState<'all' | 'in_stock' | 'sold_out'>('all');
@@ -524,6 +579,155 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
     } catch (err: any) {
       console.error('Error creating product:', err);
       showNotification(err.message || 'FAILED TO CREATE PRODUCT.', 'error');
+    } finally {
+      setSubmitting(false);
+      setUploadingMedia(false);
+    }
+  };
+
+  const handleOpenEdit = (product: Product) => {
+    setEditingProduct(product);
+    setEditName(product.name || '');
+    setEditPrice(product.price ? String(product.price) : '');
+    setEditStock(product.stock_quantity !== undefined ? String(product.stock_quantity) : '0');
+    setEditCategory(product.category || '');
+    setEditDescription(product.description || '');
+
+    const details = product.details || {};
+    const getDetail = (key: string) => {
+      const foundKey = Object.keys(details).find(
+        k => k.trim().toUpperCase() === key || k.trim().toUpperCase().replace(/\s+/g, '') === key.replace(/\s+/g, '')
+      );
+      return foundKey ? details[foundKey] : '';
+    };
+
+    setEditFit(getDetail('FIT'));
+    setEditGsm(getDetail('GSM'));
+    setEditMadeIn(getDetail('MADE IN'));
+    setEditMaterial(getDetail('MATERIAL'));
+    setEditCare(getDetail('CARE'));
+    setEditSleeve(getDetail('SLEEVE'));
+    setEditPattern(getDetail('PATTERN'));
+    setEditOccasion(getDetail('OCCASION'));
+    setEditDetails(getDetail('DETAILS'));
+
+    setEditSizes(product.sizes ? product.sizes.join(', ') : '');
+    setEditColors(product.colors ? product.colors.join(', ') : '');
+    setEditExistingMedia(product.product_media || []);
+    setEditMediaFiles([]);
+    setEditMediaPreviews([]);
+  };
+
+  const handleEditMediaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length > 0) {
+      setEditMediaFiles(prev => [...prev, ...files]);
+      const newPreviews = files.map(file => ({
+        url: URL.createObjectURL(file),
+        type: file.type.startsWith('video') ? ('video' as const) : ('image' as const)
+      }));
+      setEditMediaPreviews(prev => [...prev, ...newPreviews]);
+    }
+    e.target.value = '';
+  };
+
+  const removeSelectedEditMedia = (index: number) => {
+    setEditMediaPreviews(prev => {
+      if (prev[index]?.url) {
+        URL.revokeObjectURL(prev[index].url);
+      }
+      return prev.filter((_, i) => i !== index);
+    });
+    setEditMediaFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const removeExistingMedia = (index: number) => {
+    setEditExistingMedia(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleEditDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const val = e.target.value;
+    const words = val.trim().split(/\s+/).filter(Boolean);
+    if (words.length <= 200 || val.length < editDescription.length) {
+      setEditDescription(val);
+    }
+  };
+
+  const handleUpdateProduct = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingProduct || !editName || !editPrice) {
+      showNotification('PRODUCT NAME AND PRICE ARE REQUIRED.', 'error');
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+
+      const detailsJson: Record<string, string> = {};
+      if (editFit) detailsJson['FIT'] = editFit;
+      if (editGsm) detailsJson['GSM'] = editGsm;
+      if (editMaterial) detailsJson['MATERIAL'] = editMaterial;
+      if (editCare) detailsJson['CARE'] = editCare;
+      if (editSleeve) detailsJson['SLEEVE'] = editSleeve;
+      if (editPattern) detailsJson['PATTERN'] = editPattern;
+      if (editOccasion) detailsJson['OCCASION'] = editOccasion;
+      if (editMadeIn) detailsJson['MADE IN'] = editMadeIn;
+      if (editDetails) detailsJson['DETAILS'] = editDetails;
+
+      const sizesArray = editSizes.split(',').map(s => s.trim()).filter(Boolean);
+      const colorsArray = editColors.split(',').map(c => c.trim().toUpperCase()).filter(Boolean);
+
+      const { error: updateError } = await supabase
+        .from('products')
+        .update({
+          name: editName,
+          price: parseFloat(editPrice),
+          stock_quantity: parseInt(editStock || '0', 10),
+          category: editCategory || 'GENERAL',
+          description: editDescription,
+          details: detailsJson,
+          sizes: sizesArray,
+          colors: colorsArray
+        })
+        .eq('id', editingProduct.id);
+
+      if (updateError) throw updateError;
+
+      await supabase.from('product_media').delete().eq('product_id', editingProduct.id);
+
+      for (let i = 0; i < editExistingMedia.length; i++) {
+        await supabase.from('product_media').insert([{
+          product_id: editingProduct.id,
+          media_url: editExistingMedia[i].media_url,
+          media_type: editExistingMedia[i].media_type,
+          sort_order: i
+        }]);
+      }
+
+      if (editMediaFiles.length > 0) {
+        setUploadingMedia(true);
+        const startOrder = editExistingMedia.length;
+        for (let i = 0; i < editMediaFiles.length; i++) {
+          const file = editMediaFiles[i];
+          const mediaUrl = await uploadToCloudinary(file);
+          const mediaType = file.type.startsWith('video') ? 'video' : 'image';
+
+          await supabase.from('product_media').insert([{
+            product_id: editingProduct.id,
+            media_url: mediaUrl,
+            media_type: mediaType,
+            sort_order: startOrder + i
+          }]);
+        }
+        setUploadingMedia(false);
+      }
+
+      setEditingProduct(null);
+      fetchProducts();
+      showNotification('PRODUCT UPDATED SUCCESSFULLY.');
+    } catch (err: any) {
+      console.error('Error updating product:', err);
+      showNotification(err.message || 'FAILED TO UPDATE PRODUCT.', 'error');
     } finally {
       setSubmitting(false);
       setUploadingMedia(false);
@@ -883,6 +1087,7 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
                         product={product}
                         onUpdateStock={handleStockUpdate}
                         onDelete={handleDeleteProduct}
+                        onEdit={handleOpenEdit}
                       />
                     ))}
                   </div>
@@ -902,6 +1107,252 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
               <button onClick={() => setDeletingProductId(null)} className="smooth-transition" style={{ flex: 1, background: 'transparent', border: '1px solid #333', borderRadius: '6px', color: '#fff', padding: '10px', fontSize: '11px', fontWeight: '600', cursor: 'pointer' }}>CANCEL</button>
               <button onClick={confirmDeleteProduct} className="smooth-transition" style={{ flex: 1, background: '#ef4444', border: 'none', borderRadius: '6px', color: '#fff', padding: '10px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}>CONFIRM DELETE</button>
             </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {editingProduct && createPortal(
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000, padding: '20px' }}>
+          <div className="animate-pop" style={{ backgroundColor: '#050505', border: '1px solid #262626', borderRadius: '12px', width: '100%', maxWidth: '480px', padding: '24px', maxHeight: '85vh', overflowY: 'auto', position: 'relative', boxShadow: '0 20px 40px rgba(0,0,0,0.8)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '22px' }}>
+              <h3 style={{ color: '#fff', fontSize: '13px', letterSpacing: '2px', margin: 0, fontWeight: '600' }}>EDIT PRODUCT</h3>
+              <button
+                type="button"
+                onClick={() => setEditingProduct(null)}
+                className="smooth-transition"
+                style={{
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '50%',
+                  width: '30px',
+                  height: '30px',
+                  color: '#aaa',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justify: 'center',
+                  padding: 0,
+                  lineHeight: 1,
+                  fontSize: '12px'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = '#ef4444';
+                  e.currentTarget.style.color = '#fff';
+                  e.currentTarget.style.borderColor = '#ef4444';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                  e.currentTarget.style.color = '#aaa';
+                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                }}
+              >
+                <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>✕</span>
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdateProduct} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+              <div style={{ display: 'flex', gap: '15px', alignItems: 'center', flexWrap: 'wrap' }}>
+                <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '60px', height: '60px', border: '1px dashed #333', borderRadius: '8px', cursor: 'pointer', backgroundColor: '#000', flexShrink: 0 }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                  </svg>
+                  <span style={{ fontSize: '9px', color: '#888', marginTop: '4px', letterSpacing: '0.5px', textTransform: 'uppercase' }}>Upload</span>
+                  <input type="file" multiple accept="image/*,video/*" onChange={handleEditMediaChange} style={{ display: 'none' }} />
+                </label>
+                <div style={{ flex: '1 1 140px' }}>
+                  <input
+                    type="text"
+                    value={editCategory}
+                    onChange={(e) => setEditCategory(e.target.value)}
+                    placeholder="Category (e.g. APPAREL)"
+                    className="minimal-input"
+                  />
+                </div>
+              </div>
+
+              {(editExistingMedia.length > 0 || editMediaPreviews.length > 0) && (
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '-6px' }}>
+                  {editExistingMedia.map((media, idx) => (
+                    <div key={`existing-${idx}`} style={{ position: 'relative', width: '50px', height: '50px', border: '1px solid #333', borderRadius: '6px', backgroundColor: '#000', overflow: 'visible' }}>
+                      {media.media_type === 'video' ? (
+                        <video src={media.media_url} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '5px' }} />
+                      ) : (
+                        <img src={media.media_url} alt="existing" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '5px' }} />
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => removeExistingMedia(idx)}
+                        className="smooth-transition"
+                        style={{
+                          position: 'absolute',
+                          top: '-5px',
+                          right: '-5px',
+                          background: '#ef4444',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: '50%',
+                          width: '16px',
+                          height: '16px',
+                          fontSize: '9px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justify: 'center',
+                          padding: 0,
+                          lineHeight: 1,
+                          fontWeight: 'bold'
+                        }}
+                      >
+                        <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>✕</span>
+                      </button>
+                    </div>
+                  ))}
+
+                  {editMediaPreviews.map((media, idx) => (
+                    <div key={`new-${idx}`} style={{ position: 'relative', width: '50px', height: '50px', border: '1px solid #333', borderRadius: '6px', backgroundColor: '#000', overflow: 'visible' }}>
+                      {media.type === 'video' ? (
+                        <video src={media.url} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '5px' }} />
+                      ) : (
+                        <img src={media.url} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '5px' }} />
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => removeSelectedEditMedia(idx)}
+                        className="smooth-transition"
+                        style={{
+                          position: 'absolute',
+                          top: '-5px',
+                          right: '-5px',
+                          background: '#ef4444',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: '50%',
+                          width: '16px',
+                          height: '16px',
+                          fontSize: '9px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justify: 'center',
+                          padding: 0,
+                          lineHeight: 1,
+                          fontWeight: 'bold'
+                        }}
+                      >
+                        <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>✕</span>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div>
+                <input
+                  type="text"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  placeholder="Product Name *"
+                  className="minimal-input"
+                />
+              </div>
+
+              <div>
+                <textarea
+                  value={editDescription}
+                  onChange={handleEditDescriptionChange}
+                  placeholder="Description (Bio)"
+                  rows={2}
+                  className="minimal-input"
+                  style={{ resize: 'none' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
+                <input
+                  type="number"
+                  value={editPrice}
+                  onChange={(e) => setEditPrice(e.target.value)}
+                  placeholder="Price (৳) *"
+                  className="minimal-input"
+                  style={{ flex: '1 1 130px' }}
+                />
+                <input
+                  type="number"
+                  value={editStock}
+                  onChange={(e) => setEditStock(e.target.value)}
+                  placeholder="Stock Quantity"
+                  className="minimal-input"
+                  style={{ flex: '1 1 130px' }}
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '14px 15px' }}>
+                <input type="text" value={editFit} onChange={(e) => setEditFit(e.target.value)} placeholder="Fit (e.g. Regular Fit)" className="minimal-input" />
+                <input type="text" value={editGsm} onChange={(e) => setEditGsm(e.target.value)} placeholder="GSM (e.g. 180)" className="minimal-input" />
+                <input type="text" value={editSizes} onChange={(e) => setEditSizes(e.target.value)} placeholder="Sizes (e.g. S, M, L, XL)" className="minimal-input" />
+                <input type="text" value={editColors} onChange={(e) => setEditColors(e.target.value)} placeholder="Colors (e.g. BLACK, WHITE)" className="minimal-input" />
+                <input type="text" value={editMaterial} onChange={(e) => setEditMaterial(e.target.value)} placeholder="Material (e.g. 100% Cotton)" className="minimal-input" />
+                <input type="text" value={editCare} onChange={(e) => setEditCare(e.target.value)} placeholder="Care (e.g. Machine Wash)" className="minimal-input" />
+                <input type="text" value={editSleeve} onChange={(e) => setEditSleeve(e.target.value)} placeholder="Sleeve (e.g. Half Sleeve)" className="minimal-input" />
+                <input type="text" value={editPattern} onChange={(e) => setEditPattern(e.target.value)} placeholder="Pattern (e.g. Solid)" className="minimal-input" />
+                <input type="text" value={editOccasion} onChange={(e) => setEditOccasion(e.target.value)} placeholder="Occasion (e.g. Casual)" className="minimal-input" />
+                <input type="text" value={editMadeIn} onChange={(e) => setEditMadeIn(e.target.value)} placeholder="Made In (e.g. Bangladesh)" className="minimal-input" />
+              </div>
+
+              <div>
+                <textarea
+                  value={editDetails}
+                  onChange={(e) => setEditDetails(e.target.value)}
+                  placeholder="Details (Product Details)"
+                  rows={3}
+                  className="minimal-input"
+                  style={{ resize: 'none' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px', marginTop: '10px' }}>
+                <button
+                  type="button"
+                  onClick={() => setEditingProduct(null)}
+                  className="smooth-transition"
+                  style={{
+                    flex: 1,
+                    background: 'transparent',
+                    border: '1px solid #333',
+                    borderRadius: '6px',
+                    color: '#aaa',
+                    padding: '10px',
+                    fontSize: '11px',
+                    letterSpacing: '1px',
+                    cursor: 'pointer',
+                    fontWeight: '600'
+                  }}
+                >
+                  CANCEL
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting || uploadingMedia}
+                  className="smooth-transition"
+                  style={{
+                    flex: 1,
+                    background: 'rgba(255, 255, 255, 0.08)',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    borderRadius: '6px',
+                    color: '#fff',
+                    padding: '10px',
+                    fontSize: '11px',
+                    letterSpacing: '1px',
+                    fontWeight: '600',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {uploadingMedia ? 'UPLOADING MEDIA...' : submitting ? 'SAVING...' : 'UPDATE PRODUCT'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>,
         document.body
