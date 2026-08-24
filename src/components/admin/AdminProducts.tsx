@@ -82,41 +82,70 @@ const ProductGallery = ({ images, productName }: { images: string[], productName
   );
 };
 
-const ProductAdminActionRow = ({ product, onUpdateStock, onDelete, onEdit }: { product: Product; onUpdateStock: (id: string | number, currentStock: number, change: number) => void; onDelete: (id: string | number) => void; onEdit: (product: Product) => void }) => {
+const ProductAdminActionRow = ({ product, onUpdateStock, onDelete, onEdit, onUnhide }: { product: Product; onUpdateStock: (id: string | number, currentStock: number, change: number) => void; onDelete: (id: string | number) => void; onEdit: (product: Product) => void; onUnhide: (id: string | number) => void }) => {
   const [step, setStep] = useState<'idle' | 'manage'>('idle');
   const isSoldOut = product.status === 'sold_out' || product.stock_quantity <= 0;
+  const isHidden = product.status === 'archived' || product.status === 'hidden';
 
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: '42px', marginTop: '10px', boxSizing: 'border-box', width: '100%' }}>
       {step === 'idle' && (
         <div className="animate-fade-in" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', gap: '6px' }}>
           <span style={{ fontSize: '14px', color: isSoldOut ? '#555' : '#fff', fontWeight: 500, fontFamily: 'monospace', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0, flexShrink: 1 }}>৳{product.price}</span>
-          <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexShrink: 0 }}>
-            <button
-              onClick={() => setStep('manage')}
-              className="smooth-transition"
-              style={{
-                height: '36px',
-                padding: '0 4px',
-                display: 'flex',
-                alignItems: 'center',
-                justify: 'center',
-                boxSizing: 'border-box',
-                background: 'transparent',
-                border: 'none',
-                borderRadius: '6px',
-                color: '#fff',
-                fontSize: '10px',
-                letterSpacing: '0.5px',
-                cursor: 'pointer',
-                textTransform: 'uppercase',
-                fontWeight: '600',
-                whiteSpace: 'nowrap',
-                flexShrink: 0
-              }}
-            >
-              STOCK ({product.stock_quantity})
-            </button>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 }}>
+            {isHidden ? (
+              <button
+                onClick={() => onUnhide(product.id)}
+                className="smooth-transition"
+                style={{
+                  height: '36px',
+                  padding: '0 8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justify: 'center',
+                  boxSizing: 'border-box',
+                  background: 'rgba(34, 197, 94, 0.15)',
+                  border: '1px solid rgba(34, 197, 94, 0.3)',
+                  borderRadius: '6px',
+                  color: '#22c55e',
+                  fontSize: '10px',
+                  letterSpacing: '0.5px',
+                  cursor: 'pointer',
+                  textTransform: 'uppercase',
+                  fontWeight: '600',
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0
+                }}
+              >
+                UNHIDE
+              </button>
+            ) : (
+              <button
+                onClick={() => setStep('manage')}
+                className="smooth-transition"
+                style={{
+                  height: '36px',
+                  padding: '0 4px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justify: 'center',
+                  boxSizing: 'border-box',
+                  background: 'transparent',
+                  border: 'none',
+                  borderRadius: '6px',
+                  color: '#fff',
+                  fontSize: '10px',
+                  letterSpacing: '0.5px',
+                  cursor: 'pointer',
+                  textTransform: 'uppercase',
+                  fontWeight: '600',
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0
+                }}
+              >
+                STOCK ({product.stock_quantity})
+              </button>
+            )}
             <div style={{ display: 'flex', gap: '2px', alignItems: 'center' }}>
               <button
                 onClick={() => onEdit(product)}
@@ -197,7 +226,7 @@ const ProductAdminActionRow = ({ product, onUpdateStock, onDelete, onEdit }: { p
   );
 };
 
-const ProductCard = ({ product, onUpdateStock, onDelete, onEdit }: { product: Product; onUpdateStock: any; onDelete: any; onEdit: any }) => {
+const ProductCard = ({ product, onUpdateStock, onDelete, onEdit, onUnhide }: { product: Product; onUpdateStock: any; onDelete: any; onEdit: any; onUnhide: any }) => {
   const [isDescExpanded, setIsDescExpanded] = useState(false);
 
   const imagesList = (product.product_media && product.product_media.length > 0)
@@ -299,7 +328,7 @@ const ProductCard = ({ product, onUpdateStock, onDelete, onEdit }: { product: Pr
           })()}
         </div>
 
-        <ProductAdminActionRow product={product} onUpdateStock={onUpdateStock} onDelete={onDelete} onEdit={onEdit} />
+        <ProductAdminActionRow product={product} onUpdateStock={onUpdateStock} onDelete={onDelete} onEdit={onEdit} onUnhide={onUnhide} />
       </div>
     </div>
   );
@@ -348,7 +377,7 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
   const [editMediaPreviews, setEditMediaPreviews] = useState<{ url: string; type: 'image' | 'video' }[]>([]);
 
   const [searchTerm, setSearchTerm] = useState<string>('');
-  const [stockFilter, setStockFilter] = useState<'all' | 'in_stock' | 'sold_out'>('all');
+  const [stockFilter, setStockFilter] = useState<'all' | 'in_stock' | 'sold_out' | 'hidden'>('all');
   const [dateSort, setDateSort] = useState<'newest' | 'oldest'>('newest');
   const [priceSort, setPriceSort] = useState<'none' | 'price_low' | 'price_high'>('none');
   const [startDate, setStartDate] = useState<string>('');
@@ -754,13 +783,26 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
     const productId = deletingProduct.id;
     setDeletingProduct(null);
     try {
-      setProducts(prev => prev.filter(p => p.id !== productId));
+      setProducts(prev => prev.map(p => p.id === productId ? { ...p, status: 'archived' } : p));
       const { error } = await supabase.from('products').update({ status: 'archived' }).eq('id', productId);
       if (error) throw error;
       showNotification('PRODUCT HIDDEN FROM CATALOG.');
     } catch (err) {
       console.error('Failed to hide product:', err);
       showNotification('COULD NOT HIDE PRODUCT.', 'error');
+      fetchProducts();
+    }
+  };
+
+  const handleUnhideProduct = async (productId: string | number) => {
+    try {
+      setProducts(prev => prev.map(p => p.id === productId ? { ...p, status: 'active' } : p));
+      const { error } = await supabase.from('products').update({ status: 'active' }).eq('id', productId);
+      if (error) throw error;
+      showNotification('PRODUCT UNHIDDEN AND RESTORED TO CATALOG.');
+    } catch (err) {
+      console.error('Failed to unhide product:', err);
+      showNotification('COULD NOT UNHIDE PRODUCT.', 'error');
       fetchProducts();
     }
   };
@@ -800,14 +842,19 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
   const activeSearch = searchQuery || searchTerm;
 
   let filteredProducts = products.filter(p => {
-    if (p.status === 'archived' || p.status === 'hidden') return false;
+    const isHiddenProduct = p.status === 'archived' || p.status === 'hidden';
+
+    if (stockFilter === 'hidden') {
+      if (!isHiddenProduct) return false;
+    } else {
+      if (isHiddenProduct) return false;
+      if (stockFilter === 'in_stock' && p.stock_quantity <= 0) return false;
+      if (stockFilter === 'sold_out' && p.stock_quantity > 0) return false;
+    }
 
     const matchesSearch = p.name.toLowerCase().includes(activeSearch.toLowerCase()) ||
                           p.category?.toLowerCase().includes(activeSearch.toLowerCase());
     if (!matchesSearch) return false;
-
-    if (stockFilter === 'in_stock' && p.stock_quantity <= 0) return false;
-    if (stockFilter === 'sold_out' && p.stock_quantity > 0) return false;
 
     const hasMin = minPrice !== '' && !isNaN(parseFloat(minPrice));
     const hasMax = maxPrice !== '' && !isNaN(parseFloat(maxPrice));
@@ -942,7 +989,8 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
                       {[
                         { label: 'ALL', value: 'all' },
                         { label: 'IN STOCK', value: 'in_stock' },
-                        { label: 'SOLD OUT', value: 'sold_out' }
+                        { label: 'SOLD OUT', value: 'sold_out' },
+                        { label: 'HIDDEN', value: 'hidden' }
                       ].map((item) => (
                         <button
                           key={item.value}
@@ -1125,6 +1173,7 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
                         onUpdateStock={handleStockUpdate}
                         onDelete={handleDeleteProduct}
                         onEdit={handleOpenEdit}
+                        onUnhide={handleUnhideProduct}
                       />
                     ))}
                   </div>
