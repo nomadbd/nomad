@@ -1,69 +1,56 @@
-Import React, { useState, useEffect } from 'react';
-Import { createPortal } from 'react-dom';
-Import { supabase } from '../../supabaseClient';
-Import { uploadToCloudinary, deleteFromCloudinary } from '../../cloudinary';
-Import './admin-animations.css';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import { supabase } from '../../supabaseClient';
+import { uploadToCloudinary, deleteFromCloudinary } from '../../cloudinary';
+import './admin-animations.css';
 
-Interface Product {
-  Id: string | number;
-  Name: string;
-  Description: string;
-  Price: number;
-  Category: string;
-  Stock_quantity: number;
-  Status: 'active' | 'sold_out' | string;
-  Sizes: string[];
-  Colors: string[];
-  Created_at: string;
-  Product_media: { media_url: string; media_type: string; sort_order?: number }[];
-  Details?: Record<string, string> | null;
-  Image_url?: string;
+interface Product {
+  id: string | number;
+  name: string;
+  description: string;
+  price: number;
+  category: string;
+  stock_quantity: number;
+  status: 'active' | 'sold_out' | string;
+  sizes: string[];
+  colors: string[];
+  created_at: string;
+  product_media: { media_url: string; media_type: string; sort_order?: number }[];
+  details?: Record<string, string> | null;
+  image_url?: string;
 }
 
-Interface AdminProductsProps {
-  ShowAddModal?: boolean;
-  SetShowAddModal?: React.Dispatch<React.SetStateAction<boolean>> | ((value: boolean) => void);
-  SearchQuery?: string;
-  OnSearchChange?: (query: string) => void;
-  IsFilterOpen?: boolean;
-  IsSearchOpen?: boolean;
-  DateFormat?: string;
-  IsAddOpen?: boolean;
-  OnToggleAdd?: () => void;
-  OnCloseAdd?: () => void;
+interface AdminProductsProps {
+  showAddModal?: boolean;
+  setShowAddModal?: React.Dispatch<React.SetStateAction<boolean>> | ((value: boolean) => void);
+  searchQuery?: string;
+  onSearchChange?: (query: string) => void;
+  isFilterOpen?: boolean;
+  isSearchOpen?: boolean;
+  dateFormat?: string;
+  isAddOpen?: boolean;
+  onToggleAdd?: () => void;
+  onCloseAdd?: () => void;
 }
 
-// হেল্পার ফাংশন: বিস্তারিত এরর মেসেজ বের করার জন্য
-Const getErrorMessage = (err: any): string => {
-  If (!err) return 'UNKNOWN ERROR';
-  If (typeof err === 'string') return err;
-  
-  Let msg = err.message || err.error_description || err.msg || 'AN UNEXPECTED ERROR OCCURRED';
-  If (err.details) msg += ` | Details: ${err.details}`;
-  If (err.hint) msg += ` | Hint: ${err.hint}`;
-  If (err.code) msg += ` (Code: ${err.code})`;
-  
-  Return msg;
-};
+const ProductGallery = ({ images, productName }: { images: string[], productName: string }) => {
+  const [currentIndex, setCurrentIndex] = useState(0);
 
-Const ProductGallery = ({ images, productName }: { images: string[], productName: string }) => {
-  Const [currentIndex, setCurrentIndex] = useState(0);
-
-  UseEffect(() => {
-    SetCurrentIndex(0);
+  useEffect(() => {
+    setCurrentIndex(0);
   }, [images]);
 
-  Const handlePrev = (e: React.MouseEvent) => {
-    E.stopPropagation();
-    SetCurrentIndex(prev => (prev > 0 ? Prev - 1 : images.length - 1));
+  const handlePrev = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCurrentIndex(prev => (prev > 0 ? prev - 1 : images.length - 1));
   };
 
-  Const handleNext = (e: React.MouseEvent) => {
-    E.stopPropagation();
-    SetCurrentIndex(prev => (prev < images.length - 1 ? Prev + 1 : 0));
+  const handleNext = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCurrentIndex(prev => (prev < images.length - 1 ? prev + 1 : 0));
   };
 
-  Return (
+  return (
     <div style={{ width: '100%', position: 'relative', overflow: 'hidden', backgroundColor: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       {images.length > 0 ? (
         <img src={images[currentIndex]} alt={productName} style={{ width: '100%', height: 'auto', display: 'block' }} />
@@ -78,13 +65,13 @@ Const ProductGallery = ({ images, productName }: { images: string[], productName
           <div style={{ position: 'absolute', bottom: '15px', left: 0, width: '100%', display: 'flex', justifyContent: 'center', gap: '6px', zIndex: 2 }}>
             {images.map((_, idx) => (
               <div
-                Key={idx}
-                ClassName="smooth-transition"
-                Style={{
-                  Width: '6px',
-                  Height: '6px',
-                  BorderRadius: '50%',
-                  Background: currentIndex === idx ? '#fff' : 'rgba(255,255,255,0.4)',
+                key={idx}
+                className="smooth-transition"
+                style={{
+                  width: '6px',
+                  height: '6px',
+                  borderRadius: '50%',
+                  background: currentIndex === idx ? '#fff' : 'rgba(255,255,255,0.4)',
                 }}
               />
             ))}
@@ -95,66 +82,66 @@ Const ProductGallery = ({ images, productName }: { images: string[], productName
   );
 };
 
-Const ProductAdminActionRow = ({ product, onUpdateStock, onDelete, onEdit }: { product: Product; onUpdateStock: (id: string | number, currentStock: number, change: number) => void; onDelete: (id: string | number) => void; onEdit: (product: Product) => void }) => {
-  Const [step, setStep] = useState<'idle' | 'manage'>('idle');
-  Const isSoldOut = product.status === 'sold_out' || product.stock_quantity <= 0;
+const ProductAdminActionRow = ({ product, onUpdateStock, onDelete, onEdit }: { product: Product; onUpdateStock: (id: string | number, currentStock: number, change: number) => void; onDelete: (id: string | number) => void; onEdit: (product: Product) => void }) => {
+  const [step, setStep] = useState<'idle' | 'manage'>('idle');
+  const isSoldOut = product.status === 'sold_out' || product.stock_quantity <= 0;
 
-  Return (
+  return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: '42px', marginTop: '10px', boxSizing: 'border-box', width: '100%' }}>
       {step === 'idle' && (
         <div className="animate-fade-in" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', gap: '6px' }}>
           <span style={{ fontSize: '14px', color: isSoldOut ? '#555' : '#fff', fontWeight: 500, fontFamily: 'monospace', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0, flexShrink: 1 }}>৳{product.price}</span>
           <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexShrink: 0 }}>
             <button
-              OnClick={() => setStep('manage')}
-              ClassName="smooth-transition"
-              Style={{
-                Height: '36px',
-                Padding: '0 4px',
-                Display: 'flex',
-                AlignItems: 'center',
-                JustifyContent: 'center',
-                BoxSizing: 'border-box',
-                Background: 'transparent',
-                Border: 'none',
-                BorderRadius: '6px',
-                Color: '#fff',
-                FontSize: '10px',
-                LetterSpacing: '0.5px',
-                Cursor: 'pointer',
-                TextTransform: 'uppercase',
-                FontWeight: '600',
-                WhiteSpace: 'nowrap',
-                FlexShrink: 0
+              onClick={() => setStep('manage')}
+              className="smooth-transition"
+              style={{
+                height: '36px',
+                padding: '0 4px',
+                display: 'flex',
+                alignItems: 'center',
+                justify: 'center',
+                boxSizing: 'border-box',
+                background: 'transparent',
+                border: 'none',
+                borderRadius: '6px',
+                color: '#fff',
+                fontSize: '10px',
+                letterSpacing: '0.5px',
+                cursor: 'pointer',
+                textTransform: 'uppercase',
+                fontWeight: '600',
+                whiteSpace: 'nowrap',
+                flexShrink: 0
               }}
             >
               STOCK ({product.stock_quantity})
             </button>
             <div style={{ display: 'flex', gap: '2px', alignItems: 'center' }}>
               <button
-                OnClick={() => onEdit(product)}
-                ClassName="smooth-transition"
-                Style={{
-                  Height: '36px',
-                  Width: '28px',
-                  Display: 'flex',
-                  AlignItems: 'center',
-                  JustifyContent: 'center',
-                  Padding: 0,
-                  LineHeight: 1,
-                  Background: 'transparent',
-                  Border: 'none',
-                  BorderRadius: '6px',
-                  Color: '#aaa',
-                  FontSize: '13px',
-                  Cursor: 'pointer',
-                  FlexShrink: 0
+                onClick={() => onEdit(product)}
+                className="smooth-transition"
+                style={{
+                  height: '36px',
+                  width: '28px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justify: 'center',
+                  padding: 0,
+                  lineHeight: 1,
+                  background: 'transparent',
+                  border: 'none',
+                  borderRadius: '6px',
+                  color: '#aaa',
+                  fontSize: '13px',
+                  cursor: 'pointer',
+                  flexShrink: 0
                 }}
-                OnMouseEnter={(e) => {
-                  E.currentTarget.style.color = '#ffffff';
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = '#ffffff';
                 }}
-                OnMouseLeave={(e) => {
-                  E.currentTarget.style.color = '#aaa';
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = '#aaa';
                 }}
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -163,30 +150,30 @@ Const ProductAdminActionRow = ({ product, onUpdateStock, onDelete, onEdit }: { p
                 </svg>
               </button>
               <button
-                OnClick={() => onDelete(product.id)}
-                ClassName="smooth-transition"
-                Style={{
-                  Height: '36px',
-                  Width: '28px',
-                  Display: 'flex',
-                  AlignItems: 'center',
-                  JustifyContent: 'center',
-                  Padding: 0,
-                  LineHeight: 1,
-                  Background: 'transparent',
-                  Border: 'none',
-                  BorderRadius: '6px',
-                  Color: '#ef4444',
-                  FontSize: '13px',
-                  Cursor: 'pointer',
-                  FontWeight: 'bold',
-                  FlexShrink: 0
+                onClick={() => onDelete(product.id)}
+                className="smooth-transition"
+                style={{
+                  height: '36px',
+                  width: '28px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justify: 'center',
+                  padding: 0,
+                  lineHeight: 1,
+                  background: 'transparent',
+                  border: 'none',
+                  borderRadius: '6px',
+                  color: '#ef4444',
+                  fontSize: '13px',
+                  cursor: 'pointer',
+                  fontWeight: 'bold',
+                  flexShrink: 0
                 }}
-                OnMouseEnter={(e) => {
-                  E.currentTarget.style.color = '#ff6666';
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = '#ff6666';
                 }}
-                OnMouseLeave={(e) => {
-                  E.currentTarget.style.color = '#ef4444';
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = '#ef4444';
                 }}
               >
                 <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>✕</span>
@@ -210,14 +197,14 @@ Const ProductAdminActionRow = ({ product, onUpdateStock, onDelete, onEdit }: { p
   );
 };
 
-Const ProductCard = ({ product, onUpdateStock, onDelete, onEdit }: { product: Product; onUpdateStock: any; onDelete: any; onEdit: any }) => {
-  Const [isDescExpanded, setIsDescExpanded] = useState(false);
+const ProductCard = ({ product, onUpdateStock, onDelete, onEdit }: { product: Product; onUpdateStock: any; onDelete: any; onEdit: any }) => {
+  const [isDescExpanded, setIsDescExpanded] = useState(false);
 
-  Const imagesList = (product.product_media && product.product_media.length > 0)
-    ? Product.product_media.map(m => m.media_url)
+  const imagesList = (product.product_media && product.product_media.length > 0)
+    ? product.product_media.map(m => m.media_url)
     : (product.image_url ? [product.image_url] : []);
 
-  Return (
+  return (
     <div className="showroom-card-item animate-card smooth-transition" style={{ scrollSnapAlign: 'start', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', backgroundColor: '#050505', border: '1px solid #1a1a1a', padding: '12px', borderRadius: '8px' }}>
       <ProductGallery images={imagesList} productName={product.name} />
 
@@ -226,20 +213,20 @@ Const ProductCard = ({ product, onUpdateStock, onDelete, onEdit }: { product: Pr
 
         <div style={{ margin: '0 0 10px 0' }}>
           {(() => {
-            Const descriptionText = product.description || '';
-            Const characterLimit = 75;
-            Const isLongText = descriptionText.length > characterLimit;
-            Const displayedText = isLongText ? DescriptionText.slice(0, characterLimit) + '...' : descriptionText;
+            const descriptionText = product.description || '';
+            const characterLimit = 75;
+            const isLongText = descriptionText.length > characterLimit;
+            const displayedText = isLongText ? descriptionText.slice(0, characterLimit) + '...' : descriptionText;
 
-            Return !isDescExpanded ? (
+            return !isDescExpanded ? (
               <p style={{ fontSize: '13px', color: '#aaa', margin: 0, lineHeight: '1.4' }}>
                 {displayedText || 'No description provided.'}
                 <span
-                  OnClick={() => setIsDescExpanded(true)}
-                  ClassName="smooth-transition"
-                  Style={{ fontSize: '12px', color: '#fff', cursor: 'pointer', marginLeft: '6px', fontWeight: '500', display: 'inline' }}
+                  onClick={() => setIsDescExpanded(true)}
+                  className="smooth-transition"
+                  style={{ fontSize: '12px', color: '#fff', cursor: 'pointer', marginLeft: '6px', fontWeight: '500', display: 'inline' }}
                 >
-                  See more
+                  see more
                 </span>
               </p>
             ) : (
@@ -250,7 +237,7 @@ Const ProductCard = ({ product, onUpdateStock, onDelete, onEdit }: { product: Pr
                 {product.details && Object.keys(product.details).length > 0 && (
                   <div style={{ borderTop: '1px solid #1a1a1a', marginTop: '12px', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px', fontFamily: 'monospace', fontSize: '12px' }}>
                     {(() => {
-                      Const specKeys = [
+                      const specKeys = [
                         'FIT',
                         'GSM',
                         'MATERIAL',
@@ -262,26 +249,26 @@ Const ProductCard = ({ product, onUpdateStock, onDelete, onEdit }: { product: Pr
                         'MADE IN'
                       ];
 
-                      Const detailsObj = product.details || {};
-                      Const detailKeys = Object.keys(detailsObj);
+                      const detailsObj = product.details || {};
+                      const detailKeys = Object.keys(detailsObj);
 
-                      Const getVal = (targetKey: string) => {
-                        Const foundKey = detailKeys.find(
+                      const getVal = (targetKey: string) => {
+                        const foundKey = detailKeys.find(
                           (k) =>
-                            K.trim().toUpperCase() === targetKey ||
-                            K.trim().toUpperCase().replace(/\s+/g, '') === targetKey.replace(/\s+/g, '')
+                            k.trim().toUpperCase() === targetKey ||
+                            k.trim().toUpperCase().replace(/\s+/g, '') === targetKey.replace(/\s+/g, '')
                         );
-                        Return foundKey ? DetailsObj[foundKey] : null;
+                        return foundKey ? detailsObj[foundKey] : null;
                       };
 
-                      Const detailsVal = getVal('DETAILS');
+                      const detailsVal = getVal('DETAILS');
 
-                      Return (
+                      return (
                         <>
                           {specKeys.map((key) => {
-                            Const val = getVal(key);
-                            If (!val) return null;
-                            Return (
+                            const val = getVal(key);
+                            if (!val) return null;
+                            return (
                               <div key={key} style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'flex-start' }}>
                                 <span style={{ color: '#fff', width: '95px', flexShrink: 0, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{key}</span>
                                 <span style={{ color: '#555', marginRight: '10px', flexShrink: 0 }}>:</span>
@@ -301,11 +288,11 @@ Const ProductCard = ({ product, onUpdateStock, onDelete, onEdit }: { product: Pr
                   </div>
                 )}
                 <span
-                  OnClick={() => setIsDescExpanded(false)}
-                  ClassName="smooth-transition"
-                  Style={{ fontSize: '11px', color: '#fff', cursor: 'pointer', marginTop: '12px', display: 'inline-block', letterSpacing: '0.5px' }}
+                  onClick={() => setIsDescExpanded(false)}
+                  className="smooth-transition"
+                  style={{ fontSize: '11px', color: '#fff', cursor: 'pointer', marginTop: '12px', display: 'inline-block', letterSpacing: '0.5px' }}
                 >
-                  See less
+                  see less
                 </span>
               </div>
             );
@@ -318,622 +305,609 @@ Const ProductCard = ({ product, onUpdateStock, onDelete, onEdit }: { product: Pr
   );
 };
 
-Const AdminProducts: React.FC<AdminProductsProps> = ({
-  ShowAddModal: externalShowAddModal,
-  SetShowAddModal: externalSetShowAddModal,
-  SearchQuery = '',
-  OnSearchChange,
-  IsFilterOpen = false,
-  IsSearchOpen = false,
-  DateFormat,
-  IsAddOpen,
-  OnToggleAdd,
-  OnCloseAdd
+const AdminProducts: React.FC<AdminProductsProps> = ({
+  showAddModal: externalShowAddModal,
+  setShowAddModal: externalSetShowAddModal,
+  searchQuery = '',
+  onSearchChange,
+  isFilterOpen = false,
+  isSearchOpen = false,
+  dateFormat,
+  isAddOpen,
+  onToggleAdd,
+  onCloseAdd
 }) => {
-  Const [products, setProducts] = useState<Product[]>([]);
-  Const [categories, setCategories] = useState<string[]>([]);
-  Const [loading, setLoading] = useState<boolean>(true);
-  Const [showAddModal, setShowAddModal] = useState<boolean>(false);
-  Const [submitting, setSubmitting] = useState<boolean>(false);
-  Const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [showAddModal, setShowAddModal] = useState<boolean>(false);
+  const [submitting, setSubmitting] = useState<boolean>(false);
+  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
 
-  Const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
+  const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
 
-  Const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  Const [editName, setEditName] = useState<string>('');
-  Const [editPrice, setEditPrice] = useState<string>('');
-  Const [editStock, setEditStock] = useState<string>('');
-  Const [editCategory, setEditCategory] = useState<string>('');
-  Const [editDescription, setEditDescription] = useState<string>('');
-  Const [editFit, setEditFit] = useState<string>('');
-  Const [editGsm, setEditGsm] = useState<string>('');
-  Const [editMadeIn, setEditMadeIn] = useState<string>('');
-  Const [editMaterial, setEditMaterial] = useState<string>('');
-  Const [editCare, setEditCare] = useState<string>('');
-  Const [editSleeve, setEditSleeve] = useState<string>('');
-  Const [editPattern, setEditPattern] = useState<string>('');
-  Const [editOccasion, setEditOccasion] = useState<string>('');
-  Const [editSizes, setEditSizes] = useState<string>('');
-  Const [editColors, setEditColors] = useState<string>('');
-  Const [editDetails, setEditDetails] = useState<string>('');
-  Const [editExistingMedia, setEditExistingMedia] = useState<{ id?: string | number; media_url: string; media_type: string }[]>([]);
-  Const [editMediaFiles, setEditMediaFiles] = useState<File[]>([]);
-  Const [editMediaPreviews, setEditMediaPreviews] = useState<{ url: string; type: 'image' | 'video' }[]>([]);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [editName, setEditName] = useState<string>('');
+  const [editPrice, setEditPrice] = useState<string>('');
+  const [editStock, setEditStock] = useState<string>('');
+  const [editCategory, setEditCategory] = useState<string>('');
+  const [editDescription, setEditDescription] = useState<string>('');
+  const [editFit, setEditFit] = useState<string>('');
+  const [editGsm, setEditGsm] = useState<string>('');
+  const [editMadeIn, setEditMadeIn] = useState<string>('');
+  const [editMaterial, setEditMaterial] = useState<string>('');
+  const [editCare, setEditCare] = useState<string>('');
+  const [editSleeve, setEditSleeve] = useState<string>('');
+  const [editPattern, setEditPattern] = useState<string>('');
+  const [editOccasion, setEditOccasion] = useState<string>('');
+  const [editSizes, setEditSizes] = useState<string>('');
+  const [editColors, setEditColors] = useState<string>('');
+  const [editDetails, setEditDetails] = useState<string>('');
+  const [editExistingMedia, setEditExistingMedia] = useState<{ id?: string | number; media_url: string; media_type: string }[]>([]);
+  const [editMediaFiles, setEditMediaFiles] = useState<File[]>([]);
+  const [editMediaPreviews, setEditMediaPreviews] = useState<{ url: string; type: 'image' | 'video' }[]>([]);
 
-  Const [searchTerm, setSearchTerm] = useState<string>('');
-  Const [stockFilter, setStockFilter] = useState<'all' | 'in_stock' | 'sold_out'>('all');
-  Const [dateSort, setDateSort] = useState<'newest' | 'oldest'>('newest');
-  Const [priceSort, setPriceSort] = useState<'none' | 'price_low' | 'price_high'>('none');
-  Const [startDate, setStartDate] = useState<string>('');
-  Const [endDate, setEndDate] = useState<string>('');
-  Const [minPrice, setMinPrice] = useState<string>('');
-  Const [maxPrice, setMaxPrice] = useState<string>('');
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [stockFilter, setStockFilter] = useState<'all' | 'in_stock' | 'sold_out'>('all');
+  const [dateSort, setDateSort] = useState<'newest' | 'oldest'>('newest');
+  const [priceSort, setPriceSort] = useState<'none' | 'price_low' | 'price_high'>('none');
+  const [startDate, setStartDate] = useState<string>('');
+  const [endDate, setEndDate] = useState<string>('');
+  const [minPrice, setMinPrice] = useState<string>('');
+  const [maxPrice, setMaxPrice] = useState<string>('');
 
-  Const [newName, setNewName] = useState<string>('');
-  Const [newPrice, setNewPrice] = useState<string>('');
-  Const [newStock, setNewStock] = useState<string>('');
-  Const [newCategory, setNewCategory] = useState<string>('');
-  Const [newDescription, setNewDescription] = useState<string>('');
+  const [newName, setNewName] = useState<string>('');
+  const [newPrice, setNewPrice] = useState<string>('');
+  const [newStock, setNewStock] = useState<string>('');
+  const [newCategory, setNewCategory] = useState<string>('');
+  const [newDescription, setNewDescription] = useState<string>('');
 
-  Const [newFit, setNewFit] = useState<string>('');
-  Const [newGsm, setNewGsm] = useState<string>('');
-  Const [newMadeIn, setNewMadeIn] = useState<string>('');
-  Const [newMaterial, setNewMaterial] = useState<string>('');
-  Const [newCare, setNewCare] = useState<string>('');
-  Const [newSleeve, setNewSleeve] = useState<string>('');
-  Const [newPattern, setNewPattern] = useState<string>('');
-  Const [newOccasion, setNewOccasion] = useState<string>('');
-  Const [newSizes, setNewSizes] = useState<string>('');
-  Const [newColors, setNewColors] = useState<string>('');
-  Const [newDetails, setNewDetails] = useState<string>('');
+  const [newFit, setNewFit] = useState<string>('');
+  const [newGsm, setNewGsm] = useState<string>('');
+  const [newMadeIn, setNewMadeIn] = useState<string>('');
+  const [newMaterial, setNewMaterial] = useState<string>('');
+  const [newCare, setNewCare] = useState<string>('');
+  const [newSleeve, setNewSleeve] = useState<string>('');
+  const [newPattern, setNewPattern] = useState<string>('');
+  const [newOccasion, setNewOccasion] = useState<string>('');
+  const [newSizes, setNewSizes] = useState<string>('');
+  const [newColors, setNewColors] = useState<string>('');
+  const [newDetails, setNewDetails] = useState<string>('');
 
-  Const [mediaFiles, setMediaFiles] = useState<File[]>([]);
-  Const [mediaPreviews, setMediaPreviews] = useState<{ url: string; type: 'image' | 'video' }[]>([]);
-  Const [uploadingMedia, setUploadingMedia] = useState<boolean>(false);
+  const [mediaFiles, setMediaFiles] = useState<File[]>([]);
+  const [mediaPreviews, setMediaPreviews] = useState<{ url: string; type: 'image' | 'video' }[]>([]);
+  const [uploadingMedia, setUploadingMedia] = useState<boolean>(false);
 
-  Const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
-  UseEffect(() => {
-    If (isAddOpen !== undefined) {
-      SetShowAddModal(isAddOpen);
+  useEffect(() => {
+    if (isAddOpen !== undefined) {
+      setShowAddModal(isAddOpen);
     } else if (externalShowAddModal !== undefined) {
-      SetShowAddModal(externalShowAddModal);
+      setShowAddModal(externalShowAddModal);
     }
   }, [isAddOpen, externalShowAddModal]);
 
-  Const handleSetShowAddModal = (value: boolean) => {
-    SetShowAddModal(value);
-    If (externalSetShowAddModal) {
-      ExternalSetShowAddModal(value);
+  const handleSetShowAddModal = (value: boolean) => {
+    setShowAddModal(value);
+    if (externalSetShowAddModal) {
+      externalSetShowAddModal(value);
     }
-    If (!value && onCloseAdd) {
-      OnCloseAdd();
+    if (!value && onCloseAdd) {
+      onCloseAdd();
     }
   };
 
-  Const showNotification = (message: string, type: 'success' | 'error' = 'success') => {
-    SetNotification({ message, type });
-    SetTimeout(() => {
-      SetNotification(null);
-    }, 6000); // এরর ভালো করে পড়ার সুবিধার্থে সময় একটু বাড়িয়ে ৬ সেকেন্ড করা হয়েছে
+  const showNotification = (message: string, type: 'success' | 'error' = 'success') => {
+    setNotification({ message, type });
+    setTimeout(() => {
+      setNotification(null);
+    }, 4000);
   };
 
-  Const fetchProducts = async () => {
-    Try {
-      SetLoading(true);
-      Const { data, error } = await supabase
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
         .from('products')
         .select(`
           *,
-          Product_media (
-            Media_url,
-            Media_type,
-            Sort_order
+          product_media (
+            media_url,
+            media_type,
+            sort_order
           )
         `)
         .order('created_at', { ascending: false });
 
-      If (error) throw error;
+      if (error) throw error;
 
-      If (data) {
-        Const formatted = data.map((p: any) => {
-          Const sortedMedia = p.product_media?.sort((a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
-          Return {
-            Id: p.id,
-            Name: p.name,
-            Description: p.description || '',
-            Details: p.details || {},
-            Sizes: p.sizes || [],
-            Colors: p.colors || [],
-            Price: p.price,
-            Stock_quantity: p.stock_quantity ?? 0,
-            Status: p.status || 'active',
-            Category: p.category || 'GENERAL',
-            Created_at: p.created_at,
-            Product_media: sortedMedia || [],
-            Image_url: p.image_url
+      if (data) {
+        const formatted = data.map((p: any) => {
+          const sortedMedia = p.product_media?.sort((a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+          return {
+            id: p.id,
+            name: p.name,
+            description: p.description || '',
+            details: p.details || {},
+            sizes: p.sizes || [],
+            colors: p.colors || [],
+            price: p.price,
+            stock_quantity: p.stock_quantity ?? 0,
+            status: p.status || 'active',
+            category: p.category || 'GENERAL',
+            created_at: p.created_at,
+            product_media: sortedMedia || [],
+            image_url: p.image_url
           };
         });
 
-        SetProducts(formatted);
-        Const uniqueCategories = Array.from(new Set(formatted.map((p: Product) => p.category)));
-        SetCategories(uniqueCategories);
+        setProducts(formatted);
+        const uniqueCategories = Array.from(new Set(formatted.map((p: Product) => p.category)));
+        setCategories(uniqueCategories);
       }
-    } catch (err: any) {
-      Console.error('Error fetching admin products:', err);
-      ShowNotification(`FETCH ERROR: ${getErrorMessage(err)}`, 'error');
+    } catch (err) {
+      console.error('Error fetching admin products:', err);
     } finally {
-      SetLoading(false);
+      setLoading(false);
     }
   };
 
-  UseEffect(() => {
-    FetchProducts();
+  useEffect(() => {
+    fetchProducts();
   }, []);
 
-  Const handleMediaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    Const files = Array.from(e.target.files || []);
-    If (files.length > 0) {
-      SetMediaFiles(prev => [...prev, ...files]);
-      Const newPreviews = files.map(file => ({
-        Url: URL.createObjectURL(file),
-        Type: file.type.startsWith('video') ? ('video' as const) : ('image' as const)
+  const handleMediaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length > 0) {
+      setMediaFiles(prev => [...prev, ...files]);
+      const newPreviews = files.map(file => ({
+        url: URL.createObjectURL(file),
+        type: file.type.startsWith('video') ? ('video' as const) : ('image' as const)
       }));
-      SetMediaPreviews(prev => [...prev, ...newPreviews]);
+      setMediaPreviews(prev => [...prev, ...newPreviews]);
     }
-    E.target.value = '';
+    e.target.value = '';
   };
 
-  Const removeSelectedMedia = (index: number) => {
-    SetMediaPreviews(prev => {
-      If (prev[index]?.url) {
+  const removeSelectedMedia = (index: number) => {
+    setMediaPreviews(prev => {
+      if (prev[index]?.url) {
         URL.revokeObjectURL(prev[index].url);
       }
-      Return prev.filter((_, i) => i !== index);
+      return prev.filter((_, i) => i !== index);
     });
-    SetMediaFiles(prev => prev.filter((_, i) => i !== index));
+    setMediaFiles(prev => prev.filter((_, i) => i !== index));
   };
 
-  Const resetForm = () => {
-    MediaPreviews.forEach(m => {
-      If (m.url) URL.revokeObjectURL(m.url);
+  const resetForm = () => {
+    mediaPreviews.forEach(m => {
+      if (m.url) URL.revokeObjectURL(m.url);
     });
-    SetNewName('');
-    SetNewPrice('');
-    SetNewStock('');
-    SetNewDescription('');
-    SetNewCategory('');
-    SetNewFit('');
-    SetNewGsm('');
-    SetNewMadeIn('');
-    SetNewMaterial('');
-    SetNewCare('');
-    SetNewSleeve('');
-    SetNewPattern('');
-    SetNewOccasion('');
-    SetNewSizes('');
-    SetNewColors('');
-    SetNewDetails('');
-    SetMediaFiles([]);
-    SetMediaPreviews([]);
+    setNewName('');
+    setNewPrice('');
+    setNewStock('');
+    setNewDescription('');
+    setNewCategory('');
+    setNewFit('');
+    setNewGsm('');
+    setNewMadeIn('');
+    setNewMaterial('');
+    setNewCare('');
+    setNewSleeve('');
+    setNewPattern('');
+    setNewOccasion('');
+    setNewSizes('');
+    setNewColors('');
+    setNewDetails('');
+    setMediaFiles([]);
+    setMediaPreviews([]);
   };
 
-  Const handleDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    Const val = e.target.value;
-    Const words = val.trim().split(/\s+/).filter(Boolean);
-    If (words.length <= 200 || val.length < newDescription.length) {
-      SetNewDescription(val);
+  const handleDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const val = e.target.value;
+    const words = val.trim().split(/\s+/).filter(Boolean);
+    if (words.length <= 200 || val.length < newDescription.length) {
+      setNewDescription(val);
     }
   };
 
-  Const handleAddProduct = async (e: React.FormEvent) => {
-    E.preventDefault();
-    If (!newName || !newPrice) {
-      ShowNotification('PRODUCT NAME AND PRICE ARE REQUIRED.', 'error');
-      Return;
+  const handleAddProduct = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newName || !newPrice) {
+      showNotification('PRODUCT NAME AND PRICE ARE REQUIRED.', 'error');
+      return;
     }
 
-    Try {
-      SetSubmitting(true);
+    try {
+      setSubmitting(true);
 
-      Const detailsJson: Record<string, string> = {};
-      If (newFit) detailsJson['FIT'] = newFit;
-      If (newGsm) detailsJson['GSM'] = newGsm;
-      If (newMaterial) detailsJson['MATERIAL'] = newMaterial;
-      If (newCare) detailsJson['CARE'] = newCare;
-      If (newSleeve) detailsJson['SLEEVE'] = newSleeve;
-      If (newPattern) detailsJson['PATTERN'] = newPattern;
-      If (newOccasion) detailsJson['OCCASION'] = newOccasion;
-      If (newMadeIn) detailsJson['MADE IN'] = newMadeIn;
-      If (newDetails) detailsJson['DETAILS'] = newDetails;
+      const detailsJson: Record<string, string> = {};
+      if (newFit) detailsJson['FIT'] = newFit;
+      if (newGsm) detailsJson['GSM'] = newGsm;
+      if (newMaterial) detailsJson['MATERIAL'] = newMaterial;
+      if (newCare) detailsJson['CARE'] = newCare;
+      if (newSleeve) detailsJson['SLEEVE'] = newSleeve;
+      if (newPattern) detailsJson['PATTERN'] = newPattern;
+      if (newOccasion) detailsJson['OCCASION'] = newOccasion;
+      if (newMadeIn) detailsJson['MADE IN'] = newMadeIn;
+      if (newDetails) detailsJson['DETAILS'] = newDetails;
 
-      Const sizesArray = newSizes.split(',').map(s => s.trim()).filter(Boolean);
-      Const colorsArray = newColors.split(',').map(c => c.trim().toUpperCase()).filter(Boolean);
+      const sizesArray = newSizes.split(',').map(s => s.trim()).filter(Boolean);
+      const colorsArray = newColors.split(',').map(c => c.trim().toUpperCase()).filter(Boolean);
 
-      Const { data: newProd, error: prodError } = await supabase
+      const { data: newProd, error: prodError } = await supabase
         .from('products')
         .insert([{
-          Name: newName,
-          Price: parseFloat(newPrice),
-          Stock_quantity: parseInt(newStock || '0', 10),
-          Category: newCategory || 'GENERAL',
-          Description: newDescription,
-          Details: detailsJson,
-          Sizes: sizesArray,
-          Colors: colorsArray
+          name: newName,
+          price: parseFloat(newPrice),
+          stock_quantity: parseInt(newStock || '0', 10),
+          category: newCategory || 'GENERAL',
+          description: newDescription,
+          details: detailsJson,
+          sizes: sizesArray,
+          colors: colorsArray
         }])
         .select()
         .single();
 
-      If (prodError) throw prodError;
+      if (prodError) throw prodError;
 
-      If (mediaFiles.length > 0 && newProd) {
-        SetUploadingMedia(true);
-        For (let i = 0; i < mediaFiles.length; i++) {
-          Const file = mediaFiles[i];
-          Const mediaUrl = await uploadToCloudinary(file);
-          Const mediaType = file.type.startsWith('video') ? 'video' : 'image';
+      if (mediaFiles.length > 0 && newProd) {
+        setUploadingMedia(true);
+        for (let i = 0; i < mediaFiles.length; i++) {
+          const file = mediaFiles[i];
+          const mediaUrl = await uploadToCloudinary(file);
+          const mediaType = file.type.startsWith('video') ? 'video' : 'image';
 
-          Const { error: mediaErr } = await supabase.from('product_media').insert([{
-            Product_id: newProd.id,
-            Media_url: mediaUrl,
-            Media_type: mediaType,
-            Sort_order: i
+          await supabase.from('product_media').insert([{
+            product_id: newProd.id,
+            media_url: mediaUrl,
+            media_type: mediaType,
+            sort_order: i
           }]);
-
-          If (mediaErr) throw mediaErr;
         }
-        SetUploadingMedia(false);
+        setUploadingMedia(false);
       }
 
-      HandleSetShowAddModal(false);
-      ResetForm();
-      FetchProducts();
-      ShowNotification('PRODUCT & MULTIPLE MEDIA FILES UPLOADED SUCCESSFULLY.');
+      handleSetShowAddModal(false);
+      resetForm();
+      fetchProducts();
+      showNotification('PRODUCT & MULTIPLE MEDIA FILES UPLOADED SUCCESSFULLY.');
     } catch (err: any) {
-      Console.error('Error creating product:', err);
-      ShowNotification(`CREATE FAILED: ${getErrorMessage(err)}`, 'error');
+      console.error('Error creating product:', err);
+      showNotification(err.message || 'FAILED TO CREATE PRODUCT.', 'error');
     } finally {
-      SetSubmitting(false);
-      SetUploadingMedia(false);
+      setSubmitting(false);
+      setUploadingMedia(false);
     }
   };
 
-  Const handleOpenEdit = (product: Product) => {
-    SetEditingProduct(product);
-    SetEditName(product.name || '');
-    SetEditPrice(product.price ? String(product.price) : '');
-    SetEditStock(product.stock_quantity !== undefined ? String(product.stock_quantity) : '0');
-    SetEditCategory(product.category || '');
-    SetEditDescription(product.description || '');
+  const handleOpenEdit = (product: Product) => {
+    setEditingProduct(product);
+    setEditName(product.name || '');
+    setEditPrice(product.price ? String(product.price) : '');
+    setEditStock(product.stock_quantity !== undefined ? String(product.stock_quantity) : '0');
+    setEditCategory(product.category || '');
+    setEditDescription(product.description || '');
 
-    Const details = product.details || {};
-    Const getDetail = (key: string) => {
-      Const foundKey = Object.keys(details).find(
-        K => k.trim().toUpperCase() === key || k.trim().toUpperCase().replace(/\s+/g, '') === key.replace(/\s+/g, '')
+    const details = product.details || {};
+    const getDetail = (key: string) => {
+      const foundKey = Object.keys(details).find(
+        k => k.trim().toUpperCase() === key || k.trim().toUpperCase().replace(/\s+/g, '') === key.replace(/\s+/g, '')
       );
-      Return foundKey ? Details[foundKey] : '';
+      return foundKey ? details[foundKey] : '';
     };
 
-    SetEditFit(getDetail('FIT'));
-    SetEditGsm(getDetail('GSM'));
-    SetEditMadeIn(getDetail('MADE IN'));
-    SetEditMaterial(getDetail('MATERIAL'));
-    SetEditCare(getDetail('CARE'));
-    SetEditSleeve(getDetail('SLEEVE'));
-    SetEditPattern(getDetail('PATTERN'));
-    SetEditOccasion(getDetail('OCCASION'));
-    SetEditDetails(getDetail('DETAILS'));
+    setEditFit(getDetail('FIT'));
+    setEditGsm(getDetail('GSM'));
+    setEditMadeIn(getDetail('MADE IN'));
+    setEditMaterial(getDetail('MATERIAL'));
+    setEditCare(getDetail('CARE'));
+    setEditSleeve(getDetail('SLEEVE'));
+    setEditPattern(getDetail('PATTERN'));
+    setEditOccasion(getDetail('OCCASION'));
+    setEditDetails(getDetail('DETAILS'));
 
-    SetEditSizes(product.sizes ? Product.sizes.join(', ') : '');
-    SetEditColors(product.colors ? Product.colors.join(', ') : '');
-    SetEditExistingMedia(product.product_media || []);
-    SetEditMediaFiles([]);
-    SetEditMediaPreviews([]);
+    setEditSizes(product.sizes ? product.sizes.join(', ') : '');
+    setEditColors(product.colors ? product.colors.join(', ') : '');
+    setEditExistingMedia(product.product_media || []);
+    setEditMediaFiles([]);
+    setEditMediaPreviews([]);
   };
 
-  Const handleEditMediaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    Const files = Array.from(e.target.files || []);
-    If (files.length > 0) {
-      SetEditMediaFiles(prev => [...prev, ...files]);
-      Const newPreviews = files.map(file => ({
-        Url: URL.createObjectURL(file),
-        Type: file.type.startsWith('video') ? ('video' as const) : ('image' as const)
+  const handleEditMediaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length > 0) {
+      setEditMediaFiles(prev => [...prev, ...files]);
+      const newPreviews = files.map(file => ({
+        url: URL.createObjectURL(file),
+        type: file.type.startsWith('video') ? ('video' as const) : ('image' as const)
       }));
-      SetEditMediaPreviews(prev => [...prev, ...newPreviews]);
+      setEditMediaPreviews(prev => [...prev, ...newPreviews]);
     }
-    E.target.value = '';
+    e.target.value = '';
   };
 
-  Const removeSelectedEditMedia = (index: number) => {
-    SetEditMediaPreviews(prev => {
-      If (prev[index]?.url) {
+  const removeSelectedEditMedia = (index: number) => {
+    setEditMediaPreviews(prev => {
+      if (prev[index]?.url) {
         URL.revokeObjectURL(prev[index].url);
       }
-      Return prev.filter((_, i) => i !== index);
+      return prev.filter((_, i) => i !== index);
     });
-    SetEditMediaFiles(prev => prev.filter((_, i) => i !== index));
+    setEditMediaFiles(prev => prev.filter((_, i) => i !== index));
   };
 
-  Const removeExistingMedia = (index: number) => {
-    SetEditExistingMedia(prev => prev.filter((_, i) => i !== index));
+  const removeExistingMedia = (index: number) => {
+    setEditExistingMedia(prev => prev.filter((_, i) => i !== index));
   };
 
-  Const handleEditDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    Const val = e.target.value;
-    Const words = val.trim().split(/\s+/).filter(Boolean);
-    If (words.length <= 200 || val.length < editDescription.length) {
-      SetEditDescription(val);
+  const handleEditDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const val = e.target.value;
+    const words = val.trim().split(/\s+/).filter(Boolean);
+    if (words.length <= 200 || val.length < editDescription.length) {
+      setEditDescription(val);
     }
   };
 
-  Const handleUpdateProduct = async (e: React.FormEvent) => {
-    E.preventDefault();
-    If (!editingProduct || !editName || !editPrice) {
-      ShowNotification('PRODUCT NAME AND PRICE ARE REQUIRED.', 'error');
-      Return;
+  const handleUpdateProduct = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingProduct || !editName || !editPrice) {
+      showNotification('PRODUCT NAME AND PRICE ARE REQUIRED.', 'error');
+      return;
     }
 
-    Try {
-      SetSubmitting(true);
+    try {
+      setSubmitting(true);
 
-      Const detailsJson: Record<string, string> = {};
-      If (editFit) detailsJson['FIT'] = editFit;
-      If (editGsm) detailsJson['GSM'] = editGsm;
-      If (editMaterial) detailsJson['MATERIAL'] = editMaterial;
-      If (editCare) detailsJson['CARE'] = editCare;
-      If (editSleeve) detailsJson['SLEEVE'] = editSleeve;
-      If (editPattern) detailsJson['PATTERN'] = editPattern;
-      If (editOccasion) detailsJson['OCCASION'] = editOccasion;
-      If (editMadeIn) detailsJson['MADE IN'] = editMadeIn;
-      If (editDetails) detailsJson['DETAILS'] = editDetails;
+      const detailsJson: Record<string, string> = {};
+      if (editFit) detailsJson['FIT'] = editFit;
+      if (editGsm) detailsJson['GSM'] = editGsm;
+      if (editMaterial) detailsJson['MATERIAL'] = editMaterial;
+      if (editCare) detailsJson['CARE'] = editCare;
+      if (editSleeve) detailsJson['SLEEVE'] = editSleeve;
+      if (editPattern) detailsJson['PATTERN'] = editPattern;
+      if (editOccasion) detailsJson['OCCASION'] = editOccasion;
+      if (editMadeIn) detailsJson['MADE IN'] = editMadeIn;
+      if (editDetails) detailsJson['DETAILS'] = editDetails;
 
-      Const sizesArray = editSizes.split(',').map(s => s.trim()).filter(Boolean);
-      Const colorsArray = editColors.split(',').map(c => c.trim().toUpperCase()).filter(Boolean);
+      const sizesArray = editSizes.split(',').map(s => s.trim()).filter(Boolean);
+      const colorsArray = editColors.split(',').map(c => c.trim().toUpperCase()).filter(Boolean);
 
-      Const { error: updateError } = await supabase
+      const { error: updateError } = await supabase
         .from('products')
         .update({
-          Name: editName,
-          Price: parseFloat(editPrice),
-          Stock_quantity: parseInt(editStock || '0', 10),
-          Category: editCategory || 'GENERAL',
-          Description: editDescription,
-          Details: detailsJson,
-          Sizes: sizesArray,
-          Colors: colorsArray
+          name: editName,
+          price: parseFloat(editPrice),
+          stock_quantity: parseInt(editStock || '0', 10),
+          category: editCategory || 'GENERAL',
+          description: editDescription,
+          details: detailsJson,
+          sizes: sizesArray,
+          colors: colorsArray
         })
         .eq('id', editingProduct.id);
 
-      If (updateError) throw updateError;
+      if (updateError) throw updateError;
 
-      Const { error: delMediaErr } = await supabase.from('product_media').delete().eq('product_id', editingProduct.id);
-      If (delMediaErr) throw delMediaErr;
+      await supabase.from('product_media').delete().eq('product_id', editingProduct.id);
 
-      For (let i = 0; i < editExistingMedia.length; i++) {
-        Const { error: insExistingErr } = await supabase.from('product_media').insert([{
-          Product_id: editingProduct.id,
-          Media_url: editExistingMedia[i].media_url,
-          Media_type: editExistingMedia[i].media_type,
-          Sort_order: i
+      for (let i = 0; i < editExistingMedia.length; i++) {
+        await supabase.from('product_media').insert([{
+          product_id: editingProduct.id,
+          media_url: editExistingMedia[i].media_url,
+          media_type: editExistingMedia[i].media_type,
+          sort_order: i
         }]);
-        If (insExistingErr) throw insExistingErr;
       }
 
-      If (editMediaFiles.length > 0) {
-        SetUploadingMedia(true);
-        Const startOrder = editExistingMedia.length;
-        For (let i = 0; i < editMediaFiles.length; i++) {
-          Const file = editMediaFiles[i];
-          Const mediaUrl = await uploadToCloudinary(file);
-          Const mediaType = file.type.startsWith('video') ? 'video' : 'image';
+      if (editMediaFiles.length > 0) {
+        setUploadingMedia(true);
+        const startOrder = editExistingMedia.length;
+        for (let i = 0; i < editMediaFiles.length; i++) {
+          const file = editMediaFiles[i];
+          const mediaUrl = await uploadToCloudinary(file);
+          const mediaType = file.type.startsWith('video') ? 'video' : 'image';
 
-          Const { error: insNewErr } = await supabase.from('product_media').insert([{
-            Product_id: editingProduct.id,
-            Media_url: mediaUrl,
-            Media_type: mediaType,
-            Sort_order: startOrder + i
+          await supabase.from('product_media').insert([{
+            product_id: editingProduct.id,
+            media_url: mediaUrl,
+            media_type: mediaType,
+            sort_order: startOrder + i
           }]);
-          If (insNewErr) throw insNewErr;
         }
-        SetUploadingMedia(false);
+        setUploadingMedia(false);
       }
 
-      SetEditingProduct(null);
-      FetchProducts();
-      ShowNotification('PRODUCT UPDATED SUCCESSFULLY.');
+      setEditingProduct(null);
+      fetchProducts();
+      showNotification('PRODUCT UPDATED SUCCESSFULLY.');
     } catch (err: any) {
-      Console.error('Error updating product:', err);
-      ShowNotification(`UPDATE FAILED: ${getErrorMessage(err)}`, 'error');
+      console.error('Error updating product:', err);
+      showNotification(err.message || 'FAILED TO UPDATE PRODUCT.', 'error');
     } finally {
-      SetSubmitting(false);
-      SetUploadingMedia(false);
+      setSubmitting(false);
+      setUploadingMedia(false);
     }
   };
 
-  Const handleStockUpdate = async (productId: string | number, currentStock: number, change: number) => {
-    Const updated = Math.max(0, currentStock + change);
-    Try {
-      SetProducts(prev => prev.map(p => p.id === productId ? { ...p, stock_quantity: updated } : p));
-      Const { error } = await supabase.from('products').update({ stock_quantity: updated }).eq('id', productId);
-      If (error) throw error;
-    } catch (err: any) {
-      Console.error('Failed to update stock:', err);
-      ShowNotification(`STOCK UPDATE FAILED: ${getErrorMessage(err)}`, 'error');
-      FetchProducts();
+  const handleStockUpdate = async (productId: string | number, currentStock: number, change: number) => {
+    const updated = Math.max(0, currentStock + change);
+    try {
+      setProducts(prev => prev.map(p => p.id === productId ? { ...p, stock_quantity: updated } : p));
+      const { error } = await supabase.from('products').update({ stock_quantity: updated }).eq('id', productId);
+      if (error) throw error;
+    } catch (err) {
+      console.error('Failed to update stock:', err);
+      fetchProducts();
     }
   };
 
-  Const handleDeleteProduct = (productId: string | number) => {
-    Const targetProduct = products.find(p => p.id === productId) || null;
-    SetDeletingProduct(targetProduct);
+  const handleDeleteProduct = (productId: string | number) => {
+    const targetProduct = products.find(p => p.id === productId) || null;
+    setDeletingProduct(targetProduct);
   };
 
-  Const handleSoftDeleteProduct = async () => {
-    If (!deletingProduct) return;
-    Const productId = deletingProduct.id;
-    SetDeletingProduct(null);
-    Try {
-      SetProducts(prev => prev.filter(p => p.id !== productId));
-      Const { error } = await supabase.from('products').update({ status: 'archived' }).eq('id', productId);
-      If (error) throw error;
-      ShowNotification('PRODUCT HIDDEN FROM CATALOG.');
-    } catch (err: any) {
-      Console.error('Failed to hide product:', err);
-      ShowNotification(`HIDE FAILED: ${getErrorMessage(err)}`, 'error');
-      FetchProducts();
+  const handleSoftDeleteProduct = async () => {
+    if (!deletingProduct) return;
+    const productId = deletingProduct.id;
+    setDeletingProduct(null);
+    try {
+      setProducts(prev => prev.filter(p => p.id !== productId));
+      const { error } = await supabase.from('products').update({ status: 'archived' }).eq('id', productId);
+      if (error) throw error;
+      showNotification('PRODUCT HIDDEN FROM CATALOG.');
+    } catch (err) {
+      console.error('Failed to hide product:', err);
+      showNotification('COULD NOT HIDE PRODUCT.', 'error');
+      fetchProducts();
     }
   };
 
-  Const handleHardDeleteProduct = async () => {
-    If (!deletingProduct) return;
-    Const productId = deletingProduct.id;
-    Const mediaList = deletingProduct.product_media || [];
-    SetDeletingProduct(null);
-    Try {
-      SetProducts(prev => prev.filter(p => p.id !== productId));
+  const handleHardDeleteProduct = async () => {
+    if (!deletingProduct) return;
+    const productId = deletingProduct.id;
+    const mediaList = deletingProduct.product_media || [];
+    setDeletingProduct(null);
+    try {
+      setProducts(prev => prev.filter(p => p.id !== productId));
 
-      If (mediaList.length > 0 && typeof deleteFromCloudinary === 'function') {
-        For (const media of mediaList) {
-          If (media.media_url) {
-            Try {
-              Await deleteFromCloudinary(media.media_url);
-            } catch (e: any) {
-              Console.error('Failed to delete media from Cloudinary:', e);
-              // Cloudinary delete fail হলেও DB delete সামনে এগোবে, তবে নোটিফিকেশনে সতর্ক রাখা হলো
+      if (mediaList.length > 0 && typeof deleteFromCloudinary === 'function') {
+        for (const media of mediaList) {
+          if (media.media_url) {
+            try {
+              await deleteFromCloudinary(media.media_url);
+            } catch (e) {
+              console.error('Failed to delete media from Cloudinary:', e);
             }
           }
         }
       }
 
-      Const { error: mediaDelError } = await supabase.from('product_media').delete().eq('product_id', productId);
-      If (mediaDelError) throw mediaDelError;
+      await supabase.from('product_media').delete().eq('product_id', productId);
+      const { error } = await supabase.from('products').delete().eq('id', productId);
+      if (error) throw error;
 
-      Const { error } = await supabase.from('products').delete().eq('id', productId);
-      If (error) throw error;
-
-      ShowNotification('PRODUCT PERMANENTLY DELETED FROM DATABASE & CLOUDINARY.');
-    } catch (err: any) {
-      Console.error('Failed to delete product:', err);
-      ShowNotification(`DELETE FAILED: ${getErrorMessage(err)}`, 'error');
-      FetchProducts();
+      showNotification('PRODUCT PERMANENTLY DELETED FROM DATABASE & CLOUDINARY.');
+    } catch (err) {
+      console.error('Failed to delete product:', err);
+      showNotification('COULD NOT DELETE PRODUCT.', 'error');
+      fetchProducts();
     }
   };
 
-  Const activeSearch = searchQuery || searchTerm;
+  const activeSearch = searchQuery || searchTerm;
 
-  Let filteredProducts = products.filter(p => {
-    If (p.status === 'archived' || p.status === 'hidden') return false;
+  let filteredProducts = products.filter(p => {
+    if (p.status === 'archived' || p.status === 'hidden') return false;
 
-    Const matchesSearch = p.name.toLowerCase().includes(activeSearch.toLowerCase()) ||
-                          P.category?.toLowerCase().includes(activeSearch.toLowerCase());
-    If (!matchesSearch) return false;
+    const matchesSearch = p.name.toLowerCase().includes(activeSearch.toLowerCase()) ||
+                          p.category?.toLowerCase().includes(activeSearch.toLowerCase());
+    if (!matchesSearch) return false;
 
-    If (stockFilter === 'in_stock' && p.stock_quantity <= 0) return false;
-    If (stockFilter === 'sold_out' && p.stock_quantity > 0) return false;
+    if (stockFilter === 'in_stock' && p.stock_quantity <= 0) return false;
+    if (stockFilter === 'sold_out' && p.stock_quantity > 0) return false;
 
-    Const hasMin = minPrice !== '' && !isNaN(parseFloat(minPrice));
-    Const hasMax = maxPrice !== '' && !isNaN(parseFloat(maxPrice));
+    const hasMin = minPrice !== '' && !isNaN(parseFloat(minPrice));
+    const hasMax = maxPrice !== '' && !isNaN(parseFloat(maxPrice));
 
-    If (hasMin && hasMax) {
-      If (p.price < parseFloat(minPrice) || p.price > parseFloat(maxPrice)) return false;
+    if (hasMin && hasMax) {
+      if (p.price < parseFloat(minPrice) || p.price > parseFloat(maxPrice)) return false;
     } else if (hasMin) {
-      If (p.price !== parseFloat(minPrice)) return false;
+      if (p.price !== parseFloat(minPrice)) return false;
     } else if (hasMax) {
-      If (p.price !== parseFloat(maxPrice)) return false;
+      if (p.price !== parseFloat(maxPrice)) return false;
     }
 
-    Const hasStart = startDate !== '';
-    Const hasEnd = endDate !== '';
-    Const pTime = new Date(p.created_at).getTime();
+    const hasStart = startDate !== '';
+    const hasEnd = endDate !== '';
+    const pTime = new Date(p.created_at).getTime();
 
-    If (hasStart && hasEnd) {
-      Const sTime = new Date(`${startDate}T00:00:00`).getTime();
-      Const eTime = new Date(`${endDate}T23:59:59.999`).getTime();
-      If (pTime < sTime || pTime > eTime) return false;
+    if (hasStart && hasEnd) {
+      const sTime = new Date(`${startDate}T00:00:00`).getTime();
+      const eTime = new Date(`${endDate}T23:59:59.999`).getTime();
+      if (pTime < sTime || pTime > eTime) return false;
     } else if (hasStart) {
-      Const sTime = new Date(`${startDate}T00:00:00`).getTime();
-      Const eTime = new Date(`${startDate}T23:59:59.999`).getTime();
-      If (pTime < sTime || pTime > eTime) return false;
+      const sTime = new Date(`${startDate}T00:00:00`).getTime();
+      const eTime = new Date(`${startDate}T23:59:59.999`).getTime();
+      if (pTime < sTime || pTime > eTime) return false;
     } else if (hasEnd) {
-      Const sTime = new Date(`${endDate}T00:00:00`).getTime();
-      Const eTime = new Date(`${endDate}T23:59:59.999`).getTime();
-      If (pTime < sTime || pTime > eTime) return false;
+      const sTime = new Date(`${endDate}T00:00:00`).getTime();
+      const eTime = new Date(`${endDate}T23:59:59.999`).getTime();
+      if (pTime < sTime || pTime > eTime) return false;
     }
 
-    Return true;
+    return true;
   });
 
-  FilteredProducts.sort((a, b) => {
-    If (a.stock_quantity !== b.stock_quantity) {
-      Return a.stock_quantity - b.stock_quantity;
+  filteredProducts.sort((a, b) => {
+    if (a.stock_quantity !== b.stock_quantity) {
+      return a.stock_quantity - b.stock_quantity;
     }
 
-    If (priceSort === 'price_low') {
-      If (a.price !== b.price) return a.price - b.price;
+    if (priceSort === 'price_low') {
+      if (a.price !== b.price) return a.price - b.price;
     } else if (priceSort === 'price_high') {
-      If (a.price !== b.price) return b.price - a.price;
+      if (a.price !== b.price) return b.price - a.price;
     }
 
-    Const timeA = new Date(a.created_at).getTime();
-    Const timeB = new Date(b.created_at).getTime();
-    If (dateSort === 'oldest') {
-      Return timeA - timeB;
+    const timeA = new Date(a.created_at).getTime();
+    const timeB = new Date(b.created_at).getTime();
+    if (dateSort === 'oldest') {
+      return timeA - timeB;
     } else {
-      Return timeB - timeA;
+      return timeB - timeA;
     }
   });
 
-  Const filteredCategories = Array.from(new Set(filteredProducts.map(p => p.category)));
+  const filteredCategories = Array.from(new Set(filteredProducts.map(p => p.category)));
 
-  Return (
+  return (
     <div className="admin-products-container animate-fade-in" style={{ width: '100%', maxWidth: '100%', overflow: 'hidden', position: 'relative', backgroundColor: '#000', minHeight: '100vh', padding: '0 20px 20px 20px', boxSizing: 'border-box' }}>
       {notification && createPortal(
         <div
-          ClassName="animate-pop"
-          Style={{
-            Position: 'fixed',
-            Top: '20px',
-            Right: '20px',
-            ZIndex: 10001,
-            BackgroundColor: '#0d0d0d',
-            Border: `1px solid ${notification.type === 'error' ? 'rgba(239, 68, 68, 0.4)' : 'rgba(34, 197, 94, 0.4)'}`,
-            BoxShadow: notification.type === 'error'
+          className="animate-pop"
+          style={{
+            position: 'fixed',
+            top: '20px',
+            right: '20px',
+            zIndex: 10001,
+            backgroundColor: '#0d0d0d',
+            border: `1px solid ${notification.type === 'error' ? 'rgba(239, 68, 68, 0.4)' : 'rgba(34, 197, 94, 0.4)'}`,
+            boxShadow: notification.type === 'error'
               ? '0 10px 30px rgba(239, 68, 68, 0.15)'
               : '0 10px 30px rgba(34, 197, 94, 0.15)',
-            Color: '#ffffff',
-            Padding: '12px 18px',
-            BorderRadius: '8px',
-            FontFamily: 'monospace',
-            FontSize: '11px',
-            LetterSpacing: '0.5px',
-            Display: 'flex',
-            AlignItems: 'center',
-            Gap: '10px',
-            MaxWidth: '90vw',
-            WordBreak: 'break-word'
+            color: '#ffffff',
+            padding: '12px 18px',
+            borderRadius: '8px',
+            fontFamily: 'monospace',
+            fontSize: '11px',
+            letterSpacing: '0.5px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px'
           }}
         >
           <span style={{
-            Display: 'flex',
-            AlignItems: 'center',
-            JustifyContent: 'center',
-            Width: '20px',
-            Height: '20px',
-            BorderRadius: '50%',
-            BackgroundColor: notification.type === 'error' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(34, 197, 94, 0.15)',
-            Color: notification.type === 'error' ? '#ef4444' : '#22c55e',
-            FontSize: '11px',
-            FontWeight: 'bold',
-            Padding: 0,
-            LineHeight: 1,
-            FlexShrink: 0
+            display: 'flex',
+            alignItems: 'center',
+            justify: 'center',
+            width: '20px',
+            height: '20px',
+            borderRadius: '50%',
+            backgroundColor: notification.type === 'error' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(34, 197, 94, 0.15)',
+            color: notification.type === 'error' ? '#ef4444' : '#22c55e',
+            fontSize: '11px',
+            fontWeight: 'bold',
+            padding: 0,
+            lineHeight: 1
           }}>
             <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>{notification.type === 'error' ? '✕' : '✓'}</span>
           </span>
           <span>{notification.message}</span>
         </div>,
-        Document.body
+        document.body
       )}
 
       <div className={`filter-expand-wrapper ${isFilterOpen || isSearchOpen ? 'open' : ''}`}>
@@ -943,17 +917,17 @@ Const AdminProducts: React.FC<AdminProductsProps> = ({
               <div className="search-filter-sub-inner">
                 <div style={{ paddingBottom: isFilterOpen ? '16px' : '0px', transition: 'padding 0.35s ease' }}>
                   <input
-                    Type="text"
-                    Value={searchQuery || searchTerm}
-                    OnChange={(e) => {
-                      If (onSearchChange) {
-                        OnSearchChange(e.target.value);
+                    type="text"
+                    value={searchQuery || searchTerm}
+                    onChange={(e) => {
+                      if (onSearchChange) {
+                        onSearchChange(e.target.value);
                       }
-                      SetSearchTerm(e.target.value);
+                      setSearchTerm(e.target.value);
                     }}
-                    Placeholder="SEARCH PRODUCTS..."
-                    ClassName="smooth-transition animate-fade-in"
-                    Style={{ width: '100%', backgroundColor: '#000', border: '1px solid #333', borderRadius: '25px', padding: '8px 16px', color: '#fff', fontSize: '11px', fontFamily: 'monospace', boxSizing: 'border-box', outline: 'none' }}
+                    placeholder="SEARCH PRODUCTS..."
+                    className="smooth-transition animate-fade-in"
+                    style={{ width: '100%', backgroundColor: '#000', border: '1px solid #333', borderRadius: '25px', padding: '8px 16px', color: '#fff', fontSize: '11px', fontFamily: 'monospace', boxSizing: 'border-box', outline: 'none' }}
                   />
                 </div>
               </div>
@@ -971,21 +945,21 @@ Const AdminProducts: React.FC<AdminProductsProps> = ({
                         { label: 'SOLD OUT', value: 'sold_out' }
                       ].map((item) => (
                         <button
-                          Key={item.value}
-                          Type="button"
-                          OnClick={() => setStockFilter(item.value as any)}
-                          ClassName="smooth-transition"
-                          Style={{
-                            Background: 'none',
-                            Border: 'none',
-                            Padding: '0',
-                            Color: stockFilter === item.value ? '#fff' : '#666',
-                            FontSize: '11px',
-                            FontFamily: 'monospace',
-                            Cursor: 'pointer',
-                            FontWeight: stockFilter === item.value ? '700' : 'normal',
-                            TextDecoration: 'none',
-                            FlexShrink: 0
+                          key={item.value}
+                          type="button"
+                          onClick={() => setStockFilter(item.value as any)}
+                          className="smooth-transition"
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            padding: '0',
+                            color: stockFilter === item.value ? '#fff' : '#666',
+                            fontSize: '11px',
+                            fontFamily: 'monospace',
+                            cursor: 'pointer',
+                            fontWeight: stockFilter === item.value ? '700' : 'normal',
+                            textDecoration: 'none',
+                            flexShrink: 0
                           }}
                         >
                           {item.label}
@@ -1003,21 +977,21 @@ Const AdminProducts: React.FC<AdminProductsProps> = ({
                           { label: 'OLDEST FIRST', value: 'oldest' }
                         ].map((item) => (
                           <button
-                            Key={item.value}
-                            Type="button"
-                            OnClick={() => setDateSort(item.value as any)}
-                            ClassName="smooth-transition"
-                            Style={{
-                              Background: 'none',
-                              Border: 'none',
-                              Padding: '0',
-                              Color: dateSort === item.value ? '#fff' : '#666',
-                              FontSize: '11px',
-                              FontFamily: 'monospace',
-                              Cursor: 'pointer',
-                              FontWeight: dateSort === item.value ? '700' : 'normal',
-                              TextDecoration: 'none',
-                              FlexShrink: 0
+                            key={item.value}
+                            type="button"
+                            onClick={() => setDateSort(item.value as any)}
+                            className="smooth-transition"
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              padding: '0',
+                              color: dateSort === item.value ? '#fff' : '#666',
+                              fontSize: '11px',
+                              fontFamily: 'monospace',
+                              cursor: 'pointer',
+                              fontWeight: dateSort === item.value ? '700' : 'normal',
+                              textDecoration: 'none',
+                              flexShrink: 0
                             }}
                           >
                             {item.label}
@@ -1026,19 +1000,19 @@ Const AdminProducts: React.FC<AdminProductsProps> = ({
                       </div>
                       <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0 }}>
                         <input
-                          Type="date"
-                          Value={startDate}
-                          OnChange={(e) => setStartDate(e.target.value)}
-                          ClassName="smooth-transition"
-                          Style={{ backgroundColor: '#000', border: '1px solid #333', color: '#aaa', fontSize: '10px', fontFamily: 'monospace', padding: '4px 6px', borderRadius: '4px', outline: 'none' }}
+                          type="date"
+                          value={startDate}
+                          onChange={(e) => setStartDate(e.target.value)}
+                          className="smooth-transition"
+                          style={{ backgroundColor: '#000', border: '1px solid #333', color: '#aaa', fontSize: '10px', fontFamily: 'monospace', padding: '4px 6px', borderRadius: '4px', outline: 'none' }}
                         />
                         <span style={{ color: '#555', fontSize: '10px' }}>-</span>
                         <input
-                          Type="date"
-                          Value={endDate}
-                          OnChange={(e) => setEndDate(e.target.value)}
-                          ClassName="smooth-transition"
-                          Style={{ backgroundColor: '#000', border: '1px solid #333', color: '#aaa', fontSize: '10px', fontFamily: 'monospace', padding: '4px 6px', borderRadius: '4px', outline: 'none' }}
+                          type="date"
+                          value={endDate}
+                          onChange={(e) => setEndDate(e.target.value)}
+                          className="smooth-transition"
+                          style={{ backgroundColor: '#000', border: '1px solid #333', color: '#aaa', fontSize: '10px', fontFamily: 'monospace', padding: '4px 6px', borderRadius: '4px', outline: 'none' }}
                         />
                       </div>
                     </div>
@@ -1053,21 +1027,21 @@ Const AdminProducts: React.FC<AdminProductsProps> = ({
                           { label: 'LOW TO HIGH', value: 'price_low' }
                         ].map((item) => (
                           <button
-                            Key={item.value}
-                            Type="button"
-                            OnClick={() => setPriceSort(priceSort === item.value ? 'none' : item.value as any)}
-                            ClassName="smooth-transition"
-                            Style={{
-                              Background: 'none',
-                              Border: 'none',
-                              Padding: '0',
-                              Color: priceSort === item.value ? '#fff' : '#666',
-                              FontSize: '11px',
-                              FontFamily: 'monospace',
-                              Cursor: 'pointer',
-                              FontWeight: priceSort === item.value ? '700' : 'normal',
-                              TextDecoration: 'none',
-                              FlexShrink: 0
+                            key={item.value}
+                            type="button"
+                            onClick={() => setPriceSort(priceSort === item.value ? 'none' : item.value as any)}
+                            className="smooth-transition"
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              padding: '0',
+                              color: priceSort === item.value ? '#fff' : '#666',
+                              fontSize: '11px',
+                              fontFamily: 'monospace',
+                              cursor: 'pointer',
+                              fontWeight: priceSort === item.value ? '700' : 'normal',
+                              textDecoration: 'none',
+                              flexShrink: 0
                             }}
                           >
                             {item.label}
@@ -1076,21 +1050,21 @@ Const AdminProducts: React.FC<AdminProductsProps> = ({
                       </div>
                       <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0 }}>
                         <input
-                          Type="number"
-                          Placeholder="MIN"
-                          Value={minPrice}
-                          OnChange={(e) => setMinPrice(e.target.value)}
-                          ClassName="smooth-transition"
-                          Style={{ width: '60px', backgroundColor: '#000', border: '1px solid #333', color: '#fff', fontSize: '10px', fontFamily: 'monospace', padding: '4px 6px', borderRadius: '4px', outline: 'none' }}
+                          type="number"
+                          placeholder="MIN"
+                          value={minPrice}
+                          onChange={(e) => setMinPrice(e.target.value)}
+                          className="smooth-transition"
+                          style={{ width: '60px', backgroundColor: '#000', border: '1px solid #333', color: '#fff', fontSize: '10px', fontFamily: 'monospace', padding: '4px 6px', borderRadius: '4px', outline: 'none' }}
                         />
                         <span style={{ color: '#555', fontSize: '10px' }}>-</span>
                         <input
-                          Type="number"
-                          Placeholder="MAX"
-                          Value={maxPrice}
-                          OnChange={(e) => setMaxPrice(e.target.value)}
-                          ClassName="smooth-transition"
-                          Style={{ width: '60px', backgroundColor: '#000', border: '1px solid #333', color: '#fff', fontSize: '10px', fontFamily: 'monospace', padding: '4px 6px', borderRadius: '4px', outline: 'none' }}
+                          type="number"
+                          placeholder="MAX"
+                          value={maxPrice}
+                          onChange={(e) => setMaxPrice(e.target.value)}
+                          className="smooth-transition"
+                          style={{ width: '60px', backgroundColor: '#000', border: '1px solid #333', color: '#fff', fontSize: '10px', fontFamily: 'monospace', padding: '4px 6px', borderRadius: '4px', outline: 'none' }}
                         />
                       </div>
                     </div>
@@ -1110,30 +1084,30 @@ Const AdminProducts: React.FC<AdminProductsProps> = ({
             <div style={{ textAlign: 'center', padding: '50px 0', color: '#555', fontSize: '11px', fontFamily: 'monospace' }}>NO PRODUCTS FOUND</div>
           ) : (
             filteredCategories.map((category) => {
-              Const categoryProducts = filteredProducts.filter(p => p.category === category);
-              Const isExpanded = !!expandedCategories[category];
+              const categoryProducts = filteredProducts.filter(p => p.category === category);
+              const isExpanded = !!expandedCategories[category];
 
-              Return (
+              return (
                 <div key={category} className="showroom-section animate-fade-in" style={{ marginBottom: '50px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 15px 12px 15px', borderBottom: '1px solid #141414' }}>
                     <h3 style={{ margin: 0, fontSize: '13px', letterSpacing: '3px', color: '#b3b3b3', textTransform: 'uppercase' }}>{category}</h3>
                     <button
-                      OnClick={() => setExpandedCategories(prev => ({ ...prev, [category]: !isExpanded }))}
-                      ClassName="smooth-transition"
-                      Style={{
-                        Background: 'none',
-                        Border: 'none',
-                        Color: '#fff',
-                        FontSize: '11px',
-                        LetterSpacing: '2px',
-                        Cursor: 'pointer',
-                        Opacity: 0.7,
-                        Display: 'flex',
-                        Padding: 0,
-                        AlignItems: 'center',
-                        MinWidth: '85px',
-                        JustifyContent: 'flex-end',
-                        WhiteSpace: 'nowrap'
+                      onClick={() => setExpandedCategories(prev => ({ ...prev, [category]: !isExpanded }))}
+                      className="smooth-transition"
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#fff',
+                        fontSize: '11px',
+                        letterSpacing: '2px',
+                        cursor: 'pointer',
+                        opacity: 0.7,
+                        display: 'flex',
+                        padding: 0,
+                        alignItems: 'center',
+                        minWidth: '85px',
+                        justifyContent: 'flex-end',
+                        whiteSpace: 'nowrap'
                       }}
                     >
                       <span>SEE&nbsp;</span>
@@ -1146,11 +1120,11 @@ Const AdminProducts: React.FC<AdminProductsProps> = ({
                   <div className="showroom-row-container" style={{ display: 'flex', flexWrap: isExpanded ? 'wrap' : 'nowrap', width: '100%', scrollSnapType: 'x mandatory', overflowX: 'auto', scrollBehavior: 'smooth' }}>
                     {categoryProducts.map((product) => (
                       <ProductCard
-                        Key={product.id}
-                        Product={product}
-                        OnUpdateStock={handleStockUpdate}
-                        OnDelete={handleDeleteProduct}
-                        OnEdit={handleOpenEdit}
+                        key={product.id}
+                        product={product}
+                        onUpdateStock={handleStockUpdate}
+                        onDelete={handleDeleteProduct}
+                        onEdit={handleOpenEdit}
                       />
                     ))}
                   </div>
@@ -1173,7 +1147,7 @@ Const AdminProducts: React.FC<AdminProductsProps> = ({
             </div>
           </div>
         </div>,
-        Document.body
+        document.body
       )}
 
       {editingProduct && createPortal(
@@ -1182,33 +1156,33 @@ Const AdminProducts: React.FC<AdminProductsProps> = ({
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '22px' }}>
               <h3 style={{ color: '#fff', fontSize: '13px', letterSpacing: '2px', margin: 0, fontWeight: '600' }}>EDIT PRODUCT</h3>
               <button
-                Type="button"
-                OnClick={() => setEditingProduct(null)}
-                ClassName="smooth-transition"
-                Style={{
-                  Background: 'rgba(255, 255, 255, 0.05)',
-                  Border: '1px solid rgba(255, 255, 255, 0.1)',
-                  BorderRadius: '50%',
-                  Width: '30px',
-                  Height: '30px',
-                  Color: '#aaa',
-                  Cursor: 'pointer',
-                  Display: 'flex',
-                  AlignItems: 'center',
-                  JustifyContent: 'center',
-                  Padding: 0,
-                  LineHeight: 1,
-                  FontSize: '12px'
+                type="button"
+                onClick={() => setEditingProduct(null)}
+                className="smooth-transition"
+                style={{
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '50%',
+                  width: '30px',
+                  height: '30px',
+                  color: '#aaa',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justify: 'center',
+                  padding: 0,
+                  lineHeight: 1,
+                  fontSize: '12px'
                 }}
-                OnMouseEnter={(e) => {
-                  E.currentTarget.style.background = '#ef4444';
-                  E.currentTarget.style.color = '#fff';
-                  E.currentTarget.style.borderColor = '#ef4444';
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = '#ef4444';
+                  e.currentTarget.style.color = '#fff';
+                  e.currentTarget.style.borderColor = '#ef4444';
                 }}
-                OnMouseLeave={(e) => {
-                  E.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-                  E.currentTarget.style.color = '#aaa';
-                  E.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                  e.currentTarget.style.color = '#aaa';
+                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
                 }}
               >
                 <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>✕</span>
@@ -1227,11 +1201,11 @@ Const AdminProducts: React.FC<AdminProductsProps> = ({
                 </label>
                 <div style={{ flex: '1 1 140px' }}>
                   <input
-                    Type="text"
-                    Value={editCategory}
-                    OnChange={(e) => setEditCategory(e.target.value)}
-                    Placeholder="Category (e.g. APPAREL)"
-                    ClassName="minimal-input"
+                    type="text"
+                    value={editCategory}
+                    onChange={(e) => setEditCategory(e.target.value)}
+                    placeholder="Category (e.g. APPAREL)"
+                    className="minimal-input"
                   />
                 </div>
               </div>
@@ -1246,27 +1220,27 @@ Const AdminProducts: React.FC<AdminProductsProps> = ({
                         <img src={media.media_url} alt="existing" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '5px' }} />
                       )}
                       <button
-                        Type="button"
-                        OnClick={() => removeExistingMedia(idx)}
-                        ClassName="smooth-transition"
-                        Style={{
-                          Position: 'absolute',
-                          Top: '-5px',
-                          Right: '-5px',
-                          Background: '#ef4444',
-                          Color: '#fff',
-                          Border: 'none',
-                          BorderRadius: '50%',
-                          Width: '16px',
-                          Height: '16px',
-                          FontSize: '9px',
-                          Cursor: 'pointer',
-                          Display: 'flex',
-                          AlignItems: 'center',
-                          JustifyContent: 'center',
-                          Padding: 0,
-                          LineHeight: 1,
-                          FontWeight: 'bold'
+                        type="button"
+                        onClick={() => removeExistingMedia(idx)}
+                        className="smooth-transition"
+                        style={{
+                          position: 'absolute',
+                          top: '-5px',
+                          right: '-5px',
+                          background: '#ef4444',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: '50%',
+                          width: '16px',
+                          height: '16px',
+                          fontSize: '9px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justify: 'center',
+                          padding: 0,
+                          lineHeight: 1,
+                          fontWeight: 'bold'
                         }}
                       >
                         <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>✕</span>
@@ -1282,27 +1256,27 @@ Const AdminProducts: React.FC<AdminProductsProps> = ({
                         <img src={media.url} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '5px' }} />
                       )}
                       <button
-                        Type="button"
-                        OnClick={() => removeSelectedEditMedia(idx)}
-                        ClassName="smooth-transition"
-                        Style={{
-                          Position: 'absolute',
-                          Top: '-5px',
-                          Right: '-5px',
-                          Background: '#ef4444',
-                          Color: '#fff',
-                          Border: 'none',
-                          BorderRadius: '50%',
-                          Width: '16px',
-                          Height: '16px',
-                          FontSize: '9px',
-                          Cursor: 'pointer',
-                          Display: 'flex',
-                          AlignItems: 'center',
-                          JustifyContent: 'center',
-                          Padding: 0,
-                          LineHeight: 1,
-                          FontWeight: 'bold'
+                        type="button"
+                        onClick={() => removeSelectedEditMedia(idx)}
+                        className="smooth-transition"
+                        style={{
+                          position: 'absolute',
+                          top: '-5px',
+                          right: '-5px',
+                          background: '#ef4444',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: '50%',
+                          width: '16px',
+                          height: '16px',
+                          fontSize: '9px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justify: 'center',
+                          padding: 0,
+                          lineHeight: 1,
+                          fontWeight: 'bold'
                         }}
                       >
                         <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>✕</span>
@@ -1314,41 +1288,41 @@ Const AdminProducts: React.FC<AdminProductsProps> = ({
 
               <div>
                 <input
-                  Type="text"
-                  Value={editName}
-                  OnChange={(e) => setEditName(e.target.value)}
-                  Placeholder="Product Name *"
-                  ClassName="minimal-input"
+                  type="text"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  placeholder="Product Name *"
+                  className="minimal-input"
                 />
               </div>
 
               <div>
                 <textarea
-                  Value={editDescription}
-                  OnChange={handleEditDescriptionChange}
-                  Placeholder="Description (Bio)"
-                  Rows={2}
-                  ClassName="minimal-input"
-                  Style={{ resize: 'none' }}
+                  value={editDescription}
+                  onChange={handleEditDescriptionChange}
+                  placeholder="Description (Bio)"
+                  rows={2}
+                  className="minimal-input"
+                  style={{ resize: 'none' }}
                 />
               </div>
 
               <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
                 <input
-                  Type="number"
-                  Value={editPrice}
-                  OnChange={(e) => setEditPrice(e.target.value)}
-                  Placeholder="Price (৳) *"
-                  ClassName="minimal-input"
-                  Style={{ flex: '1 1 130px' }}
+                  type="number"
+                  value={editPrice}
+                  onChange={(e) => setEditPrice(e.target.value)}
+                  placeholder="Price (৳) *"
+                  className="minimal-input"
+                  style={{ flex: '1 1 130px' }}
                 />
                 <input
-                  Type="number"
-                  Value={editStock}
-                  OnChange={(e) => setEditStock(e.target.value)}
-                  Placeholder="Stock Quantity"
-                  ClassName="minimal-input"
-                  Style={{ flex: '1 1 130px' }}
+                  type="number"
+                  value={editStock}
+                  onChange={(e) => setEditStock(e.target.value)}
+                  placeholder="Stock Quantity"
+                  className="minimal-input"
+                  style={{ flex: '1 1 130px' }}
                 />
               </div>
 
@@ -1367,50 +1341,50 @@ Const AdminProducts: React.FC<AdminProductsProps> = ({
 
               <div>
                 <textarea
-                  Value={editDetails}
-                  OnChange={(e) => setEditDetails(e.target.value)}
-                  Placeholder="Details (Product Details)"
-                  Rows={3}
-                  ClassName="minimal-input"
-                  Style={{ resize: 'none' }}
+                  value={editDetails}
+                  onChange={(e) => setEditDetails(e.target.value)}
+                  placeholder="Details (Product Details)"
+                  rows={3}
+                  className="minimal-input"
+                  style={{ resize: 'none' }}
                 />
               </div>
 
               <div style={{ display: 'flex', gap: '12px', marginTop: '10px' }}>
                 <button
-                  Type="button"
-                  OnClick={() => setEditingProduct(null)}
-                  ClassName="smooth-transition"
-                  Style={{
-                    Flex: 1,
-                    Background: 'transparent',
-                    Border: '1px solid #333',
-                    BorderRadius: '6px',
-                    Color: '#aaa',
-                    Padding: '10px',
-                    FontSize: '11px',
-                    LetterSpacing: '1px',
-                    Cursor: 'pointer',
-                    FontWeight: '600'
+                  type="button"
+                  onClick={() => setEditingProduct(null)}
+                  className="smooth-transition"
+                  style={{
+                    flex: 1,
+                    background: 'transparent',
+                    border: '1px solid #333',
+                    borderRadius: '6px',
+                    color: '#aaa',
+                    padding: '10px',
+                    fontSize: '11px',
+                    letterSpacing: '1px',
+                    cursor: 'pointer',
+                    fontWeight: '600'
                   }}
                 >
                   CANCEL
                 </button>
                 <button
-                  Type="submit"
-                  Disabled={submitting || uploadingMedia}
-                  ClassName="smooth-transition"
-                  Style={{
-                    Flex: 1,
-                    Background: 'rgba(255, 255, 255, 0.08)',
-                    Border: '1px solid rgba(255, 255, 255, 0.2)',
-                    BorderRadius: '6px',
-                    Color: '#fff',
-                    Padding: '10px',
-                    FontSize: '11px',
-                    LetterSpacing: '1px',
-                    FontWeight: '600',
-                    Cursor: 'pointer'
+                  type="submit"
+                  disabled={submitting || uploadingMedia}
+                  className="smooth-transition"
+                  style={{
+                    flex: 1,
+                    background: 'rgba(255, 255, 255, 0.08)',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    borderRadius: '6px',
+                    color: '#fff',
+                    padding: '10px',
+                    fontSize: '11px',
+                    letterSpacing: '1px',
+                    fontWeight: '600',
+                    cursor: 'pointer'
                   }}
                 >
                   {uploadingMedia ? 'UPLOADING MEDIA...' : submitting ? 'SAVING...' : 'UPDATE PRODUCT'}
@@ -1419,7 +1393,7 @@ Const AdminProducts: React.FC<AdminProductsProps> = ({
             </form>
           </div>
         </div>,
-        Document.body
+        document.body
       )}
 
       {showAddModal && createPortal(
@@ -1428,33 +1402,33 @@ Const AdminProducts: React.FC<AdminProductsProps> = ({
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '22px' }}>
               <h3 style={{ color: '#fff', fontSize: '13px', letterSpacing: '2px', margin: 0, fontWeight: '600' }}>ADD NEW PRODUCT</h3>
               <button
-                Type="button"
-                OnClick={() => handleSetShowAddModal(false)}
-                ClassName="smooth-transition"
-                Style={{
-                  Background: 'rgba(255, 255, 255, 0.05)',
-                  Border: '1px solid rgba(255, 255, 255, 0.1)',
-                  BorderRadius: '50%',
-                  Width: '30px',
-                  Height: '30px',
-                  Color: '#aaa',
-                  Cursor: 'pointer',
-                  Display: 'flex',
-                  AlignItems: 'center',
-                  JustifyContent: 'center',
-                  Padding: 0,
-                  LineHeight: 1,
-                  FontSize: '12px'
+                type="button"
+                onClick={() => handleSetShowAddModal(false)}
+                className="smooth-transition"
+                style={{
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '50%',
+                  width: '30px',
+                  height: '30px',
+                  color: '#aaa',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justify: 'center',
+                  padding: 0,
+                  lineHeight: 1,
+                  fontSize: '12px'
                 }}
-                OnMouseEnter={(e) => {
-                  E.currentTarget.style.background = '#ef4444';
-                  E.currentTarget.style.color = '#fff';
-                  E.currentTarget.style.borderColor = '#ef4444';
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = '#ef4444';
+                  e.currentTarget.style.color = '#fff';
+                  e.currentTarget.style.borderColor = '#ef4444';
                 }}
-                OnMouseLeave={(e) => {
-                  E.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-                  E.currentTarget.style.color = '#aaa';
-                  E.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                  e.currentTarget.style.color = '#aaa';
+                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
                 }}
               >
                 <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>✕</span>
@@ -1473,11 +1447,11 @@ Const AdminProducts: React.FC<AdminProductsProps> = ({
                 </label>
                 <div style={{ flex: '1 1 140px' }}>
                   <input
-                    Type="text"
-                    Value={newCategory}
-                    OnChange={(e) => setNewCategory(e.target.value)}
-                    Placeholder="Category (e.g. APPAREL)"
-                    ClassName="minimal-input"
+                    type="text"
+                    value={newCategory}
+                    onChange={(e) => setNewCategory(e.target.value)}
+                    placeholder="Category (e.g. APPAREL)"
+                    className="minimal-input"
                   />
                 </div>
               </div>
@@ -1492,27 +1466,27 @@ Const AdminProducts: React.FC<AdminProductsProps> = ({
                         <img src={media.url} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '5px' }} />
                       )}
                       <button
-                        Type="button"
-                        OnClick={() => removeSelectedMedia(idx)}
-                        ClassName="smooth-transition"
-                        Style={{
-                          Position: 'absolute',
-                          Top: '-5px',
-                          Right: '-5px',
-                          Background: '#ef4444',
-                          Color: '#fff',
-                          Border: 'none',
-                          BorderRadius: '50%',
-                          Width: '16px',
-                          Height: '16px',
-                          FontSize: '9px',
-                          Cursor: 'pointer',
-                          Display: 'flex',
-                          AlignItems: 'center',
-                          JustifyContent: 'center',
-                          Padding: 0,
-                          LineHeight: 1,
-                          FontWeight: 'bold'
+                        type="button"
+                        onClick={() => removeSelectedMedia(idx)}
+                        className="smooth-transition"
+                        style={{
+                          position: 'absolute',
+                          top: '-5px',
+                          right: '-5px',
+                          background: '#ef4444',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: '50%',
+                          width: '16px',
+                          height: '16px',
+                          fontSize: '9px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justify: 'center',
+                          padding: 0,
+                          lineHeight: 1,
+                          fontWeight: 'bold'
                         }}
                       >
                         <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>✕</span>
@@ -1524,41 +1498,41 @@ Const AdminProducts: React.FC<AdminProductsProps> = ({
 
               <div>
                 <input
-                  Type="text"
-                  Value={newName}
-                  OnChange={(e) => setNewName(e.target.value)}
-                  Placeholder="Product Name *"
-                  ClassName="minimal-input"
+                  type="text"
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  placeholder="Product Name *"
+                  className="minimal-input"
                 />
               </div>
 
               <div>
                 <textarea
-                  Value={newDescription}
-                  OnChange={handleDescriptionChange}
-                  Placeholder="Description (Bio)"
-                  Rows={2}
-                  ClassName="minimal-input"
-                  Style={{ resize: 'none' }}
+                  value={newDescription}
+                  onChange={handleDescriptionChange}
+                  placeholder="Description (Bio)"
+                  rows={2}
+                  className="minimal-input"
+                  style={{ resize: 'none' }}
                 />
               </div>
 
               <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
                 <input
-                  Type="number"
-                  Value={newPrice}
-                  OnChange={(e) => setNewPrice(e.target.value)}
-                  Placeholder="Price (৳) *"
-                  ClassName="minimal-input"
-                  Style={{ flex: '1 1 130px' }}
+                  type="number"
+                  value={newPrice}
+                  onChange={(e) => setNewPrice(e.target.value)}
+                  placeholder="Price (৳) *"
+                  className="minimal-input"
+                  style={{ flex: '1 1 130px' }}
                 />
                 <input
-                  Type="number"
-                  Value={newStock}
-                  OnChange={(e) => setNewStock(e.target.value)}
-                  Placeholder="Stock Quantity"
-                  ClassName="minimal-input"
-                  Style={{ flex: '1 1 130px' }}
+                  type="number"
+                  value={newStock}
+                  onChange={(e) => setNewStock(e.target.value)}
+                  placeholder="Stock Quantity"
+                  className="minimal-input"
+                  style={{ flex: '1 1 130px' }}
                 />
               </div>
 
@@ -1577,50 +1551,50 @@ Const AdminProducts: React.FC<AdminProductsProps> = ({
 
               <div>
                 <textarea
-                  Value={newDetails}
-                  OnChange={(e) => setNewDetails(e.target.value)}
-                  Placeholder="Details (Product Details)"
-                  Rows={3}
-                  ClassName="minimal-input"
-                  Style={{ resize: 'none' }}
+                  value={newDetails}
+                  onChange={(e) => setNewDetails(e.target.value)}
+                  placeholder="Details (Product Details)"
+                  rows={3}
+                  className="minimal-input"
+                  style={{ resize: 'none' }}
                 />
               </div>
 
               <div style={{ display: 'flex', gap: '12px', marginTop: '10px' }}>
                 <button
-                  Type="button"
-                  OnClick={() => handleSetShowAddModal(false)}
-                  ClassName="smooth-transition"
-                  Style={{
-                    Flex: 1,
-                    Background: 'transparent',
-                    Border: '1px solid #333',
-                    BorderRadius: '6px',
-                    Color: '#aaa',
-                    Padding: '10px',
-                    FontSize: '11px',
-                    LetterSpacing: '1px',
-                    Cursor: 'pointer',
-                    FontWeight: '600'
+                  type="button"
+                  onClick={() => handleSetShowAddModal(false)}
+                  className="smooth-transition"
+                  style={{
+                    flex: 1,
+                    background: 'transparent',
+                    border: '1px solid #333',
+                    borderRadius: '6px',
+                    color: '#aaa',
+                    padding: '10px',
+                    fontSize: '11px',
+                    letterSpacing: '1px',
+                    cursor: 'pointer',
+                    fontWeight: '600'
                   }}
                 >
                   CANCEL
                 </button>
                 <button
-                  Type="submit"
-                  Disabled={submitting || uploadingMedia}
-                  ClassName="smooth-transition"
-                  Style={{
-                    Flex: 1,
-                    Background: 'rgba(255, 255, 255, 0.08)',
-                    Border: '1px solid rgba(255, 255, 255, 0.2)',
-                    BorderRadius: '6px',
-                    Color: '#fff',
-                    Padding: '10px',
-                    FontSize: '11px',
-                    LetterSpacing: '1px',
-                    FontWeight: '600',
-                    Cursor: 'pointer'
+                  type="submit"
+                  disabled={submitting || uploadingMedia}
+                  className="smooth-transition"
+                  style={{
+                    flex: 1,
+                    background: 'rgba(255, 255, 255, 0.08)',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    borderRadius: '6px',
+                    color: '#fff',
+                    padding: '10px',
+                    fontSize: '11px',
+                    letterSpacing: '1px',
+                    fontWeight: '600',
+                    cursor: 'pointer'
                   }}
                 >
                   {uploadingMedia ? 'UPLOADING MEDIA...' : submitting ? 'SAVING...' : 'CREATE PRODUCT'}
@@ -1629,102 +1603,102 @@ Const AdminProducts: React.FC<AdminProductsProps> = ({
             </form>
           </div>
         </div>,
-        Document.body
+        document.body
       )}
 
       <style>{`
         @keyframes swapFadeIn {
-          From { opacity: 0; transform: translateY(1px); }
-          To { opacity: 1; transform: translateY(0); }
+          from { opacity: 0; transform: translateY(1px); }
+          to { opacity: 1; transform: translateY(0); }
         }
         .minimal-input {
-          Background: transparent !important;
-          Border: none !important;
-          Border-bottom: 1px solid #262626 !important;
-          Color: #fff !important;
-          Font-size: 11px !important;
-          Outline: none !important;
-          Padding: 8px 0 !important;
-          Width: 100%;
-          Box-sizing: border-box;
-          Transition: border-color 0.2s ease;
-          Font-family: inherit;
+          background: transparent !important;
+          border: none !important;
+          border-bottom: 1px solid #262626 !important;
+          color: #fff !important;
+          font-size: 11px !important;
+          outline: none !important;
+          padding: 8px 0 !important;
+          width: 100%;
+          box-sizing: border-box;
+          transition: border-color 0.2s ease;
+          font-family: inherit;
         }
         .minimal-input:focus {
-          Border-bottom-color: #555 !important;
+          border-bottom-color: #555 !important;
         }
         .minimal-input::placeholder {
-          Color: #555;
+          color: #555;
         }
         .filter-expand-wrapper {
-          Display: grid;
-          Grid-template-rows: 0fr;
-          Transition: grid-template-rows 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-          Overflow: hidden;
+          display: grid;
+          grid-template-rows: 0fr;
+          transition: grid-template-rows 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+          overflow: hidden;
         }
         .filter-expand-wrapper.open {
-          Grid-template-rows: 1fr;
+          grid-template-rows: 1fr;
         }
         .filter-expand-content {
-          Min-height: 0;
-          Transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
-          Opacity: 0;
-          Transform: translateY(-8px);
-          Overflow: hidden;
+          min-height: 0;
+          transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+          opacity: 0;
+          transform: translateY(-8px);
+          overflow: hidden;
         }
         .filter-expand-wrapper.open .filter-expand-content {
-          Opacity: 1;
-          Transform: translateY(0);
+          opacity: 1;
+          transform: translateY(0);
         }
         .search-filter-sub-wrapper {
-          Display: grid;
-          Grid-template-rows: 0fr;
-          Opacity: 0;
-          Transition: grid-template-rows 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease;
-          Overflow: hidden;
+          display: grid;
+          grid-template-rows: 0fr;
+          opacity: 0;
+          transition: grid-template-rows 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease;
+          overflow: hidden;
         }
         .search-filter-sub-wrapper.open {
-          Grid-template-rows: 1fr;
-          Opacity: 1;
+          grid-template-rows: 1fr;
+          opacity: 1;
         }
         .search-filter-sub-inner {
-          Min-height: 0;
-          Overflow: hidden;
+          min-height: 0;
+          overflow: hidden;
         }
         .showroom-row-container::-webkit-scrollbar {
-          Display: none;
+          display: none;
         }
         .showroom-row-container {
           -ms-overflow-style: none;
-          Scrollbar-width: none;
+          scrollbar-width: none;
         }
         @media (max-width: 767px) {
           .admin-products-container {
-            Padding-left: 0 !important;
-            Padding-right: 0 !important;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
           }
           .showroom-section {
-            Width: 100%;
+            width: 100%;
           }
           .showroom-card-item {
-            Width: 100% !important;
-            Min-width: 100% !important;
-            Padding: 0 0 15px 0 !important;
-            Border-left: none !important;
-            Border-right: none !important;
-            Border-radius: 0 !important;
+            width: 100% !important;
+            min-width: 100% !important;
+            padding: 0 0 15px 0 !important;
+            border-left: none !important;
+            border-right: none !important;
+            border-radius: 0 !important;
           }
         }
         @media (min-width: 768px) {
           .showroom-section {
-            Padding: 0;
+            padding: 0;
           }
           .showroom-card-item {
-            Width: 300px;
-            Min-width: 300px;
-            Padding: 12px;
-            Margin-right: 15px;
-            Margin-bottom: 20px;
+            width: 300px;
+            min-width: 300px;
+            padding: 12px;
+            margin-right: 15px;
+            margin-bottom: 20px;
           }
         }
       `}</style>
@@ -1732,4 +1706,4 @@ Const AdminProducts: React.FC<AdminProductsProps> = ({
   );
 };
 
-Export default AdminProducts;
+export default AdminProducts;
