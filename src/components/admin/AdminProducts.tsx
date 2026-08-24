@@ -121,7 +121,7 @@ const ProductAdminActionRow = ({ product, onUpdateStock, onDelete }: { product: 
               style={{
                 height: '36px',
                 width: '36px',
-                display: 'inline-flex',
+                display: 'flex',
                 alignItems: 'center',
                 justify: 'center',
                 padding: 0,
@@ -145,7 +145,7 @@ const ProductAdminActionRow = ({ product, onUpdateStock, onDelete }: { product: 
                 e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.3)';
               }}
             >
-              ✕
+              <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>✕</span>
             </button>
           </div>
         </div>
@@ -279,6 +279,7 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
   const [newOccasion, setNewOccasion] = useState<string>('');
   const [newSizes, setNewSizes] = useState<string>('');
   const [newColors, setNewColors] = useState<string>('');
+  const [newDetails, setNewDetails] = useState<string>('');
 
   const [mediaFiles, setMediaFiles] = useState<File[]>([]);
   const [mediaPreviews, setMediaPreviews] = useState<{ url: string; type: 'image' | 'video' }[]>([]);
@@ -405,6 +406,7 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
     setNewOccasion('');
     setNewSizes('');
     setNewColors('');
+    setNewDetails('');
     setMediaFiles([]);
     setMediaPreviews([]);
   };
@@ -430,12 +432,13 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
       const detailsJson: Record<string, string> = {};
       if (newFit) detailsJson['FIT'] = newFit;
       if (newGsm) detailsJson['GSM'] = newGsm;
-      if (newMadeIn) detailsJson['MADE IN'] = newMadeIn;
       if (newMaterial) detailsJson['MATERIAL'] = newMaterial;
       if (newCare) detailsJson['CARE'] = newCare;
       if (newSleeve) detailsJson['SLEEVE'] = newSleeve;
       if (newPattern) detailsJson['PATTERN'] = newPattern;
       if (newOccasion) detailsJson['OCCASION'] = newOccasion;
+      if (newMadeIn) detailsJson['MADE IN'] = newMadeIn;
+      if (newDetails) detailsJson['DETAILS'] = newDetails;
 
       const sizesArray = newSizes.split(',').map(s => s.trim()).filter(Boolean);
       const colorsArray = newColors.split(',').map(c => c.trim().toUpperCase()).filter(Boolean);
@@ -606,7 +609,7 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
           }}
         >
           <span style={{
-            display: 'inline-flex',
+            display: 'flex',
             alignItems: 'center',
             justify: 'center',
             width: '20px',
@@ -619,7 +622,7 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
             padding: 0,
             lineHeight: 1
           }}>
-            {notification.type === 'error' ? '✕' : '✓'}
+            <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>{notification.type === 'error' ? '✕' : '✓'}</span>
           </span>
           <span>{notification.message}</span>
         </div>,
@@ -628,78 +631,52 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
 
       <div className={`filter-expand-wrapper ${isFilterOpen || isSearchOpen ? 'open' : ''}`}>
         <div className="filter-expand-content">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '20px', marginTop: '10px', backgroundColor: '#080808', padding: '16px', border: '1px solid #1a1a1a', borderRadius: '8px' }}>
-            {isSearchOpen && (
-              <input
-                type="text"
-                value={searchQuery || searchTerm}
-                onChange={(e) => {
-                  if (onSearchChange) {
-                    onSearchChange(e.target.value);
-                  }
-                  setSearchTerm(e.target.value);
-                }}
-                placeholder="SEARCH PRODUCTS..."
-                className="smooth-transition animate-fade-in"
-                style={{ width: '100%', backgroundColor: '#000', border: '1px solid #333', borderRadius: '25px', padding: '8px 16px', color: '#fff', fontSize: '11px', fontFamily: 'monospace', boxSizing: 'border-box', outline: 'none' }}
-              />
-            )}
-            {isFilterOpen && (
-              <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%' }}>
-                <div>
-                  <div style={{ fontSize: '10px', color: '#777', fontFamily: 'monospace', letterSpacing: '1px', marginBottom: '8px' }}>STOCK STATUS</div>
-                  <div style={{ display: 'flex', gap: '14px', overflowX: 'auto', whiteSpace: 'nowrap', flexWrap: 'nowrap', scrollbarWidth: 'none' }}>
-                    {[
-                      { label: 'ALL', value: 'all' },
-                      { label: 'IN STOCK', value: 'in_stock' },
-                      { label: 'SOLD OUT', value: 'sold_out' }
-                    ].map((item) => (
-                      <button
-                        key={item.value}
-                        type="button"
-                        onClick={() => setStockFilter(item.value as any)}
-                        className="smooth-transition"
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          padding: '0',
-                          color: stockFilter === item.value ? '#fff' : '#666',
-                          fontSize: '11px',
-                          fontFamily: 'monospace',
-                          cursor: 'pointer',
-                          fontWeight: stockFilter === item.value ? '700' : 'normal',
-                          textDecoration: 'none',
-                          flexShrink: 0
-                        }}
-                      >
-                        {item.label}
-                      </button>
-                    ))}
-                  </div>
+          <div style={{ display: 'flex', flexDirection: 'column', marginBottom: '20px', marginTop: '10px', backgroundColor: '#080808', padding: '16px', border: '1px solid #1a1a1a', borderRadius: '8px' }}>
+            <div className={`search-filter-sub-wrapper ${isSearchOpen ? 'open' : ''}`}>
+              <div className="search-filter-sub-inner">
+                <div style={{ paddingBottom: isFilterOpen ? '16px' : '0px', transition: 'padding 0.35s ease' }}>
+                  <input
+                    type="text"
+                    value={searchQuery || searchTerm}
+                    onChange={(e) => {
+                      if (onSearchChange) {
+                        onSearchChange(e.target.value);
+                      }
+                      setSearchTerm(e.target.value);
+                    }}
+                    placeholder="SEARCH PRODUCTS..."
+                    className="smooth-transition animate-fade-in"
+                    style={{ width: '100%', backgroundColor: '#000', border: '1px solid #333', borderRadius: '25px', padding: '8px 16px', color: '#fff', fontSize: '11px', fontFamily: 'monospace', boxSizing: 'border-box', outline: 'none' }}
+                  />
                 </div>
+              </div>
+            </div>
 
-                <div>
-                  <div style={{ fontSize: '10px', color: '#777', fontFamily: 'monospace', letterSpacing: '1px', marginBottom: '8px' }}>SORT</div>
-                  <div style={{ display: 'flex', gap: '16px', alignItems: 'center', overflowX: 'auto', whiteSpace: 'nowrap', flexWrap: 'nowrap', scrollbarWidth: 'none' }}>
-                    <div style={{ display: 'flex', gap: '14px', flexShrink: 0 }}>
+            <div className={`search-filter-sub-wrapper ${isFilterOpen ? 'open' : ''}`}>
+              <div className="search-filter-sub-inner">
+                <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%' }}>
+                  <div>
+                    <div style={{ fontSize: '10px', color: '#777', fontFamily: 'monospace', letterSpacing: '1px', marginBottom: '8px' }}>STOCK STATUS</div>
+                    <div style={{ display: 'flex', gap: '14px', overflowX: 'auto', whiteSpace: 'nowrap', flexWrap: 'nowrap', scrollbarWidth: 'none' }}>
                       {[
-                        { label: 'NEWEST FIRST', value: 'newest' },
-                        { label: 'OLDEST FIRST', value: 'oldest' }
+                        { label: 'ALL', value: 'all' },
+                        { label: 'IN STOCK', value: 'in_stock' },
+                        { label: 'SOLD OUT', value: 'sold_out' }
                       ].map((item) => (
                         <button
                           key={item.value}
                           type="button"
-                          onClick={() => setDateSort(item.value as any)}
+                          onClick={() => setStockFilter(item.value as any)}
                           className="smooth-transition"
                           style={{
                             background: 'none',
                             border: 'none',
                             padding: '0',
-                            color: dateSort === item.value ? '#fff' : '#666',
+                            color: stockFilter === item.value ? '#fff' : '#666',
                             fontSize: '11px',
                             fontFamily: 'monospace',
                             cursor: 'pointer',
-                            fontWeight: dateSort === item.value ? '700' : 'normal',
+                            fontWeight: stockFilter === item.value ? '700' : 'normal',
                             textDecoration: 'none',
                             flexShrink: 0
                           }}
@@ -708,79 +685,112 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
                         </button>
                       ))}
                     </div>
-                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0 }}>
-                      <input
-                        type="date"
-                        value={startDate}
-                        onChange={(e) => setStartDate(e.target.value)}
-                        className="smooth-transition"
-                        style={{ backgroundColor: '#000', border: '1px solid #333', color: '#aaa', fontSize: '10px', fontFamily: 'monospace', padding: '4px 6px', borderRadius: '4px', outline: 'none' }}
-                      />
-                      <span style={{ color: '#555', fontSize: '10px' }}>-</span>
-                      <input
-                        type="date"
-                        value={endDate}
-                        onChange={(e) => setEndDate(e.target.value)}
-                        className="smooth-transition"
-                        style={{ backgroundColor: '#000', border: '1px solid #333', color: '#aaa', fontSize: '10px', fontFamily: 'monospace', padding: '4px 6px', borderRadius: '4px', outline: 'none' }}
-                      />
+                  </div>
+
+                  <div>
+                    <div style={{ fontSize: '10px', color: '#777', fontFamily: 'monospace', letterSpacing: '1px', marginBottom: '8px' }}>SORT</div>
+                    <div style={{ display: 'flex', gap: '16px', alignItems: 'center', overflowX: 'auto', whiteSpace: 'nowrap', flexWrap: 'nowrap', scrollbarWidth: 'none' }}>
+                      <div style={{ display: 'flex', gap: '14px', flexShrink: 0 }}>
+                        {[
+                          { label: 'NEWEST FIRST', value: 'newest' },
+                          { label: 'OLDEST FIRST', value: 'oldest' }
+                        ].map((item) => (
+                          <button
+                            key={item.value}
+                            type="button"
+                            onClick={() => setDateSort(item.value as any)}
+                            className="smooth-transition"
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              padding: '0',
+                              color: dateSort === item.value ? '#fff' : '#666',
+                              fontSize: '11px',
+                              fontFamily: 'monospace',
+                              cursor: 'pointer',
+                              fontWeight: dateSort === item.value ? '700' : 'normal',
+                              textDecoration: 'none',
+                              flexShrink: 0
+                            }}
+                          >
+                            {item.label}
+                          </button>
+                        ))}
+                      </div>
+                      <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0 }}>
+                        <input
+                          type="date"
+                          value={startDate}
+                          onChange={(e) => setStartDate(e.target.value)}
+                          className="smooth-transition"
+                          style={{ backgroundColor: '#000', border: '1px solid #333', color: '#aaa', fontSize: '10px', fontFamily: 'monospace', padding: '4px 6px', borderRadius: '4px', outline: 'none' }}
+                        />
+                        <span style={{ color: '#555', fontSize: '10px' }}>-</span>
+                        <input
+                          type="date"
+                          value={endDate}
+                          onChange={(e) => setEndDate(e.target.value)}
+                          className="smooth-transition"
+                          style={{ backgroundColor: '#000', border: '1px solid #333', color: '#aaa', fontSize: '10px', fontFamily: 'monospace', padding: '4px 6px', borderRadius: '4px', outline: 'none' }}
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div>
-                  <div style={{ fontSize: '10px', color: '#777', fontFamily: 'monospace', letterSpacing: '1px', marginBottom: '8px' }}>PRICE</div>
-                  <div style={{ display: 'flex', gap: '16px', alignItems: 'center', overflowX: 'auto', whiteSpace: 'nowrap', flexWrap: 'nowrap', scrollbarWidth: 'none' }}>
-                    <div style={{ display: 'flex', gap: '14px', flexShrink: 0 }}>
-                      {[
-                        { label: 'HIGH TO LOW', value: 'price_high' },
-                        { label: 'LOW TO HIGH', value: 'price_low' }
-                      ].map((item) => (
-                        <button
-                          key={item.value}
-                          type="button"
-                          onClick={() => setPriceSort(priceSort === item.value ? 'none' : item.value as any)}
+                  <div>
+                    <div style={{ fontSize: '10px', color: '#777', fontFamily: 'monospace', letterSpacing: '1px', marginBottom: '8px' }}>PRICE</div>
+                    <div style={{ display: 'flex', gap: '16px', alignItems: 'center', overflowX: 'auto', whiteSpace: 'nowrap', flexWrap: 'nowrap', scrollbarWidth: 'none' }}>
+                      <div style={{ display: 'flex', gap: '14px', flexShrink: 0 }}>
+                        {[
+                          { label: 'HIGH TO LOW', value: 'price_high' },
+                          { label: 'LOW TO HIGH', value: 'price_low' }
+                        ].map((item) => (
+                          <button
+                            key={item.value}
+                            type="button"
+                            onClick={() => setPriceSort(priceSort === item.value ? 'none' : item.value as any)}
+                            className="smooth-transition"
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              padding: '0',
+                              color: priceSort === item.value ? '#fff' : '#666',
+                              fontSize: '11px',
+                              fontFamily: 'monospace',
+                              cursor: 'pointer',
+                              fontWeight: priceSort === item.value ? '700' : 'normal',
+                              textDecoration: 'none',
+                              flexShrink: 0
+                            }}
+                          >
+                            {item.label}
+                          </button>
+                        ))}
+                      </div>
+                      <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0 }}>
+                        <input
+                          type="number"
+                          placeholder="MIN"
+                          value={minPrice}
+                          onChange={(e) => setMinPrice(e.target.value)}
                           className="smooth-transition"
-                          style={{
-                            background: 'none',
-                            border: 'none',
-                            padding: '0',
-                            color: priceSort === item.value ? '#fff' : '#666',
-                            fontSize: '11px',
-                            fontFamily: 'monospace',
-                            cursor: 'pointer',
-                            fontWeight: priceSort === item.value ? '700' : 'normal',
-                            textDecoration: 'none',
-                            flexShrink: 0
-                          }}
-                        >
-                          {item.label}
-                        </button>
-                      ))}
-                    </div>
-                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0 }}>
-                      <input
-                        type="number"
-                        placeholder="MIN"
-                        value={minPrice}
-                        onChange={(e) => setMinPrice(e.target.value)}
-                        className="smooth-transition"
-                        style={{ width: '60px', backgroundColor: '#000', border: '1px solid #333', color: '#fff', fontSize: '10px', fontFamily: 'monospace', padding: '4px 6px', borderRadius: '4px', outline: 'none' }}
-                      />
-                      <span style={{ color: '#555', fontSize: '10px' }}>-</span>
-                      <input
-                        type="number"
-                        placeholder="MAX"
-                        value={maxPrice}
-                        onChange={(e) => setMaxPrice(e.target.value)}
-                        className="smooth-transition"
-                        style={{ width: '60px', backgroundColor: '#000', border: '1px solid #333', color: '#fff', fontSize: '10px', fontFamily: 'monospace', padding: '4px 6px', borderRadius: '4px', outline: 'none' }}
-                      />
+                          style={{ width: '60px', backgroundColor: '#000', border: '1px solid #333', color: '#fff', fontSize: '10px', fontFamily: 'monospace', padding: '4px 6px', borderRadius: '4px', outline: 'none' }}
+                        />
+                        <span style={{ color: '#555', fontSize: '10px' }}>-</span>
+                        <input
+                          type="number"
+                          placeholder="MAX"
+                          value={maxPrice}
+                          onChange={(e) => setMaxPrice(e.target.value)}
+                          className="smooth-transition"
+                          style={{ width: '60px', backgroundColor: '#000', border: '1px solid #333', color: '#fff', fontSize: '10px', fontFamily: 'monospace', padding: '4px 6px', borderRadius: '4px', outline: 'none' }}
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
-            )}
+            </div>
           </div>
         </div>
       </div>
@@ -874,7 +884,7 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
                   height: '30px',
                   color: '#aaa',
                   cursor: 'pointer',
-                  display: 'inline-flex',
+                  display: 'flex',
                   alignItems: 'center',
                   justify: 'center',
                   padding: 0,
@@ -892,7 +902,7 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
                   e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
                 }}
               >
-                ✕
+                <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>✕</span>
               </button>
             </div>
 
@@ -942,7 +952,7 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
                           height: '16px',
                           fontSize: '9px',
                           cursor: 'pointer',
-                          display: 'inline-flex',
+                          display: 'flex',
                           alignItems: 'center',
                           justify: 'center',
                           padding: 0,
@@ -950,7 +960,7 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
                           fontWeight: 'bold'
                         }}
                       >
-                        ✕
+                        <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>✕</span>
                       </button>
                     </div>
                   ))}
@@ -1000,12 +1010,12 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '14px 15px' }}>
                 <input type="text" value={newFit} onChange={(e) => setNewFit(e.target.value)} placeholder="Fit (e.g. Regular Fit)" className="minimal-input" />
                 <input type="text" value={newGsm} onChange={(e) => setNewGsm(e.target.value)} placeholder="GSM (e.g. 180)" className="minimal-input" />
-                <input type="text" value={newMadeIn} onChange={(e) => setNewMadeIn(e.target.value)} placeholder="Made In (e.g. Bangladesh)" className="minimal-input" />
                 <input type="text" value={newMaterial} onChange={(e) => setNewMaterial(e.target.value)} placeholder="Material (e.g. 100% Cotton)" className="minimal-input" />
                 <input type="text" value={newCare} onChange={(e) => setNewCare(e.target.value)} placeholder="Care (e.g. Machine Wash)" className="minimal-input" />
                 <input type="text" value={newSleeve} onChange={(e) => setNewSleeve(e.target.value)} placeholder="Sleeve (e.g. Half Sleeve)" className="minimal-input" />
                 <input type="text" value={newPattern} onChange={(e) => setNewPattern(e.target.value)} placeholder="Pattern (e.g. Solid)" className="minimal-input" />
                 <input type="text" value={newOccasion} onChange={(e) => setNewOccasion(e.target.value)} placeholder="Occasion (e.g. Casual)" className="minimal-input" />
+                <input type="text" value={newMadeIn} onChange={(e) => setNewMadeIn(e.target.value)} placeholder="Made In (e.g. Bangladesh)" className="minimal-input" />
               </div>
 
               <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
@@ -1024,6 +1034,17 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
                   placeholder="Colors (e.g. BLACK, WHITE)"
                   className="minimal-input"
                   style={{ flex: '1 1 130px' }}
+                />
+              </div>
+
+              <div>
+                <textarea
+                  value={newDetails}
+                  onChange={(e) => setNewDetails(e.target.value)}
+                  placeholder="Details (Product Details)"
+                  rows={3}
+                  className="minimal-input"
+                  style={{ resize: 'none' }}
                 />
               </div>
 
@@ -1116,6 +1137,21 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
         .filter-expand-wrapper.open .filter-expand-content {
           opacity: 1;
           transform: translateY(0);
+        }
+        .search-filter-sub-wrapper {
+          display: grid;
+          grid-template-rows: 0fr;
+          opacity: 0;
+          transition: grid-template-rows 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease;
+          overflow: hidden;
+        }
+        .search-filter-sub-wrapper.open {
+          grid-template-rows: 1fr;
+          opacity: 1;
+        }
+        .search-filter-sub-inner {
+          min-height: 0;
+          overflow: hidden;
         }
         .showroom-row-container::-webkit-scrollbar {
           display: none;
