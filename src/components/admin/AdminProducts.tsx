@@ -189,15 +189,13 @@ const ProductCard = ({ product, onUpdateStock, onDelete }: { product: Product; o
             return !isDescExpanded ? (
               <p style={{ fontSize: '13px', color: '#aaa', margin: 0, lineHeight: '1.4' }}>
                 {displayedText || 'No description provided.'}
-                {isLongText && (
-                  <span
-                    onClick={() => setIsDescExpanded(true)}
-                    className="smooth-transition"
-                    style={{ fontSize: '12px', color: '#fff', cursor: 'pointer', marginLeft: '6px', fontWeight: '500', display: 'inline' }}
-                  >
-                    see more
-                  </span>
-                )}
+                <span
+                  onClick={() => setIsDescExpanded(true)}
+                  className="smooth-transition"
+                  style={{ fontSize: '12px', color: '#fff', cursor: 'pointer', marginLeft: '6px', fontWeight: '500', display: 'inline' }}
+                >
+                  see more
+                </span>
               </p>
             ) : (
               <div className="animate-fade-in">
@@ -206,13 +204,55 @@ const ProductCard = ({ product, onUpdateStock, onDelete }: { product: Product; o
                 </p>
                 {product.details && Object.keys(product.details).length > 0 && (
                   <div style={{ borderTop: '1px solid #1a1a1a', marginTop: '12px', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px', fontFamily: 'monospace', fontSize: '12px' }}>
-                    {Object.entries(product.details).map(([key, value]) => (
-                      <div key={key} style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'flex-start' }}>
-                        <span style={{ color: '#fff', width: '95px', flexShrink: 0, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{key}</span>
-                        <span style={{ color: '#555', marginRight: '10px', flexShrink: 0 }}>:</span>
-                        <span style={{ color: '#ccc', fontWeight: '400', flex: 1, overflowWrap: 'break-word', wordBreak: 'break-word', lineHeight: '1.4' }}>{String(value)}</span>
-                      </div>
-                    ))}
+                    {(() => {
+                      const specKeys = [
+                        'FIT',
+                        'GSM',
+                        'MATERIAL',
+                        'COLOR',
+                        'SLEEVE',
+                        'PATTERN',
+                        'OCCASION',
+                        'CARE',
+                        'MADE IN'
+                      ];
+
+                      const detailsObj = product.details || {};
+                      const detailKeys = Object.keys(detailsObj);
+
+                      const getVal = (targetKey: string) => {
+                        const foundKey = detailKeys.find(
+                          (k) =>
+                            k.trim().toUpperCase() === targetKey ||
+                            k.trim().toUpperCase().replace(/\s+/g, '') === targetKey.replace(/\s+/g, '')
+                        );
+                        return foundKey ? detailsObj[foundKey] : null;
+                      };
+
+                      const detailsVal = getVal('DETAILS');
+
+                      return (
+                        <>
+                          {specKeys.map((key) => {
+                            const val = getVal(key);
+                            if (!val) return null;
+                            return (
+                              <div key={key} style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'flex-start' }}>
+                                <span style={{ color: '#fff', width: '95px', flexShrink: 0, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{key}</span>
+                                <span style={{ color: '#555', marginRight: '10px', flexShrink: 0 }}>:</span>
+                                <span style={{ color: '#ccc', fontWeight: '400', flex: 1, overflowWrap: 'break-word', wordBreak: 'break-word', lineHeight: '1.4' }}>{String(val)}</span>
+                              </div>
+                            );
+                          })}
+
+                          {detailsVal && (
+                            <div style={{ marginTop: '4px', color: '#ccc', fontWeight: '400', overflowWrap: 'break-word', wordBreak: 'break-word', lineHeight: '1.4' }}>
+                              {String(detailsVal)}
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
                   </div>
                 )}
                 <span
