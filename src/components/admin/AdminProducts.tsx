@@ -1011,30 +1011,13 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
                 <input type="text" value={newFit} onChange={(e) => setNewFit(e.target.value)} placeholder="Fit (e.g. Regular Fit)" className="minimal-input" />
                 <input type="text" value={newGsm} onChange={(e) => setNewGsm(e.target.value)} placeholder="GSM (e.g. 180)" className="minimal-input" />
                 <input type="text" value={newSizes} onChange={(e) => setNewSizes(e.target.value)} placeholder="Sizes (e.g. S, M, L, XL)" className="minimal-input" />
+                <input type="text" value={newColors} onChange={(e) => setNewColors(e.target.value)} placeholder="Colors (e.g. BLACK, WHITE)" className="minimal-input" />
                 <input type="text" value={newMaterial} onChange={(e) => setNewMaterial(e.target.value)} placeholder="Material (e.g. 100% Cotton)" className="minimal-input" />
                 <input type="text" value={newCare} onChange={(e) => setNewCare(e.target.value)} placeholder="Care (e.g. Machine Wash)" className="minimal-input" />
                 <input type="text" value={newSleeve} onChange={(e) => setNewSleeve(e.target.value)} placeholder="Sleeve (e.g. Half Sleeve)" className="minimal-input" />
                 <input type="text" value={newPattern} onChange={(e) => setNewPattern(e.target.value)} placeholder="Pattern (e.g. Solid)" className="minimal-input" />
                 <input type="text" value={newOccasion} onChange={(e) => setNewOccasion(e.target.value)} placeholder="Occasion (e.g. Casual)" className="minimal-input" />
-              </div>
-
-              <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
-                <input
-                  type="text"
-                  value={newColors}
-                  onChange={(e) => setNewColors(e.target.value)}
-                  placeholder="Colors (e.g. BLACK, WHITE)"
-                  className="minimal-input"
-                  style={{ flex: '1 1 130px' }}
-                />
-                <input
-                  type="text"
-                  value={newMadeIn}
-                  onChange={(e) => setNewMadeIn(e.target.value)}
-                  placeholder="Made In (e.g. Bangladesh)"
-                  className="minimal-input"
-                  style={{ flex: '1 1 130px' }}
-                />
+                <input type="text" value={newMadeIn} onChange={(e) => setNewMadeIn(e.target.value)} placeholder="Made In (e.g. Bangladesh)" className="minimal-input" />
               </div>
 
               <div>
