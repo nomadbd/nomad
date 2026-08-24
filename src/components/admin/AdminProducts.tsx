@@ -363,9 +363,8 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
   const [uploadingMedia, setUploadingMedia] = useState<boolean>(false);
 
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
-
-  const [confirmAction, setConfirmAction] = useState<'hide' | 'delete' | null>(null);
-  const [confirmChecked, setConfirmChecked] = useState<boolean>(false);
+  const [deleteConfirmConfig, setDeleteConfirmConfig] = useState<{ type: 'soft' | 'hard'; productId: string | number } | null>(null);
+  const [isConfirmedChecked, setIsConfirmedChecked] = useState<boolean>(false);
 
   useEffect(() => {
     if (isAddOpen !== undefined) {
@@ -747,75 +746,6 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
     }
   };
 
-  const openConfirmDialog = (action: 'hide' | 'delete') => {
-    setConfirmChecked(false);
-    setConfirmAction(action);
-  };
-
-  const closeConfirmDialog = () => {
-    setConfirmAction(null);
-    setConfirmChecked(false);
-  };
-
-  const executeSoftDelete = async () => {
-    if (!editingProduct) return;
-    const productId = editingProduct.id;
-    setEditingProduct(null);
-    closeConfirmDialog();
-    try {
-      setProducts(prev => prev.map(p => p.id === productId ? { ...p, status: 'archived' } : p));
-      const { error } = await supabase.from('products').update({ status: 'archived' }).eq('id', productId);
-      if (error) throw error;
-      showNotification('PRODUCT HIDDEN FROM CATALOG.');
-    } catch (err) {
-      console.error('Failed to hide product:', err);
-      showNotification('COULD NOT HIDE PRODUCT.', 'error');
-      fetchProducts();
-    }
-  };
-
-  const executeHardDelete = async () => {
-    if (!editingProduct) return;
-    const productId = editingProduct.id;
-    const mediaList = editingProduct.product_media || [];
-    setEditingProduct(null);
-    closeConfirmDialog();
-    try {
-      setProducts(prev => prev.filter(p => p.id !== productId));
-
-      if (mediaList.length > 0 && typeof deleteFromCloudinary === 'function') {
-        for (const media of mediaList) {
-          if (media.media_url) {
-            try {
-              await deleteFromCloudinary(media.media_url);
-            } catch (e) {
-              console.error('Failed to delete media from Cloudinary:', e);
-            }
-          }
-        }
-      }
-
-      await supabase.from('product_media').delete().eq('product_id', productId);
-      const { error } = await supabase.from('products').delete().eq('id', productId);
-      if (error) throw error;
-
-      showNotification('PRODUCT PERMANENTLY DELETED FROM DATABASE & CLOUDINARY.');
-    } catch (err) {
-      console.error('Failed to delete product:', err);
-      showNotification('COULD NOT DELETE PRODUCT.', 'error');
-      fetchProducts();
-    }
-  };
-
-  const handleConfirmAction = () => {
-    if (!confirmChecked) return;
-    if (confirmAction === 'hide') {
-      executeSoftDelete();
-    } else if (confirmAction === 'delete') {
-      executeHardDelete();
-    }
-  };
-
   const handleUnhideProduct = async (productId: string | number) => {
     try {
       setProducts(prev => prev.map(p => p.id === productId ? { ...p, status: 'active' } : p));
@@ -899,171 +829,6 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
   });
 
   const filteredCategories = Array.from(new Set(filteredProducts.map(p => p.category))) as string[];
-
-  const confirmModal = confirmAction && createPortal(
-    <div
-      className="animate-fade-in"
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 10002,
-        backgroundColor: 'rgba(0, 0, 0, 0.75)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '20px',
-        boxSizing: 'border-box'
-      }}
-      onClick={closeConfirmDialog}
-    >
-      <div
-        className="animate-pop"
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          width: '100%',
-          maxWidth: '380px',
-          backgroundColor: '#0d0d0d',
-          border: `1px solid ${confirmAction === 'delete' ? 'rgba(239, 68, 68, 0.35)' : 'rgba(234, 179, 8, 0.35)'}`,
-          borderRadius: '10px',
-          padding: '24px',
-          boxSizing: 'border-box',
-          boxShadow: confirmAction === 'delete'
-            ? '0 20px 50px rgba(239, 68, 68, 0.12)'
-            : '0 20px 50px rgba(234, 179, 8, 0.12)'
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-          <div style={{
-            width: '36px',
-            height: '36px',
-            borderRadius: '50%',
-            backgroundColor: confirmAction === 'delete' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(234, 179, 8, 0.15)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexShrink: 0
-          }}>
-            <span style={{
-              color: confirmAction === 'delete' ? '#ef4444' : '#eab308',
-              fontSize: '16px',
-              fontWeight: 'bold',
-              lineHeight: 1
-            }}>
-              {confirmAction === 'delete' ? '!' : 'i'}
-            </span>
-          </div>
-          <h3 style={{
-            margin: 0,
-            color: '#fff',
-            fontSize: '13px',
-            letterSpacing: '1.5px',
-            fontWeight: '600',
-            textTransform: 'uppercase'
-          }}>
-            {confirmAction === 'delete' ? 'DELETE PERMANENTLY' : 'HIDE FROM CATALOG'}
-          </h3>
-        </div>
-
-        <p style={{
-          margin: '0 0 18px 0',
-          color: '#aaa',
-          fontSize: '12px',
-          lineHeight: '1.6',
-          fontFamily: 'monospace'
-        }}>
-          {confirmAction === 'delete'
-            ? 'This will permanently remove the product and all associated media from the database and Cloudinary. This action cannot be undone.'
-            : 'This will hide the product from the catalog. You can restore it later from the Hidden filter.'}
-        </p>
-
-        <label
-          style={{
-            display: 'flex',
-            alignItems: 'flex-start',
-            gap: '10px',
-            cursor: 'pointer',
-            marginBottom: '22px',
-            userSelect: 'none'
-          }}
-        >
-          <input
-            type="checkbox"
-            checked={confirmChecked}
-            onChange={(e) => setConfirmChecked(e.target.checked)}
-            style={{
-              marginTop: '2px',
-              width: '15px',
-              height: '15px',
-              accentColor: confirmAction === 'delete' ? '#ef4444' : '#eab308',
-              cursor: 'pointer',
-              flexShrink: 0
-            }}
-          />
-          <span style={{
-            color: '#ccc',
-            fontSize: '11px',
-            fontFamily: 'monospace',
-            lineHeight: '1.5',
-            letterSpacing: '0.3px'
-          }}>
-            {confirmAction === 'delete'
-              ? 'I understand this action is permanent and cannot be reversed.'
-              : 'I understand this product will be hidden from the catalog.'}
-          </span>
-        </label>
-
-        <div style={{ display: 'flex', gap: '12px' }}>
-          <button
-            type="button"
-            onClick={closeConfirmDialog}
-            className="smooth-transition"
-            style={{
-              flex: 1,
-              background: 'transparent',
-              border: '1px solid #333',
-              borderRadius: '6px',
-              color: '#aaa',
-              padding: '11px',
-              fontSize: '11px',
-              letterSpacing: '1px',
-              cursor: 'pointer',
-              fontWeight: '600'
-            }}
-          >
-            CANCEL
-          </button>
-          <button
-            type="button"
-            onClick={handleConfirmAction}
-            disabled={!confirmChecked}
-            className="smooth-transition"
-            style={{
-              flex: 1,
-              background: confirmChecked
-                ? (confirmAction === 'delete' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(234, 179, 8, 0.2)')
-                : 'rgba(255, 255, 255, 0.04)',
-              border: confirmChecked
-                ? (confirmAction === 'delete' ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid rgba(234, 179, 8, 0.4)')
-                : '1px solid #2a2a2a',
-              borderRadius: '6px',
-              color: confirmChecked
-                ? (confirmAction === 'delete' ? '#ef4444' : '#eab308')
-                : '#555',
-              padding: '11px',
-              fontSize: '11px',
-              letterSpacing: '1px',
-              cursor: confirmChecked ? 'pointer' : 'not-allowed',
-              fontWeight: '600',
-              opacity: confirmChecked ? 1 : 0.6
-            }}
-          >
-            CONFIRM
-          </button>
-        </div>
-      </div>
-    </div>,
-    document.body
-  );
 
   if (showAddPage) {
     return (
@@ -1150,199 +915,186 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
             </button>
           </div>
 
-          <form onSubmit={handleAddProduct} style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
-            {mediaPreviews.length === 0 ? (
-              <label
-                className="smooth-transition"
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  width: '100%',
-                  minHeight: '220px',
-                  border: '1px dashed #333',
-                  borderRadius: '10px',
-                  cursor: 'pointer',
-                  backgroundColor: '#050505',
-                  gap: '12px'
-                }}
-              >
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          {mediaPreviews.length === 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 20px', border: '1px dashed #333', borderRadius: '12px', backgroundColor: '#050505', textAlign: 'center', gap: '15px' }}>
+              <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '80px', height: '80px', border: '1px solid #444', borderRadius: '50%', cursor: 'pointer', backgroundColor: '#111' }}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="12" y1="5" x2="12" y2="19"></line>
                   <line x1="5" y1="12" x2="19" y2="12"></line>
                 </svg>
-                <span style={{ fontSize: '11px', color: '#888', letterSpacing: '1px', textTransform: 'uppercase' }}>Add Product Media</span>
-                <span style={{ fontSize: '10px', color: '#555', letterSpacing: '0.5px' }}>Images or Videos</span>
                 <input type="file" multiple accept="image/*,video/*" onChange={handleMediaChange} style={{ display: 'none' }} />
               </label>
-            ) : (
-              <>
-                <div style={{ display: 'flex', gap: '15px', alignItems: 'center', flexWrap: 'wrap' }}>
-                  <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '70px', height: '70px', border: '1px dashed #333', borderRadius: '8px', cursor: 'pointer', backgroundColor: '#050505', flexShrink: 0 }}>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <line x1="12" y1="5" x2="12" y2="19"></line>
-                      <line x1="5" y1="12" x2="19" y2="12"></line>
-                    </svg>
-                    <span style={{ fontSize: '9px', color: '#888', marginTop: '4px', letterSpacing: '0.5px', textTransform: 'uppercase' }}>Upload</span>
-                    <input type="file" multiple accept="image/*,video/*" onChange={handleMediaChange} style={{ display: 'none' }} />
-                  </label>
-                  <div style={{ flex: '1 1 200px' }}>
-                    <input
-                      type="text"
-                      value={newCategory}
-                      onChange={(e) => setNewCategory(e.target.value)}
-                      placeholder="Category (e.g. APPAREL)"
-                      className="minimal-input"
-                    />
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                  {mediaPreviews.map((media, idx) => (
-                    <div key={idx} style={{ position: 'relative', width: '60px', height: '60px', border: '1px solid #333', borderRadius: '6px', backgroundColor: '#000', overflow: 'visible' }}>
-                      {media.type === 'video' ? (
-                        <video src={media.url} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '5px' }} />
-                      ) : (
-                        <img src={media.url} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '5px' }} />
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => removeSelectedMedia(idx)}
-                        className="smooth-transition"
-                        style={{
-                          position: 'absolute',
-                          top: '-6px',
-                          right: '-6px',
-                          background: '#ef4444',
-                          color: '#fff',
-                          border: 'none',
-                          borderRadius: '50%',
-                          width: '18px',
-                          height: '18px',
-                          fontSize: '10px',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justify: 'center',
-                          padding: 0,
-                          lineHeight: 1,
-                          fontWeight: 'bold'
-                        }}
-                      >
-                        <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>✕</span>
-                      </button>
-                    </div>
-                  ))}
-                </div>
-
-                <div>
+              <div>
+                <div style={{ color: '#fff', fontSize: '13px', fontWeight: '600', marginBottom: '4px' }}>UPLOAD PRODUCT MEDIA</div>
+                <div style={{ color: '#777', fontSize: '11px' }}>Click the icon to select product images or videos</div>
+              </div>
+            </div>
+          ) : (
+            <form onSubmit={handleAddProduct} className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
+              <div style={{ display: 'flex', gap: '15px', alignItems: 'center', flexWrap: 'wrap' }}>
+                <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '70px', height: '70px', border: '1px dashed #333', borderRadius: '8px', cursor: 'pointer', backgroundColor: '#050505', flexShrink: 0 }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                  </svg>
+                  <span style={{ fontSize: '9px', color: '#888', marginTop: '4px', letterSpacing: '0.5px', textTransform: 'uppercase' }}>Add More</span>
+                  <input type="file" multiple accept="image/*,video/*" onChange={handleMediaChange} style={{ display: 'none' }} />
+                </label>
+                <div style={{ flex: '1 1 200px' }}>
                   <input
                     type="text"
-                    value={newName}
-                    onChange={(e) => setNewName(e.target.value)}
-                    placeholder="Product Name *"
+                    value={newCategory}
+                    onChange={(e) => setNewCategory(e.target.value)}
+                    placeholder="Category (e.g. APPAREL)"
                     className="minimal-input"
                   />
                 </div>
+              </div>
 
-                <div>
-                  <textarea
-                    value={newDescription}
-                    onChange={handleDescriptionChange}
-                    placeholder="Description (Bio)"
-                    rows={3}
-                    className="minimal-input"
-                    style={{ resize: 'none' }}
-                  />
-                </div>
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                {mediaPreviews.map((media, idx) => (
+                  <div key={idx} style={{ position: 'relative', width: '60px', height: '60px', border: '1px solid #333', borderRadius: '6px', backgroundColor: '#000', overflow: 'visible' }}>
+                    {media.type === 'video' ? (
+                      <video src={media.url} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '5px' }} />
+                    ) : (
+                      <img src={media.url} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '5px' }} />
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => removeSelectedMedia(idx)}
+                      className="smooth-transition"
+                      style={{
+                        position: 'absolute',
+                        top: '-6px',
+                        right: '-6px',
+                        background: '#ef4444',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: '50%',
+                        width: '18px',
+                        height: '18px',
+                        fontSize: '10px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justify: 'center',
+                        padding: 0,
+                        lineHeight: 1,
+                        fontWeight: 'bold'
+                      }}
+                    >
+                      <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>✕</span>
+                    </button>
+                  </div>
+                ))}
+              </div>
 
-                <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
-                  <input
-                    type="number"
-                    value={newPrice}
-                    onChange={(e) => setNewPrice(e.target.value)}
-                    placeholder="Price (৳) *"
-                    className="minimal-input"
-                    style={{ flex: '1 1 200px' }}
-                  />
-                  <input
-                    type="number"
-                    value={newStock}
-                    onChange={(e) => setNewStock(e.target.value)}
-                    placeholder="Stock Quantity"
-                    className="minimal-input"
-                    style={{ flex: '1 1 200px' }}
-                  />
-                </div>
+              <div>
+                <input
+                  type="text"
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  placeholder="Product Name *"
+                  className="minimal-input"
+                />
+              </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '18px 20px' }}>
-                  <input type="text" value={newFit} onChange={(e) => setNewFit(e.target.value)} placeholder="Fit (e.g. Regular Fit)" className="minimal-input" />
-                  <input type="text" value={newGsm} onChange={(e) => setNewGsm(e.target.value)} placeholder="GSM (e.g. 180)" className="minimal-input" />
-                  <input type="text" value={newSizes} onChange={(e) => setNewSizes(e.target.value)} placeholder="Sizes (e.g. S, M, L, XL)" className="minimal-input" />
-                  <input type="text" value={newColors} onChange={(e) => setNewColors(e.target.value)} placeholder="Colors (e.g. BLACK, WHITE)" className="minimal-input" />
-                  <input type="text" value={newMaterial} onChange={(e) => setNewMaterial(e.target.value)} placeholder="Material (e.g. 100% Cotton)" className="minimal-input" />
-                  <input type="text" value={newCare} onChange={(e) => setNewCare(e.target.value)} placeholder="Care (e.g. Machine Wash)" className="minimal-input" />
-                  <input type="text" value={newSleeve} onChange={(e) => setNewSleeve(e.target.value)} placeholder="Sleeve (e.g. Half Sleeve)" className="minimal-input" />
-                  <input type="text" value={newPattern} onChange={(e) => setNewPattern(e.target.value)} placeholder="Pattern (e.g. Solid)" className="minimal-input" />
-                  <input type="text" value={newOccasion} onChange={(e) => setNewOccasion(e.target.value)} placeholder="Occasion (e.g. Casual)" className="minimal-input" />
-                  <input type="text" value={newMadeIn} onChange={(e) => setNewMadeIn(e.target.value)} placeholder="Made In (e.g. Bangladesh)" className="minimal-input" />
-                </div>
+              <div>
+                <textarea
+                  value={newDescription}
+                  onChange={handleDescriptionChange}
+                  placeholder="Description (Bio)"
+                  rows={3}
+                  className="minimal-input"
+                  style={{ resize: 'none' }}
+                />
+              </div>
 
-                <div>
-                  <textarea
-                    value={newDetails}
-                    onChange={(e) => setNewDetails(e.target.value)}
-                    placeholder="Details (Product Details)"
-                    rows={4}
-                    className="minimal-input"
-                    style={{ resize: 'none' }}
-                  />
-                </div>
+              <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
+                <input
+                  type="number"
+                  value={newPrice}
+                  onChange={(e) => setNewPrice(e.target.value)}
+                  placeholder="Price (৳) *"
+                  className="minimal-input"
+                  style={{ flex: '1 1 200px' }}
+                />
+                <input
+                  type="number"
+                  value={newStock}
+                  onChange={(e) => setNewStock(e.target.value)}
+                  placeholder="Stock Quantity"
+                  className="minimal-input"
+                  style={{ flex: '1 1 200px' }}
+                />
+              </div>
 
-                <div style={{ display: 'flex', gap: '15px', marginTop: '15px' }}>
-                  <button
-                    type="button"
-                    onClick={() => handleSetShowAddModal(false)}
-                    className="smooth-transition"
-                    style={{
-                      flex: 1,
-                      background: 'transparent',
-                      border: '1px solid #333',
-                      borderRadius: '6px',
-                      color: '#aaa',
-                      padding: '12px',
-                      fontSize: '11px',
-                      letterSpacing: '1px',
-                      cursor: 'pointer',
-                      fontWeight: '600'
-                    }}
-                  >
-                    CANCEL
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={submitting || uploadingMedia}
-                    className="smooth-transition"
-                    style={{
-                      flex: 1,
-                      background: 'rgba(255, 255, 255, 0.08)',
-                      border: '1px solid rgba(255, 255, 255, 0.2)',
-                      borderRadius: '6px',
-                      color: '#fff',
-                      padding: '12px',
-                      fontSize: '11px',
-                      letterSpacing: '1px',
-                      fontWeight: '600',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    {uploadingMedia ? 'UPLOADING MEDIA...' : submitting ? 'SAVING...' : 'CREATE PRODUCT'}
-                  </button>
-                </div>
-              </>
-            )}
-          </form>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '18px 20px' }}>
+                <input type="text" value={newFit} onChange={(e) => setNewFit(e.target.value)} placeholder="Fit (e.g. Regular Fit)" className="minimal-input" />
+                <input type="text" value={newGsm} onChange={(e) => setNewGsm(e.target.value)} placeholder="GSM (e.g. 180)" className="minimal-input" />
+                <input type="text" value={newSizes} onChange={(e) => setNewSizes(e.target.value)} placeholder="Sizes (e.g. S, M, L, XL)" className="minimal-input" />
+                <input type="text" value={newColors} onChange={(e) => setNewColors(e.target.value)} placeholder="Colors (e.g. BLACK, WHITE)" className="minimal-input" />
+                <input type="text" value={newMaterial} onChange={(e) => setNewMaterial(e.target.value)} placeholder="Material (e.g. 100% Cotton)" className="minimal-input" />
+                <input type="text" value={newCare} onChange={(e) => setNewCare(e.target.value)} placeholder="Care (e.g. Machine Wash)" className="minimal-input" />
+                <input type="text" value={newSleeve} onChange={(e) => setNewSleeve(e.target.value)} placeholder="Sleeve (e.g. Half Sleeve)" className="minimal-input" />
+                <input type="text" value={newPattern} onChange={(e) => setNewPattern(e.target.value)} placeholder="Pattern (e.g. Solid)" className="minimal-input" />
+                <input type="text" value={newOccasion} onChange={(e) => setNewOccasion(e.target.value)} placeholder="Occasion (e.g. Casual)" className="minimal-input" />
+                <input type="text" value={newMadeIn} onChange={(e) => setNewMadeIn(e.target.value)} placeholder="Made In (e.g. Bangladesh)" className="minimal-input" />
+              </div>
+
+              <div>
+                <textarea
+                  value={newDetails}
+                  onChange={(e) => setNewDetails(e.target.value)}
+                  placeholder="Details (Product Details)"
+                  rows={4}
+                  className="minimal-input"
+                  style={{ resize: 'none' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '15px', marginTop: '15px' }}>
+                <button
+                  type="button"
+                  onClick={() => handleSetShowAddModal(false)}
+                  className="smooth-transition"
+                  style={{
+                    flex: 1,
+                    background: 'transparent',
+                    border: '1px solid #333',
+                    borderRadius: '6px',
+                    color: '#aaa',
+                    padding: '12px',
+                    fontSize: '11px',
+                    letterSpacing: '1px',
+                    cursor: 'pointer',
+                    fontWeight: '600'
+                  }}
+                >
+                  CANCEL
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting || uploadingMedia}
+                  className="smooth-transition"
+                  style={{
+                    flex: 1,
+                    background: 'rgba(255, 255, 255, 0.08)',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    borderRadius: '6px',
+                    color: '#fff',
+                    padding: '12px',
+                    fontSize: '11px',
+                    letterSpacing: '1px',
+                    fontWeight: '600',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {uploadingMedia ? 'UPLOADING MEDIA...' : submitting ? 'SAVING...' : 'CREATE PRODUCT'}
+                </button>
+              </div>
+            </form>
+          )}
         </div>
 
         <style>{`
@@ -1417,8 +1169,6 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
           </div>,
           document.body
         )}
-
-        {confirmModal}
 
         <div style={{ maxWidth: '800px', margin: '0 auto' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', borderBottom: '1px solid #1a1a1a', paddingBottom: '15px' }}>
@@ -1671,7 +1421,10 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
                 {editingProduct.status !== 'archived' && editingProduct.status !== 'hidden' && (
                   <button
                     type="button"
-                    onClick={() => openConfirmDialog('hide')}
+                    onClick={() => {
+                      setDeleteConfirmConfig({ type: 'soft', productId: editingProduct.id });
+                      setIsConfirmedChecked(false);
+                    }}
                     className="smooth-transition"
                     style={{
                       flex: 1,
@@ -1691,7 +1444,10 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
                 )}
                 <button
                   type="button"
-                  onClick={() => openConfirmDialog('delete')}
+                  onClick={() => {
+                    setDeleteConfirmConfig({ type: 'hard', productId: editingProduct.id });
+                    setIsConfirmedChecked(false);
+                  }}
                   className="smooth-transition"
                   style={{
                     flex: 1,
@@ -1712,6 +1468,104 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
             </div>
           </form>
         </div>
+
+        {deleteConfirmConfig && createPortal(
+          <div className="animate-fade-in" style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.85)', zIndex: 10002, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', boxSizing: 'border-box' }}>
+            <div style={{ backgroundColor: '#0d0d0d', border: '1px solid #222', borderRadius: '10px', padding: '24px', maxWidth: '400px', width: '100%', display: 'flex', flexDirection: 'column', gap: '18px' }}>
+              <h4 style={{ color: '#fff', margin: 0, fontSize: '13px', letterSpacing: '1px', textTransform: 'uppercase' }}>
+                {deleteConfirmConfig.type === 'soft' ? 'Hide Product' : 'Delete Product Permanently'}
+              </h4>
+              <p style={{ color: '#aaa', fontSize: '12px', margin: 0, lineHeight: '1.5' }}>
+                {deleteConfirmConfig.type === 'soft'
+                  ? 'This product will be hidden from the catalog. You can unhide it later.'
+                  : 'This action is irreversible. The product and all associated media will be permanently deleted.'}
+              </p>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', userSelect: 'none' }}>
+                <input
+                  type="checkbox"
+                  checked={isConfirmedChecked}
+                  onChange={(e) => setIsConfirmedChecked(e.target.checked)}
+                  style={{ accentColor: '#fff', cursor: 'pointer' }}
+                />
+                <span style={{ color: '#ccc', fontSize: '11px', fontFamily: 'monospace' }}>I confirm this action</span>
+              </label>
+              <div style={{ display: 'flex', gap: '10px', marginTop: '4px' }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDeleteConfirmConfig(null);
+                    setIsConfirmedChecked(false);
+                  }}
+                  style={{ flex: 1, background: 'transparent', border: '1px solid #333', borderRadius: '6px', color: '#aaa', padding: '10px', fontSize: '11px', cursor: 'pointer' }}
+                >
+                  CANCEL
+                </button>
+                <button
+                  type="button"
+                  disabled={!isConfirmedChecked}
+                  onClick={async () => {
+                    const { type, productId } = deleteConfirmConfig;
+                    setDeleteConfirmConfig(null);
+                    setIsConfirmedChecked(false);
+                    if (type === 'soft') {
+                      setEditingProduct(null);
+                      try {
+                        setProducts(prev => prev.map(p => p.id === productId ? { ...p, status: 'archived' } : p));
+                        const { error } = await supabase.from('products').update({ status: 'archived' }).eq('id', productId);
+                        if (error) throw error;
+                        showNotification('PRODUCT HIDDEN FROM CATALOG.');
+                      } catch (err) {
+                        console.error('Failed to hide product:', err);
+                        showNotification('COULD NOT HIDE PRODUCT.', 'error');
+                        fetchProducts();
+                      }
+                    } else {
+                      const prodToDel = products.find(p => p.id === productId);
+                      const mediaList = prodToDel?.product_media || [];
+                      setEditingProduct(null);
+                      try {
+                        setProducts(prev => prev.filter(p => p.id !== productId));
+                        if (mediaList.length > 0 && typeof deleteFromCloudinary === 'function') {
+                          for (const media of mediaList) {
+                            if (media.media_url) {
+                              try {
+                                await deleteFromCloudinary(media.media_url);
+                              } catch (e) {
+                                console.error('Failed to delete media from Cloudinary:', e);
+                              }
+                            }
+                          }
+                        }
+                        await supabase.from('product_media').delete().eq('product_id', productId);
+                        const { error } = await supabase.from('products').delete().eq('id', productId);
+                        if (error) throw error;
+                        showNotification('PRODUCT PERMANENTLY DELETED FROM DATABASE & CLOUDINARY.');
+                      } catch (err) {
+                        console.error('Failed to delete product:', err);
+                        showNotification('COULD NOT DELETE PRODUCT.', 'error');
+                        fetchProducts();
+                      }
+                    }
+                  }}
+                  style={{
+                    flex: 1,
+                    background: isConfirmedChecked ? (deleteConfirmConfig.type === 'soft' ? 'rgba(234, 179, 8, 0.2)' : 'rgba(239, 68, 68, 0.2)') : 'rgba(255,255,255,0.03)',
+                    border: `1px solid ${isConfirmedChecked ? (deleteConfirmConfig.type === 'soft' ? '#eab308' : '#ef4444') : '#222'}`,
+                    borderRadius: '6px',
+                    color: isConfirmedChecked ? (deleteConfirmConfig.type === 'soft' ? '#eab308' : '#ef4444') : '#555',
+                    padding: '10px',
+                    fontSize: '11px',
+                    cursor: isConfirmedChecked ? 'pointer' : 'not-allowed',
+                    fontWeight: '600'
+                  }}
+                >
+                  CONFIRM
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
 
         <style>{`
           .minimal-input {
