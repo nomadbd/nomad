@@ -285,6 +285,7 @@ export default function ProductList() {
           media_type
         )
       `)
+      .in('status', ['active', 'sold_out'])
       .order('created_at', { ascending: false });
 
     if (data) {
