@@ -309,7 +309,7 @@ export default function ProductList() {
         const isExpanded = !!expandedCategories[category];
 
         return (
-          <div key={category} className="showroom-section" style={{ marginBottom: '30px' }}>
+          <div key={category} className="showroom-section" style={{ marginBottom: '25px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 15px 12px 15px', borderBottom: '1px solid #141414' }}>
               <h3 style={{ margin: 0, fontSize: '13px', letterSpacing: '3px', color: '#b3b3b3', textTransform: 'uppercase' }}>{category}</h3>
 
@@ -354,7 +354,7 @@ export default function ProductList() {
         }
         @media (min-width: 768px) {
           .showroom-section { padding: 0 15px; }
-          .showroom-card-item { width: 300px; min-width: 300px; padding: 0 10px; margin-bottom: 30px; }
+          .showroom-card-item { width: 300px; min-width: 300px; padding: 0 10px; margin-bottom: 25px; }
         }
         .showroom-row-container::-webkit-scrollbar { display: none; }
       `}</style>
