@@ -152,33 +152,28 @@ const ProductAdminActionRow = ({ product, onUpdateStock, onEdit, onUnhide }: { p
               className="smooth-transition"
               style={{
                 height: '36px',
-                padding: '0 10px',
+                padding: '0 6px',
                 display: 'flex',
                 alignItems: 'center',
                 justify: 'center',
-                gap: '6px',
-                background: 'rgba(255, 255, 255, 0.05)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                borderRadius: '6px',
+                background: 'transparent',
+                border: 'none',
+                borderRadius: '0',
                 color: '#aaa',
-                fontSize: '11px',
                 cursor: 'pointer',
                 flexShrink: 0
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.color = '#ffffff';
-                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.color = '#aaa';
-                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
               }}
             >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                 <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
               </svg>
-              <span>EDIT</span>
             </button>
           </div>
         </div>
@@ -883,6 +878,372 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
 
   const filteredCategories = Array.from(new Set(filteredProducts.map(p => p.category))) as string[];
 
+  if (editingProduct) {
+    return (
+      <div className="admin-products-container animate-fade-in" style={{ width: '100%', maxWidth: '100%', minHeight: '100vh', backgroundColor: '#000', padding: '20px', boxSizing: 'border-box' }}>
+        {notification && createPortal(
+          <div
+            className="animate-pop"
+            style={{
+              position: 'fixed',
+              top: '20px',
+              right: '20px',
+              zIndex: 10001,
+              backgroundColor: '#0d0d0d',
+              border: `1px solid ${notification.type === 'error' ? 'rgba(239, 68, 68, 0.4)' : 'rgba(34, 197, 94, 0.4)'}`,
+              boxShadow: notification.type === 'error'
+                ? '0 10px 30px rgba(239, 68, 68, 0.15)'
+                : '0 10px 30px rgba(34, 197, 94, 0.15)',
+              color: '#ffffff',
+              padding: '12px 18px',
+              borderRadius: '8px',
+              fontFamily: 'monospace',
+              fontSize: '11px',
+              letterSpacing: '0.5px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px'
+            }}
+          >
+            <span style={{
+              display: 'flex',
+              alignItems: 'center',
+              justify: 'center',
+              width: '20px',
+              height: '20px',
+              borderRadius: '50%',
+              backgroundColor: notification.type === 'error' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(34, 197, 94, 0.15)',
+              color: notification.type === 'error' ? '#ef4444' : '#22c55e',
+              fontSize: '11px',
+              fontWeight: 'bold',
+              padding: 0,
+              lineHeight: 1
+            }}>
+              <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>{notification.type === 'error' ? '✕' : '✓'}</span>
+            </span>
+            <span>{notification.message}</span>
+          </div>,
+          document.body
+        )}
+
+        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', borderBottom: '1px solid #1a1a1a', paddingBottom: '15px' }}>
+            <h2 style={{ color: '#fff', fontSize: '16px', letterSpacing: '2px', margin: 0, fontWeight: '600' }}>EDIT PRODUCT</h2>
+            <button
+              type="button"
+              onClick={() => {
+                setEditingProduct(null);
+                setRemovedMediaUrls([]);
+              }}
+              className="smooth-transition"
+              style={{
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                borderRadius: '50%',
+                width: '32px',
+                height: '32px',
+                color: '#aaa',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justify: 'center',
+                padding: 0,
+                lineHeight: 1,
+                fontSize: '14px'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = '#ef4444';
+                e.currentTarget.style.color = '#fff';
+                e.currentTarget.style.borderColor = '#ef4444';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                e.currentTarget.style.color = '#aaa';
+                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+              }}
+            >
+              <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>✕</span>
+            </button>
+          </div>
+
+          <form onSubmit={handleUpdateProduct} style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
+            <div style={{ display: 'flex', gap: '15px', alignItems: 'center', flexWrap: 'wrap' }}>
+              <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '70px', height: '70px', border: '1px dashed #333', borderRadius: '8px', cursor: 'pointer', backgroundColor: '#050505', flexShrink: 0 }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                <span style={{ fontSize: '9px', color: '#888', marginTop: '4px', letterSpacing: '0.5px', textTransform: 'uppercase' }}>Upload</span>
+                <input type="file" multiple accept="image/*,video/*" onChange={handleEditMediaChange} style={{ display: 'none' }} />
+              </label>
+              <div style={{ flex: '1 1 200px' }}>
+                <input
+                  type="text"
+                  value={editCategory}
+                  onChange={(e) => setEditCategory(e.target.value)}
+                  placeholder="Category (e.g. APPAREL)"
+                  className="minimal-input"
+                />
+              </div>
+            </div>
+
+            {(editExistingMedia.length > 0 || editMediaPreviews.length > 0) && (
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                {editExistingMedia.map((media, idx) => (
+                  <div key={`existing-${idx}`} style={{ position: 'relative', width: '60px', height: '60px', border: '1px solid #333', borderRadius: '6px', backgroundColor: '#000', overflow: 'visible' }}>
+                    {media.media_type === 'video' ? (
+                      <video src={media.media_url} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '5px' }} />
+                    ) : (
+                      <img src={media.media_url} alt="existing" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '5px' }} />
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => removeExistingMedia(idx)}
+                      className="smooth-transition"
+                      style={{
+                        position: 'absolute',
+                        top: '-6px',
+                        right: '-6px',
+                        background: '#ef4444',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: '50%',
+                        width: '18px',
+                        height: '18px',
+                        fontSize: '10px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justify: 'center',
+                        padding: 0,
+                        lineHeight: 1,
+                        fontWeight: 'bold'
+                      }}
+                    >
+                      <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>✕</span>
+                    </button>
+                  </div>
+                ))}
+
+                {editMediaPreviews.map((media, idx) => (
+                  <div key={`new-${idx}`} style={{ position: 'relative', width: '60px', height: '60px', border: '1px solid #333', borderRadius: '6px', backgroundColor: '#000', overflow: 'visible' }}>
+                    {media.type === 'video' ? (
+                      <video src={media.url} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '5px' }} />
+                    ) : (
+                      <img src={media.url} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '5px' }} />
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => removeSelectedEditMedia(idx)}
+                      className="smooth-transition"
+                      style={{
+                        position: 'absolute',
+                        top: '-6px',
+                        right: '-6px',
+                        background: '#ef4444',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: '50%',
+                        width: '18px',
+                        height: '18px',
+                        fontSize: '10px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justify: 'center',
+                        padding: 0,
+                        lineHeight: 1,
+                        fontWeight: 'bold'
+                      }}
+                    >
+                      <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>✕</span>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div>
+              <input
+                type="text"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                placeholder="Product Name *"
+                className="minimal-input"
+              />
+            </div>
+
+            <div>
+              <textarea
+                value={editDescription}
+                onChange={handleEditDescriptionChange}
+                placeholder="Description (Bio)"
+                rows={3}
+                className="minimal-input"
+                style={{ resize: 'none' }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
+              <input
+                type="number"
+                value={editPrice}
+                onChange={(e) => setEditPrice(e.target.value)}
+                placeholder="Price (৳) *"
+                className="minimal-input"
+                style={{ flex: '1 1 200px' }}
+              />
+              <input
+                type="number"
+                value={editStock}
+                onChange={(e) => setEditStock(e.target.value)}
+                placeholder="Stock Quantity"
+                className="minimal-input"
+                style={{ flex: '1 1 200px' }}
+              />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '18px 20px' }}>
+              <input type="text" value={editFit} onChange={(e) => setEditFit(e.target.value)} placeholder="Fit (e.g. Regular Fit)" className="minimal-input" />
+              <input type="text" value={editGsm} onChange={(e) => setEditGsm(e.target.value)} placeholder="GSM (e.g. 180)" className="minimal-input" />
+              <input type="text" value={editSizes} onChange={(e) => setEditSizes(e.target.value)} placeholder="Sizes (e.g. S, M, L, XL)" className="minimal-input" />
+              <input type="text" value={editColors} onChange={(e) => setEditColors(e.target.value)} placeholder="Colors (e.g. BLACK, WHITE)" className="minimal-input" />
+              <input type="text" value={editMaterial} onChange={(e) => setEditMaterial(e.target.value)} placeholder="Material (e.g. 100% Cotton)" className="minimal-input" />
+              <input type="text" value={editCare} onChange={(e) => setEditCare(e.target.value)} placeholder="Care (e.g. Machine Wash)" className="minimal-input" />
+              <input type="text" value={editSleeve} onChange={(e) => setEditSleeve(e.target.value)} placeholder="Sleeve (e.g. Half Sleeve)" className="minimal-input" />
+              <input type="text" value={editPattern} onChange={(e) => setEditPattern(e.target.value)} placeholder="Pattern (e.g. Solid)" className="minimal-input" />
+              <input type="text" value={editOccasion} onChange={(e) => setEditOccasion(e.target.value)} placeholder="Occasion (e.g. Casual)" className="minimal-input" />
+              <input type="text" value={editMadeIn} onChange={(e) => setEditMadeIn(e.target.value)} placeholder="Made In (e.g. Bangladesh)" className="minimal-input" />
+            </div>
+
+            <div>
+              <textarea
+                value={editDetails}
+                onChange={(e) => setEditDetails(e.target.value)}
+                placeholder="Details (Product Details)"
+                rows={4}
+                className="minimal-input"
+                style={{ resize: 'none' }}
+              />
+            </div>
+
+            <div style={{ borderTop: '1px solid #1a1a1a', paddingTop: '16px', marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <span style={{ fontSize: '11px', color: '#666', fontFamily: 'monospace', letterSpacing: '1px' }}>PRODUCT ACTIONS</span>
+              <div style={{ display: 'flex', gap: '12px' }}>
+                {editingProduct.status !== 'archived' && editingProduct.status !== 'hidden' && (
+                  <button
+                    type="button"
+                    onClick={handleSoftDeleteProduct}
+                    className="smooth-transition"
+                    style={{
+                      flex: 1,
+                      background: 'rgba(234, 179, 8, 0.1)',
+                      border: '1px solid rgba(234, 179, 8, 0.25)',
+                      borderRadius: '6px',
+                      color: '#eab308',
+                      padding: '10px',
+                      fontSize: '11px',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      letterSpacing: '0.5px'
+                    }}
+                  >
+                    HIDE FROM CATALOG
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={handleHardDeleteProduct}
+                  className="smooth-transition"
+                  style={{
+                    flex: 1,
+                    background: 'rgba(239, 68, 68, 0.1)',
+                    border: '1px solid rgba(239, 68, 68, 0.25)',
+                    borderRadius: '6px',
+                    color: '#ef4444',
+                    padding: '10px',
+                    fontSize: '11px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    letterSpacing: '0.5px'
+                  }}
+                >
+                  DELETE PERMANENTLY
+                </button>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '15px', marginTop: '15px' }}>
+              <button
+                type="button"
+                onClick={() => {
+                  setEditingProduct(null);
+                  setRemovedMediaUrls([]);
+                }}
+                className="smooth-transition"
+                style={{
+                  flex: 1,
+                  background: 'transparent',
+                  border: '1px solid #333',
+                  borderRadius: '6px',
+                  color: '#aaa',
+                  padding: '12px',
+                  fontSize: '11px',
+                  letterSpacing: '1px',
+                  cursor: 'pointer',
+                  fontWeight: '600'
+                }}
+              >
+                CANCEL
+              </button>
+              <button
+                type="submit"
+                disabled={submitting || uploadingMedia}
+                className="smooth-transition"
+                style={{
+                  flex: 1,
+                  background: 'rgba(255, 255, 255, 0.08)',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  borderRadius: '6px',
+                  color: '#fff',
+                  padding: '12px',
+                  fontSize: '11px',
+                  letterSpacing: '1px',
+                  fontWeight: '600',
+                  cursor: 'pointer'
+                }}
+              >
+                {uploadingMedia ? 'UPLOADING MEDIA...' : submitting ? 'SAVING...' : 'UPDATE PRODUCT'}
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <style>{`
+          .minimal-input {
+            background: transparent !important;
+            border: none !important;
+            border-bottom: 1px solid #262626 !important;
+            color: #fff !important;
+            font-size: 11px !important;
+            outline: none !important;
+            padding: 8px 0 !important;
+            width: 100%;
+            box-sizing: border-box;
+            transition: border-color 0.2s ease;
+            font-family: inherit;
+          }
+          .minimal-input:focus {
+            border-bottom-color: #555 !important;
+          }
+          .minimal-input::placeholder {
+            color: #555;
+          }
+        `}</style>
+      </div>
+    );
+  }
+
   return (
     <div className="admin-products-container animate-fade-in" style={{ width: '100%', maxWidth: '100%', overflow: 'hidden', position: 'relative', backgroundColor: '#000', minHeight: '100vh', padding: '0 20px 20px 20px', boxSizing: 'border-box' }}>
       {notification && createPortal(
@@ -1154,306 +1515,6 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
             })
           )}
         </div>
-      )}
-
-      {/* EDIT PRODUCT MODAL */}
-      {editingProduct && createPortal(
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000, padding: '20px' }}>
-          <div className="animate-pop" style={{ backgroundColor: '#050505', border: '1px solid #262626', borderRadius: '12px', width: '100%', maxWidth: '480px', padding: '24px', maxHeight: '85vh', overflowY: 'auto', position: 'relative', boxShadow: '0 20px 40px rgba(0,0,0,0.8)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '22px' }}>
-              <h3 style={{ color: '#fff', fontSize: '13px', letterSpacing: '2px', margin: 0, fontWeight: '600' }}>EDIT PRODUCT</h3>
-              <button
-                type="button"
-                onClick={() => {
-                  setEditingProduct(null);
-                  setRemovedMediaUrls([]);
-                }}
-                className="smooth-transition"
-                style={{
-                  background: 'rgba(255, 255, 255, 0.05)',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  borderRadius: '50%',
-                  width: '30px',
-                  height: '30px',
-                  color: '#aaa',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justify: 'center',
-                  padding: 0,
-                  lineHeight: 1,
-                  fontSize: '12px'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = '#ef4444';
-                  e.currentTarget.style.color = '#fff';
-                  e.currentTarget.style.borderColor = '#ef4444';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-                  e.currentTarget.style.color = '#aaa';
-                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
-                }}
-              >
-                <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>✕</span>
-              </button>
-            </div>
-
-            <form onSubmit={handleUpdateProduct} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-              <div style={{ display: 'flex', gap: '15px', alignItems: 'center', flexWrap: 'wrap' }}>
-                <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '60px', height: '60px', border: '1px dashed #333', borderRadius: '8px', cursor: 'pointer', backgroundColor: '#000', flexShrink: 0 }}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                  </svg>
-                  <span style={{ fontSize: '9px', color: '#888', marginTop: '4px', letterSpacing: '0.5px', textTransform: 'uppercase' }}>Upload</span>
-                  <input type="file" multiple accept="image/*,video/*" onChange={handleEditMediaChange} style={{ display: 'none' }} />
-                </label>
-                <div style={{ flex: '1 1 140px' }}>
-                  <input
-                    type="text"
-                    value={editCategory}
-                    onChange={(e) => setEditCategory(e.target.value)}
-                    placeholder="Category (e.g. APPAREL)"
-                    className="minimal-input"
-                  />
-                </div>
-              </div>
-
-              {(editExistingMedia.length > 0 || editMediaPreviews.length > 0) && (
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '-6px' }}>
-                  {editExistingMedia.map((media, idx) => (
-                    <div key={`existing-${idx}`} style={{ position: 'relative', width: '50px', height: '50px', border: '1px solid #333', borderRadius: '6px', backgroundColor: '#000', overflow: 'visible' }}>
-                      {media.media_type === 'video' ? (
-                        <video src={media.media_url} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '5px' }} />
-                      ) : (
-                        <img src={media.media_url} alt="existing" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '5px' }} />
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => removeExistingMedia(idx)}
-                        className="smooth-transition"
-                        style={{
-                          position: 'absolute',
-                          top: '-5px',
-                          right: '-5px',
-                          background: '#ef4444',
-                          color: '#fff',
-                          border: 'none',
-                          borderRadius: '50%',
-                          width: '16px',
-                          height: '16px',
-                          fontSize: '9px',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justify: 'center',
-                          padding: 0,
-                          lineHeight: 1,
-                          fontWeight: 'bold'
-                        }}
-                      >
-                        <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>✕</span>
-                      </button>
-                    </div>
-                  ))}
-
-                  {editMediaPreviews.map((media, idx) => (
-                    <div key={`new-${idx}`} style={{ position: 'relative', width: '50px', height: '50px', border: '1px solid #333', borderRadius: '6px', backgroundColor: '#000', overflow: 'visible' }}>
-                      {media.type === 'video' ? (
-                        <video src={media.url} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '5px' }} />
-                      ) : (
-                        <img src={media.url} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '5px' }} />
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => removeSelectedEditMedia(idx)}
-                        className="smooth-transition"
-                        style={{
-                          position: 'absolute',
-                          top: '-5px',
-                          right: '-5px',
-                          background: '#ef4444',
-                          color: '#fff',
-                          border: 'none',
-                          borderRadius: '50%',
-                          width: '16px',
-                          height: '16px',
-                          fontSize: '9px',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justify: 'center',
-                          padding: 0,
-                          lineHeight: 1,
-                          fontWeight: 'bold'
-                        }}
-                      >
-                        <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>✕</span>
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              <div>
-                <input
-                  type="text"
-                  value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                  placeholder="Product Name *"
-                  className="minimal-input"
-                />
-              </div>
-
-              <div>
-                <textarea
-                  value={editDescription}
-                  onChange={handleEditDescriptionChange}
-                  placeholder="Description (Bio)"
-                  rows={2}
-                  className="minimal-input"
-                  style={{ resize: 'none' }}
-                />
-              </div>
-
-              <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
-                <input
-                  type="number"
-                  value={editPrice}
-                  onChange={(e) => setEditPrice(e.target.value)}
-                  placeholder="Price (৳) *"
-                  className="minimal-input"
-                  style={{ flex: '1 1 130px' }}
-                />
-                <input
-                  type="number"
-                  value={editStock}
-                  onChange={(e) => setEditStock(e.target.value)}
-                  placeholder="Stock Quantity"
-                  className="minimal-input"
-                  style={{ flex: '1 1 130px' }}
-                />
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '14px 15px' }}>
-                <input type="text" value={editFit} onChange={(e) => setEditFit(e.target.value)} placeholder="Fit (e.g. Regular Fit)" className="minimal-input" />
-                <input type="text" value={editGsm} onChange={(e) => setEditGsm(e.target.value)} placeholder="GSM (e.g. 180)" className="minimal-input" />
-                <input type="text" value={editSizes} onChange={(e) => setEditSizes(e.target.value)} placeholder="Sizes (e.g. S, M, L, XL)" className="minimal-input" />
-                <input type="text" value={editColors} onChange={(e) => setEditColors(e.target.value)} placeholder="Colors (e.g. BLACK, WHITE)" className="minimal-input" />
-                <input type="text" value={editMaterial} onChange={(e) => setEditMaterial(e.target.value)} placeholder="Material (e.g. 100% Cotton)" className="minimal-input" />
-                <input type="text" value={editCare} onChange={(e) => setEditCare(e.target.value)} placeholder="Care (e.g. Machine Wash)" className="minimal-input" />
-                <input type="text" value={editSleeve} onChange={(e) => setEditSleeve(e.target.value)} placeholder="Sleeve (e.g. Half Sleeve)" className="minimal-input" />
-                <input type="text" value={editPattern} onChange={(e) => setEditPattern(e.target.value)} placeholder="Pattern (e.g. Solid)" className="minimal-input" />
-                <input type="text" value={editOccasion} onChange={(e) => setEditOccasion(e.target.value)} placeholder="Occasion (e.g. Casual)" className="minimal-input" />
-                <input type="text" value={editMadeIn} onChange={(e) => setEditMadeIn(e.target.value)} placeholder="Made In (e.g. Bangladesh)" className="minimal-input" />
-              </div>
-
-              <div>
-                <textarea
-                  value={editDetails}
-                  onChange={(e) => setEditDetails(e.target.value)}
-                  placeholder="Details (Product Details)"
-                  rows={3}
-                  className="minimal-input"
-                  style={{ resize: 'none' }}
-                />
-              </div>
-
-              {/* DANGER / MANAGEMENT ZONE INSIDE EDIT MODAL */}
-              <div style={{ borderTop: '1px solid #1a1a1a', paddingTop: '14px', marginTop: '6px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <span style={{ fontSize: '10px', color: '#666', fontFamily: 'monospace', letterSpacing: '1px' }}>PRODUCT ACTIONS</span>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  {editingProduct.status !== 'archived' && editingProduct.status !== 'hidden' && (
-                    <button
-                      type="button"
-                      onClick={handleSoftDeleteProduct}
-                      className="smooth-transition"
-                      style={{
-                        flex: 1,
-                        background: 'rgba(234, 179, 8, 0.1)',
-                        border: '1px solid rgba(234, 179, 8, 0.25)',
-                        borderRadius: '6px',
-                        color: '#eab308',
-                        padding: '8px 4px',
-                        fontSize: '10px',
-                        fontWeight: '600',
-                        cursor: 'pointer',
-                        letterSpacing: '0.5px'
-                      }}
-                    >
-                      HIDE FROM CATALOG
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    onClick={handleHardDeleteProduct}
-                    className="smooth-transition"
-                    style={{
-                      flex: 1,
-                      background: 'rgba(239, 68, 68, 0.1)',
-                      border: '1px solid rgba(239, 68, 68, 0.25)',
-                      borderRadius: '6px',
-                      color: '#ef4444',
-                      padding: '8px 4px',
-                      fontSize: '10px',
-                      fontWeight: '600',
-                      cursor: 'pointer',
-                      letterSpacing: '0.5px'
-                    }}
-                  >
-                    DELETE PERMANENTLY
-                  </button>
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', gap: '12px', marginTop: '10px' }}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEditingProduct(null);
-                    setRemovedMediaUrls([]);
-                  }}
-                  className="smooth-transition"
-                  style={{
-                    flex: 1,
-                    background: 'transparent',
-                    border: '1px solid #333',
-                    borderRadius: '6px',
-                    color: '#aaa',
-                    padding: '10px',
-                    fontSize: '11px',
-                    letterSpacing: '1px',
-                    cursor: 'pointer',
-                    fontWeight: '600'
-                  }}
-                >
-                  CANCEL
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting || uploadingMedia}
-                  className="smooth-transition"
-                  style={{
-                    flex: 1,
-                    background: 'rgba(255, 255, 255, 0.08)',
-                    border: '1px solid rgba(255, 255, 255, 0.2)',
-                    borderRadius: '6px',
-                    color: '#fff',
-                    padding: '10px',
-                    fontSize: '11px',
-                    letterSpacing: '1px',
-                    fontWeight: '600',
-                    cursor: 'pointer'
-                  }}
-                >
-                  {uploadingMedia ? 'UPLOADING MEDIA...' : submitting ? 'SAVING...' : 'UPDATE PRODUCT'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>,
-        document.body
       )}
 
       {/* ADD NEW PRODUCT MODAL */}
