@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { supabase } from '../../supabaseClient';
-import { uploadToCloudinary } from '../../cloudinary';
+import { uploadToCloudinary, deleteFromCloudinary } from '../../cloudinary';
 import './admin-animations.css';
 
 interface Product {
@@ -324,7 +324,7 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
 
-  const [deletingProductId, setDeletingProductId] = useState<string | number | null>(null);
+  const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
 
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [editName, setEditName] = useState<string>('');
@@ -745,18 +745,51 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
   };
 
   const handleDeleteProduct = (productId: string | number) => {
-    setDeletingProductId(productId);
+    const targetProduct = products.find(p => p.id === productId) || null;
+    setDeletingProduct(targetProduct);
   };
 
-  const confirmDeleteProduct = async () => {
-    if (!deletingProductId) return;
-    const productId = deletingProductId;
-    setDeletingProductId(null);
+  const handleSoftDeleteProduct = async () => {
+    if (!deletingProduct) return;
+    const productId = deletingProduct.id;
+    setDeletingProduct(null);
     try {
       setProducts(prev => prev.filter(p => p.id !== productId));
+      const { error } = await supabase.from('products').update({ status: 'archived' }).eq('id', productId);
+      if (error) throw error;
+      showNotification('PRODUCT HIDDEN FROM CATALOG.');
+    } catch (err) {
+      console.error('Failed to hide product:', err);
+      showNotification('COULD NOT HIDE PRODUCT.', 'error');
+      fetchProducts();
+    }
+  };
+
+  const handleHardDeleteProduct = async () => {
+    if (!deletingProduct) return;
+    const productId = deletingProduct.id;
+    const mediaList = deletingProduct.product_media || [];
+    setDeletingProduct(null);
+    try {
+      setProducts(prev => prev.filter(p => p.id !== productId));
+
+      if (mediaList.length > 0 && typeof deleteFromCloudinary === 'function') {
+        for (const media of mediaList) {
+          if (media.media_url) {
+            try {
+              await deleteFromCloudinary(media.media_url);
+            } catch (e) {
+              console.error('Failed to delete media from Cloudinary:', e);
+            }
+          }
+        }
+      }
+
+      await supabase.from('product_media').delete().eq('product_id', productId);
       const { error } = await supabase.from('products').delete().eq('id', productId);
       if (error) throw error;
-      showNotification('PRODUCT REMOVED FROM CATALOG.');
+
+      showNotification('PRODUCT PERMANENTLY DELETED FROM DATABASE & CLOUDINARY.');
     } catch (err) {
       console.error('Failed to delete product:', err);
       showNotification('COULD NOT DELETE PRODUCT.', 'error');
@@ -767,6 +800,8 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
   const activeSearch = searchQuery || searchTerm;
 
   let filteredProducts = products.filter(p => {
+    if (p.status === 'archived' || p.status === 'hidden') return false;
+
     const matchesSearch = p.name.toLowerCase().includes(activeSearch.toLowerCase()) ||
                           p.category?.toLowerCase().includes(activeSearch.toLowerCase());
     if (!matchesSearch) return false;
@@ -1100,14 +1135,15 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
         </div>
       )}
 
-      {deletingProductId && createPortal(
+      {deletingProduct && createPortal(
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000, padding: '20px' }}>
-          <div className="animate-pop" style={{ backgroundColor: '#050505', border: '1px solid #262626', borderRadius: '12px', width: '100%', maxWidth: '380px', padding: '24px', textAlign: 'center', boxShadow: '0 20px 40px rgba(0,0,0,0.8)' }}>
+          <div className="animate-pop" style={{ backgroundColor: '#050505', border: '1px solid #262626', borderRadius: '12px', width: '100%', maxWidth: '400px', padding: '24px', textAlign: 'center', boxShadow: '0 20px 40px rgba(0,0,0,0.8)' }}>
             <h4 style={{ color: '#fff', fontSize: '13px', margin: '0 0 10px 0', letterSpacing: '1px', textTransform: 'uppercase' }}>REMOVE PRODUCT</h4>
-            <p style={{ color: '#aaa', fontSize: '12px', margin: '0 0 20px 0', lineHeight: '1.5' }}>Are you sure you want to remove this product from catalog? This action cannot be undone.</p>
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <button onClick={() => setDeletingProductId(null)} className="smooth-transition" style={{ flex: 1, background: 'transparent', border: '1px solid #333', borderRadius: '6px', color: '#fff', padding: '10px', fontSize: '11px', fontWeight: '600', cursor: 'pointer' }}>CANCEL</button>
-              <button onClick={confirmDeleteProduct} className="smooth-transition" style={{ flex: 1, background: '#ef4444', border: 'none', borderRadius: '6px', color: '#fff', padding: '10px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}>CONFIRM DELETE</button>
+            <p style={{ color: '#aaa', fontSize: '12px', margin: '0 0 20px 0', lineHeight: '1.5' }}>Choose how you want to handle this product deletion:</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <button onClick={handleSoftDeleteProduct} className="smooth-transition" style={{ width: '100%', background: '#1a1a1a', border: '1px solid #333', borderRadius: '6px', color: '#fff', padding: '10px', fontSize: '11px', fontWeight: '600', cursor: 'pointer' }}>HIDE FROM CATALOG (KEEP DATA & MEDIA)</button>
+              <button onClick={handleHardDeleteProduct} className="smooth-transition" style={{ width: '100%', background: '#ef4444', border: 'none', borderRadius: '6px', color: '#fff', padding: '10px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}>PERMANENT DELETE (SUPABASE & CLOUDINARY)</button>
+              <button onClick={() => setDeletingProduct(null)} className="smooth-transition" style={{ width: '100%', background: 'transparent', border: 'none', color: '#888', padding: '8px', fontSize: '11px', cursor: 'pointer' }}>CANCEL</button>
             </div>
           </div>
         </div>,
