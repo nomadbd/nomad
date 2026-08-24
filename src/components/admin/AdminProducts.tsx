@@ -11,7 +11,7 @@ interface Product {
   price: number;
   category: string;
   stock_quantity: number;
-  status: 'active' | 'sold_out' | string;
+  status: 'active' | 'sold_out' | 'archived' | 'hidden' | string;
   sizes: string[];
   colors: string[];
   created_at: string;
@@ -82,7 +82,7 @@ const ProductGallery = ({ images, productName }: { images: string[], productName
   );
 };
 
-const ProductAdminActionRow = ({ product, onUpdateStock, onDelete, onEdit, onUnhide }: { product: Product; onUpdateStock: (id: string | number, currentStock: number, change: number) => void; onDelete: (id: string | number) => void; onEdit: (product: Product) => void; onUnhide: (id: string | number) => void }) => {
+const ProductAdminActionRow = ({ product, onUpdateStock, onEdit, onUnhide }: { product: Product; onUpdateStock: (id: string | number, currentStock: number, change: number) => void; onEdit: (product: Product) => void; onUnhide: (id: string | number) => void }) => {
   const [step, setStep] = useState<'idle' | 'manage'>('idle');
   const isSoldOut = product.status === 'sold_out' || product.stock_quantity <= 0;
   const isHidden = product.status === 'archived' || product.status === 'hidden';
@@ -146,68 +146,40 @@ const ProductAdminActionRow = ({ product, onUpdateStock, onDelete, onEdit, onUnh
                 STOCK ({product.stock_quantity})
               </button>
             )}
-            <div style={{ display: 'flex', gap: '2px', alignItems: 'center' }}>
-              <button
-                onClick={() => onEdit(product)}
-                className="smooth-transition"
-                style={{
-                  height: '36px',
-                  width: '28px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justify: 'center',
-                  padding: 0,
-                  lineHeight: 1,
-                  background: 'transparent',
-                  border: 'none',
-                  borderRadius: '6px',
-                  color: '#aaa',
-                  fontSize: '13px',
-                  cursor: 'pointer',
-                  flexShrink: 0
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.color = '#ffffff';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.color = '#aaa';
-                }}
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                </svg>
-              </button>
-              <button
-                onClick={() => onDelete(product.id)}
-                className="smooth-transition"
-                style={{
-                  height: '36px',
-                  width: '28px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justify: 'center',
-                  padding: 0,
-                  lineHeight: 1,
-                  background: 'transparent',
-                  border: 'none',
-                  borderRadius: '6px',
-                  color: '#ef4444',
-                  fontSize: '13px',
-                  cursor: 'pointer',
-                  fontWeight: 'bold',
-                  flexShrink: 0
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.color = '#ff6666';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.color = '#ef4444';
-                }}
-              >
-                <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>✕</span>
-              </button>
-            </div>
+            
+            <button
+              onClick={() => onEdit(product)}
+              className="smooth-transition"
+              style={{
+                height: '36px',
+                padding: '0 10px',
+                display: 'flex',
+                alignItems: 'center',
+                justify: 'center',
+                gap: '6px',
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                borderRadius: '6px',
+                color: '#aaa',
+                fontSize: '11px',
+                cursor: 'pointer',
+                flexShrink: 0
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = '#ffffff';
+                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = '#aaa';
+                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+              }}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+              </svg>
+              <span>EDIT</span>
+            </button>
           </div>
         </div>
       )}
@@ -226,7 +198,7 @@ const ProductAdminActionRow = ({ product, onUpdateStock, onDelete, onEdit, onUnh
   );
 };
 
-const ProductCard = ({ product, onUpdateStock, onDelete, onEdit, onUnhide }: { product: Product; onUpdateStock: any; onDelete: any; onEdit: any; onUnhide: any }) => {
+const ProductCard = ({ product, onUpdateStock, onEdit, onUnhide }: { product: Product; onUpdateStock: any; onEdit: any; onUnhide: any }) => {
   const [isDescExpanded, setIsDescExpanded] = useState(false);
 
   const imagesList = (product.product_media && product.product_media.length > 0)
@@ -250,13 +222,15 @@ const ProductCard = ({ product, onUpdateStock, onDelete, onEdit, onUnhide }: { p
             return !isDescExpanded ? (
               <p style={{ fontSize: '13px', color: '#aaa', margin: 0, lineHeight: '1.4' }}>
                 {displayedText || 'No description provided.'}
-                <span
-                  onClick={() => setIsDescExpanded(true)}
-                  className="smooth-transition"
-                  style={{ fontSize: '12px', color: '#fff', cursor: 'pointer', marginLeft: '6px', fontWeight: '500', display: 'inline' }}
-                >
-                  see more
-                </span>
+                {isLongText && (
+                  <span
+                    onClick={() => setIsDescExpanded(true)}
+                    className="smooth-transition"
+                    style={{ fontSize: '12px', color: '#fff', cursor: 'pointer', marginLeft: '6px', fontWeight: '500', display: 'inline' }}
+                  >
+                    see more
+                  </span>
+                )}
               </p>
             ) : (
               <div className="animate-fade-in">
@@ -266,18 +240,7 @@ const ProductCard = ({ product, onUpdateStock, onDelete, onEdit, onUnhide }: { p
                 {product.details && Object.keys(product.details).length > 0 && (
                   <div style={{ borderTop: '1px solid #1a1a1a', marginTop: '12px', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px', fontFamily: 'monospace', fontSize: '12px' }}>
                     {(() => {
-                      const specKeys = [
-                        'FIT',
-                        'GSM',
-                        'MATERIAL',
-                        'COLOR',
-                        'SLEEVE',
-                        'PATTERN',
-                        'OCCASION',
-                        'CARE',
-                        'MADE IN'
-                      ];
-
+                      const specKeys = ['FIT', 'GSM', 'MATERIAL', 'COLOR', 'SLEEVE', 'PATTERN', 'OCCASION', 'CARE', 'MADE IN'];
                       const detailsObj = product.details || {};
                       const detailKeys = Object.keys(detailsObj);
 
@@ -328,7 +291,7 @@ const ProductCard = ({ product, onUpdateStock, onDelete, onEdit, onUnhide }: { p
           })()}
         </div>
 
-        <ProductAdminActionRow product={product} onUpdateStock={onUpdateStock} onDelete={onDelete} onEdit={onEdit} onUnhide={onUnhide} />
+        <ProductAdminActionRow product={product} onUpdateStock={onUpdateStock} onEdit={onEdit} onUnhide={onUnhide} />
       </div>
     </div>
   );
@@ -341,19 +304,15 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
   onSearchChange,
   isFilterOpen = false,
   isSearchOpen = false,
-  dateFormat,
   isAddOpen,
-  onToggleAdd,
   onCloseAdd
 }) => {
   const [products, setProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<string[]>([]);
+  const [, setCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [showAddModal, setShowAddModal] = useState<boolean>(false);
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
-
-  const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
 
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [removedMediaUrls, setRemovedMediaUrls] = useState<string[]>([]);
@@ -473,7 +432,7 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
         });
 
         setProducts(formatted);
-        const uniqueCategories = Array.from(new Set(formatted.map((p: Product) => p.category)));
+        const uniqueCategories = Array.from(new Set(formatted.map((p: Product) => p.category))) as string[];
         setCategories(uniqueCategories);
       }
     } catch (err) {
@@ -615,7 +574,7 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
 
   const handleOpenEdit = (product: Product) => {
     setEditingProduct(product);
-    setRemovedMediaUrls([]); // রিমুভ হওয়া মিডিয়ার তালিকা রিসেট
+    setRemovedMediaUrls([]);
     setEditName(product.name || '');
     setEditPrice(product.price ? String(product.price) : '');
     setEditStock(product.stock_quantity !== undefined ? String(product.stock_quantity) : '0');
@@ -790,15 +749,10 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
     }
   };
 
-  const handleDeleteProduct = (productId: string | number) => {
-    const targetProduct = products.find(p => p.id === productId) || null;
-    setDeletingProduct(targetProduct);
-  };
-
   const handleSoftDeleteProduct = async () => {
-    if (!deletingProduct) return;
-    const productId = deletingProduct.id;
-    setDeletingProduct(null);
+    if (!editingProduct) return;
+    const productId = editingProduct.id;
+    setEditingProduct(null);
     try {
       setProducts(prev => prev.map(p => p.id === productId ? { ...p, status: 'archived' } : p));
       const { error } = await supabase.from('products').update({ status: 'archived' }).eq('id', productId);
@@ -825,10 +779,12 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
   };
 
   const handleHardDeleteProduct = async () => {
-    if (!deletingProduct) return;
-    const productId = deletingProduct.id;
-    const mediaList = deletingProduct.product_media || [];
-    setDeletingProduct(null);
+    if (!editingProduct) return;
+    if (!window.confirm('ARE YOU SURE YOU WANT TO PERMANENTLY DELETE THIS PRODUCT AND ALL MEDIA?')) return;
+
+    const productId = editingProduct.id;
+    const mediaList = editingProduct.product_media || [];
+    setEditingProduct(null);
     try {
       setProducts(prev => prev.filter(p => p.id !== productId));
 
@@ -925,7 +881,7 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
     }
   });
 
-  const filteredCategories = Array.from(new Set(filteredProducts.map(p => p.category)));
+  const filteredCategories = Array.from(new Set(filteredProducts.map(p => p.category))) as string[];
 
   return (
     <div className="admin-products-container animate-fade-in" style={{ width: '100%', maxWidth: '100%', overflow: 'hidden', position: 'relative', backgroundColor: '#000', minHeight: '100vh', padding: '0 20px 20px 20px', boxSizing: 'border-box' }}>
@@ -1188,7 +1144,6 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
                         key={product.id}
                         product={product}
                         onUpdateStock={handleStockUpdate}
-                        onDelete={handleDeleteProduct}
                         onEdit={handleOpenEdit}
                         onUnhide={handleUnhideProduct}
                       />
@@ -1201,21 +1156,7 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
         </div>
       )}
 
-      {deletingProduct && createPortal(
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000, padding: '20px' }}>
-          <div className="animate-pop" style={{ backgroundColor: '#050505', border: '1px solid #262626', borderRadius: '12px', width: '100%', maxWidth: '400px', padding: '24px', textAlign: 'center', boxShadow: '0 20px 40px rgba(0,0,0,0.8)' }}>
-            <h4 style={{ color: '#fff', fontSize: '13px', margin: '0 0 10px 0', letterSpacing: '1px', textTransform: 'uppercase' }}>REMOVE PRODUCT</h4>
-            <p style={{ color: '#aaa', fontSize: '12px', margin: '0 0 20px 0', lineHeight: '1.5' }}>Choose how you want to handle this product deletion:</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <button onClick={handleSoftDeleteProduct} className="smooth-transition" style={{ width: '100%', background: '#1a1a1a', border: '1px solid #333', borderRadius: '6px', color: '#fff', padding: '10px', fontSize: '11px', fontWeight: '600', cursor: 'pointer' }}>HIDE FROM CATALOG (KEEP DATA & MEDIA)</button>
-              <button onClick={handleHardDeleteProduct} className="smooth-transition" style={{ width: '100%', background: '#ef4444', border: 'none', borderRadius: '6px', color: '#fff', padding: '10px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}>PERMANENT DELETE (SUPABASE & CLOUDINARY)</button>
-              <button onClick={() => setDeletingProduct(null)} className="smooth-transition" style={{ width: '100%', background: 'transparent', border: 'none', color: '#888', padding: '8px', fontSize: '11px', cursor: 'pointer' }}>CANCEL</button>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
-
+      {/* EDIT PRODUCT MODAL */}
       {editingProduct && createPortal(
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000, padding: '20px' }}>
           <div className="animate-pop" style={{ backgroundColor: '#050505', border: '1px solid #262626', borderRadius: '12px', width: '100%', maxWidth: '480px', padding: '24px', maxHeight: '85vh', overflowY: 'auto', position: 'relative', boxShadow: '0 20px 40px rgba(0,0,0,0.8)' }}>
@@ -1419,6 +1360,53 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
                 />
               </div>
 
+              {/* DANGER / MANAGEMENT ZONE INSIDE EDIT MODAL */}
+              <div style={{ borderTop: '1px solid #1a1a1a', paddingTop: '14px', marginTop: '6px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <span style={{ fontSize: '10px', color: '#666', fontFamily: 'monospace', letterSpacing: '1px' }}>PRODUCT ACTIONS</span>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  {editingProduct.status !== 'archived' && editingProduct.status !== 'hidden' && (
+                    <button
+                      type="button"
+                      onClick={handleSoftDeleteProduct}
+                      className="smooth-transition"
+                      style={{
+                        flex: 1,
+                        background: 'rgba(234, 179, 8, 0.1)',
+                        border: '1px solid rgba(234, 179, 8, 0.25)',
+                        borderRadius: '6px',
+                        color: '#eab308',
+                        padding: '8px 4px',
+                        fontSize: '10px',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        letterSpacing: '0.5px'
+                      }}
+                    >
+                      HIDE FROM CATALOG
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={handleHardDeleteProduct}
+                    className="smooth-transition"
+                    style={{
+                      flex: 1,
+                      background: 'rgba(239, 68, 68, 0.1)',
+                      border: '1px solid rgba(239, 68, 68, 0.25)',
+                      borderRadius: '6px',
+                      color: '#ef4444',
+                      padding: '8px 4px',
+                      fontSize: '10px',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      letterSpacing: '0.5px'
+                    }}
+                  >
+                    DELETE PERMANENTLY
+                  </button>
+                </div>
+              </div>
+
               <div style={{ display: 'flex', gap: '12px', marginTop: '10px' }}>
                 <button
                   type="button"
@@ -1468,6 +1456,7 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
         document.body
       )}
 
+      {/* ADD NEW PRODUCT MODAL */}
       {showAddModal && createPortal(
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000, padding: '20px' }}>
           <div className="animate-pop" style={{ backgroundColor: '#050505', border: '1px solid #262626', borderRadius: '12px', width: '100%', maxWidth: '480px', padding: '24px', maxHeight: '85vh', overflowY: 'auto', position: 'relative', boxShadow: '0 20px 40px rgba(0,0,0,0.8)' }}>
