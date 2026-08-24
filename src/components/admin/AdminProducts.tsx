@@ -356,7 +356,7 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
   const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
 
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [removedMediaUrls, setRemovedMediaUrls] = useState<string[]>([]); // এডিটে বাদ দেওয়া মিডিয়ার URL রাখার স্টেট
+  const [removedMediaUrls, setRemovedMediaUrls] = useState<string[]>([]);
   const [editName, setEditName] = useState<string>('');
   const [editPrice, setEditPrice] = useState<string>('');
   const [editStock, setEditStock] = useState<string>('');
@@ -726,7 +726,6 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
 
       if (updateError) throw updateError;
 
-      // ক্লাউডিনারি থেকে রিমুভ করা মিডিয়া ফাইলগুলো স্থায়ীভাবে মুছে ফেলা
       if (removedMediaUrls.length > 0 && typeof deleteFromCloudinary === 'function') {
         for (const url of removedMediaUrls) {
           try {
