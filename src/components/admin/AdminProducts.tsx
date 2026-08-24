@@ -89,28 +89,30 @@ const ProductAdminActionRow = ({ product, onUpdateStock, onDelete, onEdit }: { p
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: '42px', marginTop: '10px', boxSizing: 'border-box', width: '100%' }}>
       {step === 'idle' && (
-        <div className="animate-fade-in" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-          <span style={{ fontSize: '15px', color: isSoldOut ? '#555' : '#fff', fontWeight: 500, fontFamily: 'monospace' }}>৳{product.price}</span>
-          <div style={{ display: 'flex', gap: '8px' }}>
+        <div className="animate-fade-in" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', gap: '6px' }}>
+          <span style={{ fontSize: '14px', color: isSoldOut ? '#555' : '#fff', fontWeight: 500, fontFamily: 'monospace', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0, flexShrink: 1 }}>৳{product.price}</span>
+          <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0 }}>
             <button
               onClick={() => setStep('manage')}
               className="smooth-transition"
               style={{
                 height: '36px',
-                padding: '0 12px',
+                padding: '0 8px',
                 display: 'flex',
                 alignItems: 'center',
                 justify: 'center',
                 boxSizing: 'border-box',
-                background: 'transparent',
-                border: '1px solid #333',
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: 'none',
                 borderRadius: '6px',
                 color: '#fff',
                 fontSize: '10px',
-                letterSpacing: '1px',
+                letterSpacing: '0.5px',
                 cursor: 'pointer',
                 textTransform: 'uppercase',
                 fontWeight: '600',
+                whiteSpace: 'nowrap',
+                flexShrink: 0
               }}
             >
               STOCK ({product.stock_quantity})
@@ -127,21 +129,20 @@ const ProductAdminActionRow = ({ product, onUpdateStock, onDelete, onEdit }: { p
                 padding: 0,
                 lineHeight: 1,
                 background: 'rgba(255, 255, 255, 0.05)',
-                border: '1px solid rgba(255, 255, 255, 0.15)',
+                border: 'none',
                 borderRadius: '6px',
                 color: '#aaa',
                 fontSize: '13px',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                flexShrink: 0
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
                 e.currentTarget.style.color = '#ffffff';
-                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
                 e.currentTarget.style.color = '#aaa';
-                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
               }}
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -161,22 +162,21 @@ const ProductAdminActionRow = ({ product, onUpdateStock, onDelete, onEdit }: { p
                 padding: 0,
                 lineHeight: 1,
                 background: 'rgba(239, 68, 68, 0.08)',
-                border: '1px solid rgba(239, 68, 68, 0.3)',
+                border: 'none',
                 borderRadius: '6px',
                 color: '#ef4444',
                 fontSize: '13px',
                 cursor: 'pointer',
-                fontWeight: 'bold'
+                fontWeight: 'bold',
+                flexShrink: 0
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.background = '#ef4444';
                 e.currentTarget.style.color = '#ffffff';
-                e.currentTarget.style.borderColor = '#ef4444';
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.background = 'rgba(239, 68, 68, 0.08)';
                 e.currentTarget.style.color = '#ef4444';
-                e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.3)';
               }}
             >
               <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>✕</span>
