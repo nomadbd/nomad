@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+Import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { supabase } from '../../supabaseClient';
 import { uploadToCloudinary, deleteFromCloudinary } from '../../cloudinary';
@@ -758,9 +758,10 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
       const { error } = await supabase.from('products').update({ status: 'archived' }).eq('id', productId);
       if (error) throw error;
       showNotification('PRODUCT HIDDEN FROM CATALOG.');
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to hide product:', err);
-      showNotification('COULD NOT HIDE PRODUCT.', 'error');
+      // ডায়নামিক এরর মেসেজ প্রদর্শনের জন্য
+      showNotification(err?.message || err?.error_description || 'COULD NOT HIDE PRODUCT.', 'error');
       fetchProducts();
     }
   };
@@ -790,9 +791,10 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
       if (error) throw error;
 
       showNotification('PRODUCT PERMANENTLY DELETED FROM DATABASE & CLOUDINARY.');
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to delete product:', err);
-      showNotification('COULD NOT DELETE PRODUCT.', 'error');
+      // ডায়নামিক এরর মেসেজ প্রদর্শনের জন্য
+      showNotification(err?.message || err?.error_description || 'COULD NOT DELETE PRODUCT.', 'error');
       fetchProducts();
     }
   };
