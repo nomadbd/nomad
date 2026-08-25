@@ -24,6 +24,7 @@ export default function AdminLogistics({ searchQuery = '', isFilterOpen }: Admin
   const [deliveryCharge, setDeliveryCharge] = useState<number | string>('');
   const [vatRate, setVatRate] = useState<number | string>('');
   const [settingId, setSettingId] = useState<number | null>(null);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
 
   const fetchShipments = async () => {
     setLoading(true);
@@ -65,18 +66,25 @@ export default function AdminLogistics({ searchQuery = '', isFilterOpen }: Admin
     fetchSettings();
   }, []);
 
+  // Supabase Table Update Function
   const updateSettingField = async (field: 'delivery_charge' | 'vat_rate', value: number) => {
-    if (settingId === null) return;
+    setIsSaving(true);
     try {
+      const targetId = settingId ?? 1;
       const { error } = await supabase
         .from('store_settings')
-        .update({ [field]: value, updated_at: new Date().toISOString() })
-        .eq('id', settingId);
+        .upsert({
+          id: targetId,
+          [field]: value,
+          updated_at: new Date().toISOString()
+        });
 
       if (error) throw error;
-      fetchSettings();
+      await fetchSettings();
     } catch (err: any) {
-      alert('Failed to update setting: ' + err.message);
+      alert('Supabase Update Failed: ' + err.message);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -105,7 +113,7 @@ export default function AdminLogistics({ searchQuery = '', isFilterOpen }: Admin
   return (
     <div style={{ color: '#fff', width: '100%' }}>
       {/* Store Settings Card */}
-      <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'flex-start' }}>
+      <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'flex-start', alignItems: 'center', gap: '12px' }}>
         <div style={{ display: 'flex', gap: '24px', backgroundColor: '#060606', padding: '10px 16px', border: '1px solid #1a1a1a' }}>
           <div>
             <span style={{ fontSize: '9px', color: '#888', display: 'block', letterSpacing: '1px', marginBottom: '2px' }}>
@@ -115,6 +123,12 @@ export default function AdminLogistics({ searchQuery = '', isFilterOpen }: Admin
               type="number"
               value={deliveryCharge}
               onChange={(e) => setDeliveryCharge(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && e.currentTarget.value !== '') {
+                  updateSettingField('delivery_charge', Number(e.currentTarget.value));
+                  e.currentTarget.blur();
+                }
+              }}
               onBlur={(e) => {
                 if (e.target.value !== '') {
                   updateSettingField('delivery_charge', Number(e.target.value));
@@ -134,6 +148,7 @@ export default function AdminLogistics({ searchQuery = '', isFilterOpen }: Admin
               }}
             />
           </div>
+
           <div style={{ borderLeft: '1px solid #1a1a1a', paddingLeft: '24px' }}>
             <span style={{ fontSize: '9px', color: '#888', display: 'block', letterSpacing: '1px', marginBottom: '2px' }}>
               VAT RATE
@@ -143,6 +158,12 @@ export default function AdminLogistics({ searchQuery = '', isFilterOpen }: Admin
               step="0.01"
               value={vatRate}
               onChange={(e) => setVatRate(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && e.currentTarget.value !== '') {
+                  updateSettingField('vat_rate', Number(e.currentTarget.value));
+                  e.currentTarget.blur();
+                }
+              }}
               onBlur={(e) => {
                 if (e.target.value !== '') {
                   updateSettingField('vat_rate', Number(e.target.value));
@@ -163,6 +184,10 @@ export default function AdminLogistics({ searchQuery = '', isFilterOpen }: Admin
             />
           </div>
         </div>
+
+        {isSaving && (
+          <span style={{ fontSize: '10px', color: '#f1c40f', fontFamily: 'monospace' }}>SAVING...</span>
+        )}
       </div>
 
       {isFilterOpen && (
