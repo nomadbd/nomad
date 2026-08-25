@@ -11,14 +11,14 @@ import {
   StaffProfile
 } from '../components/admin';
 
-type TabType = 'overview' | 'orders' | 'products' | 'staff' | 'customers' | 'logistics';
+type TabType = 'overview' | 'orders' | 'products' | 'customers' | 'logistics' | 'staff';
 
 const AdminDashboard: React.FC = () => {
   const getTabFromURL = (): TabType => {
     if (typeof window === 'undefined') return 'overview';
     const params = new URLSearchParams(window.location.search);
     const tab = params.get('tab') as TabType;
-    const validTabs: TabType[] = ['overview', 'orders', 'products', 'staff', 'customers', 'logistics'];
+    const validTabs: TabType[] = ['overview', 'orders', 'products', 'customers', 'logistics', 'staff'];
     return validTabs.includes(tab) ? tab : 'overview';
   };
 
@@ -492,42 +492,42 @@ const AdminDashboard: React.FC = () => {
                 className={`nav-btn ${activeTab === 'overview' ? 'active' : ''}`}
                 onClick={() => handleTabChange('overview')}
               >
-                OVERVIEW & ANALYTICS
+                OVERVIEW
               </button>
 
               <button
                 className={`nav-btn ${activeTab === 'orders' ? 'active' : ''}`}
                 onClick={() => handleTabChange('orders')}
               >
-                ORDER MANAGEMENT
+                ORDERS
               </button>
 
               <button
                 className={`nav-btn ${activeTab === 'products' ? 'active' : ''}`}
                 onClick={() => handleTabChange('products')}
               >
-                PRODUCTS & STOCK
-              </button>
-
-              <button
-                className={`nav-btn ${activeTab === 'staff' ? 'active' : ''}`}
-                onClick={() => handleTabChange('staff')}
-              >
-                STAFF MANAGEMENT
+                PRODUCTS
               </button>
 
               <button
                 className={`nav-btn ${activeTab === 'customers' ? 'active' : ''}`}
                 onClick={() => handleTabChange('customers')}
               >
-                CUSTOMER DIRECTORY
+                CUSTOMERS
               </button>
 
               <button
                 className={`nav-btn ${activeTab === 'logistics' ? 'active' : ''}`}
                 onClick={() => handleTabChange('logistics')}
               >
-                LOGISTICS & DISPATCH
+                LOGISTICS
+              </button>
+
+              <button
+                className={`nav-btn ${activeTab === 'staff' ? 'active' : ''}`}
+                onClick={() => handleTabChange('staff')}
+              >
+                STAFF
               </button>
             </nav>
           </div>
@@ -602,15 +602,6 @@ const AdminDashboard: React.FC = () => {
               onCloseAdd={() => setIsAddOpen(false)}
             />
           )}
-          {activeTab === 'staff' && (
-            <AdminStaff 
-              key="staff"
-              searchQuery={searchQuery}
-              isFilterOpen={isFilterOpen}
-              isSearchOpen={isSearchOpen}
-              dateFormat="DD/MM/YYYY"
-            />
-          )}
           {activeTab === 'customers' && (
             <AdminCustomers 
               key="customers"
@@ -624,6 +615,15 @@ const AdminDashboard: React.FC = () => {
               key="logistics"
               searchQuery={searchQuery}
               isFilterOpen={isFilterOpen}
+            />
+          )}
+          {activeTab === 'staff' && (
+            <AdminStaff 
+              key="staff"
+              searchQuery={searchQuery}
+              isFilterOpen={isFilterOpen}
+              isSearchOpen={isSearchOpen}
+              dateFormat="DD/MM/YYYY"
             />
           )}
         </main>
