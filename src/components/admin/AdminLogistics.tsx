@@ -21,11 +21,15 @@ export default function AdminLogistics({ searchQuery = '', isFilterOpen }: Admin
   const [loading, setLoading] = useState<boolean>(true);
   const [courierFilter, setCourierFilter] = useState<string>('ALL');
 
+  // Store Settings States
   const [deliveryCharge, setDeliveryCharge] = useState<number | string>('');
   const [vatRate, setVatRate] = useState<number | string>('');
+  const [initialDeliveryCharge, setInitialDeliveryCharge] = useState<number | string>('');
+  const [initialVatRate, setInitialVatRate] = useState<number | string>('');
+  
   const [settingId, setSettingId] = useState<number | null>(null);
+  const [isEditing, setIsEditing] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
-  const [saveSuccess, setSaveSuccess] = useState<boolean>(false);
 
   const fetchShipments = async () => {
     setLoading(true);
@@ -53,9 +57,13 @@ export default function AdminLogistics({ searchQuery = '', isFilterOpen }: Admin
         .maybeSingle();
 
       if (!error && data) {
+        const dc = data.delivery_charge ?? 100;
+        const vat = data.vat_rate ?? 0.05;
         setSettingId(data.id);
-        setDeliveryCharge(data.delivery_charge ?? 100);
-        setVatRate(data.vat_rate ?? 0.05);
+        setDeliveryCharge(dc);
+        setVatRate(vat);
+        setInitialDeliveryCharge(dc);
+        setInitialVatRate(vat);
       }
     } catch (err) {
       console.error('Error fetching store settings:', err);
@@ -69,7 +77,6 @@ export default function AdminLogistics({ searchQuery = '', isFilterOpen }: Admin
 
   const handleSaveSettings = async () => {
     setIsSaving(true);
-    setSaveSuccess(false);
     try {
       const targetId = settingId ?? 1;
       const { error } = await supabase
@@ -82,15 +89,21 @@ export default function AdminLogistics({ searchQuery = '', isFilterOpen }: Admin
         .eq('id', targetId);
 
       if (error) throw error;
-      
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 2000);
-      await fetchSettings();
+
+      setInitialDeliveryCharge(deliveryCharge);
+      setInitialVatRate(vatRate);
+      setIsEditing(false);
     } catch (err: any) {
       alert('Failed to save settings: ' + err.message);
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleCancel = () => {
+    setDeliveryCharge(initialDeliveryCharge);
+    setVatRate(initialVatRate);
+    setIsEditing(false);
   };
 
   const updateStatus = async (id: string, status: Shipment['shipping_status']) => {
@@ -128,17 +141,19 @@ export default function AdminLogistics({ searchQuery = '', isFilterOpen }: Admin
               type="number"
               value={deliveryCharge}
               onChange={(e) => setDeliveryCharge(e.target.value)}
+              disabled={!isEditing}
               placeholder="100"
               style={{
                 backgroundColor: 'transparent',
-                color: '#fff',
-                border: 'none',
+                color: isEditing ? '#fff' : '#888',
+                border: isEditing ? '1px solid #333' : 'none',
                 outline: 'none',
                 fontSize: '13px',
                 fontWeight: 'bold',
                 width: '75px',
-                padding: 0,
-                fontFamily: 'monospace'
+                padding: isEditing ? '2px 4px' : '0',
+                fontFamily: 'monospace',
+                cursor: isEditing ? 'text' : 'default'
               }}
             />
           </div>
@@ -152,39 +167,76 @@ export default function AdminLogistics({ searchQuery = '', isFilterOpen }: Admin
               step="0.01"
               value={vatRate}
               onChange={(e) => setVatRate(e.target.value)}
+              disabled={!isEditing}
               placeholder="0.05"
               style={{
                 backgroundColor: 'transparent',
-                color: '#fff',
-                border: 'none',
+                color: isEditing ? '#fff' : '#888',
+                border: isEditing ? '1px solid #333' : 'none',
                 outline: 'none',
                 fontSize: '13px',
                 fontWeight: 'bold',
                 width: '65px',
-                padding: 0,
-                fontFamily: 'monospace'
+                padding: isEditing ? '2px 4px' : '0',
+                fontFamily: 'monospace',
+                cursor: isEditing ? 'text' : 'default'
               }}
             />
           </div>
 
-          <div style={{ borderLeft: '1px solid #1a1a1a', paddingLeft: '16px' }}>
-            <button
-              onClick={handleSaveSettings}
-              disabled={isSaving}
-              style={{
-                backgroundColor: saveSuccess ? '#112211' : '#111',
-                color: saveSuccess ? '#2ecc71' : '#fff',
-                border: `1px solid ${saveSuccess ? '#2ecc71' : '#333'}`,
-                padding: '6px 12px',
-                fontSize: '10px',
-                fontWeight: 'bold',
-                cursor: 'pointer',
-                letterSpacing: '1px',
-                transition: 'all 0.2s ease'
-              }}
-            >
-              {isSaving ? 'SAVING...' : saveSuccess ? 'SAVED!' : 'SAVE'}
-            </button>
+          <div style={{ borderLeft: '1px solid #1a1a1a', paddingLeft: '16px', display: 'flex', gap: '8px' }}>
+            {!isEditing ? (
+              <button
+                onClick={() => setIsEditing(true)}
+                style={{
+                  backgroundColor: '#111',
+                  color: '#fff',
+                  border: '1px solid #333',
+                  padding: '6px 14px',
+                  fontSize: '10px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  letterSpacing: '1px'
+                }}
+              >
+                EDIT
+              </button>
+            ) : (
+              <>
+                <button
+                  onClick={handleSaveSettings}
+                  disabled={isSaving}
+                  style={{
+                    backgroundColor: '#112211',
+                    color: '#2ecc71',
+                    border: '1px solid #2ecc71',
+                    padding: '6px 12px',
+                    fontSize: '10px',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    letterSpacing: '1px'
+                  }}
+                >
+                  {isSaving ? 'SAVING...' : 'SAVE'}
+                </button>
+                <button
+                  onClick={handleCancel}
+                  disabled={isSaving}
+                  style={{
+                    backgroundColor: '#1a1a1a',
+                    color: '#888',
+                    border: '1px solid #333',
+                    padding: '6px 10px',
+                    fontSize: '10px',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    letterSpacing: '1px'
+                  }}
+                >
+                  CANCEL
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>
