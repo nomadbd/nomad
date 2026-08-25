@@ -4,17 +4,16 @@ import { supabase } from '../supabaseClient';
 import AdminOverview from '../components/admin/AdminOverview';
 import AdminOrders from '../components/admin/AdminOrders';
 import AdminProducts from '../components/admin/AdminProducts';
-import AdminSettings from '../components/admin/AdminSettings';
 import StaffProfile from '../components/admin/StaffProfile';
 
-type TabType = 'overview' | 'orders' | 'products' | 'settings';
+type TabType = 'overview' | 'orders' | 'products';
 
 const AdminDashboard: React.FC = () => {
   const getTabFromURL = (): TabType => {
     if (typeof window === 'undefined') return 'overview';
     const params = new URLSearchParams(window.location.search);
     const tab = params.get('tab') as TabType;
-    const validTabs: TabType[] = ['overview', 'orders', 'products', 'settings'];
+    const validTabs: TabType[] = ['overview', 'orders', 'products'];
     return validTabs.includes(tab) ? tab : 'overview';
   };
 
@@ -111,14 +110,7 @@ const AdminDashboard: React.FC = () => {
   }, []);
 
   const normalizedRole = userRole.toUpperCase().trim();
-  const isSuperAdmin = normalizedRole === 'SUPER_ADMIN';
   const hasAdminAccess = ['SUPER_ADMIN', 'ADMIN', 'STAFF'].includes(normalizedRole);
-
-  useEffect(() => {
-    if (!loading && !isSuperAdmin && activeTab === 'settings') {
-      handleTabChange('overview');
-    }
-  }, [isSuperAdmin, loading, activeTab]);
 
   useEffect(() => {
     if (!loading && !hasAdminAccess) {
@@ -511,15 +503,6 @@ const AdminDashboard: React.FC = () => {
               >
                 PRODUCTS & STOCK
               </button>
-
-              {isSuperAdmin && (
-                <button
-                  className={`nav-btn ${activeTab === 'settings' ? 'active' : ''}`}
-                  onClick={() => handleTabChange('settings')}
-                >
-                  ROLES & SETTINGS
-                </button>
-              )}
             </nav>
           </div>
 
@@ -592,16 +575,6 @@ const AdminDashboard: React.FC = () => {
               onToggleAdd={() => setIsAddOpen(prev => !prev)}
               onCloseAdd={() => setIsAddOpen(false)}
             />
-          )}
-
-          {activeTab === 'settings' && (
-            isSuperAdmin ? (
-              <AdminSettings key="settings" />
-            ) : (
-              <div style={{ padding: '40px 0', textAlign: 'center', color: '#ff4d4d', letterSpacing: '2px', fontSize: '12px' }}>
-                ACCESS DENIED: SUPER ADMIN PRIVILEGES REQUIRED.
-              </div>
-            )
           )}
         </main>
       </div>
