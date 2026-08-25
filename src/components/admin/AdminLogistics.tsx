@@ -79,7 +79,6 @@ export default function AdminLogistics({ searchQuery = '', isFilterOpen }: Admin
     try {
       const targetId = settingId ?? 1;
 
-      // .select() যোগ করে নিশ্চিত হওয়া যে ডাটাবেজে রো আপডেট হয়েছে কিনা
       const { data, error } = await supabase
         .from('store_settings')
         .update({
@@ -92,7 +91,6 @@ export default function AdminLogistics({ searchQuery = '', isFilterOpen }: Admin
 
       if (error) throw error;
 
-      // যদি Supabase RLS ব্লকিং বা ID না মেলার কারণে আপডেট না করে
       if (!data || data.length === 0) {
         alert('Update failed: RLS Policy is blocking or ID is invalid in Supabase!');
         handleCancel();
@@ -102,7 +100,6 @@ export default function AdminLogistics({ searchQuery = '', isFilterOpen }: Admin
       setInitialDeliveryCharge(deliveryCharge);
       setInitialVatRate(vatRate);
       setIsEditing(false);
-      alert('Updated Successfully!');
     } catch (err: any) {
       alert('Failed to save settings: ' + err.message);
       handleCancel();
@@ -195,56 +192,75 @@ export default function AdminLogistics({ searchQuery = '', isFilterOpen }: Admin
             />
           </div>
 
-          <div style={{ borderLeft: '1px solid #1a1a1a', paddingLeft: '16px', display: 'flex', gap: '8px' }}>
+          <div style={{ borderLeft: '1px solid #1a1a1a', paddingLeft: '16px', display: 'flex', gap: '8px', alignItems: 'center' }}>
             {!isEditing ? (
+              /* EDIT SVG ICON */
               <button
                 onClick={() => setIsEditing(true)}
+                title="Edit Settings"
                 style={{
                   backgroundColor: '#111',
                   color: '#fff',
                   border: '1px solid #333',
-                  padding: '6px 14px',
-                  fontSize: '10px',
-                  fontWeight: 'bold',
-                  cursor: 'pointer',
-                  letterSpacing: '1px'
+                  padding: '6px 10px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer'
                 }}
               >
-                EDIT
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                </svg>
               </button>
             ) : (
               <>
+                {/* SAVE SVG ICON */}
                 <button
                   onClick={handleSaveSettings}
                   disabled={isSaving}
+                  title="Save Settings"
                   style={{
                     backgroundColor: '#112211',
                     color: '#2ecc71',
                     border: '1px solid #2ecc71',
-                    padding: '6px 12px',
-                    fontSize: '10px',
-                    fontWeight: 'bold',
-                    cursor: 'pointer',
-                    letterSpacing: '1px'
+                    padding: '6px 10px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer'
                   }}
                 >
-                  {isSaving ? 'SAVING...' : 'SAVE'}
+                  {isSaving ? (
+                    <span style={{ fontSize: '10px', fontFamily: 'monospace' }}>...</span>
+                  ) : (
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  )}
                 </button>
+
+                {/* CANCEL SVG ICON */}
                 <button
                   onClick={handleCancel}
                   disabled={isSaving}
+                  title="Cancel"
                   style={{
                     backgroundColor: '#1a1a1a',
                     color: '#888',
                     border: '1px solid #333',
                     padding: '6px 10px',
-                    fontSize: '10px',
-                    fontWeight: 'bold',
-                    cursor: 'pointer',
-                    letterSpacing: '1px'
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer'
                   }}
                 >
-                  CANCEL
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
                 </button>
               </>
             )}
