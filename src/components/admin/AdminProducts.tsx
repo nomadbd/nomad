@@ -146,7 +146,7 @@ const ProductAdminActionRow = ({ product, onUpdateStock, onEdit, onUnhide }: { p
                 STOCK ({product.stock_quantity})
               </button>
             )}
-            
+
             <button
               onClick={() => onEdit(product)}
               className="smooth-transition"
@@ -915,42 +915,28 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
             </button>
           </div>
 
-          {mediaPreviews.length === 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 20px', border: '1px dashed #333', borderRadius: '12px', backgroundColor: '#050505', textAlign: 'center', gap: '15px' }}>
-              <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '80px', height: '80px', border: '1px solid #444', borderRadius: '50%', cursor: 'pointer', backgroundColor: '#111' }}>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <form onSubmit={handleAddProduct} className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
+            <div style={{ display: 'flex', gap: '15px', alignItems: 'center', flexWrap: 'wrap' }}>
+              <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '70px', height: '70px', border: '1px dashed #333', borderRadius: '8px', cursor: 'pointer', backgroundColor: '#050505', flexShrink: 0 }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="12" y1="5" x2="12" y2="19"></line>
                   <line x1="5" y1="12" x2="19" y2="12"></line>
                 </svg>
+                <span style={{ fontSize: '9px', color: '#888', marginTop: '4px', letterSpacing: '0.5px', textTransform: 'uppercase' }}>Upload</span>
                 <input type="file" multiple accept="image/*,video/*" onChange={handleMediaChange} style={{ display: 'none' }} />
               </label>
-              <div>
-                <div style={{ color: '#fff', fontSize: '13px', fontWeight: '600', marginBottom: '4px' }}>UPLOAD PRODUCT MEDIA</div>
-                <div style={{ color: '#777', fontSize: '11px' }}>Click the icon to select product images or videos</div>
+              <div style={{ flex: '1 1 200px' }}>
+                <input
+                  type="text"
+                  value={newCategory}
+                  onChange={(e) => setNewCategory(e.target.value)}
+                  placeholder="Category (e.g. APPAREL)"
+                  className="minimal-input"
+                />
               </div>
             </div>
-          ) : (
-            <form onSubmit={handleAddProduct} className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
-              <div style={{ display: 'flex', gap: '15px', alignItems: 'center', flexWrap: 'wrap' }}>
-                <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '70px', height: '70px', border: '1px dashed #333', borderRadius: '8px', cursor: 'pointer', backgroundColor: '#050505', flexShrink: 0 }}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                  </svg>
-                  <span style={{ fontSize: '9px', color: '#888', marginTop: '4px', letterSpacing: '0.5px', textTransform: 'uppercase' }}>Add More</span>
-                  <input type="file" multiple accept="image/*,video/*" onChange={handleMediaChange} style={{ display: 'none' }} />
-                </label>
-                <div style={{ flex: '1 1 200px' }}>
-                  <input
-                    type="text"
-                    value={newCategory}
-                    onChange={(e) => setNewCategory(e.target.value)}
-                    placeholder="Category (e.g. APPAREL)"
-                    className="minimal-input"
-                  />
-                </div>
-              </div>
 
+            {mediaPreviews.length > 0 && (
               <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                 {mediaPreviews.map((media, idx) => (
                   <div key={idx} style={{ position: 'relative', width: '60px', height: '60px', border: '1px solid #333', borderRadius: '6px', backgroundColor: '#000', overflow: 'visible' }}>
@@ -988,113 +974,113 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
                   </div>
                 ))}
               </div>
+            )}
 
-              <div>
-                <input
-                  type="text"
-                  value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
-                  placeholder="Product Name *"
-                  className="minimal-input"
-                />
-              </div>
+            <div>
+              <input
+                type="text"
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                placeholder="Product Name *"
+                className="minimal-input"
+              />
+            </div>
 
-              <div>
-                <textarea
-                  value={newDescription}
-                  onChange={handleDescriptionChange}
-                  placeholder="Description (Bio)"
-                  rows={3}
-                  className="minimal-input"
-                  style={{ resize: 'none' }}
-                />
-              </div>
+            <div>
+              <textarea
+                value={newDescription}
+                onChange={handleDescriptionChange}
+                placeholder="Description (Bio)"
+                rows={3}
+                className="minimal-input"
+                style={{ resize: 'none' }}
+              />
+            </div>
 
-              <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
-                <input
-                  type="number"
-                  value={newPrice}
-                  onChange={(e) => setNewPrice(e.target.value)}
-                  placeholder="Price (৳) *"
-                  className="minimal-input"
-                  style={{ flex: '1 1 200px' }}
-                />
-                <input
-                  type="number"
-                  value={newStock}
-                  onChange={(e) => setNewStock(e.target.value)}
-                  placeholder="Stock Quantity"
-                  className="minimal-input"
-                  style={{ flex: '1 1 200px' }}
-                />
-              </div>
+            <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
+              <input
+                type="number"
+                value={newPrice}
+                onChange={(e) => setNewPrice(e.target.value)}
+                placeholder="Price (৳) *"
+                className="minimal-input"
+                style={{ flex: '1 1 200px' }}
+              />
+              <input
+                type="number"
+                value={newStock}
+                onChange={(e) => setNewStock(e.target.value)}
+                placeholder="Stock Quantity"
+                className="minimal-input"
+                style={{ flex: '1 1 200px' }}
+              />
+            </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '18px 20px' }}>
-                <input type="text" value={newFit} onChange={(e) => setNewFit(e.target.value)} placeholder="Fit (e.g. Regular Fit)" className="minimal-input" />
-                <input type="text" value={newGsm} onChange={(e) => setNewGsm(e.target.value)} placeholder="GSM (e.g. 180)" className="minimal-input" />
-                <input type="text" value={newSizes} onChange={(e) => setNewSizes(e.target.value)} placeholder="Sizes (e.g. S, M, L, XL)" className="minimal-input" />
-                <input type="text" value={newColors} onChange={(e) => setNewColors(e.target.value)} placeholder="Colors (e.g. BLACK, WHITE)" className="minimal-input" />
-                <input type="text" value={newMaterial} onChange={(e) => setNewMaterial(e.target.value)} placeholder="Material (e.g. 100% Cotton)" className="minimal-input" />
-                <input type="text" value={newCare} onChange={(e) => setNewCare(e.target.value)} placeholder="Care (e.g. Machine Wash)" className="minimal-input" />
-                <input type="text" value={newSleeve} onChange={(e) => setNewSleeve(e.target.value)} placeholder="Sleeve (e.g. Half Sleeve)" className="minimal-input" />
-                <input type="text" value={newPattern} onChange={(e) => setNewPattern(e.target.value)} placeholder="Pattern (e.g. Solid)" className="minimal-input" />
-                <input type="text" value={newOccasion} onChange={(e) => setNewOccasion(e.target.value)} placeholder="Occasion (e.g. Casual)" className="minimal-input" />
-                <input type="text" value={newMadeIn} onChange={(e) => setNewMadeIn(e.target.value)} placeholder="Made In (e.g. Bangladesh)" className="minimal-input" />
-              </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '18px 20px' }}>
+              <input type="text" value={newFit} onChange={(e) => setNewFit(e.target.value)} placeholder="Fit (e.g. Regular Fit)" className="minimal-input" />
+              <input type="text" value={newGsm} onChange={(e) => setNewGsm(e.target.value)} placeholder="GSM (e.g. 180)" className="minimal-input" />
+              <input type="text" value={newSizes} onChange={(e) => setNewSizes(e.target.value)} placeholder="Sizes (e.g. S, M, L, XL)" className="minimal-input" />
+              <input type="text" value={newColors} onChange={(e) => setNewColors(e.target.value)} placeholder="Colors (e.g. BLACK, WHITE)" className="minimal-input" />
+              <input type="text" value={newMaterial} onChange={(e) => setNewMaterial(e.target.value)} placeholder="Material (e.g. 100% Cotton)" className="minimal-input" />
+              <input type="text" value={newCare} onChange={(e) => setNewCare(e.target.value)} placeholder="Care (e.g. Machine Wash)" className="minimal-input" />
+              <input type="text" value={newSleeve} onChange={(e) => setNewSleeve(e.target.value)} placeholder="Sleeve (e.g. Half Sleeve)" className="minimal-input" />
+              <input type="text" value={newPattern} onChange={(e) => setNewPattern(e.target.value)} placeholder="Pattern (e.g. Solid)" className="minimal-input" />
+              <input type="text" value={newOccasion} onChange={(e) => setNewOccasion(e.target.value)} placeholder="Occasion (e.g. Casual)" className="minimal-input" />
+              <input type="text" value={newMadeIn} onChange={(e) => setNewMadeIn(e.target.value)} placeholder="Made In (e.g. Bangladesh)" className="minimal-input" />
+            </div>
 
-              <div>
-                <textarea
-                  value={newDetails}
-                  onChange={(e) => setNewDetails(e.target.value)}
-                  placeholder="Details (Product Details)"
-                  rows={4}
-                  className="minimal-input"
-                  style={{ resize: 'none' }}
-                />
-              </div>
+            <div>
+              <textarea
+                value={newDetails}
+                onChange={(e) => setNewDetails(e.target.value)}
+                placeholder="Details (Product Details)"
+                rows={4}
+                className="minimal-input"
+                style={{ resize: 'none' }}
+              />
+            </div>
 
-              <div style={{ display: 'flex', gap: '15px', marginTop: '15px' }}>
-                <button
-                  type="button"
-                  onClick={() => handleSetShowAddModal(false)}
-                  className="smooth-transition"
-                  style={{
-                    flex: 1,
-                    background: 'transparent',
-                    border: '1px solid #333',
-                    borderRadius: '6px',
-                    color: '#aaa',
-                    padding: '12px',
-                    fontSize: '11px',
-                    letterSpacing: '1px',
-                    cursor: 'pointer',
-                    fontWeight: '600'
-                  }}
-                >
-                  CANCEL
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting || uploadingMedia}
-                  className="smooth-transition"
-                  style={{
-                    flex: 1,
-                    background: 'rgba(255, 255, 255, 0.08)',
-                    border: '1px solid rgba(255, 255, 255, 0.2)',
-                    borderRadius: '6px',
-                    color: '#fff',
-                    padding: '12px',
-                    fontSize: '11px',
-                    letterSpacing: '1px',
-                    fontWeight: '600',
-                    cursor: 'pointer'
-                  }}
-                >
-                  {uploadingMedia ? 'UPLOADING MEDIA...' : submitting ? 'SAVING...' : 'CREATE PRODUCT'}
-                </button>
-              </div>
-            </form>
-          )}
+            <div style={{ display: 'flex', gap: '15px', marginTop: '15px' }}>
+              <button
+                type="button"
+                onClick={() => handleSetShowAddModal(false)}
+                className="smooth-transition"
+                style={{
+                  flex: 1,
+                  background: 'transparent',
+                  border: '1px solid #333',
+                  borderRadius: '6px',
+                  color: '#aaa',
+                  padding: '12px',
+                  fontSize: '11px',
+                  letterSpacing: '1px',
+                  cursor: 'pointer',
+                  fontWeight: '600'
+                }}
+              >
+                CANCEL
+              </button>
+              <button
+                type="submit"
+                disabled={submitting || uploadingMedia}
+                className="smooth-transition"
+                style={{
+                  flex: 1,
+                  background: 'rgba(255, 255, 255, 0.08)',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  borderRadius: '6px',
+                  color: '#fff',
+                  padding: '12px',
+                  fontSize: '11px',
+                  letterSpacing: '1px',
+                  fontWeight: '600',
+                  cursor: 'pointer'
+                }}
+              >
+                {uploadingMedia ? 'UPLOADING MEDIA...' : submitting ? 'SAVING...' : 'CREATE PRODUCT'}
+              </button>
+            </div>
+          </form>
         </div>
 
         <style>{`
