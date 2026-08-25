@@ -236,10 +236,10 @@ const ProductCard = ({ product, onUpdateStock, onEdit, onUnhide }: { product: Pr
 
       <div style={{ marginTop: '15px', padding: '0 15px', display: 'flex', flexDirection: 'column' }}>
         <h3 style={{ fontSize: '14px', color: '#fff', margin: '0 0 4px 0', fontWeight: '600' }}>{product.name}</h3>
-        <div style={{ fontSize: '11px', color: '#555', fontFamily: 'monospace', margin: '0 0 10px 0', letterSpacing: '0.3px', display: 'flex', alignItems: 'center', gap: '8px', whiteSpace: 'nowrap', overflow: 'hidden' }}>
+        <div style={{ fontSize: '11px', color: '#888', fontFamily: 'monospace', margin: '0 0 10px 0', letterSpacing: '0.3px', display: 'flex', alignItems: 'center', whiteSpace: 'nowrap', overflow: 'hidden' }}>
           <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', flexShrink: 1, minWidth: 0 }}>{formatId(product.id)}</span>
-          <span style={{ color: '#333', flexShrink: 0 }}>·</span>
-          <span style={{ flexShrink: 0 }}>{formatDate(product.created_at)}</span>
+          <span style={{ color: '#555', margin: '0 8px', flexShrink: 0 }}>·</span>
+          <span style={{ flexShrink: 0, marginLeft: 'auto' }}>{formatDate(product.created_at)}</span>
         </div>
 
         <div style={{ margin: '0 0 10px 0' }}>
