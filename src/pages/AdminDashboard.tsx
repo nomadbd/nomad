@@ -1,19 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient'; 
 
-import AdminOverview from '../components/admin/AdminOverview';
-import AdminOrders from '../components/admin/AdminOrders';
-import AdminProducts from '../components/admin/AdminProducts';
-import StaffProfile from '../components/admin/StaffProfile';
+import {
+  AdminOverview,
+  AdminOrders,
+  AdminProducts,
+  AdminStaff,
+  AdminCustomers,
+  AdminLogistics,
+  StaffProfile
+} from '../components/admin';
 
-type TabType = 'overview' | 'orders' | 'products';
+type TabType = 'overview' | 'orders' | 'products' | 'staff' | 'customers' | 'logistics';
 
 const AdminDashboard: React.FC = () => {
   const getTabFromURL = (): TabType => {
     if (typeof window === 'undefined') return 'overview';
     const params = new URLSearchParams(window.location.search);
     const tab = params.get('tab') as TabType;
-    const validTabs: TabType[] = ['overview', 'orders', 'products'];
+    const validTabs: TabType[] = ['overview', 'orders', 'products', 'staff', 'customers', 'logistics'];
     return validTabs.includes(tab) ? tab : 'overview';
   };
 
@@ -503,6 +508,27 @@ const AdminDashboard: React.FC = () => {
               >
                 PRODUCTS & STOCK
               </button>
+
+              <button
+                className={`nav-btn ${activeTab === 'staff' ? 'active' : ''}`}
+                onClick={() => handleTabChange('staff')}
+              >
+                STAFF MANAGEMENT
+              </button>
+
+              <button
+                className={`nav-btn ${activeTab === 'customers' ? 'active' : ''}`}
+                onClick={() => handleTabChange('customers')}
+              >
+                CUSTOMER DIRECTORY
+              </button>
+
+              <button
+                className={`nav-btn ${activeTab === 'logistics' ? 'active' : ''}`}
+                onClick={() => handleTabChange('logistics')}
+              >
+                LOGISTICS & DISPATCH
+              </button>
             </nav>
           </div>
 
@@ -574,6 +600,30 @@ const AdminDashboard: React.FC = () => {
               isAddOpen={isAddOpen}
               onToggleAdd={() => setIsAddOpen(prev => !prev)}
               onCloseAdd={() => setIsAddOpen(false)}
+            />
+          )}
+          {activeTab === 'staff' && (
+            <AdminStaff 
+              key="staff"
+              searchQuery={searchQuery}
+              isFilterOpen={isFilterOpen}
+              isSearchOpen={isSearchOpen}
+              dateFormat="DD/MM/YYYY"
+            />
+          )}
+          {activeTab === 'customers' && (
+            <AdminCustomers 
+              key="customers"
+              searchQuery={searchQuery}
+              isFilterOpen={isFilterOpen}
+              dateFormat="DD/MM/YYYY"
+            />
+          )}
+          {activeTab === 'logistics' && (
+            <AdminLogistics 
+              key="logistics"
+              searchQuery={searchQuery}
+              isFilterOpen={isFilterOpen}
             />
           )}
         </main>
