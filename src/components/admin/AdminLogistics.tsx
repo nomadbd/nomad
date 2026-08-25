@@ -21,6 +21,9 @@ export default function AdminLogistics({ searchQuery = '', isFilterOpen }: Admin
   const [loading, setLoading] = useState<boolean>(true);
   const [courierFilter, setCourierFilter] = useState<string>('ALL');
 
+  const [deliveryCharge, setDeliveryCharge] = useState<number | string>('');
+  const [vatRate, setVatRate] = useState<number | string>('');
+
   const fetchShipments = async () => {
     setLoading(true);
     try {
@@ -38,9 +41,41 @@ export default function AdminLogistics({ searchQuery = '', isFilterOpen }: Admin
     }
   };
 
+  const fetchSettings = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('store_settings')
+        .select('*')
+        .eq('id', 1)
+        .single();
+
+      if (!error && data) {
+        setDeliveryCharge(data.delivery_charge ?? '');
+        setVatRate(data.vat_rate ?? '');
+      }
+    } catch (err) {
+      console.error('Error fetching store settings:', err);
+    }
+  };
+
   useEffect(() => {
     fetchShipments();
+    fetchSettings();
   }, []);
+
+  const updateSettingField = async (field: 'delivery_charge' | 'vat_rate', value: any) => {
+    try {
+      const { error } = await supabase
+        .from('store_settings')
+        .update({ [field]: value, updated_at: new Date().toISOString() })
+        .eq('id', 1);
+
+      if (error) throw error;
+      fetchSettings();
+    } catch (err: any) {
+      alert('Failed to update setting: ' + err.message);
+    }
+  };
 
   const updateStatus = async (id: string, status: Shipment['shipping_status']) => {
     try {
@@ -66,13 +101,39 @@ export default function AdminLogistics({ searchQuery = '', isFilterOpen }: Admin
 
   return (
     <div style={{ color: '#fff', width: '100%' }}>
-      {/* Header */}
-      <div style={{ marginBottom: '20px' }}>
-        <h2 style={{ fontSize: '16px', letterSpacing: '2px', margin: 0 }}>LOGISTICS & DISPATCH</h2>
-        <span style={{ fontSize: '10px', color: '#888' }}>ACTIVE SHIPMENTS: {filteredShipments.length}</span>
+      <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '16px' }}>
+        <div>
+          <h2 style={{ fontSize: '16px', letterSpacing: '2px', margin: 0 }}>LOGISTICS & DISPATCH</h2>
+          <span style={{ fontSize: '10px', color: '#888' }}>ACTIVE SHIPMENTS: {filteredShipments.length}</span>
+        </div>
+
+        <div style={{ display: 'flex', gap: '24px', backgroundColor: '#060606', padding: '10px 16px', border: '1px solid #1a1a1a' }}>
+          <div>
+            <span style={{ fontSize: '9px', color: '#888', display: 'block', letterSpacing: '1px' }}>DEFAULT DELIVERY CHARGE</span>
+            <input
+              type="number"
+              value={deliveryCharge}
+              onChange={(e) => setDeliveryCharge(e.target.value)}
+              onBlur={(e) => updateSettingField('delivery_charge', Number(e.target.value))}
+              style={{ backgroundColor: 'transparent', color: '#fff', border: 'none', outline: 'none', fontSize: '13px', fontWeight: 'bold', width: '80px', padding: 0, fontFamily: 'monospace' }}
+              placeholder="0"
+            />
+          </div>
+          <div style={{ borderLeft: '1px solid #1a1a1a', paddingLeft: '24px' }}>
+            <span style={{ fontSize: '9px', color: '#888', display: 'block', letterSpacing: '1px' }}>VAT RATE</span>
+            <input
+              type="number"
+              step="0.01"
+              value={vatRate}
+              onChange={(e) => setVatRate(e.target.value)}
+              onBlur={(e) => updateSettingField('vat_rate', Number(e.target.value))}
+              style={{ backgroundColor: 'transparent', color: '#fff', border: 'none', outline: 'none', fontSize: '13px', fontWeight: 'bold', width: '80px', padding: 0, fontFamily: 'monospace' }}
+              placeholder="0.00"
+            />
+          </div>
+        </div>
       </div>
 
-      {/* Filter Bar */}
       {isFilterOpen && (
         <div style={{ backgroundColor: '#0a0a0a', border: '1px solid #1f1f1f', padding: '12px', marginBottom: '20px', display: 'flex', gap: '12px' }}>
           <select
@@ -89,7 +150,6 @@ export default function AdminLogistics({ searchQuery = '', isFilterOpen }: Admin
         </div>
       )}
 
-      {/* Shipments Table */}
       {loading ? (
         <div style={{ fontSize: '11px', color: '#888', padding: '20px 0' }}>LOADING LOGISTICS DATA...</div>
       ) : (
