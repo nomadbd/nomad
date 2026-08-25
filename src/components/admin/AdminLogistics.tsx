@@ -106,43 +106,65 @@ export default function AdminLogistics({ searchQuery = '', isFilterOpen }: Admin
 
   return (
     <div style={{ color: '#fff', width: '100%' }}>
-      {/* Borderless Settings Section */}
-      <div style={{ marginBottom: '24px', display: 'flex', gap: '32px', flexWrap: 'wrap', alignItems: 'center' }}>
+      <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
         <div>
-          <span style={{ fontSize: '9px', color: '#888', display: 'block', letterSpacing: '1px', marginBottom: '4px' }}>
-            DELIVERY CHARGE
-          </span>
-          <input
-            type="number"
-            value={inputDeliveryCharge}
-            onChange={(e) => setInputDeliveryCharge(e.target.value)}
-            onBlur={(e) => {
-              if (e.target.value !== '') {
-                updateSettingField('delivery_charge', Number(e.target.value));
-              }
-            }}
-            placeholder={String(deliveryCharge)}
-            style={{ backgroundColor: 'transparent', color: '#fff', border: 'none', outline: 'none', fontSize: '13px', fontWeight: 'bold', width: '100px', padding: 0, fontFamily: 'monospace' }}
-          />
+          <h2 style={{ fontSize: '16px', letterSpacing: '2px', margin: 0 }}>LOGISTICS & DISPATCH</h2>
+          <span style={{ fontSize: '10px', color: '#888' }}>ACTIVE SHIPMENTS: {filteredShipments.length}</span>
         </div>
 
-        <div>
-          <span style={{ fontSize: '9px', color: '#888', display: 'block', letterSpacing: '1px', marginBottom: '4px' }}>
-            VAT RATE
-          </span>
-          <input
-            type="number"
-            step="0.01"
-            value={inputVatRate}
-            onChange={(e) => setInputVatRate(e.target.value)}
-            onBlur={(e) => {
-              if (e.target.value !== '') {
-                updateSettingField('vat_rate', Number(e.target.value));
-              }
-            }}
-            placeholder={String(vatRate)}
-            style={{ backgroundColor: 'transparent', color: '#fff', border: 'none', outline: 'none', fontSize: '13px', fontWeight: 'bold', width: '100px', padding: 0, fontFamily: 'monospace' }}
-          />
+        {/* Dynamic Store Settings Card */}
+        <div style={{ display: 'flex', gap: '24px', backgroundColor: '#060606', padding: '10px 16px', border: '1px solid #1a1a1a' }}>
+          <div>
+            <span style={{ fontSize: '9px', color: '#888', display: 'block', letterSpacing: '1px' }}>DELIVERY CHARGE</span>
+            <input
+              type="number"
+              value={inputDeliveryCharge}
+              onChange={(e) => setInputDeliveryCharge(e.target.value)}
+              onBlur={(e) => {
+                if (e.target.value !== '') {
+                  updateSettingField('delivery_charge', Number(e.target.value));
+                }
+              }}
+              placeholder={deliveryCharge !== '' ? String(deliveryCharge) : '...'}
+              style={{ 
+                backgroundColor: 'transparent', 
+                color: '#fff', 
+                border: 'none', 
+                outline: 'none', 
+                fontSize: '13px', 
+                fontWeight: 'bold', 
+                width: '80px', 
+                padding: 0, 
+                fontFamily: 'monospace' 
+              }}
+            />
+          </div>
+          <div style={{ borderLeft: '1px solid #1a1a1a', paddingLeft: '24px' }}>
+            <span style={{ fontSize: '9px', color: '#888', display: 'block', letterSpacing: '1px' }}>VAT RATE</span>
+            <input
+              type="number"
+              step="0.01"
+              value={inputVatRate}
+              onChange={(e) => setInputVatRate(e.target.value)}
+              onBlur={(e) => {
+                if (e.target.value !== '') {
+                  updateSettingField('vat_rate', Number(e.target.value));
+                }
+              }}
+              placeholder={vatRate !== '' ? String(vatRate) : '...'}
+              style={{ 
+                backgroundColor: 'transparent', 
+                color: '#fff', 
+                border: 'none', 
+                outline: 'none', 
+                fontSize: '13px', 
+                fontWeight: 'bold', 
+                width: '80px', 
+                padding: 0, 
+                fontFamily: 'monospace' 
+              }}
+            />
+          </div>
         </div>
       </div>
 
