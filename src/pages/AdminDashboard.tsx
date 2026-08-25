@@ -11,14 +11,14 @@ import {
   StaffProfile
 } from '../components/admin';
 
-type TabType = 'overview' | 'orders' | 'products' | 'logistics' | 'customers' | 'staff';
+type TabType = 'overview' | 'orders' | 'products' | 'logistics' | 'staff' | 'customers';
 
 const AdminDashboard: React.FC = () => {
   const getTabFromURL = (): TabType => {
     if (typeof window === 'undefined') return 'overview';
     const params = new URLSearchParams(window.location.search);
     const tab = params.get('tab') as TabType;
-    const validTabs: TabType[] = ['overview', 'orders', 'products', 'customers', 'logistics', 'staff'];
+    const validTabs: TabType[] = ['overview', 'orders', 'products', 'logistics', 'staff', 'customers'];
     return validTabs.includes(tab) ? tab : 'overview';
   };
 
@@ -510,13 +510,6 @@ const AdminDashboard: React.FC = () => {
               </button>
 
               <button
-                className={`nav-btn ${activeTab === 'customers' ? 'active' : ''}`}
-                onClick={() => handleTabChange('customers')}
-              >
-                CUSTOMERS
-              </button>
-
-              <button
                 className={`nav-btn ${activeTab === 'logistics' ? 'active' : ''}`}
                 onClick={() => handleTabChange('logistics')}
               >
@@ -528,6 +521,13 @@ const AdminDashboard: React.FC = () => {
                 onClick={() => handleTabChange('staff')}
               >
                 STAFF
+              </button>
+
+              <button
+                className={`nav-btn ${activeTab === 'customers' ? 'active' : ''}`}
+                onClick={() => handleTabChange('customers')}
+              >
+                CUSTOMERS
               </button>
             </nav>
           </div>
@@ -602,14 +602,6 @@ const AdminDashboard: React.FC = () => {
               onCloseAdd={() => setIsAddOpen(false)}
             />
           )}
-          {activeTab === 'customers' && (
-            <AdminCustomers 
-              key="customers"
-              searchQuery={searchQuery}
-              isFilterOpen={isFilterOpen}
-              dateFormat="DD/MM/YYYY"
-            />
-          )}
           {activeTab === 'logistics' && (
             <AdminLogistics 
               key="logistics"
@@ -623,6 +615,14 @@ const AdminDashboard: React.FC = () => {
               searchQuery={searchQuery}
               isFilterOpen={isFilterOpen}
               isSearchOpen={isSearchOpen}
+              dateFormat="DD/MM/YYYY"
+            />
+          )}
+          {activeTab === 'customers' && (
+            <AdminCustomers 
+              key="customers"
+              searchQuery={searchQuery}
+              isFilterOpen={isFilterOpen}
               dateFormat="DD/MM/YYYY"
             />
           )}
