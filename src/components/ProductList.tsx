@@ -51,7 +51,7 @@ const ProductActionRow = ({ product }: { product: Product }) => {
   };
 
   const handleShare = async () => {
-    const shareUrl = `${window.location.origin}/?product=${product.id}`;
+    const shareUrl = `${window.location.origin}/?p=${product.id}`;
     if (navigator.share) {
       try {
         await navigator.share({
@@ -202,7 +202,7 @@ const ProductCard = ({ product }: { product: Product }) => {
   const [isDescExpanded, setIsDescExpanded] = useState(false);
 
   return (
-    <div className="showroom-card-item" style={{ scrollSnapAlign: 'start', boxSizing: 'border-box', display: 'flex', flexDirection: 'column' }}>
+    <div id={`product-${product.id}`} className="showroom-card-item" style={{ scrollSnapAlign: 'start', boxSizing: 'border-box', display: 'flex', flexDirection: 'column' }}>
       <ProductGallery 
         media={product.product_media || []} 
         productName={product.name} 
@@ -338,6 +338,25 @@ export default function ProductList() {
   };
 
   useEffect(() => { fetchProducts(); }, []);
+
+  useEffect(() => {
+    if (!loading && products.length > 0) {
+      const params = new URLSearchParams(window.location.search);
+      const targetId = params.get('p') || params.get('product');
+      if (targetId) {
+        const targetProduct = products.find(p => String(p.id) === String(targetId));
+        if (targetProduct && targetProduct.category) {
+          setExpandedCategories(prev => ({ ...prev, [targetProduct.category]: true }));
+        }
+        setTimeout(() => {
+          const el = document.getElementById(`product-${targetId}`);
+          if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }, 300);
+      }
+    }
+  }, [loading, products]);
 
   if (loading) return <p style={{ color: '#555', padding: '40px', letterSpacing: '2px', fontSize: '11px' }}>LOADING PRODUCTS...</p>;
 
