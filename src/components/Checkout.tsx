@@ -13,7 +13,6 @@ interface CartItem {
   image_url?: string;
 }
 
-// গ্লোবাল কান্ট্রি লিস্ট
 const ALL_COUNTRIES = [
   { name: 'Bangladesh', code: '+880', flag: '🇧🇩' },
   { name: 'United States', code: '+1', flag: '🇺🇸' },
@@ -57,8 +56,7 @@ export default function Checkout({
 
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  
-  // কান্ট্রি ও সার্চ স্টেট
+
   const [selectedCountry, setSelectedCountry] = useState(ALL_COUNTRIES[0]);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [countrySearch, setCountrySearch] = useState('');
@@ -68,7 +66,7 @@ export default function Checkout({
   const [isOrderPlacedState, setIsOrderPlacedState] = useState(false); 
 
   const [deliveryCharge, setDeliveryCharge] = useState<number>(100); 
-  const [vatRate, setVatRate] = useState<number>(0.05); 
+  const [vatRate, setVatRate] = useState<number>(5); 
   const [placedOrderDetails, setPlacedOrderDetails] = useState<any>(null); 
 
   useEffect(() => {
@@ -106,10 +104,9 @@ export default function Checkout({
   }, [isOrderPlacedState, onOrderPlaced]);
 
   const subtotal = selectedItems.reduce((acc: number, item: CartItem) => acc + item.price * item.quantity, 0);
-  const vatAmount = Math.round(subtotal * vatRate);
+  const vatAmount = Math.round((subtotal * vatRate) / 100);
   const grandTotal = subtotal + deliveryCharge + vatAmount;
 
-  // সার্চ অনুযায়ী ফিল্টারড দেশ
   const filteredCountries = ALL_COUNTRIES.filter(c => 
     c.name.toLowerCase().includes(countrySearch.toLowerCase()) || 
     c.code.includes(countrySearch)
@@ -129,7 +126,6 @@ export default function Checkout({
       return setErrorMessage('INVALID EMAIL ADDRESS. PLEASE ENTER A VALID EMAIL.');
     }
 
-    // নম্বর প্রসেসিং
     const rawDigits = formData.phone.replace(/[^0-9]/g, '');
     const cleanDigits = rawDigits.startsWith('0') ? rawDigits.substring(1) : rawDigits;
     const fullPhone = `${selectedCountry.code}${cleanDigits}`;
@@ -305,7 +301,6 @@ export default function Checkout({
       outline: 'none',
       borderRadius: 0,
     },
-    // কাস্টম সার্চ ড্রপডাউন বা মোডাল
     pickerModal: {
       position: 'fixed' as const,
       top: 0,
@@ -499,7 +494,6 @@ export default function Checkout({
 
   return (
     <div style={styles.container}>
-      {/* কাস্টম সার্চযোগ্য দেশ বাছাই করার পপআপ/মোডাল */}
       {isPickerOpen && (
         <div style={styles.pickerModal} onClick={() => setIsPickerOpen(false)}>
           <div style={styles.pickerBox} onClick={(e) => e.stopPropagation()}>
@@ -510,7 +504,7 @@ export default function Checkout({
                 style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '14px' }}
               >✕</button>
             </div>
-            
+
             <input 
               style={styles.searchInput} 
               placeholder="SEARCH COUNTRY OR CODE..." 
@@ -550,8 +544,7 @@ export default function Checkout({
             <h2 style={styles.sectionHeading}>SHIPPING ADDRESS</h2>
             <input style={styles.input} placeholder="FULL NAME" required value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
             <input style={styles.input} placeholder="EMAIL ADDRESS" required type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
-            
-            {/* কাস্টম ডায়ালগ ট্রিগার বাটন */}
+
             <div style={styles.phoneContainer}>
               <button 
                 type="button"
@@ -602,7 +595,7 @@ export default function Checkout({
             <div style={{ marginTop: '30px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', letterSpacing: '1.5px', marginBottom: '15px', color: '#666' }}><span>SUBTOTAL</span><span style={{ fontFamily: 'monospace' }}>৳{subtotal}</span></div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', letterSpacing: '1.5px', marginBottom: '15px', color: '#666' }}><span>SHIPPING</span><span style={{ fontFamily: 'monospace', color: deliveryCharge === 0 ? '#fff' : '#666' }}>{deliveryCharge === 0 ? 'COMPLIMENTARY' : `৳${deliveryCharge}`}</span></div>
-              {vatRate > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', letterSpacing: '1.5px', marginBottom: '15px', color: '#666' }}><span>VAT ({vatRate * 100}%)</span><span style={{ fontFamily: 'monospace' }}>৳{vatAmount}</span></div>}
+              {vatRate > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', letterSpacing: '1.5px', marginBottom: '15px', color: '#666' }}><span>VAT ({vatRate}%)</span><span style={{ fontFamily: 'monospace' }}>৳{vatAmount}</span></div>}
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', letterSpacing: '2px', paddingTop: '20px', borderTop: '1px dotted #222', color: '#fff', fontWeight: 600, marginTop: '25px' }}><span>TOTAL</span><span style={{ fontFamily: 'monospace', fontSize: '14px' }}>৳{grandTotal}</span></div>
             </div>
           </div>
