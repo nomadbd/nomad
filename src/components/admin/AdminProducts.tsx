@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+Import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { supabase } from '../../supabaseClient';
 import { uploadToCloudinary, deleteFromCloudinary } from '../../cloudinary';
@@ -30,6 +30,15 @@ isAddOpen?: boolean;
 onToggleAdd?: () => void;
 onCloseAdd?: () => void;
 }
+const formatDate = (dateString?: string) => {
+if (!dateString) return '';
+const d = new Date(dateString);
+if (isNaN(d.getTime())) return '';
+const year = d.getFullYear();
+const month = String(d.getMonth() + 1).padStart(2, '0');
+const day = String(d.getDate()).padStart(2, '0');
+return ${year}-${month}-${day};
+};
 const ProductGallery = ({ media, productName }: { media: { media_url: string; media_type?: string }[], productName: string }) => {
 const [currentIndex, setCurrentIndex] = useState(0);
 useEffect(() => {
@@ -198,17 +207,18 @@ const [isDescExpanded, setIsDescExpanded] = useState(false);
 const mediaList = (product.product_media && product.product_media.length > 0)
 ? product.product_media.map(m => ({ media_url: m.media_url, media_type: m.media_type }))
 : (product.image_url ? [{ media_url: product.image_url, media_type: 'image' }] : []);
-const d = new Date(product.created_at);
-const formattedDate = ${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')};
-const displayId = String(product.id).length > 12 ? String(product.id).substring(0, 12) + '...' : product.id;
 return (
 <div className="showroom-card-item animate-card smooth-transition" style={{ scrollSnapAlign: 'start', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', backgroundColor: '#050505', border: '1px solid #1a1a1a', padding: '12px', borderRadius: '8px' }}>
 <ProductGallery media="{mediaList}" productName="{product.name}"/>
 <div style={{ marginTop: '15px', padding: '0 15px', display: 'flex', flexDirection: 'column' }}>
 <h3 style={{ fontSize: '14px', color: '#fff', margin: '0 0 4px 0', fontWeight: '600' }}>{product.name}</h3>
-<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '0 0 10px 0' }}>
-<span style={{ fontSize: '10px', color: '#777', fontFamily: 'monospace' }}>ID: {displayId}</span>
-<span style={{ fontSize: '10px', color: '#777', fontFamily: 'monospace' }}>{formattedDate}</span>
+<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '10px', color: '#666', fontFamily: 'monospace', margin: '0 0 10px 0', gap: '8px' }}>
+<span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '60%' }} title={String(product.id)}>
+#{product.id}
+</span>
+<span style={{ flexShrink: 0 }}>
+{formatDate(product.created_at)}
+</span>
 </div>
 <div style={{ margin: '0 0 10px 0' }}>
 {(() => {
@@ -700,7 +710,7 @@ showNotification('Unable to restore product.', 'error');
 fetchProducts();
 }
 };
-const activeSearch = searchQuery || searchTerm;
+const activeSearch = (searchQuery || searchTerm).trim().toLowerCase();
 let filteredProducts = products.filter(p => {
 const isHiddenProduct = p.status === 'archived' || p.status === 'hidden';
 if (stockFilter === 'hidden') {
@@ -710,20 +720,25 @@ if (isHiddenProduct) return false;
 if (stockFilter === 'in_stock' && p.stock_quantity <= 0) return false;
 if (stockFilter === 'sold_out' && p.stock_quantity > 0) return false;
 }
-const searchLower = activeSearch.toLowerCase();
-const pd = new Date(p.created_at);
-const pDateStr = ${pd.getFullYear()}-${String(pd.getMonth() + 1).padStart(2, '0')}-${String(pd.getDate()).padStart(2, '0')};
-const colorStr = (p.colors || []).join(' ').toLowerCase();
-const detailsStr = p.details ? Object.values(p.details).map(v => String(v)).join(' ').toLowerCase() : '';
-const matchesSearch = p.name.toLowerCase().includes(searchLower) ||
-(p.category && p.category.toLowerCase().includes(searchLower)) ||
-String(p.id).toLowerCase().includes(searchLower) ||
-String(p.price).includes(searchLower) ||
-(p.description && p.description.toLowerCase().includes(searchLower)) ||
-pDateStr.includes(searchLower) ||
-colorStr.includes(searchLower) ||
-detailsStr.includes(searchLower);
+if (activeSearch) {
+const detailsStr = p.details ? Object.entries(p.details).map(([k, v]) => ${k} ${v}).join(' ').toLowerCase() : '';
+const colorsStr = Array.isArray(p.colors) ? p.colors.join(' ').toLowerCase() : '';
+const sizesStr = Array.isArray(p.sizes) ? p.sizes.join(' ').toLowerCase() : '';
+const formattedDate = formatDate(p.created_at);
+const rawDate = p.created_at ? p.created_at.toLowerCase() : '';
+const matchesSearch =
+p.name.toLowerCase().includes(activeSearch) ||
+String(p.id).toLowerCase().includes(activeSearch) ||
+String(p.price).includes(activeSearch) ||
+(p.category && p.category.toLowerCase().includes(activeSearch)) ||
+(p.description && p.description.toLowerCase().includes(activeSearch)) ||
+colorsStr.includes(activeSearch) ||
+sizesStr.includes(activeSearch) ||
+detailsStr.includes(activeSearch) ||
+formattedDate.includes(activeSearch) ||
+rawDate.includes(activeSearch);
 if (!matchesSearch) return false;
+}
 const hasMin = minPrice !== '' && !isNaN(parseFloat(minPrice));
 const hasMax = maxPrice !== '' && !isNaN(parseFloat(maxPrice));
 if (hasMin && hasMax) {
