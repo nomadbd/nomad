@@ -33,37 +33,51 @@ interface AdminProductsProps {
   onCloseAdd?: () => void;
 }
 
-const ProductGallery = ({ images, productName }: { images: string[], productName: string }) => {
+const ProductGallery = ({ media, productName }: { media: { media_url: string; media_type?: string }[], productName: string }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
     setCurrentIndex(0);
-  }, [images]);
+  }, [media]);
 
   const handlePrev = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setCurrentIndex(prev => (prev > 0 ? prev - 1 : images.length - 1));
+    setCurrentIndex(prev => (prev > 0 ? prev - 1 : media.length - 1));
   };
 
   const handleNext = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setCurrentIndex(prev => (prev < images.length - 1 ? prev + 1 : 0));
+    setCurrentIndex(prev => (prev < media.length - 1 ? prev + 1 : 0));
   };
+
+  const currentMedia = media[currentIndex];
+  const isVideo = currentMedia?.media_type === 'video' || (currentMedia?.media_url && /\.(mp4|webm|ogg|mov)(\?.*)?$/i.test(currentMedia.media_url));
 
   return (
     <div style={{ width: '100%', position: 'relative', overflow: 'hidden', backgroundColor: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      {images.length > 0 ? (
-        <img src={images[currentIndex]} alt={productName} style={{ width: '100%', height: 'auto', display: 'block' }} />
+      {media.length > 0 ? (
+        isVideo ? (
+          <video
+            src={currentMedia.media_url}
+            autoPlay
+            muted
+            loop
+            playsInline
+            style={{ width: '100%', height: 'auto', display: 'block', objectFit: 'cover' }}
+          />
+        ) : (
+          <img src={currentMedia.media_url} alt={productName} style={{ width: '100%', height: 'auto', display: 'block' }} />
+        )
       ) : (
-        <div style={{ width: '100%', height: '250px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#333' }}>No Image</div>
+        <div style={{ width: '100%', height: '250px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#333' }}>No Media</div>
       )}
 
-      {images.length > 1 && (
+      {media.length > 1 && (
         <>
           <div style={{ position: 'absolute', top: 0, left: 0, width: '50%', height: '100%', cursor: 'pointer' }} onClick={handlePrev} />
           <div style={{ position: 'absolute', top: 0, right: 0, width: '50%', height: '100%', cursor: 'pointer' }} onClick={handleNext} />
           <div style={{ position: 'absolute', bottom: '15px', left: 0, width: '100%', display: 'flex', justifyContent: 'center', gap: '6px', zIndex: 2 }}>
-            {images.map((_, idx) => (
+            {media.map((_, idx) => (
               <div
                 key={idx}
                 className="smooth-transition"
@@ -171,7 +185,7 @@ const ProductAdminActionRow = ({ product, onUpdateStock, onEdit, onUnhide }: { p
               }}
             >
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 2 2h14a2 2 0 0 2 2-2v-7"></path>
                 <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
               </svg>
             </button>
@@ -196,13 +210,13 @@ const ProductAdminActionRow = ({ product, onUpdateStock, onEdit, onUnhide }: { p
 const ProductCard = ({ product, onUpdateStock, onEdit, onUnhide }: { product: Product; onUpdateStock: any; onEdit: any; onUnhide: any }) => {
   const [isDescExpanded, setIsDescExpanded] = useState(false);
 
-  const imagesList = (product.product_media && product.product_media.length > 0)
-    ? product.product_media.map(m => m.media_url)
-    : (product.image_url ? [product.image_url] : []);
+  const mediaList = (product.product_media && product.product_media.length > 0)
+    ? product.product_media.map(m => ({ media_url: m.media_url, media_type: m.media_type }))
+    : (product.image_url ? [{ media_url: product.image_url, media_type: 'image' }] : []);
 
   return (
     <div className="showroom-card-item animate-card smooth-transition" style={{ scrollSnapAlign: 'start', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', backgroundColor: '#050505', border: '1px solid #1a1a1a', padding: '12px', borderRadius: '8px' }}>
-      <ProductGallery images={imagesList} productName={product.name} />
+      <ProductGallery media={mediaList} productName={product.name} />
 
       <div style={{ marginTop: '15px', padding: '0 15px', display: 'flex', flexDirection: 'column' }}>
         <h3 style={{ fontSize: '14px', color: '#fff', margin: '0 0 6px 0', fontWeight: '600' }}>{product.name}</h3>
@@ -501,7 +515,7 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
   const handleAddProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newName || !newPrice) {
-      showNotification('PRODUCT NAME AND PRICE ARE REQUIRED.', 'error');
+      showNotification('Name and price are required.', 'error');
       return;
     }
 
@@ -559,10 +573,10 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
       handleSetShowAddModal(false);
       resetForm();
       fetchProducts();
-      showNotification('PRODUCT & MULTIPLE MEDIA FILES UPLOADED SUCCESSFULLY.');
+      showNotification('Product published successfully.');
     } catch (err: any) {
       console.error('Error creating product:', err);
-      showNotification(err.message || 'FAILED TO CREATE PRODUCT.', 'error');
+      showNotification(err.message || 'Failed to create product.', 'error');
     } finally {
       setSubmitting(false);
       setUploadingMedia(false);
@@ -645,7 +659,7 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
   const handleUpdateProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingProduct || !editName || !editPrice) {
-      showNotification('PRODUCT NAME AND PRICE ARE REQUIRED.', 'error');
+      showNotification('Name and price are required.', 'error');
       return;
     }
 
@@ -724,10 +738,10 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
       setEditingProduct(null);
       setRemovedMediaUrls([]);
       fetchProducts();
-      showNotification('PRODUCT UPDATED SUCCESSFULLY.');
+      showNotification('Product details updated.');
     } catch (err: any) {
       console.error('Error updating product:', err);
-      showNotification(err.message || 'FAILED TO UPDATE PRODUCT.', 'error');
+      showNotification(err.message || 'Failed to update product.', 'error');
     } finally {
       setSubmitting(false);
       setUploadingMedia(false);
@@ -751,10 +765,10 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
       setProducts(prev => prev.map(p => p.id === productId ? { ...p, status: 'active' } : p));
       const { error } = await supabase.from('products').update({ status: 'active' }).eq('id', productId);
       if (error) throw error;
-      showNotification('PRODUCT UNHIDDEN AND RESTORED TO CATALOG.');
+      showNotification('Product restored to catalog.');
     } catch (err) {
       console.error('Failed to unhide product:', err);
-      showNotification('COULD NOT UNHIDE PRODUCT.', 'error');
+      showNotification('Unable to restore product.', 'error');
       fetchProducts();
     }
   };
@@ -941,7 +955,7 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
                 {mediaPreviews.map((media, idx) => (
                   <div key={idx} style={{ position: 'relative', width: '60px', height: '60px', border: '1px solid #333', borderRadius: '6px', backgroundColor: '#000', overflow: 'visible' }}>
                     {media.type === 'video' ? (
-                      <video src={media.url} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '5px' }} />
+                      <video src={media.url} autoPlay muted loop playsInline style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '5px' }} />
                     ) : (
                       <img src={media.url} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '5px' }} />
                     )}
@@ -1222,7 +1236,7 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
                 {editExistingMedia.map((media, idx) => (
                   <div key={`existing-${idx}`} style={{ position: 'relative', width: '60px', height: '60px', border: '1px solid #333', borderRadius: '6px', backgroundColor: '#000', overflow: 'visible' }}>
                     {media.media_type === 'video' ? (
-                      <video src={media.media_url} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '5px' }} />
+                      <video src={media.media_url} autoPlay muted loop playsInline style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '5px' }} />
                     ) : (
                       <img src={media.media_url} alt="existing" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '5px' }} />
                     )}
@@ -1258,7 +1272,7 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
                 {editMediaPreviews.map((media, idx) => (
                   <div key={`new-${idx}`} style={{ position: 'relative', width: '60px', height: '60px', border: '1px solid #333', borderRadius: '6px', backgroundColor: '#000', overflow: 'visible' }}>
                     {media.type === 'video' ? (
-                      <video src={media.url} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '5px' }} />
+                      <video src={media.url} autoPlay muted loop playsInline style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '5px' }} />
                     ) : (
                       <img src={media.url} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '5px' }} />
                     )}
@@ -1499,10 +1513,10 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
                         setProducts(prev => prev.map(p => p.id === productId ? { ...p, status: 'archived' } : p));
                         const { error } = await supabase.from('products').update({ status: 'archived' }).eq('id', productId);
                         if (error) throw error;
-                        showNotification('PRODUCT HIDDEN FROM CATALOG.');
+                        showNotification('Product hidden from catalog.');
                       } catch (err) {
                         console.error('Failed to hide product:', err);
-                        showNotification('COULD NOT HIDE PRODUCT.', 'error');
+                        showNotification('Unable to hide product.', 'error');
                         fetchProducts();
                       }
                     } else {
@@ -1525,10 +1539,10 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
                         await supabase.from('product_media').delete().eq('product_id', productId);
                         const { error } = await supabase.from('products').delete().eq('id', productId);
                         if (error) throw error;
-                        showNotification('PRODUCT PERMANENTLY DELETED FROM DATABASE & CLOUDINARY.');
+                        showNotification('Product removed permanently.');
                       } catch (err) {
                         console.error('Failed to delete product:', err);
-                        showNotification('COULD NOT DELETE PRODUCT.', 'error');
+                        showNotification('Unable to delete product.', 'error');
                         fetchProducts();
                       }
                     }
