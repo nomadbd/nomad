@@ -11,7 +11,7 @@ import {
   StaffProfile
 } from '../components/admin';
 
-type TabType = 'overview' | 'orders' | 'products' | 'customers' | 'logistics' | 'staff';
+type TabType = 'overview' | 'orders' | 'products' | 'logistics' | 'customers' | 'staff';
 
 const AdminDashboard: React.FC = () => {
   const getTabFromURL = (): TabType => {
