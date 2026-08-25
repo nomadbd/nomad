@@ -66,18 +66,16 @@ export default function AdminLogistics({ searchQuery = '', isFilterOpen }: Admin
     fetchSettings();
   }, []);
 
-  // Supabase Table Update Function
   const updateSettingField = async (field: 'delivery_charge' | 'vat_rate', value: number) => {
     setIsSaving(true);
     try {
-      const targetId = settingId ?? 1;
-      const { error } = await supabase
+      const query = supabase
         .from('store_settings')
-        .upsert({
-          id: targetId,
-          [field]: value,
-          updated_at: new Date().toISOString()
-        });
+        .update({ [field]: value, updated_at: new Date().toISOString() });
+
+      const { error } = settingId !== null 
+        ? await query.eq('id', settingId)
+        : await query.gt('id', 0);
 
       if (error) throw error;
       await fetchSettings();
