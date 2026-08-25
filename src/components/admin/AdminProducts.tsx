@@ -226,16 +226,18 @@ const ProductCard = ({ product, onUpdateStock, onEdit, onUnhide }: { product: Pr
             const descriptionText = product.description || '';
             const characterLimit = 75;
             const isLongText = descriptionText.length > characterLimit;
+            const hasDetails = product.details && Object.keys(product.details).length > 0;
+            const shouldShowSeeMore = isLongText || hasDetails;
             const displayedText = isLongText ? descriptionText.slice(0, characterLimit) + '...' : descriptionText;
 
             return !isDescExpanded ? (
               <p style={{ fontSize: '13px', color: '#aaa', margin: 0, lineHeight: '1.4' }}>
-                {displayedText || 'No description provided.'}
-                {isLongText && (
+                {displayedText || (hasDetails ? '' : 'No description provided.')}
+                {shouldShowSeeMore && (
                   <span
                     onClick={() => setIsDescExpanded(true)}
                     className="smooth-transition"
-                    style={{ fontSize: '12px', color: '#fff', cursor: 'pointer', marginLeft: '6px', fontWeight: '500', display: 'inline' }}
+                    style={{ fontSize: '12px', color: '#fff', cursor: 'pointer', marginLeft: displayedText ? '6px' : '0', fontWeight: '500', display: 'inline' }}
                   >
                     see more
                   </span>
