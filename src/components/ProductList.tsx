@@ -50,6 +50,21 @@ const ProductActionRow = ({ product }: { product: Product }) => {
     }
   };
 
+  const handleShare = async () => {
+    const shareUrl = `${window.location.origin}/?product=${product.id}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: product.name,
+          text: product.description,
+          url: shareUrl,
+        });
+      } catch (err) {}
+    } else {
+      navigator.clipboard.writeText(shareUrl);
+    }
+  };
+
   const labelStyle: React.CSSProperties = {
     fontSize: '11px',
     fontWeight: '500',
@@ -68,41 +83,64 @@ const ProductActionRow = ({ product }: { product: Product }) => {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', animation: 'swapFadeIn 0.25s ease-in-out' }}>
           <span style={{ fontSize: '15px', color: isSoldOut ? '#555' : '#fff', fontWeight: 500, fontFamily: 'monospace' }}>৳{product.price}</span>
 
-          {isSoldOut ? (
-            <button 
-              disabled 
-              style={{ 
-                height: '36px', width: '130px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box', lineHeight: '1',
-                background: 'transparent', border: '1px solid #222', color: '#555', fontSize: '11px', letterSpacing: '1.5px', cursor: 'not-allowed', textTransform: 'uppercase', fontWeight: '600' 
-              }}
-            >
-              SOLD OUT
-            </button>
-          ) : (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <button
-              onClick={handleActionClick}
+              onClick={handleShare}
               style={{
-                height: '36px',
-                width: '130px',
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                padding: '4px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                boxSizing: 'border-box',
-                lineHeight: '1',
-                background: 'transparent',
-                border: `1px solid ${isAdded ? '#fff' : '#333'}`,
-                color: '#fff',
-                fontSize: '11px',
-                letterSpacing: '1.5px',
-                cursor: 'pointer',
-                textTransform: 'uppercase',
-                fontWeight: '600',
-                transition: 'all 0.2s ease',
+                outline: 'none',
               }}
+              title="Share"
             >
-              {isAdded ? 'ADDED' : 'ADD TO CART'}
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ccc" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+                <polyline points="16 6 12 2 8 6" />
+                <line x1="12" y1="2" x2="12" y2="15" />
+              </svg>
             </button>
-          )}
+
+            {isSoldOut ? (
+              <button 
+                disabled 
+                style={{ 
+                  height: '36px', width: '130px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box', lineHeight: '1',
+                  background: 'transparent', border: '1px solid #222', color: '#555', fontSize: '11px', letterSpacing: '1.5px', cursor: 'not-allowed', textTransform: 'uppercase', fontWeight: '600' 
+                }}
+              >
+                SOLD OUT
+              </button>
+            ) : (
+              <button
+                onClick={handleActionClick}
+                style={{
+                  height: '36px',
+                  width: '130px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxSizing: 'border-box',
+                  lineHeight: '1',
+                  background: 'transparent',
+                  border: `1px solid ${isAdded ? '#fff' : '#333'}`,
+                  color: '#fff',
+                  fontSize: '11px',
+                  letterSpacing: '1.5px',
+                  cursor: 'pointer',
+                  textTransform: 'uppercase',
+                  fontWeight: '600',
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                {isAdded ? 'ADDED' : 'ADD TO CART'}
+              </button>
+            )}
+          </div>
         </div>
       )}
 
