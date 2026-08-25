@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+Import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 
 interface StoreSettings {
@@ -13,7 +13,7 @@ interface StaffProfile {
   name: string;
   email: string;
   avatar_url?: string;
-  role: string;
+  role: 'staff' | 'admin' | 'super_admin';
   created_at: string;
 }
 
@@ -26,42 +26,18 @@ const AdminSettings: React.FC = () => {
   const [staffList, setStaffList] = useState<StaffProfile[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [savingSettings, setSavingSettings] = useState<boolean>(false);
-  
-  // UI Controls
-  const [isStaffExpanded, setIsStaffExpanded] = useState<boolean>(true);
-  const [isAddModalOpen, setIsAddModalOpen] = useState<boolean>(false);
-  const [editingStaff, setEditingStaff] = useState<StaffProfile | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [msg, setMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  // Form States (Create)
   const [newStaffName, setNewStaffName] = useState('');
   const [newStaffEmail, setNewStaffEmail] = useState('');
   const [newStaffPassword, setNewStaffPassword] = useState('');
-  const [newStaffRole, setNewStaffRole] = useState<string>('super_admin');
-
-  // Form States (Edit)
-  const [editName, setEditName] = useState('');
-  const [editEmail, setEditEmail] = useState('');
-  const [editPassword, setEditPassword] = useState('');
-  const [editRole, setEditRole] = useState('');
-
+  const [newStaffRole, setNewStaffRole] = useState<'staff' | 'admin' | 'super_admin'>('staff');
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [uploadingStaff, setUploadingStaff] = useState(false);
 
   const CLOUD_NAME = "YOUR_CLOUDINARY_CLOUD_NAME";
   const UPLOAD_PRESET = "staff_avatars";
-
-  // রোলকে পদবীতে (Designation) রূপান্তর করার হেলপার ফাংশন
-  const getDesignation = (role: string) => {
-    if (!role) return 'STAFF';
-    const cleanRole = role.toLowerCase().replace(/_/g, '');
-    if (cleanRole.includes('superadmin') || cleanRole.includes('suparadmin')) {
-      return 'SUPER ADMIN'; // বা আপনার ইচ্ছামতো পদবী যেমন: 'CHIEF EXECUTIVE'
-    }
-    if (cleanRole === 'admin') return 'ADMINISTRATOR';
-    if (cleanRole === 'staff') return 'EXECUTIVE STAFF';
-    return role.toUpperCase();
-  };
 
   const fetchInitialData = async () => {
     try {
@@ -89,7 +65,11 @@ const AdminSettings: React.FC = () => {
       if (profilesError) throw profilesError;
 
       if (profilesData) {
-        setStaffList(profilesData as StaffProfile[]);
+        const filteredStaff = profilesData.filter((p: any) => 
+          ['staff', 'admin', 'super_admin'].includes(String(p.role).toLowerCase())
+        );
+        
+        setStaffList(filteredStaff.length > 0 ? filteredStaff : profilesData);
       }
     } catch (err: any) {
       console.error(err);
@@ -130,7 +110,6 @@ const AdminSettings: React.FC = () => {
     }
   };
 
-  // অনবোর্ড নতুন স্টাফ
   const handleCreateStaff = async (e: React.FormEvent) => {
     e.preventDefault();
     setUploadingStaff(true);
@@ -152,6 +131,8 @@ const AdminSettings: React.FC = () => {
         const fileData = await res.json();
         if (fileData.secure_url) {
           avatarUrl = fileData.secure_url;
+        } else {
+          throw new Error("AVATAR UPLOAD FAILED");
         }
       }
 
@@ -187,72 +168,11 @@ const AdminSettings: React.FC = () => {
       setNewStaffEmail('');
       setNewStaffPassword('');
       setImageFile(null);
-      setIsAddModalOpen(false);
+      setIsModalOpen(false);
       fetchInitialData();
 
     } catch (err: any) {
       setMsg({ type: 'error', text: err.message || 'ONBOARDING FAILED' });
-    } finally {
-      setUploadingStaff(false);
-    }
-  };
-
-  // স্টাফ এডিট মডাল ওপেন
-  const handleOpenEditModal = (staff: StaffProfile) => {
-    setEditingStaff(staff);
-    setEditName(staff.name || '');
-    setEditEmail(staff.email || '');
-    setEditRole(staff.role || 'staff');
-    setEditPassword('');
-    setImageFile(null);
-  };
-
-  // স্টাফের তথ্য আপডেট
-  const handleUpdateStaff = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingStaff) return;
-
-    setUploadingStaff(true);
-    setMsg(null);
-
-    try {
-      let avatarUrl = editingStaff.avatar_url || '';
-
-      if (imageFile) {
-        const formData = new FormData();
-        formData.append('file', imageFile);
-        formData.append('upload_preset', UPLOAD_PRESET);
-
-        const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {
-          method: 'POST',
-          body: formData,
-        });
-
-        const fileData = await res.json();
-        if (fileData.secure_url) {
-          avatarUrl = fileData.secure_url;
-        }
-      }
-
-      // Profiles টেবিলে আপডেট
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({
-          name: editName,
-          email: editEmail,
-          role: editRole,
-          avatar_url: avatarUrl,
-        })
-        .eq('id', editingStaff.id);
-
-      if (profileError) throw profileError;
-
-      setMsg({ type: 'success', text: 'STAFF UPDATED SUCCESSFULLY' });
-      setEditingStaff(null);
-      setImageFile(null);
-      fetchInitialData();
-    } catch (err: any) {
-      setMsg({ type: 'error', text: err.message || 'UPDATE FAILED' });
     } finally {
       setUploadingStaff(false);
     }
@@ -282,24 +202,14 @@ const AdminSettings: React.FC = () => {
         </div>
       )}
 
-      {/* CURRENT STAFF SECTION */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #27272a', paddingBottom: '12px' }}>
-          <div 
-            onClick={() => setIsStaffExpanded(!isStaffExpanded)}
-            style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', userSelect: 'none' }}
-          >
-            <span style={{ fontSize: '12px', color: '#71717a', transition: 'transform 0.2s', transform: isStaffExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }}>
-              ▼
-            </span>
-            <div>
-              <h2 style={{ fontSize: '13px', fontWeight: '700', letterSpacing: '2px', margin: 0, color: '#fff' }}>CURRENT STAFF</h2>
-              <span style={{ fontSize: '10px', color: '#71717a' }}>TOTAL ACTIVE: {staffList.length}</span>
-            </div>
+          <div>
+            <h2 style={{ fontSize: '13px', fontWeight: '700', letterSpacing: '2px', margin: 0, color: '#fff' }}>CURRENT STAFF</h2>
+            <span style={{ fontSize: '10px', color: '#71717a' }}>TOTAL ACTIVE: {staffList.length}</span>
           </div>
-
           <button 
-            onClick={() => setIsAddModalOpen(true)}
+            onClick={() => setIsModalOpen(true)}
             style={{ 
               width: '32px', 
               height: '32px', 
@@ -319,54 +229,28 @@ const AdminSettings: React.FC = () => {
           </button>
         </div>
 
-        {/* STAFF LIST (ACCORDION TOGGLE) */}
-        {isStaffExpanded && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '12px' }}>
-            {staffList.map((stf) => (
-              <div key={stf.id} style={{ background: '#09090b', border: '1px solid #18181b', padding: '12px', display: 'flex', alignItems: 'center', justifyBetween: 'space-between', gap: '12px', position: 'relative' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, overflow: 'hidden' }}>
-                  {stf.avatar_url ? (
-                    <img src={stf.avatar_url} alt="" style={{ width: '38px', height: '38px', borderRadius: '50%', objectFit: 'cover' }} />
-                  ) : (
-                    <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: '#18181b', border: '1px solid #27272a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', color: '#a1a1aa' }}>
-                      {stf.name ? stf.name.charAt(0).toUpperCase() : 'S'}
-                    </div>
-                  )}
-                  <div style={{ overflow: 'hidden', flex: 1 }}>
-                    <div style={{ fontSize: '12px', fontWeight: '600', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{stf.name}</div>
-                    <div style={{ fontSize: '10px', color: '#71717a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{stf.email}</div>
-                    
-                    {/* পদবী (DESIGNATION) */}
-                    <span style={{ display: 'inline-block', marginTop: '4px', fontSize: '9px', padding: '2px 6px', background: '#18181b', color: '#a1a1aa', border: '1px solid #27272a', letterSpacing: '0.5px' }}>
-                      {getDesignation(stf.role)}
-                    </span>
-                  </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '12px' }}>
+          {staffList.map((stf) => (
+            <div key={stf.id} style={{ background: '#09090b', border: '1px solid #18181b', padding: '12px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+              {stf.avatar_url ? (
+                <img src={stf.avatar_url} alt="" style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover' }} />
+              ) : (
+                <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#18181b', border: '1px solid #27272a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', color: '#a1a1aa' }}>
+                  {stf.name ? stf.name.charAt(0).toUpperCase() : 'S'}
                 </div>
-
-                {/* EDIT BUTTON */}
-                <button
-                  onClick={() => handleOpenEditModal(stf)}
-                  title="Edit Staff"
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    color: '#71717a',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    padding: '4px',
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.color = '#fff')}
-                  onMouseLeave={(e) => (e.currentTarget.style.color = '#71717a')}
-                >
-                  ✎
-                </button>
+              )}
+              <div style={{ overflow: 'hidden', flex: 1 }}>
+                <div style={{ fontSize: '12px', fontWeight: '600', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{stf.name}</div>
+                <div style={{ fontSize: '10px', color: '#71717a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{stf.email}</div>
+                <span style={{ display: 'inline-block', marginTop: '4px', fontSize: '9px', padding: '2px 6px', background: '#18181b', color: '#a1a1aa', border: '1px solid #27272a', textTransform: 'uppercase' }}>
+                  {stf.role}
+                </span>
               </div>
-            ))}
-          </div>
-        )}
+            </div>
+          ))}
+        </div>
       </div>
 
-      {/* LOGISTICS FORM */}
       <form onSubmit={handleSaveSettings} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
         <div style={{ borderBottom: '1px solid #27272a', paddingBottom: '12px' }}>
           <h2 style={{ fontSize: '13px', fontWeight: '700', letterSpacing: '2px', margin: 0, color: '#fff' }}>LOGISTICS & RATES</h2>
@@ -438,94 +322,93 @@ const AdminSettings: React.FC = () => {
         </button>
       </form>
 
-      {/* CREATE STAFF MODAL */}
-      {isAddModalOpen && (
+      {isModalOpen && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
           <div style={{ background: '#09090b', border: '1px solid #27272a', padding: '24px', width: '100%', maxWidth: '400px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #18181b', paddingBottom: '10px' }}>
               <span style={{ fontSize: '12px', fontWeight: '700', letterSpacing: '2px' }}>ONBOARD NEW STAFF</span>
-              <button onClick={() => setIsAddModalOpen(false)} style={{ background: 'none', border: 'none', color: '#71717a', cursor: 'pointer', fontSize: '16px' }}>✕</button>
+              <button 
+                onClick={() => setIsModalOpen(false)}
+                style={{ background: 'none', border: 'none', color: '#71717a', cursor: 'pointer', fontSize: '16px' }}
+              >
+                ✕
+              </button>
             </div>
 
             <form onSubmit={handleCreateStaff} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div>
                 <label style={{ fontSize: '9px', color: '#71717a', display: 'block', marginBottom: '4px' }}>FULL NAME</label>
-                <input type="text" required value={newStaffName} onChange={(e) => setNewStaffName(e.target.value)} style={{ width: '100%', background: '#000', border: '1px solid #18181b', padding: '10px', color: '#fff', fontSize: '11px', fontFamily: 'monospace', boxSizing: 'border-box' }} />
+                <input 
+                  type="text" 
+                  required 
+                  value={newStaffName} 
+                  onChange={(e) => setNewStaffName(e.target.value)} 
+                  style={{ width: '100%', background: '#000', border: '1px solid #18181b', padding: '10px', color: '#fff', fontSize: '11px', fontFamily: 'monospace', boxSizing: 'border-box' }}
+                />
               </div>
 
               <div>
                 <label style={{ fontSize: '9px', color: '#71717a', display: 'block', marginBottom: '4px' }}>EMAIL</label>
-                <input type="email" required value={newStaffEmail} onChange={(e) => setNewStaffEmail(e.target.value)} style={{ width: '100%', background: '#000', border: '1px solid #18181b', padding: '10px', color: '#fff', fontSize: '11px', fontFamily: 'monospace', boxSizing: 'border-box' }} />
+                <input 
+                  type="email" 
+                  required 
+                  value={newStaffEmail} 
+                  onChange={(e) => setNewStaffEmail(e.target.value)} 
+                  style={{ width: '100%', background: '#000', border: '1px solid #18181b', padding: '10px', color: '#fff', fontSize: '11px', fontFamily: 'monospace', boxSizing: 'border-box' }}
+                />
               </div>
 
               <div>
                 <label style={{ fontSize: '9px', color: '#71717a', display: 'block', marginBottom: '4px' }}>PASSWORD</label>
-                <input type="password" required value={newStaffPassword} onChange={(e) => setNewStaffPassword(e.target.value)} style={{ width: '100%', background: '#000', border: '1px solid #18181b', padding: '10px', color: '#fff', fontSize: '11px', fontFamily: 'monospace', boxSizing: 'border-box' }} />
+                <input 
+                  type="password" 
+                  required 
+                  value={newStaffPassword} 
+                  onChange={(e) => setNewStaffPassword(e.target.value)} 
+                  style={{ width: '100%', background: '#000', border: '1px solid #18181b', padding: '10px', color: '#fff', fontSize: '11px', fontFamily: 'monospace', boxSizing: 'border-box' }}
+                />
               </div>
 
               <div>
-                <label style={{ fontSize: '9px', color: '#71717a', display: 'block', marginBottom: '4px' }}>DESIGNATION / ROLE</label>
-                <select value={newStaffRole} onChange={(e) => setNewStaffRole(e.target.value)} style={{ width: '100%', background: '#000', border: '1px solid #18181b', padding: '10px', color: '#fff', fontSize: '11px', fontFamily: 'monospace', boxSizing: 'border-box' }}>
-                  <option value="staff">EXECUTIVE STAFF</option>
-                  <option value="admin">ADMINISTRATOR</option>
+                <label style={{ fontSize: '9px', color: '#71717a', display: 'block', marginBottom: '4px' }}>ROLE</label>
+                <select 
+                  value={newStaffRole} 
+                  onChange={(e) => setNewStaffRole(e.target.value as 'staff' | 'admin' | 'super_admin')}
+                  style={{ width: '100%', background: '#000', border: '1px solid #18181b', padding: '10px', color: '#fff', fontSize: '11px', fontFamily: 'monospace', boxSizing: 'border-box' }}
+                >
+                  <option value="staff">STAFF</option>
+                  <option value="admin">ADMIN</option>
                   <option value="super_admin">SUPER ADMIN</option>
                 </select>
               </div>
 
               <div>
                 <label style={{ fontSize: '9px', color: '#71717a', display: 'block', marginBottom: '4px' }}>AVATAR IMAGE</label>
-                <input type="file" accept="image/*" onChange={(e) => setImageFile(e.target.files?.[0] || null)} style={{ fontSize: '10px', color: '#a1a1aa' }} />
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  onChange={(e) => setImageFile(e.target.files?.[0] || null)} 
+                  style={{ fontSize: '10px', color: '#a1a1aa' }}
+                />
               </div>
 
-              <button type="submit" disabled={uploadingStaff} style={{ background: '#fff', color: '#000', border: 'none', padding: '12px', fontSize: '10px', fontFamily: 'monospace', fontWeight: '700', letterSpacing: '1px', cursor: uploadingStaff ? 'not-allowed' : 'pointer', marginTop: '8px' }}>
+              <button
+                type="submit"
+                disabled={uploadingStaff}
+                style={{
+                  background: '#fff',
+                  color: '#000',
+                  border: 'none',
+                  padding: '12px',
+                  fontSize: '10px',
+                  fontFamily: 'monospace',
+                  fontWeight: '700',
+                  letterSpacing: '1px',
+                  cursor: uploadingStaff ? 'not-allowed' : 'pointer',
+                  marginTop: '8px'
+                }}
+              >
                 {uploadingStaff ? 'PROCESSING...' : 'CONFIRM ONBOARDING'}
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* EDIT STAFF MODAL */}
-      {editingStaff && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
-          <div style={{ background: '#09090b', border: '1px solid #27272a', padding: '24px', width: '100%', maxWidth: '400px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #18181b', paddingBottom: '10px' }}>
-              <span style={{ fontSize: '12px', fontWeight: '700', letterSpacing: '2px' }}>EDIT STAFF PROFILE</span>
-              <button onClick={() => setEditingStaff(null)} style={{ background: 'none', border: 'none', color: '#71717a', cursor: 'pointer', fontSize: '16px' }}>✕</button>
-            </div>
-
-            <form onSubmit={handleUpdateStaff} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div>
-                <label style={{ fontSize: '9px', color: '#71717a', display: 'block', marginBottom: '4px' }}>FULL NAME</label>
-                <input type="text" required value={editName} onChange={(e) => setEditName(e.target.value)} style={{ width: '100%', background: '#000', border: '1px solid #18181b', padding: '10px', color: '#fff', fontSize: '11px', fontFamily: 'monospace', boxSizing: 'border-box' }} />
-              </div>
-
-              <div>
-                <label style={{ fontSize: '9px', color: '#71717a', display: 'block', marginBottom: '4px' }}>EMAIL</label>
-                <input type="email" required value={editEmail} onChange={(e) => setEditEmail(e.target.value)} style={{ width: '100%', background: '#000', border: '1px solid #18181b', padding: '10px', color: '#fff', fontSize: '11px', fontFamily: 'monospace', boxSizing: 'border-box' }} />
-              </div>
-
-              <div>
-                <label style={{ fontSize: '9px', color: '#71717a', display: 'block', marginBottom: '4px' }}>NEW PASSWORD (OPTIONAL)</label>
-                <input type="password" placeholder="Leave blank to keep current" value={editPassword} onChange={(e) => setEditPassword(e.target.value)} style={{ width: '100%', background: '#000', border: '1px solid #18181b', padding: '10px', color: '#fff', fontSize: '11px', fontFamily: 'monospace', boxSizing: 'border-box' }} />
-              </div>
-
-              <div>
-                <label style={{ fontSize: '9px', color: '#71717a', display: 'block', marginBottom: '4px' }}>DESIGNATION / ROLE</label>
-                <select value={editRole} onChange={(e) => setEditRole(e.target.value)} style={{ width: '100%', background: '#000', border: '1px solid #18181b', padding: '10px', color: '#fff', fontSize: '11px', fontFamily: 'monospace', boxSizing: 'border-box' }}>
-                  <option value="staff">EXECUTIVE STAFF</option>
-                  <option value="admin">ADMINISTRATOR</option>
-                  <option value="super_admin">SUPER ADMIN</option>
-                </select>
-              </div>
-
-              <div>
-                <label style={{ fontSize: '9px', color: '#71717a', display: 'block', marginBottom: '4px' }}>CHANGE AVATAR</label>
-                <input type="file" accept="image/*" onChange={(e) => setImageFile(e.target.files?.[0] || null)} style={{ fontSize: '10px', color: '#a1a1aa' }} />
-              </div>
-
-              <button type="submit" disabled={uploadingStaff} style={{ background: '#fff', color: '#000', border: 'none', padding: '12px', fontSize: '10px', fontFamily: 'monospace', fontWeight: '700', letterSpacing: '1px', cursor: uploadingStaff ? 'not-allowed' : 'pointer', marginTop: '8px' }}>
-                {uploadingStaff ? 'SAVING...' : 'UPDATE PROFILE'}
               </button>
             </form>
           </div>
@@ -537,3 +420,4 @@ const AdminSettings: React.FC = () => {
 };
 
 export default AdminSettings;
+
