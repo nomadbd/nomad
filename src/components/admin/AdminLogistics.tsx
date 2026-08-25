@@ -21,7 +21,6 @@ export default function AdminLogistics({ searchQuery = '', isFilterOpen }: Admin
   const [loading, setLoading] = useState<boolean>(true);
   const [courierFilter, setCourierFilter] = useState<string>('ALL');
 
-  // Store Settings States
   const [deliveryCharge, setDeliveryCharge] = useState<number | string>('');
   const [vatRate, setVatRate] = useState<number | string>('');
   const [initialDeliveryCharge, setInitialDeliveryCharge] = useState<number | string>('');
@@ -79,22 +78,34 @@ export default function AdminLogistics({ searchQuery = '', isFilterOpen }: Admin
     setIsSaving(true);
     try {
       const targetId = settingId ?? 1;
-      const { error } = await supabase
+
+      // .select() যোগ করে নিশ্চিত হওয়া যে ডাটাবেজে রো আপডেট হয়েছে কিনা
+      const { data, error } = await supabase
         .from('store_settings')
         .update({
           delivery_charge: Number(deliveryCharge),
           vat_rate: Number(vatRate),
           updated_at: new Date().toISOString()
         })
-        .eq('id', targetId);
+        .eq('id', targetId)
+        .select();
 
       if (error) throw error;
+
+      // যদি Supabase RLS ব্লকিং বা ID না মেলার কারণে আপডেট না করে
+      if (!data || data.length === 0) {
+        alert('Update failed: RLS Policy is blocking or ID is invalid in Supabase!');
+        handleCancel();
+        return;
+      }
 
       setInitialDeliveryCharge(deliveryCharge);
       setInitialVatRate(vatRate);
       setIsEditing(false);
+      alert('Updated Successfully!');
     } catch (err: any) {
       alert('Failed to save settings: ' + err.message);
+      handleCancel();
     } finally {
       setIsSaving(false);
     }
