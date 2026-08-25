@@ -25,6 +25,7 @@ export default function AdminLogistics({ searchQuery = '', isFilterOpen }: Admin
   const [vatRate, setVatRate] = useState<number | string>('');
   const [settingId, setSettingId] = useState<number | null>(null);
   const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [saveSuccess, setSaveSuccess] = useState<boolean>(false);
 
   const fetchShipments = async () => {
     setLoading(true);
@@ -66,21 +67,27 @@ export default function AdminLogistics({ searchQuery = '', isFilterOpen }: Admin
     fetchSettings();
   }, []);
 
-  const updateSettingField = async (field: 'delivery_charge' | 'vat_rate', value: number) => {
+  const handleSaveSettings = async () => {
     setIsSaving(true);
+    setSaveSuccess(false);
     try {
-      const query = supabase
+      const targetId = settingId ?? 1;
+      const { error } = await supabase
         .from('store_settings')
-        .update({ [field]: value, updated_at: new Date().toISOString() });
-
-      const { error } = settingId !== null 
-        ? await query.eq('id', settingId)
-        : await query.gt('id', 0);
+        .update({
+          delivery_charge: Number(deliveryCharge),
+          vat_rate: Number(vatRate),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', targetId);
 
       if (error) throw error;
+      
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 2000);
       await fetchSettings();
     } catch (err: any) {
-      alert('Supabase Update Failed: ' + err.message);
+      alert('Failed to save settings: ' + err.message);
     } finally {
       setIsSaving(false);
     }
@@ -111,8 +118,8 @@ export default function AdminLogistics({ searchQuery = '', isFilterOpen }: Admin
   return (
     <div style={{ color: '#fff', width: '100%' }}>
       {/* Store Settings Card */}
-      <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'flex-start', alignItems: 'center', gap: '12px' }}>
-        <div style={{ display: 'flex', gap: '24px', backgroundColor: '#060606', padding: '10px 16px', border: '1px solid #1a1a1a' }}>
+      <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'flex-start' }}>
+        <div style={{ display: 'flex', gap: '20px', backgroundColor: '#060606', padding: '10px 16px', border: '1px solid #1a1a1a', alignItems: 'center' }}>
           <div>
             <span style={{ fontSize: '9px', color: '#888', display: 'block', letterSpacing: '1px', marginBottom: '2px' }}>
               DELIVERY CHARGE
@@ -121,17 +128,6 @@ export default function AdminLogistics({ searchQuery = '', isFilterOpen }: Admin
               type="number"
               value={deliveryCharge}
               onChange={(e) => setDeliveryCharge(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && e.currentTarget.value !== '') {
-                  updateSettingField('delivery_charge', Number(e.currentTarget.value));
-                  e.currentTarget.blur();
-                }
-              }}
-              onBlur={(e) => {
-                if (e.target.value !== '') {
-                  updateSettingField('delivery_charge', Number(e.target.value));
-                }
-              }}
               placeholder="100"
               style={{
                 backgroundColor: 'transparent',
@@ -140,14 +136,14 @@ export default function AdminLogistics({ searchQuery = '', isFilterOpen }: Admin
                 outline: 'none',
                 fontSize: '13px',
                 fontWeight: 'bold',
-                width: '80px',
+                width: '75px',
                 padding: 0,
                 fontFamily: 'monospace'
               }}
             />
           </div>
 
-          <div style={{ borderLeft: '1px solid #1a1a1a', paddingLeft: '24px' }}>
+          <div style={{ borderLeft: '1px solid #1a1a1a', paddingLeft: '20px' }}>
             <span style={{ fontSize: '9px', color: '#888', display: 'block', letterSpacing: '1px', marginBottom: '2px' }}>
               VAT RATE
             </span>
@@ -156,17 +152,6 @@ export default function AdminLogistics({ searchQuery = '', isFilterOpen }: Admin
               step="0.01"
               value={vatRate}
               onChange={(e) => setVatRate(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && e.currentTarget.value !== '') {
-                  updateSettingField('vat_rate', Number(e.currentTarget.value));
-                  e.currentTarget.blur();
-                }
-              }}
-              onBlur={(e) => {
-                if (e.target.value !== '') {
-                  updateSettingField('vat_rate', Number(e.target.value));
-                }
-              }}
               placeholder="0.05"
               style={{
                 backgroundColor: 'transparent',
@@ -175,17 +160,33 @@ export default function AdminLogistics({ searchQuery = '', isFilterOpen }: Admin
                 outline: 'none',
                 fontSize: '13px',
                 fontWeight: 'bold',
-                width: '80px',
+                width: '65px',
                 padding: 0,
                 fontFamily: 'monospace'
               }}
             />
           </div>
-        </div>
 
-        {isSaving && (
-          <span style={{ fontSize: '10px', color: '#f1c40f', fontFamily: 'monospace' }}>SAVING...</span>
-        )}
+          <div style={{ borderLeft: '1px solid #1a1a1a', paddingLeft: '16px' }}>
+            <button
+              onClick={handleSaveSettings}
+              disabled={isSaving}
+              style={{
+                backgroundColor: saveSuccess ? '#112211' : '#111',
+                color: saveSuccess ? '#2ecc71' : '#fff',
+                border: `1px solid ${saveSuccess ? '#2ecc71' : '#333'}`,
+                padding: '6px 12px',
+                fontSize: '10px',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                letterSpacing: '1px',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              {isSaving ? 'SAVING...' : saveSuccess ? 'SAVED!' : 'SAVE'}
+            </button>
+          </div>
+        </div>
       </div>
 
       {isFilterOpen && (
