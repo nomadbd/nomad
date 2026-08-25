@@ -47,7 +47,7 @@ const AdminSettings: React.FC = () => {
         .from('store_settings')
         .select('*')
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (storeData) {
         setSettings({
@@ -57,16 +57,21 @@ const AdminSettings: React.FC = () => {
         });
       }
 
-      const { data: profilesData } = await supabase
+      const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
         .select('*')
-        .in('role', ['staff', 'admin', 'super_admin'])
         .order('created_at', { ascending: false });
 
+      if (profilesError) throw profilesError;
+
       if (profilesData) {
-        setStaffList(profilesData as StaffProfile[]);
+        const filteredStaff = profilesData.filter((p: any) => 
+          ['staff', 'admin', 'super_admin'].includes(String(p.role).toLowerCase())
+        );
+        
+        setStaffList(filteredStaff.length > 0 ? filteredStaff : profilesData);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
     } finally {
       setLoading(false);
@@ -246,31 +251,53 @@ const AdminSettings: React.FC = () => {
         </div>
       </div>
 
-      <form onSubmit={handleSaveSettings} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <form onSubmit={handleSaveSettings} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
         <div style={{ borderBottom: '1px solid #27272a', paddingBottom: '12px' }}>
           <h2 style={{ fontSize: '13px', fontWeight: '700', letterSpacing: '2px', margin: 0, color: '#fff' }}>LOGISTICS & RATES</h2>
           <span style={{ fontSize: '10px', color: '#71717a' }}>STORE CHARGES CONFIGURATION</span>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
           <div>
-            <label style={{ fontSize: '10px', color: '#a1a1aa', display: 'block', marginBottom: '6px', letterSpacing: '1px' }}>DELIVERY CHARGE (BDT)</label>
+            <label style={{ fontSize: '10px', color: '#71717a', display: 'block', marginBottom: '8px', letterSpacing: '1px' }}>DELIVERY CHARGE (BDT)</label>
             <input
               type="number"
               value={settings.delivery_charge}
               onChange={(e) => setSettings({ ...settings, delivery_charge: parseFloat(e.target.value) || 0 })}
-              style={{ width: '100%', background: '#09090b', border: '1px solid #18181b', padding: '12px', color: '#fff', fontSize: '12px', fontFamily: 'monospace', boxSizing: 'border-box' }}
+              style={{ 
+                width: '100%', 
+                background: 'transparent', 
+                border: 'none', 
+                borderBottom: '1px solid #27272a', 
+                padding: '8px 0', 
+                color: '#fff', 
+                fontSize: '14px', 
+                fontFamily: 'monospace', 
+                outline: 'none',
+                borderRadius: 0 
+              }}
             />
           </div>
 
           <div>
-            <label style={{ fontSize: '10px', color: '#a1a1aa', display: 'block', marginBottom: '6px', letterSpacing: '1px' }}>VAT RATE (%)</label>
+            <label style={{ fontSize: '10px', color: '#71717a', display: 'block', marginBottom: '8px', letterSpacing: '1px' }}>VAT RATE (%)</label>
             <input
               type="number"
               step="0.01"
               value={settings.vat_rate}
               onChange={(e) => setSettings({ ...settings, vat_rate: parseFloat(e.target.value) || 0 })}
-              style={{ width: '100%', background: '#09090b', border: '1px solid #18181b', padding: '12px', color: '#fff', fontSize: '12px', fontFamily: 'monospace', boxSizing: 'border-box' }}
+              style={{ 
+                width: '100%', 
+                background: 'transparent', 
+                border: 'none', 
+                borderBottom: '1px solid #27272a', 
+                padding: '8px 0', 
+                color: '#fff', 
+                fontSize: '14px', 
+                fontFamily: 'monospace', 
+                outline: 'none',
+                borderRadius: 0 
+              }}
             />
           </div>
         </div>
@@ -288,7 +315,7 @@ const AdminSettings: React.FC = () => {
             fontWeight: '700',
             letterSpacing: '2px',
             cursor: savingSettings ? 'not-allowed' : 'pointer',
-            marginTop: '8px'
+            marginTop: '12px'
           }}
         >
           {savingSettings ? 'SAVING...' : 'SAVE LOGISTICS SETTINGS'}
