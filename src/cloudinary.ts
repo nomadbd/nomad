@@ -7,7 +7,7 @@ export const uploadToCloudinary = async (file: File): Promise<string> => {
   formData.append('upload_preset', uploadPreset);
 
   const response = await fetch(
-    `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+    `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`,
     { method: 'POST', body: formData }
   );
 
@@ -40,13 +40,15 @@ export const deleteFromCloudinary = async (mediaUrl: string): Promise<any> => {
 
   if (!publicId) return;
 
+  const resourceType = mediaUrl.includes('/video/') ? 'video' : 'image';
+
   const formData = new FormData();
   formData.append('public_id', publicId);
   formData.append('upload_preset', uploadPreset);
 
   try {
     const response = await fetch(
-      `https://api.cloudinary.com/v1_1/${cloudName}/image/destroy`,
+      `https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/destroy`,
       { method: 'POST', body: formData }
     );
     return await response.json();
