@@ -13,10 +13,6 @@ interface OrderItem {
   id: string;
   user_id?: string | null;
   courier_name?: string | null;
-  customer_name?: string | null;
-  customer_phone?: string | null;
-  customer_email?: string | null;
-  shipping_address?: string | null;
   return_reason?: string | null;
   return_status?: string | null;
   created_at: string;
@@ -45,10 +41,6 @@ export default function AdminLogistics() {
           id,
           user_id,
           courier_name,
-          customer_name,
-          customer_phone,
-          customer_email,
-          shipping_address,
           return_reason,
           return_status,
           created_at,
@@ -173,7 +165,6 @@ export default function AdminLogistics() {
 
   return (
     <div style={{ color: '#fff', width: '100%' }}>
-      {/* DELIVERY CHARGE & VAT SETTINGS HEADER */}
       <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'flex-start', width: '100%' }}>
         <div style={{
           display: 'flex',
@@ -317,7 +308,6 @@ export default function AdminLogistics() {
         </div>
       </div>
 
-      {/* ORDERS LIST */}
       {loading ? (
         <div style={{ fontSize: '11px', color: '#888', padding: '20px 0' }}>LOADING DATA...</div>
       ) : (
@@ -328,12 +318,9 @@ export default function AdminLogistics() {
 
             return (
               <div key={item.id} style={{ borderBottom: '1px solid #1a1a1a' }}>
-                {/* Main Visible Card Row */}
                 <div style={{ padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px' }}>
-                  
-                  {/* Left Column: Order ID, Time, Customer Details, Address */}
+
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    {/* Order ID with ... and Dropdown Icon */}
                     <div 
                       onClick={() => toggleExpand(item.id)}
                       style={{ 
@@ -352,40 +339,11 @@ export default function AdminLogistics() {
                       </span>
                     </div>
 
-                    {/* Order Time */}
-                    <div style={{ fontSize: '10px', color: '#666', marginBottom: '8px', fontFamily: 'monospace' }}>
+                    <div style={{ fontSize: '10px', color: '#666', fontFamily: 'monospace' }}>
                       {new Date(item.created_at).toLocaleString()}
                     </div>
-
-                    {/* Customer Info: Name + Phone (wraps if name is long), Email below */}
-                    <div style={{ marginBottom: '6px' }}>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 10px', alignItems: 'baseline' }}>
-                        <span style={{ fontWeight: 'bold', color: '#ddd', fontSize: '12px' }}>
-                          {item.customer_name || 'N/A'}
-                        </span>
-                        {item.customer_phone && (
-                          <span style={{ fontSize: '11px', color: '#888' }}>
-                            {item.customer_phone}
-                          </span>
-                        )}
-                      </div>
-                      {item.customer_email && (
-                        <div style={{ fontSize: '10px', color: '#666', marginTop: '2px' }}>
-                          {item.customer_email}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Shipping Address */}
-                    {item.shipping_address && (
-                      <div style={{ fontSize: '10px', color: '#888', marginTop: '6px', lineHeight: '1.4' }}>
-                        <span style={{ color: '#555' }}>Address: </span>
-                        {item.shipping_address}
-                      </div>
-                    )}
                   </div>
 
-                  {/* Right Column: Return Status Dropdown */}
                   <div style={{ display: 'flex', alignItems: 'flex-start', flexShrink: 0 }}>
                     <select
                       value={item.return_status || 'Pending'}
@@ -408,17 +366,15 @@ export default function AdminLogistics() {
 
                 </div>
 
-                {/* Dropdown Content Box */}
                 {isExpanded && (
                   <div style={{ backgroundColor: '#0a0a0a', borderTop: '1px solid #141414', padding: '16px 20px' }}>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '20px' }}>
-                      
-                      {/* Courier & Return Reason */}
+
                       <div style={{ borderRight: '1px solid #1a1a1a', paddingRight: '16px' }}>
                         <div style={{ fontSize: '10px', color: '#888', marginBottom: '8px', fontWeight: 'bold', letterSpacing: '0.5px' }}>
                           LOGISTICS DETAILS
                         </div>
-                        
+
                         <div style={{ marginBottom: '8px', fontSize: '11px', color: '#aaa' }}>
                           <span style={{ color: '#555' }}>Courier Name: </span>
                           <span style={{ color: '#fff', fontWeight: '500' }}>{item.courier_name || '—'}</span>
@@ -432,7 +388,6 @@ export default function AdminLogistics() {
                         </div>
                       </div>
 
-                      {/* Product Info List */}
                       <div>
                         <div style={{ fontSize: '10px', color: '#888', marginBottom: '8px', fontWeight: 'bold', letterSpacing: '0.5px' }}>
                           PRODUCTS LIST
