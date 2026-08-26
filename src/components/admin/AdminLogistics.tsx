@@ -3,6 +3,7 @@ import { supabase } from '../../supabaseClient';
 
 interface OrderItemDetail {
   id: string;
+  order_id: string;
   product_name: string;
   quantity: number;
   size?: string | null;
@@ -19,6 +20,7 @@ interface OrderItem {
   shipping_address?: string | null;
   return_reason?: string | null;
   return_status?: string | null;
+  total_price?: number | null;
   created_at: string;
   order_items?: OrderItemDetail[];
 }
@@ -39,31 +41,33 @@ export default function AdminLogistics() {
   const fetchOrders = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      const { data: ordersData, error: ordersError } = await supabase
         .from('orders')
-        .select(`
-          id,
-          user_id,
-          courier_name,
-          customer_name,
-          customer_phone,
-          customer_email,
-          shipping_address,
-          return_reason,
-          return_status,
-          created_at,
-          order_items (
-            id,
-            quantity,
-            size,
-            color,
-            product_name
-          )
-        `)
+        .select('id, user_id, courier_name, customer_name, customer_phone, customer_email, shipping_address, return_reason, return_status, total_price, created_at')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setOrders(data || []);
+      if (ordersError) throw ordersError;
+
+      if (!ordersData || ordersData.length === 0) {
+        setOrders([]);
+        return;
+      }
+
+      const orderIds = ordersData.map((order) => order.id);
+
+      const { data: itemsData, error: itemsError } = await supabase
+        .from('order_items')
+        .select('id, order_id, quantity, size, color, product_name')
+        .in('order_id', orderIds);
+
+      if (itemsError) console.error('Error fetching order items:', itemsError);
+
+      const combinedOrders = ordersData.map((order) => ({
+        ...order,
+        order_items: (itemsData || []).filter((item) => item.order_id === order.id)
+      }));
+
+      setOrders(combinedOrders);
     } catch (err) {
       console.error('Error fetching orders:', err);
     } finally {
@@ -171,8 +175,15 @@ export default function AdminLogistics() {
     }
   };
 
+  const formatDate = (dateString: string) => {
+    const d = new Date(dateString);
+    const formattedDate = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    const formattedTime = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+    return `${formattedDate}, ${formattedTime}`;
+  };
+
   return (
-    <div style={{ color: '#fff', width: '100%' }}>
+    <div style={{ color: '#fff', width: '100%', fontFamily: 'sans-serif' }}>
       <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'flex-start', width: '100%' }}>
         <div style={{
           display: 'flex',
@@ -319,119 +330,167 @@ export default function AdminLogistics() {
       {loading ? (
         <div style={{ fontSize: '11px', color: '#888', padding: '20px 0' }}>LOADING DATA...</div>
       ) : (
-        <div style={{ overflowX: 'auto', border: '1px solid #1a1a1a', backgroundColor: '#060606' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '11px' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid #1a1a1a', color: '#666', height: '40px' }}>
-                <th style={{ padding: '0 16px', width: '40px' }}></th>
-                <th style={{ padding: '0 16px' }}>ORDER ID</th>
-                <th style={{ padding: '0 16px' }}>CUSTOMER</th>
-                <th style={{ padding: '0 16px' }}>COURIER</th>
-                <th style={{ padding: '0 16px' }}>RETURN REASON</th>
-                <th style={{ padding: '0 16px' }}>RETURN RECEIVED</th>
-              </tr>
-            </thead>
-            <tbody>
-              {orders.map((item) => {
-                const isExpanded = expandedOrderId === item.id;
-                const isReceived = item.return_status === 'Received';
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
+          {orders.map((item) => {
+            const isExpanded = expandedOrderId === item.id;
+            const isReceived = item.return_status === 'Received';
+            const itemQty = item.order_items?.reduce((sum, i) => sum + (i.quantity || 0), 0) || 0;
 
-                return (
-                  <React.Fragment key={item.id}>
-                    <tr style={{ borderBottom: '1px solid #111', height: '48px', cursor: 'pointer' }}>
-                      <td style={{ padding: '0 16px', color: '#888' }} onClick={() => toggleExpand(item.id)}>
-                        {isExpanded ? '▼' : '►'}
-                      </td>
-                      <td
-                        style={{ padding: '0 16px', fontWeight: 'bold', color: '#fff' }}
-                        onClick={() => toggleExpand(item.id)}
+            return (
+              <div
+                key={item.id}
+                style={{
+                  backgroundColor: '#060606',
+                  border: '1px solid #1a1a1a',
+                  borderRadius: '4px',
+                  overflow: 'hidden'
+                }}
+              >
+                <div
+                  onClick={() => toggleExpand(item.id)}
+                  style={{
+                    padding: '12px 16px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{
+                      width: '16px',
+                      height: '16px',
+                      border: '1px solid #333',
+                      borderRadius: '3px',
+                      flexShrink: 0
+                    }} />
+
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ fontSize: '16px', fontWeight: 'bold', fontFamily: 'monospace', color: '#fff', letterSpacing: '0.5px' }}>
+                          #{item.id.substring(0, 8)}...
+                        </span>
+                        <span style={{ fontSize: '10px', color: '#888' }}>
+                          {isExpanded ? '▼' : '►'}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#888', fontFamily: 'monospace', marginTop: '4px' }}>
+                        {formatDate(item.created_at)}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#fff' }}>
+                        ৳{item.total_price ?? 0}
+                      </div>
+                      <div style={{ fontSize: '10px', color: '#888', fontFamily: 'monospace', marginTop: '2px', letterSpacing: '0.5px' }}>
+                        {itemQty} ITEM(S)
+                      </div>
+                    </div>
+
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <select
+                        value={item.return_status || 'Pending'}
+                        onChange={(e) => handleStatusUpdate(item.id, e.target.value)}
+                        style={{
+                          backgroundColor: '#111',
+                          color: isReceived ? '#2ecc71' : '#f39c12',
+                          border: '1px solid #222',
+                          padding: '6px 10px',
+                          fontSize: '11px',
+                          borderRadius: '3px',
+                          outline: 'none',
+                          cursor: 'pointer',
+                          fontWeight: 'bold'
+                        }}
                       >
-                        #{item.id.substring(0, 8)}
-                      </td>
-                      <td style={{ padding: '0 16px', color: '#ccc' }} onClick={() => toggleExpand(item.id)}>
-                        <div>{item.customer_name || 'N/A'}</div>
-                        <div style={{ fontSize: '9px', color: '#666' }}>{item.customer_phone || ''}</div>
-                      </td>
-                      <td style={{ padding: '0 16px', color: '#888' }} onClick={() => toggleExpand(item.id)}>
-                        {item.courier_name || '—'}
-                      </td>
-                      <td style={{ padding: '0 16px', color: item.return_reason ? '#e74c3c' : '#666' }} onClick={() => toggleExpand(item.id)}>
-                        {item.return_reason || '—'}
-                      </td>
-                      <td style={{ padding: '0 16px' }}>
-                        <select
-                          value={item.return_status || 'Pending'}
-                          onChange={(e) => handleStatusUpdate(item.id, e.target.value)}
-                          style={{
-                            backgroundColor: '#111',
-                            color: isReceived ? '#2ecc71' : '#f39c12',
-                            border: '1px solid #222',
-                            padding: '4px 8px',
-                            fontSize: '10px',
-                            borderRadius: '3px',
-                            outline: 'none',
-                            cursor: 'pointer'
-                          }}
-                        >
-                          <option value="Pending" style={{ color: '#f39c12' }}>Pending</option>
-                          <option value="Received" style={{ color: '#2ecc71' }}>Received</option>
-                        </select>
-                      </td>
-                    </tr>
+                        <option value="Pending" style={{ color: '#f39c12' }}>Pending</option>
+                        <option value="Received" style={{ color: '#2ecc71' }}>Received</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
 
-                    {isExpanded && (
-                      <tr style={{ borderBottom: '1px solid #1a1a1a', backgroundColor: '#0a0a0a' }}>
-                        <td colSpan={6} style={{ padding: '16px 24px' }}>
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '20px' }}>
-                            <div style={{ borderRight: '1px solid #1a1a1a', paddingRight: '16px' }}>
-                              <div style={{ fontSize: '10px', color: '#888', marginBottom: '8px', fontWeight: 'bold' }}>ORDER DETAILS</div>
-                              <div style={{ marginBottom: '6px', color: '#aaa' }}>
-                                <span style={{ color: '#555' }}>Email: </span>{item.customer_email || 'N/A'}
-                              </div>
-                              <div style={{ marginBottom: '6px', color: '#aaa' }}>
-                                <span style={{ color: '#555' }}>Address: </span>{item.shipping_address || 'N/A'}
-                              </div>
-                              <div style={{ marginBottom: '6px', color: '#aaa' }}>
-                                <span style={{ color: '#555' }}>Date: </span>{new Date(item.created_at).toLocaleString()}
-                              </div>
-                            </div>
+                {isExpanded && (
+                  <div style={{
+                    borderTop: '1px solid #1a1a1a',
+                    backgroundColor: '#000000',
+                    padding: '16px 20px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '16px'
+                  }}>
+                    <div>
+                      <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#fff', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <span>{item.customer_name || 'N/A'}</span>
+                        <span style={{ fontSize: '13px', color: '#888', fontWeight: 'normal', fontFamily: 'monospace' }}>
+                          {item.customer_phone || ''}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#aaa', marginTop: '6px', fontFamily: 'monospace' }}>
+                        • {item.customer_email || 'No Email'}
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#ccc', marginTop: '4px' }}>
+                        {item.shipping_address || 'No Address Provided'}
+                      </div>
+                    </div>
 
-                            <div>
-                              <div style={{ fontSize: '10px', color: '#888', marginBottom: '8px', fontWeight: 'bold' }}>PRODUCTS LIST</div>
-                              {item.order_items && item.order_items.length > 0 ? (
-                                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10px' }}>
-                                  <thead>
-                                    <tr style={{ color: '#555', borderBottom: '1px solid #1a1a1a', textAlign: 'left' }}>
-                                      <th style={{ paddingBottom: '4px' }}>PRODUCT NAME</th>
-                                      <th style={{ paddingBottom: '4px' }}>SIZE</th>
-                                      <th style={{ paddingBottom: '4px' }}>COLOR</th>
-                                      <th style={{ paddingBottom: '4px' }}>QTY</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {item.order_items.map((prod) => (
-                                      <tr key={prod.id} style={{ borderBottom: '1px solid #141414', color: '#ccc' }}>
-                                        <td style={{ padding: '6px 0' }}>{prod.product_name}</td>
-                                        <td style={{ padding: '6px 0', color: '#888' }}>{prod.size || '—'}</td>
-                                        <td style={{ padding: '6px 0', color: '#888' }}>{prod.color || '—'}</td>
-                                        <td style={{ padding: '6px 0', fontWeight: 'bold', color: '#fff' }}>{prod.quantity}</td>
-                                      </tr>
-                                    ))}
-                                  </tbody>
-                                </table>
-                              ) : (
-                                <div style={{ fontSize: '10px', color: '#555' }}>No product details found for this order.</div>
-                              )}
-                            </div>
-                          </div>
-                        </td>
-                      </tr>
-                    )}
-                  </React.Fragment>
-                );
-              })}
-            </tbody>
-          </table>
+                    <div style={{ display: 'flex', gap: '30px', borderTop: '1px solid #111', paddingTop: '12px' }}>
+                      <div>
+                        <span style={{ fontSize: '10px', color: '#666', display: 'block', letterSpacing: '0.5px', marginBottom: '2px' }}>
+                          COURIER NAME
+                        </span>
+                        <span style={{ fontSize: '12px', color: '#fff', fontWeight: 'bold' }}>
+                          {item.courier_name || '—'}
+                        </span>
+                      </div>
+
+                      <div>
+                        <span style={{ fontSize: '10px', color: '#666', display: 'block', letterSpacing: '0.5px', marginBottom: '2px' }}>
+                          RETURN REASON
+                        </span>
+                        <span style={{ fontSize: '12px', color: item.return_reason ? '#e74c3c' : '#888' }}>
+                          {item.return_reason || '—'}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div style={{ borderTop: '1px solid #111', paddingTop: '12px' }}>
+                      <div style={{ fontSize: '10px', color: '#666', letterSpacing: '0.5px', marginBottom: '8px', fontWeight: 'bold' }}>
+                        ORDERED PRODUCTS
+                      </div>
+                      {item.order_items && item.order_items.length > 0 ? (
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
+                          <thead>
+                            <tr style={{ color: '#555', borderBottom: '1px solid #1a1a1a', textAlign: 'left', height: '28px' }}>
+                              <th>PRODUCT NAME</th>
+                              <th>SIZE</th>
+                              <th>COLOR</th>
+                              <th>QTY</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {item.order_items.map((prod) => (
+                              <tr key={prod.id} style={{ borderBottom: '1px solid #111', height: '32px', color: '#ccc' }}>
+                                <td>{prod.product_name}</td>
+                                <td style={{ color: '#888' }}>{prod.size || '—'}</td>
+                                <td style={{ color: '#888' }}>{prod.color || '—'}</td>
+                                <td style={{ fontWeight: 'bold', color: '#fff' }}>{prod.quantity}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      ) : (
+                        <div style={{ fontSize: '11px', color: '#555' }}>No products found for this order.</div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
