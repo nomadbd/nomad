@@ -3,6 +3,7 @@ import { supabase } from '../../supabaseClient';
 
 interface OrderItemDetail {
   id: string;
+  product_id?: string | null;
   product_name: string;
   quantity: number;
   size?: string | null;
@@ -48,6 +49,7 @@ export default function AdminLogistics() {
           created_at,
           order_items (
             id,
+            product_id,
             quantity,
             size,
             color,
@@ -55,6 +57,8 @@ export default function AdminLogistics() {
           )
         `)
         .eq('status', 'Cancelled')
+        .not('courier_name', 'is', null)
+        .neq('courier_name', '')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -149,12 +153,50 @@ export default function AdminLogistics() {
 
   const handleStatusUpdate = async (orderId: string, newStatus: string) => {
     try {
+      const targetOrder = orders.find((o) => o.id === orderId);
+
       const { error } = await supabase
         .from('orders')
         .update({ return_status: newStatus })
         .eq('id', orderId);
 
       if (error) throw error;
+
+      if (newStatus === 'Received' && targetOrder?.return_status !== 'Received') {
+        if (targetOrder && targetOrder.order_items) {
+          for (const item of targetOrder.order_items) {
+            if (item.product_id) {
+              const { data: prodData } = await supabase
+                .from('products')
+                .select('stock_quantity')
+                .eq('id', item.product_id)
+                .single();
+
+              if (prodData) {
+                const currentStock = prodData.stock_quantity || 0;
+                await supabase
+                  .from('products')
+                  .update({ stock_quantity: currentStock + item.quantity })
+                  .eq('id', item.product_id);
+              }
+            } else if (item.product_name) {
+              const { data: prodData } = await supabase
+                .from('products')
+                .select('stock_quantity')
+                .eq('name', item.product_name)
+                .single();
+
+              if (prodData) {
+                const currentStock = prodData.stock_quantity || 0;
+                await supabase
+                  .from('products')
+                  .update({ stock_quantity: currentStock + item.quantity })
+                  .eq('name', item.product_name);
+              }
+            }
+          }
+        }
+      }
 
       setOrders((prevOrders) =>
         prevOrders.map((order) =>
