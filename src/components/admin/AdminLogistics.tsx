@@ -159,18 +159,19 @@ export default function AdminLogistics({ searchQuery = '', isFilterOpen }: Admin
               type="number"
               value={deliveryCharge}
               onChange={(e) => setDeliveryCharge(e.target.value)}
+              onFocus={(e) => e.target.select()}
               disabled={!isEditing}
               placeholder="100"
               style={{
                 backgroundColor: 'transparent',
                 color: isEditing ? '#fff' : '#888',
-                border: isEditing ? '1px solid #333' : 'none',
+                border: 'none',
                 outline: 'none',
                 fontSize: '12px',
                 fontWeight: 'bold',
                 width: '100%',
                 maxWidth: '50px',
-                padding: isEditing ? '1px 3px' : '0',
+                padding: '0',
                 fontFamily: 'monospace',
                 cursor: isEditing ? 'text' : 'default',
                 boxSizing: 'border-box'
@@ -187,18 +188,19 @@ export default function AdminLogistics({ searchQuery = '', isFilterOpen }: Admin
               step="0.01"
               value={vatRate}
               onChange={(e) => setVatRate(e.target.value)}
+              onFocus={(e) => e.target.select()}
               disabled={!isEditing}
               placeholder="0.05"
               style={{
                 backgroundColor: 'transparent',
                 color: isEditing ? '#fff' : '#888',
-                border: isEditing ? '1px solid #333' : 'none',
+                border: 'none',
                 outline: 'none',
                 fontSize: '12px',
                 fontWeight: 'bold',
                 width: '100%',
                 maxWidth: '40px',
-                padding: isEditing ? '1px 3px' : '0',
+                padding: '0',
                 fontFamily: 'monospace',
                 cursor: isEditing ? 'text' : 'default',
                 boxSizing: 'border-box'
