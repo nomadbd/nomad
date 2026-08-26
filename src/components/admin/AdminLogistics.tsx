@@ -5,7 +5,6 @@ interface OrderItemDetail {
   id: string;
   product_name: string;
   quantity: number;
-  price?: number | null;
   size?: string | null;
   color?: string | null;
 }
@@ -20,7 +19,6 @@ interface OrderItem {
   shipping_address?: string | null;
   return_reason?: string | null;
   return_status?: string | null;
-  total_amount?: number | null;
   created_at: string;
   order_items?: OrderItemDetail[];
 }
@@ -53,12 +51,10 @@ export default function AdminLogistics() {
           shipping_address,
           return_reason,
           return_status,
-          total_amount,
           created_at,
           order_items (
             id,
             quantity,
-            price,
             size,
             color,
             product_name
@@ -177,7 +173,7 @@ export default function AdminLogistics() {
 
   return (
     <div style={{ color: '#fff', width: '100%' }}>
-      {/* DELIVERY CHARGE & VAT SETTINGS HEADER (Hospitals/Stores Config) */}
+      {/* DELIVERY CHARGE & VAT SETTINGS HEADER */}
       <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'flex-start', width: '100%' }}>
         <div style={{
           display: 'flex',
@@ -329,8 +325,6 @@ export default function AdminLogistics() {
           {orders.map((item) => {
             const isExpanded = expandedOrderId === item.id;
             const isReceived = item.return_status === 'Received';
-            const totalAmount = item.total_amount ?? 
-              item.order_items?.reduce((sum, p) => sum + ((p.price || 0) * (p.quantity || 1)), 0) ?? 0;
 
             return (
               <div key={item.id} style={{ borderBottom: '1px solid #1a1a1a' }}>
@@ -391,33 +385,25 @@ export default function AdminLogistics() {
                     )}
                   </div>
 
-                  {/* Right Column: Price & Return Status Dropdown */}
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '10px', flexShrink: 0 }}>
-                    {/* Price */}
-                    <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#2ecc71', fontFamily: 'monospace' }}>
-                      ৳{totalAmount.toLocaleString()}
-                    </div>
-
-                    {/* Return Status Dropdown */}
-                    <div>
-                      <select
-                        value={item.return_status || 'Pending'}
-                        onChange={(e) => handleStatusUpdate(item.id, e.target.value)}
-                        style={{
-                          backgroundColor: '#111',
-                          color: isReceived ? '#2ecc71' : '#f39c12',
-                          border: '1px solid #222',
-                          padding: '4px 8px',
-                          fontSize: '10px',
-                          borderRadius: '3px',
-                          outline: 'none',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        <option value="Pending" style={{ color: '#f39c12' }}>Pending</option>
-                        <option value="Received" style={{ color: '#2ecc71' }}>Received</option>
-                      </select>
-                    </div>
+                  {/* Right Column: Return Status Dropdown */}
+                  <div style={{ display: 'flex', alignItems: 'flex-start', flexShrink: 0 }}>
+                    <select
+                      value={item.return_status || 'Pending'}
+                      onChange={(e) => handleStatusUpdate(item.id, e.target.value)}
+                      style={{
+                        backgroundColor: '#111',
+                        color: isReceived ? '#2ecc71' : '#f39c12',
+                        border: '1px solid #222',
+                        padding: '4px 8px',
+                        fontSize: '10px',
+                        borderRadius: '3px',
+                        outline: 'none',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <option value="Pending" style={{ color: '#f39c12' }}>Pending</option>
+                      <option value="Received" style={{ color: '#2ecc71' }}>Received</option>
+                    </select>
                   </div>
 
                 </div>
