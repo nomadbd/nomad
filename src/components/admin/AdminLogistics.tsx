@@ -25,7 +25,7 @@ export default function AdminLogistics({ searchQuery = '', isFilterOpen }: Admin
   const [vatRate, setVatRate] = useState<number | string>('');
   const [initialDeliveryCharge, setInitialDeliveryCharge] = useState<number | string>('');
   const [initialVatRate, setInitialVatRate] = useState<number | string>('');
-  
+
   const [settingId, setSettingId] = useState<number | null>(null);
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
@@ -139,8 +139,18 @@ export default function AdminLogistics({ searchQuery = '', isFilterOpen }: Admin
   return (
     <div style={{ color: '#fff', width: '100%' }}>
       {/* Store Settings Card */}
-      <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'flex-start' }}>
-        <div style={{ display: 'flex', gap: '20px', backgroundColor: '#060606', padding: '10px 16px', border: '1px solid #1a1a1a', alignItems: 'center' }}>
+      <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'flex-start', width: '100%' }}>
+        <div style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: '12px',
+          backgroundColor: '#060606',
+          padding: '10px 12px',
+          border: '1px solid #1a1a1a',
+          alignItems: 'center',
+          maxWidth: '100%',
+          boxSizing: 'border-box'
+        }}>
           <div>
             <span style={{ fontSize: '9px', color: '#888', display: 'block', letterSpacing: '1px', marginBottom: '2px' }}>
               DELIVERY CHARGE
@@ -158,7 +168,7 @@ export default function AdminLogistics({ searchQuery = '', isFilterOpen }: Admin
                 outline: 'none',
                 fontSize: '13px',
                 fontWeight: 'bold',
-                width: '75px',
+                width: '60px',
                 padding: isEditing ? '2px 4px' : '0',
                 fontFamily: 'monospace',
                 cursor: isEditing ? 'text' : 'default'
@@ -166,7 +176,7 @@ export default function AdminLogistics({ searchQuery = '', isFilterOpen }: Admin
             />
           </div>
 
-          <div style={{ borderLeft: '1px solid #1a1a1a', paddingLeft: '20px' }}>
+          <div style={{ borderLeft: '1px solid #1a1a1a', paddingLeft: '12px' }}>
             <span style={{ fontSize: '9px', color: '#888', display: 'block', letterSpacing: '1px', marginBottom: '2px' }}>
               VAT RATE
             </span>
@@ -184,7 +194,7 @@ export default function AdminLogistics({ searchQuery = '', isFilterOpen }: Admin
                 outline: 'none',
                 fontSize: '13px',
                 fontWeight: 'bold',
-                width: '65px',
+                width: '55px',
                 padding: isEditing ? '2px 4px' : '0',
                 fontFamily: 'monospace',
                 cursor: isEditing ? 'text' : 'default'
@@ -192,48 +202,49 @@ export default function AdminLogistics({ searchQuery = '', isFilterOpen }: Admin
             />
           </div>
 
-          <div style={{ borderLeft: '1px solid #1a1a1a', paddingLeft: '16px', display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <div style={{ borderLeft: '1px solid #1a1a1a', paddingLeft: '10px', display: 'flex', gap: '8px', alignItems: 'center' }}>
             {!isEditing ? (
-              /* EDIT SVG ICON */
+              /* EDIT SVG ICON (Border removed) */
               <button
                 onClick={() => setIsEditing(true)}
                 title="Edit Settings"
                 style={{
-                  backgroundColor: '#111',
-                  color: '#fff',
-                  border: '1px solid #333',
-                  padding: '6px 10px',
+                  backgroundColor: 'transparent',
+                  color: '#888',
+                  border: 'none',
+                  padding: '4px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   cursor: 'pointer'
                 }}
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
                   <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                 </svg>
               </button>
             ) : (
               <>
-                {/* SAVE SVG ICON */}
+                {/* SAVE SVG ICON (White by default, Green when saving) */}
                 <button
                   onClick={handleSaveSettings}
                   disabled={isSaving}
                   title="Save Settings"
                   style={{
-                    backgroundColor: '#112211',
-                    color: '#2ecc71',
-                    border: '1px solid #2ecc71',
-                    padding: '6px 10px',
+                    backgroundColor: 'transparent',
+                    color: isSaving ? '#2ecc71' : '#fff',
+                    border: `1px solid ${isSaving ? '#2ecc71' : '#444'}`,
+                    padding: '6px 8px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    cursor: 'pointer'
+                    cursor: 'pointer',
+                    borderRadius: '2px'
                   }}
                 >
                   {isSaving ? (
-                    <span style={{ fontSize: '10px', fontFamily: 'monospace' }}>...</span>
+                    <span style={{ fontSize: '10px', fontFamily: 'monospace', color: '#2ecc71' }}>...</span>
                   ) : (
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                       <polyline points="20 6 9 17 4 12" />
@@ -247,14 +258,15 @@ export default function AdminLogistics({ searchQuery = '', isFilterOpen }: Admin
                   disabled={isSaving}
                   title="Cancel"
                   style={{
-                    backgroundColor: '#1a1a1a',
+                    backgroundColor: 'transparent',
                     color: '#888',
                     border: '1px solid #333',
-                    padding: '6px 10px',
+                    padding: '6px 8px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    cursor: 'pointer'
+                    cursor: 'pointer',
+                    borderRadius: '2px'
                   }}
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
