@@ -54,7 +54,7 @@ export default function AdminLogistics() {
             product_name
           )
         `)
-        .eq('status', 'Cancel')
+        .eq('status', 'Cancelled')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
