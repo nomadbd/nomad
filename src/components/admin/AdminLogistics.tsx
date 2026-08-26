@@ -57,6 +57,8 @@ export default function AdminLogistics() {
           )
         `)
         .eq('status', 'Cancelled')
+        .not('courier_name', 'is', null)
+        .neq('courier_name', '')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
