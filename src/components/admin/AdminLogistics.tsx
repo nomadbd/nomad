@@ -74,16 +74,24 @@ export default function AdminLogistics({ searchQuery = '', isFilterOpen }: Admin
     fetchSettings();
   }, []);
 
+  const handleStartEdit = () => {
+    setIsEditing(true);
+    setDeliveryCharge('');
+    setVatRate('');
+  };
+
   const handleSaveSettings = async () => {
     setIsSaving(true);
     try {
       const targetId = settingId ?? 1;
+      const finalDc = deliveryCharge === '' ? initialDeliveryCharge : deliveryCharge;
+      const finalVat = vatRate === '' ? initialVatRate : vatRate;
 
       const { data, error } = await supabase
         .from('store_settings')
         .update({
-          delivery_charge: Number(deliveryCharge),
-          vat_rate: Number(vatRate),
+          delivery_charge: Number(finalDc),
+          vat_rate: Number(finalVat),
           updated_at: new Date().toISOString()
         })
         .eq('id', targetId)
@@ -97,8 +105,10 @@ export default function AdminLogistics({ searchQuery = '', isFilterOpen }: Admin
         return;
       }
 
-      setInitialDeliveryCharge(deliveryCharge);
-      setInitialVatRate(vatRate);
+      setInitialDeliveryCharge(finalDc);
+      setInitialVatRate(finalVat);
+      setDeliveryCharge(finalDc);
+      setVatRate(finalVat);
       setIsEditing(false);
     } catch (err: any) {
       alert('Failed to save settings: ' + err.message);
@@ -157,14 +167,13 @@ export default function AdminLogistics({ searchQuery = '', isFilterOpen }: Admin
             </span>
             <input
               type="number"
-              value={deliveryCharge}
+              value={isEditing ? deliveryCharge : initialDeliveryCharge}
               onChange={(e) => setDeliveryCharge(e.target.value)}
-              onFocus={(e) => e.target.select()}
               disabled={!isEditing}
-              placeholder="100"
+              placeholder={String(initialDeliveryCharge)}
               style={{
                 backgroundColor: 'transparent',
-                color: isEditing ? '#fff' : '#888',
+                color: '#fff',
                 border: 'none',
                 outline: 'none',
                 fontSize: '12px',
@@ -186,14 +195,13 @@ export default function AdminLogistics({ searchQuery = '', isFilterOpen }: Admin
             <input
               type="number"
               step="0.01"
-              value={vatRate}
+              value={isEditing ? vatRate : initialVatRate}
               onChange={(e) => setVatRate(e.target.value)}
-              onFocus={(e) => e.target.select()}
               disabled={!isEditing}
-              placeholder="0.05"
+              placeholder={String(initialVatRate)}
               style={{
                 backgroundColor: 'transparent',
-                color: isEditing ? '#fff' : '#888',
+                color: '#fff',
                 border: 'none',
                 outline: 'none',
                 fontSize: '12px',
@@ -211,7 +219,7 @@ export default function AdminLogistics({ searchQuery = '', isFilterOpen }: Admin
           <div style={{ borderLeft: '1px solid #1a1a1a', paddingLeft: '8px', display: 'flex', gap: '4px', alignItems: 'center', flexShrink: 0 }}>
             {!isEditing ? (
               <button
-                onClick={() => setIsEditing(true)}
+                onClick={handleStartEdit}
                 title="Edit Settings"
                 style={{
                   backgroundColor: 'transparent',
