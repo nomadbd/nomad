@@ -6,25 +6,24 @@ interface AdminLogisticsProps {
   isFilterOpen?: boolean;
 }
 
-interface Shipment {
+interface OrderItem {
   id: string;
-  order_id: string;
-  courier_partner: string;
-  tracking_number: string;
-  shipping_status: 'PENDING' | 'DISPATCHED' | 'IN_TRANSIT' | 'DELIVERED' | 'RETURNED';
-  destination: string;
-  updated_at: string;
-  // Logistics specific fields
-  cod_amount?: number;
-  cod_status?: 'UNPAID' | 'SETTLED';
+  customer_name: string;
+  shipping_address: string;
+  courier_name: string | null;
+  tracking_id: string | null;
+  status: string;
+  total_amount: number;
+  payment_status: string;
+  delivery_charge: number;
   courier_fee?: number;
   weight?: string;
-  zone?: string;
   return_reason?: string;
+  created_at: string;
 }
 
 export default function AdminLogistics({ searchQuery = '', isFilterOpen }: AdminLogisticsProps) {
-  const [shipments, setShipments] = useState<Shipment[]>([]);
+  const [orders, setOrders] = useState<OrderItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [courierFilter, setCourierFilter] = useState<string>('ALL');
 
@@ -37,16 +36,16 @@ export default function AdminLogistics({ searchQuery = '', isFilterOpen }: Admin
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
 
-  const fetchShipments = async () => {
+  const fetchLogisticsOrders = async () => {
     setLoading(true);
     try {
       const { data, error } = await supabase
-        .from('shipments')
+        .from('orders')
         .select('*')
-        .order('updated_at', { ascending: false });
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setShipments(data || []);
+      setOrders(data || []);
     } catch (err) {
       console.error('Error fetching logistics data:', err);
     } finally {
@@ -77,7 +76,7 @@ export default function AdminLogistics({ searchQuery = '', isFilterOpen }: Admin
   };
 
   useEffect(() => {
-    fetchShipments();
+    fetchLogisticsOrders();
     fetchSettings();
   }, []);
 
@@ -131,56 +130,59 @@ export default function AdminLogistics({ searchQuery = '', isFilterOpen }: Admin
     setIsEditing(false);
   };
 
-  const updateStatus = async (id: string, status: Shipment['shipping_status']) => {
+  const updateOrderStatus = async (id: string, status: string) => {
     try {
       const { error } = await supabase
-        .from('shipments')
-        .update({ shipping_status: status, updated_at: new Date().toISOString() })
+        .from('orders')
+        .update({ status })
         .eq('id', id);
 
       if (error) throw error;
-      fetchShipments();
+      fetchLogisticsOrders();
     } catch (err: any) {
       alert('Failed to update status: ' + err.message);
     }
   };
 
-  const toggleCodStatus = async (id: string, currentStatus?: 'UNPAID' | 'SETTLED') => {
-    const nextStatus = currentStatus === 'SETTLED' ? 'UNPAID' : 'SETTLED';
+  const updatePaymentStatus = async (id: string, currentStatus: string) => {
+    const nextStatus = currentStatus === 'Paid' ? 'Unpaid / COD' : 'Paid';
     try {
       const { error } = await supabase
-        .from('shipments')
-        .update({ cod_status: nextStatus, updated_at: new Date().toISOString() })
+        .from('orders')
+        .update({ payment_status: nextStatus })
         .eq('id', id);
 
       if (error) throw error;
-      fetchShipments();
+      fetchLogisticsOrders();
     } catch (err: any) {
-      alert('Failed to update COD status: ' + err.message);
+      alert('Failed to update payment status: ' + err.message);
     }
   };
 
-  const filteredShipments = shipments.filter((shipment) => {
+  const filteredOrders = orders.filter((order) => {
     const matchesSearch =
-      shipment.order_id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      shipment.tracking_number?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCourier = courierFilter === 'ALL' || shipment.courier_partner === courierFilter;
+      order.id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      order.tracking_id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      order.customer_name?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCourier =
+      courierFilter === 'ALL' ||
+      order.courier_name?.toUpperCase() === courierFilter.toUpperCase();
     return matchesSearch && matchesCourier;
   });
 
-  // Logistics-Specific Metrics
-  const pendingCodTotal = shipments
-    .filter((s) => s.cod_status !== 'SETTLED' && s.shipping_status !== 'RETURNED')
-    .reduce((sum, s) => sum + (s.cod_amount || 0), 0);
+  // Overview Metrics Calculations
+  const pendingCodTotal = orders
+    .filter((o) => o.payment_status !== 'Paid' && o.status !== 'Cancelled' && o.status !== 'Returned')
+    .reduce((sum, o) => sum + (o.total_amount || 0), 0);
 
-  const activeInTransit = shipments.filter(
-    (s) => s.shipping_status === 'IN_TRANSIT' || s.shipping_status === 'DISPATCHED'
+  const activeInTransit = orders.filter(
+    (o) => o.status === 'Shipped' || o.status === 'In Transit' || o.status === 'Processing'
   ).length;
 
-  const totalReturned = shipments.filter((s) => s.shipping_status === 'RETURNED').length;
-  const returnRate = shipments.length > 0 ? ((totalReturned / shipments.length) * 100).toFixed(1) : '0';
+  const totalReturned = orders.filter((o) => o.status === 'Returned').length;
+  const returnRate = orders.length > 0 ? ((totalReturned / orders.length) * 100).toFixed(1) : '0';
 
-  const getTrackingUrl = (courier: string, trk: string) => {
+  const getTrackingUrl = (courier: string | null, trk: string | null) => {
     if (!trk) return null;
     const c = courier?.toUpperCase() || '';
     if (c.includes('PATHAO')) return `https://pathao.com/courier/tracking/?consignment_id=${trk}`;
@@ -192,7 +194,7 @@ export default function AdminLogistics({ searchQuery = '', isFilterOpen }: Admin
 
   return (
     <div style={{ color: '#fff', width: '100%' }}>
-      {/* Settings Row */}
+      {/* Settings Bar */}
       <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'flex-start', width: '100%' }}>
         <div style={{
           display: 'flex',
@@ -336,7 +338,7 @@ export default function AdminLogistics({ searchQuery = '', isFilterOpen }: Admin
         </div>
       </div>
 
-      {/* Logistics Specific Overview Metrics */}
+      {/* Overview Cards */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
@@ -344,16 +346,16 @@ export default function AdminLogistics({ searchQuery = '', isFilterOpen }: Admin
         marginBottom: '20px'
       }}>
         <div style={{ backgroundColor: '#060606', border: '1px solid #1a1a1a', padding: '10px' }}>
-          <span style={{ fontSize: '8px', color: '#888', letterSpacing: '0.5px', display: 'block' }}>PENDING COD</span>
+          <span style={{ fontSize: '8px', color: '#888', letterSpacing: '0.5px', display: 'block' }}>PENDING COD COLLECTION</span>
           <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#2ecc71', fontFamily: 'monospace' }}>
             ৳{pendingCodTotal.toLocaleString()}
           </span>
         </div>
 
         <div style={{ backgroundColor: '#060606', border: '1px solid #1a1a1a', padding: '10px' }}>
-          <span style={{ fontSize: '8px', color: '#888', letterSpacing: '0.5px', display: 'block' }}>IN-TRANSIT PARCELS</span>
+          <span style={{ fontSize: '8px', color: '#888', letterSpacing: '0.5px', display: 'block' }}>IN-TRANSIT / PROCESSING</span>
           <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#3498db', fontFamily: 'monospace' }}>
-            {activeInTransit} ITEMS
+            {activeInTransit} ORDERS
           </span>
         </div>
 
@@ -389,22 +391,23 @@ export default function AdminLogistics({ searchQuery = '', isFilterOpen }: Admin
             <thead>
               <tr style={{ borderBottom: '1px solid #1a1a1a', color: '#666', height: '40px' }}>
                 <th style={{ padding: '0 16px' }}>ORDER / TRACKING</th>
+                <th style={{ padding: '0 16px' }}>CUSTOMER & ADDRESS</th>
                 <th style={{ padding: '0 16px' }}>COURIER & FEE</th>
-                <th style={{ padding: '0 16px' }}>DESTINATION & COD</th>
-                <th style={{ padding: '0 16px' }}>STATUS & RTO</th>
-                <th style={{ padding: '0 16px', textAlign: 'right' }}>UPDATE</th>
+                <th style={{ padding: '0 16px' }}>COD / PAYMENT</th>
+                <th style={{ padding: '0 16px' }}>STATUS</th>
+                <th style={{ padding: '0 16px', textAlign: 'right' }}>UPDATE STATUS</th>
               </tr>
             </thead>
             <tbody>
-              {filteredShipments.map((item) => {
-                const trackingUrl = getTrackingUrl(item.courier_partner, item.tracking_number);
+              {filteredOrders.map((item) => {
+                const trackingUrl = getTrackingUrl(item.courier_name, item.tracking_id);
 
                 return (
                   <tr key={item.id} style={{ borderBottom: '1px solid #111', height: '58px' }}>
                     <td style={{ padding: '0 16px' }}>
-                      <div style={{ fontWeight: 'bold', color: '#fff' }}>#{item.order_id}</div>
+                      <div style={{ fontWeight: 'bold', color: '#fff' }}>#{item.id.substring(0, 8)}</div>
                       <div style={{ fontSize: '10px', color: '#3498db', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <span>TRK: {item.tracking_number || 'UNASSIGNED'}</span>
+                        <span>TRK: {item.tracking_id || 'UNASSIGNED'}</span>
                         {trackingUrl && (
                           <a
                             href={trackingUrl}
@@ -421,37 +424,39 @@ export default function AdminLogistics({ searchQuery = '', isFilterOpen }: Admin
                           </a>
                         )}
                       </div>
-                      <div style={{ fontSize: '9px', color: '#555', fontFamily: 'monospace' }}>
-                        {item.zone || 'STD ZONE'} • {item.weight || '1.0kg'}
+                    </td>
+
+                    <td style={{ padding: '0 16px' }}>
+                      <div style={{ color: '#fff', fontWeight: 'bold' }}>{item.customer_name || 'N/A'}</div>
+                      <div style={{ fontSize: '10px', color: '#888', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {item.shipping_address || 'No Address'}
                       </div>
                     </td>
 
                     <td style={{ padding: '0 16px' }}>
-                      <div style={{ color: '#bbb', fontWeight: 'bold' }}>{item.courier_partner || 'STANDARD'}</div>
+                      <div style={{ color: '#bbb', fontWeight: 'bold' }}>{item.courier_name || 'UNASSIGNED'}</div>
                       <div style={{ fontSize: '10px', color: '#666', fontFamily: 'monospace' }}>
-                        FEE: ৳{item.courier_fee ?? '--'}
+                        FEE: ৳{item.courier_fee ?? 0}
                       </div>
                     </td>
 
                     <td style={{ padding: '0 16px' }}>
-                      <div style={{ color: '#888' }}>{item.destination || 'N/A'}</div>
-                      <div style={{ fontSize: '10px', color: '#aaa', display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
-                        <span>COD: ৳{item.cod_amount ?? 0}</span>
-                        <button
-                          onClick={() => toggleCodStatus(item.id, item.cod_status)}
-                          style={{
-                            fontSize: '8px',
-                            padding: '1px 4px',
-                            borderRadius: '2px',
-                            border: 'none',
-                            cursor: 'pointer',
-                            backgroundColor: item.cod_status === 'SETTLED' ? '#112211' : '#221111',
-                            color: item.cod_status === 'SETTLED' ? '#2ecc71' : '#e74c3c'
-                          }}
-                        >
-                          {item.cod_status === 'SETTLED' ? 'SETTLED' : 'UNPAID'}
-                        </button>
-                      </div>
+                      <div style={{ color: '#aaa', fontWeight: 'bold' }}>৳{item.total_amount}</div>
+                      <button
+                        onClick={() => updatePaymentStatus(item.id, item.payment_status)}
+                        style={{
+                          fontSize: '8px',
+                          padding: '1px 5px',
+                          borderRadius: '2px',
+                          border: 'none',
+                          cursor: 'pointer',
+                          marginTop: '2px',
+                          backgroundColor: item.payment_status === 'Paid' ? '#112211' : '#221111',
+                          color: item.payment_status === 'Paid' ? '#2ecc71' : '#e74c3c'
+                        }}
+                      >
+                        {item.payment_status || 'Unpaid / COD'}
+                      </button>
                     </td>
 
                     <td style={{ padding: '0 16px' }}>
@@ -463,35 +468,33 @@ export default function AdminLogistics({ searchQuery = '', isFilterOpen }: Admin
                           fontWeight: 'bold',
                           display: 'inline-block',
                           backgroundColor:
-                            item.shipping_status === 'DELIVERED' ? '#112211' :
-                            item.shipping_status === 'IN_TRANSIT' ? '#112233' :
-                            item.shipping_status === 'RETURNED' ? '#331111' : '#222211',
+                            item.status === 'Delivered' ? '#112211' :
+                            item.status === 'Shipped' || item.status === 'In Transit' ? '#112233' :
+                            item.status === 'Cancelled' || item.status === 'Returned' ? '#331111' : '#222211',
                           color:
-                            item.shipping_status === 'DELIVERED' ? '#2ecc71' :
-                            item.shipping_status === 'IN_TRANSIT' ? '#3498db' :
-                            item.shipping_status === 'RETURNED' ? '#e74c3c' : '#f1c40f'
+                            item.status === 'Delivered' ? '#2ecc71' :
+                            item.status === 'Shipped' || item.status === 'In Transit' ? '#3498db' :
+                            item.status === 'Cancelled' || item.status === 'Returned' ? '#e74c3c' : '#f1c40f'
                         }}
                       >
-                        {item.shipping_status}
+                        {item.status}
                       </span>
-                      {item.shipping_status === 'RETURNED' && item.return_reason && (
-                        <div style={{ fontSize: '8px', color: '#e74c3c', marginTop: '2px' }}>
-                          REASON: {item.return_reason}
-                        </div>
-                      )}
                     </td>
 
                     <td style={{ padding: '0 16px', textAlign: 'right' }}>
                       <select
-                        value={item.shipping_status}
-                        onChange={(e) => updateStatus(item.id, e.target.value as Shipment['shipping_status'])}
+                        value={item.status || 'Pending'}
+                        onChange={(e) => updateOrderStatus(item.id, e.target.value)}
                         style={{ backgroundColor: '#111', color: '#fff', border: '1px solid #222', padding: '4px 8px', fontSize: '10px' }}
                       >
-                        <option value="PENDING">PENDING</option>
-                        <option value="DISPATCHED">DISPATCHED</option>
-                        <option value="IN_TRANSIT">IN TRANSIT</option>
-                        <option value="DELIVERED">DELIVERED</option>
-                        <option value="RETURNED">RETURNED</option>
+                        <option value="Pending">Pending</option>
+                        <option value="Received">Received</option>
+                        <option value="Processing">Processing</option>
+                        <option value="Shipped">Shipped</option>
+                        <option value="In Transit">In Transit</option>
+                        <option value="Delivered">Delivered</option>
+                        <option value="Returned">Returned</option>
+                        <option value="Cancelled">Cancelled</option>
                       </select>
                     </td>
                   </tr>
