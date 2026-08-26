@@ -412,39 +412,31 @@ export default function AdminLogistics() {
                 </div>
 
                 {isExpanded && (
-                  <div style={{ backgroundColor: '#0a0a0a', borderTop: '1px solid #141414', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '11px' }}>
-                    <div style={{ color: '#ccc' }}>
-                      <span style={{ color: '#666' }}>Courier Name - </span>
-                      <span style={{ color: '#fff', fontWeight: '500' }}>{item.courier_name || '—'}</span>
+                  <div style={{ backgroundColor: '#0a0a0a', borderTop: '1px solid #141414', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div style={{ fontWeight: '600', color: '#fff', fontSize: '12px' }}>
+                      {item.courier_name || '—'}
                     </div>
 
                     {item.order_items && item.order_items.length > 0 ? (
                       item.order_items.map((prod) => (
-                        <React.Fragment key={prod.id}>
-                          <div style={{ color: '#ccc' }}>
-                            <span style={{ color: '#666' }}>Products Name - </span>
-                            <span style={{ color: '#fff' }}>{prod.product_name}</span>
+                        <div key={prod.id} style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          <div style={{ color: '#ddd', fontSize: '11px', fontWeight: '500' }}>
+                            {prod.product_name}
                           </div>
-                          <div style={{ color: '#ccc' }}>
-                            <span style={{ color: '#666' }}>Size - </span>
-                            <span style={{ color: '#fff' }}>{prod.size || '—'}</span>
-                            <span style={{ color: '#666', marginLeft: '10px' }}>Color - </span>
-                            <span style={{ color: '#fff' }}>{prod.color || '—'}</span>
-                            <span style={{ color: '#666', marginLeft: '10px' }}>Quantity - </span>
-                            <span style={{ color: '#fff', fontWeight: 'bold' }}>{prod.quantity}</span>
+                          <div style={{ color: '#888', fontSize: '10px' }}>
+                            {[prod.size, prod.color, prod.quantity].filter(Boolean).join(' • ')}
                           </div>
-                        </React.Fragment>
+                        </div>
                       ))
                     ) : (
-                      <div style={{ color: '#555' }}>No product details found.</div>
+                      <div style={{ color: '#555', fontSize: '10px' }}>No products found</div>
                     )}
 
-                    <div style={{ color: '#ccc' }}>
-                      <span style={{ color: '#666' }}>Return Reason - </span>
-                      <span style={{ color: item.return_reason ? '#e74c3c' : '#888' }}>
-                        {item.return_reason || '—'}
-                      </span>
-                    </div>
+                    {item.return_reason && (
+                      <div style={{ color: '#e74c3c', fontSize: '10px', marginTop: '2px' }}>
+                        Reason: {item.return_reason}
+                      </div>
+                    )}
                   </div>
                 )}
 
