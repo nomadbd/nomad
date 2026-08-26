@@ -14,6 +14,13 @@ interface Shipment {
   shipping_status: 'PENDING' | 'DISPATCHED' | 'IN_TRANSIT' | 'DELIVERED' | 'RETURNED';
   destination: string;
   updated_at: string;
+  // Logistics specific fields
+  cod_amount?: number;
+  cod_status?: 'UNPAID' | 'SETTLED';
+  courier_fee?: number;
+  weight?: string;
+  zone?: string;
+  return_reason?: string;
 }
 
 export default function AdminLogistics({ searchQuery = '', isFilterOpen }: AdminLogisticsProps) {
@@ -138,6 +145,21 @@ export default function AdminLogistics({ searchQuery = '', isFilterOpen }: Admin
     }
   };
 
+  const toggleCodStatus = async (id: string, currentStatus?: 'UNPAID' | 'SETTLED') => {
+    const nextStatus = currentStatus === 'SETTLED' ? 'UNPAID' : 'SETTLED';
+    try {
+      const { error } = await supabase
+        .from('shipments')
+        .update({ cod_status: nextStatus, updated_at: new Date().toISOString() })
+        .eq('id', id);
+
+      if (error) throw error;
+      fetchShipments();
+    } catch (err: any) {
+      alert('Failed to update COD status: ' + err.message);
+    }
+  };
+
   const filteredShipments = shipments.filter((shipment) => {
     const matchesSearch =
       shipment.order_id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -146,9 +168,32 @@ export default function AdminLogistics({ searchQuery = '', isFilterOpen }: Admin
     return matchesSearch && matchesCourier;
   });
 
+  // Logistics-Specific Metrics
+  const pendingCodTotal = shipments
+    .filter((s) => s.cod_status !== 'SETTLED' && s.shipping_status !== 'RETURNED')
+    .reduce((sum, s) => sum + (s.cod_amount || 0), 0);
+
+  const activeInTransit = shipments.filter(
+    (s) => s.shipping_status === 'IN_TRANSIT' || s.shipping_status === 'DISPATCHED'
+  ).length;
+
+  const totalReturned = shipments.filter((s) => s.shipping_status === 'RETURNED').length;
+  const returnRate = shipments.length > 0 ? ((totalReturned / shipments.length) * 100).toFixed(1) : '0';
+
+  const getTrackingUrl = (courier: string, trk: string) => {
+    if (!trk) return null;
+    const c = courier?.toUpperCase() || '';
+    if (c.includes('PATHAO')) return `https://pathao.com/courier/tracking/?consignment_id=${trk}`;
+    if (c.includes('STEADFAST')) return `https://steadfast.com.bd/t/${trk}`;
+    if (c.includes('REDX')) return `https://redx.com.bd/track-parcel?trackingId=${trk}`;
+    if (c.includes('DHL')) return `https://www.dhl.com/en/express/tracking.html?AWB=${trk}`;
+    return null;
+  };
+
   return (
     <div style={{ color: '#fff', width: '100%' }}>
-      <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'flex-start', width: '100%' }}>
+      {/* Settings Row */}
+      <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'flex-start', width: '100%' }}>
         <div style={{
           display: 'flex',
           flexDirection: 'row',
@@ -291,6 +336,35 @@ export default function AdminLogistics({ searchQuery = '', isFilterOpen }: Admin
         </div>
       </div>
 
+      {/* Logistics Specific Overview Metrics */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
+        gap: '8px',
+        marginBottom: '20px'
+      }}>
+        <div style={{ backgroundColor: '#060606', border: '1px solid #1a1a1a', padding: '10px' }}>
+          <span style={{ fontSize: '8px', color: '#888', letterSpacing: '0.5px', display: 'block' }}>PENDING COD</span>
+          <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#2ecc71', fontFamily: 'monospace' }}>
+            ৳{pendingCodTotal.toLocaleString()}
+          </span>
+        </div>
+
+        <div style={{ backgroundColor: '#060606', border: '1px solid #1a1a1a', padding: '10px' }}>
+          <span style={{ fontSize: '8px', color: '#888', letterSpacing: '0.5px', display: 'block' }}>IN-TRANSIT PARCELS</span>
+          <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#3498db', fontFamily: 'monospace' }}>
+            {activeInTransit} ITEMS
+          </span>
+        </div>
+
+        <div style={{ backgroundColor: '#060606', border: '1px solid #1a1a1a', padding: '10px' }}>
+          <span style={{ fontSize: '8px', color: '#888', letterSpacing: '0.5px', display: 'block' }}>RETURN RATE (RTO)</span>
+          <span style={{ fontSize: '13px', fontWeight: 'bold', color: Number(returnRate) > 5 ? '#e74c3c' : '#f1c40f', fontFamily: 'monospace' }}>
+            {returnRate}% ({totalReturned})
+          </span>
+        </div>
+      </div>
+
       {isFilterOpen && (
         <div style={{ backgroundColor: '#0a0a0a', border: '1px solid #1f1f1f', padding: '12px', marginBottom: '20px', display: 'flex', gap: '12px' }}>
           <select
@@ -315,58 +389,114 @@ export default function AdminLogistics({ searchQuery = '', isFilterOpen }: Admin
             <thead>
               <tr style={{ borderBottom: '1px solid #1a1a1a', color: '#666', height: '40px' }}>
                 <th style={{ padding: '0 16px' }}>ORDER / TRACKING</th>
-                <th style={{ padding: '0 16px' }}>COURIER</th>
-                <th style={{ padding: '0 16px' }}>DESTINATION</th>
-                <th style={{ padding: '0 16px' }}>STATUS</th>
+                <th style={{ padding: '0 16px' }}>COURIER & FEE</th>
+                <th style={{ padding: '0 16px' }}>DESTINATION & COD</th>
+                <th style={{ padding: '0 16px' }}>STATUS & RTO</th>
                 <th style={{ padding: '0 16px', textAlign: 'right' }}>UPDATE</th>
               </tr>
             </thead>
             <tbody>
-              {filteredShipments.map((item) => (
-                <tr key={item.id} style={{ borderBottom: '1px solid #111', height: '52px' }}>
-                  <td style={{ padding: '0 16px' }}>
-                    <div style={{ fontWeight: 'bold', color: '#fff' }}>#{item.order_id}</div>
-                    <div style={{ fontSize: '10px', color: '#3498db' }}>TRK: {item.tracking_number || 'UNASSIGNED'}</div>
-                  </td>
-                  <td style={{ padding: '0 16px', color: '#bbb', fontWeight: 'bold' }}>
-                    {item.courier_partner || 'STANDARD'}
-                  </td>
-                  <td style={{ padding: '0 16px', color: '#888' }}>
-                    {item.destination || 'N/A'}
-                  </td>
-                  <td style={{ padding: '0 16px' }}>
-                    <span
-                      style={{
-                        fontSize: '9px',
-                        padding: '3px 6px',
-                        borderRadius: '2px',
-                        fontWeight: 'bold',
-                        backgroundColor:
-                          item.shipping_status === 'DELIVERED' ? '#112211' :
-                          item.shipping_status === 'IN_TRANSIT' ? '#112233' : '#222211',
-                        color:
-                          item.shipping_status === 'DELIVERED' ? '#2ecc71' :
-                          item.shipping_status === 'IN_TRANSIT' ? '#3498db' : '#f1c40f'
-                      }}
-                    >
-                      {item.shipping_status}
-                    </span>
-                  </td>
-                  <td style={{ padding: '0 16px', textAlign: 'right' }}>
-                    <select
-                      value={item.shipping_status}
-                      onChange={(e) => updateStatus(item.id, e.target.value as Shipment['shipping_status'])}
-                      style={{ backgroundColor: '#111', color: '#fff', border: '1px solid #222', padding: '4px 8px', fontSize: '10px' }}
-                    >
-                      <option value="PENDING">PENDING</option>
-                      <option value="DISPATCHED">DISPATCHED</option>
-                      <option value="IN_TRANSIT">IN TRANSIT</option>
-                      <option value="DELIVERED">DELIVERED</option>
-                      <option value="RETURNED">RETURNED</option>
-                    </select>
-                  </td>
-                </tr>
-              ))}
+              {filteredShipments.map((item) => {
+                const trackingUrl = getTrackingUrl(item.courier_partner, item.tracking_number);
+
+                return (
+                  <tr key={item.id} style={{ borderBottom: '1px solid #111', height: '58px' }}>
+                    <td style={{ padding: '0 16px' }}>
+                      <div style={{ fontWeight: 'bold', color: '#fff' }}>#{item.order_id}</div>
+                      <div style={{ fontSize: '10px', color: '#3498db', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <span>TRK: {item.tracking_number || 'UNASSIGNED'}</span>
+                        {trackingUrl && (
+                          <a
+                            href={trackingUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title="Live Track"
+                            style={{ color: '#3498db', display: 'inline-flex', alignItems: 'center' }}
+                          >
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                              <polyline points="15 3 21 3 21 9" />
+                              <line x1="10" y1="14" x2="21" y2="3" />
+                            </svg>
+                          </a>
+                        )}
+                      </div>
+                      <div style={{ fontSize: '9px', color: '#555', fontFamily: 'monospace' }}>
+                        {item.zone || 'STD ZONE'} • {item.weight || '1.0kg'}
+                      </div>
+                    </td>
+
+                    <td style={{ padding: '0 16px' }}>
+                      <div style={{ color: '#bbb', fontWeight: 'bold' }}>{item.courier_partner || 'STANDARD'}</div>
+                      <div style={{ fontSize: '10px', color: '#666', fontFamily: 'monospace' }}>
+                        FEE: ৳{item.courier_fee ?? '--'}
+                      </div>
+                    </td>
+
+                    <td style={{ padding: '0 16px' }}>
+                      <div style={{ color: '#888' }}>{item.destination || 'N/A'}</div>
+                      <div style={{ fontSize: '10px', color: '#aaa', display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
+                        <span>COD: ৳{item.cod_amount ?? 0}</span>
+                        <button
+                          onClick={() => toggleCodStatus(item.id, item.cod_status)}
+                          style={{
+                            fontSize: '8px',
+                            padding: '1px 4px',
+                            borderRadius: '2px',
+                            border: 'none',
+                            cursor: 'pointer',
+                            backgroundColor: item.cod_status === 'SETTLED' ? '#112211' : '#221111',
+                            color: item.cod_status === 'SETTLED' ? '#2ecc71' : '#e74c3c'
+                          }}
+                        >
+                          {item.cod_status === 'SETTLED' ? 'SETTLED' : 'UNPAID'}
+                        </button>
+                      </div>
+                    </td>
+
+                    <td style={{ padding: '0 16px' }}>
+                      <span
+                        style={{
+                          fontSize: '9px',
+                          padding: '3px 6px',
+                          borderRadius: '2px',
+                          fontWeight: 'bold',
+                          display: 'inline-block',
+                          backgroundColor:
+                            item.shipping_status === 'DELIVERED' ? '#112211' :
+                            item.shipping_status === 'IN_TRANSIT' ? '#112233' :
+                            item.shipping_status === 'RETURNED' ? '#331111' : '#222211',
+                          color:
+                            item.shipping_status === 'DELIVERED' ? '#2ecc71' :
+                            item.shipping_status === 'IN_TRANSIT' ? '#3498db' :
+                            item.shipping_status === 'RETURNED' ? '#e74c3c' : '#f1c40f'
+                        }}
+                      >
+                        {item.shipping_status}
+                      </span>
+                      {item.shipping_status === 'RETURNED' && item.return_reason && (
+                        <div style={{ fontSize: '8px', color: '#e74c3c', marginTop: '2px' }}>
+                          REASON: {item.return_reason}
+                        </div>
+                      )}
+                    </td>
+
+                    <td style={{ padding: '0 16px', textAlign: 'right' }}>
+                      <select
+                        value={item.shipping_status}
+                        onChange={(e) => updateStatus(item.id, e.target.value as Shipment['shipping_status'])}
+                        style={{ backgroundColor: '#111', color: '#fff', border: '1px solid #222', padding: '4px 8px', fontSize: '10px' }}
+                      >
+                        <option value="PENDING">PENDING</option>
+                        <option value="DISPATCHED">DISPATCHED</option>
+                        <option value="IN_TRANSIT">IN TRANSIT</option>
+                        <option value="DELIVERED">DELIVERED</option>
+                        <option value="RETURNED">RETURNED</option>
+                      </select>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
