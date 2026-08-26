@@ -15,6 +15,7 @@ interface OrderItem {
   courier_name?: string | null;
   return_reason?: string | null;
   return_status?: string | null;
+  status?: string | null;
   created_at: string;
   order_items?: OrderItemDetail[];
 }
@@ -43,6 +44,7 @@ export default function AdminLogistics() {
           courier_name,
           return_reason,
           return_status,
+          status,
           created_at,
           order_items (
             id,
@@ -52,6 +54,7 @@ export default function AdminLogistics() {
             product_name
           )
         `)
+        .eq('status', 'Cancel')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
