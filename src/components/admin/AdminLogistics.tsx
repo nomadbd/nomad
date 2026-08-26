@@ -1,17 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 
+interface OrderItemDetail {
+  id: string;
+  product_name: string;
+  quantity: number;
+  size?: string | null;
+  color?: string | null;
+}
+
 interface OrderItem {
   id: string;
+  user_id?: string | null;
+  courier_name?: string | null;
+  customer_name?: string | null;
+  customer_phone?: string | null;
+  customer_email?: string | null;
+  shipping_address?: string | null;
   return_reason?: string | null;
+  return_status?: string | null;
   created_at: string;
+  order_items?: OrderItemDetail[];
 }
 
 export default function AdminLogistics() {
   const [orders, setOrders] = useState<OrderItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
 
-  // Store Settings States
   const [deliveryCharge, setDeliveryCharge] = useState<number | string>('');
   const [vatRate, setVatRate] = useState<number | string>('');
   const [initialDeliveryCharge, setInitialDeliveryCharge] = useState<number | string>('');
@@ -25,7 +41,25 @@ export default function AdminLogistics() {
     try {
       const { data, error } = await supabase
         .from('orders')
-        .select('id, return_reason, created_at')
+        .select(`
+          id,
+          user_id,
+          courier_name,
+          customer_name,
+          customer_phone,
+          customer_email,
+          shipping_address,
+          return_reason,
+          return_status,
+          created_at,
+          order_items (
+            id,
+            quantity,
+            size,
+            color,
+            product_name
+          )
+        `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -114,9 +148,31 @@ export default function AdminLogistics() {
     setIsEditing(false);
   };
 
+  const toggleExpand = (id: string) => {
+    setExpandedOrderId(expandedOrderId === id ? null : id);
+  };
+
+  const handleStatusUpdate = async (orderId: string, newStatus: string) => {
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .update({ return_status: newStatus })
+        .eq('id', orderId);
+
+      if (error) throw error;
+
+      setOrders((prevOrders) =>
+        prevOrders.map((order) =>
+          order.id === orderId ? { ...order, return_status: newStatus } : order
+        )
+      );
+    } catch (err: any) {
+      alert('Failed to update return status: ' + err.message);
+    }
+  };
+
   return (
     <div style={{ color: '#fff', width: '100%' }}>
-      {/* Delivery Charge & VAT Rate Input Bar */}
       <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'flex-start', width: '100%' }}>
         <div style={{
           display: 'flex',
@@ -260,7 +316,6 @@ export default function AdminLogistics() {
         </div>
       </div>
 
-      {/* Return Reasons List Table */}
       {loading ? (
         <div style={{ fontSize: '11px', color: '#888', padding: '20px 0' }}>LOADING DATA...</div>
       ) : (
@@ -268,21 +323,113 @@ export default function AdminLogistics() {
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '11px' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid #1a1a1a', color: '#666', height: '40px' }}>
+                <th style={{ padding: '0 16px', width: '40px' }}></th>
                 <th style={{ padding: '0 16px' }}>ORDER ID</th>
+                <th style={{ padding: '0 16px' }}>CUSTOMER</th>
+                <th style={{ padding: '0 16px' }}>COURIER</th>
                 <th style={{ padding: '0 16px' }}>RETURN REASON</th>
+                <th style={{ padding: '0 16px' }}>RETURN RECEIVED</th>
               </tr>
             </thead>
             <tbody>
-              {orders.map((item) => (
-                <tr key={item.id} style={{ borderBottom: '1px solid #111', height: '48px' }}>
-                  <td style={{ padding: '0 16px', fontWeight: 'bold', color: '#fff' }}>
-                    #{item.id.substring(0, 8)}
-                  </td>
-                  <td style={{ padding: '0 16px', color: item.return_reason ? '#e74c3c' : '#666' }}>
-                    {item.return_reason || '—'}
-                  </td>
-                </tr>
-              ))}
+              {orders.map((item) => {
+                const isExpanded = expandedOrderId === item.id;
+                const isReceived = item.return_status === 'Received';
+
+                return (
+                  <React.Fragment key={item.id}>
+                    <tr style={{ borderBottom: '1px solid #111', height: '48px', cursor: 'pointer' }}>
+                      <td style={{ padding: '0 16px', color: '#888' }} onClick={() => toggleExpand(item.id)}>
+                        {isExpanded ? '▼' : '►'}
+                      </td>
+                      <td
+                        style={{ padding: '0 16px', fontWeight: 'bold', color: '#fff' }}
+                        onClick={() => toggleExpand(item.id)}
+                      >
+                        #{item.id.substring(0, 8)}
+                      </td>
+                      <td style={{ padding: '0 16px', color: '#ccc' }} onClick={() => toggleExpand(item.id)}>
+                        <div>{item.customer_name || 'N/A'}</div>
+                        <div style={{ fontSize: '9px', color: '#666' }}>{item.customer_phone || ''}</div>
+                      </td>
+                      <td style={{ padding: '0 16px', color: '#888' }} onClick={() => toggleExpand(item.id)}>
+                        {item.courier_name || '—'}
+                      </td>
+                      <td style={{ padding: '0 16px', color: item.return_reason ? '#e74c3c' : '#666' }} onClick={() => toggleExpand(item.id)}>
+                        {item.return_reason || '—'}
+                      </td>
+                      <td style={{ padding: '0 16px' }}>
+                        <select
+                          value={item.return_status || 'Pending'}
+                          onChange={(e) => handleStatusUpdate(item.id, e.target.value)}
+                          style={{
+                            backgroundColor: '#111',
+                            color: isReceived ? '#2ecc71' : '#f39c12',
+                            border: '1px solid #222',
+                            padding: '4px 8px',
+                            fontSize: '10px',
+                            borderRadius: '3px',
+                            outline: 'none',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          <option value="Pending" style={{ color: '#f39c12' }}>Pending</option>
+                          <option value="Received" style={{ color: '#2ecc71' }}>Received</option>
+                        </select>
+                      </td>
+                    </tr>
+
+                    {isExpanded && (
+                      <tr style={{ borderBottom: '1px solid #1a1a1a', backgroundColor: '#0a0a0a' }}>
+                        <td colSpan={6} style={{ padding: '16px 24px' }}>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '20px' }}>
+                            <div style={{ borderRight: '1px solid #1a1a1a', paddingRight: '16px' }}>
+                              <div style={{ fontSize: '10px', color: '#888', marginBottom: '8px', fontWeight: 'bold' }}>ORDER DETAILS</div>
+                              <div style={{ marginBottom: '6px', color: '#aaa' }}>
+                                <span style={{ color: '#555' }}>Email: </span>{item.customer_email || 'N/A'}
+                              </div>
+                              <div style={{ marginBottom: '6px', color: '#aaa' }}>
+                                <span style={{ color: '#555' }}>Address: </span>{item.shipping_address || 'N/A'}
+                              </div>
+                              <div style={{ marginBottom: '6px', color: '#aaa' }}>
+                                <span style={{ color: '#555' }}>Date: </span>{new Date(item.created_at).toLocaleString()}
+                              </div>
+                            </div>
+
+                            <div>
+                              <div style={{ fontSize: '10px', color: '#888', marginBottom: '8px', fontWeight: 'bold' }}>PRODUCTS LIST</div>
+                              {item.order_items && item.order_items.length > 0 ? (
+                                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10px' }}>
+                                  <thead>
+                                    <tr style={{ color: '#555', borderBottom: '1px solid #1a1a1a', textAlign: 'left' }}>
+                                      <th style={{ paddingBottom: '4px' }}>PRODUCT NAME</th>
+                                      <th style={{ paddingBottom: '4px' }}>SIZE</th>
+                                      <th style={{ paddingBottom: '4px' }}>COLOR</th>
+                                      <th style={{ paddingBottom: '4px' }}>QTY</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {item.order_items.map((prod) => (
+                                      <tr key={prod.id} style={{ borderBottom: '1px solid #141414', color: '#ccc' }}>
+                                        <td style={{ padding: '6px 0' }}>{prod.product_name}</td>
+                                        <td style={{ padding: '6px 0', color: '#888' }}>{prod.size || '—'}</td>
+                                        <td style={{ padding: '6px 0', color: '#888' }}>{prod.color || '—'}</td>
+                                        <td style={{ padding: '6px 0', fontWeight: 'bold', color: '#fff' }}>{prod.quantity}</td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              ) : (
+                                <div style={{ fontSize: '10px', color: '#555' }}>No product details found for this order.</div>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                );
+              })}
             </tbody>
           </table>
         </div>
