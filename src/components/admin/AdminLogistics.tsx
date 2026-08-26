@@ -412,57 +412,38 @@ export default function AdminLogistics() {
                 </div>
 
                 {isExpanded && (
-                  <div style={{ backgroundColor: '#0a0a0a', borderTop: '1px solid #141414', padding: '16px 20px' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '20px' }}>
+                  <div style={{ backgroundColor: '#0a0a0a', borderTop: '1px solid #141414', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '11px' }}>
+                    <div style={{ color: '#ccc' }}>
+                      <span style={{ color: '#666' }}>Courier Name - </span>
+                      <span style={{ color: '#fff', fontWeight: '500' }}>{item.courier_name || '—'}</span>
+                    </div>
 
-                      <div style={{ borderRight: '1px solid #1a1a1a', paddingRight: '16px' }}>
-                        <div style={{ fontSize: '10px', color: '#888', marginBottom: '8px', fontWeight: 'bold', letterSpacing: '0.5px' }}>
-                          LOGISTICS DETAILS
-                        </div>
+                    {item.order_items && item.order_items.length > 0 ? (
+                      item.order_items.map((prod) => (
+                        <React.Fragment key={prod.id}>
+                          <div style={{ color: '#ccc' }}>
+                            <span style={{ color: '#666' }}>Products Name - </span>
+                            <span style={{ color: '#fff' }}>{prod.product_name}</span>
+                          </div>
+                          <div style={{ color: '#ccc' }}>
+                            <span style={{ color: '#666' }}>Size - </span>
+                            <span style={{ color: '#fff' }}>{prod.size || '—'}</span>
+                            <span style={{ color: '#666', marginLeft: '10px' }}>Color - </span>
+                            <span style={{ color: '#fff' }}>{prod.color || '—'}</span>
+                            <span style={{ color: '#666', marginLeft: '10px' }}>Quantity - </span>
+                            <span style={{ color: '#fff', fontWeight: 'bold' }}>{prod.quantity}</span>
+                          </div>
+                        </React.Fragment>
+                      ))
+                    ) : (
+                      <div style={{ color: '#555' }}>No product details found.</div>
+                    )}
 
-                        <div style={{ marginBottom: '8px', fontSize: '11px', color: '#aaa' }}>
-                          <span style={{ color: '#555' }}>Courier Name: </span>
-                          <span style={{ color: '#fff', fontWeight: '500' }}>{item.courier_name || '—'}</span>
-                        </div>
-
-                        <div style={{ fontSize: '11px', color: '#aaa' }}>
-                          <span style={{ color: '#555' }}>Return Reason: </span>
-                          <span style={{ color: item.return_reason ? '#e74c3c' : '#888' }}>
-                            {item.return_reason || '—'}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div>
-                        <div style={{ fontSize: '10px', color: '#888', marginBottom: '8px', fontWeight: 'bold', letterSpacing: '0.5px' }}>
-                          PRODUCTS LIST
-                        </div>
-                        {item.order_items && item.order_items.length > 0 ? (
-                          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10px' }}>
-                            <thead>
-                              <tr style={{ color: '#555', borderBottom: '1px solid #1a1a1a', textAlign: 'left' }}>
-                                <th style={{ paddingBottom: '4px' }}>PRODUCT NAME</th>
-                                <th style={{ paddingBottom: '4px' }}>SIZE</th>
-                                <th style={{ paddingBottom: '4px' }}>COLOR</th>
-                                <th style={{ paddingBottom: '4px' }}>QTY</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {item.order_items.map((prod) => (
-                                <tr key={prod.id} style={{ borderBottom: '1px solid #141414', color: '#ccc' }}>
-                                  <td style={{ padding: '6px 0' }}>{prod.product_name}</td>
-                                  <td style={{ padding: '6px 0', color: '#888' }}>{prod.size || '—'}</td>
-                                  <td style={{ padding: '6px 0', color: '#888' }}>{prod.color || '—'}</td>
-                                  <td style={{ padding: '6px 0', fontWeight: 'bold', color: '#fff' }}>{prod.quantity}</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        ) : (
-                          <div style={{ fontSize: '10px', color: '#555' }}>No product details found for this order.</div>
-                        )}
-                      </div>
-
+                    <div style={{ color: '#ccc' }}>
+                      <span style={{ color: '#666' }}>Return Reason - </span>
+                      <span style={{ color: item.return_reason ? '#e74c3c' : '#888' }}>
+                        {item.return_reason || '—'}
+                      </span>
                     </div>
                   </div>
                 )}
