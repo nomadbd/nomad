@@ -98,6 +98,18 @@ const PAYMENT_STATUS_OPTIONS = [
 
 const DATE_FILTERS = ['ALL TIME', 'TODAY', 'LAST 7 DAYS', 'THIS MONTH'];
 
+const BD_COURIERS = [
+  'Steadfast',
+  'Pathao',
+  'Paperfly',
+  'RedX',
+  'Sundarban Express',
+  'SA Paribahan',
+  'Korotoa',
+  'Janani Express',
+  'eCourier'
+];
+
 const TEMPLATE_PRESETS: { [key: string]: string } = {
   ALL: "Hello {{name}},\n\nThank you for choosing NOMAD. Your order status is: {{status}}.\n\nOrder ID: #{{order_id}}\nCourier: {{courier}}\nTracking ID: {{tracking}}\n\nThank you for shopping with us!",
   Pending: "Hello {{name}},\n\nYour NOMAD order (#{{order_id}}) is currently PENDING. We are processing it soon!\n\nThank you for shopping with NOMAD.",
@@ -160,21 +172,21 @@ const OrderCard: React.FC<OrderCardProps> = ({
 
   const [editForm, setEditForm] = useState({
     payment_status: order.payment_status || 'Unpaid / COD',
-    courier_name: order.courier_name || '',
-    tracking_id: order.tracking_id || '',
-    admin_notes: order.admin_notes || '',
-    customer_notes: order.customer_notes || ''
+    courier_name: '',
+    tracking_id: '',
+    admin_notes: '',
+    customer_notes: ''
   });
 
   useEffect(() => {
     setEditForm({
       payment_status: order.payment_status || 'Unpaid / COD',
-      courier_name: order.courier_name || '',
-      tracking_id: order.tracking_id || '',
-      admin_notes: order.admin_notes || '',
-      customer_notes: order.customer_notes || ''
+      courier_name: '',
+      tracking_id: '',
+      admin_notes: '',
+      customer_notes: ''
     });
-  }, [order]);
+  }, [order, isEditing]);
 
   const statusColor = getStatusColor(order.status);
   const paymentStatusVal = order.payment_status || 'Unpaid / COD';
@@ -203,8 +215,11 @@ const OrderCard: React.FC<OrderCardProps> = ({
     setIsUpdating(true);
     try {
       await onUpdateDetails(order.id, {
-        ...editForm,
-        payment_status: newPaymentStatus
+        payment_status: newPaymentStatus,
+        courier_name: order.courier_name || '',
+        tracking_id: order.tracking_id || '',
+        admin_notes: order.admin_notes || '',
+        customer_notes: order.customer_notes || ''
       });
     } finally {
       setIsUpdating(false);
@@ -215,8 +230,16 @@ const OrderCard: React.FC<OrderCardProps> = ({
     e.stopPropagation();
     setIsUpdating(true);
     try {
-      await onUpdateDetails(order.id, editForm);
-      setIsEditing(false); // Disable edit mode after successful save
+      const payload = {
+        payment_status: editForm.payment_status,
+        courier_name: editForm.courier_name.trim() !== '' ? editForm.courier_name.trim() : (order.courier_name || ''),
+        tracking_id: editForm.tracking_id.trim() !== '' ? editForm.tracking_id.trim() : (order.tracking_id || ''),
+        admin_notes: editForm.admin_notes.trim() !== '' ? editForm.admin_notes.trim() : (order.admin_notes || ''),
+        customer_notes: editForm.customer_notes.trim() !== '' ? editForm.customer_notes.trim() : (order.customer_notes || '')
+      };
+
+      await onUpdateDetails(order.id, payload);
+      setIsEditing(false);
     } finally {
       setIsUpdating(false);
     }
@@ -266,7 +289,8 @@ const OrderCard: React.FC<OrderCardProps> = ({
     outline: 'none',
     borderRadius: '3px',
     transition: 'all 0.2s ease',
-    cursor: editable ? 'text' : 'default'
+    cursor: editable ? 'text' : 'default',
+    userSelect: editable ? 'auto' : 'none'
   });
 
   return (
@@ -383,6 +407,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
                       e.stopPropagation();
                       setIsEditing(prev => !prev);
                     }}
+                    title={isEditing ? "Cancel" : "Edit"}
                     style={{
                       backgroundColor: 'transparent',
                       border: 'none',
@@ -390,14 +415,14 @@ const OrderCard: React.FC<OrderCardProps> = ({
                       cursor: 'pointer',
                       fontSize: '10px',
                       fontWeight: 'bold',
-                      letterSpacing: '0.5px',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '4px',
+                      justifyContent: 'center',
+                      padding: '4px',
                       outline: 'none'
                     }}
                   >
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                       {isEditing ? (
                         <>
                           <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -410,58 +435,117 @@ const OrderCard: React.FC<OrderCardProps> = ({
                         </>
                       )}
                     </svg>
-                    <span>{isEditing ? 'CANCEL' : 'EDIT'}</span>
                   </button>
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px' }}>
                   <div>
                     <label style={{ display: 'block', fontSize: '9px', color: '#777', marginBottom: '6px', letterSpacing: '0.5px' }}>COURIER NAME</label>
-                    <input
-                      type="text"
-                      readOnly={!isEditing}
-                      placeholder={isEditing ? "e.g. Steadfast, Pathao" : "N/A"}
-                      value={editForm.courier_name}
-                      onChange={e => setEditForm({ ...editForm, courier_name: e.target.value })}
-                      style={cleanInputStyle(isEditing)}
-                    />
+                    {isEditing ? (
+                      <>
+                        <input
+                          type="text"
+                          placeholder={order.courier_name || "e.g. Steadfast, Pathao"}
+                          value={editForm.courier_name}
+                          onChange={e => setEditForm({ ...editForm, courier_name: e.target.value })}
+                          style={cleanInputStyle(true)}
+                        />
+                        <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', scrollbarWidth: 'none', padding: '6px 0', marginTop: '4px' }}>
+                          {BD_COURIERS.map((courier) => {
+                            const selectedName = editForm.courier_name || order.courier_name || '';
+                            const isChecked = selectedName.toLowerCase() === courier.toLowerCase();
+                            return (
+                              <label
+                                key={courier}
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '4px',
+                                  background: '#0d0d0d',
+                                  border: isChecked ? '1px solid #fff' : '1px solid #222',
+                                  color: isChecked ? '#fff' : '#888',
+                                  padding: '4px 8px',
+                                  borderRadius: '3px',
+                                  fontSize: '9px',
+                                  whiteSpace: 'nowrap',
+                                  cursor: 'pointer',
+                                  flexShrink: 0
+                                }}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={isChecked}
+                                  onChange={() => {
+                                    setEditForm(prev => ({
+                                      ...prev,
+                                      courier_name: isChecked ? '' : courier
+                                    }));
+                                  }}
+                                  style={{ accentColor: '#fff', cursor: 'pointer', margin: 0 }}
+                                />
+                                <span>{courier}</span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </>
+                    ) : (
+                      <div style={cleanInputStyle(false)}>
+                        {order.courier_name || "N/A"}
+                      </div>
+                    )}
                   </div>
 
                   <div>
                     <label style={{ display: 'block', fontSize: '9px', color: '#777', marginBottom: '6px', letterSpacing: '0.5px' }}>TRACKING ID</label>
-                    <input
-                      type="text"
-                      readOnly={!isEditing}
-                      placeholder={isEditing ? "Tracking / Memo No." : "N/A"}
-                      value={editForm.tracking_id}
-                      onChange={e => setEditForm({ ...editForm, tracking_id: e.target.value })}
-                      style={cleanInputStyle(isEditing)}
-                    />
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        placeholder={order.tracking_id || "Tracking / Memo No."}
+                        value={editForm.tracking_id}
+                        onChange={e => setEditForm({ ...editForm, tracking_id: e.target.value })}
+                        style={cleanInputStyle(true)}
+                      />
+                    ) : (
+                      <div style={cleanInputStyle(false)}>
+                        {order.tracking_id || "N/A"}
+                      </div>
+                    )}
                   </div>
                 </div>
 
                 <div>
                   <label style={{ display: 'block', fontSize: '9px', color: '#777', marginBottom: '6px', letterSpacing: '0.5px' }}>CUSTOMER NOTES</label>
-                  <textarea
-                    rows={2}
-                    readOnly={!isEditing}
-                    placeholder={isEditing ? "Add customer note to send in messages..." : "No notes added"}
-                    value={editForm.customer_notes}
-                    onChange={e => setEditForm({ ...editForm, customer_notes: e.target.value })}
-                    style={{ ...cleanInputStyle(isEditing), resize: isEditing ? 'vertical' : 'none' }}
-                  />
+                  {isEditing ? (
+                    <textarea
+                      rows={2}
+                      placeholder={order.customer_notes || "Add customer note to send in messages..."}
+                      value={editForm.customer_notes}
+                      onChange={e => setEditForm({ ...editForm, customer_notes: e.target.value })}
+                      style={{ ...cleanInputStyle(true), resize: 'vertical' }}
+                    />
+                  ) : (
+                    <div style={{ ...cleanInputStyle(false), minHeight: '38px', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                      {order.customer_notes || "No notes added"}
+                    </div>
+                  )}
                 </div>
 
                 <div>
                   <label style={{ display: 'block', fontSize: '9px', color: '#777', marginBottom: '6px', letterSpacing: '0.5px' }}>ADMIN NOTES</label>
-                  <textarea
-                    rows={2}
-                    readOnly={!isEditing}
-                    placeholder={isEditing ? "Add private admin notes here..." : "No notes added"}
-                    value={editForm.admin_notes}
-                    onChange={e => setEditForm({ ...editForm, admin_notes: e.target.value })}
-                    style={{ ...cleanInputStyle(isEditing), resize: isEditing ? 'vertical' : 'none' }}
-                  />
+                  {isEditing ? (
+                    <textarea
+                      rows={2}
+                      placeholder={order.admin_notes || "Add private admin notes here..."}
+                      value={editForm.admin_notes}
+                      onChange={e => setEditForm({ ...editForm, admin_notes: e.target.value })}
+                      style={{ ...cleanInputStyle(true), resize: 'vertical' }}
+                    />
+                  ) : (
+                    <div style={{ ...cleanInputStyle(false), minHeight: '38px', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                      {order.admin_notes || "No notes added"}
+                    </div>
+                  )}
                 </div>
 
                 {order.return_reason && (
