@@ -101,6 +101,8 @@ const DATE_FILTERS = ['ALL TIME', 'TODAY', 'LAST 7 DAYS', 'THIS MONTH'];
 const TEMPLATE_PRESETS: { [key: string]: string } = {
   ALL: "Hello {{name}},\n\nThank you for choosing NOMAD. Your order status is: {{status}}.\n\nOrder ID: #{{order_id}}\nCourier: {{courier}}\nTracking ID: {{tracking}}\n\nThank you for shopping with us!",
   Pending: "Hello {{name}},\n\nYour NOMAD order (#{{order_id}}) is currently PENDING. We are processing it soon!\n\nThank you for shopping with NOMAD.",
+  Received: "Hello {{name}},\n\nWe have received your NOMAD order (#{{order_id}}). We are preparing it for processing.\n\nThank you for shopping with NOMAD.",
+  Processing: "Hello {{name}},\n\nYour NOMAD order (#{{order_id}}) is now being PROCESSED.\n\nThank you for shopping with NOMAD.",
   Shipped: "Hello {{name}},\n\nYour NOMAD order (#{{order_id}}) has been SHIPPED!\n\nCourier: {{courier}}\nTracking ID: {{tracking}}\n\nThank you for shopping with NOMAD!",
   Delivered: "Hello {{name}},\n\nYour NOMAD order (#{{order_id}}) has been DELIVERED successfully!\n\nCourier: {{courier}}\nTracking ID: {{tracking}}\n\nThank you for shopping with NOMAD!",
   Cancelled: "Hello {{name}},\n\nYour NOMAD order (#{{order_id}}) status is CANCELLED. Please contact us for further details."
@@ -824,6 +826,30 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
     } catch (err) {
       console.error('Failed to bulk update payment status:', err);
       showToast('Failed to update payment status.', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBulkStatusChange = async (newStatus: string) => {
+    if (selectedOrderIds.length === 0) return;
+    try {
+      setLoading(true);
+      const { error } = await supabase
+        .from('orders')
+        .update({ status: newStatus })
+        .in('id', selectedOrderIds);
+
+      if (error) throw error;
+
+      setOrders(prev => prev.map(o =>
+        selectedOrderIds.includes(o.id) ? { ...o, status: newStatus } : o
+      ));
+
+      showToast(`Updated order status to "${newStatus}" for ${selectedOrderIds.length} orders.`, 'success');
+    } catch (err) {
+      console.error('Failed to bulk update order status:', err);
+      showToast('Failed to update status.', 'error');
     } finally {
       setLoading(false);
     }
@@ -1836,6 +1862,31 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
             <div className={`filter-expand-wrapper ${selectedOrderIds.length > 0 ? 'open' : ''}`}>
               <div className="filter-expand-content animate-fade-in">
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', paddingTop: '6px' }}>
+                  <select
+                    onChange={(e) => {
+                      if (e.target.value) {
+                        handleBulkStatusChange(e.target.value);
+                        e.target.value = '';
+                      }
+                    }}
+                    style={{
+                      backgroundColor: '#000',
+                      color: '#fff',
+                      border: '1px solid #444',
+                      padding: '7px 10px',
+                      fontSize: '10px',
+                      fontWeight: 'bold',
+                      cursor: 'pointer',
+                      borderRadius: '2px',
+                      outline: 'none'
+                    }}
+                  >
+                    <option value="" style={{ background: '#000', color: '#fff' }}>MARK STATUS AS...</option>
+                    {STATUS_OPTIONS.map(opt => (
+                      <option key={opt} value={opt} style={{ background: '#000', color: '#fff' }}>{opt.toUpperCase()}</option>
+                    ))}
+                  </select>
+
                   <select
                     onChange={(e) => {
                       if (e.target.value) {
