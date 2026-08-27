@@ -156,6 +156,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
   getStatusColor
 }) => {
   const [isUpdating, setIsUpdating] = useState<boolean>(false);
+  const [isEditing, setIsEditing] = useState<boolean>(false);
 
   const [editForm, setEditForm] = useState({
     payment_status: order.payment_status || 'Unpaid / COD',
@@ -215,6 +216,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
     setIsUpdating(true);
     try {
       await onUpdateDetails(order.id, editForm);
+      setIsEditing(false); // Disable edit mode after successful save
     } finally {
       setIsUpdating(false);
     }
@@ -253,17 +255,19 @@ const OrderCard: React.FC<OrderCardProps> = ({
     flexShrink: 0
   };
 
-  const cleanInputStyle: React.CSSProperties = {
+  const cleanInputStyle = (editable: boolean): React.CSSProperties => ({
     width: '100%',
     boxSizing: 'border-box',
-    background: '#121212',
-    color: '#fff',
-    border: 'none',
+    background: editable ? '#121212' : '#080808',
+    color: editable ? '#fff' : '#aaa',
+    border: editable ? '1px solid #444' : '1px solid #1c1c1c',
     padding: '10px 12px',
     fontSize: '11px',
     outline: 'none',
-    borderRadius: '3px'
-  };
+    borderRadius: '3px',
+    transition: 'all 0.2s ease',
+    cursor: editable ? 'text' : 'default'
+  });
 
   return (
     <div
@@ -371,17 +375,55 @@ const OrderCard: React.FC<OrderCardProps> = ({
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '10px' }}>
-                <h4 style={{ color: '#888', fontSize: '10px', letterSpacing: '1.5px', margin: 0, fontWeight: 'bold' }}>MANAGEMENT DETAILS</h4>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <h4 style={{ color: '#888', fontSize: '10px', letterSpacing: '1.5px', margin: 0, fontWeight: 'bold' }}>MANAGEMENT DETAILS</h4>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsEditing(prev => !prev);
+                    }}
+                    style={{
+                      backgroundColor: 'transparent',
+                      border: 'none',
+                      color: isEditing ? '#FF5252' : '#fff',
+                      cursor: 'pointer',
+                      fontSize: '10px',
+                      fontWeight: 'bold',
+                      letterSpacing: '0.5px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      outline: 'none'
+                    }}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      {isEditing ? (
+                        <>
+                          <line x1="18" y1="6" x2="6" y2="18"></line>
+                          <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </>
+                      ) : (
+                        <>
+                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </>
+                      )}
+                    </svg>
+                    <span>{isEditing ? 'CANCEL' : 'EDIT'}</span>
+                  </button>
+                </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px' }}>
                   <div>
                     <label style={{ display: 'block', fontSize: '9px', color: '#777', marginBottom: '6px', letterSpacing: '0.5px' }}>COURIER NAME</label>
                     <input
                       type="text"
-                      placeholder="e.g. Steadfast, Pathao"
+                      readOnly={!isEditing}
+                      placeholder={isEditing ? "e.g. Steadfast, Pathao" : "N/A"}
                       value={editForm.courier_name}
                       onChange={e => setEditForm({ ...editForm, courier_name: e.target.value })}
-                      style={cleanInputStyle}
+                      style={cleanInputStyle(isEditing)}
                     />
                   </div>
 
@@ -389,10 +431,11 @@ const OrderCard: React.FC<OrderCardProps> = ({
                     <label style={{ display: 'block', fontSize: '9px', color: '#777', marginBottom: '6px', letterSpacing: '0.5px' }}>TRACKING ID</label>
                     <input
                       type="text"
-                      placeholder="Tracking / Memo No."
+                      readOnly={!isEditing}
+                      placeholder={isEditing ? "Tracking / Memo No." : "N/A"}
                       value={editForm.tracking_id}
                       onChange={e => setEditForm({ ...editForm, tracking_id: e.target.value })}
-                      style={cleanInputStyle}
+                      style={cleanInputStyle(isEditing)}
                     />
                   </div>
                 </div>
@@ -401,10 +444,11 @@ const OrderCard: React.FC<OrderCardProps> = ({
                   <label style={{ display: 'block', fontSize: '9px', color: '#777', marginBottom: '6px', letterSpacing: '0.5px' }}>CUSTOMER NOTES</label>
                   <textarea
                     rows={2}
-                    placeholder="Add customer note to send in messages..."
+                    readOnly={!isEditing}
+                    placeholder={isEditing ? "Add customer note to send in messages..." : "No notes added"}
                     value={editForm.customer_notes}
                     onChange={e => setEditForm({ ...editForm, customer_notes: e.target.value })}
-                    style={{ ...cleanInputStyle, resize: 'vertical' }}
+                    style={{ ...cleanInputStyle(isEditing), resize: isEditing ? 'vertical' : 'none' }}
                   />
                 </div>
 
@@ -412,43 +456,46 @@ const OrderCard: React.FC<OrderCardProps> = ({
                   <label style={{ display: 'block', fontSize: '9px', color: '#777', marginBottom: '6px', letterSpacing: '0.5px' }}>ADMIN NOTES</label>
                   <textarea
                     rows={2}
-                    placeholder="Add private admin notes here..."
+                    readOnly={!isEditing}
+                    placeholder={isEditing ? "Add private admin notes here..." : "No notes added"}
                     value={editForm.admin_notes}
                     onChange={e => setEditForm({ ...editForm, admin_notes: e.target.value })}
-                    style={{ ...cleanInputStyle, resize: 'vertical' }}
+                    style={{ ...cleanInputStyle(isEditing), resize: isEditing ? 'vertical' : 'none' }}
                   />
                 </div>
 
                 {order.return_reason && (
                   <div>
                     <label style={{ display: 'block', fontSize: '9px', color: '#FF5252', marginBottom: '6px', letterSpacing: '0.5px', fontWeight: 'bold' }}>CANCELLATION REASON</label>
-                    <div style={{ ...cleanInputStyle, border: '1px solid #FF5252', color: '#FF5252', wordBreak: 'break-word' }}>
+                    <div style={{ ...cleanInputStyle(false), border: '1px solid #FF5252', color: '#FF5252', wordBreak: 'break-word' }}>
                       {order.return_reason}
                     </div>
                   </div>
                 )}
 
-                <button
-                  type="button"
-                  onClick={handleSaveDetails}
-                  disabled={isUpdating}
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    background: 'transparent',
-                    color: '#fff',
-                    fontWeight: 'bold',
-                    border: '1px solid #fff',
-                    fontSize: '10px',
-                    letterSpacing: '1px',
-                    cursor: isUpdating ? 'not-allowed' : 'pointer',
-                    borderRadius: '3px',
-                    opacity: isUpdating ? 0.6 : 1,
-                    marginTop: '4px'
-                  }}
-                >
-                  {isUpdating ? 'SAVING...' : 'SAVE DETAILS'}
-                </button>
+                {isEditing && (
+                  <button
+                    type="button"
+                    onClick={handleSaveDetails}
+                    disabled={isUpdating}
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      background: '#fff',
+                      color: '#000',
+                      fontWeight: 'bold',
+                      border: 'none',
+                      fontSize: '10px',
+                      letterSpacing: '1px',
+                      cursor: isUpdating ? 'not-allowed' : 'pointer',
+                      borderRadius: '3px',
+                      opacity: isUpdating ? 0.6 : 1,
+                      marginTop: '4px'
+                    }}
+                  >
+                    {isUpdating ? 'SAVING...' : 'SAVE DETAILS'}
+                  </button>
+                )}
               </div>
             </div>
           </div>
