@@ -293,6 +293,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
     cursor: editable ? 'text' : 'default',
     userSelect: editable ? 'auto' : 'none',
     minHeight: '38px',
+    height: '38px',
     display: 'flex',
     alignItems: 'center'
   });
@@ -466,42 +467,46 @@ const OrderCard: React.FC<OrderCardProps> = ({
                           onChange={e => setEditForm({ ...editForm, courier_name: e.target.value })}
                           style={cleanInputStyle(true)}
                         />
-                        <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', scrollbarWidth: 'none', padding: '6px 0', marginTop: '4px' }}>
-                          {BD_COURIERS.map((courier) => {
-                            const selectedName = editForm.courier_name || order.courier_name || '';
-                            const isChecked = selectedName.toLowerCase() === courier.toLowerCase();
-                            return (
-                              <button
-                                type="button"
-                                key={courier}
-                                onClick={() => {
-                                  setEditForm(prev => ({
-                                    ...prev,
-                                    courier_name: isChecked ? '' : courier
-                                  }));
-                                }}
-                                style={{
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  background: isChecked ? '#111' : '#0d0d0d',
-                                  border: isChecked ? '1px solid #ffffff' : '1px solid #222222',
-                                  color: isChecked ? '#ffffff' : '#888888',
-                                  padding: '6px 10px',
-                                  borderRadius: '3px',
-                                  fontSize: '9px',
-                                  fontWeight: isChecked ? 'bold' : 'normal',
-                                  whiteSpace: 'nowrap',
-                                  cursor: 'pointer',
-                                  flexShrink: 0,
-                                  transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
-                                  outline: 'none'
-                                }}
-                              >
-                                {courier}
-                              </button>
-                            );
-                          })}
+                        <div className={`filter-expand-wrapper ${isEditing ? 'open' : ''}`}>
+                          <div className="filter-expand-content">
+                            <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', scrollbarWidth: 'none', padding: '6px 0', marginTop: '4px' }}>
+                              {BD_COURIERS.map((courier) => {
+                                const selectedName = editForm.courier_name || order.courier_name || '';
+                                const isChecked = selectedName.toLowerCase() === courier.toLowerCase();
+                                return (
+                                  <button
+                                    type="button"
+                                    key={courier}
+                                    onClick={() => {
+                                      setEditForm(prev => ({
+                                        ...prev,
+                                        courier_name: isChecked ? '' : courier
+                                      }));
+                                    }}
+                                    style={{
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      background: isChecked ? '#111' : '#0d0d0d',
+                                      border: isChecked ? '1px solid #ffffff' : '1px solid #222222',
+                                      color: isChecked ? '#ffffff' : '#888888',
+                                      padding: '6px 10px',
+                                      borderRadius: '3px',
+                                      fontSize: '9px',
+                                      fontWeight: isChecked ? 'bold' : 'normal',
+                                      whiteSpace: 'nowrap',
+                                      cursor: 'pointer',
+                                      flexShrink: 0,
+                                      transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+                                      outline: 'none'
+                                    }}
+                                  >
+                                    {courier}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
                         </div>
                       </div>
                     ) : (
@@ -537,10 +542,10 @@ const OrderCard: React.FC<OrderCardProps> = ({
                       placeholder={order.customer_notes || "Add customer note to send in messages..."}
                       value={editForm.customer_notes}
                       onChange={e => setEditForm({ ...editForm, customer_notes: e.target.value })}
-                      style={{ ...cleanInputStyle(true), resize: 'vertical' }}
+                      style={{ ...cleanInputStyle(true), height: 'auto', resize: 'vertical' }}
                     />
                   ) : (
-                    <div style={{ ...cleanInputStyle(false), minHeight: '38px', whiteSpace: 'pre-wrap', wordBreak: 'break-word', display: 'block' }}>
+                    <div style={{ ...cleanInputStyle(false), height: 'auto', minHeight: '38px', whiteSpace: 'pre-wrap', wordBreak: 'break-word', display: 'block' }}>
                       {order.customer_notes || "No notes added"}
                     </div>
                   )}
@@ -554,10 +559,10 @@ const OrderCard: React.FC<OrderCardProps> = ({
                       placeholder={order.admin_notes || "Add private admin notes here..."}
                       value={editForm.admin_notes}
                       onChange={e => setEditForm({ ...editForm, admin_notes: e.target.value })}
-                      style={{ ...cleanInputStyle(true), resize: 'vertical' }}
+                      style={{ ...cleanInputStyle(true), height: 'auto', resize: 'vertical' }}
                     />
                   ) : (
-                    <div style={{ ...cleanInputStyle(false), minHeight: '38px', whiteSpace: 'pre-wrap', wordBreak: 'break-word', display: 'block' }}>
+                    <div style={{ ...cleanInputStyle(false), height: 'auto', minHeight: '38px', whiteSpace: 'pre-wrap', wordBreak: 'break-word', display: 'block' }}>
                       {order.admin_notes || "No notes added"}
                     </div>
                   )}
@@ -566,7 +571,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
                 {order.return_reason && (
                   <div>
                     <label style={{ display: 'block', fontSize: '9px', color: '#FF5252', marginBottom: '6px', letterSpacing: '0.5px', fontWeight: 'bold' }}>CANCELLATION REASON</label>
-                    <div style={{ ...cleanInputStyle(false), border: '1px solid #FF5252', color: '#FF5252', wordBreak: 'break-word', display: 'block' }}>
+                    <div style={{ ...cleanInputStyle(false), height: 'auto', border: '1px solid #FF5252', color: '#FF5252', wordBreak: 'break-word', display: 'block' }}>
                       {order.return_reason}
                     </div>
                   </div>
