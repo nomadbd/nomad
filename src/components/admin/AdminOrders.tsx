@@ -275,7 +275,8 @@ const OrderCard: React.FC<OrderCardProps> = ({
     outline: 'none',
     textDecoration: 'none',
     whiteSpace: 'nowrap',
-    flexShrink: 0
+    flexShrink: 0,
+    transition: 'all 0.2s ease'
   };
 
   const cleanInputStyle = (editable: boolean): React.CSSProperties => ({
@@ -300,7 +301,8 @@ const OrderCard: React.FC<OrderCardProps> = ({
         backgroundColor: '#050505',
         border: isSelected ? '1px solid #fff' : '1px solid #222',
         padding: '16px',
-        borderRadius: '2px'
+        borderRadius: '2px',
+        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
       }}
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -319,7 +321,8 @@ const OrderCard: React.FC<OrderCardProps> = ({
                 justifyContent: 'center',
                 cursor: 'pointer',
                 marginTop: '2px',
-                flexShrink: 0
+                flexShrink: 0,
+                transition: 'all 0.2s ease'
               }}
             >
               {isSelected && (
@@ -339,10 +342,19 @@ const OrderCard: React.FC<OrderCardProps> = ({
                     fontWeight: 'bold',
                     letterSpacing: '1px',
                     cursor: 'pointer',
-                    color: '#fff'
+                    color: '#fff',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px'
                   }}
                 >
-                  #{order.id.slice(0, 8)}... {isExpanded ? '▲' : '▼'}
+                  #{order.id.slice(0, 8)}... 
+                  <span style={{ 
+                    transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)', 
+                    transition: 'transform 0.3s ease',
+                    display: 'inline-block',
+                    fontSize: '10px'
+                  }}>▼</span>
                 </span>
               </div>
               <div style={{ fontSize: '10px', color: '#ccc', marginTop: '4px' }}>
@@ -419,10 +431,11 @@ const OrderCard: React.FC<OrderCardProps> = ({
                       alignItems: 'center',
                       justifyContent: 'center',
                       padding: '4px',
-                      outline: 'none'
+                      outline: 'none',
+                      transition: 'all 0.2s ease'
                     }}
                   >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transition: 'transform 0.2s ease' }}>
                       {isEditing ? (
                         <>
                           <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -455,36 +468,35 @@ const OrderCard: React.FC<OrderCardProps> = ({
                             const selectedName = editForm.courier_name || order.courier_name || '';
                             const isChecked = selectedName.toLowerCase() === courier.toLowerCase();
                             return (
-                              <label
+                              <button
+                                type="button"
                                 key={courier}
+                                onClick={() => {
+                                  setEditForm(prev => ({
+                                    ...prev,
+                                    courier_name: isChecked ? '' : courier
+                                  }));
+                                }}
                                 style={{
                                   display: 'inline-flex',
                                   alignItems: 'center',
-                                  gap: '4px',
-                                  background: '#0d0d0d',
+                                  justifyContent: 'center',
+                                  background: isChecked ? '#fff' : '#0d0d0d',
                                   border: isChecked ? '1px solid #fff' : '1px solid #222',
-                                  color: isChecked ? '#fff' : '#888',
-                                  padding: '4px 8px',
+                                  color: isChecked ? '#000' : '#888',
+                                  padding: '6px 10px',
                                   borderRadius: '3px',
                                   fontSize: '9px',
+                                  fontWeight: isChecked ? 'bold' : 'normal',
                                   whiteSpace: 'nowrap',
                                   cursor: 'pointer',
-                                  flexShrink: 0
+                                  flexShrink: 0,
+                                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                                  outline: 'none'
                                 }}
                               >
-                                <input
-                                  type="checkbox"
-                                  checked={isChecked}
-                                  onChange={() => {
-                                    setEditForm(prev => ({
-                                      ...prev,
-                                      courier_name: isChecked ? '' : courier
-                                    }));
-                                  }}
-                                  style={{ accentColor: '#fff', cursor: 'pointer', margin: 0 }}
-                                />
-                                <span>{courier}</span>
-                              </label>
+                                {courier}
+                              </button>
                             );
                           })}
                         </div>
@@ -574,7 +586,8 @@ const OrderCard: React.FC<OrderCardProps> = ({
                       cursor: isUpdating ? 'not-allowed' : 'pointer',
                       borderRadius: '3px',
                       opacity: isUpdating ? 0.6 : 1,
-                      marginTop: '4px'
+                      marginTop: '4px',
+                      transition: 'all 0.2s ease'
                     }}
                   >
                     {isUpdating ? 'SAVING...' : 'SAVE DETAILS'}
@@ -686,7 +699,8 @@ const OrderCard: React.FC<OrderCardProps> = ({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '4px'
+              gap: '4px',
+              transition: 'all 0.2s ease'
             }}
           >
             <span>{order.status.toUpperCase()}</span>
@@ -711,7 +725,8 @@ const OrderCard: React.FC<OrderCardProps> = ({
               cursor: isUpdating ? 'not-allowed' : 'pointer',
               opacity: isUpdating ? 0.6 : 1,
               textAlign: 'center',
-              textOverflow: 'ellipsis'
+              textOverflow: 'ellipsis',
+              transition: 'all 0.2s ease'
             }}
           >
             <option value="Unpaid / COD">UNPAID / COD</option>
@@ -722,7 +737,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); onPrintInvoice(order); }}
-            style={{ padding: '6px 12px', background: '#111', border: '1px solid #333', color: '#fff', fontSize: '9px', cursor: 'pointer', borderRadius: '2px', fontWeight: 'bold', flexShrink: 0 }}
+            style={{ padding: '6px 12px', background: '#111', border: '1px solid #333', color: '#fff', fontSize: '9px', cursor: 'pointer', borderRadius: '2px', fontWeight: 'bold', flexShrink: 0, transition: 'all 0.2s ease' }}
           >
             PRINT
           </button>
@@ -1556,7 +1571,8 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
                   letterSpacing: '1px',
                   outline: 'none',
                   boxSizing: 'border-box',
-                  borderRadius: '25px'
+                  borderRadius: '25px',
+                  transition: 'all 0.3s ease'
                 }}
               />
             ) : (
@@ -1579,7 +1595,8 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              outline: 'none'
+              outline: 'none',
+              transition: 'transform 0.2s ease, color 0.2s ease'
             }}
           >
             ✕
@@ -1610,7 +1627,8 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
                         fontWeight: isPresetActive ? 'bold' : 'normal',
                         cursor: 'pointer',
                         flexShrink: 0,
-                        whiteSpace: 'nowrap'
+                        whiteSpace: 'nowrap',
+                        transition: 'color 0.2s ease'
                       }}
                     >
                       {key.toUpperCase()}
@@ -1637,11 +1655,16 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   width: '100%',
-                  letterSpacing: '1px'
+                  letterSpacing: '1px',
+                  transition: 'background-color 0.2s ease'
                 }}
               >
                 <span>MESSAGE TEMPLATE</span>
-                <span style={{ fontSize: '9px' }}>{isMessageTemplateOpen ? '▲' : '▼'}</span>
+                <span style={{ 
+                  transform: isMessageTemplateOpen ? 'rotate(180deg)' : 'rotate(0deg)', 
+                  transition: 'transform 0.3s ease',
+                  fontSize: '9px' 
+                }}>▼</span>
               </button>
 
               <div className={`filter-expand-wrapper ${isMessageTemplateOpen ? 'open' : ''}`}>
@@ -1653,7 +1676,7 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
                         type="text"
                         value={bulkEmailSubject}
                         onChange={(e) => setBulkEmailSubject(e.target.value)}
-                        style={{ width: '100%', background: '#000', color: '#fff', border: '1px solid #333', padding: '10px 12px', fontSize: '11px', outline: 'none', boxSizing: 'border-box', borderRadius: '2px' }}
+                        style={{ width: '100%', background: '#000', color: '#fff', border: '1px solid #333', padding: '10px 12px', fontSize: '11px', outline: 'none', boxSizing: 'border-box', borderRadius: '2px', transition: 'border-color 0.2s ease' }}
                       />
                     </div>
                   )}
@@ -1666,7 +1689,7 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
                         setBulkMessageText(e.target.value);
                         setSelectedPresetKey('');
                       }}
-                      style={{ width: '100%', background: '#000', color: '#fff', border: '1px solid #333', padding: '10px 12px', fontSize: '11px', outline: 'none', resize: 'vertical', boxSizing: 'border-box', borderRadius: '2px' }}
+                      style={{ width: '100%', background: '#000', color: '#fff', border: '1px solid #333', padding: '10px 12px', fontSize: '11px', outline: 'none', resize: 'vertical', boxSizing: 'border-box', borderRadius: '2px', transition: 'border-color 0.2s ease' }}
                     />
                     <div style={{ fontSize: '9px', color: '#888', marginTop: '4px' }}>
                       Variables: <code>{"{{name}}"}</code>, <code>{"{{status}}"}</code>, <code>{"{{order_id}}"}</code>, <code>{"{{courier}}"}</code>, <code>{"{{tracking}}"}</code>
@@ -1696,7 +1719,8 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
                   cursor: 'pointer',
                   borderRadius: '2px',
                   textDecoration: 'none',
-                  boxSizing: 'border-box'
+                  boxSizing: 'border-box',
+                  transition: 'all 0.2s ease'
                 }}
               >
                 Send Email ({activeBulkEmails.length})
@@ -1731,7 +1755,7 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
                         border: '1px solid #222',
                         borderRadius: '2px',
                         cursor: 'pointer',
-                        transition: 'border-color 0.2s ease, background-color 0.2s ease'
+                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
                       }}
                     >
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
@@ -1761,7 +1785,8 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
                             fontWeight: 'bold',
                             cursor: 'pointer',
                             borderRadius: '2px',
-                            flexShrink: 0
+                            flexShrink: 0,
+                            transition: 'all 0.2s ease'
                           }}
                         >
                           {isSent ? 'SENT' : 'SEND'}
@@ -1833,7 +1858,7 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
               outline: 'none',
               boxSizing: 'border-box',
               borderRadius: '25px',
-              transition: 'all 0.3s ease'
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
             }}
           />
         </div>
@@ -1876,7 +1901,8 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
                         cursor: 'pointer',
                         textTransform: 'uppercase',
                         whiteSpace: 'nowrap',
-                        flexShrink: 0
+                        flexShrink: 0,
+                        transition: 'color 0.2s ease'
                       }}
                     >
                       {dateFilter}
@@ -1908,7 +1934,8 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
                         cursor: 'pointer',
                         textTransform: 'uppercase',
                         whiteSpace: 'nowrap',
-                        flexShrink: 0
+                        flexShrink: 0,
+                        transition: 'color 0.2s ease'
                       }}
                     >
                       {status}
@@ -1940,7 +1967,8 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
                         cursor: 'pointer',
                         textTransform: 'uppercase',
                         whiteSpace: 'nowrap',
-                        flexShrink: 0
+                        flexShrink: 0,
+                        transition: 'color 0.2s ease'
                       }}
                     >
                       {pStatus}
@@ -1960,7 +1988,8 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
               border: '1px solid #222',
               padding: '12px 16px',
               borderRadius: '2px',
-              marginTop: '14px'
+              marginTop: '14px',
+              transition: 'background-color 0.3s ease'
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -1976,7 +2005,8 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
                   alignItems: 'center',
                   justifyContent: 'center',
                   cursor: 'pointer',
-                  flexShrink: 0
+                  flexShrink: 0,
+                  transition: 'all 0.2s ease'
                 }}
               >
                 {isAllFilteredSelected && (
@@ -2009,7 +2039,8 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
                       fontWeight: 'bold',
                       cursor: 'pointer',
                       borderRadius: '2px',
-                      outline: 'none'
+                      outline: 'none',
+                      transition: 'border-color 0.2s ease'
                     }}
                   >
                     <option value="" style={{ background: '#000', color: '#fff' }}>MARK STATUS AS...</option>
@@ -2034,7 +2065,8 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
                       fontWeight: 'bold',
                       cursor: 'pointer',
                       borderRadius: '2px',
-                      outline: 'none'
+                      outline: 'none',
+                      transition: 'border-color 0.2s ease'
                     }}
                   >
                     <option value="" style={{ background: '#000', color: '#fff' }}>MARK PAYMENT AS...</option>
@@ -2054,7 +2086,8 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
                       fontSize: '10px',
                       fontWeight: 'bold',
                       cursor: 'pointer',
-                      borderRadius: '2px'
+                      borderRadius: '2px',
+                      transition: 'all 0.2s ease'
                     }}
                   >
                     BULK PRINT ({selectedOrderIds.length})
@@ -2074,7 +2107,8 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
                       fontSize: '10px',
                       fontWeight: 'bold',
                       cursor: 'pointer',
-                      borderRadius: '2px'
+                      borderRadius: '2px',
+                      transition: 'all 0.2s ease'
                     }}
                   >
                     WhatsApp ({selectedOrderIds.length})
@@ -2094,7 +2128,8 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
                       fontSize: '10px',
                       fontWeight: 'bold',
                       cursor: 'pointer',
-                      borderRadius: '2px'
+                      borderRadius: '2px',
+                      transition: 'all 0.2s ease'
                     }}
                   >
                     Email ({selectedOrderIds.length})
@@ -2148,7 +2183,8 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            padding: '16px'
+            padding: '16px',
+            transition: 'opacity 0.3s ease'
           }}
         >
           <div
@@ -2191,7 +2227,8 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
                         justifyContent: 'space-between',
                         padding: '12px 8px',
                         cursor: 'pointer',
-                        borderRadius: '8px'
+                        borderRadius: '8px',
+                        transition: 'background-color 0.2s ease'
                       }}
                     >
                       <span style={{ fontSize: '13px', fontWeight: '600', letterSpacing: '0.5px', color: '#fff' }}>
@@ -2205,11 +2242,12 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
                           border: isSelected ? '2px solid #a855f7' : '2px solid #555',
                           display: 'flex',
                           alignItems: 'center',
-                          justifyContent: 'center'
+                          justifyContent: 'center',
+                          transition: 'border-color 0.2s ease'
                         }}
                       >
                         {isSelected && (
-                          <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#a855f7' }} />
+                          <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#a855f7', transition: 'all 0.2s ease' }} />
                         )}
                       </div>
                     </div>
