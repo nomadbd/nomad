@@ -276,7 +276,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
     textDecoration: 'none',
     whiteSpace: 'nowrap',
     flexShrink: 0,
-    transition: 'all 0.2s ease'
+    transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
   };
 
   const cleanInputStyle = (editable: boolean): React.CSSProperties => ({
@@ -289,9 +289,12 @@ const OrderCard: React.FC<OrderCardProps> = ({
     fontSize: '11px',
     outline: 'none',
     borderRadius: '3px',
-    transition: 'all 0.2s ease',
+    transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
     cursor: editable ? 'text' : 'default',
-    userSelect: editable ? 'auto' : 'none'
+    userSelect: editable ? 'auto' : 'none',
+    minHeight: '38px',
+    display: 'flex',
+    alignItems: 'center'
   });
 
   return (
@@ -302,7 +305,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
         border: isSelected ? '1px solid #fff' : '1px solid #222',
         padding: '16px',
         borderRadius: '2px',
-        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+        transition: 'border 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
       }}
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -322,7 +325,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
                 cursor: 'pointer',
                 marginTop: '2px',
                 flexShrink: 0,
-                transition: 'all 0.2s ease'
+                transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
               }}
             >
               {isSelected && (
@@ -351,7 +354,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
                   #{order.id.slice(0, 8)}... 
                   <span style={{ 
                     transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)', 
-                    transition: 'transform 0.3s ease',
+                    transition: 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
                     display: 'inline-block',
                     fontSize: '10px'
                   }}>▼</span>
@@ -432,10 +435,10 @@ const OrderCard: React.FC<OrderCardProps> = ({
                       justifyContent: 'center',
                       padding: '4px',
                       outline: 'none',
-                      transition: 'all 0.2s ease'
+                      transition: 'color 0.2s ease, transform 0.2s ease'
                     }}
                   >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transition: 'transform 0.2s ease' }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transition: 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)' }}>
                       {isEditing ? (
                         <>
                           <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -455,7 +458,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
                   <div>
                     <label style={{ display: 'block', fontSize: '9px', color: '#777', marginBottom: '6px', letterSpacing: '0.5px' }}>COURIER NAME</label>
                     {isEditing ? (
-                      <>
+                      <div>
                         <input
                           type="text"
                           placeholder={order.courier_name || "e.g. Steadfast, Pathao"}
@@ -481,9 +484,9 @@ const OrderCard: React.FC<OrderCardProps> = ({
                                   display: 'inline-flex',
                                   alignItems: 'center',
                                   justifyContent: 'center',
-                                  background: isChecked ? '#fff' : '#0d0d0d',
-                                  border: isChecked ? '1px solid #fff' : '1px solid #222',
-                                  color: isChecked ? '#000' : '#888',
+                                  background: isChecked ? '#111' : '#0d0d0d',
+                                  border: isChecked ? '1px solid #ffffff' : '1px solid #222222',
+                                  color: isChecked ? '#ffffff' : '#888888',
                                   padding: '6px 10px',
                                   borderRadius: '3px',
                                   fontSize: '9px',
@@ -491,7 +494,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
                                   whiteSpace: 'nowrap',
                                   cursor: 'pointer',
                                   flexShrink: 0,
-                                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                                  transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
                                   outline: 'none'
                                 }}
                               >
@@ -500,7 +503,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
                             );
                           })}
                         </div>
-                      </>
+                      </div>
                     ) : (
                       <div style={cleanInputStyle(false)}>
                         {order.courier_name || "N/A"}
@@ -537,7 +540,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
                       style={{ ...cleanInputStyle(true), resize: 'vertical' }}
                     />
                   ) : (
-                    <div style={{ ...cleanInputStyle(false), minHeight: '38px', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                    <div style={{ ...cleanInputStyle(false), minHeight: '38px', whiteSpace: 'pre-wrap', wordBreak: 'break-word', display: 'block' }}>
                       {order.customer_notes || "No notes added"}
                     </div>
                   )}
@@ -554,7 +557,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
                       style={{ ...cleanInputStyle(true), resize: 'vertical' }}
                     />
                   ) : (
-                    <div style={{ ...cleanInputStyle(false), minHeight: '38px', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                    <div style={{ ...cleanInputStyle(false), minHeight: '38px', whiteSpace: 'pre-wrap', wordBreak: 'break-word', display: 'block' }}>
                       {order.admin_notes || "No notes added"}
                     </div>
                   )}
@@ -563,7 +566,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
                 {order.return_reason && (
                   <div>
                     <label style={{ display: 'block', fontSize: '9px', color: '#FF5252', marginBottom: '6px', letterSpacing: '0.5px', fontWeight: 'bold' }}>CANCELLATION REASON</label>
-                    <div style={{ ...cleanInputStyle(false), border: '1px solid #FF5252', color: '#FF5252', wordBreak: 'break-word' }}>
+                    <div style={{ ...cleanInputStyle(false), border: '1px solid #FF5252', color: '#FF5252', wordBreak: 'break-word', display: 'block' }}>
                       {order.return_reason}
                     </div>
                   </div>
@@ -587,7 +590,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
                       borderRadius: '3px',
                       opacity: isUpdating ? 0.6 : 1,
                       marginTop: '4px',
-                      transition: 'all 0.2s ease'
+                      transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
                     }}
                   >
                     {isUpdating ? 'SAVING...' : 'SAVE DETAILS'}
@@ -700,7 +703,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
               alignItems: 'center',
               justifyContent: 'center',
               gap: '4px',
-              transition: 'all 0.2s ease'
+              transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
             }}
           >
             <span>{order.status.toUpperCase()}</span>
@@ -726,7 +729,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
               opacity: isUpdating ? 0.6 : 1,
               textAlign: 'center',
               textOverflow: 'ellipsis',
-              transition: 'all 0.2s ease'
+              transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
             }}
           >
             <option value="Unpaid / COD">UNPAID / COD</option>
@@ -737,7 +740,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); onPrintInvoice(order); }}
-            style={{ padding: '6px 12px', background: '#111', border: '1px solid #333', color: '#fff', fontSize: '9px', cursor: 'pointer', borderRadius: '2px', fontWeight: 'bold', flexShrink: 0, transition: 'all 0.2s ease' }}
+            style={{ padding: '6px 12px', background: '#111', border: '1px solid #333', color: '#fff', fontSize: '9px', cursor: 'pointer', borderRadius: '2px', fontWeight: 'bold', flexShrink: 0, transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)' }}
           >
             PRINT
           </button>
@@ -1572,7 +1575,7 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
                   outline: 'none',
                   boxSizing: 'border-box',
                   borderRadius: '25px',
-                  transition: 'all 0.3s ease'
+                  transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
                 }}
               />
             ) : (
@@ -1662,7 +1665,7 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
                 <span>MESSAGE TEMPLATE</span>
                 <span style={{ 
                   transform: isMessageTemplateOpen ? 'rotate(180deg)' : 'rotate(0deg)', 
-                  transition: 'transform 0.3s ease',
+                  transition: 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
                   fontSize: '9px' 
                 }}>▼</span>
               </button>
@@ -1755,7 +1758,7 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
                         border: '1px solid #222',
                         borderRadius: '2px',
                         cursor: 'pointer',
-                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+                        transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
                       }}
                     >
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
@@ -1858,7 +1861,7 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
               outline: 'none',
               boxSizing: 'border-box',
               borderRadius: '25px',
-              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+              transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
             }}
           />
         </div>
@@ -1989,7 +1992,7 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
               padding: '12px 16px',
               borderRadius: '2px',
               marginTop: '14px',
-              transition: 'background-color 0.3s ease'
+              transition: 'background-color 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -2184,7 +2187,7 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
             alignItems: 'center',
             justifyContent: 'center',
             padding: '16px',
-            transition: 'opacity 0.3s ease'
+            transition: 'opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
           }}
         >
           <div
@@ -2228,7 +2231,7 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
                         padding: '12px 8px',
                         cursor: 'pointer',
                         borderRadius: '8px',
-                        transition: 'background-color 0.2s ease'
+                        transition: 'background-color 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
                       }}
                     >
                       <span style={{ fontSize: '13px', fontWeight: '600', letterSpacing: '0.5px', color: '#fff' }}>
