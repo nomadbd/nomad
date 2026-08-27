@@ -172,21 +172,21 @@ const OrderCard: React.FC<OrderCardProps> = ({
 
   const [editForm, setEditForm] = useState({
     payment_status: order.payment_status || 'Unpaid / COD',
-    courier_name: '',
-    tracking_id: '',
-    admin_notes: '',
-    customer_notes: ''
+    courier_name: order.courier_name || '',
+    tracking_id: order.tracking_id || '',
+    admin_notes: order.admin_notes || '',
+    customer_notes: order.customer_notes || ''
   });
 
   useEffect(() => {
     setEditForm({
       payment_status: order.payment_status || 'Unpaid / COD',
-      courier_name: '',
-      tracking_id: '',
-      admin_notes: '',
-      customer_notes: ''
+      courier_name: order.courier_name || '',
+      tracking_id: order.tracking_id || '',
+      admin_notes: order.admin_notes || '',
+      customer_notes: order.customer_notes || ''
     });
-  }, [order, isEditing]);
+  }, [order]);
 
   const statusColor = getStatusColor(order.status);
   const paymentStatusVal = order.payment_status || 'Unpaid / COD';
@@ -279,17 +279,17 @@ const OrderCard: React.FC<OrderCardProps> = ({
     transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
   };
 
-  const cleanInputStyle = (editable: boolean): React.CSSProperties => ({
+  const smoothInputStyle = (editable: boolean): React.CSSProperties => ({
     width: '100%',
     boxSizing: 'border-box',
     background: editable ? '#121212' : '#080808',
     color: editable ? '#fff' : '#aaa',
-    border: editable ? '1px solid #444' : '1px solid #1c1c1c',
+    border: editable ? '1px solid #555' : '1px solid #1c1c1c',
     padding: '10px 12px',
     fontSize: '11px',
     outline: 'none',
     borderRadius: '3px',
-    transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+    transition: 'background 0.3s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s cubic-bezier(0.16, 1, 0.3, 1), color 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
     cursor: editable ? 'text' : 'default',
     userSelect: editable ? 'auto' : 'none',
     minHeight: '38px',
@@ -458,149 +458,153 @@ const OrderCard: React.FC<OrderCardProps> = ({
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px' }}>
                   <div>
                     <label style={{ display: 'block', fontSize: '9px', color: '#777', marginBottom: '6px', letterSpacing: '0.5px' }}>COURIER NAME</label>
-                    {isEditing ? (
-                      <div>
-                        <input
-                          type="text"
-                          placeholder={order.courier_name || "e.g. Steadfast, Pathao"}
-                          value={editForm.courier_name}
-                          onChange={e => setEditForm({ ...editForm, courier_name: e.target.value })}
-                          style={cleanInputStyle(true)}
-                        />
-                        <div className={`filter-expand-wrapper ${isEditing ? 'open' : ''}`}>
-                          <div className="filter-expand-content">
-                            <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', scrollbarWidth: 'none', padding: '6px 0', marginTop: '4px' }}>
-                              {BD_COURIERS.map((courier) => {
-                                const selectedName = editForm.courier_name || order.courier_name || '';
-                                const isChecked = selectedName.toLowerCase() === courier.toLowerCase();
-                                return (
-                                  <button
-                                    type="button"
-                                    key={courier}
-                                    onClick={() => {
-                                      setEditForm(prev => ({
-                                        ...prev,
-                                        courier_name: isChecked ? '' : courier
-                                      }));
-                                    }}
-                                    style={{
-                                      display: 'inline-flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center',
-                                      background: isChecked ? '#111' : '#0d0d0d',
-                                      border: isChecked ? '1px solid #ffffff' : '1px solid #222222',
-                                      color: isChecked ? '#ffffff' : '#888888',
-                                      padding: '6px 10px',
-                                      borderRadius: '3px',
-                                      fontSize: '9px',
-                                      fontWeight: isChecked ? 'bold' : 'normal',
-                                      whiteSpace: 'nowrap',
-                                      cursor: 'pointer',
-                                      flexShrink: 0,
-                                      transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
-                                      outline: 'none'
-                                    }}
-                                  >
-                                    {courier}
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          </div>
+                    <input
+                      type="text"
+                      readOnly={!isEditing}
+                      placeholder={order.courier_name || "e.g. Steadfast, Pathao"}
+                      value={editForm.courier_name}
+                      onChange={e => {
+                        if (isEditing) setEditForm({ ...editForm, courier_name: e.target.value });
+                      }}
+                      style={smoothInputStyle(isEditing)}
+                    />
+                    <div className={`filter-expand-wrapper ${isEditing ? 'open' : ''}`}>
+                      <div className="filter-expand-content">
+                        <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', scrollbarWidth: 'none', padding: '6px 0', marginTop: '4px' }}>
+                          {BD_COURIERS.map((courier) => {
+                            const selectedName = editForm.courier_name || '';
+                            const isChecked = selectedName.toLowerCase() === courier.toLowerCase();
+                            return (
+                              <button
+                                type="button"
+                                key={courier}
+                                onClick={() => {
+                                  if (!isEditing) return;
+                                  setEditForm(prev => ({
+                                    ...prev,
+                                    courier_name: isChecked ? '' : courier
+                                  }));
+                                }}
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  background: isChecked ? '#111' : '#0d0d0d',
+                                  border: isChecked ? '1px solid #ffffff' : '1px solid #222222',
+                                  color: isChecked ? '#ffffff' : '#888888',
+                                  padding: '6px 10px',
+                                  borderRadius: '3px',
+                                  fontSize: '9px',
+                                  fontWeight: isChecked ? 'bold' : 'normal',
+                                  whiteSpace: 'nowrap',
+                                  cursor: isEditing ? 'pointer' : 'default',
+                                  flexShrink: 0,
+                                  transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+                                  outline: 'none'
+                                }}
+                              >
+                                {courier}
+                              </button>
+                            );
+                          })}
                         </div>
                       </div>
-                    ) : (
-                      <div style={cleanInputStyle(false)}>
-                        {order.courier_name || "N/A"}
-                      </div>
-                    )}
+                    </div>
                   </div>
 
                   <div>
                     <label style={{ display: 'block', fontSize: '9px', color: '#777', marginBottom: '6px', letterSpacing: '0.5px' }}>TRACKING ID</label>
-                    {isEditing ? (
-                      <input
-                        type="text"
-                        placeholder={order.tracking_id || "Tracking / Memo No."}
-                        value={editForm.tracking_id}
-                        onChange={e => setEditForm({ ...editForm, tracking_id: e.target.value })}
-                        style={cleanInputStyle(true)}
-                      />
-                    ) : (
-                      <div style={cleanInputStyle(false)}>
-                        {order.tracking_id || "N/A"}
-                      </div>
-                    )}
+                    <input
+                      type="text"
+                      readOnly={!isEditing}
+                      placeholder={order.tracking_id || "Tracking / Memo No."}
+                      value={editForm.tracking_id}
+                      onChange={e => {
+                        if (isEditing) setEditForm({ ...editForm, tracking_id: e.target.value });
+                      }}
+                      style={smoothInputStyle(isEditing)}
+                    />
                   </div>
                 </div>
 
                 <div>
                   <label style={{ display: 'block', fontSize: '9px', color: '#777', marginBottom: '6px', letterSpacing: '0.5px' }}>CUSTOMER NOTES</label>
-                  {isEditing ? (
-                    <textarea
-                      rows={2}
-                      placeholder={order.customer_notes || "Add customer note to send in messages..."}
-                      value={editForm.customer_notes}
-                      onChange={e => setEditForm({ ...editForm, customer_notes: e.target.value })}
-                      style={{ ...cleanInputStyle(true), height: 'auto', resize: 'vertical' }}
-                    />
-                  ) : (
-                    <div style={{ ...cleanInputStyle(false), height: 'auto', minHeight: '38px', whiteSpace: 'pre-wrap', wordBreak: 'break-word', display: 'block' }}>
-                      {order.customer_notes || "No notes added"}
-                    </div>
-                  )}
+                  <textarea
+                    rows={2}
+                    readOnly={!isEditing}
+                    placeholder={order.customer_notes || "Add customer note to send in messages..."}
+                    value={editForm.customer_notes}
+                    onChange={e => {
+                      if (isEditing) setEditForm({ ...editForm, customer_notes: e.target.value });
+                    }}
+                    style={{ 
+                      ...smoothInputStyle(isEditing), 
+                      height: 'auto', 
+                      minHeight: '38px', 
+                      resize: isEditing ? 'vertical' : 'none', 
+                      whiteSpace: 'pre-wrap', 
+                      wordBreak: 'break-word', 
+                      display: 'block' 
+                    }}
+                  />
                 </div>
 
                 <div>
                   <label style={{ display: 'block', fontSize: '9px', color: '#777', marginBottom: '6px', letterSpacing: '0.5px' }}>ADMIN NOTES</label>
-                  {isEditing ? (
-                    <textarea
-                      rows={2}
-                      placeholder={order.admin_notes || "Add private admin notes here..."}
-                      value={editForm.admin_notes}
-                      onChange={e => setEditForm({ ...editForm, admin_notes: e.target.value })}
-                      style={{ ...cleanInputStyle(true), height: 'auto', resize: 'vertical' }}
-                    />
-                  ) : (
-                    <div style={{ ...cleanInputStyle(false), height: 'auto', minHeight: '38px', whiteSpace: 'pre-wrap', wordBreak: 'break-word', display: 'block' }}>
-                      {order.admin_notes || "No notes added"}
-                    </div>
-                  )}
+                  <textarea
+                    rows={2}
+                    readOnly={!isEditing}
+                    placeholder={order.admin_notes || "Add private admin notes here..."}
+                    value={editForm.admin_notes}
+                    onChange={e => {
+                      if (isEditing) setEditForm({ ...editForm, admin_notes: e.target.value });
+                    }}
+                    style={{ 
+                      ...smoothInputStyle(isEditing), 
+                      height: 'auto', 
+                      minHeight: '38px', 
+                      resize: isEditing ? 'vertical' : 'none', 
+                      whiteSpace: 'pre-wrap', 
+                      wordBreak: 'break-word', 
+                      display: 'block' 
+                    }}
+                  />
                 </div>
 
                 {order.return_reason && (
                   <div>
                     <label style={{ display: 'block', fontSize: '9px', color: '#FF5252', marginBottom: '6px', letterSpacing: '0.5px', fontWeight: 'bold' }}>CANCELLATION REASON</label>
-                    <div style={{ ...cleanInputStyle(false), height: 'auto', border: '1px solid #FF5252', color: '#FF5252', wordBreak: 'break-word', display: 'block' }}>
+                    <div style={{ ...smoothInputStyle(false), height: 'auto', border: '1px solid #FF5252', color: '#FF5252', wordBreak: 'break-word', display: 'block' }}>
                       {order.return_reason}
                     </div>
                   </div>
                 )}
 
-                {isEditing && (
-                  <button
-                    type="button"
-                    onClick={handleSaveDetails}
-                    disabled={isUpdating}
-                    style={{
-                      width: '100%',
-                      padding: '12px',
-                      background: '#fff',
-                      color: '#000',
-                      fontWeight: 'bold',
-                      border: 'none',
-                      fontSize: '10px',
-                      letterSpacing: '1px',
-                      cursor: isUpdating ? 'not-allowed' : 'pointer',
-                      borderRadius: '3px',
-                      opacity: isUpdating ? 0.6 : 1,
-                      marginTop: '4px',
-                      transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
-                    }}
-                  >
-                    {isUpdating ? 'SAVING...' : 'SAVE DETAILS'}
-                  </button>
-                )}
+                <div className={`filter-expand-wrapper ${isEditing ? 'open' : ''}`}>
+                  <div className="filter-expand-content" style={{ paddingTop: '4px' }}>
+                    <button
+                      type="button"
+                      onClick={handleSaveDetails}
+                      disabled={isUpdating}
+                      style={{
+                        width: '100%',
+                        padding: '12px',
+                        background: '#fff',
+                        color: '#000',
+                        fontWeight: 'bold',
+                        border: 'none',
+                        fontSize: '10px',
+                        letterSpacing: '1px',
+                        cursor: isUpdating ? 'not-allowed' : 'pointer',
+                        borderRadius: '3px',
+                        opacity: isUpdating ? 0.6 : 1,
+                        transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
+                      }}
+                    >
+                      {isUpdating ? 'SAVING...' : 'SAVE DETAILS'}
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
