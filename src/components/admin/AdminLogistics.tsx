@@ -25,6 +25,7 @@ export default function AdminLogistics() {
   const [orders, setOrders] = useState<OrderItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
+  const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null);
 
   const [deliveryCharge, setDeliveryCharge] = useState<number | string>('');
   const [vatRate, setVatRate] = useState<number | string>('');
@@ -154,6 +155,10 @@ export default function AdminLogistics() {
   const handleStatusUpdate = async (orderId: string, newStatus: string) => {
     try {
       const targetOrder = orders.find((o) => o.id === orderId);
+      if (!targetOrder) return;
+
+      const currentReturnStatus = targetOrder.return_status || 'Pending';
+      if (currentReturnStatus === newStatus) return;
 
       const { error } = await supabase
         .from('orders')
@@ -162,8 +167,8 @@ export default function AdminLogistics() {
 
       if (error) throw error;
 
-      if (newStatus === 'Received' && targetOrder?.return_status !== 'Received') {
-        if (targetOrder && targetOrder.order_items) {
+      if (newStatus === 'Received' && currentReturnStatus !== 'Received') {
+        if (targetOrder.order_items) {
           for (const item of targetOrder.order_items) {
             if (item.product_id) {
               const { data: prodData } = await supabase
@@ -191,6 +196,42 @@ export default function AdminLogistics() {
                 await supabase
                   .from('products')
                   .update({ stock_quantity: currentStock + item.quantity })
+                  .eq('name', item.product_name);
+              }
+            }
+          }
+        }
+      } else if (currentReturnStatus === 'Received' && newStatus !== 'Received') {
+        if (targetOrder.order_items) {
+          for (const item of targetOrder.order_items) {
+            if (item.product_id) {
+              const { data: prodData } = await supabase
+                .from('products')
+                .select('stock_quantity')
+                .eq('id', item.product_id)
+                .single();
+
+              if (prodData) {
+                const currentStock = prodData.stock_quantity || 0;
+                const updatedStock = Math.max(0, currentStock - item.quantity);
+                await supabase
+                  .from('products')
+                  .update({ stock_quantity: updatedStock })
+                  .eq('id', item.product_id);
+              }
+            } else if (item.product_name) {
+              const { data: prodData } = await supabase
+                .from('products')
+                .select('stock_quantity')
+                .eq('name', item.product_name)
+                .single();
+
+              if (prodData) {
+                const currentStock = prodData.stock_quantity || 0;
+                const updatedStock = Math.max(0, currentStock - item.quantity);
+                await supabase
+                  .from('products')
+                  .update({ stock_quantity: updatedStock })
                   .eq('name', item.product_name);
               }
             }
@@ -360,6 +401,7 @@ export default function AdminLogistics() {
           {orders.map((item) => {
             const isExpanded = expandedOrderId === item.id;
             const isReceived = item.return_status === 'Received';
+            const isDropdownOpen = activeDropdownId === item.id;
 
             return (
               <div key={item.id} style={{ borderBottom: '1px solid #1a1a1a' }}>
@@ -389,10 +431,9 @@ export default function AdminLogistics() {
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', alignItems: 'flex-start', flexShrink: 0 }}>
-                    <select
-                      value={item.return_status || 'Pending'}
-                      onChange={(e) => handleStatusUpdate(item.id, e.target.value)}
+                  <div style={{ position: 'relative', flexShrink: 0 }}>
+                    <button
+                      onClick={() => setActiveDropdownId(isDropdownOpen ? null : item.id)}
                       style={{
                         backgroundColor: '#111',
                         color: isReceived ? '#2ecc71' : '#f39c12',
@@ -401,12 +442,61 @@ export default function AdminLogistics() {
                         fontSize: '10px',
                         borderRadius: '3px',
                         outline: 'none',
-                        cursor: 'pointer'
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px'
                       }}
                     >
-                      <option value="Pending" style={{ color: '#f39c12' }}>Pending</option>
-                      <option value="Received" style={{ color: '#2ecc71' }}>Received</option>
-                    </select>
+                      <span>{item.return_status || 'Pending'}</span>
+                      <span style={{ fontSize: '8px' }}>▼</span>
+                    </button>
+
+                    {isDropdownOpen && (
+                      <div style={{
+                        position: 'absolute',
+                        top: 'calc(100% + 4px)',
+                        right: 0,
+                        backgroundColor: '#111',
+                        border: '1px solid #222',
+                        borderRadius: '4px',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                        zIndex: 20,
+                        minWidth: '90px',
+                        overflow: 'hidden'
+                      }}>
+                        <div
+                          onClick={() => {
+                            handleStatusUpdate(item.id, 'Pending');
+                            setActiveDropdownId(null);
+                          }}
+                          style={{
+                            padding: '6px 10px',
+                            fontSize: '10px',
+                            color: '#f39c12',
+                            cursor: 'pointer',
+                            backgroundColor: item.return_status === 'Pending' || !item.return_status ? '#1a1a1a' : 'transparent'
+                          }}
+                        >
+                          Pending
+                        </div>
+                        <div
+                          onClick={() => {
+                            handleStatusUpdate(item.id, 'Received');
+                            setActiveDropdownId(null);
+                          }}
+                          style={{
+                            padding: '6px 10px',
+                            fontSize: '10px',
+                            color: '#2ecc71',
+                            cursor: 'pointer',
+                            backgroundColor: item.return_status === 'Received' ? '#1a1a1a' : 'transparent'
+                          }}
+                        >
+                          Received
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                 </div>
