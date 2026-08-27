@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import ReactDOM from 'react-dom';
 import { supabase } from '../../supabaseClient';
 import './admin-animations.css';
 
@@ -135,7 +136,7 @@ interface OrderCardProps {
   isExpanded: boolean;
   onToggleExpand: (orderId: string) => void;
   onSelectToggle: (orderId: string) => void;
-  onStatusChange: (orderId: string, newStatus: string, cancelReason?: string) => Promise<void>;
+  onOpenStatusModal: (order: Order) => void;
   onUpdateDetails: (orderId: string, updatedData: { payment_status: string; courier_name: string; tracking_id: string; admin_notes: string; customer_notes: string }) => Promise<void>;
   onPrintInvoice: (order: Order) => void;
   getStatusColor: (status: string) => string;
@@ -147,16 +148,12 @@ const OrderCard: React.FC<OrderCardProps> = ({
   isExpanded,
   onToggleExpand,
   onSelectToggle,
-  onStatusChange,
+  onOpenStatusModal,
   onUpdateDetails,
   onPrintInvoice,
   getStatusColor
 }) => {
   const [isUpdating, setIsUpdating] = useState<boolean>(false);
-  const [isStatusModalOpen, setIsStatusModalOpen] = useState<boolean>(false);
-  const [modalSelectedStatus, setModalSelectedStatus] = useState<string>(order.status);
-  const [cancelReasonText, setCancelReasonText] = useState<string>(order.return_reason || '');
-  const [isSubmittingCancel, setIsSubmittingCancel] = useState<boolean>(false);
 
   const [editForm, setEditForm] = useState({
     payment_status: order.payment_status || 'Unpaid / COD',
@@ -174,8 +171,6 @@ const OrderCard: React.FC<OrderCardProps> = ({
       admin_notes: order.admin_notes || '',
       customer_notes: order.customer_notes || ''
     });
-    setModalSelectedStatus(order.status);
-    setCancelReasonText(order.return_reason || '');
   }, [order]);
 
   const statusColor = getStatusColor(order.status);
@@ -234,19 +229,6 @@ const OrderCard: React.FC<OrderCardProps> = ({
       } catch (err) {
         console.error('Error sharing order:', err);
       }
-    }
-  };
-
-  const handleConfirmCancelSubmit = async () => {
-    if (!cancelReasonText.trim() || isSubmittingCancel) return;
-    setIsSubmittingCancel(true);
-    setIsUpdating(true);
-    try {
-      await onStatusChange(order.id, 'Cancelled', cancelReasonText.trim());
-      setIsStatusModalOpen(false);
-    } finally {
-      setIsSubmittingCancel(false);
-      setIsUpdating(false);
     }
   };
 
@@ -438,7 +420,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
                 {order.return_reason && (
                   <div>
                     <label style={{ display: 'block', fontSize: '9px', color: '#FF5252', marginBottom: '6px', letterSpacing: '0.5px', fontWeight: 'bold' }}>CANCELLATION REASON</label>
-                    <div style={{ ...cleanInputStyle, border: '1px solid #FF5252', color: '#FF5252' }}>
+                    <div style={{ ...cleanInputStyle, border: '1px solid #FF5252', color: '#FF5252', wordBreak: 'break-word' }}>
                       {order.return_reason}
                     </div>
                   </div>
@@ -552,9 +534,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
             disabled={isUpdating}
             onClick={(e) => {
               e.stopPropagation();
-              setModalSelectedStatus(order.status);
-              setCancelReasonText(order.return_reason || '');
-              setIsStatusModalOpen(true);
+              onOpenStatusModal(order);
             }}
             style={{
               backgroundColor: '#000',
@@ -615,181 +595,6 @@ const OrderCard: React.FC<OrderCardProps> = ({
           </button>
         </div>
       </div>
-
-      {isStatusModalOpen && (
-        <div
-          className="animate-fade-in"
-          onClick={(e) => {
-            e.stopPropagation();
-            setIsStatusModalOpen(false);
-          }}
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.75)',
-            zIndex: 9999,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '16px'
-          }}
-        >
-          <div
-            className="animate-pop"
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              backgroundColor: '#23212c',
-              borderRadius: '20px',
-              width: '100%',
-              maxWidth: '340px',
-              padding: '20px',
-              boxSizing: 'border-box',
-              position: 'relative',
-              boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
-              color: '#fff'
-            }}
-          >
-            <button
-              type="button"
-              onClick={() => setIsStatusModalOpen(false)}
-              style={{
-                position: 'absolute',
-                top: '16px',
-                right: '16px',
-                background: 'transparent',
-                border: 'none',
-                color: '#aaa',
-                fontSize: '18px',
-                fontWeight: 'bold',
-                cursor: 'pointer',
-                outline: 'none',
-                lineHeight: '1'
-              }}
-            >
-              ✕
-            </button>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '10px' }}>
-              {STATUS_OPTIONS.map((opt) => {
-                const isSelected = modalSelectedStatus.toLowerCase() === opt.toLowerCase();
-                return (
-                  <div key={opt} style={{ display: 'flex', flexDirection: 'column' }}>
-                    <div
-                      onClick={async () => {
-                        if (opt === 'Cancelled') {
-                          setModalSelectedStatus('Cancelled');
-                        } else {
-                          setModalSelectedStatus(opt);
-                          setIsUpdating(true);
-                          setIsStatusModalOpen(false);
-                          try {
-                            await onStatusChange(order.id, opt);
-                          } finally {
-                            setIsUpdating(false);
-                          }
-                        }
-                      }}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        padding: '12px 8px',
-                        cursor: 'pointer',
-                        borderRadius: '8px'
-                      }}
-                    >
-                      <span style={{ fontSize: '13px', fontWeight: '600', letterSpacing: '0.5px', color: '#fff' }}>
-                        {opt.toUpperCase()}
-                      </span>
-                      <div
-                        style={{
-                          width: '18px',
-                          height: '18px',
-                          borderRadius: '50%',
-                          border: isSelected ? '2px solid #a855f7' : '2px solid #555',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center'
-                        }}
-                      >
-                        {isSelected && (
-                          <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#a855f7' }} />
-                        )}
-                      </div>
-                    </div>
-
-                    {opt === 'Cancelled' && modalSelectedStatus === 'Cancelled' && (
-                      <div className="filter-expand-wrapper open">
-                        <div className="filter-expand-content animate-fade-in" style={{ padding: '8px 0 4px 0' }}>
-                          <div
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              backgroundColor: '#14131a',
-                              border: '1px solid #3b3848',
-                              borderRadius: '25px',
-                              padding: '4px 6px 4px 14px',
-                              gap: '8px'
-                            }}
-                          >
-                            <input
-                              type="text"
-                              placeholder="Type cancellation reason..."
-                              value={cancelReasonText}
-                              onChange={(e) => setCancelReasonText(e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                  e.preventDefault();
-                                  handleConfirmCancelSubmit();
-                                }
-                              }}
-                              style={{
-                                flex: 1,
-                                background: 'transparent',
-                                border: 'none',
-                                color: '#fff',
-                                fontSize: '11px',
-                                outline: 'none'
-                              }}
-                            />
-                            <button
-                              type="button"
-                              disabled={!cancelReasonText.trim() || isSubmittingCancel}
-                              onClick={handleConfirmCancelSubmit}
-                              style={{
-                                width: '30px',
-                                height: '30px',
-                                borderRadius: '50%',
-                                backgroundColor: cancelReasonText.trim() ? '#FF5252' : '#2a2836',
-                                border: 'none',
-                                color: '#fff',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                cursor: cancelReasonText.trim() ? 'pointer' : 'not-allowed',
-                                transition: 'all 0.2s ease',
-                                flexShrink: 0
-                              }}
-                            >
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                <line x1="22" y1="2" x2="11" y2="13"></line>
-                                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                              </svg>
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
@@ -825,6 +630,12 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
   const filterOpen = propFilterOpen !== undefined ? propFilterOpen : internalFilterOpen;
 
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
+
+  // Single Active Status Modal State
+  const [activeModalOrder, setActiveModalOrder] = useState<Order | null>(null);
+  const [modalSelectedStatus, setModalSelectedStatus] = useState<string>('');
+  const [cancelReasonText, setCancelReasonText] = useState<string>('');
+  const [isSubmittingCancel, setIsSubmittingCancel] = useState<boolean>(false);
 
   const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
   const [isBulkViewOpen, setIsBulkViewOpen] = useState<boolean>(false);
@@ -1039,6 +850,23 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
     if (s.includes('delivered') || s.includes('completed')) return '#008000';
     if (s.includes('cancel')) return '#FF5252';
     return '#FFB800';
+  };
+
+  const handleOpenStatusModal = (order: Order) => {
+    setActiveModalOrder(order);
+    setModalSelectedStatus(order.status);
+    setCancelReasonText(order.return_reason || '');
+  };
+
+  const handleConfirmCancelSubmit = async () => {
+    if (!activeModalOrder || !cancelReasonText.trim() || isSubmittingCancel) return;
+    setIsSubmittingCancel(true);
+    try {
+      await handleStatusChange(activeModalOrder.id, 'Cancelled', cancelReasonText.trim());
+      setActiveModalOrder(null);
+    } finally {
+      setIsSubmittingCancel(false);
+    }
   };
 
   const handlePrintInvoice = (order: Order) => {
@@ -2103,7 +1931,7 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
               isExpanded={expandedOrderId === order.id}
               onToggleExpand={handleToggleExpand}
               onSelectToggle={handleSelectToggle}
-              onStatusChange={handleStatusChange}
+              onOpenStatusModal={handleOpenStatusModal}
               onUpdateDetails={handleUpdateDetails}
               onPrintInvoice={handlePrintInvoice}
               getStatusColor={getStatusColor}
@@ -2111,6 +1939,183 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
           ))
         )}
       </div>
+
+      {/* Global Status Modal using React Portal */}
+      {activeModalOrder && ReactDOM.createPortal(
+        <div
+          className="animate-fade-in"
+          onClick={() => setActiveModalOrder(null)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.75)',
+            zIndex: 99999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px'
+          }}
+        >
+          <div
+            className="animate-pop"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              backgroundColor: '#23212c',
+              borderRadius: '20px',
+              width: '100%',
+              maxWidth: '340px',
+              padding: '20px',
+              boxSizing: 'border-box',
+              position: 'relative',
+              boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
+              color: '#fff',
+              maxHeight: '90vh',
+              overflowY: 'auto'
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => setActiveModalOrder(null)}
+              style={{
+                position: 'absolute',
+                top: '16px',
+                right: '16px',
+                background: 'transparent',
+                border: 'none',
+                color: '#aaa',
+                fontSize: '18px',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                outline: 'none',
+                lineHeight: '1'
+              }}
+            >
+              ✕
+            </button>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '10px' }}>
+              {STATUS_OPTIONS.map((opt) => {
+                const isSelected = modalSelectedStatus.toLowerCase() === opt.toLowerCase();
+                return (
+                  <div key={opt} style={{ display: 'flex', flexDirection: 'column' }}>
+                    <div
+                      onClick={async () => {
+                        if (opt === 'Cancelled') {
+                          setModalSelectedStatus('Cancelled');
+                        } else {
+                          setModalSelectedStatus(opt);
+                          const currentOrderId = activeModalOrder.id;
+                          setActiveModalOrder(null);
+                          await handleStatusChange(currentOrderId, opt);
+                        }
+                      }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '12px 8px',
+                        cursor: 'pointer',
+                        borderRadius: '8px'
+                      }}
+                    >
+                      <span style={{ fontSize: '13px', fontWeight: '600', letterSpacing: '0.5px', color: '#fff' }}>
+                        {opt.toUpperCase()}
+                      </span>
+                      <div
+                        style={{
+                          width: '18px',
+                          height: '18px',
+                          borderRadius: '50%',
+                          border: isSelected ? '2px solid #a855f7' : '2px solid #555',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}
+                      >
+                        {isSelected && (
+                          <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#a855f7' }} />
+                        )}
+                      </div>
+                    </div>
+
+                    {opt === 'Cancelled' && modalSelectedStatus === 'Cancelled' && (
+                      <div className="filter-expand-wrapper open">
+                        <div className="filter-expand-content animate-fade-in" style={{ padding: '8px 0 4px 0' }}>
+                          <div
+                            style={{
+                              display: 'flex',
+                              alignItems: 'flex-start',
+                              backgroundColor: '#14131a',
+                              border: '1px solid #3b3848',
+                              borderRadius: '16px',
+                              padding: '6px 6px 6px 14px',
+                              gap: '8px'
+                            }}
+                          >
+                            <textarea
+                              rows={2}
+                              placeholder="Type cancellation reason..."
+                              value={cancelReasonText}
+                              onChange={(e) => setCancelReasonText(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' && !e.shiftKey) {
+                                  e.preventDefault();
+                                  handleConfirmCancelSubmit();
+                                }
+                              }}
+                              style={{
+                                flex: 1,
+                                background: 'transparent',
+                                border: 'none',
+                                color: '#fff',
+                                fontSize: '11px',
+                                outline: 'none',
+                                resize: 'none',
+                                fontFamily: 'inherit',
+                                wordBreak: 'break-word',
+                                overflowWrap: 'break-word'
+                              }}
+                            />
+                            <button
+                              type="button"
+                              disabled={!cancelReasonText.trim() || isSubmittingCancel}
+                              onClick={handleConfirmCancelSubmit}
+                              style={{
+                                width: '30px',
+                                height: '30px',
+                                borderRadius: '50%',
+                                backgroundColor: cancelReasonText.trim() ? '#FF5252' : '#2a2836',
+                                border: 'none',
+                                color: '#fff',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                cursor: cancelReasonText.trim() ? 'pointer' : 'not-allowed',
+                                transition: 'all 0.2s ease',
+                                flexShrink: 0,
+                                marginTop: '2px'
+                              }}
+                            >
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <line x1="22" y1="2" x2="11" y2="13"></line>
+                                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                              </svg>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 };
