@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import { supabase } from '../../supabaseClient';
 import './admin-animations.css';
@@ -631,7 +631,6 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
 
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
 
-  // Single Active Status Modal State
   const [activeModalOrder, setActiveModalOrder] = useState<Order | null>(null);
   const [modalSelectedStatus, setModalSelectedStatus] = useState<string>('');
   const [cancelReasonText, setCancelReasonText] = useState<string>('');
@@ -648,6 +647,9 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
   const [isMessageTemplateOpen, setIsMessageTemplateOpen] = useState<boolean>(false);
 
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  const modalContainerRef = useRef<HTMLDivElement | null>(null);
+  const cancelTextareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   useEffect(() => {
     const handleGlobalSearchToggle = () => {
@@ -674,6 +676,15 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
       window.removeEventListener('admin-toggle-filter', handleGlobalFilterToggle);
     };
   }, [onToggleSearch, onToggleFilter]);
+
+  useEffect(() => {
+    if (modalSelectedStatus === 'Cancelled' && cancelTextareaRef.current) {
+      setTimeout(() => {
+        cancelTextareaRef.current?.focus();
+        cancelTextareaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 150);
+    }
+  }, [modalSelectedStatus]);
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
     setToast({ message, type });
@@ -1940,7 +1951,6 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
         )}
       </div>
 
-      {/* Global Status Modal using React Portal */}
       {activeModalOrder && ReactDOM.createPortal(
         <div
           className="animate-fade-in"
@@ -1960,6 +1970,7 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
           }}
         >
           <div
+            ref={modalContainerRef}
             className="animate-pop"
             onClick={(e) => e.stopPropagation()}
             style={{
@@ -1976,27 +1987,7 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
               overflowY: 'auto'
             }}
           >
-            <button
-              type="button"
-              onClick={() => setActiveModalOrder(null)}
-              style={{
-                position: 'absolute',
-                top: '16px',
-                right: '16px',
-                background: 'transparent',
-                border: 'none',
-                color: '#aaa',
-                fontSize: '18px',
-                fontWeight: 'bold',
-                cursor: 'pointer',
-                outline: 'none',
-                lineHeight: '1'
-              }}
-            >
-              ✕
-            </button>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '10px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '4px' }}>
               {STATUS_OPTIONS.map((opt) => {
                 const isSelected = modalSelectedStatus.toLowerCase() === opt.toLowerCase();
                 return (
@@ -2056,16 +2047,12 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
                             }}
                           >
                             <textarea
+                              ref={cancelTextareaRef}
                               rows={2}
+                              autoFocus
                               placeholder="Type cancellation reason..."
                               value={cancelReasonText}
                               onChange={(e) => setCancelReasonText(e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter' && !e.shiftKey) {
-                                  e.preventDefault();
-                                  handleConfirmCancelSubmit();
-                                }
-                              }}
                               style={{
                                 flex: 1,
                                 background: 'transparent',
