@@ -151,7 +151,16 @@ interface OrderCardProps {
   onToggleExpand: (orderId: string) => void;
   onSelectToggle: (orderId: string) => void;
   onOpenStatusModal: (order: Order) => void;
-  onUpdateDetails: (orderId: string, updatedData: { payment_status: string; courier_name: string; tracking_id: string; admin_notes: string; customer_notes: string }) => Promise<void>;
+  onUpdateDetails: (orderId: string, updatedData: { 
+    customer_name?: string;
+    customer_phone?: string;
+    shipping_address?: string;
+    payment_status: string; 
+    courier_name: string; 
+    tracking_id: string; 
+    admin_notes: string; 
+    customer_notes: string 
+  }) => Promise<void>;
   onPrintInvoice: (order: Order) => void;
   getStatusColor: (status: string) => string;
 }
@@ -171,6 +180,9 @@ const OrderCard: React.FC<OrderCardProps> = ({
   const [isEditing, setIsEditing] = useState<boolean>(false);
 
   const [editForm, setEditForm] = useState({
+    customer_name: order.customer_name || '',
+    customer_phone: order.customer_phone || '',
+    shipping_address: order.shipping_address || '',
     payment_status: order.payment_status || 'Unpaid / COD',
     courier_name: order.courier_name || '',
     tracking_id: order.tracking_id || '',
@@ -180,6 +192,9 @@ const OrderCard: React.FC<OrderCardProps> = ({
 
   useEffect(() => {
     setEditForm({
+      customer_name: order.customer_name || '',
+      customer_phone: order.customer_phone || '',
+      shipping_address: order.shipping_address || '',
       payment_status: order.payment_status || 'Unpaid / COD',
       courier_name: order.courier_name || '',
       tracking_id: order.tracking_id || '',
@@ -215,11 +230,14 @@ const OrderCard: React.FC<OrderCardProps> = ({
     setIsUpdating(true);
     try {
       await onUpdateDetails(order.id, {
+        customer_name: editForm.customer_name,
+        customer_phone: editForm.customer_phone,
+        shipping_address: editForm.shipping_address,
         payment_status: newPaymentStatus,
-        courier_name: order.courier_name || '',
-        tracking_id: order.tracking_id || '',
-        admin_notes: order.admin_notes || '',
-        customer_notes: order.customer_notes || ''
+        courier_name: editForm.courier_name,
+        tracking_id: editForm.tracking_id,
+        admin_notes: editForm.admin_notes,
+        customer_notes: editForm.customer_notes
       });
     } finally {
       setIsUpdating(false);
@@ -231,11 +249,14 @@ const OrderCard: React.FC<OrderCardProps> = ({
     setIsUpdating(true);
     try {
       const payload = {
+        customer_name: editForm.customer_name.trim(),
+        customer_phone: editForm.customer_phone.trim(),
+        shipping_address: editForm.shipping_address.trim(),
         payment_status: editForm.payment_status,
-        courier_name: editForm.courier_name.trim() !== '' ? editForm.courier_name.trim() : (order.courier_name || ''),
-        tracking_id: editForm.tracking_id.trim() !== '' ? editForm.tracking_id.trim() : (order.tracking_id || ''),
-        admin_notes: editForm.admin_notes.trim() !== '' ? editForm.admin_notes.trim() : (order.admin_notes || ''),
-        customer_notes: editForm.customer_notes.trim() !== '' ? editForm.customer_notes.trim() : (order.customer_notes || '')
+        courier_name: editForm.courier_name.trim(),
+        tracking_id: editForm.tracking_id.trim(),
+        admin_notes: editForm.admin_notes.trim(),
+        customer_notes: editForm.customer_notes.trim()
       };
 
       await onUpdateDetails(order.id, payload);
@@ -416,14 +437,14 @@ const OrderCard: React.FC<OrderCardProps> = ({
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '10px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <h4 style={{ color: '#888', fontSize: '10px', letterSpacing: '1.5px', margin: 0, fontWeight: 'bold' }}>MANAGEMENT DETAILS</h4>
+                  <h4 style={{ color: '#888', fontSize: '10px', letterSpacing: '1.5px', margin: 0, fontWeight: 'bold' }}>MANAGEMENT & CUSTOMER EDIT</h4>
                   <button
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
                       setIsEditing(prev => !prev);
                     }}
-                    title={isEditing ? "Cancel" : "Edit"}
+                    title={isEditing ? "Cancel" : "Edit Details"}
                     style={{
                       backgroundColor: 'transparent',
                       border: 'none',
@@ -456,6 +477,34 @@ const OrderCard: React.FC<OrderCardProps> = ({
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '9px', color: '#777', marginBottom: '6px', letterSpacing: '0.5px' }}>CUSTOMER NAME</label>
+                    <input
+                      type="text"
+                      readOnly={!isEditing}
+                      placeholder={order.customer_name || "Customer Name"}
+                      value={editForm.customer_name}
+                      onChange={e => {
+                        if (isEditing) setEditForm({ ...editForm, customer_name: e.target.value });
+                      }}
+                      style={smoothInputStyle(isEditing)}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '9px', color: '#777', marginBottom: '6px', letterSpacing: '0.5px' }}>CUSTOMER PHONE</label>
+                    <input
+                      type="text"
+                      readOnly={!isEditing}
+                      placeholder={order.customer_phone || "Customer Phone"}
+                      value={editForm.customer_phone}
+                      onChange={e => {
+                        if (isEditing) setEditForm({ ...editForm, customer_phone: e.target.value });
+                      }}
+                      style={smoothInputStyle(isEditing)}
+                    />
+                  </div>
+
                   <div>
                     <label style={{ display: 'block', fontSize: '9px', color: '#777', marginBottom: '6px', letterSpacing: '0.5px' }}>COURIER NAME</label>
                     <input
@@ -525,6 +574,28 @@ const OrderCard: React.FC<OrderCardProps> = ({
                       style={smoothInputStyle(isEditing)}
                     />
                   </div>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '9px', color: '#777', marginBottom: '6px', letterSpacing: '0.5px' }}>SHIPPING ADDRESS</label>
+                  <textarea
+                    rows={2}
+                    readOnly={!isEditing}
+                    placeholder={order.shipping_address || "Add full shipping address..."}
+                    value={editForm.shipping_address}
+                    onChange={e => {
+                      if (isEditing) setEditForm({ ...editForm, shipping_address: e.target.value });
+                    }}
+                    style={{ 
+                      ...smoothInputStyle(isEditing), 
+                      height: 'auto', 
+                      minHeight: '38px', 
+                      resize: isEditing ? 'vertical' : 'none', 
+                      whiteSpace: 'pre-wrap', 
+                      wordBreak: 'break-word', 
+                      display: 'block' 
+                    }}
+                  />
                 </div>
 
                 <div>
@@ -930,6 +1001,17 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
 
   useEffect(() => {
     fetchAdminOrders();
+
+    const channel = supabase
+      .channel('orders-realtime-sync')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => {
+        fetchAdminOrders();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   useEffect(() => {
@@ -942,11 +1024,26 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
     }
   }, [selectedStatusFilter]);
 
-  const handleUpdateDetails = async (orderId: string, updatedFields: { payment_status: string; courier_name: string; tracking_id: string; admin_notes: string; customer_notes: string }) => {
+  const handleUpdateDetails = async (
+    orderId: string, 
+    updatedFields: { 
+      customer_name?: string;
+      customer_phone?: string;
+      shipping_address?: string;
+      payment_status: string; 
+      courier_name: string; 
+      tracking_id: string; 
+      admin_notes: string; 
+      customer_notes: string 
+    }
+  ) => {
     try {
       const { error } = await supabase
         .from('orders')
         .update({
+          customer_name: updatedFields.customer_name,
+          customer_phone: updatedFields.customer_phone,
+          shipping_address: updatedFields.shipping_address,
           payment_status: updatedFields.payment_status,
           courier_name: updatedFields.courier_name,
           tracking_id: updatedFields.tracking_id,
