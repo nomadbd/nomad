@@ -811,36 +811,6 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
   const modalContainerRef = useRef<HTMLDivElement | null>(null);
   const cancelTextareaRef = useRef<HTMLTextAreaElement | null>(null);
 
-  // Helper function to insert logs into audit_logs table
-  const logAudit = async (action: string, targetId: string | string[], details: Record<string, any>) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-
-      if (Array.isArray(targetId)) {
-        const logs = targetId.map(id => ({
-          user_id: user?.id || null,
-          action: action,
-          table_name: 'orders',
-          record_id: id,
-          details: details,
-          created_at: new Date().toISOString()
-        }));
-        await supabase.from('audit_logs').insert(logs);
-      } else {
-        await supabase.from('audit_logs').insert({
-          user_id: user?.id || null,
-          action: action,
-          table_name: 'orders',
-          record_id: targetId,
-          details: details,
-          created_at: new Date().toISOString()
-        });
-      }
-    } catch (auditErr) {
-      console.error('Failed to log audit:', auditErr);
-    }
-  };
-
   useEffect(() => {
     const handleGlobalSearchToggle = () => {
       if (onToggleSearch) {
@@ -987,8 +957,6 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
 
       if (error) throw error;
 
-      await logAudit('UPDATE_ORDER_DETAILS', orderId, updatedFields);
-
       setOrders(prev => prev.map(o => o.id === orderId ? { ...o, ...updatedFields } : o));
       showToast('Order details updated successfully!', 'success');
     } catch (err) {
@@ -1007,8 +975,6 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
         .in('id', selectedOrderIds);
 
       if (error) throw error;
-
-      await logAudit('BULK_UPDATE_PAYMENT_STATUS', selectedOrderIds, { payment_status: newPaymentStatus });
 
       setOrders(prev => prev.map(o =>
         selectedOrderIds.includes(o.id) ? { ...o, payment_status: newPaymentStatus } : o
@@ -1033,8 +999,6 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
         .in('id', selectedOrderIds);
 
       if (error) throw error;
-
-      await logAudit('BULK_UPDATE_ORDER_STATUS', selectedOrderIds, { status: newStatus });
 
       setOrders(prev => prev.map(o =>
         selectedOrderIds.includes(o.id) ? { ...o, status: newStatus } : o
@@ -1064,8 +1028,6 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
         .eq('id', orderId);
 
       if (error) throw error;
-
-      await logAudit('UPDATE_ORDER_STATUS', orderId, updateData);
 
       setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus, return_reason: cancelReason || '' } : o));
       showToast(`Order marked as ${newStatus}`, 'success');
