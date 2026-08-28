@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../../supabaseClient';
+import { supabase } from '../../../supabaseClient';
 import { Order } from '../../../utils/messageUtils';
 import { SupabaseOrderResponse } from './adminOrders.types';
 
