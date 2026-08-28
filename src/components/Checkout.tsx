@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/supabaseClient';
 import { useCart } from '@/context/CartContext'; 
-import { printInvoice } from '@/utils/printInvoice'; 
+import { printInvoice } from '@/utils/invoiceUtils'; 
 
 interface CartItem {
   id: string;
