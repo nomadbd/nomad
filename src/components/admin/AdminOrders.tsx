@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import { supabase } from '../../supabaseClient';
 import './admin-animations.css';
-import { CheckIcon, EditIcon, CloseIcon, ShareIcon, SendIcon } from './icons';
+import { CheckIcon, CloseIcon, EditIcon, SendIcon, ShareIcon } from '../icons';
 
 interface SupabaseProductMedia {
   media_url: string;
@@ -222,7 +222,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
         admin_notes: order.admin_notes || '',
         customer_notes: order.customer_notes || ''
       });
-    } opacity finally {
+    } finally {
       setIsUpdating(false);
     }
   };
@@ -268,6 +268,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
     border: '1px solid #333',
     color: '#fff',
     padding: '4px 7px',
+    borderRadius: '2px',
     fontSize: '9.5px',
     fontWeight: 'bold',
     cursor: 'pointer',
@@ -329,7 +330,9 @@ const OrderCard: React.FC<OrderCardProps> = ({
                 transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
               }}
             >
-              {isSelected && <CheckIcon />}
+              {isSelected && (
+                <CheckIcon width="11" height="11" stroke="#000" strokeWidth="3.5" />
+              )}
             </div>
 
             <div>
@@ -435,7 +438,11 @@ const OrderCard: React.FC<OrderCardProps> = ({
                       transition: 'color 0.2s ease, transform 0.2s ease'
                     }}
                   >
-                    {isEditing ? <CloseIcon /> : <EditIcon />}
+                    {isEditing ? (
+                      <CloseIcon width="14" height="14" stroke="currentColor" strokeWidth="2.5" style={{ transition: 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)' }} />
+                    ) : (
+                      <EditIcon width="14" height="14" stroke="currentColor" strokeWidth="2.5" style={{ transition: 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)' }} />
+                    )}
                   </button>
                 </div>
 
@@ -659,7 +666,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
               title="Share Customer Info"
               style={{ ...actionLinkStyle, padding: '4px 6px' }}
             >
-              <ShareIcon />
+              <ShareIcon width="12" height="12" stroke="currentColor" strokeWidth="2" />
             </button>
           </div>
         </div>
@@ -1999,7 +2006,9 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
                   transition: 'all 0.2s ease'
                 }}
               >
-                {isAllFilteredSelected && <CheckIcon />}
+                {isAllFilteredSelected && (
+                  <CheckIcon width="11" height="11" stroke="#000" strokeWidth="3.5" />
+                )}
               </div>
               <span onClick={handleSelectAllFiltered} style={{ fontSize: '11px', color: '#fff', cursor: 'pointer', fontWeight: 'bold' }}>
                 SELECT ALL FILTERED ({filteredOrders.length})
@@ -2292,7 +2301,7 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
                                 marginTop: '2px'
                               }}
                             >
-                              <SendIcon />
+                              <SendIcon width="14" height="14" stroke="currentColor" strokeWidth="2.5" />
                             </button>
                           </div>
                         </div>
