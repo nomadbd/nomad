@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useCart } from '@/src/context/CartContext';
+import { useCart } from '@/context/CartContext';
 import Checkout from './Checkout'; 
 
 const CartOverlay = () => {
