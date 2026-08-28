@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { supabase } from '../supabaseClient'; // 👈 আপনার supabaseClient ফাইলের সঠিক পাথটি এখানে নিশ্চিত করুন
+import { supabase } from '@/supabaseClient'; 
 
 interface CartItem {
   id: string;
@@ -19,13 +19,13 @@ interface CartContextType {
   addToCart: (product: any, color?: string, size?: string) => void;
   incrementQuantity: (id: string, color?: string, size?: string) => void;
   decrementQuantity: (id: string, color?: string, size?: string) => void;
-  removeFromCart: (id: string, color?: string, size?: string) => void; // 🔥 টাইপ ডিফাইন করা হলো
+  removeFromCart: (id: string, color?: string, size?: string) => void; 
   clearCart: () => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-// ডুপ্লিকেট দূর করার হেল্পার
+
 const aggregateCartItems = (items: CartItem[]): CartItem[] => {
   const map = new Map<string, CartItem>();
   items.forEach(item => {
@@ -52,7 +52,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
 
-  // গুরুত্বপূর্ণ ২টি স্টেট গার্ড
+  
   const [authLoading, setAuthLoading] = useState(true); 
   const [isCartInitialized, setIsCartInitialized] = useState(false); 
 
@@ -80,7 +80,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // =================== ১. AUTH STATE LISTENER ===================
+  
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       const uid = session?.user?.id || null;
@@ -100,7 +100,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => subscription.unsubscribe();
   }, []);
 
-  // =================== ২. FETCH & SAFE MERGE CART ===================
+  
   useEffect(() => {
     if (authLoading || !userId) return;
 
@@ -149,7 +149,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     loadCartForUser();
   }, [userId, authLoading]);
 
-  // =================== ৩. AUTO SAVE EFFECT (SAFE) ===================
+  
   useEffect(() => {
     if (authLoading) return; 
 
@@ -167,7 +167,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [cartItems, userId, isCartInitialized, authLoading]);
 
-  // =================== CART ACTIONS ===================
+  
   const addToCart = (product: any, color?: string, size?: string) => {
     const chosenColor = color || product.color || product.selected_color || undefined;
     const chosenSize = size || product.size || product.selected_size || undefined;
@@ -213,7 +213,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
   };
 
-  // 🔥 নতুন ফাংশন: নির্দিষ্ট প্রোডাক্ট কার্ট থেকে ডিলিট করার নিখুঁত লজিক
+  
   const removeFromCart = (id: string, color?: string, size?: string) => {
     setCartItems(prev => prev.filter(item => 
       !(item.id === id && item.color === color && item.size === size)
@@ -237,7 +237,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       addToCart,
       incrementQuantity,
       decrementQuantity,
-      removeFromCart, // 🔥 প্রোভাইডারে পাস করা হলো
+      removeFromCart, 
       clearCart
     }}>
       {children}
