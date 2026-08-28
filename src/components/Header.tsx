@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useCart } from '../context/CartContext'; // ⚡ নতুন কার্ট কনটেক্সট ইম্পোর্ট করা হলো
+import { useCart } from '@/context/CartContext'; 
 
 interface HeaderProps {
   onSearchOpen: () => void;
@@ -10,7 +10,7 @@ const Header: React.FC<HeaderProps> = ({ onSearchOpen, onAuthOpen }) => {
   const [show, setShow] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
   
-  // ⚡ কার্ট ওপেন করার ফাংশন এবং কার্টের প্রোডাক্ট লিস্ট নিয়ে আসা হলো
+  
   const { setIsCartOpen, cartItems } = useCart();
 
   const controlHeader = () => {
@@ -61,8 +61,8 @@ const Header: React.FC<HeaderProps> = ({ onSearchOpen, onAuthOpen }) => {
 
         {/* কার্ট আইকন */}
         <button 
-          onClick={() => setIsCartOpen(true)} // ⚡ কনসোল লগের পরিবর্তে কার্ট ওপেন করার লজিক দেওয়া হলো
-          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'block', lineHeight: 0, position: 'relative' }} // পজিশন রিলেটিভ করা হলো কাউন্টারের জন্য
+          onClick={() => setIsCartOpen(true)} 
+          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'block', lineHeight: 0, position: 'relative' }} 
           aria-label="Cart"
         >
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -70,7 +70,7 @@ const Header: React.FC<HeaderProps> = ({ onSearchOpen, onAuthOpen }) => {
             <path d="M8 11V6a4 4 0 0 1 8 0v5"/>
           </svg>
 
-          {/* ⚡ কার্টে প্রোডাক্ট থাকলে এই ছোট্ট মিনিমাল ডটটি সংখ্যার সাথে দেখাবে */}
+          
           {cartItems.length > 0 && (
             <span style={{
               position: 'absolute', top: '-6px', right: '-6px',
@@ -84,7 +84,7 @@ const Header: React.FC<HeaderProps> = ({ onSearchOpen, onAuthOpen }) => {
           )}
         </button>
 
-        {/* প্রোফাইল আইকন */}
+        
         <button 
           onClick={onAuthOpen} 
           style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'block', lineHeight: 0 }}
