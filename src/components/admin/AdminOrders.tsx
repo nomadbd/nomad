@@ -1,78 +1,18 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { supabase } from '../../supabaseClient';
 import './admin-animations.css';
-import { CheckIcon } from '../icons';
 
 import { Order } from '../../utils/messageUtils';
 import { handlePrintInvoice, handlePrintBulkInvoices } from '../../utils/invoiceUtils';
 import OrderCard from './OrderCard';
 import BulkMessageView from './BulkMessageView';
 import OrderStatusModal from './OrderStatusModal';
+import OrderFiltersBar from './OrderFiltersBar';
 
-interface SupabaseProductMedia {
-  media_url: string;
-}
+import { AdminOrdersProps } from './adminOrders.types';
+import { useAdminOrders } from './useAdminOrders';
 
-interface SupabaseProduct {
-  name: string;
-  product_media: SupabaseProductMedia[];
-}
-
-interface SupabaseOrderItem {
-  quantity: number;
-  size: string;
-  color: string;
-  price_at_purchase: number;
-  product_name?: string;
-  product_image?: string;
-  products?: SupabaseProduct;
-}
-
-interface SupabaseOrderResponse {
-  id: string;
-  created_at: string;
-  total_amount: number;
-  status: string;
-  customer_name?: string;
-  customer_phone?: string;
-  customer_email?: string;
-  shipping_address?: string;
-  delivery_charge?: number;
-  vat_amount?: number;
-  payment_status?: string;
-  courier_name?: string;
-  tracking_id?: string;
-  admin_notes?: string;
-  customer_notes?: string;
-  return_reason?: string;
-  order_items: SupabaseOrderItem[];
-}
-
-interface AdminOrdersProps {
-  isSearchOpen?: boolean;
-  isFilterOpen?: boolean;
-  onToggleSearch?: () => void;
-  onToggleFilter?: () => void;
-  searchQuery?: string;
-  onSearchChange?: (query: string) => void;
-}
-
-const STATUS_OPTIONS = [
-  'Pending',
-  'Received',
-  'Processing',
-  'Shipped',
-  'Delivered',
-  'Cancelled'
-];
-
-const PAYMENT_STATUS_OPTIONS = [
-  'ALL',
-  'Paid',
-  'Unpaid / COD',
-  'Partial Paid'
-];
-
+const STATUS_OPTIONS = ['Pending', 'Received', 'Processing', 'Shipped', 'Delivered', 'Cancelled'];
+const PAYMENT_STATUS_OPTIONS = ['ALL', 'Paid', 'Unpaid / COD', 'Partial Paid'];
 const DATE_FILTERS = ['ALL TIME', 'TODAY', 'LAST 7 DAYS', 'THIS MONTH'];
 
 const AdminOrders: React.FC<AdminOrdersProps> = ({
@@ -83,16 +23,11 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
   searchQuery,
   onSearchChange
 }) => {
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
   const [internalSearchTerm, setInternalSearchTerm] = useState<string>('');
-
   const searchTerm = searchQuery !== undefined ? searchQuery : internalSearchTerm;
   const setSearchTerm = (val: string) => {
     setInternalSearchTerm(val);
-    if (onSearchChange) {
-      onSearchChange(val);
-    }
+    if (onSearchChange) onSearchChange(val);
   };
 
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<string>('ALL');
@@ -114,21 +49,29 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
 
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const {
+    orders,
+    loading,
+    handleUpdateDetails,
+    handleStatusChange,
+    handleBulkPaymentStatusChange,
+    handleBulkStatusChange
+  } = useAdminOrders(showToast);
+
   useEffect(() => {
     const handleGlobalSearchToggle = () => {
-      if (onToggleSearch) {
-        onToggleSearch();
-      } else {
-        setInternalSearchOpen(prev => !prev);
-      }
+      if (onToggleSearch) onToggleSearch();
+      else setInternalSearchOpen(prev => !prev);
     };
 
     const handleGlobalFilterToggle = () => {
-      if (onToggleFilter) {
-        onToggleFilter();
-      } else {
-        setInternalFilterOpen(prev => !prev);
-      }
+      if (onToggleFilter) onToggleFilter();
+      else setInternalFilterOpen(prev => !prev);
     };
 
     window.addEventListener('admin-toggle-search', handleGlobalSearchToggle);
@@ -140,181 +83,8 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
     };
   }, [onToggleSearch, onToggleFilter]);
 
-  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
-    setToast({ message, type });
-    setTimeout(() => {
-      setToast(null);
-    }, 3000);
-  };
-
   const handleToggleExpand = (orderId: string) => {
     setExpandedOrderId(prevId => (prevId === orderId ? null : orderId));
-  };
-
-  const fetchAdminOrders = async () => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('orders')
-        .select(`
-          *,
-          order_items (
-            quantity, 
-            size, 
-            color, 
-            price_at_purchase,
-            product_name,
-            product_image,
-            products:product_id (
-              name,
-              product_media (
-                media_url
-              )
-            )
-          )
-        `)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      if (data) {
-        const formatted = (data as unknown as SupabaseOrderResponse[]).map((order) => {
-          const items = (order.order_items || []).map((item) => ({
-            product_name: item.product_name || item.products?.name || 'NOMAD APPAREL',
-            product_image: item.product_image || item.products?.product_media?.[0]?.media_url || 'https://via.placeholder.com/80x100',
-            size: item.size || 'N/A',
-            color: item.color || 'N/A',
-            quantity: item.quantity ? Number(item.quantity) : 1,
-            price: item.price_at_purchase || 0
-          }));
-
-          return {
-            id: order.id,
-            created_at: order.created_at,
-            total_amount: order.total_amount,
-            status: order.status === 'Delivered / Completed' ? 'Delivered' : (order.status || 'Pending'),
-            customer_name: order.customer_name,
-            customer_phone: order.customer_phone,
-            customer_email: order.customer_email,
-            shipping_address: order.shipping_address,
-            delivery_charge: order.delivery_charge,
-            vat_amount: order.vat_amount,
-            payment_status: order.payment_status || 'Unpaid / COD',
-            courier_name: order.courier_name || '',
-            tracking_id: order.tracking_id || '',
-            admin_notes: order.admin_notes || '',
-            customer_notes: order.customer_notes || '',
-            return_reason: order.return_reason || '',
-            items: items
-          };
-        });
-        setOrders(formatted);
-      }
-    } catch (err) {
-      console.error('Error fetching admin orders:', err);
-      showToast('Failed to fetch orders.', 'error');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchAdminOrders();
-  }, []);
-
-  const handleUpdateDetails = async (orderId: string, updatedFields: { payment_status: string; courier_name: string; tracking_id: string; admin_notes: string; customer_notes: string }) => {
-    try {
-      const { error } = await supabase
-        .from('orders')
-        .update({
-          payment_status: updatedFields.payment_status,
-          courier_name: updatedFields.courier_name,
-          tracking_id: updatedFields.tracking_id,
-          admin_notes: updatedFields.admin_notes,
-          customer_notes: updatedFields.customer_notes
-        })
-        .eq('id', orderId);
-
-      if (error) throw error;
-
-      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, ...updatedFields } : o));
-      showToast('Order details updated successfully!', 'success');
-    } catch (err) {
-      console.error('Failed to update order details:', err);
-      showToast('Failed to update details.', 'error');
-    }
-  };
-
-  const handleBulkPaymentStatusChange = async (newPaymentStatus: string) => {
-    if (selectedOrderIds.length === 0) return;
-    try {
-      setLoading(true);
-      const { error } = await supabase
-        .from('orders')
-        .update({ payment_status: newPaymentStatus })
-        .in('id', selectedOrderIds);
-
-      if (error) throw error;
-
-      setOrders(prev => prev.map(o =>
-        selectedOrderIds.includes(o.id) ? { ...o, payment_status: newPaymentStatus } : o
-      ));
-
-      showToast(`Updated payment status to "${newPaymentStatus}" for ${selectedOrderIds.length} orders.`, 'success');
-    } catch (err) {
-      console.error('Failed to bulk update payment status:', err);
-      showToast('Failed to update payment status.', 'error');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleBulkStatusChange = async (newStatus: string) => {
-    if (selectedOrderIds.length === 0) return;
-    try {
-      setLoading(true);
-      const { error } = await supabase
-        .from('orders')
-        .update({ status: newStatus })
-        .in('id', selectedOrderIds);
-
-      if (error) throw error;
-
-      setOrders(prev => prev.map(o =>
-        selectedOrderIds.includes(o.id) ? { ...o, status: newStatus } : o
-      ));
-
-      showToast(`Updated order status to "${newStatus}" for ${selectedOrderIds.length} orders.`, 'success');
-    } catch (err) {
-      console.error('Failed to bulk update order status:', err);
-      showToast('Failed to update status.', 'error');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleStatusChange = async (orderId: string, newStatus: string, cancelReason?: string) => {
-    try {
-      const updateData: { status: string; return_reason?: string | null } = { status: newStatus };
-      if (newStatus === 'Cancelled') {
-        updateData.return_reason = cancelReason || null;
-      } else {
-        updateData.return_reason = null;
-      }
-
-      const { error } = await supabase
-        .from('orders')
-        .update(updateData)
-        .eq('id', orderId);
-
-      if (error) throw error;
-
-      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus, return_reason: cancelReason || '' } : o));
-      showToast(`Order marked as ${newStatus}`, 'success');
-    } catch (err) {
-      console.error('Failed to update status:', err);
-      showToast('Failed to update status.', 'error');
-    }
   };
 
   const getStatusColor = (rawStatus: string) => {
@@ -360,22 +130,12 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
         }
 
         matchesSearch = Boolean(
-          idMatch ||
-          nameMatch ||
-          emailMatch ||
-          addressMatch ||
-          courierMatch ||
-          trackingMatch ||
-          customerNotesMatch ||
-          adminNotesMatch ||
-          returnReasonMatch ||
-          itemMatch ||
-          phoneMatch
+          idMatch || nameMatch || emailMatch || addressMatch || courierMatch || 
+          trackingMatch || customerNotesMatch || adminNotesMatch || returnReasonMatch || itemMatch || phoneMatch
         );
       }
 
       const matchesStatus = selectedStatusFilter === 'ALL' || order.status.toLowerCase().trim() === selectedStatusFilter.toLowerCase().trim();
-
       const orderPaymentStatus = order.payment_status || 'Unpaid / COD';
       const matchesPaymentStatus = selectedPaymentStatusFilter === 'ALL' || orderPaymentStatus.toLowerCase().trim() === selectedPaymentStatusFilter.toLowerCase().trim();
 
@@ -441,7 +201,6 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%', maxWidth: '100%', position: 'relative' }}>
-
       {toast && (
         <div
           className="animate-pop"
@@ -494,278 +253,28 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
       </div>
 
       <div className={`filter-expand-wrapper ${isFilterVisible ? 'open' : ''}`}>
-        <div className="filter-expand-content animate-fade-in">
-          <div
-            style={{
-              backgroundColor: '#050505',
-              border: '1px solid #222',
-              padding: '16px',
-              borderRadius: '2px',
-              width: '100%',
-              boxSizing: 'border-box',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '14px'
-            }}
-          >
-            <div>
-              <label style={{ display: 'block', fontSize: '9px', color: '#666', marginBottom: '6px', letterSpacing: '1px' }}>DATE RANGE</label>
-              <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '2px', width: '100%' }}>
-                {DATE_FILTERS.map((dateFilter) => {
-                  const isActive = selectedDateFilter === dateFilter;
-                  return (
-                    <button
-                      type="button"
-                      key={dateFilter}
-                      onClick={() => setSelectedDateFilter(dateFilter)}
-                      style={{
-                        backgroundColor: 'transparent',
-                        color: isActive ? '#ffffff' : '#666666',
-                        border: 'none',
-                        padding: '4px 0px',
-                        fontSize: '10px',
-                        fontFamily: 'monospace',
-                        letterSpacing: '1px',
-                        fontWeight: isActive ? 'bold' : 'normal',
-                        cursor: 'pointer',
-                        textTransform: 'uppercase',
-                        whiteSpace: 'nowrap',
-                        flexShrink: 0,
-                        transition: 'color 0.2s ease'
-                      }}
-                    >
-                      {dateFilter}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div>
-              <label style={{ display: 'block', fontSize: '9px', color: '#666', marginBottom: '6px', letterSpacing: '1px' }}>ORDER STATUS</label>
-              <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '2px', width: '100%' }}>
-                {['ALL', ...STATUS_OPTIONS].map((status) => {
-                  const isActive = selectedStatusFilter === status;
-                  return (
-                    <button
-                      type="button"
-                      key={status}
-                      onClick={() => setSelectedStatusFilter(status)}
-                      style={{
-                        backgroundColor: 'transparent',
-                        color: isActive ? '#ffffff' : '#666666',
-                        border: 'none',
-                        padding: '4px 0px',
-                        fontSize: '10px',
-                        fontFamily: 'monospace',
-                        letterSpacing: '1px',
-                        fontWeight: isActive ? 'bold' : 'normal',
-                        cursor: 'pointer',
-                        textTransform: 'uppercase',
-                        whiteSpace: 'nowrap',
-                        flexShrink: 0,
-                        transition: 'color 0.2s ease'
-                      }}
-                    >
-                      {status}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div>
-              <label style={{ display: 'block', fontSize: '9px', color: '#666', marginBottom: '6px', letterSpacing: '1px' }}>PAYMENT STATUS</label>
-              <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '2px', width: '100%' }}>
-                {PAYMENT_STATUS_OPTIONS.map((pStatus) => {
-                  const isActive = selectedPaymentStatusFilter === pStatus;
-                  return (
-                    <button
-                      type="button"
-                      key={pStatus}
-                      onClick={() => setSelectedPaymentStatusFilter(pStatus)}
-                      style={{
-                        backgroundColor: 'transparent',
-                        color: isActive ? '#ffffff' : '#666666',
-                        border: 'none',
-                        padding: '4px 0px',
-                        fontSize: '10px',
-                        fontFamily: 'monospace',
-                        letterSpacing: '1px',
-                        fontWeight: isActive ? 'bold' : 'normal',
-                        cursor: 'pointer',
-                        textTransform: 'uppercase',
-                        whiteSpace: 'nowrap',
-                        flexShrink: 0,
-                        transition: 'color 0.2s ease'
-                      }}
-                    >
-                      {pStatus}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '10px',
-              backgroundColor: selectedOrderIds.length > 0 ? '#111' : '#0a0a0a',
-              border: '1px solid #222',
-              padding: '12px 16px',
-              borderRadius: '2px',
-              marginTop: '14px',
-              transition: 'background-color 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <div
-                onClick={handleSelectAllFiltered}
-                style={{
-                  width: '18px',
-                  height: '18px',
-                  borderRadius: '3px',
-                  border: isAllFilteredSelected ? '1px solid #fff' : '1px solid #444',
-                  backgroundColor: isAllFilteredSelected ? '#fff' : '#000',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  flexShrink: 0,
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                {isAllFilteredSelected && (
-                  <CheckIcon width="11" height="11" stroke="#000" strokeWidth="3.5" />
-                )}
-              </div>
-              <span onClick={handleSelectAllFiltered} style={{ fontSize: '11px', color: '#fff', cursor: 'pointer', fontWeight: 'bold' }}>
-                SELECT ALL FILTERED ({filteredOrders.length})
-              </span>
-            </div>
-
-            <div className={`filter-expand-wrapper ${selectedOrderIds.length > 0 ? 'open' : ''}`}>
-              <div className="filter-expand-content animate-fade-in">
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', paddingTop: '6px' }}>
-                  <select
-                    onChange={(e) => {
-                      if (e.target.value) {
-                        handleBulkStatusChange(e.target.value);
-                        e.target.value = '';
-                      }
-                    }}
-                    style={{
-                      backgroundColor: '#000',
-                      color: '#fff',
-                      border: '1px solid #444',
-                      padding: '7px 10px',
-                      fontSize: '10px',
-                      fontWeight: 'bold',
-                      cursor: 'pointer',
-                      borderRadius: '2px',
-                      outline: 'none',
-                      transition: 'border-color 0.2s ease'
-                    }}
-                  >
-                    <option value="" style={{ background: '#000', color: '#fff' }}>MARK STATUS AS...</option>
-                    {STATUS_OPTIONS.map(opt => (
-                      <option key={opt} value={opt} style={{ background: '#000', color: '#fff' }}>{opt.toUpperCase()}</option>
-                    ))}
-                  </select>
-
-                  <select
-                    onChange={(e) => {
-                      if (e.target.value) {
-                        handleBulkPaymentStatusChange(e.target.value);
-                        e.target.value = '';
-                      }
-                    }}
-                    style={{
-                      backgroundColor: '#000',
-                      color: '#fff',
-                      border: '1px solid #444',
-                      padding: '7px 10px',
-                      fontSize: '10px',
-                      fontWeight: 'bold',
-                      cursor: 'pointer',
-                      borderRadius: '2px',
-                      outline: 'none',
-                      transition: 'border-color 0.2s ease'
-                    }}
-                  >
-                    <option value="" style={{ background: '#000', color: '#fff' }}>MARK PAYMENT AS...</option>
-                    <option value="Paid" style={{ background: '#000', color: '#fff' }}>PAID</option>
-                    <option value="Unpaid / COD" style={{ background: '#000', color: '#fff' }}>UNPAID / COD</option>
-                    <option value="Partial Paid" style={{ background: '#000', color: '#fff' }}>PARTIAL PAID</option>
-                  </select>
-
-                  <button
-                    type="button"
-                    onClick={() => handlePrintBulkInvoices(selectedOrdersList, showToast)}
-                    style={{
-                      backgroundColor: '#000',
-                      color: '#fff',
-                      border: '1px solid #444',
-                      padding: '7px 12px',
-                      fontSize: '10px',
-                      fontWeight: 'bold',
-                      cursor: 'pointer',
-                      borderRadius: '2px',
-                      transition: 'all 0.2s ease'
-                    }}
-                  >
-                    BULK PRINT ({selectedOrderIds.length})
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setBulkMessageType('whatsapp');
-                      setIsBulkViewOpen(true);
-                    }}
-                    style={{
-                      backgroundColor: '#000',
-                      color: '#fff',
-                      border: '1px solid #444',
-                      padding: '7px 12px',
-                      fontSize: '10px',
-                      fontWeight: 'bold',
-                      cursor: 'pointer',
-                      borderRadius: '2px',
-                      transition: 'all 0.2s ease'
-                    }}
-                  >
-                    WhatsApp ({selectedOrderIds.length})
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setBulkMessageType('email');
-                      setIsBulkViewOpen(true);
-                    }}
-                    style={{
-                      backgroundColor: '#000',
-                      color: '#fff',
-                      border: '1px solid #444',
-                      padding: '7px 12px',
-                      fontSize: '10px',
-                      fontWeight: 'bold',
-                      cursor: 'pointer',
-                      borderRadius: '2px',
-                      transition: 'all 0.2s ease'
-                    }}
-                  >
-                    Email ({selectedOrderIds.length})
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <OrderFiltersBar
+          dateFilters={DATE_FILTERS}
+          statusOptions={STATUS_OPTIONS}
+          paymentStatusOptions={PAYMENT_STATUS_OPTIONS}
+          selectedDateFilter={selectedDateFilter}
+          setSelectedDateFilter={setSelectedDateFilter}
+          selectedStatusFilter={selectedStatusFilter}
+          setSelectedStatusFilter={setSelectedStatusFilter}
+          selectedPaymentStatusFilter={selectedPaymentStatusFilter}
+          setSelectedPaymentStatusFilter={setSelectedPaymentStatusFilter}
+          filteredOrdersLength={filteredOrders.length}
+          selectedOrderIds={selectedOrderIds}
+          isAllFilteredSelected={isAllFilteredSelected}
+          onSelectAllFiltered={handleSelectAllFiltered}
+          onBulkStatusChange={(status) => handleBulkStatusChange(selectedOrderIds, status)}
+          onBulkPaymentStatusChange={(status) => handleBulkPaymentStatusChange(selectedOrderIds, status)}
+          onPrintBulkInvoices={() => handlePrintBulkInvoices(selectedOrdersList, showToast)}
+          onOpenBulkMessage={(type) => {
+            setBulkMessageType(type);
+            setIsBulkViewOpen(true);
+          }}
+        />
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
