@@ -128,7 +128,6 @@ export const printInvoice = (placedOrderDetails: any) => {
   }, 150);
 };
 
- 
 export const handlePrintInvoice = (
   order: Order, 
   showToast: (message: string, type: 'success' | 'error') => void
@@ -250,7 +249,6 @@ export const handlePrintInvoice = (
   printWindow.focus();
 };
 
- (Admin Bulk Orders Print)
 export const handlePrintBulkInvoices = (
   ordersToPrint: Order[], 
   showToast: (message: string, type: 'success' | 'error') => void
