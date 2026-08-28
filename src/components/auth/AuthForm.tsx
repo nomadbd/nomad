@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { supabase } from '@supabaseClient';
+import { supabase } from '@/supabaseClient';
 
 export default function AuthForm({ isRecoveryPage = false }) {
   const [view, setView] = useState<'login' | 'signup' | 'forgot' | 'update'>('login');
