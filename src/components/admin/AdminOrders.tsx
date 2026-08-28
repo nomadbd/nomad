@@ -1,12 +1,13 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
-import ReactDOM from 'react-dom';
+import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../../supabaseClient';
 import './admin-animations.css';
-import { CheckIcon, SendIcon } from '../icons';
+import { CheckIcon } from '../icons';
 
-import { Order, TEMPLATE_PRESETS, formatWhatsAppNumber, renderPersonalizedText } from '../../utils/messageUtils';
+import { Order } from '../../utils/messageUtils';
 import { handlePrintInvoice, handlePrintBulkInvoices } from '../../utils/invoiceUtils';
 import OrderCard from './OrderCard';
+import BulkMessageView from './BulkMessageView';
+import OrderStatusModal from './OrderStatusModal';
 
 interface SupabaseProductMedia {
   media_url: string;
@@ -105,26 +106,13 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
   const filterOpen = propFilterOpen !== undefined ? propFilterOpen : internalFilterOpen;
 
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
-
   const [activeModalOrder, setActiveModalOrder] = useState<Order | null>(null);
-  const [modalSelectedStatus, setModalSelectedStatus] = useState<string>('');
-  const [cancelReasonText, setCancelReasonText] = useState<string>('');
-  const [isSubmittingCancel, setIsSubmittingCancel] = useState<boolean>(false);
 
   const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
   const [isBulkViewOpen, setIsBulkViewOpen] = useState<boolean>(false);
   const [bulkMessageType, setBulkMessageType] = useState<'whatsapp' | 'email'>('whatsapp');
-  const [bulkMessageText, setBulkMessageText] = useState<string>(TEMPLATE_PRESETS.ALL);
-  const [selectedPresetKey, setSelectedPresetKey] = useState<string>('ALL');
-  const [bulkEmailSubject, setBulkEmailSubject] = useState<string>('Update Regarding Your NOMAD Order');
-  const [sentIndexes, setSentIndexes] = useState<{ [key: string]: boolean }>({});
-  const [expandedBulkItems, setExpandedBulkItems] = useState<{ [key: string]: boolean }>({});
-  const [isMessageTemplateOpen, setIsMessageTemplateOpen] = useState<boolean>(false);
 
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
-
-  const modalContainerRef = useRef<HTMLDivElement | null>(null);
-  const cancelTextareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   useEffect(() => {
     const handleGlobalSearchToggle = () => {
@@ -152,15 +140,6 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
     };
   }, [onToggleSearch, onToggleFilter]);
 
-  useEffect(() => {
-    if (modalSelectedStatus === 'Cancelled' && cancelTextareaRef.current) {
-      setTimeout(() => {
-        cancelTextareaRef.current?.focus();
-        cancelTextareaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }, 150);
-    }
-  }, [modalSelectedStatus]);
-
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
     setToast({ message, type });
     setTimeout(() => {
@@ -170,10 +149,6 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
 
   const handleToggleExpand = (orderId: string) => {
     setExpandedOrderId(prevId => (prevId === orderId ? null : orderId));
-  };
-
-  const toggleBulkItemExpand = (orderId: string) => {
-    setExpandedBulkItems(prev => ({ ...prev, [orderId]: !prev[orderId] }));
   };
 
   const fetchAdminOrders = async () => {
@@ -246,16 +221,6 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
   useEffect(() => {
     fetchAdminOrders();
   }, []);
-
-  useEffect(() => {
-    if (selectedStatusFilter !== 'ALL' && TEMPLATE_PRESETS[selectedStatusFilter]) {
-      setBulkMessageText(TEMPLATE_PRESETS[selectedStatusFilter]);
-      setSelectedPresetKey(selectedStatusFilter);
-    } else {
-      setBulkMessageText(TEMPLATE_PRESETS.ALL);
-      setSelectedPresetKey('ALL');
-    }
-  }, [selectedStatusFilter]);
 
   const handleUpdateDetails = async (orderId: string, updatedFields: { payment_status: string; courier_name: string; tracking_id: string; admin_notes: string; customer_notes: string }) => {
     try {
@@ -362,23 +327,6 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
     return '#FFB800';
   };
 
-  const handleOpenStatusModal = (order: Order) => {
-    setActiveModalOrder(order);
-    setModalSelectedStatus(order.status);
-    setCancelReasonText(order.return_reason || '');
-  };
-
-  const handleConfirmCancelSubmit = async () => {
-    if (!activeModalOrder || !cancelReasonText.trim() || isSubmittingCancel) return;
-    setIsSubmittingCancel(true);
-    try {
-      await handleStatusChange(activeModalOrder.id, 'Cancelled', cancelReasonText.trim());
-      setActiveModalOrder(null);
-    } finally {
-      setIsSubmittingCancel(false);
-    }
-  };
-
   const filteredOrders = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
     const cleanTermDigits = term.replace(/[^0-9]/g, '');
@@ -472,302 +420,22 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
     return orders.filter(o => selectedOrderIds.includes(o.id));
   }, [orders, selectedOrderIds]);
 
-  const handleSendSingleWhatsApp = (order: Order) => {
-    const waPhone = formatWhatsAppNumber(order.customer_phone || '');
-    if (!waPhone) {
-      showToast("Invalid phone number", 'error');
-      return;
-    }
-
-    const personalizedMessage = renderPersonalizedText(bulkMessageText, order);
-    const url = `https://wa.me/${waPhone}?text=${encodeURIComponent(personalizedMessage)}`;
-    window.open(url, '_blank');
-
-    setSentIndexes(prev => ({ ...prev, [order.id]: true }));
-  };
-
   const isFilterVisible = filterOpen || selectedOrderIds.length > 0;
 
   if (isBulkViewOpen) {
-    const activeBulkOrders = (selectedPresetKey === 'ALL' || !selectedPresetKey
-      ? selectedOrdersList
-      : selectedOrdersList.filter(o => o.status.toLowerCase().trim() === selectedPresetKey.toLowerCase().trim())
-    ).filter(o => {
-      if (!searchTerm.trim()) return true;
-      const term = searchTerm.trim().toLowerCase();
-      return (
-        (o.customer_name && o.customer_name.toLowerCase().includes(term)) ||
-        (o.customer_phone && o.customer_phone.toLowerCase().includes(term)) ||
-        (o.id && o.id.toLowerCase().includes(term)) ||
-        (o.customer_email && o.customer_email.toLowerCase().includes(term))
-      );
-    });
-
-    const activeBulkEmails = activeBulkOrders
-      .map(o => o.customer_email)
-      .filter((email): email is string => Boolean(email && email.trim()));
-
-    const bulkEmailBccList = Array.from(new Set(activeBulkEmails)).join(',');
-    const bulkEmailHref = `mailto:?bcc=${encodeURIComponent(bulkEmailBccList)}&subject=${encodeURIComponent(bulkEmailSubject)}&body=${encodeURIComponent(bulkMessageText.replace(/{{name}}/g, 'Valued Customer').replace(/{{status}}/g, selectedPresetKey !== 'ALL' ? selectedPresetKey : 'Updated'))}`;
-
     return (
-      <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%', maxWidth: '100%', position: 'relative', minHeight: '80vh', backgroundColor: '#050505', padding: '0px', boxSizing: 'border-box', borderRadius: '0px', border: 'none' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #222', paddingBottom: '16px' }}>
-          <div style={{ flex: 1, marginRight: '10px' }}>
-            {searchOpen ? (
-              <input
-                type="text"
-                placeholder="SEARCH..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                style={{
-                  width: '100%',
-                  maxWidth: '300px',
-                  backgroundColor: '#000',
-                  border: '1px solid #333',
-                  padding: '8px 16px',
-                  color: '#fff',
-                  fontSize: '11px',
-                  fontFamily: 'monospace',
-                  letterSpacing: '1px',
-                  outline: 'none',
-                  boxSizing: 'border-box',
-                  borderRadius: '25px',
-                  transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
-                }}
-              />
-            ) : (
-              <h3 style={{ margin: 0, fontSize: '15px', color: '#fff', letterSpacing: '1px', fontWeight: 'bold' }}>
-                {(selectedPresetKey || 'ALL').toUpperCase()} {activeBulkOrders.length}
-              </h3>
-            )}
-          </div>
-          <button
-            type="button"
-            onClick={() => setIsBulkViewOpen(false)}
-            style={{
-              backgroundColor: 'transparent',
-              border: 'none',
-              color: '#fff',
-              padding: '6px 10px',
-              fontSize: '16px',
-              fontWeight: 'bold',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              outline: 'none',
-              transition: 'transform 0.2s ease, color 0.2s ease'
-            }}
-          >
-            ✕
-          </button>
-        </div>
-
-        <div className={`filter-expand-wrapper ${filterOpen ? 'open' : ''}`}>
-          <div className="filter-expand-content animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%', marginBottom: filterOpen ? '16px' : '0' }}>
-            <div>
-              <label style={{ display: 'block', fontSize: '9px', color: '#888', marginBottom: '6px', letterSpacing: '1px' }}>STATUS</label>
-              <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', scrollbarWidth: 'none', whiteSpace: 'nowrap', paddingBottom: '4px', width: '100%' }}>
-                {Object.keys(TEMPLATE_PRESETS).map((key) => {
-                  const isPresetActive = selectedPresetKey === key;
-                  return (
-                    <button
-                      type="button"
-                      key={key}
-                      onClick={() => {
-                        setBulkMessageText(TEMPLATE_PRESETS[key]);
-                        setSelectedPresetKey(key);
-                      }}
-                      style={{
-                        backgroundColor: 'transparent',
-                        color: isPresetActive ? '#ffffff' : '#666666',
-                        border: 'none',
-                        padding: '6px 10px',
-                        fontSize: '9.5px',
-                        fontWeight: isPresetActive ? 'bold' : 'normal',
-                        cursor: 'pointer',
-                        flexShrink: 0,
-                        whiteSpace: 'nowrap',
-                        transition: 'color 0.2s ease'
-                      }}
-                    >
-                      {key.toUpperCase()}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div>
-              <button
-                type="button"
-                onClick={() => setIsMessageTemplateOpen(prev => !prev)}
-                style={{
-                  backgroundColor: '#111',
-                  border: '1px solid #333',
-                  color: '#fff',
-                  padding: '8px 12px',
-                  fontSize: '10px',
-                  fontWeight: 'bold',
-                  cursor: 'pointer',
-                  borderRadius: '2px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  width: '100%',
-                  letterSpacing: '1px',
-                  transition: 'background-color 0.2s ease'
-                }}
-              >
-                <span>MESSAGE TEMPLATE</span>
-                <span style={{ 
-                  transform: isMessageTemplateOpen ? 'rotate(180deg)' : 'rotate(0deg)', 
-                  transition: 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
-                  fontSize: '9px' 
-                }}>▼</span>
-              </button>
-
-              <div className={`filter-expand-wrapper ${isMessageTemplateOpen ? 'open' : ''}`}>
-                <div className="filter-expand-content" style={{ paddingTop: '10px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  {bulkMessageType === 'email' && (
-                    <div>
-                      <label style={{ display: 'block', fontSize: '10px', color: '#888', marginBottom: '4px' }}>EMAIL SUBJECT</label>
-                      <input
-                        type="text"
-                        value={bulkEmailSubject}
-                        onChange={(e) => setBulkEmailSubject(e.target.value)}
-                        style={{ width: '100%', background: '#000', color: '#fff', border: '1px solid #333', padding: '10px 12px', fontSize: '11px', outline: 'none', boxSizing: 'border-box', borderRadius: '2px', transition: 'border-color 0.2s ease' }}
-                      />
-                    </div>
-                  )}
-
-                  <div>
-                    <textarea
-                      rows={5}
-                      value={bulkMessageText}
-                      onChange={(e) => {
-                        setBulkMessageText(e.target.value);
-                        setSelectedPresetKey('');
-                      }}
-                      style={{ width: '100%', background: '#000', color: '#fff', border: '1px solid #333', padding: '10px 12px', fontSize: '11px', outline: 'none', resize: 'vertical', boxSizing: 'border-box', borderRadius: '2px', transition: 'border-color 0.2s ease' }}
-                    />
-                    <div style={{ fontSize: '9px', color: '#888', marginTop: '4px' }}>
-                      Variables: <code>{"{{name}}"}</code>, <code>{"{{status}}"}</code>, <code>{"{{order_id}}"}</code>, <code>{"{{courier}}"}</code>, <code>{"{{tracking}}"}</code>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%' }}>
-          {bulkMessageType === 'email' ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <a
-                href={bulkEmailHref}
-                style={{
-                  display: 'block',
-                  textAlign: 'center',
-                  width: '100%',
-                  padding: '12px',
-                  background: 'transparent',
-                  color: '#fff',
-                  fontWeight: 'bold',
-                  border: '1px solid #fff',
-                  fontSize: '11px',
-                  cursor: 'pointer',
-                  borderRadius: '2px',
-                  textDecoration: 'none',
-                  boxSizing: 'border-box',
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                Send Email ({activeBulkEmails.length})
-              </a>
-
-              <div style={{ fontSize: '9.5px', color: '#888', textAlign: 'center' }}>
-                Found {activeBulkEmails.length} valid emails out of {activeBulkOrders.length} selected orders.
-              </div>
-            </div>
-          ) : (
-            <div>
-              <label style={{ display: 'block', fontSize: '10px', color: '#888', marginBottom: '8px' }}>RECIPIENT DISPATCH QUEUE</label>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {activeBulkOrders.map((ord) => {
-                  const isSent = Boolean(sentIndexes[ord.id]);
-                  const isItemExpanded = Boolean(expandedBulkItems[ord.id]);
-                  const phone = ord.customer_phone || 'No phone';
-                  const personalizedPreview = renderPersonalizedText(bulkMessageText, ord);
-                  const statusColor = getStatusColor(ord.status);
-
-                  return (
-                    <div
-                      key={ord.id}
-                      onClick={() => toggleBulkItemExpand(ord.id)}
-                      className="table-row-hover"
-                      style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '6px',
-                        background: '#000',
-                        padding: '12px',
-                        border: '1px solid #222',
-                        borderRadius: '2px',
-                        cursor: 'pointer',
-                        transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
-                      }}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
-                            <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>
-                              {ord.customer_name || 'Customer'}
-                            </span>
-                            <span style={{ fontSize: '9px', fontWeight: 'bold', color: statusColor, border: `1px solid ${statusColor}`, padding: '1px 5px', borderRadius: '2px', whiteSpace: 'nowrap', flexShrink: 0 }}>
-                              {ord.status.toUpperCase()}
-                            </span>
-                          </div>
-                          <div style={{ fontSize: '10px', color: '#888', marginTop: '4px', fontFamily: 'monospace' }}>{phone}</div>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleSendSingleWhatsApp(ord);
-                          }}
-                          style={{
-                            backgroundColor: isSent ? '#222' : '#111',
-                            color: isSent ? '#888' : '#ccc',
-                            border: isSent ? '1px solid #444' : '1px solid #333',
-                            padding: '6px 14px',
-                            fontSize: '9.5px',
-                            fontWeight: 'bold',
-                            cursor: 'pointer',
-                            borderRadius: '2px',
-                            flexShrink: 0,
-                            transition: 'all 0.2s ease'
-                          }}
-                        >
-                          {isSent ? 'SENT' : 'SEND'}
-                        </button>
-                      </div>
-                      <div className={`filter-expand-wrapper ${isItemExpanded ? 'open' : ''}`}>
-                        <div className="filter-expand-content">
-                          <div style={{ fontSize: '10px', color: '#ccc', background: '#050505', padding: '10px', border: '1px solid #1a1a1a', borderRadius: '2px', whiteSpace: 'pre-wrap', marginTop: '6px' }}>
-                            {personalizedPreview}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
+      <BulkMessageView
+        selectedOrdersList={selectedOrdersList}
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        searchOpen={searchOpen}
+        filterOpen={filterOpen}
+        selectedStatusFilter={selectedStatusFilter}
+        bulkMessageType={bulkMessageType}
+        onClose={() => setIsBulkViewOpen(false)}
+        showToast={showToast}
+        getStatusColor={getStatusColor}
+      />
     );
   }
 
@@ -1118,7 +786,7 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
               isExpanded={expandedOrderId === order.id}
               onToggleExpand={handleToggleExpand}
               onSelectToggle={handleSelectToggle}
-              onOpenStatusModal={handleOpenStatusModal}
+              onOpenStatusModal={(ord) => setActiveModalOrder(ord)}
               onUpdateDetails={handleUpdateDetails}
               onPrintInvoice={(ord) => handlePrintInvoice(ord, showToast)}
               getStatusColor={getStatusColor}
@@ -1127,157 +795,13 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
         )}
       </div>
 
-      {activeModalOrder && ReactDOM.createPortal(
-        <div
-          className="animate-fade-in"
-          onClick={() => setActiveModalOrder(null)}
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.75)',
-            zIndex: 99999,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '16px',
-            transition: 'opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
-          }}
-        >
-          <div
-            ref={modalContainerRef}
-            className="animate-pop"
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              backgroundColor: '#23212c',
-              borderRadius: '20px',
-              width: '100%',
-              maxWidth: '340px',
-              padding: '20px',
-              boxSizing: 'border-box',
-              position: 'relative',
-              boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
-              color: '#fff',
-              maxHeight: '90vh',
-              overflowY: 'auto'
-            }}
-          >
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '4px' }}>
-              {STATUS_OPTIONS.map((opt) => {
-                const isSelected = modalSelectedStatus.toLowerCase() === opt.toLowerCase();
-                return (
-                  <div key={opt} style={{ display: 'flex', flexDirection: 'column' }}>
-                    <div
-                      onClick={async () => {
-                        if (opt === 'Cancelled') {
-                          setModalSelectedStatus('Cancelled');
-                        } else {
-                          setModalSelectedStatus(opt);
-                          const currentOrderId = activeModalOrder.id;
-                          setActiveModalOrder(null);
-                          await handleStatusChange(currentOrderId, opt);
-                        }
-                      }}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        padding: '12px 8px',
-                        cursor: 'pointer',
-                        borderRadius: '8px',
-                        transition: 'background-color 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
-                      }}
-                    >
-                      <span style={{ fontSize: '13px', fontWeight: '600', letterSpacing: '0.5px', color: '#fff' }}>
-                        {opt.toUpperCase()}
-                      </span>
-                      <div
-                        style={{
-                          width: '18px',
-                          height: '18px',
-                          borderRadius: '50%',
-                          border: isSelected ? '2px solid #a855f7' : '2px solid #555',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          transition: 'border-color 0.2s ease'
-                        }}
-                      >
-                        {isSelected && (
-                          <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#a855f7', transition: 'all 0.2s ease' }} />
-                        )}
-                      </div>
-                    </div>
-
-                    {opt === 'Cancelled' && modalSelectedStatus === 'Cancelled' && (
-                      <div className="filter-expand-wrapper open">
-                        <div className="filter-expand-content animate-fade-in" style={{ padding: '8px 0 4px 0' }}>
-                          <div
-                            style={{
-                              display: 'flex',
-                              alignItems: 'flex-start',
-                              backgroundColor: '#14131a',
-                              border: '1px solid #3b3848',
-                              borderRadius: '16px',
-                              padding: '6px 6px 6px 14px',
-                              gap: '8px'
-                            }}
-                          >
-                            <textarea
-                              ref={cancelTextareaRef}
-                              rows={2}
-                              autoFocus
-                              placeholder="Type cancellation reason..."
-                              value={cancelReasonText}
-                              onChange={(e) => setCancelReasonText(e.target.value)}
-                              style={{
-                                flex: 1,
-                                background: 'transparent',
-                                border: 'none',
-                                color: '#fff',
-                                fontSize: '11px',
-                                outline: 'none',
-                                resize: 'none',
-                                fontFamily: 'inherit',
-                                wordBreak: 'break-word',
-                                overflowWrap: 'break-word'
-                              }}
-                            />
-                            <button
-                              type="button"
-                              disabled={!cancelReasonText.trim() || isSubmittingCancel}
-                              onClick={handleConfirmCancelSubmit}
-                              style={{
-                                width: '30px',
-                                height: '30px',
-                                borderRadius: '50%',
-                                backgroundColor: cancelReasonText.trim() ? '#FF5252' : '#2a2836',
-                                border: 'none',
-                                color: '#fff',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                cursor: cancelReasonText.trim() ? 'pointer' : 'not-allowed',
-                                transition: 'all 0.2s ease',
-                                flexShrink: 0,
-                                marginTop: '2px'
-                              }}
-                            >
-                              <SendIcon width="14" height="14" stroke="currentColor" strokeWidth="2.5" />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>,
-        document.body
+      {activeModalOrder && (
+        <OrderStatusModal
+          activeModalOrder={activeModalOrder}
+          statusOptions={STATUS_OPTIONS}
+          onClose={() => setActiveModalOrder(null)}
+          onStatusChange={handleStatusChange}
+        />
       )}
     </div>
   );
