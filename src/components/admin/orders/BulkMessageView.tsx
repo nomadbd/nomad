@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Order, TEMPLATE_PRESETS, formatWhatsAppNumber, renderPersonalizedText } from '../../../utils/messageUtils';
+import { Order, TEMPLATE_PRESETS, formatWhatsAppNumber, renderPersonalizedText } from '@/utils/messageUtils';
 
 interface BulkMessageViewProps {
   selectedOrdersList: Order[];
