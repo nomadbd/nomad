@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import { supabase } from '../../supabaseClient';
 import './admin-animations.css';
-import { CheckIcon, CloseIcon, EditIcon, SendIcon, ShareIcon } from '../icons';
+import { CheckIcon, CloseIcon, EditIcon, SendIcon, ShareIcon } from './icons';
 
 interface SupabaseProductMedia {
   media_url: string;
