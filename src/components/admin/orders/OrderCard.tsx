@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { CheckIcon, CloseIcon, EditIcon, ShareIcon } from '../icons';
-import { Order, TEMPLATE_PRESETS, formatWhatsAppNumber, renderPersonalizedText } from '../../utils/messageUtils';
+import { CheckIcon, CloseIcon, EditIcon, ShareIcon } from '../../icons';
+import { Order, TEMPLATE_PRESETS, formatWhatsAppNumber, renderPersonalizedText } from '../../../utils/messageUtils';
+
 
 const BD_COURIERS = [
   'Steadfast',
