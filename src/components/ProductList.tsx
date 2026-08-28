@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '../supabaseClient';
-import { useCart } from '../context/CartContext';
+import { supabase } from '@/supabaseClient';
+import { useCart } from '@/context/CartContext';
 import ProductGallery from './ProductGallery';
 
 interface Product {
