@@ -1,5 +1,7 @@
 import React from 'react';
-import { CheckIcon } from '../icons';
+import { CheckIcon } from '../../icons';
+import { Order } from '../../../utils/messageUtils';
+
 import { Order } from '../../utils/messageUtils';
 
 interface OrderFiltersBarProps {
