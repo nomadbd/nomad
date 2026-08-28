@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import { supabase } from '../../supabaseClient';
 import './admin-animations.css';
+import { CheckIcon, EditIcon, CloseIcon, ShareIcon, SendIcon } from './icons';
 
 interface SupabaseProductMedia {
   media_url: string;
@@ -221,7 +222,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
         admin_notes: order.admin_notes || '',
         customer_notes: order.customer_notes || ''
       });
-    } finally {
+    } opacity finally {
       setIsUpdating(false);
     }
   };
@@ -267,7 +268,6 @@ const OrderCard: React.FC<OrderCardProps> = ({
     border: '1px solid #333',
     color: '#fff',
     padding: '4px 7px',
-    borderRadius: '2px',
     fontSize: '9.5px',
     fontWeight: 'bold',
     cursor: 'pointer',
@@ -329,11 +329,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
                 transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
               }}
             >
-              {isSelected && (
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-              )}
+              {isSelected && <CheckIcon />}
             </div>
 
             <div>
@@ -439,19 +435,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
                       transition: 'color 0.2s ease, transform 0.2s ease'
                     }}
                   >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transition: 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)' }}>
-                      {isEditing ? (
-                        <>
-                          <line x1="18" y1="6" x2="6" y2="18"></line>
-                          <line x1="6" y1="6" x2="18" y2="18"></line>
-                        </>
-                      ) : (
-                        <>
-                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                        </>
-                      )}
-                    </svg>
+                    {isEditing ? <CloseIcon /> : <EditIcon />}
                   </button>
                 </div>
 
@@ -675,13 +659,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
               title="Share Customer Info"
               style={{ ...actionLinkStyle, padding: '4px 6px' }}
             >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="18" cy="5" r="3"></circle>
-                <circle cx="6" cy="12" r="3"></circle>
-                <circle cx="18" cy="19" r="3"></circle>
-                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
-                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
-              </svg>
+              <ShareIcon />
             </button>
           </div>
         </div>
@@ -2021,11 +1999,7 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
                   transition: 'all 0.2s ease'
                 }}
               >
-                {isAllFilteredSelected && (
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="20 6 9 17 4 12"></polyline>
-                  </svg>
-                )}
+                {isAllFilteredSelected && <CheckIcon />}
               </div>
               <span onClick={handleSelectAllFiltered} style={{ fontSize: '11px', color: '#fff', cursor: 'pointer', fontWeight: 'bold' }}>
                 SELECT ALL FILTERED ({filteredOrders.length})
@@ -2318,10 +2292,7 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
                                 marginTop: '2px'
                               }}
                             >
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                <line x1="22" y1="2" x2="11" y2="13"></line>
-                                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                              </svg>
+                              <SendIcon />
                             </button>
                           </div>
                         </div>
