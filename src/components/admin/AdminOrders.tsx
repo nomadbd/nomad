@@ -4,8 +4,8 @@ import { supabase } from '../../supabaseClient';
 import './admin-animations.css';
 import { CheckIcon, CloseIcon, EditIcon, SendIcon, ShareIcon } from '../icons';
 
-import { Order, TEMPLATE_PRESETS, formatWhatsAppNumber, renderPersonalizedText } from './messageUtils';
-import { handlePrintInvoice, handlePrintBulkInvoices } from './invoiceUtils';
+import { Order, TEMPLATE_PRESETS, formatWhatsAppNumber, renderPersonalizedText } from '../../utils/messageUtils';
+import { handlePrintInvoice, handlePrintBulkInvoices } from '../../utils/invoiceUtils';
 
 interface SupabaseProductMedia {
   media_url: string;
