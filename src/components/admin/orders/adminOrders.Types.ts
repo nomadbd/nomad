@@ -44,4 +44,4 @@ export interface AdminOrdersProps {
   onToggleFilter?: () => void;
   searchQuery?: string;
   onSearchChange?: (query: string) => void;
-}
+} 
