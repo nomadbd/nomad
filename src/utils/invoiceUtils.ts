@@ -1,6 +1,5 @@
 import { Order } from './messageUtils';
 
-
 export const printInvoice = (placedOrderDetails: any) => {
   if (!placedOrderDetails) return;
 
