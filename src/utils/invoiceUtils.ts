@@ -1,6 +1,6 @@
 import { Order } from './messageUtils';
 
- (Customer Checkout Print)
+
 export const printInvoice = (placedOrderDetails: any) => {
   if (!placedOrderDetails) return;
 
