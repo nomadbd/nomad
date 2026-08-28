@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../supabaseClient';
+import { supabase } from '@/supabaseClient';
 
 interface OrderItem {
   product_name: string;
@@ -38,7 +38,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
   const [singleOrderToHide, setSingleOrderToHide] = useState<string | null>(null);
   const [isHiding, setIsHiding] = useState<boolean>(false);
 
-  // 🔹 ১. অ্যাডমিন প্যানেল ও ডাটাবেজের স্ট্যাটাসের সাথে হুবহু ১:১ ইউনিফাইড নাম
+  
   const getUnifiedStatus = (rawStatus: string) => {
     if (!rawStatus) return 'PENDING';
     const s = rawStatus.trim().toLowerCase();
@@ -52,7 +52,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
     return rawStatus.trim().toUpperCase();
   };
 
-  // 🔹 ২. ট্র্যাকার বারের প্রোগ্রেস ইনডেক্স
+  
   const getStepIndex = (rawStatus: string) => {
     if (!rawStatus) return 0;
     const s = rawStatus.toLowerCase().trim();
@@ -62,7 +62,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
     return 0; // pending or default
   };
 
-  // 📄 ব্রাউজার-নেটিভ প্রিমিয়াম ইনভয়েস ডাউনলোড
+  
   const handleDownloadInvoice = (order: Order) => {
     const dateObj = new Date(order.created_at);
     const year = dateObj.getFullYear();
@@ -79,7 +79,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
     const vatAmount = order.vat_amount || 0;
     const grandTotal = order.total_amount;
 
-    // 🔹 ডাটাবেজের সঠিক স্ট্যাটাস ব্যবহার
+    
     const unifiedStatus = getUnifiedStatus(order.status);
     const isDelivered = unifiedStatus === 'DELIVERED';
     
@@ -394,10 +394,10 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
         const activeStepIndex = getStepIndex(order.status);
         const unifiedStatusText = getUnifiedStatus(order.status);
 
-        // 🔹 ট্র্যাকার ধাপসমূহ (অ্যাডমিন প্যানেলের নামের সাথে সিঙ্কড)
+       
         const dynamicSteps = ['PENDING', 'RECEIVED', 'SHIPPED', 'DELIVERED'];
         
-        // বর্তমান স্ট্যাটাস যদি অ্যাডমিন থেকে 'RECEIVED' বা অন্য কিছু আসে, ট্র্যাকার লাইনে হুবহু সেটাই দেখাবে
+        
         if (activeStepIndex === 1) {
           dynamicSteps[1] = unifiedStatusText;
         }
@@ -477,7 +477,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
               </div>
             </div>
 
-            {/* 🛒 প্রোডাক্ট ক্যারোজেল */}
+            
             <div 
               className="premium-carousel"
               style={{ 
@@ -551,7 +551,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
               </div>
             </div>
 
-            {/* 🔘 ১০০% সিঙ্কড স্ট্যাটাস ট্র্যাকার */}
+            
             <div style={{ display: 'flex', justifyContent: 'space-between', position: 'relative', marginTop: '15px', borderTop: '1px solid rgba(255,255,255,0.04)', paddingTop: '20px', paddingRight: '25px' }}>
               {dynamicSteps.map((stepText, idx) => {
                 const isCompleted = idx <= activeStepIndex;
