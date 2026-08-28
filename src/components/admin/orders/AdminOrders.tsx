@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import '../admin-animations.css';
 
 import { Order } from '../../../utils/messageUtils';
-import { handlePrintInvoice, handlePrintBulkInvoices } from '../../utils/invoiceUtils';
+import { handlePrintInvoice, handlePrintBulkInvoices } from '../../../utils/invoiceUtils';
 import OrderCard from './OrderCard';
 import BulkMessageView from './BulkMessageView';
 import OrderStatusModal from './OrderStatusModal';
