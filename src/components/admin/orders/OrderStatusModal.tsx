@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
-import { SendIcon } from '../../icons';
-import { Order } from '../../../utils/messageUtils';
+import { SendIcon } from '@/components/icons';
+import { Order } from '@/utils/messageUtils';
 
 interface OrderStatusModalProps {
   activeModalOrder: Order;
