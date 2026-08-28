@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../supabaseClient'; 
-import { useCart } from '../context/CartContext'; 
+import { supabase } from '@/supabaseClient'; 
+import { useCart } from '@/context/CartContext'; 
 
 interface Props {
   isOpen: boolean;
@@ -22,7 +22,7 @@ interface Product {
   details?: Record<string, string> | null; 
 }
 
-// 📸 প্রোডাক্ট গ্যালারি কম্পোনেন্ট
+
 const ProductGallery = ({ images, productName }: { images: string[], productName: string }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -70,7 +70,7 @@ const ProductGallery = ({ images, productName }: { images: string[], productName
   );
 };
 
-// 🛒 অ্যাকশন রো
+
 const ProductActionRow = ({ product }: { product: Product }) => {
   const { addToCart } = useCart();
 
@@ -213,7 +213,7 @@ const ProductActionRow = ({ product }: { product: Product }) => {
   );
 };
 
-// 💳 ইনডিভিজুয়াল প্রোডাক্ট কার্ড কম্পোনেন্ট
+
 const ProductCard = ({ product }: { product: Product }) => {
   const [isDescExpanded, setIsDescExpanded] = useState(false);
   const mediaUrls = product.product_media?.map(m => m.media_url) || [];
@@ -236,7 +236,7 @@ const ProductCard = ({ product }: { product: Product }) => {
       <div style={{ marginTop: '15px', padding: '0 5px', display: 'flex', flexDirection: 'column', flex: 1 }}>
         <h3 style={{ fontSize: '14px', color: '#fff', margin: '0 0 6px 0', fontWeight: '600' }}>{product.name}</h3>
 
-        {/* ⚡ এক্সপ্যান্ডেবল বর্ণনা ও স্পেসিফিকেশন সেকশন (ProductList-এর মতো হুবহু 'see more/less' লজিক) */}
+        
         <div style={{ margin: '0 0 15px 0' }}>
           {(() => {
             const characterLimit = 75; 
@@ -261,7 +261,7 @@ const ProductCard = ({ product }: { product: Product }) => {
                   {product.description}
                 </p>
 
-                {/* 📊 সুপাবেজ JSONB টেবিল */}
+                
                 {product.details && Object.keys(product.details).length > 0 && (
                   <div style={{ borderTop: '1px solid #1a1a1a', marginTop: '12px', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px', fontFamily: 'monospace', fontSize: '12px' }}>
                     {Object.entries(product.details).map(([key, value]) => (
@@ -291,7 +291,7 @@ const ProductCard = ({ product }: { product: Product }) => {
   );
 };
 
-// 🔍 মেইন সার্চ ওভারলে কম্পোনেন্ট
+
 export default function SearchOverlay({ isOpen, onClose }: Props) {
   const [searchQuery, setSearchQuery] = useState('');
   const [results, setResults] = useState<Product[]>([]);
@@ -325,7 +325,7 @@ export default function SearchOverlay({ isOpen, onClose }: Props) {
         .or(`name.ilike.${query},description.ilike.${query},category.ilike.${query},sizes.cat.${query},colors.cat.${query}`); 
 
       if (error) {
-        // ফ্যালব্যাক কুয়েরি
+        
         const { data: fallbackData, error: fallbackError } = await supabase
           .from('products')
           .select(`
@@ -356,7 +356,7 @@ export default function SearchOverlay({ isOpen, onClose }: Props) {
       backgroundColor: 'black', zIndex: 1000, boxSizing: 'border-box',
       overflowY: 'auto', fontFamily: 'sans-serif'
     }}>
-      {/* সার্চ হেডার */}
+      
       <div style={{ 
         display: 'flex', justifyContent: 'space-between', alignItems: 'center', 
         margin: '24px 24px 40px 24px', borderBottom: '1px solid rgba(255, 255, 255, 0.2)', paddingBottom: '15px'
@@ -385,7 +385,7 @@ export default function SearchOverlay({ isOpen, onClose }: Props) {
         </button>
       </div>
 
-      {/* রেজাল্ট এরিয়া (১০০% নিখুঁত মোবাইল ফিটিং সহ) */}
+      
       <div style={{ color: 'white', width: '100%', boxSizing: 'border-box' }}>
         {results.length > 0 && (
           <div className="search-results-container">
@@ -408,7 +408,7 @@ export default function SearchOverlay({ isOpen, onClose }: Props) {
         )}
       </div>
 
-      {/* রেসপন্সিভনেস এবং অ্যানিমেশনের স্টাইল */}
+      
       <style>{`
         @keyframes swapFadeIn {
           from { opacity: 0; transform: translateY(1px); }
@@ -422,7 +422,7 @@ export default function SearchOverlay({ isOpen, onClose }: Props) {
           scrollbar-width: none;
         }
         
-        /* 📱 মোবাইলের জন্য ফুল উইথ সেট করা হলো, যাতে সাইড স্ক্রল বা নড়াচড়া না করে */
+        
         @media (max-width: 767px) {
           .search-results-container {
             width: 100vw;
@@ -433,11 +433,11 @@ export default function SearchOverlay({ isOpen, onClose }: Props) {
           .search-card-item {
             width: 100vw !important;
             min-width: 100vw !important;
-            padding: 0 24px !important; /* স্ক্রিনের সাথে সাইড গ্যাপিং অ্যাডজাস্ট করা হয়েছে */
+            padding: 0 24px !important; 
           }
         }
 
-        /* 💻 ডেস্কটপ বা বড় স্ক্রিনের জন্য গ্রিড লেআউট */
+        
         @media (min-width: 768px) {
           .search-results-container {
             display: flex;
