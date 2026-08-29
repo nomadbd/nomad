@@ -1,5 +1,5 @@
 import React from 'react';
-import './admin-animations.css';
+import '../admin-animations.css';
 import { AdminOverviewProps } from './adminOverview.types';
 import { useAdminOverview } from './useAdminOverview';
 import { OverviewFilter } from './OverviewFilter';
