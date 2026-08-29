@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Product } from './product.types';
+import { Product } from './products.types';
 
 interface ProductActionToolbarProps {
   product: Product;
