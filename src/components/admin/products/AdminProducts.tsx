@@ -5,10 +5,10 @@ import { uploadToCloudinary, deleteFromCloudinary } from '@/cloudinary';
 import './admin-animations.css';
 
 import { Product, AdminProductsProps } from './products.types';
-import { ProductShowroomCard } from './components/ProductShowroomCard';
-import { ProductCreateView } from './components/ProductCreateView';
-import { ProductEditView } from './components/ProductEditView';
-import { ProductDeleteModal } from './components/ProductDeleteModal';
+import { ProductShowroomCard } from './ProductShowroomCard';
+import { ProductCreateView } from './ProductCreateView';
+import { ProductEditView } from './ProductEditView';
+import { ProductDeleteModal } from './ProductDeleteModal';
 
 const AdminProductsManager: React.FC<AdminProductsProps> = ({
   showAddModal: externalShowAddModal,
