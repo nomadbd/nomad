@@ -1,5 +1,5 @@
 import React from 'react';
-import { Product } from './products.types';
+import { Product } from './products.type';
 
 interface ProductEditViewProps {
   editingProduct: Product;
