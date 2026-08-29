@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { supabase } from '../../../supabaseClient';
-import { uploadToCloudinary, deleteFromCloudinary } from '../../../cloudinary';
+import { supabase } from '@/supabaseClient';
+import { uploadToCloudinary, deleteFromCloudinary } from '@/cloudinary';
 import './admin-animations.css';
 
 import { Product, AdminProductsProps } from './types/product.types';
