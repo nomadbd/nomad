@@ -1,6 +1,6 @@
 import React from 'react';
 
-export interface Products {
+export interface Product {
   id: string | number;
   name: string;
   description: string;
@@ -15,6 +15,8 @@ export interface Products {
   details?: Record<string, string> | null;
   image_url?: string;
 }
+
+export type Products = Product;
 
 export interface AdminProductsProps {
   showAddModal?: boolean;
