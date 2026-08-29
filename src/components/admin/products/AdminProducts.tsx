@@ -4,7 +4,7 @@ import { supabase } from '@/supabaseClient';
 import { uploadToCloudinary, deleteFromCloudinary } from '@/cloudinary';
 import './admin-animations.css';
 
-import { Product, AdminProductsProps } from './products.type';
+import { Product, AdminProductsProps } from './products.types';
 import { ProductShowroomCard } from './ProductShowroomCard';
 import { ProductCreateView } from './ProductCreateView';
 import { ProductEditView } from './ProductEditView';
