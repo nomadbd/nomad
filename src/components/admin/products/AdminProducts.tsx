@@ -10,7 +10,7 @@ import { ProductCreateView } from './ProductCreateView';
 import { ProductEditView } from './ProductEditView';
 import { ProductDeleteModal } from './ProductDeleteModal';
 
-const AdminProductsManager: React.FC<AdminProductsProps> = ({
+const AdminProducts: React.FC<AdminProductsProps> = ({
   showAddModal: externalShowAddModal,
   setShowAddModal: externalSetShowAddModal,
   searchQuery = '',
