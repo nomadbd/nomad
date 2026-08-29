@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Product } from '../types/product.types';
+import { Product } from './products.types';
 import { ProductMediaViewer } from './ProductMediaViewer';
 import { ProductActionToolbar } from './ProductActionToolbar';
 
