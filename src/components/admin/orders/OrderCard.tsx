@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { CheckIcon, CloseIcon, EditIcon, ShareIcon } from '@/components/icons';
 import { Order, TEMPLATE_PRESETS, formatWhatsAppNumber, renderPersonalizedText } from '@/utils/messageUtils';
 
-
 const BD_COURIERS = [
   'Steadfast',
   'Pathao',
@@ -15,6 +14,16 @@ const BD_COURIERS = [
   'eCourier'
 ];
 
+const CANCELLATION_REASONS = [
+  'Customer not receive',
+  'Customer refused',
+  'Customer unreachable',
+  'Wrong address',
+  'Delayed delivery',
+  'Out of stock',
+  'Damaged product'
+];
+
 export interface OrderCardProps {
   order: Order;
   isSelected: boolean;
@@ -22,7 +31,7 @@ export interface OrderCardProps {
   onToggleExpand: (orderId: string) => void;
   onSelectToggle: (orderId: string) => void;
   onOpenStatusModal: (order: Order) => void;
-  onUpdateDetails: (orderId: string, updatedData: { payment_status: string; courier_name: string; tracking_id: string; admin_notes: string; customer_notes: string }) => Promise<void>;
+  onUpdateDetails: (orderId: string, updatedData: { payment_status: string; courier_name: string; tracking_id: string; admin_notes: string; customer_notes: string; return_reason?: string }) => Promise<void>;
   onPrintInvoice: (order: Order) => void;
   getStatusColor: (status: string) => string;
 }
@@ -46,7 +55,8 @@ const OrderCard: React.FC<OrderCardProps> = ({
     courier_name: order.courier_name || '',
     tracking_id: order.tracking_id || '',
     admin_notes: order.admin_notes || '',
-    customer_notes: order.customer_notes || ''
+    customer_notes: order.customer_notes || '',
+    return_reason: order.return_reason || ''
   });
 
   useEffect(() => {
@@ -55,7 +65,8 @@ const OrderCard: React.FC<OrderCardProps> = ({
       courier_name: order.courier_name || '',
       tracking_id: order.tracking_id || '',
       admin_notes: order.admin_notes || '',
-      customer_notes: order.customer_notes || ''
+      customer_notes: order.customer_notes || '',
+      return_reason: order.return_reason || ''
     });
   }, [order]);
 
@@ -90,7 +101,8 @@ const OrderCard: React.FC<OrderCardProps> = ({
         courier_name: order.courier_name || '',
         tracking_id: order.tracking_id || '',
         admin_notes: order.admin_notes || '',
-        customer_notes: order.customer_notes || ''
+        customer_notes: order.customer_notes || '',
+        return_reason: order.return_reason || ''
       });
     } finally {
       setIsUpdating(false);
@@ -106,7 +118,8 @@ const OrderCard: React.FC<OrderCardProps> = ({
         courier_name: editForm.courier_name.trim() !== '' ? editForm.courier_name.trim() : (order.courier_name || ''),
         tracking_id: editForm.tracking_id.trim() !== '' ? editForm.tracking_id.trim() : (order.tracking_id || ''),
         admin_notes: editForm.admin_notes.trim() !== '' ? editForm.admin_notes.trim() : (order.admin_notes || ''),
-        customer_notes: editForm.customer_notes.trim() !== '' ? editForm.customer_notes.trim() : (order.customer_notes || '')
+        customer_notes: editForm.customer_notes.trim() !== '' ? editForm.customer_notes.trim() : (order.customer_notes || ''),
+        return_reason: editForm.return_reason.trim() !== '' ? editForm.return_reason.trim() : (order.return_reason || '')
       };
 
       await onUpdateDetails(order.id, payload);
@@ -432,11 +445,64 @@ const OrderCard: React.FC<OrderCardProps> = ({
                   />
                 </div>
 
-                {order.return_reason && (
+                {(isEditing || order.return_reason) && (
                   <div>
                     <label style={{ display: 'block', fontSize: '9px', color: '#FF5252', marginBottom: '6px', letterSpacing: '0.5px', fontWeight: 'bold' }}>CANCELLATION REASON</label>
-                    <div style={{ ...smoothInputStyle(false), height: 'auto', border: '1px solid #FF5252', color: '#FF5252', wordBreak: 'break-word', display: 'block' }}>
-                      {order.return_reason}
+                    <input
+                      type="text"
+                      readOnly={!isEditing}
+                      placeholder={order.return_reason || "e.g. Customer not receive, Refused"}
+                      value={editForm.return_reason}
+                      onChange={e => {
+                        if (isEditing) setEditForm({ ...editForm, return_reason: e.target.value });
+                      }}
+                      style={{
+                        ...smoothInputStyle(isEditing),
+                        border: '1px solid #FF5252',
+                        color: '#FF5252'
+                      }}
+                    />
+                    <div className={`filter-expand-wrapper ${isEditing ? 'open' : ''}`}>
+                      <div className="filter-expand-content">
+                        <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', scrollbarWidth: 'none', padding: '6px 0', marginTop: '4px' }}>
+                          {CANCELLATION_REASONS.map((reason) => {
+                            const selectedReason = editForm.return_reason || '';
+                            const isChecked = selectedReason.toLowerCase() === reason.toLowerCase();
+                            return (
+                              <button
+                                type="button"
+                                key={reason}
+                                onClick={() => {
+                                  if (!isEditing) return;
+                                  setEditForm(prev => ({
+                                    ...prev,
+                                    return_reason: isChecked ? '' : reason
+                                  }));
+                                }}
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  background: 'transparent',
+                                  border: isChecked ? '1px solid #ffffff' : '1px solid #333333',
+                                  color: isChecked ? '#ffffff' : '#888888',
+                                  padding: '6px 10px',
+                                  borderRadius: '3px',
+                                  fontSize: '9px',
+                                  fontWeight: isChecked ? 'bold' : 'normal',
+                                  whiteSpace: 'nowrap',
+                                  cursor: isEditing ? 'pointer' : 'default',
+                                  flexShrink: 0,
+                                  transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+                                  outline: 'none'
+                                }}
+                              >
+                                {reason}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 )}
