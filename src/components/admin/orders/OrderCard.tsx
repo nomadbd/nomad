@@ -168,7 +168,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
     background: editable ? '#121212' : '#080808',
     color: editable ? '#fff' : '#aaa',
     border: editable ? '1px solid #555' : '1px solid #1c1c1c',
-    padding: '10px 36px 10px 12px',
+    padding: '10px 12px',
     fontSize: '11px',
     outline: 'none',
     borderRadius: '3px',
@@ -298,51 +298,49 @@ const OrderCard: React.FC<OrderCardProps> = ({
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '10px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <h4 style={{ color: '#888', fontSize: '10px', letterSpacing: '1.5px', margin: 0, fontWeight: 'bold' }}>MANAGEMENT DETAILS</h4>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsEditing(prev => !prev);
+                    }}
+                    title={isEditing ? "Cancel" : "Edit Details"}
+                    style={{
+                      backgroundColor: 'transparent',
+                      border: 'none',
+                      color: isEditing ? '#FF5252' : '#fff',
+                      cursor: 'pointer',
+                      fontSize: '10px',
+                      fontWeight: 'bold',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '4px',
+                      outline: 'none',
+                      transition: 'color 0.2s ease, transform 0.2s ease'
+                    }}
+                  >
+                    {isEditing ? (
+                      <CloseIcon width="14" height="14" stroke="currentColor" strokeWidth="2.5" style={{ transition: 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)' }} />
+                    ) : (
+                      <EditIcon width="14" height="14" stroke="currentColor" strokeWidth="2.5" style={{ transition: 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)' }} />
+                    )}
+                  </button>
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px' }}>
                   <div>
                     <label style={{ display: 'block', fontSize: '9px', color: '#777', marginBottom: '6px', letterSpacing: '0.5px' }}>COURIER NAME</label>
-                    <div style={{ position: 'relative' }}>
-                      <input
-                        type="text"
-                        readOnly={!isEditing}
-                        placeholder={order.courier_name || "e.g. Steadfast, Pathao"}
-                        value={editForm.courier_name}
-                        onChange={e => {
-                          if (isEditing) setEditForm({ ...editForm, courier_name: e.target.value });
-                        }}
-                        style={smoothInputStyle(isEditing)}
-                      />
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setIsEditing(!isEditing);
-                        }}
-                        style={{
-                          position: 'absolute',
-                          right: '10px',
-                          top: '50%',
-                          transform: 'translateY(-50%)',
-                          backgroundColor: 'transparent',
-                          border: 'none',
-                          color: isEditing ? '#FF5252' : '#888',
-                          cursor: 'pointer',
-                          padding: '2px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          outline: 'none'
-                        }}
-                      >
-                        {isEditing ? (
-                          <CloseIcon width="14" height="14" stroke="currentColor" strokeWidth="2.5" />
-                        ) : (
-                          <EditIcon width="14" height="14" stroke="currentColor" strokeWidth="2.5" />
-                        )}
-                      </button>
-                    </div>
+                    <input
+                      type="text"
+                      readOnly={!isEditing}
+                      placeholder={order.courier_name || "e.g. Steadfast, Pathao"}
+                      value={editForm.courier_name}
+                      onChange={e => {
+                        if (isEditing) setEditForm({ ...editForm, courier_name: e.target.value });
+                      }}
+                      style={smoothInputStyle(isEditing)}
+                    />
                     <div className={`filter-expand-wrapper ${isEditing ? 'open' : ''}`}>
                       <div className="filter-expand-content">
                         <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', scrollbarWidth: 'none', padding: '6px 0', marginTop: '4px' }}>
@@ -389,198 +387,80 @@ const OrderCard: React.FC<OrderCardProps> = ({
 
                   <div>
                     <label style={{ display: 'block', fontSize: '9px', color: '#777', marginBottom: '6px', letterSpacing: '0.5px' }}>TRACKING ID</label>
-                    <div style={{ position: 'relative' }}>
-                      <input
-                        type="text"
-                        readOnly={!isEditing}
-                        placeholder={order.tracking_id || "Tracking / Memo No."}
-                        value={editForm.tracking_id}
-                        onChange={e => {
-                          if (isEditing) setEditForm({ ...editForm, tracking_id: e.target.value });
-                        }}
-                        style={smoothInputStyle(isEditing)}
-                      />
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setIsEditing(!isEditing);
-                        }}
-                        style={{
-                          position: 'absolute',
-                          right: '10px',
-                          top: '50%',
-                          transform: 'translateY(-50%)',
-                          backgroundColor: 'transparent',
-                          border: 'none',
-                          color: isEditing ? '#FF5252' : '#888',
-                          cursor: 'pointer',
-                          padding: '2px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          outline: 'none'
-                        }}
-                      >
-                        {isEditing ? (
-                          <CloseIcon width="14" height="14" stroke="currentColor" strokeWidth="2.5" />
-                        ) : (
-                          <EditIcon width="14" height="14" stroke="currentColor" strokeWidth="2.5" />
-                        )}
-                      </button>
-                    </div>
+                    <input
+                      type="text"
+                      readOnly={!isEditing}
+                      placeholder={order.tracking_id || "Tracking / Memo No."}
+                      value={editForm.tracking_id}
+                      onChange={e => {
+                        if (isEditing) setEditForm({ ...editForm, tracking_id: e.target.value });
+                      }}
+                      style={smoothInputStyle(isEditing)}
+                    />
                   </div>
                 </div>
 
                 <div>
                   <label style={{ display: 'block', fontSize: '9px', color: '#777', marginBottom: '6px', letterSpacing: '0.5px' }}>CUSTOMER NOTES</label>
-                  <div style={{ position: 'relative' }}>
-                    <textarea
-                      rows={2}
-                      readOnly={!isEditing}
-                      placeholder={order.customer_notes || "Add customer note to send in messages..."}
-                      value={editForm.customer_notes}
-                      onChange={e => {
-                        if (isEditing) setEditForm({ ...editForm, customer_notes: e.target.value });
-                      }}
-                      style={{ 
-                        ...smoothInputStyle(isEditing), 
-                        height: 'auto', 
-                        minHeight: '38px', 
-                        resize: isEditing ? 'vertical' : 'none', 
-                        whiteSpace: 'pre-wrap', 
-                        wordBreak: 'break-word', 
-                        display: 'block' 
-                      }}
-                    />
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setIsEditing(!isEditing);
-                      }}
-                      style={{
-                        position: 'absolute',
-                        right: '10px',
-                        top: '10px',
-                        backgroundColor: 'transparent',
-                        border: 'none',
-                        color: isEditing ? '#FF5252' : '#888',
-                        cursor: 'pointer',
-                        padding: '2px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        outline: 'none'
-                      }}
-                    >
-                      {isEditing ? (
-                        <CloseIcon width="14" height="14" stroke="currentColor" strokeWidth="2.5" />
-                      ) : (
-                        <EditIcon width="14" height="14" stroke="currentColor" strokeWidth="2.5" />
-                      )}
-                    </button>
-                  </div>
+                  <textarea
+                    rows={2}
+                    readOnly={!isEditing}
+                    placeholder={order.customer_notes || "Add customer note to send in messages..."}
+                    value={editForm.customer_notes}
+                    onChange={e => {
+                      if (isEditing) setEditForm({ ...editForm, customer_notes: e.target.value });
+                    }}
+                    style={{ 
+                      ...smoothInputStyle(isEditing), 
+                      height: 'auto', 
+                      minHeight: '38px', 
+                      resize: isEditing ? 'vertical' : 'none', 
+                      whiteSpace: 'pre-wrap', 
+                      wordBreak: 'break-word', 
+                      display: 'block' 
+                    }}
+                  />
                 </div>
 
                 <div>
                   <label style={{ display: 'block', fontSize: '9px', color: '#777', marginBottom: '6px', letterSpacing: '0.5px' }}>ADMIN NOTES</label>
-                  <div style={{ position: 'relative' }}>
-                    <textarea
-                      rows={2}
-                      readOnly={!isEditing}
-                      placeholder={order.admin_notes || "Add private admin notes here..."}
-                      value={editForm.admin_notes}
-                      onChange={e => {
-                        if (isEditing) setEditForm({ ...editForm, admin_notes: e.target.value });
-                      }}
-                      style={{ 
-                        ...smoothInputStyle(isEditing), 
-                        height: 'auto', 
-                        minHeight: '38px', 
-                        resize: isEditing ? 'vertical' : 'none', 
-                        whiteSpace: 'pre-wrap', 
-                        wordBreak: 'break-word', 
-                        display: 'block' 
-                      }}
-                    />
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setIsEditing(!isEditing);
-                      }}
-                      style={{
-                        position: 'absolute',
-                        right: '10px',
-                        top: '10px',
-                        backgroundColor: 'transparent',
-                        border: 'none',
-                        color: isEditing ? '#FF5252' : '#888',
-                        cursor: 'pointer',
-                        padding: '2px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        outline: 'none'
-                      }}
-                    >
-                      {isEditing ? (
-                        <CloseIcon width="14" height="14" stroke="currentColor" strokeWidth="2.5" />
-                      ) : (
-                        <EditIcon width="14" height="14" stroke="currentColor" strokeWidth="2.5" />
-                      )}
-                    </button>
-                  </div>
+                  <textarea
+                    rows={2}
+                    readOnly={!isEditing}
+                    placeholder={order.admin_notes || "Add private admin notes here..."}
+                    value={editForm.admin_notes}
+                    onChange={e => {
+                      if (isEditing) setEditForm({ ...editForm, admin_notes: e.target.value });
+                    }}
+                    style={{ 
+                      ...smoothInputStyle(isEditing), 
+                      height: 'auto', 
+                      minHeight: '38px', 
+                      resize: isEditing ? 'vertical' : 'none', 
+                      whiteSpace: 'pre-wrap', 
+                      wordBreak: 'break-word', 
+                      display: 'block' 
+                    }}
+                  />
                 </div>
 
                 {(isEditing || order.return_reason) && (
                   <div>
                     <label style={{ display: 'block', fontSize: '9px', color: '#FF5252', marginBottom: '6px', letterSpacing: '0.5px', fontWeight: 'bold' }}>CANCELLATION REASON</label>
-                    <div style={{ position: 'relative' }}>
-                      <input
-                        type="text"
-                        readOnly={!isEditing}
-                        placeholder={order.return_reason || "e.g. Customer not receive, Refused"}
-                        value={editForm.return_reason}
-                        onChange={e => {
-                          if (isEditing) setEditForm({ ...editForm, return_reason: e.target.value });
-                        }}
-                        style={{
-                          ...smoothInputStyle(isEditing),
-                          border: '1px solid #FF5252',
-                          color: '#FF5252'
-                        }}
-                      />
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setIsEditing(!isEditing);
-                        }}
-                        style={{
-                          position: 'absolute',
-                          right: '10px',
-                          top: '50%',
-                          transform: 'translateY(-50%)',
-                          backgroundColor: 'transparent',
-                          border: 'none',
-                          color: isEditing ? '#FF5252' : '#888',
-                          cursor: 'pointer',
-                          padding: '2px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          outline: 'none'
-                        }}
-                      >
-                        {isEditing ? (
-                          <CloseIcon width="14" height="14" stroke="currentColor" strokeWidth="2.5" />
-                        ) : (
-                          <EditIcon width="14" height="14" stroke="currentColor" strokeWidth="2.5" />
-                        )}
-                      </button>
-                    </div>
+                    <input
+                      type="text"
+                      readOnly={!isEditing}
+                      placeholder={order.return_reason || "e.g. Customer not receive, Refused"}
+                      value={editForm.return_reason}
+                      onChange={e => {
+                        if (isEditing) setEditForm({ ...editForm, return_reason: e.target.value });
+                      }}
+                      style={{
+                        ...smoothInputStyle(isEditing),
+                        border: '1px solid #FF5252',
+                        color: '#FF5252'
+                      }}
+                    />
                     <div className={`filter-expand-wrapper ${isEditing ? 'open' : ''}`}>
                       <div className="filter-expand-content">
                         <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', scrollbarWidth: 'none', padding: '6px 0', marginTop: '4px' }}>
