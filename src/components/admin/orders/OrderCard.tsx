@@ -332,7 +332,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
                   <div>
                     <label style={{ display: 'block', fontSize: '9px', color: '#777', marginBottom: '6px', letterSpacing: '0.5px' }}>COURIER NAME</label>
                     {!isEditing && (
-                      <div style={{ fontSize: '11px', color: editForm.courier_name ? '#fff' : '#555', padding: '4px 0', fontWeight: 'bold' }}>
+                      <div style={{ fontSize: '11px', color: editForm.courier_name ? '#aaa' : '#555', padding: '4px 0' }}>
                         {editForm.courier_name || 'Not specified'}
                       </div>
                     )}
