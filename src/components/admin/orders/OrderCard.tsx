@@ -174,11 +174,14 @@ const OrderCard: React.FC<OrderCardProps> = ({
       let auditPayload = null;
 
       if (order.payment_status && oldPaymentStatus !== newPaymentStatus) {
+        const { data: { user: authUser } } = await supabase.auth.getUser();
+        const activeUserId = currentUserId || authUser?.id || null;
         const batchId = crypto.randomUUID();
+        
         auditPayload = {
           batch_id: batchId,
           order_id: order.id,
-          performed_by: currentUserId || null,
+          performed_by: activeUserId,
           action_type: 'UPDATE_PAYMENT_STATUS',
           changes: {
             'Payment Status': { old: oldPaymentStatus, new: newPaymentStatus }
@@ -235,11 +238,14 @@ const OrderCard: React.FC<OrderCardProps> = ({
       let auditPayload = null;
 
       if (Object.keys(changesObj).length > 0) {
+        const { data: { user: authUser } } = await supabase.auth.getUser();
+        const activeUserId = currentUserId || authUser?.id || null;
         const batchId = crypto.randomUUID();
+
         auditPayload = {
           batch_id: batchId,
           order_id: order.id,
-          performed_by: currentUserId || null,
+          performed_by: activeUserId,
           action_type: 'UPDATE_DETAILS',
           changes: changesObj
         };
