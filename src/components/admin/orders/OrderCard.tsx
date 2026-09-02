@@ -51,8 +51,7 @@ export interface OrderCardProps {
   onOpenStatusModal: (order: Order) => void;
   onUpdateDetails: (
     orderId: string, 
-    updatedData: { payment_status: string; courier_name: string; tracking_id: string; admin_notes: string; customer_notes: string; return_reason?: string },
-    auditPayload?: any
+    updatedData: { payment_status: string; courier_name: string; tracking_id: string; admin_notes: string; customer_notes: string; return_reason?: string }
   ) => Promise<void>;
   onPrintInvoice: (order: Order) => void;
   getStatusColor: (status: string) => string;
@@ -62,7 +61,6 @@ const OrderCard: React.FC<OrderCardProps> = ({
   order,
   isSelected,
   isExpanded,
-  currentUserId,
   onToggleExpand,
   onSelectToggle,
   onOpenStatusModal,
@@ -171,26 +169,6 @@ const OrderCard: React.FC<OrderCardProps> = ({
 
     setIsUpdating(true);
     try {
-      let auditPayload = null;
-
-      if (order.payment_status && oldPaymentStatus !== newPaymentStatus) {
-        const { data: { user: authUser } } = await supabase.auth.getUser();
-        const activeUserId = currentUserId || authUser?.id || null;
-        const batchId = crypto.randomUUID();
-        
-        auditPayload = {
-          batch_id: batchId,
-          order_id: order.id,
-          performed_by: activeUserId,
-          action_type: 'UPDATE_PAYMENT_STATUS',
-          changes: {
-            'Payment Status': { old: oldPaymentStatus, new: newPaymentStatus }
-          }
-        };
-
-        await supabase.from('audit_logs').insert([auditPayload]);
-      }
-
       await onUpdateDetails(order.id, {
         payment_status: newPaymentStatus,
         courier_name: order.courier_name || '',
@@ -198,9 +176,12 @@ const OrderCard: React.FC<OrderCardProps> = ({
         admin_notes: order.admin_notes || '',
         customer_notes: order.customer_notes || '',
         return_reason: order.return_reason || ''
-      }, auditPayload);
+      });
 
-      fetchAuditLogs();
+      await fetchAuditLogs();
+    } catch (err) {
+      console.error(err);
+      alert('নেটওয়ার্ক সমস্যার কারণে আপডেট সম্ভব হয়নি। পুনরায় চেষ্টা করুন।');
     } finally {
       setIsUpdating(false);
     }
@@ -211,60 +192,21 @@ const OrderCard: React.FC<OrderCardProps> = ({
     setIsUpdating(true);
 
     try {
-      const newCourier = editForm.courier_name.trim() !== '' ? editForm.courier_name.trim() : (order.courier_name || '');
-      const newTracking = editForm.tracking_id.trim() !== '' ? editForm.tracking_id.trim() : (order.tracking_id || '');
-      const newAdminNotes = editForm.admin_notes.trim() !== '' ? editForm.admin_notes.trim() : (order.admin_notes || '');
-      const newCustomerNotes = editForm.customer_notes.trim() !== '' ? editForm.customer_notes.trim() : (order.customer_notes || '');
-      const newReturnReason = editForm.return_reason.trim() !== '' ? editForm.return_reason.trim() : (order.return_reason || '');
-
-      const changesObj: Record<string, { old: string; new: string }> = {};
-
-      if (order.courier_name && newCourier !== order.courier_name) {
-        changesObj['Courier Name'] = { old: order.courier_name, new: newCourier };
-      }
-      if (order.tracking_id && newTracking !== order.tracking_id) {
-        changesObj['Tracking ID'] = { old: order.tracking_id, new: newTracking };
-      }
-      if (order.customer_notes && newCustomerNotes !== order.customer_notes) {
-        changesObj['Customer Notes'] = { old: order.customer_notes, new: newCustomerNotes };
-      }
-      if (order.admin_notes && newAdminNotes !== order.admin_notes) {
-        changesObj['Admin Notes'] = { old: order.admin_notes, new: newAdminNotes };
-      }
-      if (order.return_reason && newReturnReason !== order.return_reason) {
-        changesObj['Cancellation Reason'] = { old: order.return_reason, new: newReturnReason };
-      }
-
-      let auditPayload = null;
-
-      if (Object.keys(changesObj).length > 0) {
-        const { data: { user: authUser } } = await supabase.auth.getUser();
-        const activeUserId = currentUserId || authUser?.id || null;
-        const batchId = crypto.randomUUID();
-
-        auditPayload = {
-          batch_id: batchId,
-          order_id: order.id,
-          performed_by: activeUserId,
-          action_type: 'UPDATE_DETAILS',
-          changes: changesObj
-        };
-
-        await supabase.from('audit_logs').insert([auditPayload]);
-      }
-
       const payload = {
         payment_status: editForm.payment_status || order.payment_status || 'Unpaid / COD',
-        courier_name: newCourier,
-        tracking_id: newTracking,
-        admin_notes: newAdminNotes,
-        customer_notes: newCustomerNotes,
-        return_reason: newReturnReason
+        courier_name: editForm.courier_name.trim() !== '' ? editForm.courier_name.trim() : (order.courier_name || ''),
+        tracking_id: editForm.tracking_id.trim() !== '' ? editForm.tracking_id.trim() : (order.tracking_id || ''),
+        admin_notes: editForm.admin_notes.trim() !== '' ? editForm.admin_notes.trim() : (order.admin_notes || ''),
+        customer_notes: editForm.customer_notes.trim() !== '' ? editForm.customer_notes.trim() : (order.customer_notes || ''),
+        return_reason: editForm.return_reason.trim() !== '' ? editForm.return_reason.trim() : (order.return_reason || '')
       };
 
-      await onUpdateDetails(order.id, payload, auditPayload);
+      await onUpdateDetails(order.id, payload);
       setIsEditing(false);
-      fetchAuditLogs();
+      await fetchAuditLogs();
+    } catch (err) {
+      console.error(err);
+      alert('নেটওয়ার্ক সমস্যার কারণে ডাটা সেভ হয়নি। পুনরায় চেষ্টা করুন।');
     } finally {
       setIsUpdating(false);
     }
