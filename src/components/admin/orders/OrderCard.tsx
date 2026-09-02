@@ -52,9 +52,9 @@ const OrderCard: React.FC<OrderCardProps> = ({
   const [editForm, setEditForm] = useState({
     payment_status: order.payment_status || 'Unpaid / COD',
     courier_name: order.courier_name || '',
-    tracking_id: order.tracking_id || '',
-    admin_notes: order.admin_notes || '',
-    customer_notes: order.customer_notes || '',
+    tracking_id: '',
+    admin_notes: '',
+    customer_notes: '',
     return_reason: order.return_reason || ''
   });
 
@@ -62,9 +62,9 @@ const OrderCard: React.FC<OrderCardProps> = ({
     setEditForm({
       payment_status: order.payment_status || 'Unpaid / COD',
       courier_name: order.courier_name || '',
-      tracking_id: order.tracking_id || '',
-      admin_notes: order.admin_notes || '',
-      customer_notes: order.customer_notes || '',
+      tracking_id: '',
+      admin_notes: '',
+      customer_notes: '',
       return_reason: order.return_reason || ''
     });
   }, [order]);
@@ -302,7 +302,19 @@ const OrderCard: React.FC<OrderCardProps> = ({
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      setIsEditing(prev => !prev);
+                      setIsEditing(prev => {
+                        if (prev) {
+                          setEditForm({
+                            payment_status: order.payment_status || 'Unpaid / COD',
+                            courier_name: order.courier_name || '',
+                            tracking_id: '',
+                            admin_notes: '',
+                            customer_notes: '',
+                            return_reason: order.return_reason || ''
+                          });
+                        }
+                        return !prev;
+                      });
                     }}
                     title={isEditing ? "Cancel" : "Edit Details"}
                     style={{
