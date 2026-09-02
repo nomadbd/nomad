@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { CheckIcon, CloseIcon, EditIcon, ShareIcon } from '@/components/icons';
 import { Order, TEMPLATE_PRESETS, formatWhatsAppNumber, renderPersonalizedText } from '@/utils/messageUtils';
-import { supabase } from '@/lib/supabaseClient'; // আপনার প্রোজেক্টের সুপাবেজ ক্লায়েন্ট পাথ অনুযায়ী সামঞ্জস্য করুন
+import { supabase } from '@/supabaseClient';
 
 const BD_COURIERS = [
   'Steadfast',
