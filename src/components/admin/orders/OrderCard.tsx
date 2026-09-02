@@ -527,9 +527,9 @@ const OrderCard: React.FC<OrderCardProps> = ({
                 {(isEditing || editForm.return_reason || order.return_reason) && (
                   <div>
                     <label style={{ display: 'block', fontSize: '9px', color: '#ff4d4d', marginBottom: '6px', letterSpacing: '0.5px', fontWeight: 'bold' }}>CANCELLATION REASON</label>
-                    {!isEditing && order.return_reason && (
+                    {!isEditing && (
                       <div style={{ fontSize: '11px', color: '#ff4d4d', padding: '4px 0', fontWeight: 'bold' }}>
-                        {order.return_reason}
+                        {order.return_reason || 'Not specified'}
                       </div>
                     )}
                     <div className={`filter-expand-wrapper ${isEditing ? 'open' : ''}`}>
