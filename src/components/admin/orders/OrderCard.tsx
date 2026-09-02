@@ -38,7 +38,7 @@ export interface AuditLogItem {
     name: string;
     role: string;
     email: string;
-  } | null;
+  } | { name: string; role: string; email: string }[] | null;
 }
 
 export interface OrderCardProps {
@@ -679,8 +679,9 @@ const OrderCard: React.FC<OrderCardProps> = ({
                     paddingBottom: '8px' 
                   }}>
                     {auditLogs.map((log) => {
-                      const profileName = log.profiles?.name || log.profiles?.email || 'Admin';
-                      const profileRole = log.profiles?.role;
+                      const profileObj = Array.isArray(log.profiles) ? log.profiles[0] : log.profiles;
+                      const profileName = profileObj?.name || profileObj?.email || 'Admin';
+                      const profileRole = profileObj?.role;
 
                       const validChanges = log.changes && typeof log.changes === 'object'
                         ? Object.entries(log.changes).filter(([_, val]) => {
@@ -735,7 +736,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
                           {validChanges.length > 0 ? (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '4px' }}>
                               {validChanges.map(([field, val]) => (
-                                <div key={field} style={{ fontSize: '10px', color: '#ccc', lineHeight: '1.4' }}>
+                                <div key={field} style={{ fontSize: '10px', color: '#ccc', lineHeight: '1.4', wordBreak: 'break-word' }}>
                                   <span style={{ color: '#777', fontWeight: 'bold' }}>{field}: </span>
                                   <span style={{ color: '#ff5252', textDecoration: 'line-through' }}>{val.old}</span>
                                   <span style={{ color: '#888', margin: '0 4px' }}>➔</span>
@@ -744,7 +745,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
                               ))}
                             </div>
                           ) : hasSingleFieldChange ? (
-                            <div style={{ fontSize: '10px', color: '#ccc', marginTop: '4px' }}>
+                            <div style={{ fontSize: '10px', color: '#ccc', marginTop: '4px', wordBreak: 'break-word' }}>
                               <span style={{ color: '#777', fontWeight: 'bold' }}>{log.field_name}: </span>
                               <span style={{ color: '#ff5252', textDecoration: 'line-through' }}>{log.old_value}</span>
                               <span style={{ color: '#888', margin: '0 4px' }}>➔</span>
