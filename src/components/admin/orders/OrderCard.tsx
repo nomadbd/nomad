@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CheckIcon, CloseIcon, EditIcon, ShareIcon } from '@/components/icons';
+import { CheckIcon, CloseIcon, EditIcon, ShareIcon, HistoryIcon } from '@/components/icons';
 import { Order, TEMPLATE_PRESETS, formatWhatsAppNumber, renderPersonalizedText } from '@/utils/messageUtils';
 import { supabase } from '@/supabaseClient';
 
@@ -45,7 +45,7 @@ export interface OrderCardProps {
   order: Order;
   isSelected: boolean;
   isExpanded: boolean;
-  currentUserId?: string; // যিনি ইডিট করছেন তার Profile ID
+  currentUserId?: string;
   onToggleExpand: (orderId: string) => void;
   onSelectToggle: (orderId: string) => void;
   onOpenStatusModal: (order: Order) => void;
@@ -84,7 +84,6 @@ const OrderCard: React.FC<OrderCardProps> = ({
     return_reason: order.return_reason || ''
   });
 
-  // ১. অডিট হিস্ট্রি ফেচ করার ফাংশন (profiles টেবিলের সাথে JOIN)
   const fetchAuditLogs = async () => {
     if (!order.id) return;
     setIsLoadingLogs(true);
@@ -158,7 +157,6 @@ const OrderCard: React.FC<OrderCardProps> = ({
 
   const customerInfoText = `Name: ${order.customer_name || 'N/A'}\nPhone: ${order.customer_phone || 'N/A'}\nAddress: ${order.shipping_address || 'N/A'}`;
 
-  // পেমেন্ট স্ট্যাটাস পরিবর্তনের অডিট সেভ
   const handlePaymentStatusSelect = async (e: React.ChangeEvent<HTMLSelectElement>) => {
     e.stopPropagation();
     const newPaymentStatus = e.target.value;
@@ -179,7 +177,6 @@ const OrderCard: React.FC<OrderCardProps> = ({
         }
       };
 
-      // অডিট লগে সরাসরি ইনসার্ট
       await supabase.from('audit_logs').insert([auditPayload]);
 
       await onUpdateDetails(order.id, {
@@ -197,7 +194,6 @@ const OrderCard: React.FC<OrderCardProps> = ({
     }
   };
 
-  // ডিটেইলস সেভ করা ও অডিট হিস্ট্রি তৈরি করা
   const handleSaveDetails = async (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsUpdating(true);
@@ -209,7 +205,6 @@ const OrderCard: React.FC<OrderCardProps> = ({
       const newCustomerNotes = editForm.customer_notes.trim() !== '' ? editForm.customer_notes.trim() : (order.customer_notes || '');
       const newReturnReason = editForm.return_reason.trim() !== '' ? editForm.return_reason.trim() : (order.return_reason || '');
 
-      // ২. কি কি ফিল্ড পরিবর্তন হলো তা ট্র্যাক করা
       const changesObj: Record<string, { old: string; new: string }> = {};
 
       if (newCourier !== (order.courier_name || '')) {
@@ -230,7 +225,6 @@ const OrderCard: React.FC<OrderCardProps> = ({
 
       let auditPayload = null;
 
-      // পরিবর্তন থাকলে অডিট লগ টেবিলে ইনসার্ট
       if (Object.keys(changesObj).length > 0) {
         const batchId = crypto.randomUUID();
         auditPayload = {
@@ -256,7 +250,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
 
       await onUpdateDetails(order.id, payload, auditPayload);
       setIsEditing(false);
-      fetchAuditLogs(); // নতুন হিস্ট্রি রিফ্রেশ করা
+      fetchAuditLogs();
     } finally {
       setIsUpdating(false);
     }
@@ -300,7 +294,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
     width: '100%',
     boxSizing: 'border-box',
     background: editable ? '#121212' : '#080808',
-    color: editable ? '#888' : '#ccc', // সাধারণত অবস্থায় লাইট ধূসর (#ccc) এবং ইডিট মুডে ধূসর (#888)
+    color: editable ? '#888' : '#ccc',
     border: editable ? '1px solid #555' : '1px solid #1c1c1c',
     padding: '10px 12px',
     fontSize: '11px',
@@ -395,12 +389,11 @@ const OrderCard: React.FC<OrderCardProps> = ({
         <div className={`filter-expand-wrapper ${isExpanded ? 'open' : ''}`}>
           <div className="filter-expand-content">
             <div style={{ paddingTop: '8px', paddingBottom: '8px', borderTop: '1px solid #1a1a1a', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              
-              {/* ORDERED ITEMS */}
+
               <div>
                 <h4 style={{ color: '#888', fontSize: '10px', letterSpacing: '1px', marginBottom: '10px', marginTop: '10px', fontWeight: 'bold' }}>ORDERED ITEMS</h4>
                 {order.items.length > 0 ? order.items.map((item, idx) => (
-                  <div key={`${item.product_name}-${idx}`} style={{
+                  <div key={`${item.product_name}-${idx}`} className="animate-fade-in" style={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: '12px',
@@ -431,7 +424,6 @@ const OrderCard: React.FC<OrderCardProps> = ({
                 )}
               </div>
 
-              {/* MANAGEMENT DETAILS */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <h4 style={{ color: '#888', fontSize: '10px', letterSpacing: '1.5px', margin: 0, fontWeight: 'bold' }}>MANAGEMENT DETAILS</h4>
@@ -670,21 +662,34 @@ const OrderCard: React.FC<OrderCardProps> = ({
                 </div>
               </div>
 
-              {/* ৩. ইডিট হিস্ট্রি / AUDIT LOG TIMELINE SECTION */}
               <div style={{ borderTop: '1px solid #1c1c1c', paddingTop: '14px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                  <h4 style={{ color: '#888', fontSize: '10px', letterSpacing: '1.5px', margin: 0, fontWeight: 'bold' }}>
-                    EDIT HISTORY & AUDIT LOGS
-                  </h4>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <HistoryIcon width="13" height="13" stroke="#888" strokeWidth="2.2" />
+                    <h4 style={{ color: '#888', fontSize: '10px', letterSpacing: '1.5px', margin: 0, fontWeight: 'bold' }}>
+                      EDIT HISTORY & AUDIT LOGS
+                    </h4>
+                  </div>
                   {isLoadingLogs && <span style={{ fontSize: '9px', color: '#666' }}>Loading...</span>}
                 </div>
 
                 {auditLogs.length > 0 ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div style={{ 
+                    display: 'flex', 
+                    flexDirection: 'row', 
+                    gap: '10px', 
+                    overflowX: 'auto', 
+                    scrollbarWidth: 'none', 
+                    paddingBottom: '8px' 
+                  }}>
                     {auditLogs.map((log) => (
                       <div
                         key={log.id}
+                        className="animate-fade-in"
                         style={{
+                          minWidth: '260px',
+                          maxWidth: '300px',
+                          flexShrink: 0,
                           background: '#080808',
                           border: '1px solid #1a1a1a',
                           borderLeft: '3px solid #444',
@@ -708,7 +713,6 @@ const OrderCard: React.FC<OrderCardProps> = ({
                           </span>
                         </div>
 
-                        {/* JSONB Changes Display */}
                         {log.changes && typeof log.changes === 'object' ? (
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '4px' }}>
                             {Object.entries(log.changes).map(([field, val]) => (
@@ -748,7 +752,6 @@ const OrderCard: React.FC<OrderCardProps> = ({
           </div>
         </div>
 
-        {/* CUSTOMER DETAILS */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
             <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#fff' }}>
@@ -819,7 +822,6 @@ const OrderCard: React.FC<OrderCardProps> = ({
           </div>
         </div>
 
-        {/* STATUS & ACTIONS */}
         <div style={{ display: 'flex', gap: '4px', flexWrap: 'nowrap', width: '100%' }}>
           <button
             type="button"
