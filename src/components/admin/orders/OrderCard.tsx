@@ -664,110 +664,112 @@ const OrderCard: React.FC<OrderCardProps> = ({
                 </div>
               </div>
 
-              <div style={{ borderTop: '1px solid #1c1c1c', paddingTop: '14px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <HistoryIcon width="13" height="13" stroke="#888" strokeWidth="2.2" />
-                    <h4 style={{ color: '#888', fontSize: '10px', letterSpacing: '1.5px', margin: 0, fontWeight: 'bold' }}>
-                      EDIT HISTORY & AUDIT LOGS
-                    </h4>
+              {!isEditing && (
+                <div style={{ borderTop: '1px solid #1c1c1c', paddingTop: '14px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <HistoryIcon width="13" height="13" stroke="#888" strokeWidth="2.2" />
+                      <h4 style={{ color: '#888', fontSize: '10px', letterSpacing: '1.5px', margin: 0, fontWeight: 'bold' }}>
+                        EDIT HISTORY & AUDIT LOGS
+                      </h4>
+                    </div>
+                    {isLoadingLogs && <span style={{ fontSize: '9px', color: '#666' }}>Loading...</span>}
                   </div>
-                  {isLoadingLogs && <span style={{ fontSize: '9px', color: '#666' }}>Loading...</span>}
-                </div>
 
-                {auditLogs.length > 0 ? (
-                  <div style={{ 
-                    display: 'flex', 
-                    flexDirection: 'row', 
-                    gap: '10px', 
-                    overflowX: 'auto', 
-                    scrollbarWidth: 'none', 
-                    paddingBottom: '8px' 
-                  }}>
-                    {auditLogs.map((log) => {
-                      const profileObj = Array.isArray(log.profiles) ? log.profiles[0] : log.profiles;
-                      const profileName = profileObj?.name || profileObj?.email || 'Admin';
-                      const profileRole = profileObj?.role;
+                  {auditLogs.length > 0 ? (
+                    <div style={{ 
+                      display: 'flex', 
+                      flexDirection: 'row', 
+                      gap: '10px', 
+                      overflowX: 'auto', 
+                      scrollbarWidth: 'none', 
+                      paddingBottom: '8px' 
+                    }}>
+                      {auditLogs.map((log) => {
+                        const profileObj = Array.isArray(log.profiles) ? log.profiles[0] : log.profiles;
+                        const profileName = profileObj?.name || profileObj?.email || 'Admin';
+                        const profileRole = profileObj?.role;
 
-                      const validChanges = log.changes && typeof log.changes === 'object'
-                        ? Object.entries(log.changes).filter(([_, val]) => {
-                            return val && val.old && val.old !== 'None' && val.old !== 'Empty' && val.old !== 'Not specified' && val.old !== val.new;
-                          })
-                        : [];
+                        const validChanges = log.changes && typeof log.changes === 'object'
+                          ? Object.entries(log.changes).filter(([_, val]) => {
+                              return val && val.old && val.old !== 'None' && val.old !== 'Empty' && val.old !== 'Not specified' && val.old !== val.new;
+                            })
+                          : [];
 
-                      const hasSingleFieldChange = Boolean(
-                        log.field_name && 
-                        log.old_value && 
-                        log.old_value !== 'None' && 
-                        log.old_value !== 'Empty' && 
-                        log.old_value !== 'Not specified' && 
-                        log.old_value !== log.new_value
-                      );
+                        const hasSingleFieldChange = Boolean(
+                          log.field_name && 
+                          log.old_value && 
+                          log.old_value !== 'None' && 
+                          log.old_value !== 'Empty' && 
+                          log.old_value !== 'Not specified' && 
+                          log.old_value !== log.new_value
+                        );
 
-                      if (validChanges.length === 0 && !hasSingleFieldChange) {
-                        return null;
-                      }
+                        if (validChanges.length === 0 && !hasSingleFieldChange) {
+                          return null;
+                        }
 
-                      return (
-                        <div
-                          key={log.id}
-                          className="animate-fade-in"
-                          style={{
-                            minWidth: '260px',
-                            maxWidth: '300px',
-                            flexShrink: 0,
-                            background: '#080808',
-                            border: '1px solid #1a1a1a',
-                            borderLeft: '3px solid #444',
-                            borderRadius: '3px',
-                            padding: '10px 12px'
-                          }}
-                        >
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                              <span style={{ fontSize: '10px', fontWeight: 'bold', color: '#fff' }}>
-                                {profileName}
-                              </span>
-                              {profileRole && (
-                                <span style={{ fontSize: '8px', background: '#1c1c1c', color: '#888', padding: '1px 5px', borderRadius: '2px', textTransform: 'uppercase' }}>
-                                  {profileRole}
+                        return (
+                          <div
+                            key={log.id}
+                            className="animate-fade-in"
+                            style={{
+                              minWidth: '260px',
+                              maxWidth: '300px',
+                              flexShrink: 0,
+                              background: '#080808',
+                              border: '1px solid #1a1a1a',
+                              borderLeft: '3px solid #444',
+                              borderRadius: '3px',
+                              padding: '10px 12px'
+                            }}
+                          >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <span style={{ fontSize: '10px', fontWeight: 'bold', color: '#fff' }}>
+                                  {profileName}
                                 </span>
-                              )}
+                                {profileRole && (
+                                  <span style={{ fontSize: '8px', background: '#1c1c1c', color: '#888', padding: '1px 5px', borderRadius: '2px', textTransform: 'uppercase' }}>
+                                    {profileRole}
+                                  </span>
+                                )}
+                              </div>
+                              <span style={{ fontSize: '9px', color: '#666' }}>
+                                {new Date(log.created_at).toLocaleString('en-US', { dateStyle: 'short', timeStyle: 'short' })}
+                              </span>
                             </div>
-                            <span style={{ fontSize: '9px', color: '#666' }}>
-                              {new Date(log.created_at).toLocaleString('en-US', { dateStyle: 'short', timeStyle: 'short' })}
-                            </span>
-                          </div>
 
-                          {validChanges.length > 0 ? (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '4px' }}>
-                              {validChanges.map(([field, val]) => (
-                                <div key={field} style={{ fontSize: '10px', color: '#ccc', lineHeight: '1.4', wordBreak: 'break-word' }}>
-                                  <span style={{ color: '#777', fontWeight: 'bold' }}>{field}: </span>
-                                  <span style={{ color: '#ff5252', textDecoration: 'line-through' }}>{val.old}</span>
-                                  <span style={{ color: '#888', margin: '0 4px' }}>➔</span>
-                                  <span style={{ color: '#4cd964', fontWeight: 'bold' }}>{val.new || 'N/A'}</span>
-                                </div>
-                              ))}
-                            </div>
-                          ) : hasSingleFieldChange ? (
-                            <div style={{ fontSize: '10px', color: '#ccc', marginTop: '4px', wordBreak: 'break-word' }}>
-                              <span style={{ color: '#777', fontWeight: 'bold' }}>{log.field_name}: </span>
-                              <span style={{ color: '#ff5252', textDecoration: 'line-through' }}>{log.old_value}</span>
-                              <span style={{ color: '#888', margin: '0 4px' }}>➔</span>
-                              <span style={{ color: '#4cd964', fontWeight: 'bold' }}>{log.new_value || 'N/A'}</span>
-                            </div>
-                          ) : null}
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div style={{ fontSize: '10px', color: '#555', fontStyle: 'italic', padding: '6px 0' }}>
-                    No edit history recorded for this order.
-                  </div>
-                )}
-              </div>
+                            {validChanges.length > 0 ? (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '4px' }}>
+                                {validChanges.map(([field, val]) => (
+                                  <div key={field} style={{ fontSize: '10px', color: '#ccc', lineHeight: '1.4', wordBreak: 'break-word' }}>
+                                    <span style={{ color: '#777', fontWeight: 'bold' }}>{field}: </span>
+                                    <span style={{ color: '#ff5252', textDecoration: 'line-through' }}>{val.old}</span>
+                                    <span style={{ color: '#888', margin: '0 4px' }}>➔</span>
+                                    <span style={{ color: '#4cd964', fontWeight: 'bold' }}>{val.new || 'N/A'}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : hasSingleFieldChange ? (
+                              <div style={{ fontSize: '10px', color: '#ccc', marginTop: '4px', wordBreak: 'break-word' }}>
+                                <span style={{ color: '#777', fontWeight: 'bold' }}>{log.field_name}: </span>
+                                <span style={{ color: '#ff5252', textDecoration: 'line-through' }}>{log.old_value}</span>
+                                <span style={{ color: '#888', margin: '0 4px' }}>➔</span>
+                                <span style={{ color: '#4cd964', fontWeight: 'bold' }}>{log.new_value || 'N/A'}</span>
+                              </div>
+                            ) : null}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: '10px', color: '#555', fontStyle: 'italic', padding: '6px 0' }}>
+                      No edit history recorded for this order.
+                    </div>
+                  )}
+                </div>
+              )}
 
             </div>
           </div>
