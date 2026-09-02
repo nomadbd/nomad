@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { CheckIcon, CloseIcon, EditIcon, ShareIcon } from '@/components/icons';
 import { Order, TEMPLATE_PRESETS, formatWhatsAppNumber, renderPersonalizedText } from '@/utils/messageUtils';
+import { supabase } from '@/lib/supabaseClient'; // আপনার প্রোজেক্টের সুপাবেজ ক্লায়েন্ট পাথ অনুযায়ী সামঞ্জস্য করুন
 
 const BD_COURIERS = [
   'Steadfast',
@@ -23,14 +24,36 @@ const CANCELLATION_REASONS = [
   'Damaged product'
 ];
 
+export interface AuditLogItem {
+  id: string;
+  batch_id: string;
+  action_type: string;
+  field_name?: string;
+  old_value?: string;
+  new_value?: string;
+  changes?: Record<string, { old: string; new: string }>;
+  reason?: string;
+  created_at: string;
+  profiles?: {
+    name: string;
+    role: string;
+    email: string;
+  } | null;
+}
+
 export interface OrderCardProps {
   order: Order;
   isSelected: boolean;
   isExpanded: boolean;
+  currentUserId?: string; // যিনি ইডিট করছেন তার Profile ID
   onToggleExpand: (orderId: string) => void;
   onSelectToggle: (orderId: string) => void;
   onOpenStatusModal: (order: Order) => void;
-  onUpdateDetails: (orderId: string, updatedData: { payment_status: string; courier_name: string; tracking_id: string; admin_notes: string; customer_notes: string; return_reason?: string }) => Promise<void>;
+  onUpdateDetails: (
+    orderId: string, 
+    updatedData: { payment_status: string; courier_name: string; tracking_id: string; admin_notes: string; customer_notes: string; return_reason?: string },
+    auditPayload?: any
+  ) => Promise<void>;
   onPrintInvoice: (order: Order) => void;
   getStatusColor: (status: string) => string;
 }
@@ -39,6 +62,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
   order,
   isSelected,
   isExpanded,
+  currentUserId,
   onToggleExpand,
   onSelectToggle,
   onOpenStatusModal,
@@ -48,6 +72,8 @@ const OrderCard: React.FC<OrderCardProps> = ({
 }) => {
   const [isUpdating, setIsUpdating] = useState<boolean>(false);
   const [isEditing, setIsEditing] = useState<boolean>(false);
+  const [auditLogs, setAuditLogs] = useState<AuditLogItem[]>([]);
+  const [isLoadingLogs, setIsLoadingLogs] = useState<boolean>(false);
 
   const [editForm, setEditForm] = useState({
     payment_status: order.payment_status || 'Unpaid / COD',
@@ -58,6 +84,44 @@ const OrderCard: React.FC<OrderCardProps> = ({
     return_reason: order.return_reason || ''
   });
 
+  // ১. অডিট হিস্ট্রি ফেচ করার ফাংশন (profiles টেবিলের সাথে JOIN)
+  const fetchAuditLogs = async () => {
+    if (!order.id) return;
+    setIsLoadingLogs(true);
+    try {
+      const { data, error } = await supabase
+        .from('audit_logs')
+        .select(`
+          id,
+          batch_id,
+          action_type,
+          field_name,
+          old_value,
+          new_value,
+          changes,
+          reason,
+          created_at,
+          profiles:performed_by (
+            name,
+            role,
+            email
+          )
+        `)
+        .eq('order_id', order.id)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching audit logs:', error);
+      } else if (data) {
+        setAuditLogs(data as unknown as AuditLogItem[]);
+      }
+    } catch (err) {
+      console.error('Audit log fetch error:', err);
+    } finally {
+      setIsLoadingLogs(false);
+    }
+  };
+
   useEffect(() => {
     setEditForm({
       payment_status: order.payment_status || 'Unpaid / COD',
@@ -67,7 +131,11 @@ const OrderCard: React.FC<OrderCardProps> = ({
       customer_notes: '',
       return_reason: order.return_reason || ''
     });
-  }, [order]);
+
+    if (isExpanded) {
+      fetchAuditLogs();
+    }
+  }, [order, isExpanded]);
 
   const statusColor = getStatusColor(order.status);
   const paymentStatusVal = order.payment_status || 'Unpaid / COD';
@@ -90,11 +158,30 @@ const OrderCard: React.FC<OrderCardProps> = ({
 
   const customerInfoText = `Name: ${order.customer_name || 'N/A'}\nPhone: ${order.customer_phone || 'N/A'}\nAddress: ${order.shipping_address || 'N/A'}`;
 
+  // পেমেন্ট স্ট্যাটাস পরিবর্তনের অডিট সেভ
   const handlePaymentStatusSelect = async (e: React.ChangeEvent<HTMLSelectElement>) => {
     e.stopPropagation();
     const newPaymentStatus = e.target.value;
+    const oldPaymentStatus = order.payment_status || 'Unpaid / COD';
+
+    if (newPaymentStatus === oldPaymentStatus) return;
+
     setIsUpdating(true);
     try {
+      const batchId = crypto.randomUUID();
+      const auditPayload = {
+        batch_id: batchId,
+        order_id: order.id,
+        performed_by: currentUserId || null,
+        action_type: 'UPDATE_PAYMENT_STATUS',
+        changes: {
+          'Payment Status': { old: oldPaymentStatus, new: newPaymentStatus }
+        }
+      };
+
+      // অডিট লগে সরাসরি ইনসার্ট
+      await supabase.from('audit_logs').insert([auditPayload]);
+
       await onUpdateDetails(order.id, {
         payment_status: newPaymentStatus,
         courier_name: order.courier_name || '',
@@ -102,27 +189,74 @@ const OrderCard: React.FC<OrderCardProps> = ({
         admin_notes: order.admin_notes || '',
         customer_notes: order.customer_notes || '',
         return_reason: order.return_reason || ''
-      });
+      }, auditPayload);
+
+      fetchAuditLogs();
     } finally {
       setIsUpdating(false);
     }
   };
 
+  // ডিটেইলস সেভ করা ও অডিট হিস্ট্রি তৈরি করা
   const handleSaveDetails = async (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsUpdating(true);
+
     try {
+      const newCourier = editForm.courier_name.trim() !== '' ? editForm.courier_name.trim() : (order.courier_name || '');
+      const newTracking = editForm.tracking_id.trim() !== '' ? editForm.tracking_id.trim() : (order.tracking_id || '');
+      const newAdminNotes = editForm.admin_notes.trim() !== '' ? editForm.admin_notes.trim() : (order.admin_notes || '');
+      const newCustomerNotes = editForm.customer_notes.trim() !== '' ? editForm.customer_notes.trim() : (order.customer_notes || '');
+      const newReturnReason = editForm.return_reason.trim() !== '' ? editForm.return_reason.trim() : (order.return_reason || '');
+
+      // ২. কি কি ফিল্ড পরিবর্তন হলো তা ট্র্যাক করা
+      const changesObj: Record<string, { old: string; new: string }> = {};
+
+      if (newCourier !== (order.courier_name || '')) {
+        changesObj['Courier Name'] = { old: order.courier_name || 'Not specified', new: newCourier };
+      }
+      if (newTracking !== (order.tracking_id || '')) {
+        changesObj['Tracking ID'] = { old: order.tracking_id || 'Empty', new: newTracking };
+      }
+      if (newCustomerNotes !== (order.customer_notes || '')) {
+        changesObj['Customer Notes'] = { old: order.customer_notes || 'Empty', new: newCustomerNotes };
+      }
+      if (newAdminNotes !== (order.admin_notes || '')) {
+        changesObj['Admin Notes'] = { old: order.admin_notes || 'Empty', new: newAdminNotes };
+      }
+      if (newReturnReason !== (order.return_reason || '')) {
+        changesObj['Cancellation Reason'] = { old: order.return_reason || 'None', new: newReturnReason };
+      }
+
+      let auditPayload = null;
+
+      // পরিবর্তন থাকলে অডিট লগ টেবিলে ইনসার্ট
+      if (Object.keys(changesObj).length > 0) {
+        const batchId = crypto.randomUUID();
+        auditPayload = {
+          batch_id: batchId,
+          order_id: order.id,
+          performed_by: currentUserId || null,
+          action_type: 'UPDATE_DETAILS',
+          changes: changesObj,
+          reason: newReturnReason || undefined
+        };
+
+        await supabase.from('audit_logs').insert([auditPayload]);
+      }
+
       const payload = {
         payment_status: editForm.payment_status,
-        courier_name: editForm.courier_name.trim() !== '' ? editForm.courier_name.trim() : (order.courier_name || ''),
-        tracking_id: editForm.tracking_id.trim() !== '' ? editForm.tracking_id.trim() : (order.tracking_id || ''),
-        admin_notes: editForm.admin_notes.trim() !== '' ? editForm.admin_notes.trim() : (order.admin_notes || ''),
-        customer_notes: editForm.customer_notes.trim() !== '' ? editForm.customer_notes.trim() : (order.customer_notes || ''),
-        return_reason: editForm.return_reason.trim() !== '' ? editForm.return_reason.trim() : (order.return_reason || '')
+        courier_name: newCourier,
+        tracking_id: newTracking,
+        admin_notes: newAdminNotes,
+        customer_notes: newCustomerNotes,
+        return_reason: newReturnReason
       };
 
-      await onUpdateDetails(order.id, payload);
+      await onUpdateDetails(order.id, payload, auditPayload);
       setIsEditing(false);
+      fetchAuditLogs(); // নতুন হিস্ট্রি রিফ্রেশ করা
     } finally {
       setIsUpdating(false);
     }
@@ -166,7 +300,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
     width: '100%',
     boxSizing: 'border-box',
     background: editable ? '#121212' : '#080808',
-    color: editable ? '#888' : '#ccc', // সাধারণত অবস্থায় লাইট ধূসর (#ccc) এবং ইডিট মুডে ধূসর (#888)
+    color: editable ? '#888' : '#ccc', // সাধারণত অবস্থায় লাইট ধূসর (#ccc) এবং ইডিট মুডে ধূসর (#888)
     border: editable ? '1px solid #555' : '1px solid #1c1c1c',
     padding: '10px 12px',
     fontSize: '11px',
@@ -261,6 +395,8 @@ const OrderCard: React.FC<OrderCardProps> = ({
         <div className={`filter-expand-wrapper ${isExpanded ? 'open' : ''}`}>
           <div className="filter-expand-content">
             <div style={{ paddingTop: '8px', paddingBottom: '8px', borderTop: '1px solid #1a1a1a', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              
+              {/* ORDERED ITEMS */}
               <div>
                 <h4 style={{ color: '#888', fontSize: '10px', letterSpacing: '1px', marginBottom: '10px', marginTop: '10px', fontWeight: 'bold' }}>ORDERED ITEMS</h4>
                 {order.items.length > 0 ? order.items.map((item, idx) => (
@@ -295,7 +431,8 @@ const OrderCard: React.FC<OrderCardProps> = ({
                 )}
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '10px' }}>
+              {/* MANAGEMENT DETAILS */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <h4 style={{ color: '#888', fontSize: '10px', letterSpacing: '1.5px', margin: 0, fontWeight: 'bold' }}>MANAGEMENT DETAILS</h4>
                   <button
@@ -333,9 +470,9 @@ const OrderCard: React.FC<OrderCardProps> = ({
                     }}
                   >
                     {isEditing ? (
-                      <CloseIcon width="14" height="14" stroke="currentColor" strokeWidth="2.5" style={{ transition: 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)' }} />
+                      <CloseIcon width="14" height="14" stroke="currentColor" strokeWidth="2.5" />
                     ) : (
-                      <EditIcon width="14" height="14" stroke="currentColor" strokeWidth="2.5" style={{ transition: 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)' }} />
+                      <EditIcon width="14" height="14" stroke="currentColor" strokeWidth="2.5" />
                     )}
                   </button>
                 </div>
@@ -413,7 +550,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
                   <textarea
                     rows={2}
                     readOnly={!isEditing}
-                    placeholder={order.customer_notes || "Add customer note to send in messages..."}
+                    placeholder={order.customer_notes || "Add customer note..."}
                     value={isEditing ? editForm.customer_notes : (order.customer_notes || '')}
                     onChange={e => {
                       if (isEditing) setEditForm({ ...editForm, customer_notes: e.target.value });
@@ -435,7 +572,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
                   <textarea
                     rows={2}
                     readOnly={!isEditing}
-                    placeholder={order.admin_notes || "Add private admin notes here..."}
+                    placeholder={order.admin_notes || "Add private admin notes..."}
                     value={isEditing ? editForm.admin_notes : (order.admin_notes || '')}
                     onChange={e => {
                       if (isEditing) setEditForm({ ...editForm, admin_notes: e.target.value });
@@ -532,10 +669,86 @@ const OrderCard: React.FC<OrderCardProps> = ({
                   </div>
                 </div>
               </div>
+
+              {/* ৩. ইডিট হিস্ট্রি / AUDIT LOG TIMELINE SECTION */}
+              <div style={{ borderTop: '1px solid #1c1c1c', paddingTop: '14px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                  <h4 style={{ color: '#888', fontSize: '10px', letterSpacing: '1.5px', margin: 0, fontWeight: 'bold' }}>
+                    EDIT HISTORY & AUDIT LOGS
+                  </h4>
+                  {isLoadingLogs && <span style={{ fontSize: '9px', color: '#666' }}>Loading...</span>}
+                </div>
+
+                {auditLogs.length > 0 ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {auditLogs.map((log) => (
+                      <div
+                        key={log.id}
+                        style={{
+                          background: '#080808',
+                          border: '1px solid #1a1a1a',
+                          borderLeft: '3px solid #444',
+                          borderRadius: '3px',
+                          padding: '10px 12px'
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span style={{ fontSize: '10px', fontWeight: 'bold', color: '#fff' }}>
+                              {log.profiles?.name || 'System / Admin'}
+                            </span>
+                            {log.profiles?.role && (
+                              <span style={{ fontSize: '8px', background: '#1c1c1c', color: '#888', padding: '1px 5px', borderRadius: '2px', textTransform: 'uppercase' }}>
+                                {log.profiles.role}
+                              </span>
+                            )}
+                          </div>
+                          <span style={{ fontSize: '9px', color: '#666' }}>
+                            {new Date(log.created_at).toLocaleString('en-US', { dateStyle: 'short', timeStyle: 'short' })}
+                          </span>
+                        </div>
+
+                        {/* JSONB Changes Display */}
+                        {log.changes && typeof log.changes === 'object' ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '4px' }}>
+                            {Object.entries(log.changes).map(([field, val]) => (
+                              <div key={field} style={{ fontSize: '10px', color: '#ccc', lineHeight: '1.4' }}>
+                                <span style={{ color: '#777', fontWeight: 'bold' }}>{field}: </span>
+                                <span style={{ color: '#ff5252', textDecoration: 'line-through' }}>{val.old || 'N/A'}</span>
+                                <span style={{ color: '#888', margin: '0 4px' }}>➔</span>
+                                <span style={{ color: '#4cd964', fontWeight: 'bold' }}>{val.new || 'N/A'}</span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : log.field_name ? (
+                          <div style={{ fontSize: '10px', color: '#ccc', marginTop: '4px' }}>
+                            <span style={{ color: '#777', fontWeight: 'bold' }}>{log.field_name}: </span>
+                            <span style={{ color: '#ff5252', textDecoration: 'line-through' }}>{log.old_value || 'N/A'}</span>
+                            <span style={{ color: '#888', margin: '0 4px' }}>➔</span>
+                            <span style={{ color: '#4cd964', fontWeight: 'bold' }}>{log.new_value || 'N/A'}</span>
+                          </div>
+                        ) : null}
+
+                        {log.reason && (
+                          <div style={{ fontSize: '9.5px', color: '#888', fontStyle: 'italic', marginTop: '4px' }}>
+                            Reason: {log.reason}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{ fontSize: '10px', color: '#555', fontStyle: 'italic', padding: '6px 0' }}>
+                    No edit history recorded for this order.
+                  </div>
+                )}
+              </div>
+
             </div>
           </div>
         </div>
 
+        {/* CUSTOMER DETAILS */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
             <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#fff' }}>
@@ -606,6 +819,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
           </div>
         </div>
 
+        {/* STATUS & ACTIONS */}
         <div style={{ display: 'flex', gap: '4px', flexWrap: 'nowrap', width: '100%' }}>
           <button
             type="button"
