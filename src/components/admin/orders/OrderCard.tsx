@@ -78,9 +78,9 @@ const OrderCard: React.FC<OrderCardProps> = ({
   const [editForm, setEditForm] = useState({
     payment_status: order.payment_status || 'Unpaid / COD',
     courier_name: order.courier_name || '',
-    tracking_id: '',
-    admin_notes: '',
-    customer_notes: '',
+    tracking_id: order.tracking_id || '',
+    admin_notes: order.admin_notes || '',
+    customer_notes: order.customer_notes || '',
     return_reason: order.return_reason || ''
   });
 
@@ -125,9 +125,9 @@ const OrderCard: React.FC<OrderCardProps> = ({
     setEditForm({
       payment_status: order.payment_status || 'Unpaid / COD',
       courier_name: order.courier_name || '',
-      tracking_id: '',
-      admin_notes: '',
-      customer_notes: '',
+      tracking_id: order.tracking_id || '',
+      admin_notes: order.admin_notes || '',
+      customer_notes: order.customer_notes || '',
       return_reason: order.return_reason || ''
     });
 
@@ -166,18 +166,23 @@ const OrderCard: React.FC<OrderCardProps> = ({
 
     setIsUpdating(true);
     try {
-      const batchId = crypto.randomUUID();
-      const auditPayload = {
-        batch_id: batchId,
-        order_id: order.id,
-        performed_by: currentUserId || null,
-        action_type: 'UPDATE_PAYMENT_STATUS',
-        changes: {
-          'Payment Status': { old: oldPaymentStatus, new: newPaymentStatus }
-        }
-      };
+      let auditPayload = null;
 
-      await supabase.from('audit_logs').insert([auditPayload]);
+      // কেবল আগে কোনো স্টেটাস বিদ্যমান থাকলে এবং তা পরিবর্তিত হলেই হিস্ট্রি রেকর্ড হবে
+      if (order.payment_status) {
+        const batchId = crypto.randomUUID();
+        auditPayload = {
+          batch_id: batchId,
+          order_id: order.id,
+          performed_by: currentUserId || null,
+          action_type: 'UPDATE_PAYMENT_STATUS',
+          changes: {
+            'Payment Status': { old: oldPaymentStatus, new: newPaymentStatus }
+          }
+        };
+
+        await supabase.from('audit_logs').insert([auditPayload]);
+      }
 
       await onUpdateDetails(order.id, {
         payment_status: newPaymentStatus,
@@ -199,28 +204,29 @@ const OrderCard: React.FC<OrderCardProps> = ({
     setIsUpdating(true);
 
     try {
-      const newCourier = editForm.courier_name.trim() !== '' ? editForm.courier_name.trim() : (order.courier_name || '');
-      const newTracking = editForm.tracking_id.trim() !== '' ? editForm.tracking_id.trim() : (order.tracking_id || '');
-      const newAdminNotes = editForm.admin_notes.trim() !== '' ? editForm.admin_notes.trim() : (order.admin_notes || '');
-      const newCustomerNotes = editForm.customer_notes.trim() !== '' ? editForm.customer_notes.trim() : (order.customer_notes || '');
-      const newReturnReason = editForm.return_reason.trim() !== '' ? editForm.return_reason.trim() : (order.return_reason || '');
+      const newCourier = editForm.courier_name.trim();
+      const newTracking = editForm.tracking_id.trim();
+      const newAdminNotes = editForm.admin_notes.trim();
+      const newCustomerNotes = editForm.customer_notes.trim();
+      const newReturnReason = editForm.return_reason.trim();
 
       const changesObj: Record<string, { old: string; new: string }> = {};
 
-      if (newCourier !== (order.courier_name || '')) {
-        changesObj['Courier Name'] = { old: order.courier_name || 'Not specified', new: newCourier };
+      // কেবল পূর্বের ভ্যালু বিদ্যমান থাকলেই নতুন ফিল্ড চেঞ্জকে হিস্ট্রিতে রেকর্ড করবে (প্রথমবারের ইনপুটে হিস্ট্রি যুক্ত হবে না)
+      if (order.courier_name && newCourier !== order.courier_name) {
+        changesObj['Courier Name'] = { old: order.courier_name, new: newCourier };
       }
-      if (newTracking !== (order.tracking_id || '')) {
-        changesObj['Tracking ID'] = { old: order.tracking_id || 'Empty', new: newTracking };
+      if (order.tracking_id && newTracking !== order.tracking_id) {
+        changesObj['Tracking ID'] = { old: order.tracking_id, new: newTracking };
       }
-      if (newCustomerNotes !== (order.customer_notes || '')) {
-        changesObj['Customer Notes'] = { old: order.customer_notes || 'Empty', new: newCustomerNotes };
+      if (order.customer_notes && newCustomerNotes !== order.customer_notes) {
+        changesObj['Customer Notes'] = { old: order.customer_notes, new: newCustomerNotes };
       }
-      if (newAdminNotes !== (order.admin_notes || '')) {
-        changesObj['Admin Notes'] = { old: order.admin_notes || 'Empty', new: newAdminNotes };
+      if (order.admin_notes && newAdminNotes !== order.admin_notes) {
+        changesObj['Admin Notes'] = { old: order.admin_notes, new: newAdminNotes };
       }
-      if (newReturnReason !== (order.return_reason || '')) {
-        changesObj['Cancellation Reason'] = { old: order.return_reason || 'None', new: newReturnReason };
+      if (order.return_reason && newReturnReason !== order.return_reason) {
+        changesObj['Cancellation Reason'] = { old: order.return_reason, new: newReturnReason };
       }
 
       let auditPayload = null;
@@ -436,9 +442,9 @@ const OrderCard: React.FC<OrderCardProps> = ({
                           setEditForm({
                             payment_status: order.payment_status || 'Unpaid / COD',
                             courier_name: order.courier_name || '',
-                            tracking_id: '',
-                            admin_notes: '',
-                            customer_notes: '',
+                            tracking_id: order.tracking_id || '',
+                            admin_notes: order.admin_notes || '',
+                            customer_notes: order.customer_notes || '',
                             return_reason: order.return_reason || ''
                           });
                         }
@@ -473,8 +479,8 @@ const OrderCard: React.FC<OrderCardProps> = ({
                   <div>
                     <label style={{ display: 'block', fontSize: '9px', color: '#777', marginBottom: '6px', letterSpacing: '0.5px' }}>COURIER NAME</label>
                     {!isEditing && (
-                      <div style={{ fontSize: '11px', color: (editForm.courier_name || order.courier_name) ? '#ccc' : '#555', padding: '4px 0' }}>
-                        {editForm.courier_name || order.courier_name || 'Not specified'}
+                      <div style={{ fontSize: '11px', color: order.courier_name ? '#ccc' : '#555', padding: '4px 0' }}>
+                        {order.courier_name || 'Not specified'}
                       </div>
                     )}
                     <div className={`filter-expand-wrapper ${isEditing ? 'open' : ''}`}>
@@ -584,9 +590,9 @@ const OrderCard: React.FC<OrderCardProps> = ({
                 {(isEditing || editForm.return_reason || order.return_reason) && (
                   <div>
                     <label style={{ display: 'block', fontSize: '9px', color: '#ff4d4d', marginBottom: '6px', letterSpacing: '0.5px', fontWeight: 'bold' }}>CANCELLATION REASON</label>
-                    {!isEditing && (editForm.return_reason || order.return_reason) && (
+                    {!isEditing && order.return_reason && (
                       <div style={{ fontSize: '11px', color: '#ff4d4d', padding: '4px 0', fontWeight: 'bold' }}>
-                        {editForm.return_reason || order.return_reason}
+                        {order.return_reason}
                       </div>
                     )}
                     <div className={`filter-expand-wrapper ${isEditing ? 'open' : ''}`}>
@@ -682,64 +688,75 @@ const OrderCard: React.FC<OrderCardProps> = ({
                     scrollbarWidth: 'none', 
                     paddingBottom: '8px' 
                   }}>
-                    {auditLogs.map((log) => (
-                      <div
-                        key={log.id}
-                        className="animate-fade-in"
-                        style={{
-                          minWidth: '260px',
-                          maxWidth: '300px',
-                          flexShrink: 0,
-                          background: '#080808',
-                          border: '1px solid #1a1a1a',
-                          borderLeft: '3px solid #444',
-                          borderRadius: '3px',
-                          padding: '10px 12px'
-                        }}
-                      >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <span style={{ fontSize: '10px', fontWeight: 'bold', color: '#fff' }}>
-                              {log.profiles?.name || 'System / Admin'}
-                            </span>
-                            {log.profiles?.role && (
-                              <span style={{ fontSize: '8px', background: '#1c1c1c', color: '#888', padding: '1px 5px', borderRadius: '2px', textTransform: 'uppercase' }}>
-                                {log.profiles.role}
+                    {auditLogs.map((log) => {
+                      const profileName = log.profiles?.name || log.profiles?.email || 'User';
+                      const profileRole = log.profiles?.role;
+
+                      return (
+                        <div
+                          key={log.id}
+                          className="animate-fade-in"
+                          style={{
+                            minWidth: '260px',
+                            maxWidth: '300px',
+                            flexShrink: 0,
+                            background: '#080808',
+                            border: '1px solid #1a1a1a',
+                            borderLeft: '3px solid #444',
+                            borderRadius: '3px',
+                            padding: '10px 12px'
+                          }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <span style={{ fontSize: '10px', fontWeight: 'bold', color: '#fff' }}>
+                                {profileName}
                               </span>
-                            )}
+                              {profileRole && (
+                                <span style={{ fontSize: '8px', background: '#1c1c1c', color: '#888', padding: '1px 5px', borderRadius: '2px', textTransform: 'uppercase' }}>
+                                  {profileRole}
+                                </span>
+                              )}
+                            </div>
+                            <span style={{ fontSize: '9px', color: '#666' }}>
+                              {new Date(log.created_at).toLocaleString('en-US', { dateStyle: 'short', timeStyle: 'short' })}
+                            </span>
                           </div>
-                          <span style={{ fontSize: '9px', color: '#666' }}>
-                            {new Date(log.created_at).toLocaleString('en-US', { dateStyle: 'short', timeStyle: 'short' })}
-                          </span>
+
+                          {log.changes && typeof log.changes === 'object' ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '4px' }}>
+                              {Object.entries(log.changes).map(([field, val]) => {
+                                // "None" বা "Empty" বা খালি মান থাকলে তা দেখানো রোধ করার ফিল্টার
+                                if (!val.old || val.old === 'None' || val.old === 'Empty' || val.old === 'Not specified') {
+                                  return null;
+                                }
+                                return (
+                                  <div key={field} style={{ fontSize: '10px', color: '#ccc', lineHeight: '1.4' }}>
+                                    <span style={{ color: '#777', fontWeight: 'bold' }}>{field}: </span>
+                                    <span style={{ color: '#ff5252', textDecoration: 'line-through' }}>{val.old}</span>
+                                    <span style={{ color: '#888', margin: '0 4px' }}>➔</span>
+                                    <span style={{ color: '#4cd964', fontWeight: 'bold' }}>{val.new || 'N/A'}</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          ) : log.field_name ? (
+                            <div style={{ fontSize: '10px', color: '#ccc', marginTop: '4px' }}>
+                              <span style={{ color: '#777', fontWeight: 'bold' }}>{log.field_name}: </span>
+                              <span style={{ color: '#ff5252', textDecoration: 'line-through' }}>{log.old_value || 'N/A'}</span>
+                              <span style={{ color: '#888', margin: '0 4px' }}>➔</span>
+                              <span style={{ color: '#4cd964', fontWeight: 'bold' }}>{log.new_value || 'N/A'}</span>
+                            </div>
+                          ) : null}
+
+                          {log.reason && (
+                            <div style={{ fontSize: '9.5px', color: '#888', fontStyle: 'italic', marginTop: '4px' }}>
+                              Reason: {log.reason}
+                            </div>
+                          )}
                         </div>
-
-                        {log.changes && typeof log.changes === 'object' ? (
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '4px' }}>
-                            {Object.entries(log.changes).map(([field, val]) => (
-                              <div key={field} style={{ fontSize: '10px', color: '#ccc', lineHeight: '1.4' }}>
-                                <span style={{ color: '#777', fontWeight: 'bold' }}>{field}: </span>
-                                <span style={{ color: '#ff5252', textDecoration: 'line-through' }}>{val.old || 'N/A'}</span>
-                                <span style={{ color: '#888', margin: '0 4px' }}>➔</span>
-                                <span style={{ color: '#4cd964', fontWeight: 'bold' }}>{val.new || 'N/A'}</span>
-                              </div>
-                            ))}
-                          </div>
-                        ) : log.field_name ? (
-                          <div style={{ fontSize: '10px', color: '#ccc', marginTop: '4px' }}>
-                            <span style={{ color: '#777', fontWeight: 'bold' }}>{log.field_name}: </span>
-                            <span style={{ color: '#ff5252', textDecoration: 'line-through' }}>{log.old_value || 'N/A'}</span>
-                            <span style={{ color: '#888', margin: '0 4px' }}>➔</span>
-                            <span style={{ color: '#4cd964', fontWeight: 'bold' }}>{log.new_value || 'N/A'}</span>
-                          </div>
-                        ) : null}
-
-                        {log.reason && (
-                          <div style={{ fontSize: '9.5px', color: '#888', fontStyle: 'italic', marginTop: '4px' }}>
-                            Reason: {log.reason}
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 ) : (
                   <div style={{ fontSize: '10px', color: '#555', fontStyle: 'italic', padding: '6px 0' }}>
