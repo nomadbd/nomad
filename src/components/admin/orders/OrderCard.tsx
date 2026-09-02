@@ -331,22 +331,13 @@ const OrderCard: React.FC<OrderCardProps> = ({
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px' }}>
                   <div>
                     <label style={{ display: 'block', fontSize: '9px', color: '#777', marginBottom: '6px', letterSpacing: '0.5px' }}>COURIER NAME</label>
-                    <input
-                      type="text"
-                      readOnly={!isEditing}
-                      placeholder={order.courier_name || "e.g. Steadfast, Pathao"}
-                      value={editForm.courier_name}
-                      onChange={e => {
-                        if (isEditing) setEditForm({ ...editForm, courier_name: e.target.value });
-                      }}
-                      style={smoothInputStyle(isEditing)}
-                    />
                     <div className={`filter-expand-wrapper ${isEditing ? 'open' : ''}`}>
                       <div className="filter-expand-content">
-                        <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', scrollbarWidth: 'none', padding: '6px 0', marginTop: '4px' }}>
+                        <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '6px' }}>
                           {BD_COURIERS.map((courier) => {
-                            const selectedName = editForm.courier_name || '';
-                            const isChecked = selectedName.toLowerCase() === courier.toLowerCase();
+                            const selectedName = (editForm.courier_name || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+                            const courierKey = courier.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+                            const isChecked = selectedName !== '' && selectedName === courierKey;
                             return (
                               <button
                                 type="button"
@@ -362,9 +353,9 @@ const OrderCard: React.FC<OrderCardProps> = ({
                                   display: 'inline-flex',
                                   alignItems: 'center',
                                   justifyContent: 'center',
-                                  background: isChecked ? '#111' : '#0d0d0d',
-                                  border: isChecked ? '1px solid #ffffff' : '1px solid #222222',
-                                  color: isChecked ? '#ffffff' : '#888888',
+                                  background: isChecked ? '#1f1f1f' : '#0d0d0d',
+                                  border: 'none',
+                                  color: isChecked ? '#ffffff' : '#666666',
                                   padding: '6px 10px',
                                   borderRadius: '3px',
                                   fontSize: '9px',
@@ -383,6 +374,16 @@ const OrderCard: React.FC<OrderCardProps> = ({
                         </div>
                       </div>
                     </div>
+                    <input
+                      type="text"
+                      readOnly={!isEditing}
+                      placeholder={order.courier_name || "e.g. Steadfast, Pathao"}
+                      value={editForm.courier_name}
+                      onChange={e => {
+                        if (isEditing) setEditForm({ ...editForm, courier_name: e.target.value });
+                      }}
+                      style={smoothInputStyle(isEditing)}
+                    />
                   </div>
 
                   <div>
@@ -447,26 +448,13 @@ const OrderCard: React.FC<OrderCardProps> = ({
                 {(isEditing || order.return_reason) && (
                   <div>
                     <label style={{ display: 'block', fontSize: '9px', color: '#FF5252', marginBottom: '6px', letterSpacing: '0.5px', fontWeight: 'bold' }}>CANCELLATION REASON</label>
-                    <input
-                      type="text"
-                      readOnly={!isEditing}
-                      placeholder={order.return_reason || "e.g. Customer not receive, Refused"}
-                      value={editForm.return_reason}
-                      onChange={e => {
-                        if (isEditing) setEditForm({ ...editForm, return_reason: e.target.value });
-                      }}
-                      style={{
-                        ...smoothInputStyle(isEditing),
-                        border: '1px solid #FF5252',
-                        color: '#FF5252'
-                      }}
-                    />
                     <div className={`filter-expand-wrapper ${isEditing ? 'open' : ''}`}>
                       <div className="filter-expand-content">
-                        <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', scrollbarWidth: 'none', padding: '6px 0', marginTop: '4px' }}>
+                        <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '6px' }}>
                           {CANCELLATION_REASONS.map((reason) => {
-                            const selectedReason = editForm.return_reason || '';
-                            const isChecked = selectedReason.toLowerCase() === reason.toLowerCase();
+                            const selectedReason = (editForm.return_reason || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+                            const reasonKey = reason.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+                            const isChecked = selectedReason !== '' && selectedReason === reasonKey;
                             return (
                               <button
                                 type="button"
@@ -482,9 +470,9 @@ const OrderCard: React.FC<OrderCardProps> = ({
                                   display: 'inline-flex',
                                   alignItems: 'center',
                                   justifyContent: 'center',
-                                  background: 'transparent',
-                                  border: isChecked ? '1px solid #ffffff' : '1px solid #333333',
-                                  color: isChecked ? '#ffffff' : '#888888',
+                                  background: isChecked ? '#2c1212' : '#0d0d0d',
+                                  border: 'none',
+                                  color: isChecked ? '#FF5252' : '#666666',
                                   padding: '6px 10px',
                                   borderRadius: '3px',
                                   fontSize: '9px',
@@ -503,6 +491,20 @@ const OrderCard: React.FC<OrderCardProps> = ({
                         </div>
                       </div>
                     </div>
+                    <input
+                      type="text"
+                      readOnly={!isEditing}
+                      placeholder={order.return_reason || "e.g. Customer not receive, Refused"}
+                      value={editForm.return_reason}
+                      onChange={e => {
+                        if (isEditing) setEditForm({ ...editForm, return_reason: e.target.value });
+                      }}
+                      style={{
+                        ...smoothInputStyle(isEditing),
+                        border: '1px solid #FF5252',
+                        color: '#FF5252'
+                      }}
+                    />
                   </div>
                 )}
 
