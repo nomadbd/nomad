@@ -166,7 +166,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
     width: '100%',
     boxSizing: 'border-box',
     background: editable ? '#121212' : '#080808',
-    color: editable ? '#fff' : '#aaa',
+    color: editable ? '#888' : '#ccc', // সাধারণত অবস্থায় লাইট ধূসর (#ccc) এবং ইডিট মুডে ধূসর (#888)
     border: editable ? '1px solid #555' : '1px solid #1c1c1c',
     padding: '10px 12px',
     fontSize: '11px',
@@ -344,8 +344,8 @@ const OrderCard: React.FC<OrderCardProps> = ({
                   <div>
                     <label style={{ display: 'block', fontSize: '9px', color: '#777', marginBottom: '6px', letterSpacing: '0.5px' }}>COURIER NAME</label>
                     {!isEditing && (
-                      <div style={{ fontSize: '11px', color: editForm.courier_name ? '#aaa' : '#555', padding: '4px 0' }}>
-                        {editForm.courier_name || 'Not specified'}
+                      <div style={{ fontSize: '11px', color: (editForm.courier_name || order.courier_name) ? '#ccc' : '#555', padding: '4px 0' }}>
+                        {editForm.courier_name || order.courier_name || 'Not specified'}
                       </div>
                     )}
                     <div className={`filter-expand-wrapper ${isEditing ? 'open' : ''}`}>
@@ -399,7 +399,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
                       type="text"
                       readOnly={!isEditing}
                       placeholder={order.tracking_id || "Tracking / Memo No."}
-                      value={editForm.tracking_id}
+                      value={isEditing ? editForm.tracking_id : (order.tracking_id || '')}
                       onChange={e => {
                         if (isEditing) setEditForm({ ...editForm, tracking_id: e.target.value });
                       }}
@@ -414,7 +414,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
                     rows={2}
                     readOnly={!isEditing}
                     placeholder={order.customer_notes || "Add customer note to send in messages..."}
-                    value={editForm.customer_notes}
+                    value={isEditing ? editForm.customer_notes : (order.customer_notes || '')}
                     onChange={e => {
                       if (isEditing) setEditForm({ ...editForm, customer_notes: e.target.value });
                     }}
@@ -436,7 +436,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
                     rows={2}
                     readOnly={!isEditing}
                     placeholder={order.admin_notes || "Add private admin notes here..."}
-                    value={editForm.admin_notes}
+                    value={isEditing ? editForm.admin_notes : (order.admin_notes || '')}
                     onChange={e => {
                       if (isEditing) setEditForm({ ...editForm, admin_notes: e.target.value });
                     }}
@@ -452,12 +452,12 @@ const OrderCard: React.FC<OrderCardProps> = ({
                   />
                 </div>
 
-                {(isEditing || editForm.return_reason) && (
+                {(isEditing || editForm.return_reason || order.return_reason) && (
                   <div>
                     <label style={{ display: 'block', fontSize: '9px', color: '#ff4d4d', marginBottom: '6px', letterSpacing: '0.5px', fontWeight: 'bold' }}>CANCELLATION REASON</label>
-                    {!isEditing && editForm.return_reason && (
+                    {!isEditing && (editForm.return_reason || order.return_reason) && (
                       <div style={{ fontSize: '11px', color: '#ff4d4d', padding: '4px 0', fontWeight: 'bold' }}>
-                        {editForm.return_reason}
+                        {editForm.return_reason || order.return_reason}
                       </div>
                     )}
                     <div className={`filter-expand-wrapper ${isEditing ? 'open' : ''}`}>
