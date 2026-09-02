@@ -331,59 +331,50 @@ const OrderCard: React.FC<OrderCardProps> = ({
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px' }}>
                   <div>
                     <label style={{ display: 'block', fontSize: '9px', color: '#777', marginBottom: '6px', letterSpacing: '0.5px' }}>COURIER NAME</label>
-                    <div className={`filter-expand-wrapper ${isEditing ? 'open' : ''}`}>
-                      <div className="filter-expand-content">
-                        <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '6px' }}>
-                          {BD_COURIERS.map((courier) => {
-                            const selectedName = (editForm.courier_name || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
-                            const courierKey = courier.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
-                            const isChecked = selectedName !== '' && selectedName === courierKey;
-                            return (
-                              <button
-                                type="button"
-                                key={courier}
-                                onClick={() => {
-                                  if (!isEditing) return;
-                                  setEditForm(prev => ({
-                                    ...prev,
-                                    courier_name: isChecked ? '' : courier
-                                  }));
-                                }}
-                                style={{
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  background: isChecked ? '#1f1f1f' : '#0d0d0d',
-                                  border: 'none',
-                                  color: isChecked ? '#ffffff' : '#666666',
-                                  padding: '6px 10px',
-                                  borderRadius: '3px',
-                                  fontSize: '9px',
-                                  fontWeight: isChecked ? 'bold' : 'normal',
-                                  whiteSpace: 'nowrap',
-                                  cursor: isEditing ? 'pointer' : 'default',
-                                  flexShrink: 0,
-                                  transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
-                                  outline: 'none'
-                                }}
-                              >
-                                {courier}
-                              </button>
-                            );
-                          })}
-                        </div>
+                    {!isEditing ? (
+                      <div style={{ fontSize: '11px', color: editForm.courier_name ? '#fff' : '#555', padding: '6px 0', fontWeight: 'bold' }}>
+                        {editForm.courier_name || 'Not specified'}
                       </div>
-                    </div>
-                    <input
-                      type="text"
-                      readOnly={!isEditing}
-                      placeholder={order.courier_name || "e.g. Steadfast, Pathao"}
-                      value={editForm.courier_name}
-                      onChange={e => {
-                        if (isEditing) setEditForm({ ...editForm, courier_name: e.target.value });
-                      }}
-                      style={smoothInputStyle(isEditing)}
-                    />
+                    ) : (
+                      <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '6px' }}>
+                        {BD_COURIERS.map((courier) => {
+                          const selectedName = (editForm.courier_name || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+                          const courierKey = courier.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+                          const isChecked = selectedName !== '' && selectedName === courierKey;
+                          return (
+                            <button
+                              type="button"
+                              key={courier}
+                              onClick={() => {
+                                setEditForm(prev => ({
+                                  ...prev,
+                                  courier_name: isChecked ? '' : courier
+                                }));
+                              }}
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                background: isChecked ? '#fff' : '#111',
+                                border: 'none',
+                                color: isChecked ? '#000' : '#666',
+                                padding: '6px 12px',
+                                borderRadius: '3px',
+                                fontSize: '9.5px',
+                                fontWeight: isChecked ? 'bold' : 'normal',
+                                whiteSpace: 'nowrap',
+                                cursor: 'pointer',
+                                flexShrink: 0,
+                                transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+                                outline: 'none'
+                              }}
+                            >
+                              {courier}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
 
                   <div>
@@ -445,66 +436,53 @@ const OrderCard: React.FC<OrderCardProps> = ({
                   />
                 </div>
 
-                {(isEditing || order.return_reason) && (
+                {(isEditing || editForm.return_reason) && (
                   <div>
-                    <label style={{ display: 'block', fontSize: '9px', color: '#FF5252', marginBottom: '6px', letterSpacing: '0.5px', fontWeight: 'bold' }}>CANCELLATION REASON</label>
-                    <div className={`filter-expand-wrapper ${isEditing ? 'open' : ''}`}>
-                      <div className="filter-expand-content">
-                        <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '6px' }}>
-                          {CANCELLATION_REASONS.map((reason) => {
-                            const selectedReason = (editForm.return_reason || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
-                            const reasonKey = reason.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
-                            const isChecked = selectedReason !== '' && selectedReason === reasonKey;
-                            return (
-                              <button
-                                type="button"
-                                key={reason}
-                                onClick={() => {
-                                  if (!isEditing) return;
-                                  setEditForm(prev => ({
-                                    ...prev,
-                                    return_reason: isChecked ? '' : reason
-                                  }));
-                                }}
-                                style={{
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  background: isChecked ? '#2c1212' : '#0d0d0d',
-                                  border: 'none',
-                                  color: isChecked ? '#FF5252' : '#666666',
-                                  padding: '6px 10px',
-                                  borderRadius: '3px',
-                                  fontSize: '9px',
-                                  fontWeight: isChecked ? 'bold' : 'normal',
-                                  whiteSpace: 'nowrap',
-                                  cursor: isEditing ? 'pointer' : 'default',
-                                  flexShrink: 0,
-                                  transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
-                                  outline: 'none'
-                                }}
-                              >
-                                {reason}
-                              </button>
-                            );
-                          })}
-                        </div>
+                    <label style={{ display: 'block', fontSize: '9px', color: '#ff4d4d', marginBottom: '6px', letterSpacing: '0.5px', fontWeight: 'bold' }}>CANCELLATION REASON</label>
+                    {!isEditing ? (
+                      <div style={{ fontSize: '11px', color: '#ff4d4d', padding: '6px 0', fontWeight: 'bold' }}>
+                        {editForm.return_reason}
                       </div>
-                    </div>
-                    <input
-                      type="text"
-                      readOnly={!isEditing}
-                      placeholder={order.return_reason || "e.g. Customer not receive, Refused"}
-                      value={editForm.return_reason}
-                      onChange={e => {
-                        if (isEditing) setEditForm({ ...editForm, return_reason: e.target.value });
-                      }}
-                      style={{
-                        ...smoothInputStyle(isEditing),
-                        border: '1px solid #FF5252',
-                        color: '#FF5252'
-                      }}
-                    />
+                    ) : (
+                      <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '6px' }}>
+                        {CANCELLATION_REASONS.map((reason) => {
+                          const selectedReason = (editForm.return_reason || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+                          const reasonKey = reason.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+                          const isChecked = selectedReason !== '' && selectedReason === reasonKey;
+                          return (
+                            <button
+                              type="button"
+                              key={reason}
+                              onClick={() => {
+                                setEditForm(prev => ({
+                                  ...prev,
+                                  return_reason: isChecked ? '' : reason
+                                }));
+                              }}
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                background: isChecked ? '#ff4d4d' : '#111',
+                                border: 'none',
+                                color: isChecked ? '#ffffff' : '#777777',
+                                padding: '6px 12px',
+                                borderRadius: '3px',
+                                fontSize: '9.5px',
+                                fontWeight: isChecked ? 'bold' : 'normal',
+                                whiteSpace: 'nowrap',
+                                cursor: 'pointer',
+                                flexShrink: 0,
+                                transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+                                outline: 'none'
+                              }}
+                            >
+                              {reason}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 )}
 
