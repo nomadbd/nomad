@@ -181,7 +181,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
       await fetchAuditLogs();
     } catch (err) {
       console.error(err);
-      alert('নেটওয়ার্ক সমস্যার কারণে আপডেট সম্ভব হয়নি। পুনরায় চেষ্টা করুন।');
+      alert('Unable to update due to a network issue. Please try again.');
     } finally {
       setIsUpdating(false);
     }
@@ -206,7 +206,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
       await fetchAuditLogs();
     } catch (err) {
       console.error(err);
-      alert('নেটওয়ার্ক সমস্যার কারণে ডাটা সেভ হয়নি। পুনরায় চেষ্টা করুন।');
+      alert('Unable to save data due to a network issue. Please try again.');
     } finally {
       setIsUpdating(false);
     }
@@ -632,16 +632,31 @@ const OrderCard: React.FC<OrderCardProps> = ({
                         const profileName = profileObj?.name || profileObj?.email || 'Admin';
                         const profileRole = profileObj?.role;
 
-                        // ===== FIXED FILTER =====
-                        const validChanges = log.changes && typeof log.changes === 'object'
+                        let validChanges = log.changes && typeof log.changes === 'object'
                           ? Object.entries(log.changes).filter(([_, val]) => {
                               if (!val) return false;
                               const oldVal = val.old ?? '';
                               const newVal = val.new ?? '';
-                              // old আর new এক না হলেই দেখাবে (empty → value ও দেখাবে)
                               return String(oldVal).trim() !== String(newVal).trim();
                             })
                           : [];
+
+                        // Professional field order
+                        const fieldOrder = [
+                          'Courier Name',
+                          'Tracking ID',
+                          'Cancellation Reason',
+                          'Customer Notes',
+                          'Admin Notes'
+                        ];
+
+                        validChanges.sort((a, b) => {
+                          const indexA = fieldOrder.indexOf(a[0]);
+                          const indexB = fieldOrder.indexOf(b[0]);
+                          if (indexA === -1) return 1;
+                          if (indexB === -1) return -1;
+                          return indexA - indexB;
+                        });
 
                         const hasSingleFieldChange = Boolean(
                           log.field_name &&
