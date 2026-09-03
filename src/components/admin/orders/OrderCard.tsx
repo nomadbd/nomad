@@ -326,7 +326,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
                 </span>
               </div>
               <div style={{ fontSize: '10px', color: '#888', marginTop: '4px' }}>
-                {new Date(order.created_at).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}
+                {new Date(order.created_at).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })}
               </div>
             </div>
           </div>
@@ -694,7 +694,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
                                 )}
                               </div>
                               <span style={{ fontSize: '9px', color: '#666' }}>
-                                {new Date(log.created_at).toLocaleString('en-US', { dateStyle: 'short', timeStyle: 'short' })}
+                                {new Date(log.created_at).toLocaleString('en-GB', { dateStyle: 'short', timeStyle: 'short' })}
                               </span>
                             </div>
 
