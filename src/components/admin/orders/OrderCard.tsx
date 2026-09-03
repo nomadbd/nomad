@@ -632,19 +632,19 @@ const OrderCard: React.FC<OrderCardProps> = ({
                         const profileName = profileObj?.name || profileObj?.email || 'Admin';
                         const profileRole = profileObj?.role;
 
+                        // ✅ FIXED: old_value null বা খালি হলেও যদি new-তে মান ভিন্ন হয়, তবে তা হিস্ট্রিতে দেখাবে
                         const validChanges = log.changes && typeof log.changes === 'object'
                           ? Object.entries(log.changes).filter(([_, val]) => {
-                              return val && val.old && val.old !== 'None' && val.old !== 'Empty' && val.old !== 'Not specified' && val.old !== val.new;
+                              if (!val) return false;
+                              const oldVal = (val.old ?? '').toString().trim();
+                              const newVal = (val.new ?? '').toString().trim();
+                              return oldVal !== newVal;
                             })
                           : [];
 
                         const hasSingleFieldChange = Boolean(
                           log.field_name && 
-                          log.old_value && 
-                          log.old_value !== 'None' && 
-                          log.old_value !== 'Empty' && 
-                          log.old_value !== 'Not specified' && 
-                          log.old_value !== log.new_value
+                          (log.old_value ?? '').toString().trim() !== (log.new_value ?? '').toString().trim()
                         );
 
                         if (validChanges.length === 0 && !hasSingleFieldChange) {
@@ -687,7 +687,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
                                 {validChanges.map(([field, val]) => (
                                   <div key={field} style={{ fontSize: '10px', color: '#ccc', lineHeight: '1.4', wordBreak: 'break-word' }}>
                                     <span style={{ color: '#777', fontWeight: 'bold' }}>{field}: </span>
-                                    <span style={{ color: '#ff5252', textDecoration: 'line-through' }}>{val.old}</span>
+                                    <span style={{ color: '#ff5252', textDecoration: 'line-through' }}>{val.old || 'Empty'}</span>
                                     <span style={{ color: '#888', margin: '0 4px' }}>➔</span>
                                     <span style={{ color: '#4cd964', fontWeight: 'bold' }}>{val.new || 'N/A'}</span>
                                   </div>
@@ -696,7 +696,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
                             ) : hasSingleFieldChange ? (
                               <div style={{ fontSize: '10px', color: '#ccc', marginTop: '4px', wordBreak: 'break-word' }}>
                                 <span style={{ color: '#777', fontWeight: 'bold' }}>{log.field_name}: </span>
-                                <span style={{ color: '#ff5252', textDecoration: 'line-through' }}>{log.old_value}</span>
+                                <span style={{ color: '#ff5252', textDecoration: 'line-through' }}>{log.old_value || 'Empty'}</span>
                                 <span style={{ color: '#888', margin: '0 4px' }}>➔</span>
                                 <span style={{ color: '#4cd964', fontWeight: 'bold' }}>{log.new_value || 'N/A'}</span>
                               </div>
@@ -856,4 +856,4 @@ const OrderCard: React.FC<OrderCardProps> = ({
   );
 };
 
-export default OrderCard; 
+export default OrderCard;
