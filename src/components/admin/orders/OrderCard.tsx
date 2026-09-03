@@ -201,14 +201,11 @@ const OrderCard: React.FC<OrderCardProps> = ({
         return_reason: editForm.return_reason
       };
 
-      await supabase
-        .from('orders')
-        .update({ return_reason: editForm.return_reason })
-        .eq('id', order.id);
+      // সব পরিবর্তন একটিমাত্র payload এর মাধ্যমে প্যারেন্ট ফাংশনে পাঠানো হচ্ছে
+      await onUpdateDetails(order.id, payload);
 
       order.return_reason = editForm.return_reason;
 
-      await onUpdateDetails(order.id, payload);
       setIsEditing(false);
       await fetchAuditLogs();
     } catch (err) {
