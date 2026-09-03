@@ -80,7 +80,14 @@ export const useAdminOrders = (showToast: (msg: string, type?: 'success' | 'erro
 
   const handleUpdateDetails = async (
     orderId: string, 
-    updatedFields: { payment_status: string; courier_name: string; tracking_id: string; admin_notes: string; customer_notes: string }
+    updatedFields: { 
+      payment_status: string; 
+      courier_name: string; 
+      tracking_id: string; 
+      admin_notes: string; 
+      customer_notes: string;
+      return_reason?: string;
+    }
   ) => {
     try {
       const { error } = await supabase
@@ -90,13 +97,23 @@ export const useAdminOrders = (showToast: (msg: string, type?: 'success' | 'erro
           courier_name: updatedFields.courier_name,
           tracking_id: updatedFields.tracking_id,
           admin_notes: updatedFields.admin_notes,
-          customer_notes: updatedFields.customer_notes
+          customer_notes: updatedFields.customer_notes,
+          return_reason: updatedFields.return_reason || null
         })
         .eq('id', orderId);
 
       if (error) throw error;
 
-      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, ...updatedFields } : o));
+      setOrders(prev => prev.map(o => 
+        o.id === orderId 
+          ? { 
+              ...o, 
+              ...updatedFields,
+              return_reason: updatedFields.return_reason || '' 
+            } 
+          : o
+      ));
+      
       showToast('Order details updated successfully!', 'success');
     } catch (err) {
       console.error('Failed to update order details:', err);
