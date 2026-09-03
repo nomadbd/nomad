@@ -201,6 +201,13 @@ const OrderCard: React.FC<OrderCardProps> = ({
         return_reason: editForm.return_reason
       };
 
+      await supabase
+        .from('orders')
+        .update({ return_reason: editForm.return_reason })
+        .eq('id', order.id);
+
+      order.return_reason = editForm.return_reason;
+
       await onUpdateDetails(order.id, payload);
       setIsEditing(false);
       await fetchAuditLogs();
@@ -423,7 +430,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
                       <div className="filter-expand-content">
                         <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '6px', paddingTop: '4px' }}>
                           {BD_COURIERS.map((courier) => {
-                            const currentVal = editForm.courier_name || order.courier_name || '';
+                            const currentVal = editForm.courier_name;
                             const selectedName = currentVal.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
                             const courierKey = courier.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
                             const isChecked = selectedName !== '' && selectedName === courierKey;
@@ -535,7 +542,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
                     <div className="filter-expand-content">
                       <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '6px', paddingTop: '4px' }}>
                         {CANCELLATION_REASONS.map((reason) => {
-                          const currentVal = editForm.return_reason || order.return_reason || '';
+                          const currentVal = editForm.return_reason;
                           const selectedReason = currentVal.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
                           const reasonKey = reason.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
                           const isChecked = selectedReason !== '' && selectedReason === reasonKey;
