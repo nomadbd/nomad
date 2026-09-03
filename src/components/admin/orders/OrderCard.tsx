@@ -75,11 +75,11 @@ const OrderCard: React.FC<OrderCardProps> = ({
 
   const [editForm, setEditForm] = useState({
     payment_status: order.payment_status || 'Unpaid / COD',
-    courier_name: order.courier_name || '',
-    tracking_id: order.tracking_id || '',
-    admin_notes: order.admin_notes || '',
-    customer_notes: order.customer_notes || '',
-    return_reason: order.return_reason || ''
+    courier_name: '',
+    tracking_id: '',
+    admin_notes: '',
+    customer_notes: '',
+    return_reason: ''
   });
 
   const fetchAuditLogs = async () => {
@@ -128,11 +128,11 @@ const OrderCard: React.FC<OrderCardProps> = ({
       if (!prev) {
         setEditForm({
           payment_status: order.payment_status || 'Unpaid / COD',
-          courier_name: order.courier_name || '',
-          tracking_id: order.tracking_id || '',
-          admin_notes: order.admin_notes || '',
-          customer_notes: order.customer_notes || '',
-          return_reason: order.return_reason || ''
+          courier_name: '',
+          tracking_id: '',
+          admin_notes: '',
+          customer_notes: '',
+          return_reason: ''
         });
       }
       return !prev;
@@ -193,19 +193,15 @@ const OrderCard: React.FC<OrderCardProps> = ({
 
     try {
       const payload = {
-        payment_status: editForm.payment_status,
-        courier_name: editForm.courier_name,
-        tracking_id: editForm.tracking_id,
-        admin_notes: editForm.admin_notes,
-        customer_notes: editForm.customer_notes,
-        return_reason: editForm.return_reason
+        payment_status: editForm.payment_status || order.payment_status || 'Unpaid / COD',
+        courier_name: editForm.courier_name.trim() !== '' ? editForm.courier_name.trim() : (order.courier_name || ''),
+        tracking_id: editForm.tracking_id.trim() !== '' ? editForm.tracking_id.trim() : (order.tracking_id || ''),
+        admin_notes: editForm.admin_notes.trim() !== '' ? editForm.admin_notes.trim() : (order.admin_notes || ''),
+        customer_notes: editForm.customer_notes.trim() !== '' ? editForm.customer_notes.trim() : (order.customer_notes || ''),
+        return_reason: editForm.return_reason.trim() !== '' ? editForm.return_reason.trim() : (order.return_reason || '')
       };
 
-      // সব পরিবর্তন একটিমাত্র payload এর মাধ্যমে প্যারেন্ট ফাংশনে পাঠানো হচ্ছে
       await onUpdateDetails(order.id, payload);
-
-      order.return_reason = editForm.return_reason;
-
       setIsEditing(false);
       await fetchAuditLogs();
     } catch (err) {
@@ -427,7 +423,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
                       <div className="filter-expand-content">
                         <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '6px', paddingTop: '4px' }}>
                           {BD_COURIERS.map((courier) => {
-                            const currentVal = editForm.courier_name;
+                            const currentVal = editForm.courier_name || order.courier_name || '';
                             const selectedName = currentVal.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
                             const courierKey = courier.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
                             const isChecked = selectedName !== '' && selectedName === courierKey;
@@ -528,58 +524,60 @@ const OrderCard: React.FC<OrderCardProps> = ({
                   />
                 </div>
 
-                <div>
-                  <label style={{ display: 'block', fontSize: '9px', color: '#ff4d4d', marginBottom: '6px', letterSpacing: '0.5px', fontWeight: 'bold' }}>CANCELLATION REASON</label>
-                  {!isEditing && (
-                    <div style={{ fontSize: '11px', color: '#ff4d4d', padding: '4px 0', fontWeight: 'bold' }}>
-                      {order.return_reason || 'Not specified'}
-                    </div>
-                  )}
-                  <div className={`filter-expand-wrapper ${isEditing ? 'open' : ''}`}>
-                    <div className="filter-expand-content">
-                      <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '6px', paddingTop: '4px' }}>
-                        {CANCELLATION_REASONS.map((reason) => {
-                          const currentVal = editForm.return_reason;
-                          const selectedReason = currentVal.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
-                          const reasonKey = reason.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
-                          const isChecked = selectedReason !== '' && selectedReason === reasonKey;
-                          return (
-                            <button
-                              type="button"
-                              key={reason}
-                              onClick={() => {
-                                if (!isEditing) return;
-                                setEditForm(prev => ({
-                                  ...prev,
-                                  return_reason: isChecked ? '' : reason
-                                }));
-                              }}
-                              style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                background: isChecked ? '#241010' : '#0d0d0d',
-                                border: isChecked ? '1px solid #552222' : '1px solid #1c1c1c',
-                                color: isChecked ? '#ff4d4d' : '#555555',
-                                padding: '6px 12px',
-                                borderRadius: '3px',
-                                fontSize: '9.5px',
-                                fontWeight: isChecked ? 'bold' : 'normal',
-                                whiteSpace: 'nowrap',
-                                cursor: isEditing ? 'pointer' : 'default',
-                                flexShrink: 0,
-                                transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
-                                outline: 'none'
-                              }}
-                            >
-                              {reason}
-                            </button>
-                          );
-                        })}
+                {(isEditing || editForm.return_reason || order.return_reason) && (
+                  <div>
+                    <label style={{ display: 'block', fontSize: '9px', color: '#ff4d4d', marginBottom: '6px', letterSpacing: '0.5px', fontWeight: 'bold' }}>CANCELLATION REASON</label>
+                    {!isEditing && (
+                      <div style={{ fontSize: '11px', color: '#ff4d4d', padding: '4px 0', fontWeight: 'bold' }}>
+                        {order.return_reason || 'Not specified'}
+                      </div>
+                    )}
+                    <div className={`filter-expand-wrapper ${isEditing ? 'open' : ''}`}>
+                      <div className="filter-expand-content">
+                        <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '6px', paddingTop: '4px' }}>
+                          {CANCELLATION_REASONS.map((reason) => {
+                            const currentVal = editForm.return_reason || order.return_reason || '';
+                            const selectedReason = currentVal.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+                            const reasonKey = reason.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+                            const isChecked = selectedReason !== '' && selectedReason === reasonKey;
+                            return (
+                              <button
+                                type="button"
+                                key={reason}
+                                onClick={() => {
+                                  if (!isEditing) return;
+                                  setEditForm(prev => ({
+                                    ...prev,
+                                    return_reason: isChecked ? '' : reason
+                                  }));
+                                }}
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  background: isChecked ? '#241010' : '#0d0d0d',
+                                  border: isChecked ? '1px solid #552222' : '1px solid #1c1c1c',
+                                  color: isChecked ? '#ff4d4d' : '#555555',
+                                  padding: '6px 12px',
+                                  borderRadius: '3px',
+                                  fontSize: '9.5px',
+                                  fontWeight: isChecked ? 'bold' : 'normal',
+                                  whiteSpace: 'nowrap',
+                                  cursor: isEditing ? 'pointer' : 'default',
+                                  flexShrink: 0,
+                                  transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+                                  outline: 'none'
+                                }}
+                              >
+                                {reason}
+                              </button>
+                            );
+                          })}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
+                )}
 
                 <div className={`filter-expand-wrapper ${isEditing ? 'open' : ''}`}>
                   <div className="filter-expand-content" style={{ paddingTop: '8px' }}>
@@ -636,15 +634,17 @@ const OrderCard: React.FC<OrderCardProps> = ({
 
                         const validChanges = log.changes && typeof log.changes === 'object'
                           ? Object.entries(log.changes).filter(([_, val]) => {
-                              const oldVal = (val?.old ?? '').toString().trim();
-                              const newVal = (val?.new ?? '').toString().trim();
-                              return oldVal !== newVal;
+                              return val && val.old && val.old !== 'None' && val.old !== 'Empty' && val.old !== 'Not specified' && val.old !== val.new;
                             })
                           : [];
 
                         const hasSingleFieldChange = Boolean(
                           log.field_name && 
-                          ((log.old_value ?? '').toString().trim() !== (log.new_value ?? '').toString().trim())
+                          log.old_value && 
+                          log.old_value !== 'None' && 
+                          log.old_value !== 'Empty' && 
+                          log.old_value !== 'Not specified' && 
+                          log.old_value !== log.new_value
                         );
 
                         if (validChanges.length === 0 && !hasSingleFieldChange) {
@@ -687,18 +687,18 @@ const OrderCard: React.FC<OrderCardProps> = ({
                                 {validChanges.map(([field, val]) => (
                                   <div key={field} style={{ fontSize: '10px', color: '#ccc', lineHeight: '1.4', wordBreak: 'break-word' }}>
                                     <span style={{ color: '#777', fontWeight: 'bold' }}>{field}: </span>
-                                    <span style={{ color: '#ff5252', textDecoration: 'line-through' }}>{val.old || 'None'}</span>
+                                    <span style={{ color: '#ff5252', textDecoration: 'line-through' }}>{val.old}</span>
                                     <span style={{ color: '#888', margin: '0 4px' }}>➔</span>
-                                    <span style={{ color: '#4cd964', fontWeight: 'bold' }}>{val.new || 'None'}</span>
+                                    <span style={{ color: '#4cd964', fontWeight: 'bold' }}>{val.new || 'N/A'}</span>
                                   </div>
                                 ))}
                               </div>
                             ) : hasSingleFieldChange ? (
                               <div style={{ fontSize: '10px', color: '#ccc', marginTop: '4px', wordBreak: 'break-word' }}>
                                 <span style={{ color: '#777', fontWeight: 'bold' }}>{log.field_name}: </span>
-                                <span style={{ color: '#ff5252', textDecoration: 'line-through' }}>{log.old_value || 'None'}</span>
+                                <span style={{ color: '#ff5252', textDecoration: 'line-through' }}>{log.old_value}</span>
                                 <span style={{ color: '#888', margin: '0 4px' }}>➔</span>
-                                <span style={{ color: '#4cd964', fontWeight: 'bold' }}>{log.new_value || 'None'}</span>
+                                <span style={{ color: '#4cd964', fontWeight: 'bold' }}>{log.new_value || 'N/A'}</span>
                               </div>
                             ) : null}
                           </div>
@@ -856,4 +856,4 @@ const OrderCard: React.FC<OrderCardProps> = ({
   );
 };
 
-export default OrderCard;
+export default OrderCard; 
