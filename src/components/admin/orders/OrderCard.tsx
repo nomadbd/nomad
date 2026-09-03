@@ -75,11 +75,11 @@ const OrderCard: React.FC<OrderCardProps> = ({
 
   const [editForm, setEditForm] = useState({
     payment_status: order.payment_status || 'Unpaid / COD',
-    courier_name: '',
-    tracking_id: '',
-    admin_notes: '',
-    customer_notes: '',
-    return_reason: ''
+    courier_name: order.courier_name || '',
+    tracking_id: order.tracking_id || '',
+    admin_notes: order.admin_notes || '',
+    customer_notes: order.customer_notes || '',
+    return_reason: order.return_reason || ''
   });
 
   const fetchAuditLogs = async () => {
@@ -128,11 +128,11 @@ const OrderCard: React.FC<OrderCardProps> = ({
       if (!prev) {
         setEditForm({
           payment_status: order.payment_status || 'Unpaid / COD',
-          courier_name: '',
-          tracking_id: '',
-          admin_notes: '',
-          customer_notes: '',
-          return_reason: ''
+          courier_name: order.courier_name || '',
+          tracking_id: order.tracking_id || '',
+          admin_notes: order.admin_notes || '',
+          customer_notes: order.customer_notes || '',
+          return_reason: order.return_reason || ''
         });
       }
       return !prev;
@@ -159,6 +159,29 @@ const OrderCard: React.FC<OrderCardProps> = ({
   const emailSubject = encodeURIComponent(`Update Regarding Your NOMAD Order #${order.id.slice(0, 8)}`);
 
   const customerInfoText = `Name: ${order.customer_name || 'N/A'}\nPhone: ${order.customer_phone || 'N/A'}\nAddress: ${order.shipping_address || 'N/A'}`;
+
+  // অডিট লগে ফিল্ডের নাম সুন্দর করে দেখানোর জন্য হেল্পার
+  const formatFieldName = (key: string): string => {
+    const fieldMap: Record<string, string> = {
+      return_reason: 'Cancellation Reason',
+      cancellation_reason: 'Cancellation Reason',
+      admin_notes: 'Admin Notes',
+      customer_notes: 'Customer Notes',
+      courier_name: 'Courier Name',
+      tracking_id: 'Tracking ID',
+      payment_status: 'Payment Status',
+      status: 'Status'
+    };
+    if (fieldMap[key]) return fieldMap[key];
+    const lowerKey = key.toLowerCase();
+    if (fieldMap[lowerKey]) return fieldMap[lowerKey];
+    
+    return key
+      .replace(/([A-Z])/g, ' $1')
+      .replace(/_/g, ' ')
+      .trim()
+      .replace(/\b\w/g, c => c.toUpperCase());
+  };
 
   const handlePaymentStatusSelect = async (e: React.ChangeEvent<HTMLSelectElement>) => {
     e.stopPropagation();
@@ -194,11 +217,11 @@ const OrderCard: React.FC<OrderCardProps> = ({
     try {
       const payload = {
         payment_status: editForm.payment_status || order.payment_status || 'Unpaid / COD',
-        courier_name: editForm.courier_name.trim() !== '' ? editForm.courier_name.trim() : (order.courier_name || ''),
-        tracking_id: editForm.tracking_id.trim() !== '' ? editForm.tracking_id.trim() : (order.tracking_id || ''),
-        admin_notes: editForm.admin_notes.trim() !== '' ? editForm.admin_notes.trim() : (order.admin_notes || ''),
-        customer_notes: editForm.customer_notes.trim() !== '' ? editForm.customer_notes.trim() : (order.customer_notes || ''),
-        return_reason: editForm.return_reason.trim() !== '' ? editForm.return_reason.trim() : (order.return_reason || '')
+        courier_name: editForm.courier_name.trim(),
+        tracking_id: editForm.tracking_id.trim(),
+        admin_notes: editForm.admin_notes.trim(),
+        customer_notes: editForm.customer_notes.trim(),
+        return_reason: editForm.return_reason.trim()
       };
 
       await onUpdateDetails(order.id, payload);
@@ -423,7 +446,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
                       <div className="filter-expand-content">
                         <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '6px', paddingTop: '4px' }}>
                           {BD_COURIERS.map((courier) => {
-                            const currentVal = editForm.courier_name || order.courier_name || '';
+                            const currentVal = isEditing ? editForm.courier_name : (order.courier_name || '');
                             const selectedName = currentVal.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
                             const courierKey = courier.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
                             const isChecked = selectedName !== '' && selectedName === courierKey;
@@ -470,10 +493,10 @@ const OrderCard: React.FC<OrderCardProps> = ({
                     <input
                       type="text"
                       readOnly={!isEditing}
-                      placeholder={order.tracking_id || "Tracking / Memo No."}
+                      placeholder={!isEditing ? (order.tracking_id || "Tracking / Memo No.") : "Enter tracking ID"}
                       value={isEditing ? editForm.tracking_id : (order.tracking_id || '')}
                       onChange={e => {
-                        if (isEditing) setEditForm({ ...editForm, tracking_id: e.target.value });
+                        if (isEditing) setEditForm(prev => ({ ...prev, tracking_id: e.target.value }));
                       }}
                       style={smoothInputStyle(isEditing)}
                     />
@@ -485,10 +508,10 @@ const OrderCard: React.FC<OrderCardProps> = ({
                   <textarea
                     rows={2}
                     readOnly={!isEditing}
-                    placeholder={order.customer_notes || "Add customer note..."}
+                    placeholder={!isEditing ? (order.customer_notes || "Add customer note...") : "Enter customer notes"}
                     value={isEditing ? editForm.customer_notes : (order.customer_notes || '')}
                     onChange={e => {
-                      if (isEditing) setEditForm({ ...editForm, customer_notes: e.target.value });
+                      if (isEditing) setEditForm(prev => ({ ...prev, customer_notes: e.target.value }));
                     }}
                     style={{ 
                       ...smoothInputStyle(isEditing), 
@@ -507,10 +530,10 @@ const OrderCard: React.FC<OrderCardProps> = ({
                   <textarea
                     rows={2}
                     readOnly={!isEditing}
-                    placeholder={order.admin_notes || "Add private admin notes..."}
+                    placeholder={!isEditing ? (order.admin_notes || "Add private admin notes...") : "Enter admin notes"}
                     value={isEditing ? editForm.admin_notes : (order.admin_notes || '')}
                     onChange={e => {
-                      if (isEditing) setEditForm({ ...editForm, admin_notes: e.target.value });
+                      if (isEditing) setEditForm(prev => ({ ...prev, admin_notes: e.target.value }));
                     }}
                     style={{ 
                       ...smoothInputStyle(isEditing), 
@@ -536,7 +559,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
                       <div className="filter-expand-content">
                         <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '6px', paddingTop: '4px' }}>
                           {CANCELLATION_REASONS.map((reason) => {
-                            const currentVal = editForm.return_reason || order.return_reason || '';
+                            const currentVal = isEditing ? editForm.return_reason : (order.return_reason || '');
                             const selectedReason = currentVal.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
                             const reasonKey = reason.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
                             const isChecked = selectedReason !== '' && selectedReason === reasonKey;
@@ -632,7 +655,6 @@ const OrderCard: React.FC<OrderCardProps> = ({
                         const profileName = profileObj?.name || profileObj?.email || 'Admin';
                         const profileRole = profileObj?.role;
 
-                        // ✅ FIXED: old_value null বা খালি হলেও যদি new-তে মান ভিন্ন হয়, তবে তা হিস্ট্রিতে দেখাবে
                         const validChanges = log.changes && typeof log.changes === 'object'
                           ? Object.entries(log.changes).filter(([_, val]) => {
                               if (!val) return false;
@@ -663,7 +685,9 @@ const OrderCard: React.FC<OrderCardProps> = ({
                               border: '1px solid #1a1a1a',
                               borderLeft: '3px solid #444',
                               borderRadius: '3px',
-                              padding: '10px 12px'
+                              padding: '10px 12px',
+                              maxHeight: '180px',
+                              overflowY: 'auto'
                             }}
                           >
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
@@ -686,7 +710,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
                               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '4px' }}>
                                 {validChanges.map(([field, val]) => (
                                   <div key={field} style={{ fontSize: '10px', color: '#ccc', lineHeight: '1.4', wordBreak: 'break-word' }}>
-                                    <span style={{ color: '#777', fontWeight: 'bold' }}>{field}: </span>
+                                    <span style={{ color: '#777', fontWeight: 'bold' }}>{formatFieldName(field)}: </span>
                                     <span style={{ color: '#ff5252', textDecoration: 'line-through' }}>{val.old || 'Empty'}</span>
                                     <span style={{ color: '#888', margin: '0 4px' }}>➔</span>
                                     <span style={{ color: '#4cd964', fontWeight: 'bold' }}>{val.new || 'N/A'}</span>
@@ -695,7 +719,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
                               </div>
                             ) : hasSingleFieldChange ? (
                               <div style={{ fontSize: '10px', color: '#ccc', marginTop: '4px', wordBreak: 'break-word' }}>
-                                <span style={{ color: '#777', fontWeight: 'bold' }}>{log.field_name}: </span>
+                                <span style={{ color: '#777', fontWeight: 'bold' }}>{formatFieldName(log.field_name || '')}: </span>
                                 <span style={{ color: '#ff5252', textDecoration: 'line-through' }}>{log.old_value || 'Empty'}</span>
                                 <span style={{ color: '#888', margin: '0 4px' }}>➔</span>
                                 <span style={{ color: '#4cd964', fontWeight: 'bold' }}>{log.new_value || 'N/A'}</span>
