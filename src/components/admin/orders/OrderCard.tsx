@@ -265,6 +265,18 @@ const OrderCard: React.FC<OrderCardProps> = ({
     alignItems: 'center'
   });
 
+  // Professional date formatter (DD MMM YY, 24-hour)
+  const formatDateTime = (dateString: string) => {
+    return new Date(dateString).toLocaleString('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
+  };
+
   return (
     <div
       className="animate-fade-in table-row-hover"
@@ -326,7 +338,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
                 </span>
               </div>
               <div style={{ fontSize: '10px', color: '#888', marginTop: '4px' }}>
-                {new Date(order.created_at).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })}
+                {formatDateTime(order.created_at)}
               </div>
             </div>
           </div>
@@ -694,7 +706,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
                                 )}
                               </div>
                               <span style={{ fontSize: '9px', color: '#666' }}>
-                                {new Date(log.created_at).toLocaleString('en-GB', { dateStyle: 'short', timeStyle: 'short' })}
+                                {formatDateTime(log.created_at)}
                               </span>
                             </div>
 
