@@ -8,7 +8,10 @@ export default function Profile() {
   const [view, setView] = useState<'profile' | 'settings'>(() => {
     return (localStorage.getItem('currentView') as 'profile' | 'settings') || 'profile';
   });
+  
+  const [portalMode, setPortalMode] = useState<'customer' | 'ambassador'>('customer');
   const [profile, setProfile] = useState<any>(null);
+  const [ambassadorData, setAmbassadorData] = useState<any>(null);
   const [session, setSession] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [newName, setNewName] = useState('');
@@ -45,7 +48,7 @@ export default function Profile() {
     if (user) {
       setSession({ user });
       const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single();
-      
+
       const normalizedRole = prof?.role ? String(prof.role).toUpperCase().trim() : '';
       const isStaff = ['SUPER_ADMIN', 'ADMIN', 'STAFF'].includes(normalizedRole);
 
@@ -55,6 +58,12 @@ export default function Profile() {
       }
 
       setProfile({ ...prof, email: user.email });
+
+      if (normalizedRole === 'AMBASSADOR') {
+        const { data: amb } = await supabase.from('ambassador').select('*').eq('user_id', user.id).maybeSingle();
+        setAmbassadorData(amb);
+      }
+
       setNewName('');
       setNewEmail('');
       setNewPassword('');
@@ -124,6 +133,8 @@ export default function Profile() {
     }
   };
 
+  const isAmbassador = String(profile?.role).toUpperCase().trim() === 'AMBASSADOR';
+
   const inputStyle = { width: '100%', padding: '10px 0', background: 'transparent', border: 'none', borderBottom: '1px solid #333', color: '#fff', marginBottom: '20px', outline: 'none', fontSize: '15px' };
   const navButtonStyle = { background: 'transparent', border: 'none', color: '#aaa', cursor: 'pointer', fontSize: '13px', letterSpacing: '1px', display: 'block', width: '100%', textAlign: 'left', padding: '5px 0' };
   const dangerButtonStyle = { background: 'transparent', border: 'none', color: '#ff4444', cursor: 'pointer', fontSize: '11px', letterSpacing: '2px', textTransform: 'uppercase' as const, display: 'block', width: '100%', textAlign: 'left', fontWeight: 'bold' };
@@ -155,51 +166,114 @@ export default function Profile() {
         </div>
       )}
 
+      {isAmbassador && (
+        <div style={{ display: 'flex', gap: '15px', marginBottom: '30px', borderBottom: '1px solid #222', paddingBottom: '15px' }}>
+          <button 
+            onClick={() => setPortalMode('customer')}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: portalMode === 'customer' ? '#fff' : '#666',
+              fontSize: '12px',
+              letterSpacing: '2px',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              borderBottom: portalMode === 'customer' ? '2px solid #fff' : '2px solid transparent',
+              paddingBottom: '5px'
+            }}>
+            CUSTOMER ACCOUNT
+          </button>
+          <button 
+            onClick={() => setPortalMode('ambassador')}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: portalMode === 'ambassador' ? '#d4af37' : '#666',
+              fontSize: '12px',
+              letterSpacing: '2px',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              borderBottom: portalMode === 'ambassador' ? '2px solid #d4af37' : '2px solid transparent',
+              paddingBottom: '5px'
+            }}>
+            ★ AMBASSADOR PORTAL
+          </button>
+        </div>
+      )}
+
       <div style={{ width: '100%' }}>
-        {view === 'profile' ? (
-          <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
-              <div style={{ width: '100%' }}>
-                {profile?.name ? (
-                  <>
-                    <p style={{ margin: '0', fontSize: '22px', fontWeight: '600', color: '#fff', letterSpacing: '1px' }}>{profile.name}</p>
-                    <p style={{ margin: '5px 0 0 0', fontSize: '14px', color: '#666', letterSpacing: '0.5px' }}>{profile.email}</p>
-                  </>
-                ) : (
-                  <>
-                    <p style={{ margin: 0, fontSize: '22px', fontWeight: '600', color: '#fff', letterSpacing: '1px' }}>PROFILE</p>
-                    <p style={{ fontSize: '13px', fontWeight: '500', color: '#aaa', cursor: 'pointer', margin: '8px 0 0 0', letterSpacing: '1px' }} onClick={() => changeView('settings')}>Add your name</p>
-                  </>
-                )}
+        {portalMode === 'ambassador' && isAmbassador ? (
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
+              <div>
+                <span style={{ fontSize: '10px', color: '#d4af37', letterSpacing: '2px', textTransform: 'uppercase' }}>VIP PARTNER</span>
+                <h2 style={{ fontSize: '22px', margin: '4px 0 0 0', fontWeight: '500', letterSpacing: '1px' }}>AMBASSADOR DASHBOARD</h2>
               </div>
-              <svg onClick={() => changeView('settings')} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" cursor="pointer"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
             </div>
 
-            <div style={{ marginTop: '20px', borderTop: '1px solid #111', paddingTop: '10px' }}>
-              <OrderHistory userId={profile?.id} />
+            <div style={{ backgroundColor: '#0a0a0a', border: '1px solid #222', padding: '24px', borderRadius: '8px', marginBottom: '20px' }}>
+              <p style={{ margin: 0, fontSize: '11px', color: '#888', letterSpacing: '1px' }}>STATUS</p>
+              <p style={{ margin: '4px 0 16px 0', fontSize: '16px', color: '#4edf4e', fontWeight: 'bold' }}>ACTIVE PARTNER</p>
+
+              <p style={{ margin: 0, fontSize: '11px', color: '#888', letterSpacing: '1px' }}>RECIPIENT ID</p>
+              <p style={{ margin: '4px 0 0 0', fontSize: '14px', color: '#fff' }}>{ambassadorData?.recipient_identifier || profile?.email}</p>
             </div>
-          </>
+
+            <div style={{ backgroundColor: '#0a0a0a', border: '1px solid #222', padding: '24px', borderRadius: '8px' }}>
+              <h4 style={{ margin: '0 0 10px 0', fontSize: '14px', letterSpacing: '1px', color: '#fff' }}>CONCIERGE & SUPPORT</h4>
+              <p style={{ fontSize: '13px', color: '#888', lineHeight: '1.6', margin: 0 }}>
+                Welcome to your exclusive Ambassador portal. For partner inquiries or payout updates, contact your concierge admin directly.
+              </p>
+            </div>
+          </div>
         ) : (
           <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
-              <h2 style={{ fontWeight: '500', letterSpacing: '4px', fontSize: '18px', margin: 0 }}>SETTINGS</h2>
-              <svg onClick={() => changeView('profile')} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" cursor="pointer"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-            </div>
+            {view === 'profile' ? (
+              <>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
+                  <div style={{ width: '100%' }}>
+                    {profile?.name ? (
+                      <>
+                        <p style={{ margin: '0', fontSize: '22px', fontWeight: '600', color: '#fff', letterSpacing: '1px' }}>{profile.name}</p>
+                        <p style={{ margin: '5px 0 0 0', fontSize: '14px', color: '#666', letterSpacing: '0.5px' }}>{profile.email}</p>
+                      </>
+                    ) : (
+                      <>
+                        <p style={{ margin: 0, fontSize: '22px', fontWeight: '600', color: '#fff', letterSpacing: '1px' }}>PROFILE</p>
+                        <p style={{ fontSize: '13px', fontWeight: '500', color: '#aaa', cursor: 'pointer', margin: '8px 0 0 0', letterSpacing: '1px' }} onClick={() => changeView('settings')}>Add your name</p>
+                      </>
+                    )}
+                  </div>
+                  <svg onClick={() => changeView('settings')} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" cursor="pointer"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                </div>
 
-            <p style={{ fontSize: '10px', color: '#888', letterSpacing: '2px', marginBottom: '5px' }}>NAME</p>
-            <input placeholder={profile?.name || "Enter your name"} value={newName} onChange={(e) => setNewName(e.target.value)} style={inputStyle} />
+                <div style={{ marginTop: '20px', borderTop: '1px solid #111', paddingTop: '10px' }}>
+                  <OrderHistory userId={profile?.id} />
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
+                  <h2 style={{ fontWeight: '500', letterSpacing: '4px', fontSize: '18px', margin: 0 }}>SETTINGS</h2>
+                  <svg onClick={() => changeView('profile')} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" cursor="pointer"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </div>
 
-            <p style={{ fontSize: '10px', color: '#888', letterSpacing: '2px', marginBottom: '5px' }}>EMAIL ADDRESS</p>
-            <input placeholder={profile?.email} value={newEmail} onChange={(e) => setNewEmail(e.target.value)} style={inputStyle} />
+                <p style={{ fontSize: '10px', color: '#888', letterSpacing: '2px', marginBottom: '5px' }}>NAME</p>
+                <input placeholder={profile?.name || "Enter your name"} value={newName} onChange={(e) => setNewName(e.target.value)} style={inputStyle} />
 
-            <p style={{ fontSize: '10px', color: '#888', letterSpacing: '2px', marginBottom: '5px' }}>NEW PASSWORD</p>
-            <input type="password" placeholder="••••••••" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} style={inputStyle} />
+                <p style={{ fontSize: '10px', color: '#888', letterSpacing: '2px', marginBottom: '5px' }}>EMAIL ADDRESS</p>
+                <input placeholder={profile?.email} value={newEmail} onChange={(e) => setNewEmail(e.target.value)} style={inputStyle} />
 
-            <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              <button onClick={handleUpdate} style={{ ...navButtonStyle, color: '#fff', fontWeight: '600' }}>SAVE CHANGES</button>
-              <button onClick={handleSignOut} style={navButtonStyle}>SIGN OUT</button>
-              <button onClick={() => setShowConfirm(true)} style={dangerButtonStyle}>DELETE ACCOUNT</button>
-            </div>
+                <p style={{ fontSize: '10px', color: '#888', letterSpacing: '2px', marginBottom: '5px' }}>NEW PASSWORD</p>
+                <input type="password" placeholder="••••••••" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} style={inputStyle} />
+
+                <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                  <button onClick={handleUpdate} style={{ ...navButtonStyle, color: '#fff', fontWeight: '600' }}>SAVE CHANGES</button>
+                  <button onClick={handleSignOut} style={navButtonStyle}>SIGN OUT</button>
+                  <button onClick={() => setShowConfirm(true)} style={dangerButtonStyle}>DELETE ACCOUNT</button>
+                </div>
+              </>
+            )}
           </>
         )}
       </div>
