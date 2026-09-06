@@ -5,12 +5,16 @@ import { supabase } from '../supabaseClient';
 export default function AmbassadorJoin() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const token = searchParams.get('token');
+  // Support both short '?t=' and legacy '?token='
+  const token = searchParams.get('t') || searchParams.get('token');
 
   const [loading, setLoading] = useState(true);
   const [inviteData, setInviteData] = useState<any>(null);
   const [isExpired, setIsExpired] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+
+  // Mode: 'signup' (New Account) or 'login' (Account Upgrade)
+  const [mode, setMode] = useState<'signup' | 'login'>('signup');
 
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -21,7 +25,7 @@ export default function AmbassadorJoin() {
 
   useEffect(() => {
     if (!token) {
-      setErrorMessage('No invite token provided.');
+      setErrorMessage('No invitation token provided.');
       setLoading(false);
       return;
     }
@@ -60,7 +64,7 @@ export default function AmbassadorJoin() {
     validateToken();
   }, [token]);
 
-  const handleRegister = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inviteData || submitting || !token) return;
 
@@ -68,26 +72,50 @@ export default function AmbassadorJoin() {
     setErrorMessage('');
 
     try {
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: email,
-        password: password,
-        options: {
-          data: {
-            full_name: fullName,
-            role: 'AMBASSADOR',
-          },
-        },
-      });
+      let userId = '';
+      let userEmail = email;
+      let userName = fullName;
 
-      if (authError || !authData.user) {
-        throw new Error(authError?.message || 'Registration failed');
+      if (mode === 'signup') {
+        // 1. Create New Account
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+          email: email,
+          password: password,
+          options: {
+            data: { full_name: fullName, role: 'AMBASSADOR' }
+          }
+        });
+
+        if (authError || !authData.user) {
+          throw new Error(authError?.message || 'Sign up failed.');
+        }
+        userId = authData.user.id;
+      } else {
+        // 2. Existing Customer Login (Account Upgrade)
+        const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+          email: email,
+          password: password
+        });
+
+        if (authError || !authData.user) {
+          throw new Error('Invalid email or password.');
+        }
+        userId = authData.user.id;
+        userEmail = authData.user.email || email;
+        
+        // Fetch existing name if full name input is blank
+        if (!userName) {
+          const { data: prof } = await supabase.from('profiles').select('name').eq('id', userId).single();
+          userName = prof?.name || userEmail.split('@')[0];
+        }
       }
 
+      // 3. Upgrade Role to AMBASSADOR via RPC
       const { data: rpcRes, error: rpcErr } = await supabase.rpc('complete_ambassador_registration', {
         invite_token: token,
-        new_user_id: authData.user.id,
-        user_email: email,
-        user_name: fullName
+        new_user_id: userId,
+        user_email: userEmail,
+        user_name: userName
       });
 
       if (rpcErr || !rpcRes?.success) {
@@ -132,17 +160,18 @@ export default function AmbassadorJoin() {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: '24px',
-    fontFamily: 'sans-serif',
+    padding: '20px',
+    fontFamily: "'Inter', sans-serif",
   };
 
   const cardStyle: React.CSSProperties = {
     width: '100%',
-    maxWidth: '440px',
+    maxWidth: '420px',
     border: '1px solid #222',
     backgroundColor: '#0a0a0a',
-    padding: '32px',
+    padding: '28px',
     borderRadius: '8px',
+    boxSizing: 'border-box',
   };
 
   const inputStyle: React.CSSProperties = {
@@ -154,6 +183,7 @@ export default function AmbassadorJoin() {
     color: '#fff',
     borderRadius: '4px',
     boxSizing: 'border-box',
+    outline: 'none',
   };
 
   const buttonStyle: React.CSSProperties = {
@@ -165,12 +195,27 @@ export default function AmbassadorJoin() {
     fontWeight: 'bold',
     cursor: 'pointer',
     borderRadius: '4px',
+    letterSpacing: '1px',
+    marginTop: '10px'
   };
+
+  const tabStyle = (active: boolean): React.CSSProperties => ({
+    flex: 1,
+    padding: '10px',
+    textAlign: 'center',
+    cursor: 'pointer',
+    fontSize: '12px',
+    fontWeight: 'bold',
+    letterSpacing: '1px',
+    borderBottom: active ? '2px solid #fff' : '2px solid #222',
+    color: active ? '#fff' : '#666',
+    transition: 'all 0.2s ease',
+  });
 
   if (loading) {
     return (
       <div style={containerStyle}>
-        <p style={{ letterSpacing: '2px', fontFamily: 'monospace' }}>VALIDATING VIP INVITATION...</p>
+        <p style={{ letterSpacing: '2px', fontSize: '12px', color: '#888' }}>VERIFYING LINK...</p>
       </div>
     );
   }
@@ -179,8 +224,8 @@ export default function AmbassadorJoin() {
     return (
       <div style={containerStyle}>
         <div style={cardStyle}>
-          <h2 style={{ color: '#ff4d4d', marginTop: 0 }}>Access Denied</h2>
-          <p style={{ color: '#aaa' }}>{errorMessage}</p>
+          <h3 style={{ color: '#ff4d4d', marginTop: 0 }}>Access Denied</h3>
+          <p style={{ color: '#aaa', fontSize: '14px' }}>{errorMessage}</p>
         </div>
       </div>
     );
@@ -190,22 +235,22 @@ export default function AmbassadorJoin() {
     return (
       <div style={containerStyle}>
         <div style={cardStyle}>
-          <h2 style={{ marginTop: 0, letterSpacing: '1px' }}>LINK EXPIRED</h2>
-          <p style={{ color: '#888', fontSize: '14px', lineHeight: '1.5' }}>
-            This invitation token is no longer active. You may request a one-time link extension from the concierge.
+          <h2 style={{ marginTop: 0, letterSpacing: '1px', fontSize: '20px' }}>LINK EXPIRED</h2>
+          <p style={{ color: '#888', fontSize: '13px', lineHeight: '1.5' }}>
+            This invitation link is no longer active. Request a renewal below.
           </p>
 
           {reissueSubmitted ? (
-            <div style={{ padding: '16px', backgroundColor: '#112211', border: '1px solid #225522', borderRadius: '4px', marginTop: '16px' }}>
-              <p style={{ margin: 0, color: '#4edf4e', fontSize: '14px' }}>
-                ✓ Request submitted. Our team will review your message shortly.
+            <div style={{ padding: '14px', backgroundColor: '#112211', border: '1px solid #225522', borderRadius: '4px', marginTop: '16px' }}>
+              <p style={{ margin: 0, color: '#4edf4e', fontSize: '13px' }}>
+                ✓ Renewal request sent to admin.
               </p>
             </div>
           ) : (
             <form onSubmit={handleReissueRequest} style={{ marginTop: '20px' }}>
               <textarea
-                style={{ ...inputStyle, minHeight: '100px', resize: 'vertical' }}
-                placeholder="Reason for requesting re-activation..."
+                style={{ ...inputStyle, minHeight: '80px', resize: 'vertical' }}
+                placeholder="Message for requesting new link..."
                 value={reissueMsg}
                 onChange={(e) => setReissueMsg(e.target.value)}
                 required
@@ -223,34 +268,48 @@ export default function AmbassadorJoin() {
   return (
     <div style={containerStyle}>
       <div style={cardStyle}>
-        <div style={{ textTransform: 'uppercase', fontSize: '12px', letterSpacing: '3px', color: '#888', marginBottom: '8px' }}>
-          Exclusive Invitation
+        <div style={{ textTransform: 'uppercase', fontSize: '11px', letterSpacing: '3px', color: '#888', marginBottom: '6px' }}>
+          Exclusive VIP Invitation
         </div>
-        <h1 style={{ marginTop: 0, fontSize: '24px', fontWeight: 'normal', letterSpacing: '1px' }}>
+        <h2 style={{ marginTop: 0, fontSize: '20px', fontWeight: '500', letterSpacing: '1px' }}>
           WELCOME, {inviteData?.recipient_identifier}
-        </h1>
+        </h2>
 
         {inviteData?.initial_admin_message && (
-          <div style={{ padding: '12px', backgroundColor: '#141414', borderLeft: '2px solid #fff', marginBottom: '24px', fontSize: '13px', color: '#ccc' }}>
+          <div style={{ padding: '12px', backgroundColor: '#141414', borderLeft: '2px solid #fff', marginBottom: '20px', fontSize: '13px', color: '#ccc' }}>
             "{inviteData.initial_admin_message}"
           </div>
         )}
 
+        {/* Tab Switcher: Sign Up vs Account Upgrade */}
+        <div style={{ display: 'flex', marginBottom: '20px' }}>
+          <div style={tabStyle(mode === 'signup')} onClick={() => setMode('signup')}>
+            NEW ACCOUNT
+          </div>
+          <div style={tabStyle(mode === 'login')} onClick={() => setMode('login')}>
+            EXISTING USER
+          </div>
+        </div>
+
         {errorMessage && (
-          <p style={{ color: '#ff4d4d', fontSize: '14px', marginBottom: '16px' }}>{errorMessage}</p>
+          <p style={{ color: '#ff4d4d', fontSize: '13px', marginBottom: '16px' }}>{errorMessage}</p>
         )}
 
-        <form onSubmit={handleRegister}>
-          <label style={{ fontSize: '12px', color: '#aaa', display: 'block', marginBottom: '6px' }}>FULL NAME</label>
-          <input
-            type="text"
-            style={inputStyle}
-            value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
-            required
-          />
+        <form onSubmit={handleSubmit}>
+          {mode === 'signup' && (
+            <>
+              <label style={{ fontSize: '11px', color: '#aaa', display: 'block', marginBottom: '6px' }}>FULL NAME</label>
+              <input
+                type="text"
+                style={inputStyle}
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                required
+              />
+            </>
+          )}
 
-          <label style={{ fontSize: '12px', color: '#aaa', display: 'block', marginBottom: '6px' }}>EMAIL ADDRESS</label>
+          <label style={{ fontSize: '11px', color: '#aaa', display: 'block', marginBottom: '6px' }}>EMAIL ADDRESS</label>
           <input
             type="email"
             style={inputStyle}
@@ -259,7 +318,9 @@ export default function AmbassadorJoin() {
             required
           />
 
-          <label style={{ fontSize: '12px', color: '#aaa', display: 'block', marginBottom: '6px' }}>CREATE PASSWORD</label>
+          <label style={{ fontSize: '11px', color: '#aaa', display: 'block', marginBottom: '6px' }}>
+            {mode === 'signup' ? 'CREATE PASSWORD' : 'PASSWORD'}
+          </label>
           <input
             type="password"
             style={inputStyle}
@@ -269,8 +330,8 @@ export default function AmbassadorJoin() {
             minLength={6}
           />
 
-          <button type="submit" disabled={submitting} style={{ ...buttonStyle, marginTop: '8px' }}>
-            {submitting ? 'ACTIVATING...' : 'ACCEPT & JOIN'}
+          <button type="submit" disabled={submitting} style={buttonStyle}>
+            {submitting ? 'PROCESSING...' : mode === 'signup' ? 'JOIN AS AMBASSADOR' : 'UPGRADE MY ACCOUNT'}
           </button>
         </form>
       </div>
