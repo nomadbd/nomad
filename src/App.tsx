@@ -8,6 +8,7 @@ import AuthOverlay from './components/auth/AuthOverlay';
 import Profile from './pages/Profile';
 import AuthForm from './components/auth/AuthForm';
 import ProductList from './components/ProductList';
+import AmbassadorJoin from './pages/AmbassadorJoin';
 import { CartProvider } from './context/CartContext';
 import CartOverlay from './components/CartOverlay';
 
@@ -17,7 +18,7 @@ const AppContent = ({ session, setIsSearchOpen, setIsAuthOpen }: any) => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const showHeader = !['/profile', '/admin', '/update-password'].includes(location.pathname);
+  const showHeader = !['/profile', '/admin', '/update-password', '/vip/join'].includes(location.pathname);
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: 'black', color: 'white' }}>
@@ -45,6 +46,8 @@ const AppContent = ({ session, setIsSearchOpen, setIsAuthOpen }: any) => {
         } />
 
         <Route path="/profile" element={session ? <Profile /> : <Navigate to="/" replace />} />
+
+        <Route path="/vip/join" element={<AmbassadorJoin />} />
 
         <Route 
           path="/admin" 
