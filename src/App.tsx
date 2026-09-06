@@ -1,16 +1,19 @@
 import React, { useState, lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
+
+import { CartProvider } from './context/CartContext';
 import { useSession } from './hooks/useSession';
+
+import Profile from './pages/Profile';
+import AmbassadorJoin from './pages/AmbassadorJoin';
+
 import Header from './components/Header';
 import SearchOverlay from './components/SearchOverlay';
 import Hero from './components/Hero/Hero';
-import AuthOverlay from './components/auth/AuthOverlay';
-import Profile from './pages/Profile';
-import AuthForm from './components/auth/AuthForm';
 import ProductList from './components/ProductList';
-import AmbassadorJoin from './pages/AmbassadorJoin';
-import { CartProvider } from './context/CartContext';
 import CartOverlay from './components/CartOverlay';
+import AuthOverlay from './components/auth/AuthOverlay';
+import AuthForm from './components/auth/AuthForm';
 
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 
@@ -18,7 +21,7 @@ const AppContent = ({ session, setIsSearchOpen, setIsAuthOpen }: any) => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const showHeader = !['/profile', '/admin', '/update-password', '/vip/join'].includes(location.pathname);
+  const showHeader = !['/profile', '/admin', '/update-password'].includes(location.pathname) && !location.pathname.startsWith('/vip');
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: 'black', color: 'white' }}>
@@ -47,7 +50,7 @@ const AppContent = ({ session, setIsSearchOpen, setIsAuthOpen }: any) => {
 
         <Route path="/profile" element={session ? <Profile /> : <Navigate to="/" replace />} />
 
-        <Route path="/vip/join" element={<AmbassadorJoin />} />
+        <Route path="/vip/:token" element={<AmbassadorJoin />} />
 
         <Route 
           path="/admin" 
