@@ -12,8 +12,8 @@ export default function AmbassadorJoin() {
   const [isExpired, setIsExpired] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  // Form states
   const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [reissueMsg, setReissueMsg] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -62,20 +62,19 @@ export default function AmbassadorJoin() {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inviteData || submitting) return;
+    if (!inviteData || submitting || !token) return;
 
     setSubmitting(true);
     setErrorMessage('');
 
     try {
-      // 1. Create Supabase Auth User
       const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: `${inviteData.assigned_slug.toLowerCase()}@ambassador.brand`, // Or dynamic input
+        email: email,
         password: password,
         options: {
           data: {
             full_name: fullName,
-            role: 'ambassador',
+            role: 'AMBASSADOR',
           },
         },
       });
@@ -84,17 +83,16 @@ export default function AmbassadorJoin() {
         throw new Error(authError?.message || 'Registration failed');
       }
 
-      // 2. Update Ambassador Record
-      const { error: updateError } = await supabase
-        .from('ambassador')
-        .update({
-          user_id: authData.user.id,
-          is_registered: true,
-          registered_at: new Date().toISOString(),
-        })
-        .eq('id', inviteData.id);
+      const { data: rpcRes, error: rpcErr } = await supabase.rpc('complete_ambassador_registration', {
+        invite_token: token,
+        new_user_id: authData.user.id,
+        user_email: email,
+        user_name: fullName
+      });
 
-      if (updateError) throw updateError;
+      if (rpcErr || !rpcRes?.success) {
+        throw new Error(rpcRes?.message || rpcErr?.message || 'Failed to complete registration.');
+      }
 
       navigate('/profile');
     } catch (err: any) {
@@ -249,6 +247,15 @@ export default function AmbassadorJoin() {
             style={inputStyle}
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
+            required
+          />
+
+          <label style={{ fontSize: '12px', color: '#aaa', display: 'block', marginBottom: '6px' }}>EMAIL ADDRESS</label>
+          <input
+            type="email"
+            style={inputStyle}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             required
           />
 
