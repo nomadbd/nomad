@@ -1,19 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 
 export default function AmbassadorJoin() {
-  const [searchParams] = useSearchParams();
+  const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
-  // Support both short '?t=' and legacy '?token='
-  const token = searchParams.get('t') || searchParams.get('token');
 
   const [loading, setLoading] = useState(true);
   const [inviteData, setInviteData] = useState<any>(null);
   const [isExpired, setIsExpired] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  // Mode: 'signup' (New Account) or 'login' (Account Upgrade)
   const [mode, setMode] = useState<'signup' | 'login'>('signup');
 
   const [fullName, setFullName] = useState('');
@@ -77,7 +74,6 @@ export default function AmbassadorJoin() {
       let userName = fullName;
 
       if (mode === 'signup') {
-        // 1. Create New Account
         const { data: authData, error: authError } = await supabase.auth.signUp({
           email: email,
           password: password,
@@ -91,7 +87,6 @@ export default function AmbassadorJoin() {
         }
         userId = authData.user.id;
       } else {
-        // 2. Existing Customer Login (Account Upgrade)
         const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
           email: email,
           password: password
@@ -103,14 +98,12 @@ export default function AmbassadorJoin() {
         userId = authData.user.id;
         userEmail = authData.user.email || email;
         
-        // Fetch existing name if full name input is blank
         if (!userName) {
           const { data: prof } = await supabase.from('profiles').select('name').eq('id', userId).single();
           userName = prof?.name || userEmail.split('@')[0];
         }
       }
 
-      // 3. Upgrade Role to AMBASSADOR via RPC
       const { data: rpcRes, error: rpcErr } = await supabase.rpc('complete_ambassador_registration', {
         invite_token: token,
         new_user_id: userId,
@@ -281,7 +274,6 @@ export default function AmbassadorJoin() {
           </div>
         )}
 
-        {/* Tab Switcher: Sign Up vs Account Upgrade */}
         <div style={{ display: 'flex', marginBottom: '20px' }}>
           <div style={tabStyle(mode === 'signup')} onClick={() => setMode('signup')}>
             NEW ACCOUNT
