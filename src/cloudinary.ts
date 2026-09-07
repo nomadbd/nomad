@@ -1,10 +1,23 @@
-export const uploadToCloudinary = async (file: File): Promise<string> => {
+export const uploadToCloudinary = async (
+  file: File,
+  folder?: string,
+  publicId?: string
+): Promise<string> => {
   const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
   const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
 
   const formData = new FormData();
   formData.append('file', file);
   formData.append('upload_preset', uploadPreset);
+
+  if (folder) {
+    formData.append('folder', folder);
+  }
+
+  if (publicId) {
+    formData.append('public_id', publicId);
+    formData.append('overwrite', 'true');
+  }
 
   const response = await fetch(
     `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`,
