@@ -261,7 +261,7 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
         setUploadingMedia(true);
         for (let i = 0; i < mediaFiles.length; i++) {
           const file = mediaFiles[i];
-          const mediaUrl = await uploadToCloudinary(file);
+          const mediaUrl = await uploadToCloudinary(file, 'product_media', 'products');
           const mediaType = file.type.startsWith('video') ? 'video' : 'image';
 
           await supabase.from('product_media').insert([{
@@ -426,7 +426,7 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
         const startOrder = editExistingMedia.length;
         for (let i = 0; i < editMediaFiles.length; i++) {
           const file = editMediaFiles[i];
-          const mediaUrl = await uploadToCloudinary(file);
+          const mediaUrl = await uploadToCloudinary(file, 'product_media', 'products');
           const mediaType = file.type.startsWith('video') ? 'video' : 'image';
 
           await supabase.from('product_media').insert([{
