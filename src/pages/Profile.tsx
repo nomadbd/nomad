@@ -85,8 +85,9 @@ export default function Profile() {
         return;
       }
 
-      setProfile({ ...prof, email: user.email });
-      setAvatarUrl(prof?.avatar_url || null);
+      const fetchedAvatar = prof?.avatar_url || prof?.avatar || null;
+      setProfile({ ...prof, email: user.email, avatar_url: fetchedAvatar });
+      setAvatarUrl(fetchedAvatar);
 
       if (normalizedRole === 'AMBASSADOR') {
         const { data: amb } = await supabase.from('ambassador').select('*').eq('user_id', user.id).maybeSingle();
@@ -167,11 +168,11 @@ export default function Profile() {
         return;
       }
 
-      const viewportSize = 220; 
       const outputSize = 500; 
       canvas.width = outputSize;
       canvas.height = outputSize;
 
+      const viewportSize = 200;
       const baseScale = Math.max(viewportSize / image.naturalWidth, viewportSize / image.naturalHeight);
       const currentScale = baseScale * zoom;
 
@@ -182,6 +183,9 @@ export default function Profile() {
       const imgTopInViewport = (viewportSize - renderedHeight) / 2 + offset.y;
 
       const scaleRatio = outputSize / viewportSize;
+
+      ctx.fillStyle = '#181818';
+      ctx.fillRect(0, 0, outputSize, outputSize);
 
       ctx.drawImage(
         image,
@@ -221,6 +225,7 @@ export default function Profile() {
       if (uploadedUrl) {
         const urlWithCacheBust = `${uploadedUrl}?v=${Date.now()}`;
 
+        // Supabase Profile Table update
         const { error } = await supabase
           .from('profiles')
           .update({ avatar_url: urlWithCacheBust })
@@ -228,6 +233,7 @@ export default function Profile() {
 
         if (error) throw error;
 
+        // Force local state update
         setAvatarUrl(urlWithCacheBust);
         setProfile((prev: any) => ({ ...prev, avatar_url: urlWithCacheBust }));
         showToast("Profile picture updated successfully!", "#2ecc71");
@@ -385,15 +391,15 @@ export default function Profile() {
         </div>
       )}
 
-      {/* Twitter-Style Bottom Sheet Cropper Modal */}
+      {/* Responsive Fixed Modal with dvh & safe padding */}
       {cropModalOpen && selectedImageSrc && (
         <div style={{ 
           position: 'fixed', 
           top: 0, 
           left: 0, 
           width: '100vw', 
-          height: '100vh', 
-          backgroundColor: 'rgba(0, 0, 0, 0.75)', 
+          height: '100dvh', 
+          backgroundColor: 'rgba(0, 0, 0, 0.85)', 
           backdropFilter: 'blur(10px)', 
           display: 'flex', 
           alignItems: 'flex-end', 
@@ -404,21 +410,22 @@ export default function Profile() {
             background: '#121212', 
             borderTop: '1px solid #282828', 
             borderRadius: '24px 24px 0 0', 
-            padding: '16px 24px 32px 24px', 
+            padding: '16px 20px calc(20px + env(safe-area-inset-bottom)) 20px', 
             maxWidth: '480px', 
             width: '100%', 
+            maxHeight: '90dvh',
+            overflowY: 'auto',
             textAlign: 'center', 
             boxShadow: '0 -10px 30px rgba(0,0,0,0.8)',
             boxSizing: 'border-box'
           }}>
-            {/* Mobile Drag Indicator Bar */}
-            <div style={{ width: '36px', height: '4px', background: '#333', borderRadius: '2px', margin: '0 auto 16px auto' }} />
+            <div style={{ width: '36px', height: '4px', background: '#333', borderRadius: '2px', margin: '0 auto 12px auto' }} />
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '700', letterSpacing: '1px', textTransform: 'uppercase' }}>EDIT MEDIA</h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+              <h3 style={{ margin: 0, fontSize: '14px', fontWeight: '700', letterSpacing: '1px', textTransform: 'uppercase' }}>EDIT MEDIA</h3>
               <button 
                 onClick={() => setCropModalOpen(false)} 
-                style={{ background: 'transparent', border: 'none', color: '#888', cursor: 'pointer', fontSize: '14px' }}>
+                style={{ background: 'transparent', border: 'none', color: '#888', cursor: 'pointer', fontSize: '16px' }}>
                 ✕
               </button>
             </div>
@@ -432,10 +439,10 @@ export default function Profile() {
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
               style={{
-                width: '220px',
-                height: '220px',
+                width: '200px',
+                height: '200px',
                 borderRadius: '50%',
-                margin: '0 auto 20px auto',
+                margin: '0 auto 16px auto',
                 overflow: 'hidden',
                 position: 'relative',
                 cursor: isDragging ? 'grabbing' : 'grab',
@@ -464,8 +471,8 @@ export default function Profile() {
               />
             </div>
 
-            <div style={{ marginBottom: '24px', padding: '0 10px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#888', marginBottom: '8px', letterSpacing: '1px' }}>
+            <div style={{ marginBottom: '16px', padding: '0 10px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#888', marginBottom: '6px', letterSpacing: '1px' }}>
                 <span>ZOOM</span>
                 <span>{Math.round(zoom * 100)}%</span>
               </div>
@@ -480,7 +487,7 @@ export default function Profile() {
               />
             </div>
 
-            <div style={{ display: 'flex', gap: '12px' }}>
+            <div style={{ display: 'flex', gap: '12px', marginBottom: '8px' }}>
               <button 
                 onClick={() => setCropModalOpen(false)}
                 style={{
