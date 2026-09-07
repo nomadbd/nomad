@@ -211,26 +211,23 @@ export default function Profile() {
                   }}>
                   {getInitials(profile?.name, profile?.email)}
 
-                  {/* শুধুমাত্র অ্যাম্বাসেডর মোডে সুইচ করা থাকলে ছোট সোনালী স্টার ব্যাজ দেখাবে */}
-                  {isAmbassador && portalMode === 'ambassador' && (
-                    <div style={{
+                  {/* কোনো ব্যাকগ্রাউন্ড ছাড়াই সরাসরি নিয়ন সাদা গ্লো সহ স্টার আইকন */}
+                  {isAmbassador && (
+                    <span style={{
                       position: 'absolute',
                       bottom: '-2px',
                       right: '-2px',
-                      width: '18px',
-                      height: '18px',
-                      borderRadius: '50%',
-                      backgroundColor: '#d4af37',
-                      border: '2px solid #000',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '10px',
-                      color: '#000',
-                      fontWeight: 'bold'
+                      fontSize: '15px',
+                      color: portalMode === 'ambassador' ? '#ffffff' : '#444444',
+                      textShadow: portalMode === 'ambassador' 
+                        ? '0 0 6px #ffffff, 0 0 12px #ffffff, 0 0 18px rgba(255, 255, 255, 0.8)' 
+                        : 'none',
+                      lineHeight: 1,
+                      pointerEvents: 'none',
+                      transition: 'all 0.3s ease'
                     }}>
                       ★
-                    </div>
+                    </span>
                   )}
                 </div>
 
