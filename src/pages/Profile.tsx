@@ -12,7 +12,10 @@ export default function Profile() {
     return (localStorage.getItem('currentView') as 'profile' | 'settings') || 'profile';
   });
 
-  const [portalMode, setPortalMode] = useState<'customer' | 'ambassador'>('customer');
+  const [portalMode, setPortalMode] = useState<'customer' | 'ambassador'>(() => {
+    return (localStorage.getItem('portalMode') as 'customer' | 'ambassador') || 'customer';
+  });
+
   const [profile, setProfile] = useState<any>(null);
   const [ambassadorData, setAmbassadorData] = useState<any>(null);
   const [session, setSession] = useState<any>(null);
@@ -268,6 +271,7 @@ export default function Profile() {
 
   const handleSignOut = async () => { 
     localStorage.removeItem('currentView');
+    localStorage.removeItem('portalMode');
     await supabase.auth.signOut(); 
     window.location.href = '/'; 
   };
@@ -279,6 +283,7 @@ export default function Profile() {
       showToast("Error: " + error.message, "#ff4444");
     } else {
       localStorage.removeItem('currentView');
+      localStorage.removeItem('portalMode');
       await supabase.auth.signOut();
       window.location.href = '/';
     }
@@ -333,7 +338,11 @@ export default function Profile() {
 
   const togglePortalMode = () => {
     if (isAmbassador) {
-      setPortalMode(prev => (prev === 'customer' ? 'ambassador' : 'customer'));
+      setPortalMode(prev => {
+        const nextMode = prev === 'customer' ? 'ambassador' : 'customer';
+        localStorage.setItem('portalMode', nextMode);
+        return nextMode;
+      });
     }
   };
 
@@ -352,15 +361,13 @@ export default function Profile() {
   return (
     <div style={{ backgroundColor: '#000', minHeight: '100vh', color: '#fff', padding: '40px 20px', fontFamily: "'Inter', sans-serif", width: '100%', boxSizing: 'border-box', overflowX: 'hidden' }}>
 
-      {isAmbassadorActive && (
-        <input 
-          type="file" 
-          ref={fileInputRef} 
-          onChange={handleFileSelect} 
-          accept="image/*" 
-          style={{ display: 'none' }} 
-        />
-      )}
+      <input 
+        type="file" 
+        ref={fileInputRef} 
+        onChange={handleFileSelect} 
+        accept="image/*" 
+        style={{ display: 'none' }} 
+      />
 
       {toast && (
         <div style={{ position: 'fixed', top: '20px', right: '20px', background: '#111', color: '#fff', padding: '15px 25px', borderRadius: '5px', borderLeft: `5px solid ${toast.color}`, zIndex: 9999, fontSize: '12px', letterSpacing: '1px', boxShadow: '0 4px 12px rgba(0,0,0,0.5)' }}>
@@ -612,40 +619,58 @@ export default function Profile() {
               <svg onClick={() => changeView('profile')} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" cursor="pointer"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
             </div>
 
-            {isAmbassadorActive && (
-              <div style={{ marginBottom: '30px', display: 'flex', alignItems: 'center', gap: '20px' }}>
-                <div style={{ 
-                  width: '64px', 
-                  height: '64px', 
-                  borderRadius: '50%', 
-                  backgroundColor: '#181818', 
-                  border: '1px solid #ffffff',
-                  boxShadow: '0 0 15px rgba(255, 255, 255, 0.4)',
-                  overflow: 'hidden', 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'center',
-                  fontWeight: '600',
-                  color: '#fff',
-                  textShadow: '0 0 8px #ffffff, 0 0 16px #ffffff',
-                  flexShrink: 0
-                }}>
-                  {avatarUrl ? (
-                    <img src={avatarUrl} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  ) : (
-                    <span style={{ fontSize: '20px', fontWeight: 'bold' }}>{getInitials(profile?.name, profile?.email)}</span>
-                  )}
-                </div>
+            <div style={{ marginBottom: '30px', display: 'flex', alignItems: 'center', gap: '20px' }}>
+              <div style={{ 
+                width: '64px', 
+                height: '64px', 
+                borderRadius: '50%', 
+                backgroundColor: '#181818', 
+                border: isAmbassadorActive ? '1px solid #ffffff' : '1px solid #333',
+                boxShadow: isAmbassadorActive ? '0 0 15px rgba(255, 255, 255, 0.4)' : 'none',
+                overflow: 'hidden', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                fontWeight: '600',
+                color: '#fff',
+                textShadow: isAmbassadorActive ? '0 0 8px #ffffff, 0 0 16px #ffffff' : 'none',
+                flexShrink: 0
+              }}>
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  <span style={{ fontSize: '20px', fontWeight: 'bold' }}>{getInitials(profile?.name, profile?.email)}</span>
+                )}
+              </div>
 
-                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                <button 
+                  type="button"
+                  disabled={uploadingAvatar}
+                  onClick={() => fileInputRef.current?.click()}
+                  style={{
+                    background: '#1a1a1a',
+                    border: '1px solid #333',
+                    color: '#fff',
+                    padding: '8px 16px',
+                    borderRadius: '4px',
+                    fontSize: '12px',
+                    letterSpacing: '1px',
+                    cursor: uploadingAvatar ? 'not-allowed' : 'pointer',
+                    opacity: uploadingAvatar ? 0.6 : 1
+                  }}>
+                  {uploadingAvatar ? 'UPLOADING...' : (avatarUrl ? 'CHANGE PICTURE' : 'UPLOAD PICTURE')}
+                </button>
+
+                {avatarUrl && (
                   <button 
                     type="button"
                     disabled={uploadingAvatar}
-                    onClick={() => fileInputRef.current?.click()}
+                    onClick={handleDeleteAvatar}
                     style={{
-                      background: '#1a1a1a',
-                      border: '1px solid #333',
-                      color: '#fff',
+                      background: 'transparent',
+                      border: '1px solid #ff4444',
+                      color: '#ff4444',
                       padding: '8px 16px',
                       borderRadius: '4px',
                       fontSize: '12px',
@@ -653,31 +678,11 @@ export default function Profile() {
                       cursor: uploadingAvatar ? 'not-allowed' : 'pointer',
                       opacity: uploadingAvatar ? 0.6 : 1
                     }}>
-                    {uploadingAvatar ? 'UPLOADING...' : (avatarUrl ? 'CHANGE PICTURE' : 'UPLOAD PICTURE')}
+                    REMOVE PICTURE
                   </button>
-
-                  {avatarUrl && (
-                    <button 
-                      type="button"
-                      disabled={uploadingAvatar}
-                      onClick={handleDeleteAvatar}
-                      style={{
-                        background: 'transparent',
-                        border: '1px solid #ff4444',
-                        color: '#ff4444',
-                        padding: '8px 16px',
-                        borderRadius: '4px',
-                        fontSize: '12px',
-                        letterSpacing: '1px',
-                        cursor: uploadingAvatar ? 'not-allowed' : 'pointer',
-                        opacity: uploadingAvatar ? 0.6 : 1
-                      }}>
-                      REMOVE PICTURE
-                    </button>
-                  )}
-                </div>
+                )}
               </div>
-            )}
+            </div>
 
             <p style={{ fontSize: '10px', color: '#888', letterSpacing: '2px', marginBottom: '5px' }}>NAME</p>
             <input placeholder={profile?.name || "Enter your name"} value={newName} onChange={(e) => setNewName(e.target.value)} style={inputStyle} />
