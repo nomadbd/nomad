@@ -195,7 +195,7 @@ export default function Profile() {
                 letterSpacing: '1px',
                 cursor: 'pointer'
               }}>
-              <ProfileIcon variant="ambassador" className="w-3.5 h-3.5" />
+              <ProfileIcon variant="ambassador" style={{ width: '14px', height: '14px' }} />
               AMBASSADOR PORTAL
             </button>
           ) : (
@@ -214,7 +214,7 @@ export default function Profile() {
                 letterSpacing: '1px',
                 cursor: 'pointer'
               }}>
-              <ProfileIcon variant="user" className="w-3.5 h-3.5" />
+              <ProfileIcon variant="user" style={{ width: '14px', height: '14px' }} />
               CUSTOMER ACCOUNT
             </button>
           )}
@@ -227,7 +227,7 @@ export default function Profile() {
             <div style={{ backgroundColor: '#0a0a0a', border: '1px solid #1c1c1c', borderRadius: '12px', padding: '24px', marginBottom: '20px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
                 <div style={{ width: '44px', height: '44px', borderRadius: '50%', backgroundColor: '#141414', border: '1px solid #2a2a2a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <ProfileIcon variant="ambassador" className="w-5 h-5" />
+                  <ProfileIcon variant="ambassador" style={{ width: '20px', height: '20px' }} />
                 </div>
                 <div>
                   <span style={{ fontSize: '10px', color: '#888', letterSpacing: '2px', textTransform: 'uppercase' }}>VIP PARTNER</span>
@@ -256,25 +256,19 @@ export default function Profile() {
             {view === 'profile' ? (
               <>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', backgroundColor: '#0a0a0a', border: '1px solid #1c1c1c', borderRadius: '12px', padding: '20px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                    <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: '#141414', border: '1px solid #2a2a2a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '600', fontSize: '16px', color: '#fff' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: '#141414', border: '1px solid #2a2a2a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '600', fontSize: '16px', color: '#fff', flexShrink: 0 }}>
                       {getInitials(profile?.name, profile?.email)}
                     </div>
                     <div>
                       {profile?.name ? (
                         <>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <ProfileIcon variant="user" className="w-4 h-4" />
-                            <p style={{ margin: '0', fontSize: '20px', fontWeight: '600', color: '#fff', letterSpacing: '1px' }}>{profile.name}</p>
-                          </div>
+                          <p style={{ margin: '0', fontSize: '20px', fontWeight: '600', color: '#fff', letterSpacing: '1px' }}>{profile.name}</p>
                           <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: '#666', letterSpacing: '0.5px' }}>{profile.email}</p>
                         </>
                       ) : (
                         <>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <ProfileIcon variant="user" className="w-4 h-4" />
-                            <p style={{ margin: 0, fontSize: '20px', fontWeight: '600', color: '#fff', letterSpacing: '1px' }}>PROFILE</p>
-                          </div>
+                          <p style={{ margin: 0, fontSize: '20px', fontWeight: '600', color: '#fff', letterSpacing: '1px' }}>PROFILE</p>
                           <p style={{ fontSize: '13px', fontWeight: '500', color: '#aaa', cursor: 'pointer', margin: '4px 0 0 0', letterSpacing: '1px' }} onClick={() => changeView('settings')}>Add your name</p>
                         </>
                       )}
