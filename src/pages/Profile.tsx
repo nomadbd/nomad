@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
-import { uploadToCloudinary } from '../cloudinary';
+import { uploadToCloudinary, deleteFromCloudinary } from '../cloudinary';
 import OrderHistory from '../components/OrderHistory'; 
 
 export default function Profile() {
@@ -96,18 +96,20 @@ export default function Profile() {
       setUploadingAvatar(true);
       showToast("Uploading profile picture...", "#3498db");
 
-      const uploadedUrl = await uploadToCloudinary(file, 'avatars', 'profiles');
+      const uploadedUrl = await uploadToCloudinary(file, 'avatars', profile.id);
 
       if (uploadedUrl) {
+        const urlWithCacheBust = `${uploadedUrl}?v=${Date.now()}`;
+
         const { error } = await supabase
           .from('profiles')
-          .update({ avatar_url: uploadedUrl })
+          .update({ avatar_url: urlWithCacheBust })
           .eq('id', profile.id);
 
         if (error) throw error;
 
-        setAvatarUrl(uploadedUrl);
-        setProfile((prev: any) => ({ ...prev, avatar_url: uploadedUrl }));
+        setAvatarUrl(urlWithCacheBust);
+        setProfile((prev: any) => ({ ...prev, avatar_url: urlWithCacheBust }));
         showToast("Profile picture updated successfully!", "#2ecc71");
       }
     } catch (err: any) {
@@ -116,6 +118,35 @@ export default function Profile() {
     } finally {
       setUploadingAvatar(false);
       if (e.target) e.target.value = '';
+    }
+  };
+
+  const handleDeleteAvatar = async () => {
+    if (!profile?.id) return;
+
+    try {
+      setUploadingAvatar(true);
+      showToast("Removing profile picture...", "#3498db");
+
+      if (avatarUrl) {
+        await deleteFromCloudinary(avatarUrl);
+      }
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({ avatar_url: null })
+        .eq('id', profile.id);
+
+      if (error) throw error;
+
+      setAvatarUrl(null);
+      setProfile((prev: any) => ({ ...prev, avatar_url: null }));
+      showToast("Profile picture removed successfully!", "#2ecc71");
+    } catch (err: any) {
+      console.error('Avatar delete error:', err);
+      showToast("Failed to remove image: " + err.message, "#ff4444");
+    } finally {
+      setUploadingAvatar(false);
     }
   };
 
@@ -334,30 +365,68 @@ export default function Profile() {
 
             {isAmbassadorActive && (
               <div style={{ marginBottom: '30px', display: 'flex', alignItems: 'center', gap: '20px' }}>
-                <div style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: '#181818', border: '1px solid #333', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ 
+                  width: '64px', 
+                  height: '64px', 
+                  borderRadius: '50%', 
+                  backgroundColor: '#181818', 
+                  border: '1px solid #ffffff',
+                  boxShadow: '0 0 15px rgba(255, 255, 255, 0.4)',
+                  overflow: 'hidden', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  fontWeight: '600',
+                  color: '#fff',
+                  textShadow: '0 0 8px #ffffff, 0 0 16px #ffffff',
+                  flexShrink: 0
+                }}>
                   {avatarUrl ? (
                     <img src={avatarUrl} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   ) : (
                     <span style={{ fontSize: '20px', fontWeight: 'bold' }}>{getInitials(profile?.name, profile?.email)}</span>
                   )}
                 </div>
-                <button 
-                  type="button"
-                  disabled={uploadingAvatar}
-                  onClick={() => fileInputRef.current?.click()}
-                  style={{
-                    background: '#1a1a1a',
-                    border: '1px solid #333',
-                    color: '#fff',
-                    padding: '8px 16px',
-                    borderRadius: '4px',
-                    fontSize: '12px',
-                    letterSpacing: '1px',
-                    cursor: uploadingAvatar ? 'not-allowed' : 'pointer',
-                    opacity: uploadingAvatar ? 0.6 : 1
-                  }}>
-                  {uploadingAvatar ? 'UPLOADING...' : 'CHANGE PICTURE'}
-                </button>
+
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                  <button 
+                    type="button"
+                    disabled={uploadingAvatar}
+                    onClick={() => fileInputRef.current?.click()}
+                    style={{
+                      background: '#1a1a1a',
+                      border: '1px solid #333',
+                      color: '#fff',
+                      padding: '8px 16px',
+                      borderRadius: '4px',
+                      fontSize: '12px',
+                      letterSpacing: '1px',
+                      cursor: uploadingAvatar ? 'not-allowed' : 'pointer',
+                      opacity: uploadingAvatar ? 0.6 : 1
+                    }}>
+                    {uploadingAvatar ? 'UPLOADING...' : (avatarUrl ? 'CHANGE PICTURE' : 'UPLOAD PICTURE')}
+                  </button>
+
+                  {avatarUrl && (
+                    <button 
+                      type="button"
+                      disabled={uploadingAvatar}
+                      onClick={handleDeleteAvatar}
+                      style={{
+                        background: 'transparent',
+                        border: '1px solid #ff4444',
+                        color: '#ff4444',
+                        padding: '8px 16px',
+                        borderRadius: '4px',
+                        fontSize: '12px',
+                        letterSpacing: '1px',
+                        cursor: uploadingAvatar ? 'not-allowed' : 'pointer',
+                        opacity: uploadingAvatar ? 0.6 : 1
+                      }}>
+                      REMOVE PICTURE
+                    </button>
+                  )}
+                </div>
               </div>
             )}
 
