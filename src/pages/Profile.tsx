@@ -145,7 +145,6 @@ export default function Profile() {
 
   const isAmbassador = String(profile?.role).toUpperCase().trim() === 'AMBASSADOR';
 
-  // প্রোফাইল আইকনে ক্লিক করে সাইলেন্টলি সুইচ করার ফাংশন
   const togglePortalMode = () => {
     if (isAmbassador) {
       setPortalMode(prev => (prev === 'customer' ? 'ambassador' : 'customer'));
@@ -199,9 +198,7 @@ export default function Profile() {
                     height: '56px', 
                     borderRadius: '50%', 
                     backgroundColor: '#181818', 
-                    border: (isAmbassador && portalMode === 'ambassador') 
-                      ? '2px solid #d4af37' 
-                      : '1px solid #2a2a2a', 
+                    border: '1px solid #2a2a2a', 
                     display: 'flex', 
                     alignItems: 'center', 
                     justifyContent: 'center', 
@@ -210,27 +207,27 @@ export default function Profile() {
                     color: '#fff', 
                     flexShrink: 0,
                     cursor: isAmbassador ? 'pointer' : 'default',
-                    transition: 'all 0.2s ease'
+                    userSelect: 'none'
                   }}>
                   {getInitials(profile?.name, profile?.email)}
 
-                  {/* অ্যাম্বাসেডরদের স্টার ব্যাজ */}
-                  {isAmbassador && (
+                  {/* শুধুমাত্র অ্যাম্বাসেডর মোডে সুইচ করা থাকলে ছোট সোনালী স্টার ব্যাজ দেখাবে */}
+                  {isAmbassador && portalMode === 'ambassador' && (
                     <div style={{
                       position: 'absolute',
                       bottom: '-2px',
                       right: '-2px',
-                      width: '20px',
-                      height: '20px',
+                      width: '18px',
+                      height: '18px',
                       borderRadius: '50%',
-                      backgroundColor: portalMode === 'ambassador' ? '#d4af37' : '#222',
+                      backgroundColor: '#d4af37',
                       border: '2px solid #000',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       fontSize: '10px',
-                      color: portalMode === 'ambassador' ? '#000' : '#666',
-                      transition: 'all 0.2s ease'
+                      color: '#000',
+                      fontWeight: 'bold'
                     }}>
                       ★
                     </div>
@@ -248,21 +245,19 @@ export default function Profile() {
                 </div>
               </div>
 
-              {/* ডানপাশের সেটিংস বাটন */}
+              {/* সেটিংস বাটন (ক্লিয়ার আইকন, ব্যাকগ্রাউন্ড ও বর্ডার ছাড়া) */}
               <div
                 onClick={() => changeView('settings')}
                 style={{
-                  width: '40px',
-                  height: '40px',
-                  borderRadius: '50%',
-                  backgroundColor: '#161616',
-                  border: '1px solid #2a2a2a',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  cursor: 'pointer'
+                  cursor: 'pointer',
+                  background: 'transparent',
+                  border: 'none',
+                  padding: '8px'
                 }}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5">
                   <circle cx="12" cy="12" r="3"></circle>
                   <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
                 </svg>
