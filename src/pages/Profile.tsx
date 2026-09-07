@@ -228,7 +228,6 @@ export default function Profile() {
       if (uploadedUrl) {
         const urlWithCacheBust = `${uploadedUrl}?v=${Date.now()}`;
 
-        // Supabase Profile Table update with .select() confirmation
         const { data, error } = await supabase
           .from('profiles')
           .update({ avatar_url: urlWithCacheBust })
@@ -242,16 +241,15 @@ export default function Profile() {
           return;
         }
 
-        // Force local state update
         setAvatarUrl(urlWithCacheBust);
         setProfile((prev: any) => ({ ...prev, avatar_url: urlWithCacheBust }));
         showToast("Profile picture updated successfully!", "#2ecc71");
       } else {
-        showToast("Cloudinary upload failed.", "#ff4444");
+        showToast("Cloudinary upload failed. Check Cloudinary upload preset/API keys.", "#ff4444");
       }
     } catch (err: any) {
       console.error('Avatar upload error:', err);
-      showToast("Failed to upload image: " + err.message, "#ff4444");
+      showToast("Failed to upload image: " + (err.message || "Unknown error"), "#ff4444");
     } finally {
       setUploadingAvatar(false);
     }
@@ -408,7 +406,7 @@ export default function Profile() {
         </div>
       )}
 
-      {/* Responsive Fixed Modal with dvh & safe padding */}
+      {/* Responsive Crop Modal */}
       {cropModalOpen && selectedImageSrc && (
         <div style={{ 
           position: 'fixed', 
@@ -643,32 +641,32 @@ export default function Profile() {
               <svg onClick={() => changeView('profile')} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" cursor="pointer"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
             </div>
 
-            <div style={{ marginBottom: '30px', display: 'flex', alignItems: 'center', gap: '20px' }}>
-              <div style={{ 
-                width: '64px', 
-                height: '64px', 
-                borderRadius: '50%', 
-                backgroundColor: '#181818', 
-                border: isAmbassadorActive ? '1px solid #ffffff' : '1px solid #333',
-                boxShadow: isAmbassadorActive ? '0 0 15px rgba(255, 255, 255, 0.4)' : 'none',
-                overflow: 'hidden', 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center',
-                fontWeight: '600',
-                color: '#fff',
-                textShadow: isAmbassadorActive ? '0 0 8px #ffffff, 0 0 16px #ffffff' : 'none',
-                flexShrink: 0
-              }}>
-                {avatarUrl ? (
-                  <img src={avatarUrl} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                ) : (
-                  <span style={{ fontSize: '20px', fontWeight: 'bold' }}>{getInitials(profile?.name, profile?.email)}</span>
-                )}
-              </div>
+            {/* শুধুমাত্র AMBASSADOR মোড সক্রিয় থাকলেই পুরো প্রোফাইল পিকচার সেকশনটি (অ্যাভাটার সার্কেল + বাটন) দেখাবে */}
+            {isAmbassadorActive && (
+              <div style={{ marginBottom: '30px', display: 'flex', alignItems: 'center', gap: '20px' }}>
+                <div style={{ 
+                  width: '64px', 
+                  height: '64px', 
+                  borderRadius: '50%', 
+                  backgroundColor: '#181818', 
+                  border: '1px solid #ffffff',
+                  boxShadow: '0 0 15px rgba(255, 255, 255, 0.4)',
+                  overflow: 'hidden', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  fontWeight: '600',
+                  color: '#fff',
+                  textShadow: '0 0 8px #ffffff, 0 0 16px #ffffff',
+                  flexShrink: 0
+                }}>
+                  {avatarUrl ? (
+                    <img src={avatarUrl} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <span style={{ fontSize: '20px', fontWeight: 'bold' }}>{getInitials(profile?.name, profile?.email)}</span>
+                  )}
+                </div>
 
-              {/* শুধুমাত্র অ্যাম্বাসেডর মোড সক্রিয় থাকলেই আপলোড ও রিমুভ বাটন দেখাবে */}
-              {isAmbassadorActive && (
                 <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                   <button 
                     type="button"
@@ -708,8 +706,8 @@ export default function Profile() {
                     </button>
                   )}
                 </div>
-              )}
-            </div>
+              </div>
+            )}
 
             <p style={{ fontSize: '10px', color: '#888', letterSpacing: '2px', marginBottom: '5px' }}>NAME</p>
             <input placeholder={profile?.name || "Enter your name"} value={newName} onChange={(e) => setNewName(e.target.value)} style={inputStyle} />
