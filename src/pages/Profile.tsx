@@ -205,13 +205,15 @@ export default function Profile() {
   return (
     <div style={{ backgroundColor: '#000', minHeight: '100vh', color: '#fff', padding: '40px 20px', fontFamily: "'Inter', sans-serif", width: '100%', boxSizing: 'border-box', overflowX: 'hidden' }}>
 
-      <input 
-        type="file" 
-        ref={fileInputRef} 
-        onChange={handleAvatarChange} 
-        accept="image/*" 
-        style={{ display: 'none' }} 
-      />
+      {isAmbassador && (
+        <input 
+          type="file" 
+          ref={fileInputRef} 
+          onChange={handleAvatarChange} 
+          accept="image/*" 
+          style={{ display: 'none' }} 
+        />
+      )}
 
       {toast && (
         <div style={{ position: 'fixed', top: '20px', right: '20px', background: '#111', color: '#fff', padding: '15px 25px', borderRadius: '5px', borderLeft: `5px solid ${toast.color}`, zIndex: 9999, fontSize: '12px', letterSpacing: '1px', boxShadow: '0 4px 12px rgba(0,0,0,0.5)' }}>
@@ -338,23 +340,25 @@ export default function Profile() {
                   <span style={{ fontSize: '20px', fontWeight: 'bold' }}>{getInitials(profile?.name, profile?.email)}</span>
                 )}
               </div>
-              <button 
-                type="button"
-                disabled={uploadingAvatar}
-                onClick={() => fileInputRef.current?.click()}
-                style={{
-                  background: '#1a1a1a',
-                  border: '1px solid #333',
-                  color: '#fff',
-                  padding: '8px 16px',
-                  borderRadius: '4px',
-                  fontSize: '12px',
-                  letterSpacing: '1px',
-                  cursor: uploadingAvatar ? 'not-allowed' : 'pointer',
-                  opacity: uploadingAvatar ? 0.6 : 1
-                }}>
-                {uploadingAvatar ? 'UPLOADING...' : 'CHANGE PICTURE'}
-              </button>
+              {isAmbassador && (
+                <button 
+                  type="button"
+                  disabled={uploadingAvatar}
+                  onClick={() => fileInputRef.current?.click()}
+                  style={{
+                    background: '#1a1a1a',
+                    border: '1px solid #333',
+                    color: '#fff',
+                    padding: '8px 16px',
+                    borderRadius: '4px',
+                    fontSize: '12px',
+                    letterSpacing: '1px',
+                    cursor: uploadingAvatar ? 'not-allowed' : 'pointer',
+                    opacity: uploadingAvatar ? 0.6 : 1
+                  }}>
+                  {uploadingAvatar ? 'UPLOADING...' : 'CHANGE PICTURE'}
+                </button>
+              )}
             </div>
 
             <p style={{ fontSize: '10px', color: '#888', letterSpacing: '2px', marginBottom: '5px' }}>NAME</p>
