@@ -205,7 +205,7 @@ export default function Profile() {
   return (
     <div style={{ backgroundColor: '#000', minHeight: '100vh', color: '#fff', padding: '40px 20px', fontFamily: "'Inter', sans-serif", width: '100%', boxSizing: 'border-box', overflowX: 'hidden' }}>
 
-      {isAmbassador && (
+      {isAmbassadorActive && (
         <input 
           type="file" 
           ref={fileInputRef} 
@@ -340,7 +340,7 @@ export default function Profile() {
                   <span style={{ fontSize: '20px', fontWeight: 'bold' }}>{getInitials(profile?.name, profile?.email)}</span>
                 )}
               </div>
-              {isAmbassador && (
+              {isAmbassadorActive && (
                 <button 
                   type="button"
                   disabled={uploadingAvatar}
