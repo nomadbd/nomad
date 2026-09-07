@@ -96,11 +96,9 @@ export default function Profile() {
       setUploadingAvatar(true);
       showToast("Uploading profile picture...", "#3498db");
 
-      // Cloudinary-তে ছবি আপলোড
       const uploadedUrl = await uploadToCloudinary(file, 'avatars', 'profiles');
 
       if (uploadedUrl) {
-        // Supabase Profiles টেবিলে avatar_url আপডেট
         const { error } = await supabase
           .from('profiles')
           .update({ avatar_url: uploadedUrl })
@@ -234,11 +232,9 @@ export default function Profile() {
       <div style={{ width: '100%' }}>
         {view === 'profile' ? (
           <>
-            {/* প্রোফাইল হেডার */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '35px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
 
-                {/* প্রোফাইল অ্যাভেটার (ছবি থাকলে দেখাবে, না থাকলে নাম দিয়ে ইনিশিয়ালস) */}
                 <div 
                   onClick={togglePortalMode}
                   style={{ 
@@ -273,7 +269,6 @@ export default function Profile() {
                   )}
                 </div>
 
-                {/* নাম ও ইমেইল */}
                 <div>
                   <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '700', color: '#fff', letterSpacing: '0.5px' }}>
                     {profile?.name || "PROFILE"}
@@ -284,7 +279,6 @@ export default function Profile() {
                 </div>
               </div>
 
-              {/* সেটিংস বাটন */}
               <div
                 onClick={() => changeView('settings')}
                 style={{
@@ -303,7 +297,6 @@ export default function Profile() {
               </div>
             </div>
 
-            {/* অ্যাম্বাসেডর ড্যাশবোর্ড / কাস্টমার অর্ডার হিস্ট্রি ভিউ */}
             {portalMode === 'ambassador' && isAmbassador ? (
               <div style={{ marginTop: '20px' }}>
                 <div style={{ backgroundColor: '#0a0a0a', border: '1px solid #222', padding: '24px', borderRadius: '8px', marginBottom: '20px' }}>
@@ -337,7 +330,6 @@ export default function Profile() {
               <svg onClick={() => changeView('profile')} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" cursor="pointer"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
             </div>
 
-            {/* প্রোফাইল পিকচার চেঞ্জ করার সেকশন */}
             <div style={{ marginBottom: '30px', display: 'flex', alignItems: 'center', gap: '20px' }}>
               <div style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: '#181818', border: '1px solid #333', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {avatarUrl ? (
