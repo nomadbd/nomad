@@ -207,7 +207,10 @@ export default function Profile() {
   };
 
   const handleApplyCropAndUpload = async () => {
-    if (!profile?.id) return;
+    if (!profile?.id) {
+      showToast("User profile ID missing.", "#ff4444");
+      return;
+    }
 
     try {
       setUploadingAvatar(true);
@@ -225,18 +228,26 @@ export default function Profile() {
       if (uploadedUrl) {
         const urlWithCacheBust = `${uploadedUrl}?v=${Date.now()}`;
 
-        // Supabase Profile Table update
-        const { error } = await supabase
+        // Supabase Profile Table update with .select() confirmation
+        const { data, error } = await supabase
           .from('profiles')
           .update({ avatar_url: urlWithCacheBust })
-          .eq('id', profile.id);
+          .eq('id', profile.id)
+          .select();
 
         if (error) throw error;
+
+        if (!data || data.length === 0) {
+          showToast("Database permission denied or row not found.", "#ff4444");
+          return;
+        }
 
         // Force local state update
         setAvatarUrl(urlWithCacheBust);
         setProfile((prev: any) => ({ ...prev, avatar_url: urlWithCacheBust }));
         showToast("Profile picture updated successfully!", "#2ecc71");
+      } else {
+        showToast("Cloudinary upload failed.", "#ff4444");
       }
     } catch (err: any) {
       console.error('Avatar upload error:', err);
@@ -257,12 +268,18 @@ export default function Profile() {
         await deleteFromCloudinary(avatarUrl);
       }
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('profiles')
         .update({ avatar_url: null })
-        .eq('id', profile.id);
+        .eq('id', profile.id)
+        .select();
 
       if (error) throw error;
+
+      if (!data || data.length === 0) {
+        showToast("Database update failed.", "#ff4444");
+        return;
+      }
 
       setAvatarUrl(null);
       setProfile((prev: any) => ({ ...prev, avatar_url: null }));
@@ -650,34 +667,17 @@ export default function Profile() {
                 )}
               </div>
 
-              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                <button 
-                  type="button"
-                  disabled={uploadingAvatar}
-                  onClick={() => fileInputRef.current?.click()}
-                  style={{
-                    background: '#1a1a1a',
-                    border: '1px solid #333',
-                    color: '#fff',
-                    padding: '8px 16px',
-                    borderRadius: '4px',
-                    fontSize: '12px',
-                    letterSpacing: '1px',
-                    cursor: uploadingAvatar ? 'not-allowed' : 'pointer',
-                    opacity: uploadingAvatar ? 0.6 : 1
-                  }}>
-                  {uploadingAvatar ? 'UPLOADING...' : (avatarUrl ? 'CHANGE PICTURE' : 'UPLOAD PICTURE')}
-                </button>
-
-                {avatarUrl && (
+              {/* শুধুমাত্র অ্যাম্বাসেডর মোড সক্রিয় থাকলেই আপলোড ও রিমুভ বাটন দেখাবে */}
+              {isAmbassadorActive && (
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                   <button 
                     type="button"
                     disabled={uploadingAvatar}
-                    onClick={handleDeleteAvatar}
+                    onClick={() => fileInputRef.current?.click()}
                     style={{
-                      background: 'transparent',
-                      border: '1px solid #ff4444',
-                      color: '#ff4444',
+                      background: '#1a1a1a',
+                      border: '1px solid #333',
+                      color: '#fff',
                       padding: '8px 16px',
                       borderRadius: '4px',
                       fontSize: '12px',
@@ -685,10 +685,30 @@ export default function Profile() {
                       cursor: uploadingAvatar ? 'not-allowed' : 'pointer',
                       opacity: uploadingAvatar ? 0.6 : 1
                     }}>
-                    REMOVE PICTURE
+                    {uploadingAvatar ? 'UPLOADING...' : (avatarUrl ? 'CHANGE PICTURE' : 'UPLOAD PICTURE')}
                   </button>
-                )}
-              </div>
+
+                  {avatarUrl && (
+                    <button 
+                      type="button"
+                      disabled={uploadingAvatar}
+                      onClick={handleDeleteAvatar}
+                      style={{
+                        background: 'transparent',
+                        border: '1px solid #ff4444',
+                        color: '#ff4444',
+                        padding: '8px 16px',
+                        borderRadius: '4px',
+                        fontSize: '12px',
+                        letterSpacing: '1px',
+                        cursor: uploadingAvatar ? 'not-allowed' : 'pointer',
+                        opacity: uploadingAvatar ? 0.6 : 1
+                      }}>
+                      REMOVE PICTURE
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
 
             <p style={{ fontSize: '10px', color: '#888', letterSpacing: '2px', marginBottom: '5px' }}>NAME</p>
@@ -711,4 +731,3 @@ export default function Profile() {
     </div>
   );
 }
-
