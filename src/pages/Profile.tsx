@@ -42,6 +42,17 @@ export default function Profile() {
     setTimeout(() => setToast(null), 4000);
   };
 
+  // নামের প্রথম অক্ষর নেওয়ার ফাংশন
+  const getInitials = (name?: string, email?: string) => {
+    if (name?.trim()) {
+      return name.trim().split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+    }
+    if (email?.trim()) {
+      return email.trim()[0].toUpperCase();
+    }
+    return 'U';
+  };
+
   const fetchUserData = async () => {
     setLoading(true);
     const { data: { user } } = await supabase.auth.getUser();
@@ -231,18 +242,25 @@ export default function Profile() {
             {view === 'profile' ? (
               <>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
-                  <div style={{ width: '100%' }}>
-                    {profile?.name ? (
-                      <>
-                        <p style={{ margin: '0', fontSize: '22px', fontWeight: '600', color: '#fff', letterSpacing: '1px' }}>{profile.name}</p>
-                        <p style={{ margin: '5px 0 0 0', fontSize: '14px', color: '#666', letterSpacing: '0.5px' }}>{profile.email}</p>
-                      </>
-                    ) : (
-                      <>
-                        <p style={{ margin: 0, fontSize: '22px', fontWeight: '600', color: '#fff', letterSpacing: '1px' }}>PROFILE</p>
-                        <p style={{ fontSize: '13px', fontWeight: '500', color: '#aaa', cursor: 'pointer', margin: '8px 0 0 0', letterSpacing: '1px' }} onClick={() => changeView('settings')}>Add your name</p>
-                      </>
-                    )}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    {/* নামের প্রথম অক্ষর দিয়ে তৈরি গোল অ্যাভেটার */}
+                    <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: '#141414', border: '1px solid #2a2a2a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '600', fontSize: '16px', color: '#fff', flexShrink: 0 }}>
+                      {getInitials(profile?.name, profile?.email)}
+                    </div>
+
+                    <div>
+                      {profile?.name ? (
+                        <>
+                          <p style={{ margin: '0', fontSize: '22px', fontWeight: '600', color: '#fff', letterSpacing: '1px' }}>{profile.name}</p>
+                          <p style={{ margin: '5px 0 0 0', fontSize: '14px', color: '#666', letterSpacing: '0.5px' }}>{profile.email}</p>
+                        </>
+                      ) : (
+                        <>
+                          <p style={{ margin: 0, fontSize: '22px', fontWeight: '600', color: '#fff', letterSpacing: '1px' }}>PROFILE</p>
+                          <p style={{ fontSize: '13px', fontWeight: '500', color: '#aaa', cursor: 'pointer', margin: '8px 0 0 0', letterSpacing: '1px' }} onClick={() => changeView('settings')}>Add your name</p>
+                        </>
+                      )}
+                    </div>
                   </div>
                   <svg onClick={() => changeView('settings')} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" cursor="pointer"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
                 </div>
