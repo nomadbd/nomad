@@ -26,6 +26,15 @@ export default function Profile() {
   const [toast, setToast] = useState<{ message: string; color: string } | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
 
+  // Crop Modal States
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+  const [selectedImageSrc, setSelectedImageSrc] = useState<string | null>(null);
+  const [zoom, setZoom] = useState(1);
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const imgRef = useRef<HTMLImageElement | null>(null);
+
   const changeView = (newView: 'profile' | 'settings') => {
     setView(newView);
     localStorage.setItem('currentView', newView);
@@ -88,15 +97,123 @@ export default function Profile() {
     setLoading(false);
   };
 
-  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !profile?.id) return;
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setSelectedImageSrc(reader.result as string);
+      setZoom(1);
+      setOffset({ x: 0, y: 0 });
+      setCropModalOpen(true);
+    };
+    reader.readAsDataURL(file);
+
+    if (e.target) e.target.value = '';
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    setIsDragging(true);
+    setDragStart({ x: e.clientX - offset.x, y: e.clientY - offset.y });
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging) return;
+    setOffset({
+      x: e.clientX - dragStart.x,
+      y: e.clientY - dragStart.y
+    });
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 1) {
+      setIsDragging(true);
+      setDragStart({ x: e.touches[0].clientX - offset.x, y: e.touches[0].clientY - offset.y });
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging || e.touches.length !== 1) return;
+    setOffset({
+      x: e.touches[0].clientX - dragStart.x,
+      y: e.touches[0].clientY - dragStart.y
+    });
+  };
+
+  const handleTouchEnd = () => {
+    setIsDragging(false);
+  };
+
+  const generateCroppedFile = (): Promise<File | null> => {
+    return new Promise((resolve) => {
+      if (!imgRef.current || !selectedImageSrc) {
+        resolve(null);
+        return;
+      }
+
+      const image = imgRef.current;
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        resolve(null);
+        return;
+      }
+
+      const viewportSize = 220; 
+      const outputSize = 500; 
+      canvas.width = outputSize;
+      canvas.height = outputSize;
+
+      const baseScale = Math.max(viewportSize / image.naturalWidth, viewportSize / image.naturalHeight);
+      const currentScale = baseScale * zoom;
+
+      const renderedWidth = image.naturalWidth * currentScale;
+      const renderedHeight = image.naturalHeight * currentScale;
+
+      const imgLeftInViewport = (viewportSize - renderedWidth) / 2 + offset.x;
+      const imgTopInViewport = (viewportSize - renderedHeight) / 2 + offset.y;
+
+      const scaleRatio = outputSize / viewportSize;
+
+      ctx.drawImage(
+        image,
+        imgLeftInViewport * scaleRatio,
+        imgTopInViewport * scaleRatio,
+        renderedWidth * scaleRatio,
+        renderedHeight * scaleRatio
+      );
+
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          resolve(null);
+          return;
+        }
+        const croppedFile = new File([blob], 'avatar.jpg', { type: 'image/jpeg' });
+        resolve(croppedFile);
+      }, 'image/jpeg', 0.92);
+    });
+  };
+
+  const handleApplyCropAndUpload = async () => {
+    if (!profile?.id) return;
 
     try {
       setUploadingAvatar(true);
-      showToast("Uploading profile picture...", "#3498db");
+      setCropModalOpen(false);
+      showToast("Uploading cropped image...", "#3498db");
 
-      const uploadedUrl = await uploadToCloudinary(file, 'avatars', profile.id);
+      const croppedFile = await generateCroppedFile();
+      if (!croppedFile) {
+        showToast("Failed to process image.", "#ff4444");
+        return;
+      }
+
+      const uploadedUrl = await uploadToCloudinary(croppedFile, 'avatars', profile.id);
 
       if (uploadedUrl) {
         const urlWithCacheBust = `${uploadedUrl}?v=${Date.now()}`;
@@ -117,7 +234,6 @@ export default function Profile() {
       showToast("Failed to upload image: " + err.message, "#ff4444");
     } finally {
       setUploadingAvatar(false);
-      if (e.target) e.target.value = '';
     }
   };
 
@@ -240,7 +356,7 @@ export default function Profile() {
         <input 
           type="file" 
           ref={fileInputRef} 
-          onChange={handleAvatarChange} 
+          onChange={handleFileSelect} 
           accept="image/*" 
           style={{ display: 'none' }} 
         />
@@ -258,6 +374,140 @@ export default function Profile() {
             <p style={{ marginBottom: '20px', fontSize: '14px' }}>Are you sure you want to delete your account?</p>
             <button onClick={handleDeleteAccount} style={{ background: '#ff4444', border: 'none', padding: '10px 20px', color: '#fff', marginRight: '10px', cursor: 'pointer' }}>Yes</button>
             <button onClick={() => setShowConfirm(false)} style={{ background: 'transparent', border: '1px solid #555', padding: '10px 20px', color: '#fff', cursor: 'pointer' }}>No</button>
+          </div>
+        </div>
+      )}
+
+      {/* Twitter-Style Bottom Sheet Cropper Modal */}
+      {cropModalOpen && selectedImageSrc && (
+        <div style={{ 
+          position: 'fixed', 
+          top: 0, 
+          left: 0, 
+          width: '100vw', 
+          height: '100vh', 
+          backgroundColor: 'rgba(0, 0, 0, 0.75)', 
+          backdropFilter: 'blur(10px)', 
+          display: 'flex', 
+          alignItems: 'flex-end', 
+          justifyContent: 'center', 
+          zIndex: 10001 
+        }}>
+          <div style={{ 
+            background: '#121212', 
+            borderTop: '1px solid #282828', 
+            borderRadius: '24px 24px 0 0', 
+            padding: '16px 24px 32px 24px', 
+            maxWidth: '480px', 
+            width: '100%', 
+            textAlign: 'center', 
+            boxShadow: '0 -10px 30px rgba(0,0,0,0.8)',
+            boxSizing: 'border-box'
+          }}>
+            {/* Mobile Drag Indicator Bar */}
+            <div style={{ width: '36px', height: '4px', background: '#333', borderRadius: '2px', margin: '0 auto 16px auto' }} />
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '700', letterSpacing: '1px', textTransform: 'uppercase' }}>EDIT MEDIA</h3>
+              <button 
+                onClick={() => setCropModalOpen(false)} 
+                style={{ background: 'transparent', border: 'none', color: '#888', cursor: 'pointer', fontSize: '14px' }}>
+                ✕
+              </button>
+            </div>
+
+            <div 
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseUp}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+              style={{
+                width: '220px',
+                height: '220px',
+                borderRadius: '50%',
+                margin: '0 auto 20px auto',
+                overflow: 'hidden',
+                position: 'relative',
+                cursor: isDragging ? 'grabbing' : 'grab',
+                backgroundColor: '#181818',
+                border: isAmbassadorActive ? '1px solid #ffffff' : '1px solid #333',
+                boxShadow: isAmbassadorActive ? '0 0 20px rgba(255, 255, 255, 0.4)' : 'none',
+                userSelect: 'none',
+                touchAction: 'none'
+              }}>
+              <img 
+                ref={imgRef}
+                src={selectedImageSrc} 
+                alt="Crop preview" 
+                draggable={false}
+                style={{
+                  position: 'absolute',
+                  top: '50%',
+                  left: '50%',
+                  transform: `translate(calc(-50% + ${offset.x}px), calc(-50% + ${offset.y}px)) scale(${zoom})`,
+                  maxWidth: 'none',
+                  maxHeight: 'none',
+                  minWidth: '100%',
+                  minHeight: '100%',
+                  objectFit: 'cover',
+                  pointerEvents: 'none'
+                }}
+              />
+            </div>
+
+            <div style={{ marginBottom: '24px', padding: '0 10px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#888', marginBottom: '8px', letterSpacing: '1px' }}>
+                <span>ZOOM</span>
+                <span>{Math.round(zoom * 100)}%</span>
+              </div>
+              <input 
+                type="range" 
+                min="1" 
+                max="3" 
+                step="0.05" 
+                value={zoom} 
+                onChange={(e) => setZoom(parseFloat(e.target.value))}
+                style={{ width: '100%', accentColor: '#fff', cursor: 'pointer' }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button 
+                onClick={() => setCropModalOpen(false)}
+                style={{
+                  flex: 1,
+                  background: '#1a1a1a',
+                  border: '1px solid #333',
+                  color: '#ccc',
+                  padding: '12px 0',
+                  borderRadius: '24px',
+                  fontSize: '12px',
+                  letterSpacing: '1px',
+                  fontWeight: '600',
+                  cursor: 'pointer'
+                }}>
+                CANCEL
+              </button>
+              <button 
+                onClick={handleApplyCropAndUpload}
+                style={{
+                  flex: 1,
+                  background: '#fff',
+                  border: 'none',
+                  color: '#000',
+                  padding: '12px 0',
+                  borderRadius: '24px',
+                  fontSize: '12px',
+                  letterSpacing: '1px',
+                  fontWeight: '700',
+                  cursor: 'pointer'
+                }}>
+                APPLY
+              </button>
+            </div>
           </div>
         </div>
       )}
