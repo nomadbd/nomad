@@ -144,6 +144,7 @@ export default function Profile() {
   };
 
   const isAmbassador = String(profile?.role).toUpperCase().trim() === 'AMBASSADOR';
+  const isAmbassadorActive = isAmbassador && portalMode === 'ambassador';
 
   const togglePortalMode = () => {
     if (isAmbassador) {
@@ -189,46 +190,29 @@ export default function Profile() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '35px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                 
-                {/* প্রোফাইল অ্যাভেটার */}
+                {/* প্রোফাইল অ্যাভেটার (কোনো স্টার আইকন ছাড়াই গ্লোয়িং ইফেক্ট সহ) */}
                 <div 
                   onClick={togglePortalMode}
                   style={{ 
-                    position: 'relative',
                     width: '56px', 
                     height: '56px', 
                     borderRadius: '50%', 
                     backgroundColor: '#181818', 
-                    border: '1px solid #2a2a2a', 
+                    border: isAmbassadorActive ? '1px solid #ffffff' : '1px solid #2a2a2a', 
+                    boxShadow: isAmbassadorActive ? '0 0 15px rgba(255, 255, 255, 0.4)' : 'none',
                     display: 'flex', 
                     alignItems: 'center', 
                     justifyContent: 'center', 
                     fontWeight: '600', 
                     fontSize: '18px', 
                     color: '#fff', 
+                    textShadow: isAmbassadorActive ? '0 0 8px #ffffff, 0 0 16px #ffffff' : 'none',
                     flexShrink: 0,
                     cursor: isAmbassador ? 'pointer' : 'default',
-                    userSelect: 'none'
+                    userSelect: 'none',
+                    transition: 'all 0.3s ease'
                   }}>
                   {getInitials(profile?.name, profile?.email)}
-
-                  {/* কোনো ব্যাকগ্রাউন্ড ছাড়াই সরাসরি নিয়ন সাদা গ্লো সহ স্টার আইকন */}
-                  {isAmbassador && (
-                    <span style={{
-                      position: 'absolute',
-                      bottom: '-2px',
-                      right: '-2px',
-                      fontSize: '15px',
-                      color: portalMode === 'ambassador' ? '#ffffff' : '#444444',
-                      textShadow: portalMode === 'ambassador' 
-                        ? '0 0 6px #ffffff, 0 0 12px #ffffff, 0 0 18px rgba(255, 255, 255, 0.8)' 
-                        : 'none',
-                      lineHeight: 1,
-                      pointerEvents: 'none',
-                      transition: 'all 0.3s ease'
-                    }}>
-                      ★
-                    </span>
-                  )}
                 </div>
 
                 {/* নাম ও ইমেইল */}
@@ -242,7 +226,7 @@ export default function Profile() {
                 </div>
               </div>
 
-              {/* সেটিংস বাটন (ক্লিয়ার আইকন, ব্যাকগ্রাউন্ড ও বর্ডার ছাড়া) */}
+              {/* সেটিংস বাটন */}
               <div
                 onClick={() => changeView('settings')}
                 style={{
