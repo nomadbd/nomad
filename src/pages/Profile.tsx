@@ -445,14 +445,13 @@ export default function Profile() {
                 draggable={false}
                 style={{
                   position: 'absolute',
-                  top: '50%',
-                  left: '50%',
-                  transform: `translate(calc(-50% + ${offset.x}px), calc(-50% + ${offset.y}px)) scale(${zoom})`,
-                  maxWidth: 'none',
-                  maxHeight: 'none',
-                  minWidth: '100%',
-                  minHeight: '100%',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: '100%',
                   objectFit: 'cover',
+                  transform: `translate(${offset.x}px, ${offset.y}px) scale(${zoom})`,
+                  transformOrigin: 'center center',
                   pointerEvents: 'none'
                 }}
               />
