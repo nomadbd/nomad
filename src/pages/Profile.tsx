@@ -1,10 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
+import { uploadToCloudinary } from '../cloudinary';
 import OrderHistory from '../components/OrderHistory'; 
 
 export default function Profile() {
   const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
   const [view, setView] = useState<'profile' | 'settings'>(() => {
     return (localStorage.getItem('currentView') as 'profile' | 'settings') || 'profile';
   });
@@ -17,6 +20,9 @@ export default function Profile() {
   const [newName, setNewName] = useState('');
   const [newEmail, setNewEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+
   const [toast, setToast] = useState<{ message: string; color: string } | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
 
@@ -68,6 +74,7 @@ export default function Profile() {
       }
 
       setProfile({ ...prof, email: user.email });
+      setAvatarUrl(prof?.avatar_url || null);
 
       if (normalizedRole === 'AMBASSADOR') {
         const { data: amb } = await supabase.from('ambassador').select('*').eq('user_id', user.id).maybeSingle();
@@ -79,6 +86,39 @@ export default function Profile() {
       setNewPassword('');
     }
     setLoading(false);
+  };
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !profile?.id) return;
+
+    try {
+      setUploadingAvatar(true);
+      showToast("Uploading profile picture...", "#3498db");
+
+      // Cloudinary-তে ছবি আপলোড
+      const uploadedUrl = await uploadToCloudinary(file, 'avatars', 'profiles');
+
+      if (uploadedUrl) {
+        // Supabase Profiles টেবিলে avatar_url আপডেট
+        const { error } = await supabase
+          .from('profiles')
+          .update({ avatar_url: uploadedUrl })
+          .eq('id', profile.id);
+
+        if (error) throw error;
+
+        setAvatarUrl(uploadedUrl);
+        setProfile((prev: any) => ({ ...prev, avatar_url: uploadedUrl }));
+        showToast("Profile picture updated successfully!", "#2ecc71");
+      }
+    } catch (err: any) {
+      console.error('Avatar upload error:', err);
+      showToast("Failed to upload image: " + err.message, "#ff4444");
+    } finally {
+      setUploadingAvatar(false);
+      if (e.target) e.target.value = '';
+    }
   };
 
   const handleSignOut = async () => { 
@@ -167,6 +207,14 @@ export default function Profile() {
   return (
     <div style={{ backgroundColor: '#000', minHeight: '100vh', color: '#fff', padding: '40px 20px', fontFamily: "'Inter', sans-serif", width: '100%', boxSizing: 'border-box', overflowX: 'hidden' }}>
 
+      <input 
+        type="file" 
+        ref={fileInputRef} 
+        onChange={handleAvatarChange} 
+        accept="image/*" 
+        style={{ display: 'none' }} 
+      />
+
       {toast && (
         <div style={{ position: 'fixed', top: '20px', right: '20px', background: '#111', color: '#fff', padding: '15px 25px', borderRadius: '5px', borderLeft: `5px solid ${toast.color}`, zIndex: 9999, fontSize: '12px', letterSpacing: '1px', boxShadow: '0 4px 12px rgba(0,0,0,0.5)' }}>
           {toast.message}
@@ -189,8 +237,8 @@ export default function Profile() {
             {/* প্রোফাইল হেডার */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '35px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                
-                {/* প্রোফাইল অ্যাভেটার (কোনো স্টার আইকন ছাড়াই গ্লোয়িং ইফেক্ট সহ) */}
+
+                {/* প্রোফাইল অ্যাভেটার (ছবি থাকলে দেখাবে, না থাকলে নাম দিয়ে ইনিশিয়ালস) */}
                 <div 
                   onClick={togglePortalMode}
                   style={{ 
@@ -210,9 +258,19 @@ export default function Profile() {
                     flexShrink: 0,
                     cursor: isAmbassador ? 'pointer' : 'default',
                     userSelect: 'none',
-                    transition: 'all 0.3s ease'
+                    transition: 'all 0.3s ease',
+                    overflow: 'hidden',
+                    position: 'relative'
                   }}>
-                  {getInitials(profile?.name, profile?.email)}
+                  {avatarUrl ? (
+                    <img 
+                      src={avatarUrl} 
+                      alt="Profile Avatar" 
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                    />
+                  ) : (
+                    getInitials(profile?.name, profile?.email)
+                  )}
                 </div>
 
                 {/* নাম ও ইমেইল */}
@@ -277,6 +335,34 @@ export default function Profile() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
               <h2 style={{ fontWeight: '500', letterSpacing: '4px', fontSize: '18px', margin: 0 }}>SETTINGS</h2>
               <svg onClick={() => changeView('profile')} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" cursor="pointer"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </div>
+
+            {/* প্রোফাইল পিকচার চেঞ্জ করার সেকশন */}
+            <div style={{ marginBottom: '30px', display: 'flex', alignItems: 'center', gap: '20px' }}>
+              <div style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: '#181818', border: '1px solid #333', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  <span style={{ fontSize: '20px', fontWeight: 'bold' }}>{getInitials(profile?.name, profile?.email)}</span>
+                )}
+              </div>
+              <button 
+                type="button"
+                disabled={uploadingAvatar}
+                onClick={() => fileInputRef.current?.click()}
+                style={{
+                  background: '#1a1a1a',
+                  border: '1px solid #333',
+                  color: '#fff',
+                  padding: '8px 16px',
+                  borderRadius: '4px',
+                  fontSize: '12px',
+                  letterSpacing: '1px',
+                  cursor: uploadingAvatar ? 'not-allowed' : 'pointer',
+                  opacity: uploadingAvatar ? 0.6 : 1
+                }}>
+                {uploadingAvatar ? 'UPLOADING...' : 'CHANGE PICTURE'}
+              </button>
             </div>
 
             <p style={{ fontSize: '10px', color: '#888', letterSpacing: '2px', marginBottom: '5px' }}>NAME</p>
