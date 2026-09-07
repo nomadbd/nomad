@@ -145,6 +145,18 @@ export default function Profile() {
 
   const isAmbassador = String(profile?.role).toUpperCase().trim() === 'AMBASSADOR';
 
+  // প্রোফাইল আইকনে ক্লিক করে সুইচ করার ফাংশন
+  const togglePortalMode = () => {
+    if (isAmbassador) {
+      const nextMode = portalMode === 'customer' ? 'ambassador' : 'customer';
+      setPortalMode(nextMode);
+      showToast(
+        nextMode === 'ambassador' ? "Switched to Ambassador Portal" : "Switched to Customer Account", 
+        nextMode === 'ambassador' ? "#d4af37" : "#2ecc71"
+      );
+    }
+  };
+
   const inputStyle = { width: '100%', padding: '10px 0', background: 'transparent', border: 'none', borderBottom: '1px solid #333', color: '#fff', marginBottom: '20px', outline: 'none', fontSize: '15px' };
   const navButtonStyle = { background: 'transparent', border: 'none', color: '#aaa', cursor: 'pointer', fontSize: '13px', letterSpacing: '1px', display: 'block', width: '100%', textAlign: 'left', padding: '5px 0' };
   const dangerButtonStyle = { background: 'transparent', border: 'none', color: '#ff4444', cursor: 'pointer', fontSize: '11px', letterSpacing: '2px', textTransform: 'uppercase' as const, display: 'block', width: '100%', textAlign: 'left', fontWeight: 'bold' };
@@ -179,12 +191,55 @@ export default function Profile() {
       <div style={{ width: '100%' }}>
         {view === 'profile' ? (
           <>
-            {/* প্রোফাইল হেডার (ছবির লেআউট অনুযায়ী) */}
+            {/* প্রোফাইল হেডার */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '35px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                {/* প্রোফাইল অ্যাভেটার সার্কেল */}
-                <div style={{ width: '56px', height: '56px', borderRadius: '50%', backgroundColor: '#181818', border: '1px solid #2a2a2a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '600', fontSize: '18px', color: '#fff', flexShrink: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                
+                {/* প্রোফাইল অ্যাভেটার (যেটিতে ক্লিক করলে সুইচ হবে) */}
+                <div 
+                  onClick={togglePortalMode}
+                  title={isAmbassador ? "Click to switch mode" : ""}
+                  style={{ 
+                    position: 'relative',
+                    width: '56px', 
+                    height: '56px', 
+                    borderRadius: '50%', 
+                    backgroundColor: '#181818', 
+                    border: isAmbassador 
+                      ? (portalMode === 'ambassador' ? '2px solid #d4af37' : '2px solid #3498db')
+                      : '1px solid #2a2a2a', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    fontWeight: '600', 
+                    fontSize: '18px', 
+                    color: '#fff', 
+                    flexShrink: 0,
+                    cursor: isAmbassador ? 'pointer' : 'default',
+                    transition: 'all 0.2s ease'
+                  }}>
                   {getInitials(profile?.name, profile?.email)}
+
+                  {/* অ্যাম্বাসেডরদের জন্য আইকনের ওপর ছোট ব্যাজ নির্দেশক */}
+                  {isAmbassador && (
+                    <div style={{
+                      position: 'absolute',
+                      bottom: '-2px',
+                      right: '-2px',
+                      width: '20px',
+                      height: '20px',
+                      borderRadius: '50%',
+                      backgroundColor: portalMode === 'ambassador' ? '#d4af37' : '#222',
+                      border: '2px solid #000',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '10px',
+                      color: portalMode === 'ambassador' ? '#000' : '#888'
+                    }}>
+                      ★
+                    </div>
+                  )}
                 </div>
 
                 {/* নাম ও সাবটাইটেল */}
@@ -192,68 +247,41 @@ export default function Profile() {
                   <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '700', color: '#fff', letterSpacing: '0.5px' }}>
                     {profile?.name || "PROFILE"}
                   </h2>
-                  <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: portalMode === 'ambassador' ? '#d4af37' : '#888' }}>
+                  <p 
+                    onClick={togglePortalMode}
+                    style={{ 
+                      margin: '4px 0 0 0', 
+                      fontSize: '12px', 
+                      color: portalMode === 'ambassador' ? '#d4af37' : '#888',
+                      cursor: isAmbassador ? 'pointer' : 'default',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}>
                     {portalMode === 'ambassador' && isAmbassador ? '★ AMBASSADOR PORTAL' : profile?.email}
+                    {isAmbassador && <span style={{ fontSize: '10px', opacity: 0.6 }}>(Click icon to switch)</span>}
                   </p>
                 </div>
               </div>
 
-              {/* ডানের অ্যাকশন বাটনসমূহ */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                {/* অ্যাম্বাসেডরদের জন্য সার্কুলার সুইচার বাটন (ছবি অনুযায়ী) */}
-                {isAmbassador && (
-                  <button
-                    onClick={() => setPortalMode(portalMode === 'customer' ? 'ambassador' : 'customer')}
-                    title={portalMode === 'customer' ? "Switch to Ambassador Portal" : "Switch to Customer Account"}
-                    style={{
-                      width: '40px',
-                      height: '40px',
-                      borderRadius: '50%',
-                      backgroundColor: '#222',
-                      border: '1px solid #333',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: 'pointer',
-                      position: 'relative',
-                      padding: 0
-                    }}>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={portalMode === 'ambassador' ? '#d4af37' : '#fff'} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="6 9 12 15 18 9"></polyline>
-                    </svg>
-
-                    {/* ব্যাজ ইন্ডিকেটর ডট */}
-                    <span style={{
-                      position: 'absolute',
-                      top: '2px',
-                      right: '2px',
-                      width: '8px',
-                      height: '8px',
-                      borderRadius: '50%',
-                      backgroundColor: portalMode === 'ambassador' ? '#d4af37' : '#4edf4e'
-                    }} />
-                  </button>
-                )}
-
-                {/* সেটিংস গিয়ার বাটন */}
-                <div
-                  onClick={() => changeView('settings')}
-                  style={{
-                    width: '40px',
-                    height: '40px',
-                    borderRadius: '50%',
-                    backgroundColor: '#161616',
-                    border: '1px solid #2a2a2a',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer'
-                  }}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5">
-                    <circle cx="12" cy="12" r="3"></circle>
-                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-                  </svg>
-                </div>
+              {/* ডানপাশের সেটিংস বাটন */}
+              <div
+                onClick={() => changeView('settings')}
+                style={{
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '50%',
+                  backgroundColor: '#161616',
+                  border: '1px solid #2a2a2a',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer'
+                }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5">
+                  <circle cx="12" cy="12" r="3"></circle>
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                </svg>
               </div>
             </div>
 
