@@ -145,15 +145,10 @@ export default function Profile() {
 
   const isAmbassador = String(profile?.role).toUpperCase().trim() === 'AMBASSADOR';
 
-  // প্রোফাইল আইকনে ক্লিক করে সুইচ করার ফাংশন
+  // প্রোফাইল আইকনে ক্লিক করে সাইলেন্টলি সুইচ করার ফাংশন
   const togglePortalMode = () => {
     if (isAmbassador) {
-      const nextMode = portalMode === 'customer' ? 'ambassador' : 'customer';
-      setPortalMode(nextMode);
-      showToast(
-        nextMode === 'ambassador' ? "Switched to Ambassador Portal" : "Switched to Customer Account", 
-        nextMode === 'ambassador' ? "#d4af37" : "#2ecc71"
-      );
+      setPortalMode(prev => (prev === 'customer' ? 'ambassador' : 'customer'));
     }
   };
 
@@ -195,18 +190,17 @@ export default function Profile() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '35px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                 
-                {/* প্রোফাইল অ্যাভেটার (যেটিতে ক্লিক করলে সুইচ হবে) */}
+                {/* প্রোফাইল অ্যাভেটার */}
                 <div 
                   onClick={togglePortalMode}
-                  title={isAmbassador ? "Click to switch mode" : ""}
                   style={{ 
                     position: 'relative',
                     width: '56px', 
                     height: '56px', 
                     borderRadius: '50%', 
                     backgroundColor: '#181818', 
-                    border: isAmbassador 
-                      ? (portalMode === 'ambassador' ? '2px solid #d4af37' : '2px solid #3498db')
+                    border: (isAmbassador && portalMode === 'ambassador') 
+                      ? '2px solid #d4af37' 
                       : '1px solid #2a2a2a', 
                     display: 'flex', 
                     alignItems: 'center', 
@@ -220,7 +214,7 @@ export default function Profile() {
                   }}>
                   {getInitials(profile?.name, profile?.email)}
 
-                  {/* অ্যাম্বাসেডরদের জন্য আইকনের ওপর ছোট ব্যাজ নির্দেশক */}
+                  {/* অ্যাম্বাসেডরদের স্টার ব্যাজ */}
                   {isAmbassador && (
                     <div style={{
                       position: 'absolute',
@@ -235,31 +229,21 @@ export default function Profile() {
                       alignItems: 'center',
                       justifyContent: 'center',
                       fontSize: '10px',
-                      color: portalMode === 'ambassador' ? '#000' : '#888'
+                      color: portalMode === 'ambassador' ? '#000' : '#666',
+                      transition: 'all 0.2s ease'
                     }}>
                       ★
                     </div>
                   )}
                 </div>
 
-                {/* নাম ও সাবটাইটেল */}
+                {/* নাম ও ইমেইল */}
                 <div>
                   <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '700', color: '#fff', letterSpacing: '0.5px' }}>
                     {profile?.name || "PROFILE"}
                   </h2>
-                  <p 
-                    onClick={togglePortalMode}
-                    style={{ 
-                      margin: '4px 0 0 0', 
-                      fontSize: '12px', 
-                      color: portalMode === 'ambassador' ? '#d4af37' : '#888',
-                      cursor: isAmbassador ? 'pointer' : 'default',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px'
-                    }}>
-                    {portalMode === 'ambassador' && isAmbassador ? '★ AMBASSADOR PORTAL' : profile?.email}
-                    {isAmbassador && <span style={{ fontSize: '10px', opacity: 0.6 }}>(Click icon to switch)</span>}
+                  <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: '#888' }}>
+                    {profile?.email}
                   </p>
                 </div>
               </div>
