@@ -30,6 +30,12 @@ export default function Profile() {
   const [newName, setNewName] = useState('');
   const [newEmail, setNewEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
+  
+  // --- নতুন যুক্ত করা স্টেট ---
+  const [slug, setSlug] = useState('');
+  const [payoutDetails, setPayoutDetails] = useState('');
+  // -------------------------
+
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
@@ -85,6 +91,10 @@ export default function Profile() {
       if (normalizedRole === 'AMBASSADOR') {
         const { data: amb } = await supabase.from('ambassador').select('*').eq('user_id', user.id).maybeSingle();
         setAmbassadorData(amb);
+        if (amb) {
+          setSlug(amb.assigned_slug || '');
+          setPayoutDetails(amb.payout_details || '');
+        }
       }
 
       setNewName('');
@@ -236,10 +246,40 @@ export default function Profile() {
         otherChanges = true;
       }
 
+      // --- অ্যাম্বাসেডর স্ল্যাগ ও পেমেন্ট ডিটেইলস আপডেট লজিক ---
+      if (isAmbassadorActive && ambassadorData?.id) {
+        const formattedSlug = slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-');
+
+        if (formattedSlug && formattedSlug !== ambassadorData.assigned_slug) {
+          const { data: existing } = await supabase
+            .from('ambassador')
+            .select('id')
+            .eq('assigned_slug', formattedSlug)
+            .neq('id', ambassadorData.id)
+            .maybeSingle();
+
+          if (existing) {
+            showToast("This URL slug is already taken.", "#ff4444");
+            return;
+          }
+        }
+
+        const { error: ambErr } = await supabase
+          .from('ambassador')
+          .update({
+            assigned_slug: formattedSlug,
+            payout_details: payoutDetails.trim()
+          })
+          .eq('id', ambassadorData.id);
+
+        if (ambErr) throw ambErr;
+        otherChanges = true;
+      }
+
       if (emailChanged) {
         showToast("Check your new email inbox to verify the change.", "#3498db");
       } else if (otherChanges) {
-        showToast("Profile updated successfully!", "#2ecc71");
+        showToast("Settings updated successfully!", "#2ecc71");
       }
 
       setNewPassword('');
@@ -329,6 +369,12 @@ export default function Profile() {
             newName={newName} 
             newEmail={newEmail} 
             newPassword={newPassword} 
+            // --- নতুন প্রপস পাস করা হলো ---
+            slug={slug}
+            setSlug={setSlug}
+            payoutDetails={payoutDetails}
+            setPayoutDetails={setPayoutDetails}
+            // ---------------------------
             setNewName={setNewName} 
             setNewEmail={setNewEmail} 
             setNewPassword={setNewPassword} 
