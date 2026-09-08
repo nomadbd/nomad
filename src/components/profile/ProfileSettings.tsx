@@ -1,264 +1,473 @@
-import { useState, RefObject } from 'react';
+import { useEffect, useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '../supabaseClient';
+import { uploadToCloudinary, deleteFromCloudinary } from '../cloudinary';
+import OrderHistory from '../components/OrderHistory';
+import Toast from '../components/ui/Toast';
+import ProfileSkeleton from '../components/profile/ProfileSkeleton';
+import ProfileHeader from '../components/profile/ProfileHeader';
+import AmbassadorDashboard from './AmbassadorDashboard';
+import SettingsView from '../components/profile/ProfileSettings';
+import ImageCropModal from '../components/ui/ImageCropModal';
 
-interface ProfileSettingsProps {
-  profile: any;
-  avatarUrl: string | null;
-  isAmbassadorActive: boolean;
-  uploadingAvatar: boolean;
-  fileInputRef: RefObject<HTMLInputElement | null>;
-  newName: string;
-  newEmail: string;
-  currentPassword: string;
-  setCurrentPassword: (val: string) => void;
-  newPassword: string;
-  currentSlug?: string;
-  newSlug: string;
-  setNewSlug: (val: string) => void;
-  payoutMethod: string;
-  setPayoutMethod: (val: string) => void;
-  currentPayoutDetails?: string;
-  newPayoutNumber: string;
-  setNewPayoutNumber: (val: string) => void;
-  setNewName: (val: string) => void;
-  setNewEmail: (val: string) => void;
-  setNewPassword: (val: string) => void;
-  getInitials: (name?: string, email?: string) => string;
-  handleDeleteAvatar: () => void;
-  handleUpdate: () => void;
-  handleSignOut: () => void;
-  setShowConfirm: (val: boolean) => void;
-  onChangeView: (view: 'profile' | 'settings') => void;
-}
+export default function Profile() {
+  const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-export default function ProfileSettings({
-  profile,
-  avatarUrl,
-  isAmbassadorActive,
-  uploadingAvatar,
-  fileInputRef,
-  newName,
-  newEmail,
-  currentPassword,
-  setCurrentPassword,
-  newPassword,
-  currentSlug = '',
-  newSlug,
-  setNewSlug,
-  payoutMethod,
-  setPayoutMethod,
-  currentPayoutDetails = '',
-  newPayoutNumber,
-  setNewPayoutNumber,
-  setNewName,
-  setNewEmail,
-  setNewPassword,
-  getInitials,
-  handleDeleteAvatar,
-  handleUpdate,
-  handleSignOut,
-  setShowConfirm,
-  onChangeView
-}: ProfileSettingsProps) {
-  const [showPasswordSection, setShowPasswordSection] = useState(false);
+  const [view, setView] = useState<'profile' | 'settings'>(() => {
+    return (localStorage.getItem('currentView') as 'profile' | 'settings') || 'profile';
+  });
 
-  const labelStyle = { fontSize: '10px', color: '#888', letterSpacing: '2px', marginBottom: '5px' };
-  const inputStyle = { width: '100%', padding: '10px 0', background: 'transparent', border: 'none', borderBottom: '1px solid #333', color: '#fff', marginBottom: '20px', outline: 'none', fontSize: '15px' };
-  const navButtonStyle = { background: 'transparent', border: 'none', color: '#aaa', cursor: 'pointer', fontSize: '13px', letterSpacing: '1px', display: 'block', width: '100%', textAlign: 'left', padding: '5px 0' };
-  const dangerButtonStyle = { background: 'transparent', border: 'none', color: '#ff4444', cursor: 'pointer', fontSize: '11px', letterSpacing: '2px', textTransform: 'uppercase' as const, display: 'block', width: '100%', textAlign: 'left', fontWeight: 'bold' };
+  const [portalMode, setPortalMode] = useState<'customer' | 'ambassador'>(() => {
+    return (localStorage.getItem('portalMode') as 'customer' | 'ambassador') || 'customer';
+  });
 
-  const payoutOptions = ['bKash', 'Nagad', 'Rocket', 'Card'];
+  const [profile, setProfile] = useState<any>(null);
+  const [ambassadorData, setAmbassadorData] = useState<any>(null);
+  const [, setSession] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  const [newName, setNewName] = useState('');
+  const [newEmail, setNewEmail] = useState('');
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [deleteConfirmPassword, setDeleteConfirmPassword] = useState('');
+
+  const [currentSlug, setCurrentSlug] = useState('');
+  const [newSlug, setNewSlug] = useState('');
+
+  const [payoutMethod, setPayoutMethod] = useState('bKash');
+  const [currentPayoutDetails, setCurrentPayoutDetails] = useState('');
+  const [newPayoutNumber, setNewPayoutNumber] = useState('');
+
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+
+  const [toast, setToast] = useState<{ message: string; color: string } | null>(null);
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+  const [selectedImageSrc, setSelectedImageSrc] = useState<string | null>(null);
+
+  const changeView = (newView: 'profile' | 'settings') => {
+    setView(newView);
+    localStorage.setItem('currentView', newView);
+  };
+
+  useEffect(() => { 
+    fetchUserData(); 
+  }, []);
+
+  const showToast = (message: string, color: string = '#fff') => {
+    setToast({ message, color });
+    setTimeout(() => setToast(null), 4000);
+  };
+
+  const getInitials = (name?: string, email?: string) => {
+    if (name?.trim()) {
+      return name.trim().split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+    }
+    if (email?.trim()) {
+      return email.trim()[0].toUpperCase();
+    }
+    return 'U';
+  };
+
+  const fetchUserData = async () => {
+    setLoading(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      setSession({ user });
+      const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+
+      const normalizedRole = prof?.role ? String(prof.role).toUpperCase().trim() : '';
+      const isStaff = ['SUPER_ADMIN', 'ADMIN', 'STAFF'].includes(normalizedRole);
+
+      if (isStaff) {
+        navigate('/admin', { replace: true });
+        return;
+      }
+
+      const fetchedAvatar = prof?.avatar_url || prof?.avatar || null;
+      setProfile({ ...prof, email: user.email, avatar_url: fetchedAvatar });
+      setAvatarUrl(fetchedAvatar);
+
+      if (normalizedRole === 'AMBASSADOR') {
+        const { data: amb } = await supabase.from('ambassador').select('*').eq('user_id', user.id).maybeSingle();
+        setAmbassadorData(amb);
+        if (amb) {
+          setCurrentSlug(amb.assigned_slug || '');
+          setCurrentPayoutDetails(amb.payout_details || '');
+        }
+      }
+
+      setNewName('');
+      setNewEmail('');
+      setCurrentPassword('');
+      setNewPassword('');
+      setDeleteConfirmPassword('');
+      setNewSlug('');
+      setNewPayoutNumber('');
+    }
+    setLoading(false);
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setSelectedImageSrc(reader.result as string);
+      setCropModalOpen(true);
+    };
+    reader.readAsDataURL(file);
+
+    if (e.target) e.target.value = '';
+  };
+
+  const handleApplyCropAndUpload = async (croppedFile: File) => {
+    if (!profile?.id) {
+      showToast("User profile ID missing.", "#ff4444");
+      return;
+    }
+
+    try {
+      setUploadingAvatar(true);
+      setCropModalOpen(false);
+      showToast("Uploading cropped image...", "#3498db");
+
+      const uploadedUrl = await uploadToCloudinary(croppedFile, 'avatars', profile.id);
+
+      if (uploadedUrl) {
+        const urlWithCacheBust = `${uploadedUrl}?v=${Date.now()}`;
+
+        const { data, error } = await supabase
+          .from('profiles')
+          .update({ avatar_url: urlWithCacheBust })
+          .eq('id', profile.id)
+          .select();
+
+        if (error) throw error;
+
+        if (!data || data.length === 0) {
+          showToast("Database permission denied or row not found.", "#ff4444");
+          return;
+        }
+
+        setAvatarUrl(urlWithCacheBust);
+        setProfile((prev: any) => ({ ...prev, avatar_url: urlWithCacheBust }));
+        showToast("Profile picture updated successfully!", "#2ecc71");
+      } else {
+        showToast("Cloudinary upload failed.", "#ff4444");
+      }
+    } catch (err: any) {
+      showToast("Failed to upload image: " + (err.message || "Unknown error"), "#ff4444");
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
+  const handleDeleteAvatar = async () => {
+    if (!profile?.id) return;
+
+    try {
+      setUploadingAvatar(true);
+      showToast("Removing profile picture...", "#3498db");
+
+      if (avatarUrl) {
+        await deleteFromCloudinary(avatarUrl);
+      }
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .update({ avatar_url: null })
+        .eq('id', profile.id)
+        .select();
+
+      if (error) throw error;
+
+      if (!data || data.length === 0) {
+        showToast("Database update failed.", "#ff4444");
+        return;
+      }
+
+      setAvatarUrl(null);
+      setProfile((prev: any) => ({ ...prev, avatar_url: null }));
+      showToast("Profile picture removed successfully!", "#2ecc71");
+    } catch (err: any) {
+      showToast("Failed to remove image: " + err.message, "#ff4444");
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
+  const handleSignOut = async () => { 
+    localStorage.removeItem('currentView');
+    localStorage.removeItem('portalMode');
+    await supabase.auth.signOut(); 
+    window.location.href = '/'; 
+  };
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmPassword.length < 6) return;
+
+    const { error: authError } = await supabase.auth.signInWithPassword({
+      email: profile.email,
+      password: deleteConfirmPassword
+    });
+
+    if (authError) {
+      showToast("Incorrect password. Account deletion failed.", "#ff4444");
+      return;
+    }
+
+    setShowConfirm(false);
+    const { error } = await supabase.rpc('delete_user');
+    if (error) {
+      showToast("Error: " + error.message, "#ff4444");
+    } else {
+      localStorage.removeItem('currentView');
+      localStorage.removeItem('portalMode');
+      await supabase.auth.signOut();
+      window.location.href = '/';
+    }
+  };
+
+  const handleUpdate = async () => {
+    try {
+      let emailChanged = false;
+      let otherChanges = false;
+
+      if (newName.trim() && newName !== profile?.name) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({ name: newName.trim() })
+          .eq('id', profile.id);
+        if (profileError) throw profileError;
+        otherChanges = true;
+      }
+
+      if (newEmail.trim() && newEmail !== profile?.email) {
+        const { error: emailError } = await supabase.auth.updateUser({ email: newEmail.trim() });
+        if (emailError) throw emailError;
+        emailChanged = true;
+      }
+
+      if (newPassword) {
+        if (!currentPassword) {
+          showToast("Current password is required to change password.", "#ff4444");
+          return;
+        }
+
+        if (newPassword.length < 6) {
+          showToast("New password must be at least 6 characters long.", "#ff4444");
+          return;
+        }
+
+        const { error: authError } = await supabase.auth.signInWithPassword({
+          email: profile.email,
+          password: currentPassword
+        });
+
+        if (authError) {
+          showToast("Incorrect current password.", "#ff4444");
+          return;
+        }
+
+        const { error: passwordError } = await supabase.auth.updateUser({ password: newPassword });
+        if (passwordError) throw passwordError;
+        otherChanges = true;
+      }
+
+      if (isAmbassadorActive && ambassadorData?.id) {
+        const updatesToAmb: any = {};
+
+        if (newSlug.trim()) {
+          const formattedSlug = newSlug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-');
+          if (formattedSlug !== currentSlug) {
+            const { data: existing } = await supabase
+              .from('ambassador')
+              .select('id')
+              .eq('assigned_slug', formattedSlug)
+              .neq('id', ambassadorData.id)
+              .maybeSingle();
+
+            if (existing) {
+              showToast("This URL slug is already taken.", "#ff4444");
+              return;
+            }
+            updatesToAmb.assigned_slug = formattedSlug;
+          }
+        }
+
+        if (newPayoutNumber.trim()) {
+          updatesToAmb.payout_details = `${payoutMethod}: ${newPayoutNumber.trim()}`;
+        }
+
+        if (Object.keys(updatesToAmb).length > 0) {
+          const { error: ambErr } = await supabase
+            .from('ambassador')
+            .update(updatesToAmb)
+            .eq('id', ambassadorData.id);
+
+          if (ambErr) throw ambErr;
+          otherChanges = true;
+        }
+      }
+
+      if (emailChanged) {
+        showToast("Check your new email inbox to verify the change.", "#3498db");
+      } else if (otherChanges) {
+        showToast("Settings updated successfully!", "#2ecc71");
+      }
+
+      setCurrentPassword('');
+      setNewPassword('');
+      setDeleteConfirmPassword('');
+      await fetchUserData();
+      changeView('profile');
+    } catch (error: any) {
+      showToast("Update Error: " + error.message, "#ff4444");
+    }
+  };
+
+  const isAmbassador = String(profile?.role).toUpperCase().trim() === 'AMBASSADOR';
+  const isAmbassadorActive = isAmbassador && portalMode === 'ambassador';
+
+  const togglePortalMode = () => {
+    if (isAmbassador) {
+      setPortalMode(prev => {
+        const nextMode = prev === 'customer' ? 'ambassador' : 'customer';
+        localStorage.setItem('portalMode', nextMode);
+        return nextMode;
+      });
+    }
+  };
+
+  const isDeleteEnabled = deleteConfirmPassword.length >= 6;
+
+  if (loading) {
+    return (
+      <div style={{ backgroundColor: '#000', minHeight: '100vh', color: '#fff', padding: '40px 20px' }}>
+        <ProfileSkeleton />
+      </div>
+    );
+  }
 
   return (
-    <>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
-        <h2 style={{ fontWeight: '500', letterSpacing: '4px', fontSize: '18px', margin: 0 }}>SETTINGS</h2>
-        <svg onClick={() => onChangeView('profile')} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" cursor="pointer"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-      </div>
+    <div style={{ backgroundColor: '#000', minHeight: '100vh', color: '#fff', padding: '40px 20px', fontFamily: "'Inter', sans-serif", width: '100%', boxSizing: 'border-box', overflowX: 'hidden' }}>
+      <input 
+        type="file" 
+        ref={fileInputRef} 
+        onChange={handleFileSelect} 
+        accept="image/*" 
+        style={{ display: 'none' }} 
+      />
 
-      {isAmbassadorActive && (
-        <div style={{ marginBottom: '30px', display: 'flex', alignItems: 'center', gap: '20px' }}>
-          <div style={{ 
-            width: '64px', 
-            height: '64px', 
-            borderRadius: '50%', 
-            backgroundColor: '#181818', 
-            border: '1px solid #ffffff',
-            boxShadow: '0 0 15px rgba(255, 255, 255, 0.4)',
-            overflow: 'hidden', 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center',
-            fontWeight: '600',
-            color: '#fff',
-            textShadow: '0 0 8px #ffffff, 0 0 16px #ffffff',
-            flexShrink: 0
-          }}>
-            {avatarUrl ? (
-              <img src={avatarUrl} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            ) : (
-              <span style={{ fontSize: '20px', fontWeight: 'bold' }}>{getInitials(profile?.name, profile?.email)}</span>
-            )}
-          </div>
+      {toast && <Toast message={toast.message} color={toast.color} />}
 
-          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-            <button 
-              type="button"
-              disabled={uploadingAvatar}
-              onClick={() => fileInputRef.current?.click()}
-              style={{
-                background: '#1a1a1a',
-                border: '1px solid #333',
-                color: '#fff',
-                padding: '8px 16px',
-                borderRadius: '4px',
-                fontSize: '12px',
-                letterSpacing: '1px',
-                cursor: uploadingAvatar ? 'not-allowed' : 'pointer',
-                opacity: uploadingAvatar ? 0.6 : 1
-              }}>
-              {uploadingAvatar ? 'UPLOADING...' : (avatarUrl ? 'CHANGE PICTURE' : 'UPLOAD PICTURE')}
-            </button>
-
-            {avatarUrl && (
+      {showConfirm && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
+          <div style={{ background: '#111', border: '1px solid #222', borderRadius: '8px', padding: '25px', maxWidth: '400px', width: '100%' }}>
+            <h3 style={{ margin: '0 0 10px 0', fontSize: '16px', color: '#ff4444', letterSpacing: '1px' }}>DELETE ACCOUNT</h3>
+            <p style={{ fontSize: '13px', color: '#ccc', marginBottom: '20px' }}>This action is permanent. Enter your password to confirm deletion:</p>
+            <input 
+              type="password" 
+              placeholder="Password" 
+              value={deleteConfirmPassword} 
+              onChange={(e) => setDeleteConfirmPassword(e.target.value)}
+              style={{ width: '100%', padding: '10px 0', background: 'transparent', border: 'none', borderBottom: '1px solid #333', color: '#fff', marginBottom: '20px', outline: 'none', fontSize: '15px', boxSizing: 'border-box' }}
+            />
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
               <button 
-                type="button"
-                disabled={uploadingAvatar}
-                onClick={handleDeleteAvatar}
-                style={{
-                  background: 'transparent',
-                  border: '1px solid #ff4444',
-                  color: '#ff4444',
-                  padding: '8px 16px',
-                  borderRadius: '4px',
-                  fontSize: '12px',
-                  letterSpacing: '1px',
-                  cursor: uploadingAvatar ? 'not-allowed' : 'pointer',
-                  opacity: uploadingAvatar ? 0.6 : 1
-                }}>
-                REMOVE PICTURE
+                onClick={() => { setShowConfirm(false); setDeleteConfirmPassword(''); }}
+                style={{ background: 'transparent', border: '1px solid #333', color: '#aaa', padding: '8px 16px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', letterSpacing: '1px' }}>
+                CANCEL
               </button>
-            )}
-          </div>
-        </div>
-      )}
-
-      <p style={labelStyle}>NAME</p>
-      <input placeholder={profile?.name || "Full Name"} value={newName} onChange={(e) => setNewName(e.target.value)} style={inputStyle} />
-
-      <p style={labelStyle}>EMAIL ADDRESS</p>
-      <input placeholder={profile?.email || "Email Address"} value={newEmail} onChange={(e) => setNewEmail(e.target.value)} style={inputStyle} />
-
-      {isAmbassadorActive && (
-        <>
-          <p style={labelStyle}>CUSTOM SHOWCASE SLUG</p>
-          <input 
-            placeholder={currentSlug || "slug-name"} 
-            value={newSlug} 
-            onChange={(e) => setNewSlug(e.target.value)} 
-            style={inputStyle} 
-          />
-
-          <p style={labelStyle}>DEFAULT PAYOUT METHOD</p>
-          <div style={{
-            display: 'flex',
-            gap: '10px',
-            overflowX: 'auto',
-            paddingBottom: '10px',
-            marginBottom: '20px',
-            scrollbarWidth: 'none'
-          }}>
-            {payoutOptions.map((option) => {
-              const isSelected = payoutMethod === option || payoutMethod.startsWith(option);
-              return (
-                <button
-                  key={option}
-                  type="button"
-                  onClick={() => setPayoutMethod(option)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    padding: '8px 16px',
-                    borderRadius: '20px',
-                    background: isSelected ? '#181818' : 'transparent',
-                    color: isSelected ? '#cccccc' : '#555555',
-                    border: isSelected ? '1px solid #333333' : '1px solid #1a1a1a',
-                    fontSize: '12px',
-                    fontWeight: '400',
-                    letterSpacing: '1px',
-                    whiteSpace: 'nowrap',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                    flexShrink: 0
-                  }}
-                >
-                  <span style={{
-                    width: '6px',
-                    height: '6px',
-                    borderRadius: '50%',
-                    background: isSelected ? '#aaaaaa' : 'transparent',
-                    border: isSelected ? '1px solid #aaaaaa' : '1px solid #333333',
-                    transition: 'all 0.2s ease'
-                  }} />
-                  {option}
-                </button>
-              );
-            })}
-          </div>
-
-          <p style={labelStyle}>PAYOUT NUMBER</p>
-          <input 
-            placeholder={currentPayoutDetails || "+1234567890"} 
-            value={newPayoutNumber} 
-            onChange={(e) => setNewPayoutNumber(e.target.value)} 
-            style={inputStyle} 
-          />
-        </>
-      )}
-
-      <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        <div>
-          <button 
-            type="button"
-            onClick={() => {
-              setShowPasswordSection(!showPasswordSection);
-              if (showPasswordSection) {
-                setCurrentPassword('');
-                setNewPassword('');
-              }
-            }}
-            style={navButtonStyle}
-          >
-            CHANGE PASSWORD
-          </button>
-
-          {showPasswordSection && (
-            <div style={{ marginTop: '15px', marginBottom: '10px' }}>
-              <p style={labelStyle}>CURRENT PASSWORD</p>
-              <input 
-                type="password" 
-                placeholder="Current Password" 
-                value={currentPassword} 
-                onChange={(e) => setCurrentPassword(e.target.value)} 
-                style={inputStyle} 
-              />
-
-              <p style={labelStyle}>NEW PASSWORD</p>
-              <input 
-                type="password" 
-                placeholder="New Password" 
-                value={newPassword} 
-                onChange={(e) => setNewPassword(e.target.value)} 
-                style={inputStyle} 
-              />
+              <button 
+                disabled={!isDeleteEnabled}
+                onClick={handleDeleteAccount}
+                style={{ 
+                  background: isDeleteEnabled ? '#ff4444' : '#222222', 
+                  border: 'none', 
+                  color: isDeleteEnabled ? '#ffffff' : '#666666', 
+                  padding: '8px 16px', 
+                  borderRadius: '4px', 
+                  cursor: isDeleteEnabled ? 'pointer' : 'not-allowed', 
+                  fontSize: '12px', 
+                  letterSpacing: '1px', 
+                  fontWeight: 'bold',
+                  transition: 'all 0.2s ease'
+                }}>
+                DELETE
+              </button>
             </div>
-          )}
+          </div>
         </div>
+      )}
 
-        <button onClick={handleUpdate} style={{ ...navButtonStyle, color: '#fff', fontWeight: '600' }}>SAVE CHANGES</button>
-        <button onClick={handleSignOut} style={navButtonStyle}>SIGN OUT</button>
-        <button onClick={() => setShowConfirm(true)} style={dangerButtonStyle}>DELETE ACCOUNT</button>
+      <ImageCropModal 
+        isOpen={cropModalOpen} 
+        selectedImageSrc={selectedImageSrc} 
+        isAmbassadorActive={isAmbassadorActive} 
+        onClose={() => setCropModalOpen(false)} 
+        onApply={handleApplyCropAndUpload} 
+      />
+
+      <div style={{ width: '100%' }}>
+        {view === 'profile' ? (
+          <>
+            <ProfileHeader 
+              profile={profile} 
+              avatarUrl={avatarUrl} 
+              isAmbassador={isAmbassador} 
+              isAmbassadorActive={isAmbassadorActive} 
+              togglePortalMode={togglePortalMode} 
+              getInitials={getInitials} 
+              onChangeView={changeView} 
+            />
+
+            {portalMode === 'ambassador' && isAmbassador ? (
+              <AmbassadorDashboard ambassadorData={ambassadorData} profile={profile} />
+            ) : (
+              <div style={{ marginTop: '20px', borderTop: '1px solid #111', paddingTop: '10px' }}>
+                <OrderHistory userId={profile?.id} />
+              </div>
+            )}
+          </>
+        ) : (
+          <SettingsView 
+            profile={profile} 
+            avatarUrl={avatarUrl} 
+            isAmbassadorActive={isAmbassadorActive} 
+            uploadingAvatar={uploadingAvatar} 
+            fileInputRef={fileInputRef} 
+            newName={newName} 
+            newEmail={newEmail} 
+            currentPassword={currentPassword}
+            setCurrentPassword={setCurrentPassword}
+            newPassword={newPassword} 
+            currentSlug={currentSlug}
+            newSlug={newSlug}
+            setNewSlug={setNewSlug}
+            payoutMethod={payoutMethod}
+            setPayoutMethod={setPayoutMethod}
+            currentPayoutDetails={currentPayoutDetails}
+            newPayoutNumber={newPayoutNumber}
+            setNewPayoutNumber={setNewPayoutNumber}
+            setNewName={setNewName} 
+            setNewEmail={setNewEmail} 
+            setNewPassword={setNewPassword} 
+            getInitials={getInitials} 
+            handleDeleteAvatar={handleDeleteAvatar} 
+            handleUpdate={handleUpdate} 
+            handleSignOut={handleSignOut} 
+            setShowConfirm={setShowConfirm} 
+            onChangeView={changeView} 
+          />
+        )}
       </div>
-    </>
+    </div>
   );
 }
