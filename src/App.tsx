@@ -5,8 +5,8 @@ import { CartProvider } from './context/CartContext';
 import { useSession } from './hooks/useSession';
 
 import Profile from './pages/Profile';
-
 import AmbassadorDashboard from './pages/AmbassadorDashboard';
+import AmbassadorJoin from './components/ambassador/AmbassadorJoin';
 
 import Header from './components/Header';
 import SearchOverlay from './components/SearchOverlay';
