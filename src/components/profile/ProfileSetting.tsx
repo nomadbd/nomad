@@ -1,6 +1,6 @@
 import { RefObject } from 'react';
 
-interface SettingsViewProps {
+interface ProfileSettingsProps {
   profile: any;
   avatarUrl: string | null;
   isAmbassadorActive: boolean;
@@ -20,7 +20,7 @@ interface SettingsViewProps {
   onChangeView: (view: 'profile' | 'settings') => void;
 }
 
-export default function SettingsView({
+export default function ProfileSettings({
   profile,
   avatarUrl,
   isAmbassadorActive,
@@ -38,7 +38,7 @@ export default function SettingsView({
   handleSignOut,
   setShowConfirm,
   onChangeView
-}: SettingsViewProps) {
+}: ProfileSettingsProps) {
   const inputStyle = { width: '100%', padding: '10px 0', background: 'transparent', border: 'none', borderBottom: '1px solid #333', color: '#fff', marginBottom: '20px', outline: 'none', fontSize: '15px' };
   const navButtonStyle = { background: 'transparent', border: 'none', color: '#aaa', cursor: 'pointer', fontSize: '13px', letterSpacing: '1px', display: 'block', width: '100%', textAlign: 'left', padding: '5px 0' };
   const dangerButtonStyle = { background: 'transparent', border: 'none', color: '#ff4444', cursor: 'pointer', fontSize: '11px', letterSpacing: '2px', textTransform: 'uppercase' as const, display: 'block', width: '100%', textAlign: 'left', fontWeight: 'bold' };
