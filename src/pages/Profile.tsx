@@ -7,7 +7,7 @@ import Toast from '../components/ui/Toast';
 import ProfileSkeleton from '../components/profile/ProfileSkeleton';
 import ProfileHeader from '../components/profile/ProfileHeader';
 import AmbassadorDashboard from './AmbassadorDashboard';
-import SettingsView from '../components/profile/ProfileSettings';
+import ProfileSettings from '../components/profile/ProfileSettings';
 import ImageCropModal from '../components/ui/ImageCropModal';
 
 export default function Profile() {
@@ -426,7 +426,7 @@ export default function Profile() {
             )}
           </>
         ) : (
-          <SettingsView 
+          <ProfileSettings 
             profile={profile} 
             avatarUrl={avatarUrl} 
             isAmbassadorActive={isAmbassadorActive} 
