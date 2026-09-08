@@ -31,10 +31,14 @@ export default function Profile() {
   const [newEmail, setNewEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
   
-  // --- নতুন যুক্ত করা স্টেট ---
-  const [slug, setSlug] = useState('');
-  const [payoutDetails, setPayoutDetails] = useState('');
-  // -------------------------
+  // --- নতুন অ্যাম্বাসেডর সেটিংস স্টেটসমূহ ---
+  const [currentSlug, setCurrentSlug] = useState('');
+  const [newSlug, setNewSlug] = useState('');
+  
+  const [payoutMethod, setPayoutMethod] = useState('bKash Personal');
+  const [currentPayoutDetails, setCurrentPayoutDetails] = useState('');
+  const [newPayoutNumber, setNewPayoutNumber] = useState('');
+  // ----------------------------------------
 
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -92,14 +96,16 @@ export default function Profile() {
         const { data: amb } = await supabase.from('ambassador').select('*').eq('user_id', user.id).maybeSingle();
         setAmbassadorData(amb);
         if (amb) {
-          setSlug(amb.assigned_slug || '');
-          setPayoutDetails(amb.payout_details || '');
+          setCurrentSlug(amb.assigned_slug || '');
+          setCurrentPayoutDetails(amb.payout_details || '');
         }
       }
 
       setNewName('');
       setNewEmail('');
       setNewPassword('');
+      setNewSlug('');
+      setNewPayoutNumber('');
     }
     setLoading(false);
   };
@@ -246,34 +252,43 @@ export default function Profile() {
         otherChanges = true;
       }
 
-      // --- অ্যাম্বাসেডর স্ল্যাগ ও পেমেন্ট ডিটেইলস আপডেট লজিক ---
+      // --- অ্যাম্বাসেডর আপডেট প্রসেসিং ---
       if (isAmbassadorActive && ambassadorData?.id) {
-        const formattedSlug = slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-');
+        const updatesToAmb: any = {};
 
-        if (formattedSlug && formattedSlug !== ambassadorData.assigned_slug) {
-          const { data: existing } = await supabase
-            .from('ambassador')
-            .select('id')
-            .eq('assigned_slug', formattedSlug)
-            .neq('id', ambassadorData.id)
-            .maybeSingle();
+        // ১. স্ল্যাগ আপডেট লজিক
+        if (newSlug.trim()) {
+          const formattedSlug = newSlug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-');
+          if (formattedSlug !== currentSlug) {
+            const { data: existing } = await supabase
+              .from('ambassador')
+              .select('id')
+              .eq('assigned_slug', formattedSlug)
+              .neq('id', ambassadorData.id)
+              .maybeSingle();
 
-          if (existing) {
-            showToast("This URL slug is already taken.", "#ff4444");
-            return;
+            if (existing) {
+              showToast("This URL slug is already taken.", "#ff4444");
+              return;
+            }
+            updatesToAmb.assigned_slug = formattedSlug;
           }
         }
 
-        const { error: ambErr } = await supabase
-          .from('ambassador')
-          .update({
-            assigned_slug: formattedSlug,
-            payout_details: payoutDetails.trim()
-          })
-          .eq('id', ambassadorData.id);
+        // ২. পেমেন্ট মেথড ও নম্বর আপডেট লজিক
+        if (newPayoutNumber.trim()) {
+          updatesToAmb.payout_details = `${payoutMethod}: ${newPayoutNumber.trim()}`;
+        }
 
-        if (ambErr) throw ambErr;
-        otherChanges = true;
+        if (Object.keys(updatesToAmb).length > 0) {
+          const { error: ambErr } = await supabase
+            .from('ambassador')
+            .update(updatesToAmb)
+            .eq('id', ambassadorData.id);
+
+          if (ambErr) throw ambErr;
+          otherChanges = true;
+        }
       }
 
       if (emailChanged) {
@@ -369,12 +384,18 @@ export default function Profile() {
             newName={newName} 
             newEmail={newEmail} 
             newPassword={newPassword} 
-            // --- নতুন প্রপস পাস করা হলো ---
-            slug={slug}
-            setSlug={setSlug}
-            payoutDetails={payoutDetails}
-            setPayoutDetails={setPayoutDetails}
-            // ---------------------------
+            
+            // --- নতুন প্রপস ---
+            currentSlug={currentSlug}
+            newSlug={newSlug}
+            setNewSlug={setNewSlug}
+            payoutMethod={payoutMethod}
+            setPayoutMethod={setPayoutMethod}
+            currentPayoutDetails={currentPayoutDetails}
+            newPayoutNumber={newPayoutNumber}
+            setNewPayoutNumber={setNewPayoutNumber}
+            // ------------------
+
             setNewName={setNewName} 
             setNewEmail={setNewEmail} 
             setNewPassword={setNewPassword} 
