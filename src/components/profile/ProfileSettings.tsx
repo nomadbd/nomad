@@ -178,13 +178,13 @@ export default function ProfileSettings({
                     display: 'flex',
                     alignItems: 'center',
                     gap: '8px',
-                    padding: '8px 18px',
+                    padding: '8px 16px',
                     borderRadius: '20px',
-                    background: '#111111',
-                    color: isSelected ? '#ffffff' : '#666666',
-                    border: isSelected ? '1px solid #ffffff' : '1px solid #222222',
+                    background: isSelected ? '#181818' : 'transparent',
+                    color: isSelected ? '#cccccc' : '#555555',
+                    border: isSelected ? '1px solid #333333' : '1px solid #1a1a1a',
                     fontSize: '12px',
-                    fontWeight: isSelected ? '500' : '400',
+                    fontWeight: '400',
                     letterSpacing: '1px',
                     whiteSpace: 'nowrap',
                     cursor: 'pointer',
@@ -196,8 +196,8 @@ export default function ProfileSettings({
                     width: '6px',
                     height: '6px',
                     borderRadius: '50%',
-                    background: isSelected ? '#ffffff' : 'transparent',
-                    border: isSelected ? '1px solid #ffffff' : '1px solid #444444',
+                    background: isSelected ? '#aaaaaa' : 'transparent',
+                    border: isSelected ? '1px solid #aaaaaa' : '1px solid #333333',
                     transition: 'all 0.2s ease'
                   }} />
                   {option}
@@ -216,8 +216,30 @@ export default function ProfileSettings({
         </>
       )}
 
-      <div style={{ marginBottom: '25px', borderTop: '1px solid #1a1a1a', paddingTop: '15px' }}>
-        <button
+      {showPasswordSection && (
+        <div style={{ marginBottom: '10px' }}>
+          <p style={labelStyle}>CURRENT PASSWORD</p>
+          <input 
+            type="password" 
+            placeholder="Current Password" 
+            value={currentPassword} 
+            onChange={(e) => setCurrentPassword(e.target.value)} 
+            style={inputStyle} 
+          />
+
+          <p style={labelStyle}>NEW PASSWORD</p>
+          <input 
+            type="password" 
+            placeholder="New Password" 
+            value={newPassword} 
+            onChange={(e) => setNewPassword(e.target.value)} 
+            style={inputStyle} 
+          />
+        </div>
+      )}
+
+      <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <button 
           type="button"
           onClick={() => {
             setShowPasswordSection(!showPasswordSection);
@@ -226,48 +248,11 @@ export default function ProfileSettings({
               setNewPassword('');
             }
           }}
-          style={{
-            background: 'transparent',
-            border: 'none',
-            color: showPasswordSection ? '#fff' : '#888',
-            cursor: 'pointer',
-            fontSize: '11px',
-            letterSpacing: '2px',
-            padding: '5px 0',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            fontWeight: '500',
-            transition: 'color 0.2s ease'
-          }}
+          style={navButtonStyle}
         >
-          <span>{showPasswordSection ? '− HIDE PASSWORD OPTIONS' : '+ CHANGE PASSWORD'}</span>
+          CHANGE PASSWORD
         </button>
 
-        {showPasswordSection && (
-          <div style={{ marginTop: '15px' }}>
-            <p style={labelStyle}>CURRENT PASSWORD</p>
-            <input 
-              type="password" 
-              placeholder="Current Password" 
-              value={currentPassword} 
-              onChange={(e) => setCurrentPassword(e.target.value)} 
-              style={inputStyle} 
-            />
-
-            <p style={labelStyle}>NEW PASSWORD</p>
-            <input 
-              type="password" 
-              placeholder="New Password" 
-              value={newPassword} 
-              onChange={(e) => setNewPassword(e.target.value)} 
-              style={inputStyle} 
-            />
-          </div>
-        )}
-      </div>
-
-      <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
         <button onClick={handleUpdate} style={{ ...navButtonStyle, color: '#fff', fontWeight: '600' }}>SAVE CHANGES</button>
         <button onClick={handleSignOut} style={navButtonStyle}>SIGN OUT</button>
         <button onClick={() => setShowConfirm(true)} style={dangerButtonStyle}>DELETE ACCOUNT</button>
