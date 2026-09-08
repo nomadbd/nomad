@@ -1,4 +1,6 @@
-import Ambassador from '../components/ambassador/Ambassador';
+import React from 'react';
+import { useAmbassador } from '../hooks/useAmbassador';
+import AmbassadorWorkspace from '../components/ambassador/AmbassadorWorkspace';
 
 interface AmbassadorDashboardProps {
   ambassadorData: any;
@@ -6,9 +8,15 @@ interface AmbassadorDashboardProps {
 }
 
 export default function AmbassadorDashboard({ ambassadorData, profile }: AmbassadorDashboardProps) {
+  const ambassadorState = useAmbassador(ambassadorData);
+
   return (
     <div style={{ marginTop: '10px' }}>
-      <Ambassador ambassadorData={ambassadorData} profile={profile} />
+      <AmbassadorWorkspace 
+        ambassadorData={ambassadorData} 
+        profile={profile} 
+        ambassadorState={ambassadorState} 
+      />
     </div>
   );
 }
