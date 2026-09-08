@@ -8,7 +8,7 @@ import ConfirmModal from '../components/ui/ConfirmModal';
 import ProfileSkeleton from '../components/profile/ProfileSkeleton';
 import ProfileHeader from '../components/profile/ProfileHeader';
 import Ambassador from '../components/ambassador/Ambassador';
-import SettingsView from '../components/profile/SettingsView';
+import SettingsView from '../components/profile/ProfileSettings';
 import ImageCropModal from '../components/ui/ImageCropModal';
 
 export default function Profile() {
