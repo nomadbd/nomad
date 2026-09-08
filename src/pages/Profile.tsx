@@ -7,9 +7,9 @@ import Toast from '../components/ui/Toast';
 import ConfirmModal from '../components/ui/ConfirmModal';
 import ProfileSkeleton from '../components/profile/ProfileSkeleton';
 import ProfileHeader from '../components/profile/ProfileHeader';
-import AmbassadorDashboard from '../components/profile/AmbassadorDashboard';
+import Ambassador from '../components/ambassador/Ambassador';
 import SettingsView from '../components/profile/SettingsView';
-import ImageCropModal from '../components/profile/ImageCropModal';
+import ImageCropModal from '../components/ui/ImageCropModal';
 
 export default function Profile() {
   const navigate = useNavigate();
