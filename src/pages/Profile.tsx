@@ -4,7 +4,6 @@ import { supabase } from '../supabaseClient';
 import { uploadToCloudinary, deleteFromCloudinary } from '../cloudinary';
 import OrderHistory from '../components/OrderHistory';
 import Toast from '../components/ui/Toast';
-import ConfirmModal from '../components/ui/ConfirmModal';
 import ProfileSkeleton from '../components/profile/ProfileSkeleton';
 import ProfileHeader from '../components/profile/ProfileHeader';
 import AmbassadorDashboard from './AmbassadorDashboard';
@@ -27,18 +26,19 @@ export default function Profile() {
   const [ambassadorData, setAmbassadorData] = useState<any>(null);
   const [, setSession] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+
   const [newName, setNewName] = useState('');
   const [newEmail, setNewEmail] = useState('');
+  const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
-  
-  // --- নতুন অ্যাম্বাসেডর সেটিংস স্টেটসমূহ ---
+  const [deleteConfirmPassword, setDeleteConfirmPassword] = useState('');
+
   const [currentSlug, setCurrentSlug] = useState('');
   const [newSlug, setNewSlug] = useState('');
-  
-  const [payoutMethod, setPayoutMethod] = useState('bKash Personal');
+
+  const [payoutMethod, setPayoutMethod] = useState('bKash');
   const [currentPayoutDetails, setCurrentPayoutDetails] = useState('');
   const [newPayoutNumber, setNewPayoutNumber] = useState('');
-  // ----------------------------------------
 
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -103,7 +103,9 @@ export default function Profile() {
 
       setNewName('');
       setNewEmail('');
+      setCurrentPassword('');
       setNewPassword('');
+      setDeleteConfirmPassword('');
       setNewSlug('');
       setNewPayoutNumber('');
     }
@@ -157,10 +159,9 @@ export default function Profile() {
         setProfile((prev: any) => ({ ...prev, avatar_url: urlWithCacheBust }));
         showToast("Profile picture updated successfully!", "#2ecc71");
       } else {
-        showToast("Cloudinary upload failed. Check Cloudinary upload preset/API keys.", "#ff4444");
+        showToast("Cloudinary upload failed.", "#ff4444");
       }
     } catch (err: any) {
-      console.error('Avatar upload error:', err);
       showToast("Failed to upload image: " + (err.message || "Unknown error"), "#ff4444");
     } finally {
       setUploadingAvatar(false);
@@ -195,7 +196,6 @@ export default function Profile() {
       setProfile((prev: any) => ({ ...prev, avatar_url: null }));
       showToast("Profile picture removed successfully!", "#2ecc71");
     } catch (err: any) {
-      console.error('Avatar delete error:', err);
       showToast("Failed to remove image: " + err.message, "#ff4444");
     } finally {
       setUploadingAvatar(false);
@@ -210,6 +210,21 @@ export default function Profile() {
   };
 
   const handleDeleteAccount = async () => {
+    if (!deleteConfirmPassword) {
+      showToast("Password is required to delete account.", "#ff4444");
+      return;
+    }
+
+    const { error: authError } = await supabase.auth.signInWithPassword({
+      email: profile.email,
+      password: deleteConfirmPassword
+    });
+
+    if (authError) {
+      showToast("Incorrect password. Account deletion failed.", "#ff4444");
+      return;
+    }
+
     setShowConfirm(false);
     const { error } = await supabase.rpc('delete_user');
     if (error) {
@@ -243,20 +258,34 @@ export default function Profile() {
       }
 
       if (newPassword) {
-        if (newPassword.length < 6) {
-          showToast("Password must be at least 6 characters long.", "#ff4444");
+        if (!currentPassword) {
+          showToast("Current password is required to change password.", "#ff4444");
           return;
         }
+
+        if (newPassword.length < 6) {
+          showToast("New password must be at least 6 characters long.", "#ff4444");
+          return;
+        }
+
+        const { error: authError } = await supabase.auth.signInWithPassword({
+          email: profile.email,
+          password: currentPassword
+        });
+
+        if (authError) {
+          showToast("Incorrect current password.", "#ff4444");
+          return;
+        }
+
         const { error: passwordError } = await supabase.auth.updateUser({ password: newPassword });
         if (passwordError) throw passwordError;
         otherChanges = true;
       }
 
-      // --- অ্যাম্বাসেডর আপডেট প্রসেসিং ---
       if (isAmbassadorActive && ambassadorData?.id) {
         const updatesToAmb: any = {};
 
-        // ১. স্ল্যাগ আপডেট লজিক
         if (newSlug.trim()) {
           const formattedSlug = newSlug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-');
           if (formattedSlug !== currentSlug) {
@@ -275,7 +304,6 @@ export default function Profile() {
           }
         }
 
-        // ২. পেমেন্ট মেথড ও নম্বর আপডেট লজিক
         if (newPayoutNumber.trim()) {
           updatesToAmb.payout_details = `${payoutMethod}: ${newPayoutNumber.trim()}`;
         }
@@ -297,7 +325,9 @@ export default function Profile() {
         showToast("Settings updated successfully!", "#2ecc71");
       }
 
+      setCurrentPassword('');
       setNewPassword('');
+      setDeleteConfirmPassword('');
       await fetchUserData();
       changeView('profile');
     } catch (error: any) {
@@ -338,12 +368,33 @@ export default function Profile() {
 
       {toast && <Toast message={toast.message} color={toast.color} />}
 
-      <ConfirmModal 
-        isOpen={showConfirm} 
-        message="Are you sure you want to delete your account?" 
-        onConfirm={handleDeleteAccount} 
-        onCancel={() => setShowConfirm(false)} 
-      />
+      {showConfirm && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
+          <div style={{ background: '#111', border: '1px solid #222', borderRadius: '8px', padding: '25px', maxWidth: '400px', width: '100%' }}>
+            <h3 style={{ margin: '0 0 10px 0', fontSize: '16px', color: '#ff4444', letterSpacing: '1px' }}>DELETE ACCOUNT</h3>
+            <p style={{ fontSize: '13px', color: '#ccc', marginBottom: '20px' }}>This action is permanent. Enter your password to confirm deletion:</p>
+            <input 
+              type="password" 
+              placeholder="Password" 
+              value={deleteConfirmPassword} 
+              onChange={(e) => setDeleteConfirmPassword(e.target.value)}
+              style={{ width: '100%', padding: '10px 0', background: 'transparent', border: 'none', borderBottom: '1px solid #333', color: '#fff', marginBottom: '20px', outline: 'none', fontSize: '15px', boxSizing: 'border-box' }}
+            />
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              <button 
+                onClick={() => { setShowConfirm(false); setDeleteConfirmPassword(''); }}
+                style={{ background: 'transparent', border: '1px solid #333', color: '#aaa', padding: '8px 16px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', letterSpacing: '1px' }}>
+                CANCEL
+              </button>
+              <button 
+                onClick={handleDeleteAccount}
+                style={{ background: '#ff4444', border: 'none', color: '#fff', padding: '8px 16px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', letterSpacing: '1px', fontWeight: 'bold' }}>
+                DELETE
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <ImageCropModal 
         isOpen={cropModalOpen} 
@@ -383,9 +434,9 @@ export default function Profile() {
             fileInputRef={fileInputRef} 
             newName={newName} 
             newEmail={newEmail} 
+            currentPassword={currentPassword}
+            setCurrentPassword={setCurrentPassword}
             newPassword={newPassword} 
-            
-            // --- নতুন প্রপস ---
             currentSlug={currentSlug}
             newSlug={newSlug}
             setNewSlug={setNewSlug}
@@ -394,8 +445,6 @@ export default function Profile() {
             currentPayoutDetails={currentPayoutDetails}
             newPayoutNumber={newPayoutNumber}
             setNewPayoutNumber={setNewPayoutNumber}
-            // ------------------
-
             setNewName={setNewName} 
             setNewEmail={setNewEmail} 
             setNewPassword={setNewPassword} 
