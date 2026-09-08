@@ -6,6 +6,7 @@ import { useSession } from './hooks/useSession';
 
 import Profile from './pages/Profile';
 
+import AmbassadorDashboard from './pages/AmbassadorDashboard';
 
 import Header from './components/Header';
 import SearchOverlay from './components/SearchOverlay';
