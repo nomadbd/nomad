@@ -9,6 +9,12 @@ interface ProfileSettingsProps {
   newName: string;
   newEmail: string;
   newPassword: string;
+  // --- নতুন যুক্ত করা প্রপস ---
+  slug?: string;
+  setSlug?: (val: string) => void;
+  payoutDetails?: string;
+  setPayoutDetails?: (val: string) => void;
+  // ---------------------------
   setNewName: (val: string) => void;
   setNewEmail: (val: string) => void;
   setNewPassword: (val: string) => void;
@@ -29,6 +35,12 @@ export default function ProfileSettings({
   newName,
   newEmail,
   newPassword,
+  // --- নতুন যুক্ত করা ভ্যারিয়েবল ---
+  slug = '',
+  setSlug,
+  payoutDetails = '',
+  setPayoutDetails,
+  // ------------------------------
   setNewName,
   setNewEmail,
   setNewPassword,
@@ -122,6 +134,27 @@ export default function ProfileSettings({
 
       <p style={{ fontSize: '10px', color: '#888', letterSpacing: '2px', marginBottom: '5px' }}>EMAIL ADDRESS</p>
       <input placeholder={profile?.email} value={newEmail} onChange={(e) => setNewEmail(e.target.value)} style={inputStyle} />
+
+      {/* --- শুধুমাত্র অ্যাম্বাসেডরদের জন্য নতুন সেটিং ফিল্ডসমূহ --- */}
+      {isAmbassadorActive && (
+        <>
+          <p style={{ fontSize: '10px', color: '#d4af37', letterSpacing: '2px', marginBottom: '5px' }}>CUSTOM SHOWCASE SLUG</p>
+          <input 
+            placeholder="e.g. your-custom-name" 
+            value={slug} 
+            onChange={(e) => setSlug && setSlug(e.target.value)} 
+            style={{ ...inputStyle, color: '#d4af37' }} 
+          />
+
+          <p style={{ fontSize: '10px', color: '#d4af37', letterSpacing: '2px', marginBottom: '5px' }}>DEFAULT PAYOUT DETAILS</p>
+          <input 
+            placeholder="bKash Personal: 017XXXXXXXX" 
+            value={payoutDetails} 
+            onChange={(e) => setPayoutDetails && setPayoutDetails(e.target.value)} 
+            style={{ ...inputStyle, color: '#d4af37' }} 
+          />
+        </>
+      )}
 
       <p style={{ fontSize: '10px', color: '#888', letterSpacing: '2px', marginBottom: '5px' }}>NEW PASSWORD</p>
       <input type="password" placeholder="••••••••" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} style={inputStyle} />
