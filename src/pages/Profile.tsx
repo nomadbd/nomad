@@ -7,7 +7,7 @@ import Toast from '../components/ui/Toast';
 import ConfirmModal from '../components/ui/ConfirmModal';
 import ProfileSkeleton from '../components/profile/ProfileSkeleton';
 import ProfileHeader from '../components/profile/ProfileHeader';
-import Ambassador from '../components/ambassador/Ambassador';
+import AmbassadorDashboard from './AmbassadorDashboard';
 import SettingsView from '../components/profile/ProfileSettings';
 import ImageCropModal from '../components/ui/ImageCropModal';
 
