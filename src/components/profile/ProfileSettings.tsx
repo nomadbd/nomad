@@ -9,12 +9,18 @@ interface ProfileSettingsProps {
   newName: string;
   newEmail: string;
   newPassword: string;
-  // --- নতুন যুক্ত করা প্রপস ---
-  slug?: string;
-  setSlug?: (val: string) => void;
-  payoutDetails?: string;
-  setPayoutDetails?: (val: string) => void;
-  // ---------------------------
+  
+  // --- নতুন প্রপস ---
+  currentSlug?: string;
+  newSlug: string;
+  setNewSlug: (val: string) => void;
+  payoutMethod: string;
+  setPayoutMethod: (val: string) => void;
+  currentPayoutDetails?: string;
+  newPayoutNumber: string;
+  setNewPayoutNumber: (val: string) => void;
+  // ------------------
+
   setNewName: (val: string) => void;
   setNewEmail: (val: string) => void;
   setNewPassword: (val: string) => void;
@@ -35,12 +41,14 @@ export default function ProfileSettings({
   newName,
   newEmail,
   newPassword,
-  // --- নতুন যুক্ত করা ভ্যারিয়েবল ---
-  slug = '',
-  setSlug,
-  payoutDetails = '',
-  setPayoutDetails,
-  // ------------------------------
+  currentSlug = '',
+  newSlug,
+  setNewSlug,
+  payoutMethod,
+  setPayoutMethod,
+  currentPayoutDetails = '',
+  newPayoutNumber,
+  setNewPayoutNumber,
   setNewName,
   setNewEmail,
   setNewPassword,
@@ -52,6 +60,7 @@ export default function ProfileSettings({
   onChangeView
 }: ProfileSettingsProps) {
   const inputStyle = { width: '100%', padding: '10px 0', background: 'transparent', border: 'none', borderBottom: '1px solid #333', color: '#fff', marginBottom: '20px', outline: 'none', fontSize: '15px' };
+  const selectStyle = { width: '100%', padding: '10px 0', background: '#0a0a0a', border: 'none', borderBottom: '1px solid #333', color: '#d4af37', marginBottom: '15px', outline: 'none', fontSize: '14px', cursor: 'pointer' };
   const navButtonStyle = { background: 'transparent', border: 'none', color: '#aaa', cursor: 'pointer', fontSize: '13px', letterSpacing: '1px', display: 'block', width: '100%', textAlign: 'left', padding: '5px 0' };
   const dangerButtonStyle = { background: 'transparent', border: 'none', color: '#ff4444', cursor: 'pointer', fontSize: '11px', letterSpacing: '2px', textTransform: 'uppercase' as const, display: 'block', width: '100%', textAlign: 'left', fontWeight: 'bold' };
 
@@ -135,22 +144,35 @@ export default function ProfileSettings({
       <p style={{ fontSize: '10px', color: '#888', letterSpacing: '2px', marginBottom: '5px' }}>EMAIL ADDRESS</p>
       <input placeholder={profile?.email} value={newEmail} onChange={(e) => setNewEmail(e.target.value)} style={inputStyle} />
 
-      {/* --- শুধুমাত্র অ্যাম্বাসেডরদের জন্য নতুন সেটিং ফিল্ডসমূহ --- */}
+      {/* --- অ্যাম্বাসেডর সেটিংস ফিল্ডসমূহ --- */}
       {isAmbassadorActive && (
         <>
           <p style={{ fontSize: '10px', color: '#d4af37', letterSpacing: '2px', marginBottom: '5px' }}>CUSTOM SHOWCASE SLUG</p>
           <input 
-            placeholder="e.g. your-custom-name" 
-            value={slug} 
-            onChange={(e) => setSlug && setSlug(e.target.value)} 
+            placeholder={currentSlug || "e.g. your-custom-name"} 
+            value={newSlug} 
+            onChange={(e) => setNewSlug(e.target.value)} 
             style={{ ...inputStyle, color: '#d4af37' }} 
           />
 
-          <p style={{ fontSize: '10px', color: '#d4af37', letterSpacing: '2px', marginBottom: '5px' }}>DEFAULT PAYOUT DETAILS</p>
+          <p style={{ fontSize: '10px', color: '#d4af37', letterSpacing: '2px', marginBottom: '5px' }}>DEFAULT PAYOUT METHOD</p>
+          <select 
+            value={payoutMethod} 
+            onChange={(e) => setPayoutMethod(e.target.value)}
+            style={selectStyle}
+          >
+            <option value="bKash Personal">bKash (Personal)</option>
+            <option value="bKash Agent">bKash (Agent)</option>
+            <option value="Nagad Personal">Nagad (Personal)</option>
+            <option value="Rocket Personal">Rocket (Personal)</option>
+            <option value="Bank Account">Bank Account Transfer</option>
+          </select>
+
+          <p style={{ fontSize: '10px', color: '#d4af37', letterSpacing: '2px', marginBottom: '5px' }}>PAYOUT NUMBER / DETAILS</p>
           <input 
-            placeholder="bKash Personal: 017XXXXXXXX" 
-            value={payoutDetails} 
-            onChange={(e) => setPayoutDetails && setPayoutDetails(e.target.value)} 
+            placeholder={currentPayoutDetails || "e.g. 017XXXXXXXX or Account Details"} 
+            value={newPayoutNumber} 
+            onChange={(e) => setNewPayoutNumber(e.target.value)} 
             style={{ ...inputStyle, color: '#d4af37' }} 
           />
         </>
