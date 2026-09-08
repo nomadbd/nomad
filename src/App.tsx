@@ -6,7 +6,7 @@ import { useSession } from './hooks/useSession';
 
 import Profile from './pages/Profile';
 import AmbassadorDashboard from './pages/AmbassadorDashboard';
-import AmbassadorJoin from './components/ambassador/AmbassadorJoin';
+import { AmbassadorJoin, AmbassadorStore } from './components/ambassador';
 
 import Header from './components/Header';
 import SearchOverlay from './components/SearchOverlay';
@@ -22,7 +22,7 @@ const AppContent = ({ session, setIsSearchOpen, setIsAuthOpen }: any) => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const showHeader = !['/profile', '/admin', '/update-password'].includes(location.pathname) && !location.pathname.startsWith('/vip');
+  const showHeader = !['/profile', '/admin', '/update-password'].includes(location.pathname) && !location.pathname.startsWith('/vip') && !location.pathname.startsWith('/ref');
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: 'black', color: 'white' }}>
@@ -51,7 +51,23 @@ const AppContent = ({ session, setIsSearchOpen, setIsAuthOpen }: any) => {
 
         <Route path="/profile" element={session ? <Profile /> : <Navigate to="/" replace />} />
 
-        <Route path="/vip/:token" element={<AmbassadorJoin />} />
+        <Route 
+          path="/vip/:token" 
+          element={
+            <Suspense fallback={null}>
+              <AmbassadorJoin />
+            </Suspense>
+          } 
+        />
+
+        <Route 
+          path="/ref/:slug" 
+          element={
+            <Suspense fallback={null}>
+              <AmbassadorStore />
+            </Suspense>
+          } 
+        />
 
         <Route 
           path="/admin" 
