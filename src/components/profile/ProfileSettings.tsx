@@ -216,42 +216,44 @@ export default function ProfileSettings({
         </>
       )}
 
-      {showPasswordSection && (
-        <div style={{ marginBottom: '10px' }}>
-          <p style={labelStyle}>CURRENT PASSWORD</p>
-          <input 
-            type="password" 
-            placeholder="Current Password" 
-            value={currentPassword} 
-            onChange={(e) => setCurrentPassword(e.target.value)} 
-            style={inputStyle} 
-          />
-
-          <p style={labelStyle}>NEW PASSWORD</p>
-          <input 
-            type="password" 
-            placeholder="New Password" 
-            value={newPassword} 
-            onChange={(e) => setNewPassword(e.target.value)} 
-            style={inputStyle} 
-          />
-        </div>
-      )}
-
       <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        <button 
-          type="button"
-          onClick={() => {
-            setShowPasswordSection(!showPasswordSection);
-            if (showPasswordSection) {
-              setCurrentPassword('');
-              setNewPassword('');
-            }
-          }}
-          style={navButtonStyle}
-        >
-          CHANGE PASSWORD
-        </button>
+        <div>
+          <button 
+            type="button"
+            onClick={() => {
+              setShowPasswordSection(!showPasswordSection);
+              if (showPasswordSection) {
+                setCurrentPassword('');
+                setNewPassword('');
+              }
+            }}
+            style={navButtonStyle}
+          >
+            CHANGE PASSWORD
+          </button>
+
+          {showPasswordSection && (
+            <div style={{ marginTop: '15px', marginBottom: '10px' }}>
+              <p style={labelStyle}>CURRENT PASSWORD</p>
+              <input 
+                type="password" 
+                placeholder="Current Password" 
+                value={currentPassword} 
+                onChange={(e) => setCurrentPassword(e.target.value)} 
+                style={inputStyle} 
+              />
+
+              <p style={labelStyle}>NEW PASSWORD</p>
+              <input 
+                type="password" 
+                placeholder="New Password" 
+                value={newPassword} 
+                onChange={(e) => setNewPassword(e.target.value)} 
+                style={inputStyle} 
+              />
+            </div>
+          )}
+        </div>
 
         <button onClick={handleUpdate} style={{ ...navButtonStyle, color: '#fff', fontWeight: '600' }}>SAVE CHANGES</button>
         <button onClick={handleSignOut} style={navButtonStyle}>SIGN OUT</button>
