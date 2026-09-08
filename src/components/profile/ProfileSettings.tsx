@@ -1,4 +1,4 @@
-import { RefObject } from 'react';
+import { useState, RefObject } from 'react';
 
 interface ProfileSettingsProps {
   profile: any;
@@ -59,6 +59,8 @@ export default function ProfileSettings({
   setShowConfirm,
   onChangeView
 }: ProfileSettingsProps) {
+  const [showPasswordSection, setShowPasswordSection] = useState(false);
+
   const labelStyle = { fontSize: '10px', color: '#888', letterSpacing: '2px', marginBottom: '5px' };
   const inputStyle = { width: '100%', padding: '10px 0', background: 'transparent', border: 'none', borderBottom: '1px solid #333', color: '#fff', marginBottom: '20px', outline: 'none', fontSize: '15px' };
   const navButtonStyle = { background: 'transparent', border: 'none', color: '#aaa', cursor: 'pointer', fontSize: '13px', letterSpacing: '1px', display: 'block', width: '100%', textAlign: 'left', padding: '5px 0' };
@@ -214,11 +216,56 @@ export default function ProfileSettings({
         </>
       )}
 
-      <p style={labelStyle}>CURRENT PASSWORD</p>
-      <input type="password" placeholder="Current Password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} style={inputStyle} />
+      <div style={{ marginBottom: '25px', borderTop: '1px solid #1a1a1a', paddingTop: '15px' }}>
+        <button
+          type="button"
+          onClick={() => {
+            setShowPasswordSection(!showPasswordSection);
+            if (showPasswordSection) {
+              setCurrentPassword('');
+              setNewPassword('');
+            }
+          }}
+          style={{
+            background: 'transparent',
+            border: 'none',
+            color: showPasswordSection ? '#fff' : '#888',
+            cursor: 'pointer',
+            fontSize: '11px',
+            letterSpacing: '2px',
+            padding: '5px 0',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            fontWeight: '500',
+            transition: 'color 0.2s ease'
+          }}
+        >
+          <span>{showPasswordSection ? '− HIDE PASSWORD OPTIONS' : '+ CHANGE PASSWORD'}</span>
+        </button>
 
-      <p style={labelStyle}>NEW PASSWORD</p>
-      <input type="password" placeholder="New Password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} style={inputStyle} />
+        {showPasswordSection && (
+          <div style={{ marginTop: '15px' }}>
+            <p style={labelStyle}>CURRENT PASSWORD</p>
+            <input 
+              type="password" 
+              placeholder="Current Password" 
+              value={currentPassword} 
+              onChange={(e) => setCurrentPassword(e.target.value)} 
+              style={inputStyle} 
+            />
+
+            <p style={labelStyle}>NEW PASSWORD</p>
+            <input 
+              type="password" 
+              placeholder="New Password" 
+              value={newPassword} 
+              onChange={(e) => setNewPassword(e.target.value)} 
+              style={inputStyle} 
+            />
+          </div>
+        )}
+      </div>
 
       <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
         <button onClick={handleUpdate} style={{ ...navButtonStyle, color: '#fff', fontWeight: '600' }}>SAVE CHANGES</button>
