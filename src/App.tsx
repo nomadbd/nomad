@@ -5,8 +5,6 @@ import { CartProvider } from './context/CartContext';
 import { useSession } from './hooks/useSession';
 
 import Profile from './pages/Profile';
-import AmbassadorDashboard from './pages/AmbassadorDashboard';
-import { AmbassadorJoin, AmbassadorStore } from './components/ambassador';
 
 import Header from './components/Header';
 import SearchOverlay from './components/SearchOverlay';
@@ -17,6 +15,9 @@ import AuthOverlay from './components/auth/AuthOverlay';
 import AuthForm from './components/auth/AuthForm';
 
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
+const AmbassadorDashboard = lazy(() => import('./pages/AmbassadorDashboard'));
+const AmbassadorJoin = lazy(() => import('./components/ambassador/AmbassadorJoin'));
+const AmbassadorStore = lazy(() => import('./components/ambassador/AmbassadorStore'));
 
 const AppContent = ({ session, setIsSearchOpen, setIsAuthOpen }: any) => {
   const location = useLocation();
