@@ -569,7 +569,7 @@ export default function Profile() {
                     overflow: 'hidden',
                     position: 'relative'
                   }}>
-                  {avatarUrl ? (
+                  {avatarUrl && isAmbassadorActive ? (
                     <img 
                       src={avatarUrl} 
                       alt="Profile Avatar" 
@@ -641,7 +641,6 @@ export default function Profile() {
               <svg onClick={() => changeView('profile')} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" cursor="pointer"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
             </div>
 
-            {/* শুধুমাত্র AMBASSADOR মোড সক্রিয় থাকলেই পুরো প্রোফাইল পিকচার সেকশনটি (অ্যাভাটার সার্কেল + বাটন) দেখাবে */}
             {isAmbassadorActive && (
               <div style={{ marginBottom: '30px', display: 'flex', alignItems: 'center', gap: '20px' }}>
                 <div style={{ 
