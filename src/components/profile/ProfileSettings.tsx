@@ -8,9 +8,9 @@ interface ProfileSettingsProps {
   fileInputRef: RefObject<HTMLInputElement | null>;
   newName: string;
   newEmail: string;
+  currentPassword: string;
+  setCurrentPassword: (val: string) => void;
   newPassword: string;
-
-  
   currentSlug?: string;
   newSlug: string;
   setNewSlug: (val: string) => void;
@@ -19,8 +19,6 @@ interface ProfileSettingsProps {
   currentPayoutDetails?: string;
   newPayoutNumber: string;
   setNewPayoutNumber: (val: string) => void;
- 
-
   setNewName: (val: string) => void;
   setNewEmail: (val: string) => void;
   setNewPassword: (val: string) => void;
@@ -40,6 +38,8 @@ export default function ProfileSettings({
   fileInputRef,
   newName,
   newEmail,
+  currentPassword,
+  setCurrentPassword,
   newPassword,
   currentSlug = '',
   newSlug,
@@ -64,7 +64,6 @@ export default function ProfileSettings({
   const navButtonStyle = { background: 'transparent', border: 'none', color: '#aaa', cursor: 'pointer', fontSize: '13px', letterSpacing: '1px', display: 'block', width: '100%', textAlign: 'left', padding: '5px 0' };
   const dangerButtonStyle = { background: 'transparent', border: 'none', color: '#ff4444', cursor: 'pointer', fontSize: '11px', letterSpacing: '2px', textTransform: 'uppercase' as const, display: 'block', width: '100%', textAlign: 'left', fontWeight: 'bold' };
 
-  
   const payoutOptions = ['bKash', 'Nagad', 'Rocket', 'Card'];
 
   return (
@@ -142,24 +141,22 @@ export default function ProfileSettings({
       )}
 
       <p style={labelStyle}>NAME</p>
-      <input placeholder={profile?.name || "Enter your name"} value={newName} onChange={(e) => setNewName(e.target.value)} style={inputStyle} />
+      <input placeholder={profile?.name || "Full Name"} value={newName} onChange={(e) => setNewName(e.target.value)} style={inputStyle} />
 
       <p style={labelStyle}>EMAIL ADDRESS</p>
-      <input placeholder={profile?.email} value={newEmail} onChange={(e) => setNewEmail(e.target.value)} style={inputStyle} />
+      <input placeholder={profile?.email || "Email Address"} value={newEmail} onChange={(e) => setNewEmail(e.target.value)} style={inputStyle} />
 
-      
       {isAmbassadorActive && (
         <>
           <p style={labelStyle}>CUSTOM SHOWCASE SLUG</p>
           <input 
-            placeholder={currentSlug || "e.g. your-custom-name"} 
+            placeholder={currentSlug || "slug-name"} 
             value={newSlug} 
             onChange={(e) => setNewSlug(e.target.value)} 
             style={inputStyle} 
           />
 
           <p style={labelStyle}>DEFAULT PAYOUT METHOD</p>
-          
           <div style={{
             display: 'flex',
             gap: '10px',
@@ -176,13 +173,16 @@ export default function ProfileSettings({
                   type="button"
                   onClick={() => setPayoutMethod(option)}
                   style={{
-                    padding: '8px 20px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '8px 18px',
                     borderRadius: '20px',
-                    background: isSelected ? '#ffffff' : '#111111',
-                    color: isSelected ? '#000000' : '#888888',
+                    background: '#111111',
+                    color: isSelected ? '#ffffff' : '#666666',
                     border: isSelected ? '1px solid #ffffff' : '1px solid #222222',
                     fontSize: '12px',
-                    fontWeight: isSelected ? '600' : '400',
+                    fontWeight: isSelected ? '500' : '400',
                     letterSpacing: '1px',
                     whiteSpace: 'nowrap',
                     cursor: 'pointer',
@@ -190,6 +190,14 @@ export default function ProfileSettings({
                     flexShrink: 0
                   }}
                 >
+                  <span style={{
+                    width: '6px',
+                    height: '6px',
+                    borderRadius: '50%',
+                    background: isSelected ? '#ffffff' : 'transparent',
+                    border: isSelected ? '1px solid #ffffff' : '1px solid #444444',
+                    transition: 'all 0.2s ease'
+                  }} />
                   {option}
                 </button>
               );
@@ -198,7 +206,7 @@ export default function ProfileSettings({
 
           <p style={labelStyle}>PAYOUT NUMBER</p>
           <input 
-            placeholder={currentPayoutDetails || "017XXXXXXXX"} 
+            placeholder={currentPayoutDetails || "+1234567890"} 
             value={newPayoutNumber} 
             onChange={(e) => setNewPayoutNumber(e.target.value)} 
             style={inputStyle} 
@@ -206,8 +214,11 @@ export default function ProfileSettings({
         </>
       )}
 
+      <p style={labelStyle}>CURRENT PASSWORD</p>
+      <input type="password" placeholder="Current Password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} style={inputStyle} />
+
       <p style={labelStyle}>NEW PASSWORD</p>
-      <input type="password" placeholder="••••••••" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} style={inputStyle} />
+      <input type="password" placeholder="New Password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} style={inputStyle} />
 
       <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
         <button onClick={handleUpdate} style={{ ...navButtonStyle, color: '#fff', fontWeight: '600' }}>SAVE CHANGES</button>
