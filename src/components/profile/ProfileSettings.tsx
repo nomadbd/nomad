@@ -9,8 +9,8 @@ interface ProfileSettingsProps {
   newName: string;
   newEmail: string;
   newPassword: string;
+
   
-  // --- নতুন প্রপস ---
   currentSlug?: string;
   newSlug: string;
   setNewSlug: (val: string) => void;
@@ -19,7 +19,7 @@ interface ProfileSettingsProps {
   currentPayoutDetails?: string;
   newPayoutNumber: string;
   setNewPayoutNumber: (val: string) => void;
-  // ------------------
+ 
 
   setNewName: (val: string) => void;
   setNewEmail: (val: string) => void;
@@ -59,10 +59,13 @@ export default function ProfileSettings({
   setShowConfirm,
   onChangeView
 }: ProfileSettingsProps) {
+  const labelStyle = { fontSize: '10px', color: '#888', letterSpacing: '2px', marginBottom: '5px' };
   const inputStyle = { width: '100%', padding: '10px 0', background: 'transparent', border: 'none', borderBottom: '1px solid #333', color: '#fff', marginBottom: '20px', outline: 'none', fontSize: '15px' };
-  const selectStyle = { width: '100%', padding: '10px 0', background: '#0a0a0a', border: 'none', borderBottom: '1px solid #333', color: '#d4af37', marginBottom: '15px', outline: 'none', fontSize: '14px', cursor: 'pointer' };
   const navButtonStyle = { background: 'transparent', border: 'none', color: '#aaa', cursor: 'pointer', fontSize: '13px', letterSpacing: '1px', display: 'block', width: '100%', textAlign: 'left', padding: '5px 0' };
   const dangerButtonStyle = { background: 'transparent', border: 'none', color: '#ff4444', cursor: 'pointer', fontSize: '11px', letterSpacing: '2px', textTransform: 'uppercase' as const, display: 'block', width: '100%', textAlign: 'left', fontWeight: 'bold' };
+
+  
+  const payoutOptions = ['bKash', 'Nagad', 'Rocket', 'Card'];
 
   return (
     <>
@@ -138,47 +141,72 @@ export default function ProfileSettings({
         </div>
       )}
 
-      <p style={{ fontSize: '10px', color: '#888', letterSpacing: '2px', marginBottom: '5px' }}>NAME</p>
+      <p style={labelStyle}>NAME</p>
       <input placeholder={profile?.name || "Enter your name"} value={newName} onChange={(e) => setNewName(e.target.value)} style={inputStyle} />
 
-      <p style={{ fontSize: '10px', color: '#888', letterSpacing: '2px', marginBottom: '5px' }}>EMAIL ADDRESS</p>
+      <p style={labelStyle}>EMAIL ADDRESS</p>
       <input placeholder={profile?.email} value={newEmail} onChange={(e) => setNewEmail(e.target.value)} style={inputStyle} />
 
-      {/* --- অ্যাম্বাসেডর সেটিংস ফিল্ডসমূহ --- */}
+      
       {isAmbassadorActive && (
         <>
-          <p style={{ fontSize: '10px', color: '#d4af37', letterSpacing: '2px', marginBottom: '5px' }}>CUSTOM SHOWCASE SLUG</p>
+          <p style={labelStyle}>CUSTOM SHOWCASE SLUG</p>
           <input 
             placeholder={currentSlug || "e.g. your-custom-name"} 
             value={newSlug} 
             onChange={(e) => setNewSlug(e.target.value)} 
-            style={{ ...inputStyle, color: '#d4af37' }} 
+            style={inputStyle} 
           />
 
-          <p style={{ fontSize: '10px', color: '#d4af37', letterSpacing: '2px', marginBottom: '5px' }}>DEFAULT PAYOUT METHOD</p>
-          <select 
-            value={payoutMethod} 
-            onChange={(e) => setPayoutMethod(e.target.value)}
-            style={selectStyle}
-          >
-            <option value="bKash Personal">bKash (Personal)</option>
-            <option value="bKash Agent">bKash (Agent)</option>
-            <option value="Nagad Personal">Nagad (Personal)</option>
-            <option value="Rocket Personal">Rocket (Personal)</option>
-            <option value="Bank Account">Bank Account Transfer</option>
-          </select>
+          <p style={labelStyle}>DEFAULT PAYOUT METHOD</p>
+          
+          <div style={{
+            display: 'flex',
+            gap: '10px',
+            overflowX: 'auto',
+            paddingBottom: '10px',
+            marginBottom: '20px',
+            scrollbarWidth: 'none'
+          }}>
+            {payoutOptions.map((option) => {
+              const isSelected = payoutMethod === option || payoutMethod.startsWith(option);
+              return (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() => setPayoutMethod(option)}
+                  style={{
+                    padding: '8px 20px',
+                    borderRadius: '20px',
+                    background: isSelected ? '#ffffff' : '#111111',
+                    color: isSelected ? '#000000' : '#888888',
+                    border: isSelected ? '1px solid #ffffff' : '1px solid #222222',
+                    fontSize: '12px',
+                    fontWeight: isSelected ? '600' : '400',
+                    letterSpacing: '1px',
+                    whiteSpace: 'nowrap',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    flexShrink: 0
+                  }}
+                >
+                  {option}
+                </button>
+              );
+            })}
+          </div>
 
-          <p style={{ fontSize: '10px', color: '#d4af37', letterSpacing: '2px', marginBottom: '5px' }}>PAYOUT NUMBER / DETAILS</p>
+          <p style={labelStyle}>PAYOUT NUMBER</p>
           <input 
-            placeholder={currentPayoutDetails || "e.g. 017XXXXXXXX or Account Details"} 
+            placeholder={currentPayoutDetails || "017XXXXXXXX"} 
             value={newPayoutNumber} 
             onChange={(e) => setNewPayoutNumber(e.target.value)} 
-            style={{ ...inputStyle, color: '#d4af37' }} 
+            style={inputStyle} 
           />
         </>
       )}
 
-      <p style={{ fontSize: '10px', color: '#888', letterSpacing: '2px', marginBottom: '5px' }}>NEW PASSWORD</p>
+      <p style={labelStyle}>NEW PASSWORD</p>
       <input type="password" placeholder="••••••••" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} style={inputStyle} />
 
       <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
