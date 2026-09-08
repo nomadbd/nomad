@@ -1,9 +1,9 @@
-interface AmbassadorDashboardProps {
+interface AmbassadorProps {
   ambassadorData: any;
   profile: any;
 }
 
-export default function AmbassadorDashboard({ ambassadorData, profile }: AmbassadorDashboardProps) {
+export default function Ambassador({ ambassadorData, profile }: AmbassadorProps) {
   return (
     <div style={{ marginTop: '20px' }}>
       <div style={{ backgroundColor: '#0a0a0a', border: '1px solid #222', padding: '24px', borderRadius: '8px', marginBottom: '20px' }}>
@@ -25,4 +25,4 @@ export default function AmbassadorDashboard({ ambassadorData, profile }: Ambassa
       </div>
     </div>
   );
-} 
+}
