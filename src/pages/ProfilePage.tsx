@@ -10,7 +10,7 @@ import AmbassadorDashboard from './AmbassadorDashboard';
 import ProfileSettings from '../components/profile/ProfileSettings';
 import ImageCropModal from '../components/ui/ImageCropModal';
 
-export default function Profile() {
+export default function ProfilePage() {
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
