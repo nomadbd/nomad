@@ -102,6 +102,13 @@ export default function ProfilePage() {
           setCurrentSlug(amb.assigned_slug || '');
           setCurrentPayoutDetails(amb.payout_details || '');
           setCurrentDisplayName(amb.display_name || '');
+
+          if (amb.payout_details && amb.payout_details.includes(':')) {
+            const [method] = amb.payout_details.split(':');
+            if (method?.trim()) {
+              setPayoutMethod(method.trim());
+            }
+          }
         }
       }
 
@@ -288,7 +295,9 @@ export default function ProfilePage() {
         otherChanges = true;
       }
 
-      if (isAmbassadorActive && ambassadorData?.id) {
+      const isAmb = String(profile?.role).toUpperCase().trim() === 'AMBASSADOR';
+
+      if (isAmb && profile?.id) {
         const updatesToAmb: any = {};
 
         if (newDisplayName.trim()) {
@@ -311,9 +320,9 @@ export default function ProfilePage() {
         if (targetSlug && targetSlug !== currentSlug) {
           const { data: existing } = await supabase
             .from('ambassador')
-            .select('id')
+            .select('id, user_id')
             .eq('assigned_slug', targetSlug)
-            .neq('id', ambassadorData.id)
+            .neq('user_id', profile.id)
             .maybeSingle();
 
           if (existing) {
@@ -328,12 +337,19 @@ export default function ProfilePage() {
         }
 
         if (Object.keys(updatesToAmb).length > 0) {
-          const { error: ambErr } = await supabase
+          const { data: ambUpdatedData, error: ambErr } = await supabase
             .from('ambassador')
             .update(updatesToAmb)
-            .eq('id', ambassadorData.id);
+            .eq('user_id', profile.id)
+            .select();
 
           if (ambErr) throw ambErr;
+
+          if (!ambUpdatedData || ambUpdatedData.length === 0) {
+            showToast("Update failed! Please check database RLS policy.", "#ff4444");
+            return;
+          }
+
           otherChanges = true;
         }
       }
@@ -347,6 +363,10 @@ export default function ProfilePage() {
       setCurrentPassword('');
       setNewPassword('');
       setDeleteConfirmPassword('');
+      setNewDisplayName('');
+      setNewSlug('');
+      setNewPayoutNumber('');
+
       await fetchUserData();
       changeView('profile');
     } catch (error: any) {
