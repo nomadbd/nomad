@@ -14,6 +14,9 @@ interface ProfileSettingsProps {
   currentSlug?: string;
   newSlug: string;
   setNewSlug: (val: string) => void;
+  currentDisplayName?: string;
+  newDisplayName: string;
+  setNewDisplayName: (val: string) => void;
   payoutMethod: string;
   setPayoutMethod: (val: string) => void;
   currentPayoutDetails?: string;
@@ -44,6 +47,9 @@ export default function ProfileSettings({
   currentSlug = '',
   newSlug,
   setNewSlug,
+  currentDisplayName = '',
+  newDisplayName,
+  setNewDisplayName,
   payoutMethod,
   setPayoutMethod,
   currentPayoutDetails = '',
@@ -150,6 +156,16 @@ export default function ProfileSettings({
 
       {isAmbassadorActive && (
         <>
+          <p style={labelStyle}>HEADER DISPLAY NAME (MAX 10 CHARS)</p>
+          <input 
+            type="text"
+            maxLength={10}
+            placeholder={currentDisplayName || "TANVIR"} 
+            value={newDisplayName} 
+            onChange={(e) => setNewDisplayName(e.target.value.toUpperCase())} 
+            style={inputStyle} 
+          />
+
           <p style={labelStyle}>CUSTOM SHOWCASE SLUG</p>
           <input 
             placeholder={currentSlug || "slug-name"} 
