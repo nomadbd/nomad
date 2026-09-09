@@ -74,15 +74,12 @@ export default function ProfileSettings({
 
   const payoutOptions = ['bKash', 'Nagad', 'Rocket', 'Card'];
 
-  // যেকোনো ভাষার প্রথম শব্দ নিরাপদভাবে কেটে নেওয়ার ফোলব্যাক ফাংশন
   const getFallbackDisplayName = (name?: string) => {
     if (!name?.trim()) return '';
     const firstWord = name.trim().split(/\s+/)[0];
     return Array.from(firstWord).slice(0, 10).join('');
   };
 
-  // ১. সেভ থাকা Display Name থাকলে সেটিই স্থায়ী প্লেসহোল্ডার।
-  // ২. না থাকলে কেবল সেভ থাকা মূল নামের প্রথম অংশ দেখাবে (লাইভ টাইপিং প্রভাব ফেলবে না)।
   const dynamicPlaceholder = currentDisplayName || getFallbackDisplayName(profile?.name) || "Display Name";
 
   return (
