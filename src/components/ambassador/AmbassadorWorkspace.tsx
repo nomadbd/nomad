@@ -1,5 +1,6 @@
 import React from 'react';
 import AnalyticsChart from './AnalyticsChart';
+import StoreLinkBanner from './StoreLinkBanner';
 
 interface AmbassadorWorkspaceProps {
   ambassadorData: any;
@@ -61,6 +62,9 @@ export default function AmbassadorWorkspace({
           </div>
         </div>
       </div>
+
+      {/* STORE LINK BANNER */}
+      <StoreLinkBanner slug={ambassadorState?.slug || ambassadorData?.assigned_slug} />
 
       {/* ANALYTICS GRAPH */}
       <AnalyticsChart totalEarned={ambassadorState?.totalEarned} />
