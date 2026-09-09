@@ -74,15 +74,16 @@ export default function ProfileSettings({
 
   const payoutOptions = ['bKash', 'Nagad', 'Rocket', 'Card'];
 
-  // যেকোনো ভাষার জন্য ইউনিভার্সাল ফার্স্ট-ওয়ার্ড এবং ইউনিকোড-সেফ ট্রাঙ্কেট ফাংশন
+  // যেকোনো ভাষার প্রথম শব্দ নিরাপদভাবে কেটে নেওয়ার ফোলব্যাক ফাংশন
   const getFallbackDisplayName = (name?: string) => {
     if (!name?.trim()) return '';
     const firstWord = name.trim().split(/\s+/)[0];
-    // Array.from ব্যবহার করায় বাংলা, আরবি বা ইমোজি কোনোটির বর্ণ ভেঙে যাবে না
     return Array.from(firstWord).slice(0, 10).join('');
   };
 
-  const dynamicPlaceholder = currentDisplayName || getFallbackDisplayName(newName || profile?.name) || "Display Name";
+  // ১. সেভ থাকা Display Name থাকলে সেটিই স্থায়ী প্লেসহোল্ডার।
+  // ২. না থাকলে কেবল সেভ থাকা মূল নামের প্রথম অংশ দেখাবে (লাইভ টাইপিং প্রভাব ফেলবে না)।
+  const dynamicPlaceholder = currentDisplayName || getFallbackDisplayName(profile?.name) || "Display Name";
 
   return (
     <>
