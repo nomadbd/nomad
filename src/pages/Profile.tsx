@@ -36,6 +36,9 @@ export default function Profile() {
   const [currentSlug, setCurrentSlug] = useState('');
   const [newSlug, setNewSlug] = useState('');
 
+  const [currentDisplayName, setCurrentDisplayName] = useState('');
+  const [newDisplayName, setNewDisplayName] = useState('');
+
   const [payoutMethod, setPayoutMethod] = useState('bKash');
   const [currentPayoutDetails, setCurrentPayoutDetails] = useState('');
   const [newPayoutNumber, setNewPayoutNumber] = useState('');
@@ -98,6 +101,7 @@ export default function Profile() {
         if (amb) {
           setCurrentSlug(amb.assigned_slug || '');
           setCurrentPayoutDetails(amb.payout_details || '');
+          setCurrentDisplayName(amb.display_name || '');
         }
       }
 
@@ -107,6 +111,7 @@ export default function Profile() {
       setNewPassword('');
       setDeleteConfirmPassword('');
       setNewSlug('');
+      setNewDisplayName('');
       setNewPayoutNumber('');
     }
     setLoading(false);
@@ -286,6 +291,10 @@ export default function Profile() {
       if (isAmbassadorActive && ambassadorData?.id) {
         const updatesToAmb: any = {};
 
+        if (newDisplayName.trim()) {
+          updatesToAmb.display_name = newDisplayName.trim().toUpperCase().slice(0, 10);
+        }
+
         if (newSlug.trim()) {
           const formattedSlug = newSlug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-');
           if (formattedSlug !== currentSlug) {
@@ -440,6 +449,9 @@ export default function Profile() {
             currentSlug={currentSlug}
             newSlug={newSlug}
             setNewSlug={setNewSlug}
+            currentDisplayName={currentDisplayName}
+            newDisplayName={newDisplayName}
+            setNewDisplayName={setNewDisplayName}
             payoutMethod={payoutMethod}
             setPayoutMethod={setPayoutMethod}
             currentPayoutDetails={currentPayoutDetails}
