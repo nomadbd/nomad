@@ -1,9 +1,5 @@
 import React from 'react';
 import AnalyticsChart from './AnalyticsChart';
-import StoreLinkBanner from './StoreLinkBanner';
-import SlugEditor from './slug/SlugEditor';
-import PayoutForm from './payout/PayoutForm';
-import AssignedProducts from './products/AssignedProducts';
 
 interface AmbassadorWorkspaceProps {
   ambassadorData: any;
@@ -35,12 +31,9 @@ export default function AmbassadorWorkspace({
         gap: '12px'
       }}>
         <div>
-          <h1 style={{ fontSize: '24px', fontWeight: '700', margin: '0 0 6px 0', letterSpacing: '-0.5px' }}>
-            Ambassador Dashboard
+          <h1 style={{ fontSize: '26px', fontWeight: '700', margin: 0, letterSpacing: '-0.5px' }}>
+            Welcome back, <span style={{ color: '#d4af37' }}>{name}</span> 👋
           </h1>
-          <p style={{ color: '#888', fontSize: '14px', margin: 0 }}>
-            Welcome back, <span style={{ color: '#fff', fontWeight: '500' }}>{name}</span>
-          </p>
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>
           <span style={{ backgroundColor: '#111', border: '1px solid #333', padding: '6px 12px', borderRadius: '20px', fontSize: '12px', color: '#aaa' }}>
@@ -57,52 +50,21 @@ export default function AmbassadorWorkspace({
         <div style={{ backgroundColor: '#0a0a0a', border: '1px solid #222', borderRadius: '12px', padding: '20px' }}>
           <span style={{ color: '#666', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1px' }}>Unpaid Balance</span>
           <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#fff', marginTop: '8px' }}>
-            ৳{ambassadorState.unpaidBalance || 0}
+            ৳{ambassadorState?.unpaidBalance || 0}
           </div>
         </div>
 
         <div style={{ backgroundColor: '#0a0a0a', border: '1px solid #222', borderRadius: '12px', padding: '20px' }}>
           <span style={{ color: '#666', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1px' }}>Total Earned</span>
           <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#d4af37', marginTop: '8px' }}>
-            ৳{ambassadorState.totalEarned || 0}
+            ৳{ambassadorState?.totalEarned || 0}
           </div>
         </div>
       </div>
 
-      {/* STORE LINK BANNER */}
-      <StoreLinkBanner slug={ambassadorState.slug || ambassadorData?.assigned_slug} />
-
       {/* ANALYTICS GRAPH */}
-      <AnalyticsChart totalEarned={ambassadorState.totalEarned} />
+      <AnalyticsChart totalEarned={ambassadorState?.totalEarned} />
 
-      {/* DETAILED CONTROLS & SECTIONS */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
-        <SlugEditor 
-          slug={ambassadorState.slug}
-          setSlug={ambassadorState.setSlug}
-          isEditingSlug={ambassadorState.isEditingSlug}
-          setIsEditingSlug={ambassadorState.setIsEditingSlug}
-          handleSaveSlug={ambassadorState.handleSaveSlug}
-          savingSlug={ambassadorState.savingSlug}
-          slugMsg={ambassadorState.slugMsg}
-        />
-
-        <PayoutForm 
-          payoutAmount={ambassadorState.payoutAmount}
-          setPayoutAmount={ambassadorState.setPayoutAmount}
-          payoutDetails={ambassadorState.payoutDetails}
-          setPayoutDetails={ambassadorState.setPayoutDetails}
-          handleRequestPayout={ambassadorState.handleRequestPayout}
-          submittingPayout={ambassadorState.submittingPayout}
-          unpaidBalance={ambassadorState.unpaidBalance}
-          payoutMsg={ambassadorState.payoutMsg}
-          payoutRequests={ambassadorState.payoutRequests}
-        />
-
-        <AssignedProducts 
-          assignedProducts={ambassadorState.assignedProducts} 
-        />
-      </div>
     </div>
   );
 }
