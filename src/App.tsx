@@ -4,7 +4,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavig
 import { CartProvider } from './context/CartContext';
 import { useSession } from './hooks/useSession';
 
-import Profile from './pages/ProfilePage';
+import ProfilePage from './pages/ProfilePage';
 
 import Header from './components/Header';
 import SearchOverlay from './components/SearchOverlay';
@@ -15,7 +15,6 @@ import AuthOverlay from './components/auth/AuthOverlay';
 import AuthForm from './components/auth/AuthForm';
 
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
-const AmbassadorDashboard = lazy(() => import('./pages/AmbassadorDashboard'));
 const AmbassadorJoin = lazy(() => import('./components/ambassador/AmbassadorJoin'));
 const AmbassadorStore = lazy(() => import('./components/ambassador/AmbassadorStore'));
 
@@ -50,7 +49,7 @@ const AppContent = ({ session, setIsSearchOpen, setIsAuthOpen }: any) => {
           </>
         } />
 
-        <Route path="/profile" element={session ? <Profile /> : <Navigate to="/" replace />} />
+        <Route path="/profile" element={session ? <ProfilePage /> : <Navigate to="/" replace />} />
 
         <Route 
           path="/vip/:token" 
@@ -61,7 +60,6 @@ const AppContent = ({ session, setIsSearchOpen, setIsAuthOpen }: any) => {
           } 
         />
 
-        {/* সরাসরি সাইট/স্লাগ (site.com/:slug) এরিয়া */}
         <Route 
           path="/:slug" 
           element={
