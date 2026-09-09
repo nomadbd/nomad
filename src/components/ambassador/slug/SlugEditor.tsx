@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { isReservedSlug } from '../../../config/reservedSlugs';
+import { isReservedSlug } from '@/reservedSlugs';
 
 interface SlugEditorProps {
   slug: string;
