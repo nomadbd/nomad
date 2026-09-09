@@ -295,22 +295,32 @@ export default function Profile() {
           updatesToAmb.display_name = newDisplayName.trim().toUpperCase().slice(0, 10);
         }
 
-        if (newSlug.trim()) {
-          const formattedSlug = newSlug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-');
-          if (formattedSlug !== currentSlug) {
-            const { data: existing } = await supabase
-              .from('ambassador')
-              .select('id')
-              .eq('assigned_slug', formattedSlug)
-              .neq('id', ambassadorData.id)
-              .maybeSingle();
+        const getFallbackSlug = (name?: string) => {
+          if (!name?.trim()) return '';
+          return name
+            .trim()
+            .toLowerCase()
+            .replace(/\s+/g, '-')
+            .replace(/[^a-z0-9-]/g, '');
+        };
 
-            if (existing) {
-              showToast("This URL slug is already taken.", "#ff4444");
-              return;
-            }
-            updatesToAmb.assigned_slug = formattedSlug;
+        const targetSlug = newSlug.trim()
+          ? newSlug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-')
+          : (!currentSlug ? getFallbackSlug(profile?.name) : '');
+
+        if (targetSlug && targetSlug !== currentSlug) {
+          const { data: existing } = await supabase
+            .from('ambassador')
+            .select('id')
+            .eq('assigned_slug', targetSlug)
+            .neq('id', ambassadorData.id)
+            .maybeSingle();
+
+          if (existing) {
+            showToast("This URL slug is already taken.", "#ff4444");
+            return;
           }
+          updatesToAmb.assigned_slug = targetSlug;
         }
 
         if (newPayoutNumber.trim()) {
