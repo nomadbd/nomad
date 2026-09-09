@@ -6,7 +6,7 @@ import { useSession } from './hooks/useSession';
 
 import ProfilePage from './pages/ProfilePage';
 
-import Header from './components/Header';
+import Header from './components/ui/Header';
 import SearchOverlay from './components/SearchOverlay';
 import Hero from './components/Hero/Hero';
 import ProductList from './components/ProductList';
