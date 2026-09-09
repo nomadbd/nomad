@@ -4,7 +4,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavig
 import { CartProvider } from './context/CartContext';
 import { useSession } from './hooks/useSession';
 
-import Profile from './pages/Profile';
+import Profile from './pages/ProfilePage';
 
 import Header from './components/Header';
 import SearchOverlay from './components/SearchOverlay';
