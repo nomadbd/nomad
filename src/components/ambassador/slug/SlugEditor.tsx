@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { isReservedSlug } from '../../../config/reservedSlugs';
 
 interface SlugEditorProps {
   slug: string;
@@ -19,7 +20,25 @@ export default function SlugEditor({
   savingSlug,
   slugMsg
 }: SlugEditorProps) {
-  const storeUrl = `${window.location.origin}/ref/${slug}`;
+  const [localError, setLocalError] = useState('');
+  const storeUrl = `${window.location.origin}/${slug}`;
+
+  const onSave = () => {
+    setLocalError('');
+    const cleanSlug = slug.trim().toLowerCase();
+
+    if (!cleanSlug) {
+      setLocalError('Slug name cannot be empty.');
+      return;
+    }
+
+    if (isReservedSlug(cleanSlug)) {
+      setLocalError('This name is reserved by system. Please choose another.');
+      return;
+    }
+
+    handleSaveSlug();
+  };
 
   return (
     <section style={{ backgroundColor: '#0a0a0a', border: '1px solid #222', borderRadius: '8px', padding: '24px', marginBottom: '30px' }}>
@@ -27,16 +46,19 @@ export default function SlugEditor({
 
       {isEditingSlug ? (
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
-          <span style={{ color: '#666', fontSize: '14px' }}>{window.location.origin}/ref/</span>
+          <span style={{ color: '#666', fontSize: '14px' }}>{window.location.origin}/</span>
           <input
             type="text"
             value={slug}
-            onChange={(e) => setSlug(e.target.value)}
+            onChange={(e) => {
+              setSlug(e.target.value);
+              setLocalError('');
+            }}
             placeholder="your-custom-slug"
             style={{ backgroundColor: '#111', border: '1px solid #333', color: '#fff', padding: '8px 12px', borderRadius: '4px', fontSize: '14px', flex: '1', minWidth: '180px' }}
           />
           <button
-            onClick={handleSaveSlug}
+            onClick={onSave}
             disabled={savingSlug}
             style={{ backgroundColor: '#fff', color: '#000', border: 'none', padding: '8px 16px', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer' }}
           >
@@ -57,9 +79,9 @@ export default function SlugEditor({
         </div>
       )}
 
-      {slugMsg.text && (
-        <p style={{ marginTop: '10px', fontSize: '12px', color: slugMsg.type === 'error' ? '#ff4d4d' : '#00ff88', margin: '10px 0 0 0' }}>
-          {slugMsg.text}
+      {(localError || slugMsg.text) && (
+        <p style={{ marginTop: '10px', fontSize: '12px', color: (localError || slugMsg.type === 'error') ? '#ff4d4d' : '#00ff88', margin: '10px 0 0 0' }}>
+          {localError || slugMsg.text}
         </p>
       )}
     </section>
