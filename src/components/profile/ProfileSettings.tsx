@@ -74,17 +74,15 @@ export default function ProfileSettings({
 
   const payoutOptions = ['bKash', 'Nagad', 'Rocket', 'Card'];
 
+  // যেকোনো ভাষার জন্য ইউনিভার্সাল ফার্স্ট-ওয়ার্ড এবং ইউনিকোড-সেফ ট্রাঙ্কেট ফাংশন
   const getFallbackDisplayName = (name?: string) => {
     if (!name?.trim()) return '';
-    const parts = name.trim().split(/\s+/);
-    const prefixes = ['mohammad', 'mohammed', 'md', 'md.', 'mr', 'mr.', 'dr', 'dr.'];
-    if (parts.length > 1 && prefixes.includes(parts[0].toLowerCase())) {
-      return parts[1].slice(0, 10);
-    }
-    return parts[0].slice(0, 10);
+    const firstWord = name.trim().split(/\s+/)[0];
+    // Array.from ব্যবহার করায় বাংলা, আরবি বা ইমোজি কোনোটির বর্ণ ভেঙে যাবে না
+    return Array.from(firstWord).slice(0, 10).join('');
   };
 
-  const dynamicPlaceholder = currentDisplayName || getFallbackDisplayName(profile?.name) || "Display Name";
+  const dynamicPlaceholder = currentDisplayName || getFallbackDisplayName(newName || profile?.name) || "Display Name";
 
   return (
     <>
