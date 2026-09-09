@@ -6,7 +6,7 @@ interface StoreLinkBannerProps {
 
 export default function StoreLinkBanner({ slug }: StoreLinkBannerProps) {
   const [copied, setCopied] = useState(false);
-  const storeUrl = `${window.location.origin}/ambassador/${slug || ''}`;
+  const storeUrl = `${window.location.origin}/${slug || ''}`;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(storeUrl);
@@ -28,7 +28,7 @@ export default function StoreLinkBanner({ slug }: StoreLinkBannerProps) {
       gap: '16px'
     }}>
       <div>
-        <span style={{ fontSize: '10px', letterSpacing: '2px', color: '#d4af37', fontWeight: 'bold' }}>YOUR STOREFRONT LINK</span>
+        <span style={{ fontSize: '10px', letterSpacing: '2px', color: '#d4af37', fontWeight: 'bold' }}>YOUR EXCLUSIVE LINK</span>
         <div style={{ color: '#fff', fontSize: '14px', marginTop: '4px', wordBreak: 'break-all' }}>
           {storeUrl}
         </div>
