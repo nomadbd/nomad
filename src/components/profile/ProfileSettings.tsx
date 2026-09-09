@@ -74,6 +74,18 @@ export default function ProfileSettings({
 
   const payoutOptions = ['bKash', 'Nagad', 'Rocket', 'Card'];
 
+  const getFallbackDisplayName = (name?: string) => {
+    if (!name?.trim()) return '';
+    const parts = name.trim().split(/\s+/);
+    const prefixes = ['mohammad', 'mohammed', 'md', 'md.', 'mr', 'mr.', 'dr', 'dr.'];
+    if (parts.length > 1 && prefixes.includes(parts[0].toLowerCase())) {
+      return parts[1].toUpperCase().slice(0, 10);
+    }
+    return parts[0].toUpperCase().slice(0, 10);
+  };
+
+  const dynamicPlaceholder = currentDisplayName || getFallbackDisplayName(profile?.name) || "DISPLAY NAME";
+
   return (
     <>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
@@ -156,17 +168,17 @@ export default function ProfileSettings({
 
       {isAmbassadorActive && (
         <>
-          <p style={labelStyle}>HEADER DISPLAY NAME (MAX 10 CHARS)</p>
+          <p style={labelStyle}>DISPLAY NAME</p>
           <input 
             type="text"
             maxLength={10}
-            placeholder={currentDisplayName || "TANVIR"} 
+            placeholder={dynamicPlaceholder} 
             value={newDisplayName} 
             onChange={(e) => setNewDisplayName(e.target.value.toUpperCase())} 
             style={inputStyle} 
           />
 
-          <p style={labelStyle}>CUSTOM SHOWCASE SLUG</p>
+          <p style={labelStyle}>STORE SLUG</p>
           <input 
             placeholder={currentSlug || "slug-name"} 
             value={newSlug} 
