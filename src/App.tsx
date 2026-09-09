@@ -23,10 +23,10 @@ const AppContent = ({ session, setIsSearchOpen, setIsAuthOpen }: any) => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const showHeader = !['/profile', '/admin', '/update-password'].includes(location.pathname) && !location.pathname.startsWith('/vip') && !location.pathname.startsWith('/ref');
+  const showHeader = !['/profile', '/admin', '/update-password'].includes(location.pathname) && !location.pathname.startsWith('/vip');
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: 'black', color: 'white' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: 'black', color: '#fff' }}>
       {showHeader && (
         <Header 
           onSearchOpen={() => setIsSearchOpen(true)} 
@@ -61,8 +61,9 @@ const AppContent = ({ session, setIsSearchOpen, setIsAuthOpen }: any) => {
           } 
         />
 
+        {/* সরাসরি সাইট/স্লাগ (site.com/:slug) এরিয়া */}
         <Route 
-          path="/ref/:slug" 
+          path="/:slug" 
           element={
             <Suspense fallback={null}>
               <AmbassadorStore />
