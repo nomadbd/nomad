@@ -1,7 +1,7 @@
 import React from 'react';
 import AnalyticsChart from './AnalyticsChart';
 import StoreLinkBanner from './StoreLinkBanner';
-import SlugEditor from '../slug/SlugEditor';
+import SlugEditor from './slug/SlugEditor';
 import PayoutForm from '../payout/PayoutForm';
 import AssignedProducts from '../products/AssignedProducts';
 
