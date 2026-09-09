@@ -79,12 +79,12 @@ export default function ProfileSettings({
     const parts = name.trim().split(/\s+/);
     const prefixes = ['mohammad', 'mohammed', 'md', 'md.', 'mr', 'mr.', 'dr', 'dr.'];
     if (parts.length > 1 && prefixes.includes(parts[0].toLowerCase())) {
-      return parts[1].toUpperCase().slice(0, 10);
+      return parts[1].slice(0, 10);
     }
-    return parts[0].toUpperCase().slice(0, 10);
+    return parts[0].slice(0, 10);
   };
 
-  const dynamicPlaceholder = currentDisplayName || getFallbackDisplayName(profile?.name) || "DISPLAY NAME";
+  const dynamicPlaceholder = currentDisplayName || getFallbackDisplayName(profile?.name) || "Display Name";
 
   return (
     <>
@@ -174,7 +174,7 @@ export default function ProfileSettings({
             maxLength={10}
             placeholder={dynamicPlaceholder} 
             value={newDisplayName} 
-            onChange={(e) => setNewDisplayName(e.target.value.toUpperCase())} 
+            onChange={(e) => setNewDisplayName(e.target.value)} 
             style={inputStyle} 
           />
 
@@ -182,7 +182,13 @@ export default function ProfileSettings({
           <input 
             placeholder={currentSlug || "slug-name"} 
             value={newSlug} 
-            onChange={(e) => setNewSlug(e.target.value)} 
+            onChange={(e) => {
+              const formattedSlug = e.target.value
+                .toLowerCase()
+                .replace(/\s+/g, '-')
+                .replace(/[^a-z0-9-]/g, '');
+              setNewSlug(formattedSlug);
+            }} 
             style={inputStyle} 
           />
 
