@@ -16,9 +16,12 @@ const SendInvite: React.FC<SendInviteProps> = ({ isOpen = true, onClose, onInvit
 
   const [loadingAction, setLoadingAction] = useState<'email' | 'whatsapp' | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  
+  // ওয়ার্নিং ও কনফ্লিক্ট স্টেট
+  const [activeConflict, setActiveConflict] = useState<{ type: 'email' | 'whatsapp'; message: string } | null>(null);
 
-  // ইনভাইট তৈরি ও ডাটাবেজে সেভ করার কমন ফাংশন
-  const createInviteData = async () => {
+  // ইনভাইট সেন্ড ও ডাটাবেজ আপডেট করার মেন ফাংশন
+  const executeInviteSend = async (actionType: 'email' | 'whatsapp', forceSend: boolean = false) => {
     if (!recipientName.trim()) {
       throw new Error('RECIPIENT NAME IS REQUIRED');
     }
@@ -28,15 +31,41 @@ const SendInvite: React.FC<SendInviteProps> = ({ isOpen = true, onClose, onInvit
     }
 
     const name = recipientName.trim();
+    // নামের ওপর ভিত্তি করে টোকেন তৈরি (যেমন: Toha -> toha)
     const token = name.toLowerCase().replace(/[^a-z0-9]+/g, '');
-    const days = Number(validityDays);
 
-    // ২৪ ঘণ্টা ধরে ১ দিন হিসেবে হিসেব হবে
+    if (!token) {
+      throw new Error('PLEASE ENTER A VALID NAME');
+    }
+
+    const days = Number(validityDays);
+    const targetIdentifier = actionType === 'email' ? email.trim() : phone.trim();
+
+    // ১. চেক করা হবে এই টোকেনে আগে কোনো সক্রিয় ইনভাইট আছে কিনা
+    if (!forceSend) {
+      const { data: existingRecord } = await supabase
+        .from('ambassador')
+        .select('expires_at, is_active')
+        .eq('token', token)
+        .maybeSingle();
+
+      if (existingRecord && existingRecord.expires_at) {
+        const isStillActive = new Date(existingRecord.expires_at) > new Date();
+        if (isStillActive) {
+          setActiveConflict({
+            type: actionType,
+            message: `AN ACTIVE INVITE ALREADY EXISTS FOR "${name.toUpperCase()}". OVERWRITE?`
+          });
+          return null;
+        }
+      }
+    }
+
+    // ২. মেয়াদের সময় হিসাব (২৪ ঘণ্টা = ১ দিন)
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + days);
 
-    const targetIdentifier = email.trim() || phone.trim() || 'N/A';
-
+    // ৩. ডাটাবেজে সেভ/আপডেট (Upsert)
     const { error } = await supabase
       .from('ambassador')
       .upsert(
@@ -55,29 +84,34 @@ const SendInvite: React.FC<SendInviteProps> = ({ isOpen = true, onClose, onInvit
 
     if (error) throw error;
 
-    const inviteUrl = `https://nomadbd.vercel.app/invite/${token}`;
+    // সরাসরি site/name লিংক তৈরি
+    const inviteUrl = `https://nomadbd.vercel.app/${token}`;
 
     const message = `NOMAD | OFFICIAL VIP AMBASSADOR INVITATION\n\nDear ${name},\n\nIt is our distinct privilege to officially nominate you as an Exclusive VIP Ambassador for NOMAD.\n\nPlease access your private portal to claim your credentials:\n${inviteUrl}\n\nKindly note that this private portal access remains active for ${days} days.\n\nYours sincerely,\nNOMAD Executive Office`;
 
-    return { name, token, message };
+    return { name, token, message, targetIdentifier };
   };
 
-  // ইমেইল মাধ্যমে ইনভাইট পাঠানো
-  const handleSendEmail = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // ইমেইল সাবমিট হ্যান্ডলার
+  const handleSendEmail = async (e?: React.FormEvent, force: boolean = false) => {
+    if (e) e.preventDefault();
     if (!email.trim()) {
       setErrorMessage('PLEASE ENTER AN EMAIL ADDRESS');
       return;
     }
 
     setErrorMessage(null);
+    setActiveConflict(null);
     setLoadingAction('email');
 
     try {
-      const { message } = await createInviteData();
+      const result = await executeInviteSend('email', force);
+      if (!result) return;
+
+      const { message, targetIdentifier } = result;
       const subject = 'NOMAD | Official VIP Ambassador Nomination';
 
-      window.location.href = `mailto:${email.trim()}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message)}`;
+      window.location.href = `mailto:${targetIdentifier}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message)}`;
 
       if (onInviteSuccess) onInviteSuccess();
       if (onClose) onClose();
@@ -89,20 +123,24 @@ const SendInvite: React.FC<SendInviteProps> = ({ isOpen = true, onClose, onInvit
     }
   };
 
-  // হোয়াটসঅ্যাপ মাধ্যমে ইনভাইট পাঠানো
-  const handleSendWhatsApp = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // হোয়াটসঅ্যাপ সাবমিট হ্যান্ডলার
+  const handleSendWhatsApp = async (e?: React.FormEvent, force: boolean = false) => {
+    if (e) e.preventDefault();
     if (!phone.trim()) {
       setErrorMessage('PLEASE ENTER A PHONE NUMBER');
       return;
     }
 
     setErrorMessage(null);
+    setActiveConflict(null);
     setLoadingAction('whatsapp');
 
     try {
-      const { message } = await createInviteData();
-      const cleanPhone = phone.replace(/[^0-9+]/g, '');
+      const result = await executeInviteSend('whatsapp', force);
+      if (!result) return;
+
+      const { message, targetIdentifier } = result;
+      const cleanPhone = targetIdentifier.replace(/[^0-9+]/g, '');
       const formattedPhone = cleanPhone.startsWith('0') ? `88${cleanPhone}` : cleanPhone;
 
       window.open(`https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`, '_blank');
@@ -233,7 +271,7 @@ const SendInvite: React.FC<SendInviteProps> = ({ isOpen = true, onClose, onInvit
 
           .send-icon-btn:hover {
             opacity: 0.9;
-            color: #25D366; /* হোভারে সুন্দর গ্রীন অ্যাকসেন্ট */
+            color: #25D366;
           }
 
           .send-icon-btn:active {
@@ -255,6 +293,40 @@ const SendInvite: React.FC<SendInviteProps> = ({ isOpen = true, onClose, onInvit
             letter-spacing: 1px;
             text-transform: uppercase;
           }
+
+          .conflict-box {
+            font-size: 9px;
+            color: #f59e0b;
+            background: rgba(245, 158, 11, 0.08);
+            border: 1px solid rgba(245, 158, 11, 0.25);
+            padding: 10px;
+            margin-bottom: 18px;
+            letter-spacing: 0.8px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+          }
+
+          .force-send-btn {
+            background: #f59e0b;
+            color: #000000;
+            border: none;
+            padding: 6px 10px;
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            align-self: flex-end;
+            transition: opacity 0.2s ease;
+          }
+
+          .force-send-btn:hover {
+            opacity: 0.88;
+          }
         `}</style>
 
         {onClose && (
@@ -269,19 +341,37 @@ const SendInvite: React.FC<SendInviteProps> = ({ isOpen = true, onClose, onInvit
 
         {errorMessage && <div className="error-box">{errorMessage}</div>}
 
+        {activeConflict && (
+          <div className="conflict-box">
+            <span>{activeConflict.message}</span>
+            <button
+              type="button"
+              className="force-send-btn"
+              onClick={() => {
+                if (activeConflict.type === 'email') handleSendEmail(undefined, true);
+                if (activeConflict.type === 'whatsapp') handleSendWhatsApp(undefined, true);
+              }}
+            >
+              <span>OVERWRITE & SEND ANYWAY</span>
+              <SendIcon size={12} color="#000000" />
+            </button>
+          </div>
+        )}
+
         <div className="form-group-container">
-          {/* ১. প্রাপকের নাম */}
           <input
             type="text"
             className="minimal-input"
             placeholder="Recipient Name"
             value={recipientName}
-            onChange={(e) => setRecipientName(e.target.value)}
+            onChange={(e) => {
+              setRecipientName(e.target.value);
+              setActiveConflict(null);
+            }}
             required
             autoComplete="off"
           />
 
-          {/* ২. লিংকের মেয়াদের দিন */}
           <input
             type="number"
             className="minimal-input"
@@ -293,8 +383,7 @@ const SendInvite: React.FC<SendInviteProps> = ({ isOpen = true, onClose, onInvit
             autoComplete="off"
           />
 
-          {/* ৩. ইমেইল ইনপুট এবং সেন্ড বাটন */}
-          <form onSubmit={handleSendEmail} className="input-action-row">
+          <form onSubmit={(e) => handleSendEmail(e, false)} className="input-action-row">
             <input
               type="email"
               className="minimal-input"
@@ -313,8 +402,7 @@ const SendInvite: React.FC<SendInviteProps> = ({ isOpen = true, onClose, onInvit
             </button>
           </form>
 
-          {/* ৪. হোয়াটসঅ্যাপ/ফোন ইনপুট এবং সেন্ড বাটন */}
-          <form onSubmit={handleSendWhatsApp} className="input-action-row">
+          <form onSubmit={(e) => handleSendWhatsApp(e, false)} className="input-action-row">
             <input
               type="text"
               className="minimal-input"
