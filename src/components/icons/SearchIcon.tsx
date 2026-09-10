@@ -5,7 +5,7 @@ interface IconProps extends React.SVGProps<SVGSVGElement> {
   color?: string;
 }
 
-const SearchIcon: React.FC<IconProps> = ({ size = 24, color = 'white', ...props }) => (
+export const SearchIcon: React.FC<IconProps> = ({ size = 24, color = 'white', ...props }) => (
   <svg 
     width={size} 
     height={size} 
@@ -21,5 +21,3 @@ const SearchIcon: React.FC<IconProps> = ({ size = 24, color = 'white', ...props 
     <circle cx="11" cy="11" r="8"/>
   </svg>
 );
-
-export default SearchIcon;
