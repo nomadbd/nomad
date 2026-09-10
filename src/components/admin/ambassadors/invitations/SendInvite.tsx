@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { supabase } from '@/supabaseClient';
-import { SendIcon } from '@/components/icons';
+import { SendIcon, CloseIcon } from '@/components/icons';
 
 interface SendInviteProps {
   isOpen?: boolean;
@@ -10,7 +10,7 @@ interface SendInviteProps {
 
 const SendInvite: React.FC<SendInviteProps> = ({ isOpen = true, onClose, onInviteSuccess }) => {
   const [recipientName, setRecipientName] = useState('');
-  const [validityDays, setValidityDays] = useState<number | string>(7);
+  const [validityDays, setValidityDays] = useState<number | string>('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
 
@@ -23,10 +23,15 @@ const SendInvite: React.FC<SendInviteProps> = ({ isOpen = true, onClose, onInvit
       throw new Error('RECIPIENT NAME IS REQUIRED');
     }
 
+    if (!validityDays || Number(validityDays) <= 0) {
+      throw new Error('PLEASE ENTER VALIDITY DAYS');
+    }
+
     const name = recipientName.trim();
     const token = name.toLowerCase().replace(/[^a-z0-9]+/g, '');
-    const days = Number(validityDays) > 0 ? Number(validityDays) : 7;
+    const days = Number(validityDays);
 
+    // ২৪ ঘণ্টা ধরে ১ দিন হিসেবে হিসেব হবে
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + days);
 
@@ -51,8 +56,7 @@ const SendInvite: React.FC<SendInviteProps> = ({ isOpen = true, onClose, onInvit
     if (error) throw error;
 
     const inviteUrl = `https://nomadbd.vercel.app/invite/${token}`;
-    
-    // অত্যন্ত প্রফেশনাল ও প্রিমিয়াম অফিশিয়াল চিঠি
+
     const message = `NOMAD | OFFICIAL VIP AMBASSADOR INVITATION\n\nDear ${name},\n\nIt is our distinct privilege to officially nominate you as an Exclusive VIP Ambassador for NOMAD.\n\nPlease access your private portal to claim your credentials:\n${inviteUrl}\n\nKindly note that this private portal access remains active for ${days} days.\n\nYours sincerely,\nNOMAD Executive Office`;
 
     return { name, token, message };
@@ -72,7 +76,7 @@ const SendInvite: React.FC<SendInviteProps> = ({ isOpen = true, onClose, onInvit
     try {
       const { message } = await createInviteData();
       const subject = 'NOMAD | Official VIP Ambassador Nomination';
-      
+
       window.location.href = `mailto:${email.trim()}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message)}`;
 
       if (onInviteSuccess) onInviteSuccess();
@@ -152,15 +156,18 @@ const SendInvite: React.FC<SendInviteProps> = ({ isOpen = true, onClose, onInvit
             right: 18px;
             background: transparent;
             border: none;
-            color: #666666;
-            font-size: 16px;
+            color: #888888;
             cursor: pointer;
             padding: 4px;
-            transition: color 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.2s ease, transform 0.2s ease;
           }
 
           .close-modal-btn:hover {
             color: #ffffff;
+            transform: scale(1.1);
           }
 
           .invite-header {
@@ -211,29 +218,30 @@ const SendInvite: React.FC<SendInviteProps> = ({ isOpen = true, onClose, onInvit
           }
 
           .send-icon-btn {
-            background: #ffffff;
-            color: #000000;
+            background: transparent;
+            color: #ffffff;
             border: none;
-            padding: 8px 12px;
+            padding: 6px;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: opacity 0.2s ease, transform 0.1s ease;
+            transition: color 0.2s ease, transform 0.1s ease, opacity 0.2s ease;
             height: 33px;
-            min-width: 42px;
+            min-width: 33px;
           }
 
           .send-icon-btn:hover {
-            opacity: 0.88;
+            opacity: 0.9;
+            color: #25D366; /* হোভারে সুন্দর গ্রীন অ্যাকসেন্ট */
           }
 
           .send-icon-btn:active {
-            transform: scale(0.96);
+            transform: scale(0.92);
           }
 
           .send-icon-btn:disabled {
-            opacity: 0.4;
+            opacity: 0.3;
             cursor: not-allowed;
           }
 
@@ -251,7 +259,7 @@ const SendInvite: React.FC<SendInviteProps> = ({ isOpen = true, onClose, onInvit
 
         {onClose && (
           <button type="button" className="close-modal-btn" onClick={onClose} title="Close">
-            ✕
+            <CloseIcon size={16} color="currentColor" />
           </button>
         )}
 
@@ -301,7 +309,7 @@ const SendInvite: React.FC<SendInviteProps> = ({ isOpen = true, onClose, onInvit
               title="Send via Email"
               disabled={loadingAction === 'email'}
             >
-              {loadingAction === 'email' ? '...' : <SendIcon size={13} color="#000000" />}
+              {loadingAction === 'email' ? '...' : <SendIcon size={16} color="currentColor" />}
             </button>
           </form>
 
@@ -321,7 +329,7 @@ const SendInvite: React.FC<SendInviteProps> = ({ isOpen = true, onClose, onInvit
               title="Send via WhatsApp"
               disabled={loadingAction === 'whatsapp'}
             >
-              {loadingAction === 'whatsapp' ? '...' : <SendIcon size={13} color="#000000" />}
+              {loadingAction === 'whatsapp' ? '...' : <SendIcon size={16} color="currentColor" />}
             </button>
           </form>
         </div>
