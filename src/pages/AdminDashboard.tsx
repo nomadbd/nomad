@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import styles from './AdminDashboard.module.css';
 import { supabase } from '../supabaseClient'; 
 
 import {
@@ -156,269 +157,11 @@ const AdminDashboard: React.FC = () => {
       overflowX: 'hidden',
       position: 'relative'
     }}>
-      <style>{`
-        *, *::before, *::after { 
-          box-sizing: border-box !important; 
-          margin: 0; 
-          padding: 0; 
-        }
-        
-        html {
-          width: 100% !important;
-          max-width: 100% !important;
-          overflow-x: hidden !important;
-          -webkit-text-size-adjust: 100% !important;
-          text-size-adjust: 100% !important;
-          background-color: #030303;
-        }
-
-        body {
-          width: 100% !important;
-          max-width: 100% !important;
-          overflow-x: hidden !important;
-          overscroll-behavior-x: none;
-          touch-action: pan-y;
-          background-color: #030303;
-          position: relative;
-        }
-
-        @media screen and (max-width: 767px) {
-          .nomad-layout {
-            display: flex !important;
-            flex-direction: column !important;
-            width: 100% !important;
-            max-width: 100% !important;
-            min-height: 100dvh;
-            overflow-x: hidden !important;
-          }
-
-          .nomad-sidebar {
-            width: 100% !important;
-            max-width: 100% !important;
-            position: fixed !important;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: ${menuOpen ? '0' : 'auto'};
-            z-index: 1000;
-            background-color: rgba(6, 6, 6, 0.98);
-            backdrop-filter: blur(12px);
-            border-bottom: 1px solid #141414;
-            padding: 14px 16px;
-            padding-bottom: ${menuOpen ? 'calc(24px + env(safe-area-inset-bottom, 0px))' : '14px'};
-            box-sizing: border-box;
-            transform: ${isHeaderVisible ? 'translateY(0)' : 'translateY(-100%)'};
-            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            overflow-x: hidden !important;
-            overflow-y: ${menuOpen ? 'auto' : 'visible'};
-            display: flex !important;
-            flex-direction: column !important;
-            -webkit-overflow-scrolling: touch;
-          }
-
-          .nomad-sidebar > div:first-child {
-            flex: 1 1 auto;
-            overflow-y: auto;
-            overflow-x: hidden !important;
-            min-height: 0;
-            max-width: 100%;
-          }
-
-          .nomad-menu-toggle {
-            display: flex !important;
-          }
-
-          .nomad-nav {
-            display: ${menuOpen ? 'flex' : 'none'} !important;
-            flex-direction: column;
-            gap: 8px;
-            margin-top: 18px;
-            padding-top: 16px;
-            border-top: 1px solid #141414;
-            max-width: 100%;
-          }
-
-          .user-footer-block {
-            display: ${menuOpen ? 'block' : 'none'} !important;
-            margin-top: auto !important;
-            padding-top: 12px;
-            padding-bottom: calc(32px + env(safe-area-inset-bottom, 16px)) !important;
-            border-top: 1px solid #141414;
-            flex-shrink: 0;
-            background-color: rgba(6, 6, 6, 0.98);
-            position: sticky;
-            bottom: 0;
-            z-index: 2;
-            width: 100%;
-            max-width: 100%;
-          }
-
-          .nomad-main {
-            width: 100% !important;
-            max-width: 100% !important;
-            padding: 75px 12px 40px 12px !important;
-            overflow-x: hidden !important;
-            box-sizing: border-box;
-          }
-        }
-
-        @media screen and (min-width: 768px) {
-          .nomad-layout {
-            display: flex !important;
-            min-height: 100dvh;
-            width: 100%;
-            max-width: 100%;
-            overflow-x: hidden !important;
-          }
-
-          .nomad-sidebar {
-            width: 220px !important;
-            min-width: 220px !important;
-            max-width: 220px !important;
-            height: 100dvh !important;
-            position: fixed !important;
-            top: 0;
-            left: 0;
-            bottom: 0;
-            z-index: 100;
-            border-right: 1px solid #1a1a1a;
-            padding: 20px 14px calc(24px + env(safe-area-inset-bottom, 0px)) 14px !important;
-            display: flex !important;
-            flex-direction: column !important;
-            justify-content: space-between !important;
-            overflow-y: auto;
-            overflow-x: hidden !important;
-            background-color: #060606;
-          }
-
-          .nomad-menu-toggle {
-            display: none !important;
-          }
-
-          .nomad-nav {
-            display: flex !important;
-            flex-direction: column;
-            gap: 8px;
-            margin-top: 25px;
-          }
-
-          .user-footer-block {
-            display: block !important;
-            margin-top: auto;
-            padding-top: 16px;
-            border-top: 1px solid #1a1a1a;
-            width: 100%;
-            max-width: 100%;
-          }
-
-          .nomad-main {
-            margin-left: 220px !important;
-            width: auto !important;
-            flex: 1 1 auto !important;
-            max-width: none !important;
-            padding: 24px 28px !important;
-            min-height: 100dvh;
-            overflow-x: hidden !important;
-            box-sizing: border-box;
-          }
-        }
-
-        .nomad-brand-link {
-          text-decoration: none;
-          color: inherit;
-          display: block;
-        }
-
-        .nomad-main {
-          flex: 1;
-          background-color: #030303;
-          box-sizing: border-box;
-          overflow-x: hidden !important;
-        }
-
-        .nav-btn {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          padding: 12px 14px;
-          border: none !important;
-          border-left: 2px solid transparent !important;
-          font-weight: bold;
-          font-size: 11px;
-          text-align: left;
-          cursor: pointer;
-          letter-spacing: 1px;
-          background: transparent;
-          color: #888888;
-          border-radius: 0 !important;
-          transition: all 0.2s ease;
-          width: 100%;
-          max-width: 100%;
-        }
-
-        .nav-btn.active {
-          background-color: transparent !important;
-          color: #ffffff !important;
-          border-left: 2px solid #ffffff !important;
-          box-shadow: none !important;
-        }
-
-        .user-text-container {
-          max-width: 100%;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-        }
-
-        .nomad-action-btn,
-        .nomad-menu-toggle-btn {
-          background: transparent !important;
-          border: none !important;
-          outline: none !important;
-          color: #888888 !important;
-          width: 36px;
-          height: 36px;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          transition: color 0.15s ease, opacity 0.15s ease;
-          opacity: 0.75;
-          -webkit-tap-highlight-color: transparent;
-        }
-
-        .nomad-action-btn:hover:not(.active),
-        .nomad-menu-toggle-btn:hover:not(.active) {
-          color: #aaaaaa !important;
-          opacity: 0.9 !important;
-        }
-
-        .nomad-action-btn.active,
-        .nomad-menu-toggle-btn.active {
-          color: #ffffff !important;
-          opacity: 1 !important;
-        }
-
-        .nomad-action-btn:focus,
-        .nomad-menu-toggle-btn:focus {
-          outline: none !important;
-          box-shadow: none !important;
-        }
-
-        .nomad-layout,
-        .nomad-sidebar,
-        .nomad-main,
-        .nomad-nav,
-        .user-footer-block {
-          max-width: 100% !important;
-        }
-      `}</style>
-
-      <div className="nomad-layout">
-        <aside className="nomad-sidebar">
+      <div className={styles.nomadLayout}>
+        <aside className={`${styles.nomadSidebar} ${menuOpen ? styles.menuOpen : ''} ${!isHeaderVisible ? styles.headerHidden : ''}`}>
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: '100%' }}>
-              <a href="/" className="nomad-brand-link" title="Go to Store Homepage">
+              <a href="/" className={styles.nomadBrandLink} title="Go to Store Homepage">
                 <h1 style={{ fontSize: '18px', fontWeight: '900', letterSpacing: '4px', margin: 0, color: '#fff' }}>
                   NOMAD
                 </h1>
@@ -427,7 +170,7 @@ const AdminDashboard: React.FC = () => {
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                 {(activeTab === 'products' || activeTab === 'ambassadors') && (
                   <button
-                    className={`nomad-action-btn ${isAddOpen ? 'active' : ''}`}
+                    className={`${styles.nomadActionBtn} ${isAddOpen ? styles.nomadActionBtnActive : ''}`}
                     onClick={() => setIsAddOpen(!isAddOpen)}
                     aria-label={activeTab === 'products' ? 'Add Product' : 'Add Ambassador'}
                     title={activeTab === 'products' ? 'Add Product' : 'Add Ambassador'}
@@ -438,7 +181,7 @@ const AdminDashboard: React.FC = () => {
 
                 {activeTab !== 'overview' && (
                   <button
-                    className={`nomad-action-btn ${isSearchOpen ? 'active' : ''}`}
+                    className={`${styles.nomadActionBtn} ${isSearchOpen ? styles.nomadActionBtnActive : ''}`}
                     onClick={() => setIsSearchOpen(!isSearchOpen)}
                     aria-label="Search"
                     title="Search"
@@ -448,7 +191,7 @@ const AdminDashboard: React.FC = () => {
                 )}
 
                 <button
-                  className={`nomad-action-btn ${isFilterOpen ? 'active' : ''}`}
+                  className={`${styles.nomadActionBtn} ${isFilterOpen ? styles.nomadActionBtnActive : ''}`}
                   onClick={() => setIsFilterOpen(!isFilterOpen)}
                   aria-label="Filter"
                   title="Toggle Filter Panel"
@@ -457,7 +200,7 @@ const AdminDashboard: React.FC = () => {
                 </button>
 
                 <button
-                  className={`nomad-menu-toggle nomad-menu-toggle-btn ${menuOpen ? 'active' : ''}`}
+                  className={`${styles.nomadMenuToggle} ${styles.nomadMenuToggleBtn} ${menuOpen ? styles.nomadMenuToggleBtnActive : ''}`}
                   onClick={() => setMenuOpen(!menuOpen)}
                   aria-label="Toggle Menu"
                   title="Toggle Navigation"
@@ -467,55 +210,55 @@ const AdminDashboard: React.FC = () => {
               </div>
             </div>
 
-            <nav className="nomad-nav">
+            <nav className={styles.nomadNav}>
               <span style={{ fontSize: '9px', color: '#888888', letterSpacing: '2px', marginBottom: '8px', fontWeight: 'bold' }}>
                 MAIN MENU
               </span>
 
               <button
-                className={`nav-btn ${activeTab === 'overview' ? 'active' : ''}`}
+                className={`${styles.navBtn} ${activeTab === 'overview' ? styles.navBtnActive : ''}`}
                 onClick={() => handleTabChange('overview')}
               >
                 OVERVIEW
               </button>
 
               <button
-                className={`nav-btn ${activeTab === 'orders' ? 'active' : ''}`}
+                className={`${styles.navBtn} ${activeTab === 'orders' ? styles.navBtnActive : ''}`}
                 onClick={() => handleTabChange('orders')}
               >
                 ORDERS
               </button>
 
               <button
-                className={`nav-btn ${activeTab === 'products' ? 'active' : ''}`}
+                className={`${styles.navBtn} ${activeTab === 'products' ? styles.navBtnActive : ''}`}
                 onClick={() => handleTabChange('products')}
               >
                 PRODUCTS
               </button>
 
               <button
-                className={`nav-btn ${activeTab === 'logistics' ? 'active' : ''}`}
+                className={`${styles.navBtn} ${activeTab === 'logistics' ? styles.navBtnActive : ''}`}
                 onClick={() => handleTabChange('logistics')}
               >
                 LOGISTICS
               </button>
 
               <button
-                className={`nav-btn ${activeTab === 'ambassadors' ? 'active' : ''}`}
+                className={`${styles.navBtn} ${activeTab === 'ambassadors' ? styles.navBtnActive : ''}`}
                 onClick={() => handleTabChange('ambassadors')}
               >
                 AMBASSADORS
               </button>
 
               <button
-                className={`nav-btn ${activeTab === 'staff' ? 'active' : ''}`}
+                className={`${styles.navBtn} ${activeTab === 'staff' ? styles.navBtnActive : ''}`}
                 onClick={() => handleTabChange('staff')}
               >
                 STAFF
               </button>
 
               <button
-                className={`nav-btn ${activeTab === 'customers' ? 'active' : ''}`}
+                className={`${styles.navBtn} ${activeTab === 'customers' ? styles.navBtnActive : ''}`}
                 onClick={() => handleTabChange('customers')}
               >
                 CUSTOMERS
@@ -523,7 +266,7 @@ const AdminDashboard: React.FC = () => {
             </nav>
           </div>
 
-          <div className="user-footer-block">
+          <div className={styles.userFooterBlock}>
             <div 
               onClick={() => setIsProfileOpen(true)}
               style={{
@@ -541,7 +284,7 @@ const AdminDashboard: React.FC = () => {
             >
               <div style={{ width: '100%', overflow: 'hidden' }}>
                 <span 
-                  className="user-text-container"
+                  className={styles.userTextContainer}
                   style={{ 
                     color: '#ffffff', 
                     display: 'block', 
@@ -564,7 +307,7 @@ const AdminDashboard: React.FC = () => {
           </div>
         </aside>
 
-        <main className="nomad-main">
+        <main className={styles.nomadMain}>
           {activeTab === 'overview' && (
             <AdminOverview key="overview" userRole={userRole} showFilter={isFilterOpen} dateFormat="DD/MM/YYYY" />
           )}
@@ -603,8 +346,8 @@ const AdminDashboard: React.FC = () => {
           {activeTab === 'ambassadors' && (
             <SendInvite 
               key="ambassadors" 
-              isOpen={isAddOpen}
-              onClose={() => setIsAddOpen(false)}
+              isOpen={isAddOpen} 
+              onClose={() => setIsAddOpen(false)} 
             />
           )}
           {activeTab === 'staff' && (
