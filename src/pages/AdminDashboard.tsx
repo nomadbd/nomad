@@ -8,18 +8,17 @@ import {
   AdminStaff,
   AdminCustomers,
   AdminLogistics,
-  AdminAmbassador,
   StaffProfile
 } from '../components/admin';
 
-type TabType = 'overview' | 'orders' | 'products' | 'logistics' | 'ambassador' | 'staff' | 'customers';
+type TabType = 'overview' | 'orders' | 'products' | 'logistics' | 'staff' | 'customers';
 
 const AdminDashboard: React.FC = () => {
   const getTabFromURL = (): TabType => {
     if (typeof window === 'undefined') return 'overview';
     const params = new URLSearchParams(window.location.search);
     const tab = params.get('tab') as TabType;
-    const validTabs: TabType[] = ['overview', 'orders', 'products', 'logistics', 'ambassador', 'staff', 'customers'];
+    const validTabs: TabType[] = ['overview', 'orders', 'products', 'logistics', 'staff', 'customers'];
     return validTabs.includes(tab) ? tab : 'overview';
   };
 
@@ -201,14 +200,13 @@ const AdminDashboard: React.FC = () => {
             bottom: ${menuOpen ? '0' : 'auto'};
             z-index: 1000;
             background-color: rgba(6, 6, 6, 0.98);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
+            backdrop-filter: blur(12px);
             border-bottom: 1px solid #141414;
             padding: 14px 16px;
             padding-bottom: ${menuOpen ? 'calc(24px + env(safe-area-inset-bottom, 0px))' : '14px'};
             box-sizing: border-box;
             transform: ${isHeaderVisible ? 'translateY(0)' : 'translateY(-100%)'};
-            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.3s ease;
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
             overflow-x: hidden !important;
             overflow-y: ${menuOpen ? 'auto' : 'visible'};
             display: flex !important;
@@ -229,41 +227,20 @@ const AdminDashboard: React.FC = () => {
           }
 
           .nomad-nav {
-            display: flex !important;
+            display: ${menuOpen ? 'flex' : 'none'} !important;
             flex-direction: column;
             gap: 8px;
             margin-top: 18px;
             padding-top: 16px;
             border-top: 1px solid #141414;
             max-width: 100%;
-            opacity: 0;
-            max-height: 0;
-            overflow: hidden;
-            transform: translateY(-8px);
-            transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), 
-                        max-height 0.4s cubic-bezier(0.16, 1, 0.3, 1), 
-                        transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
-                        margin-top 0.35s ease,
-                        padding-top 0.35s ease;
-            pointer-events: none;
-          }
-
-          .nomad-nav.open {
-            opacity: 1;
-            max-height: 600px;
-            transform: translateY(0);
-            pointer-events: auto;
           }
 
           .user-footer-block {
-            display: block !important;
-            opacity: 0;
-            max-height: 0;
-            overflow: hidden;
-            transform: translateY(8px);
-            transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), 
-                        max-height 0.4s cubic-bezier(0.16, 1, 0.3, 1), 
-                        transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+            display: ${menuOpen ? 'block' : 'none'} !important;
+            margin-top: auto !important;
+            padding-top: 12px;
+            padding-bottom: calc(32px + env(safe-area-inset-bottom, 16px)) !important;
             border-top: 1px solid #141414;
             flex-shrink: 0;
             background-color: rgba(6, 6, 6, 0.98);
@@ -272,17 +249,6 @@ const AdminDashboard: React.FC = () => {
             z-index: 2;
             width: 100%;
             max-width: 100%;
-            pointer-events: none;
-          }
-
-          .user-footer-block.open {
-            opacity: 1;
-            max-height: 200px;
-            transform: translateY(0);
-            margin-top: auto !important;
-            padding-top: 12px;
-            padding-bottom: calc(32px + env(safe-area-inset-bottom, 16px)) !important;
-            pointer-events: auto;
           }
 
           .nomad-main {
@@ -332,23 +298,15 @@ const AdminDashboard: React.FC = () => {
             flex-direction: column;
             gap: 8px;
             margin-top: 25px;
-            opacity: 1 !important;
-            max-height: none !important;
-            transform: none !important;
-            pointer-events: auto !important;
           }
 
           .user-footer-block {
             display: block !important;
-            opacity: 1 !important;
-            max-height: none !important;
-            transform: none !important;
             margin-top: auto;
             padding-top: 16px;
             border-top: 1px solid #1a1a1a;
             width: 100%;
             max-width: 100%;
-            pointer-events: auto !important;
           }
 
           .nomad-main {
@@ -391,7 +349,7 @@ const AdminDashboard: React.FC = () => {
           background: transparent;
           color: #888888;
           border-radius: 0 !important;
-          transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+          transition: all 0.2s ease;
           width: 100%;
           max-width: 100%;
         }
@@ -422,7 +380,7 @@ const AdminDashboard: React.FC = () => {
           display: flex;
           align-items: center;
           justify-content: center;
-          transition: color 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease, transform 0.2s ease;
+          transition: color 0.15s ease, opacity 0.15s ease;
           opacity: 0.75;
           -webkit-tap-highlight-color: transparent;
         }
@@ -458,7 +416,7 @@ const AdminDashboard: React.FC = () => {
         <aside className="nomad-sidebar">
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: '100%' }}>
-              <a href="/" className="nomad-brand-link apple-button-press" title="Go to Store Homepage">
+              <a href="/" className="nomad-brand-link" title="Go to Store Homepage">
                 <h1 style={{ fontSize: '18px', fontWeight: '900', letterSpacing: '4px', margin: 0, color: '#fff' }}>
                   NOMAD
                 </h1>
@@ -467,7 +425,7 @@ const AdminDashboard: React.FC = () => {
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                 {activeTab === 'products' && (
                   <button
-                    className={`nomad-action-btn apple-button-press ${isAddOpen ? 'active' : ''}`}
+                    className={`nomad-action-btn ${isAddOpen ? 'active' : ''}`}
                     onClick={() => setIsAddOpen(!isAddOpen)}
                     aria-label="Add Product"
                     title="Add Product"
@@ -481,7 +439,7 @@ const AdminDashboard: React.FC = () => {
 
                 {activeTab !== 'overview' && (
                   <button
-                    className={`nomad-action-btn apple-button-press ${isSearchOpen ? 'active' : ''}`}
+                    className={`nomad-action-btn ${isSearchOpen ? 'active' : ''}`}
                     onClick={() => setIsSearchOpen(!isSearchOpen)}
                     aria-label="Search"
                     title="Search"
@@ -494,7 +452,7 @@ const AdminDashboard: React.FC = () => {
                 )}
 
                 <button
-                  className={`nomad-action-btn apple-button-press ${isFilterOpen ? 'active' : ''}`}
+                  className={`nomad-action-btn ${isFilterOpen ? 'active' : ''}`}
                   onClick={() => setIsFilterOpen(!isFilterOpen)}
                   aria-label="Filter"
                   title="Toggle Filter Panel"
@@ -505,7 +463,7 @@ const AdminDashboard: React.FC = () => {
                 </button>
 
                 <button
-                  className={`nomad-menu-toggle nomad-menu-toggle-btn apple-button-press ${menuOpen ? 'active' : ''}`}
+                  className={`nomad-menu-toggle nomad-menu-toggle-btn ${menuOpen ? 'active' : ''}`}
                   onClick={() => setMenuOpen(!menuOpen)}
                   aria-label="Toggle Menu"
                   title="Toggle Navigation"
@@ -525,55 +483,48 @@ const AdminDashboard: React.FC = () => {
               </div>
             </div>
 
-            <nav className={`nomad-nav ${menuOpen ? 'open' : ''}`}>
+            <nav className="nomad-nav">
               <span style={{ fontSize: '9px', color: '#888888', letterSpacing: '2px', marginBottom: '8px', fontWeight: 'bold' }}>
                 MAIN MENU
               </span>
 
               <button
-                className={`nav-btn apple-button-press ${activeTab === 'overview' ? 'active' : ''}`}
+                className={`nav-btn ${activeTab === 'overview' ? 'active' : ''}`}
                 onClick={() => handleTabChange('overview')}
               >
                 OVERVIEW
               </button>
 
               <button
-                className={`nav-btn apple-button-press ${activeTab === 'orders' ? 'active' : ''}`}
+                className={`nav-btn ${activeTab === 'orders' ? 'active' : ''}`}
                 onClick={() => handleTabChange('orders')}
               >
                 ORDERS
               </button>
 
               <button
-                className={`nav-btn apple-button-press ${activeTab === 'products' ? 'active' : ''}`}
+                className={`nav-btn ${activeTab === 'products' ? 'active' : ''}`}
                 onClick={() => handleTabChange('products')}
               >
                 PRODUCTS
               </button>
 
               <button
-                className={`nav-btn apple-button-press ${activeTab === 'logistics' ? 'active' : ''}`}
+                className={`nav-btn ${activeTab === 'logistics' ? 'active' : ''}`}
                 onClick={() => handleTabChange('logistics')}
               >
                 LOGISTICS
               </button>
 
               <button
-                className={`nav-btn apple-button-press ${activeTab === 'ambassador' ? 'active' : ''}`}
-                onClick={() => handleTabChange('ambassador')}
-              >
-                AMBASSADOR
-              </button>
-
-              <button
-                className={`nav-btn apple-button-press ${activeTab === 'staff' ? 'active' : ''}`}
+                className={`nav-btn ${activeTab === 'staff' ? 'active' : ''}`}
                 onClick={() => handleTabChange('staff')}
               >
                 STAFF
               </button>
 
               <button
-                className={`nav-btn apple-button-press ${activeTab === 'customers' ? 'active' : ''}`}
+                className={`nav-btn ${activeTab === 'customers' ? 'active' : ''}`}
                 onClick={() => handleTabChange('customers')}
               >
                 CUSTOMERS
@@ -581,9 +532,8 @@ const AdminDashboard: React.FC = () => {
             </nav>
           </div>
 
-          <div className={`user-footer-block ${menuOpen ? 'open' : ''}`}>
+          <div className="user-footer-block">
             <div 
-              className="apple-glass-hover apple-button-press"
               onClick={() => setIsProfileOpen(true)}
               style={{
                 backgroundColor: '#0a0a0a',
@@ -591,6 +541,7 @@ const AdminDashboard: React.FC = () => {
                 padding: '10px 12px',
                 borderRadius: '2px',
                 cursor: 'pointer',
+                transition: 'border-color 0.2s ease',
                 maxWidth: '100%',
                 width: '100%',
                 boxSizing: 'border-box'
@@ -622,12 +573,13 @@ const AdminDashboard: React.FC = () => {
           </div>
         </aside>
 
-        <main className="nomad-main animate-fade-in" key={activeTab}>
+        <main className="nomad-main">
           {activeTab === 'overview' && (
-            <AdminOverview userRole={userRole} showFilter={isFilterOpen} dateFormat="DD/MM/YYYY" />
+            <AdminOverview key="overview" userRole={userRole} showFilter={isFilterOpen} dateFormat="DD/MM/YYYY" />
           )}
           {activeTab === 'orders' && (
             <AdminOrders 
+              key="orders" 
               isSearchOpen={isSearchOpen}
               isFilterOpen={isFilterOpen}
               onToggleSearch={() => setIsSearchOpen(prev => !prev)}
@@ -639,6 +591,7 @@ const AdminDashboard: React.FC = () => {
           )}
           {activeTab === 'products' && (
             <AdminProducts 
+              key="products" 
               searchQuery={searchQuery} 
               onSearchChange={setSearchQuery}
               isFilterOpen={isFilterOpen} 
@@ -651,20 +604,14 @@ const AdminDashboard: React.FC = () => {
           )}
           {activeTab === 'logistics' && (
             <AdminLogistics 
+              key="logistics"
               searchQuery={searchQuery}
               isFilterOpen={isFilterOpen}
-            />
-          )}
-          {activeTab === 'ambassador' && (
-            <AdminAmbassador 
-              searchQuery={searchQuery}
-              isFilterOpen={isFilterOpen}
-              isSearchOpen={isSearchOpen}
-              dateFormat="DD/MM/YYYY"
             />
           )}
           {activeTab === 'staff' && (
             <AdminStaff 
+              key="staff"
               searchQuery={searchQuery}
               isFilterOpen={isFilterOpen}
               isSearchOpen={isSearchOpen}
@@ -673,6 +620,7 @@ const AdminDashboard: React.FC = () => {
           )}
           {activeTab === 'customers' && (
             <AdminCustomers 
+              key="customers"
               searchQuery={searchQuery}
               isFilterOpen={isFilterOpen}
               dateFormat="DD/MM/YYYY"
