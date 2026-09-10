@@ -13,62 +13,43 @@ export default function AmbassadorWorkspace({
   profile,
   ambassadorState
 }: AmbassadorWorkspaceProps) {
-  const name = ambassadorData?.recipient_identifier || profile?.full_name || 'Partner';
+  const name = ambassadorData?.display_name || profile?.user_metadata?.full_name || 'AMBASSADOR';
   const commissionRate = ambassadorData?.commission_rate || 0;
-  const discountPercent = ambassadorData?.discount_percent || 0;
 
   return (
-    <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '24px 16px', color: '#fff', fontFamily: "'Inter', sans-serif" }}>
-      
-      {/* HEADER SECTION */}
-      <header style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        borderBottom: '1px solid #1f1f1f',
-        paddingBottom: '20px',
-        marginBottom: '28px',
-        flexWrap: 'wrap',
-        gap: '12px'
-      }}>
+    <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '40px 20px', color: '#ffffff', fontFamily: 'monospace, sans-serif' }}>
+      <header style={{ borderBottom: '1px solid #1a1a1a', paddingBottom: '20px', marginBottom: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <h1 style={{ fontSize: '26px', fontWeight: '700', margin: 0, letterSpacing: '-0.5px' }}>
-            Welcome back, <span style={{ color: '#d4af37' }}>{name}</span> 👋
+          <span style={{ fontSize: '10px', color: '#888888', letterSpacing: '2px', textTransform: 'uppercase' }}>NOMAD PORTAL</span>
+          <h1 style={{ fontSize: '20px', margin: '4px 0 0 0', letterSpacing: '1px', textTransform: 'uppercase' }}>
+            WELCOME, {name}
           </h1>
         </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <span style={{ backgroundColor: '#111', border: '1px solid #333', padding: '6px 12px', borderRadius: '20px', fontSize: '12px', color: '#aaa' }}>
-            Commission: <b style={{ color: '#d4af37' }}>{commissionRate}%</b>
-          </span>
-          <span style={{ backgroundColor: '#111', border: '1px solid #333', padding: '6px 12px', borderRadius: '20px', fontSize: '12px', color: '#aaa' }}>
-            Customer Off: <b style={{ color: '#10b981' }}>{discountPercent}%</b>
-          </span>
+        <div style={{ border: '1px solid #333333', padding: '6px 12px', fontSize: '11px', letterSpacing: '1px' }}>
+          COMMISSION: <b style={{ color: '#ffffff' }}>{commissionRate}%</b>
         </div>
       </header>
 
-      {/* METRIC CARDS GRID */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '24px' }}>
-        <div style={{ backgroundColor: '#0a0a0a', border: '1px solid #222', borderRadius: '12px', padding: '20px' }}>
-          <span style={{ color: '#666', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1px' }}>Unpaid Balance</span>
-          <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#fff', marginTop: '8px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '32px' }}>
+        <div style={{ backgroundColor: '#050505', border: '1px solid #1a1a1a', padding: '20px' }}>
+          <span style={{ color: '#888888', fontSize: '10px', letterSpacing: '1px' }}>UNPAID BALANCE</span>
+          <div style={{ fontSize: '24px', fontWeight: 'bold', marginTop: '8px' }}>
             ৳{ambassadorState?.unpaidBalance || 0}
           </div>
         </div>
 
-        <div style={{ backgroundColor: '#0a0a0a', border: '1px solid #222', borderRadius: '12px', padding: '20px' }}>
-          <span style={{ color: '#666', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1px' }}>Total Earned</span>
-          <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#d4af37', marginTop: '8px' }}>
+        <div style={{ backgroundColor: '#050505', border: '1px solid #1a1a1a', padding: '20px' }}>
+          <span style={{ color: '#888888', fontSize: '10px', letterSpacing: '1px' }}>TOTAL EARNED</span>
+          <div style={{ fontSize: '24px', fontWeight: 'bold', marginTop: '8px' }}>
             ৳{ambassadorState?.totalEarned || 0}
           </div>
         </div>
       </div>
 
-      {/* STORE LINK BANNER */}
       <StoreLinkBanner slug={ambassadorState?.slug || ambassadorData?.assigned_slug} />
-
-      {/* ANALYTICS GRAPH */}
-      <AnalyticsChart totalEarned={ambassadorState?.totalEarned} />
-
+      <div style={{ marginTop: '32px' }}>
+        <AnalyticsChart totalEarned={ambassadorState?.totalEarned} />
+      </div>
     </div>
   );
 }
