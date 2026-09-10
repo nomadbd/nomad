@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useCart } from '@/context/CartContext'; 
-import { SearchIcon, CartIcon, UserIcon } from '@/components/icons';
+import { SearchIcon, CartIcon, ProfileIcon } from '@/components/icons';
 
 interface HeaderProps {
   onSearchOpen: () => void;
