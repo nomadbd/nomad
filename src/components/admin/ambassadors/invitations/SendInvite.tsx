@@ -25,38 +25,40 @@ const SendInvite: React.FC<SendInviteProps> = ({ isOpen = true, onClose, onInvit
       const name = recipientName.trim();
       const identifier = recipientIdentifier.trim();
       
-      const baseSlug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-      const slug = `${baseSlug}-${Math.floor(100 + Math.random() * 900)}`;
-      const token = typeof crypto !== 'undefined' && crypto.randomUUID 
-        ? crypto.randomUUID() 
-        : Math.random().toString(36).substring(2) + Date.now().toString(36);
+      // ১. নাম থেকে ছোট ও পরিষ্কার টোকেন তৈরি (যেমন: Liton -> liton)
+      const token = name.toLowerCase().replace(/[^a-z0-9]+/g, '');
 
-      // ১. Supabase ডাটাবেজে রেকর্ড সেভ করা
+      // ২. ইনভাইটের মেয়াদ নির্ধারণ (আজ থেকে ৭ দিন পর)
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 7);
+
+      // ৩. Supabase-এ Upsert করা
       const { error } = await supabase
         .from('ambassador')
-        .insert([
+        .upsert(
           {
             display_name: name,
             recipient_identifier: identifier,
-            assigned_slug: slug,
+            assigned_slug: token,
             token: token,
             is_registered: false,
             is_active: true,
             invite_sent_at: new Date().toISOString(),
-          }
-        ]);
+            expires_at: expiresAt.toISOString(), // মেয়াদ সেভ হলো
+          },
+          { onConflict: 'token' }
+        );
 
       if (error) throw error;
 
+      // ৪. শর্ট ইনভাইট লিংক
       const inviteUrl = `https://nomadbd.vercel.app/invite/${token}`;
       const message = `OFFICIAL INVITATION | NOMAD VIP PROGRAM\n\nDear ${name},\n\nYou have been nominated to join NOMAD as an exclusive VIP Ambassador.\n\nAccess your private portal:\n${inviteUrl}`;
 
-      // ২. সরাসরি মাধ্যমে পাঠানোর লজিক
+      // ৫. সরাসরি মেসেজ বা ইমেইল পাঠানোর ব্যবস্থা
       if (identifier.includes('@')) {
-        // ইমেইল হলে Mail Client ওপেন হবে
         window.location.href = `mailto:${identifier}?subject=${encodeURIComponent('NOMAD VIP Ambassador Invitation')}&body=${encodeURIComponent(message)}`;
       } else {
-        // ফোন নম্বর হলে সরাসরি WhatsApp বা SMS লিঙ্ক ওপেন হবে
         const cleanPhone = identifier.replace(/[^0-9+]/g, '');
         const formattedPhone = cleanPhone.startsWith('0') ? `88${cleanPhone}` : cleanPhone;
         window.open(`https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`, '_blank');
@@ -237,7 +239,7 @@ const SendInvite: React.FC<SendInviteProps> = ({ isOpen = true, onClose, onInvit
               <input
                 type="text"
                 className="minimal-input"
-                placeholder="e.g. John Doe"
+                placeholder="e.g. Liton"
                 value={recipientName}
                 onChange={(e) => setRecipientName(e.target.value)}
                 required
@@ -250,7 +252,7 @@ const SendInvite: React.FC<SendInviteProps> = ({ isOpen = true, onClose, onInvit
               <input
                 type="text"
                 className="minimal-input"
-                placeholder="e.g. john@example.com / +88017..."
+                placeholder="e.g. liton@example.com / 015..."
                 value={recipientIdentifier}
                 onChange={(e) => setRecipientIdentifier(e.target.value)}
                 required
