@@ -77,14 +77,14 @@ const Header: React.FC<HeaderProps> = ({ onSearchOpen, onAuthOpen }) => {
 
         <button 
           onClick={onAuthOpen} 
-          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'block', lineHeight: 0 }}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'block', lineHeight: 0, color: 'white' }}
           aria-label="Profile"
         >
-          <ProfileIcon />
+          <ProfileIcon className="w-6 h-6 text-white" />
         </button>
       </div>
     </header>
   );
 };
 
-export default Header; 
+export default Header;
