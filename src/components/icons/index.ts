@@ -7,3 +7,4 @@ export * from './HistoryIcon';
 export * from './ProfileIcon';
 export * from './SearchIcon';
 export * from './CartIcon';
+export * from './UserIcon';
