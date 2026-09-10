@@ -601,7 +601,11 @@ const AdminDashboard: React.FC = () => {
             />
           )}
           {activeTab === 'ambassadors' && (
-            <SendInvite key="ambassadors" />
+            <SendInvite 
+              key="ambassadors" 
+              isOpen={isAddOpen}
+              onClose={() => setIsAddOpen(false)}
+            />
           )}
           {activeTab === 'staff' && (
             <AdminStaff 
