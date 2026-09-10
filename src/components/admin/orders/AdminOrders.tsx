@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import '../admin-animations.css';
+
 
 import { Order } from '@/utils/messageUtils';
 import { handlePrintInvoice, handlePrintBulkInvoices } from '@/utils/invoiceUtils';
