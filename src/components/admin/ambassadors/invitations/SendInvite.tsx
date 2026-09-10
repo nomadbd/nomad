@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { supabase } from '../../../supabaseClient'; // আপনার supabaseClient ফাইলের পাথ অনুযায়ী অ্যাডজাস্ট করে নিন
+import { supabase } from '@/supabaseClient';
 
 interface SendInviteProps {
   isOpen?: boolean;
