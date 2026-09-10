@@ -2,198 +2,195 @@ import React, { useState } from 'react';
 
 const SendInvite: React.FC = () => {
   const [recipientName, setRecipientName] = useState('');
-  const [recipientEmail, setRecipientEmail] = useState('');
   const [customSlug, setCustomSlug] = useState('');
-  const [expirationPeriod, setExpirationPeriod] = useState('7d');
-  const [welcomeMessage, setWelcomeMessage] = useState('');
+  const [generatedUrl, setGeneratedUrl] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // এখানে আপনার ইনভাইটেশন সাবমিট লজিক দিন
-    console.log({
-      recipientName,
-      recipientEmail,
-      customSlug,
-      expirationPeriod,
-      welcomeMessage
-    });
+    if (!recipientName) return;
+
+    const slug = customSlug.trim() 
+      ? customSlug.trim().toLowerCase().replace(/\s+/g, '-') 
+      : recipientName.trim().toLowerCase().replace(/\s+/g, '-');
+    
+    const url = `https://nomadbd.vercel.app/vip/${slug}`;
+    setGeneratedUrl(url);
+  };
+
+  const handleCopy = () => {
+    if (!generatedUrl) return;
+    navigator.clipboard.writeText(generatedUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
-    <div style={{ width: '100%', maxWidth: '800px', margin: '0 auto' }}>
+    <div className="invite-container">
       <style>{`
-        .invite-card {
-          background-color: #090909;
-          border: 1px solid #1a1a1a;
-          border-radius: 8px;
-          padding: 16px;
-          color: #fff;
+        .invite-container {
+          width: 100%;
+          max-width: 420px;
+          margin: 40px auto 0 auto;
+          padding: 0 12px;
           font-family: monospace, sans-serif;
-          box-sizing: border-box;
+          color: #ffffff;
         }
 
-        .invite-grid {
-          display: grid;
-          grid-template-columns: 1fr; /* মোবাইলে ১ কলাম */
-          gap: 16px;
+        .invite-title {
+          font-size: 13px;
+          font-weight: 700;
+          letter-spacing: 4px;
+          text-transform: uppercase;
+          color: #ffffff;
+          margin-bottom: 40px;
         }
 
-        /* বড় স্ক্রিনে (৬৪০ পিক্সেলের উপরে) ২ কলাম হবে */
-        @media (min-width: 640px) {
-          .invite-card {
-            padding: 28px;
-          }
-          .invite-grid {
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-          }
-        }
-
-        .invite-field {
+        .invite-form {
           display: flex;
           flex-direction: column;
-          gap: 6px;
-          width: 100%;
+          gap: 36px;
         }
 
-        .invite-label {
-          font-size: 10px;
-          font-weight: 700;
-          letter-spacing: 1px;
-          color: #a0a0a0;
+        .input-group {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+        }
+
+        .input-label {
+          font-size: 9px;
+          letter-spacing: 2px;
+          color: #666666;
           text-transform: uppercase;
+          font-weight: 600;
         }
 
-        .invite-input, .invite-select, .invite-textarea {
+        .minimal-input {
           width: 100%;
-          background-color: #141414;
-          border: 1px solid #262626;
-          border-radius: 4px;
-          padding: 12px;
-          color: #ffffff;
-          font-family: inherit;
-          font-size: 13px;
-          box-sizing: border-box;
-          outline: none;
-          transition: border-color 0.2s ease;
+          background: transparent !important;
+          border: none !important;
+          border-bottom: 1px solid #262626 !important;
+          border-radius: 0 !important;
+          padding: 8px 0 !important;
+          color: #ffffff !important;
+          font-family: inherit !important;
+          font-size: 14px !important;
+          outline: none !important;
+          transition: border-color 0.3s ease !important;
+          box-shadow: none !important;
         }
 
-        .invite-input:focus, .invite-select:focus, .invite-textarea:focus {
-          border-color: #555555;
+        .minimal-input:focus {
+          border-bottom-color: #ffffff !important;
         }
 
-        .invite-input::placeholder, .invite-textarea::placeholder {
-          color: #555555;
+        .minimal-input::placeholder {
+          color: #333333;
         }
 
-        .invite-btn {
+        .submit-btn {
+          margin-top: 12px;
           width: 100%;
           background-color: #ffffff;
           color: #000000;
-          font-weight: 800;
-          font-size: 12px;
-          letter-spacing: 1.5px;
-          padding: 14px;
           border: none;
-          border-radius: 4px;
-          cursor: pointer;
-          text-transform: uppercase;
-          margin-top: 20px;
-          transition: background-color 0.2s ease;
-        }
-
-        .invite-btn:hover {
-          background-color: #e0e0e0;
-        }
-
-        .slug-preview {
+          padding: 14px;
+          font-family: inherit;
           font-size: 10px;
-          color: #666;
-          margin-top: 4px;
+          font-weight: 800;
+          letter-spacing: 2px;
+          text-transform: uppercase;
+          cursor: pointer;
+          transition: opacity 0.2s ease;
+        }
+
+        .submit-btn:hover {
+          opacity: 0.85;
+        }
+
+        .result-box {
+          margin-top: 40px;
+          padding-top: 24px;
+          border-top: 1px solid #1a1a1a;
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+
+        .url-display {
+          font-size: 12px;
+          color: #888888;
           word-break: break-all;
+          padding: 10px 0;
+          border-bottom: 1px solid #222222;
+        }
+
+        .copy-btn {
+          background: transparent;
+          border: 1px solid #333333;
+          color: #ffffff;
+          padding: 10px;
+          font-family: inherit;
+          font-size: 9px;
+          letter-spacing: 2px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          text-transform: uppercase;
+        }
+
+        .copy-btn:hover {
+          background: #ffffff;
+          color: #000000;
+        }
+
+        @media (max-width: 767px) {
+          .invite-container {
+            margin-top: 10px;
+          }
         }
       `}</style>
 
-      <div className="invite-card">
-        <div style={{ marginBottom: '20px' }}>
-          <span style={{ fontSize: '9px', color: '#666', letterSpacing: '2px', fontWeight: 'bold' }}>
-            VIP AMBASSADOR MANAGEMENT
-          </span>
-          <h2 style={{ fontSize: '18px', fontWeight: '900', letterSpacing: '2px', marginTop: '4px' }}>
-            CREATE VIP INVITATION
-          </h2>
+      <h2 className="invite-title">CREATE VIP LINK</h2>
+
+      <form className="invite-form" onSubmit={handleSubmit}>
+        <div className="input-group">
+          <label className="input-label">RECIPIENT NAME *</label>
+          <input
+            type="text"
+            className="minimal-input"
+            placeholder="John Doe"
+            value={recipientName}
+            onChange={(e) => setRecipientName(e.target.value)}
+            required
+          />
         </div>
 
-        <form onSubmit={handleSubmit}>
-          <div className="invite-grid">
-            <div className="invite-field">
-              <label className="invite-label">RECIPIENT NAME / IDENTIFIER *</label>
-              <input
-                type="text"
-                className="invite-input"
-                placeholder="e.g. John Doe"
-                value={recipientName}
-                onChange={(e) => setRecipientName(e.target.value)}
-                required
-              />
-            </div>
+        <div className="input-group">
+          <label className="input-label">CUSTOM SLUG</label>
+          <input
+            type="text"
+            className="minimal-input"
+            placeholder="john-doe"
+            value={customSlug}
+            onChange={(e) => setCustomSlug(e.target.value)}
+          />
+        </div>
 
-            <div className="invite-field">
-              <label className="invite-label">RECIPIENT EMAIL (OPTIONAL)</label>
-              <input
-                type="email"
-                className="invite-input"
-                placeholder="john@example.com"
-                value={recipientEmail}
-                onChange={(e) => setRecipientEmail(e.target.value)}
-              />
-            </div>
+        <button type="submit" className="submit-btn">
+          GENERATE LINK
+        </button>
+      </form>
 
-            <div className="invite-field">
-              <label className="invite-label">CUSTOM LINK SLUG / TOKEN</label>
-              <input
-                type="text"
-                className="invite-input"
-                placeholder="e.g. john-doe"
-                value={customSlug}
-                onChange={(e) => setCustomSlug(e.target.value)}
-              />
-              <span className="slug-preview">
-                Preview: https://nomadbd.vercel.app/{customSlug || 'custom-slug'}
-              </span>
-            </div>
-
-            <div className="invite-field">
-              <label className="invite-label">LINK EXPIRATION PERIOD</label>
-              <select
-                className="invite-select"
-                value={expirationPeriod}
-                onChange={(e) => setExpirationPeriod(e.target.value)}
-              >
-                <option value="1d">1 Day Validity</option>
-                <option value="7d">7 Days Validity</option>
-                <option value="30d">30 Days Validity</option>
-                <option value="never">Never Expires</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="invite-field" style={{ marginTop: '16px' }}>
-            <label className="invite-label">PERSONALIZED WELCOME MESSAGE</label>
-            <textarea
-              className="invite-textarea"
-              rows={4}
-              placeholder="Write a custom note for this ambassador..."
-              value={welcomeMessage}
-              onChange={(e) => setWelcomeMessage(e.target.value)}
-            />
-          </div>
-
-          <button type="submit" className="invite-btn">
-            GENERATE VIP INVITATION
+      {generatedUrl && (
+        <div className="result-box">
+          <span className="input-label">GENERATED VIP LINK</span>
+          <div className="url-display">{generatedUrl}</div>
+          <button className="copy-btn" onClick={handleCopy}>
+            {copied ? 'COPIED TO CLIPBOARD' : 'COPY LINK'}
           </button>
-        </form>
-      </div>
+        </div>
+      )}
     </div>
   );
 };
