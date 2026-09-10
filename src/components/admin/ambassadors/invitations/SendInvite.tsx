@@ -1,31 +1,80 @@
 import React, { useState } from 'react';
+import { supabase } from '../../../supabaseClient'; // আপনার supabaseClient ফাইলের পাথ অনুযায়ী অ্যাডজাস্ট করে নিন
 
 interface SendInviteProps {
   isOpen?: boolean;
   onClose?: () => void;
+  onInviteSuccess?: () => void;
 }
 
-const SendInvite: React.FC<SendInviteProps> = ({ isOpen = true, onClose }) => {
+const SendInvite: React.FC<SendInviteProps> = ({ isOpen = true, onClose, onInviteSuccess }) => {
   const [recipientName, setRecipientName] = useState('');
+  const [recipientIdentifier, setRecipientIdentifier] = useState('');
+  const [commissionRate, setCommissionRate] = useState<number | ''>('');
+  const [discountPercent, setDiscountPercent] = useState<number | ''>('');
+  
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [inviteData, setInviteData] = useState<{ name: string; url: string; message: string } | null>(null);
   const [copied, setCopied] = useState(false);
 
-  const handleGenerate = (e: React.FormEvent) => {
+  const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!recipientName.trim()) return;
+    if (!recipientName.trim() || !recipientIdentifier.trim()) return;
 
-    const name = recipientName.trim();
-    const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-    const generatedUrl = `https://nomadbd.vercel.app/${slug}`;
+    setErrorMessage(null);
+    setLoading(true);
 
-    const officialMessage = `OFFICIAL INVITATION | NOMAD VIP PROGRAM\n\nDear ${name},\n\nYou have been nominated to join NOMAD as an exclusive VIP Ambassador.\n\nAccess your private portal:\n${generatedUrl}\n\n(This invitation is confidential and non-transferable.)`;
+    try {
+      const name = recipientName.trim();
+      const identifier = recipientIdentifier.trim();
+      const baseSlug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+      const slug = `${baseSlug}-${Math.floor(100 + Math.random() * 900)}`;
+      const token = typeof crypto !== 'undefined' && crypto.randomUUID 
+        ? crypto.randomUUID() 
+        : Math.random().toString(36).substring(2) + Date.now().toString(36);
 
-    setInviteData({
-      name,
-      url: generatedUrl,
-      message: officialMessage,
-    });
-    setCopied(false);
+      const commRate = commissionRate !== '' ? Number(commissionRate) : 0;
+      const discPercent = discountPercent !== '' ? Number(discountPercent) : 0;
+
+      // Supabase-এর 'ambassador' টেবিলে ডাটা ইনসার্ট
+      const { error: sbError } = await supabase
+        .from('ambassador')
+        .insert([
+          {
+            display_name: name,
+            recipient_identifier: identifier,
+            assigned_slug: slug,
+            token: token,
+            commission_rate: commRate,
+            discount_percent: discPercent,
+            is_registered: false,
+            is_active: true,
+            invite_sent_at: new Date().toISOString(),
+          }
+        ]);
+
+      if (sbError) throw sbError;
+
+      const generatedUrl = `https://nomadbd.vercel.app/invite/${token}`;
+      const officialMessage = `OFFICIAL INVITATION | NOMAD VIP PROGRAM\n\nDear ${name},\n\nYou have been nominated to join NOMAD as an exclusive VIP Ambassador.\n\nCode/Slug: ${slug}\nCommission: ${commRate}%\nDiscount Benefit: ${discPercent}%\n\nAccess your private portal:\n${generatedUrl}\n\n(This invitation is confidential and non-transferable.)`;
+
+      setInviteData({
+        name,
+        url: generatedUrl,
+        message: officialMessage,
+      });
+      setCopied(false);
+
+      if (onInviteSuccess) {
+        onInviteSuccess();
+      }
+    } catch (err: any) {
+      console.error('Error generating invite:', err);
+      setErrorMessage(err.message || 'DATABASE ERROR: FAILED TO SAVE INVITATION');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleShare = async () => {
@@ -52,7 +101,6 @@ const SendInvite: React.FC<SendInviteProps> = ({ isOpen = true, onClose }) => {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  //isOpen false হলে একটি খালি গাইড টেক্সট দেখাবে
   if (!isOpen) {
     return (
       <div style={{ padding: '80px 20px', textAlign: 'center', color: '#555', fontFamily: 'monospace' }}>
@@ -115,7 +163,7 @@ const SendInvite: React.FC<SendInviteProps> = ({ isOpen = true, onClose }) => {
           }
 
           .invite-header {
-            margin-bottom: 28px;
+            margin-bottom: 24px;
           }
 
           .invite-title {
@@ -129,8 +177,20 @@ const SendInvite: React.FC<SendInviteProps> = ({ isOpen = true, onClose }) => {
           .input-group {
             display: flex;
             flex-direction: column;
+            gap: 16px;
+            margin-bottom: 24px;
+          }
+
+          .input-field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+          }
+
+          .input-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
             gap: 12px;
-            margin-bottom: 28px;
           }
 
           .input-label {
@@ -147,13 +207,14 @@ const SendInvite: React.FC<SendInviteProps> = ({ isOpen = true, onClose }) => {
             border: none !important;
             border-bottom: 1px solid #222222 !important;
             border-radius: 0 !important;
-            padding: 10px 0 !important;
+            padding: 8px 0 !important;
             color: #ffffff !important;
             font-family: inherit !important;
-            font-size: 14px !important;
+            font-size: 13px !important;
             outline: none !important;
             transition: border-color 0.3s ease !important;
             box-shadow: none !important;
+            box-sizing: border-box;
           }
 
           .minimal-input:focus {
@@ -162,6 +223,16 @@ const SendInvite: React.FC<SendInviteProps> = ({ isOpen = true, onClose }) => {
 
           .minimal-input::placeholder {
             color: #333333;
+          }
+
+          .error-box {
+            font-size: 10px;
+            color: #ef4444;
+            background: rgba(239, 68, 68, 0.08);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            padding: 8px 10px;
+            margin-bottom: 16px;
+            letter-spacing: 0.5px;
           }
 
           .submit-btn {
@@ -183,8 +254,13 @@ const SendInvite: React.FC<SendInviteProps> = ({ isOpen = true, onClose }) => {
             opacity: 0.88;
           }
 
+          .submit-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+          }
+
           .document-preview {
-            margin-top: 28px;
+            margin-top: 24px;
             padding-top: 20px;
             border-top: 1px solid #141414;
             display: flex;
@@ -252,22 +328,69 @@ const SendInvite: React.FC<SendInviteProps> = ({ isOpen = true, onClose }) => {
           <h2 className="invite-title">VIP INVITATION</h2>
         </div>
 
+        {errorMessage && <div className="error-box">{errorMessage}</div>}
+
         <form onSubmit={handleGenerate}>
           <div className="input-group">
-            <label className="input-label">RECIPIENT NAME</label>
-            <input
-              type="text"
-              className="minimal-input"
-              placeholder="e.g. John Doe"
-              value={recipientName}
-              onChange={(e) => setRecipientName(e.target.value)}
-              required
-              autoComplete="off"
-            />
+            <div className="input-field">
+              <label className="input-label">RECIPIENT NAME</label>
+              <input
+                type="text"
+                className="minimal-input"
+                placeholder="e.g. John Doe"
+                value={recipientName}
+                onChange={(e) => setRecipientName(e.target.value)}
+                required
+                autoComplete="off"
+              />
+            </div>
+
+            <div className="input-field">
+              <label className="input-label">EMAIL / PHONE IDENTIFIER</label>
+              <input
+                type="text"
+                className="minimal-input"
+                placeholder="e.g. john@example.com / +88017..."
+                value={recipientIdentifier}
+                onChange={(e) => setRecipientIdentifier(e.target.value)}
+                required
+                autoComplete="off"
+              />
+            </div>
+
+            <div className="input-row">
+              <div className="input-field">
+                <label className="input-label">COMMISSION RATE (%)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="100"
+                  className="minimal-input"
+                  placeholder="e.g. 10"
+                  value={commissionRate}
+                  onChange={(e) => setCommissionRate(e.target.value === '' ? '' : Number(e.target.value))}
+                />
+              </div>
+
+              <div className="input-field">
+                <label className="input-label">DISCOUNT BENEFIT (%)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="100"
+                  className="minimal-input"
+                  placeholder="e.g. 5"
+                  value={discountPercent}
+                  onChange={(e) => setDiscountPercent(e.target.value === '' ? '' : Number(e.target.value))}
+                />
+              </div>
+            </div>
           </div>
 
-          <button type="submit" className="submit-btn">
-            GENERATE INVITATION
+          <button type="submit" className="submit-btn" disabled={loading}>
+            {loading ? 'GENERATING...' : 'GENERATE INVITATION'}
           </button>
         </form>
 
