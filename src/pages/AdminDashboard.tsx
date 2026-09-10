@@ -11,6 +11,7 @@ import {
   StaffProfile
 } from '../components/admin';
 import SendInvite from '../components/admin/ambassadors/invitations/SendInvite';
+import { PlusIcon, SearchIcon, FilterIcon, MenuIcon, CloseIcon } from '../components/icons';
 
 type TabType = 'overview' | 'orders' | 'products' | 'logistics' | 'ambassadors' | 'staff' | 'customers';
 
@@ -431,10 +432,7 @@ const AdminDashboard: React.FC = () => {
                     aria-label="Add Product"
                     title="Add Product"
                   >
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <line x1="12" y1="5" x2="12" y2="19"></line>
-                      <line x1="5" y1="12" x2="19" y2="12"></line>
-                    </svg>
+                    <PlusIcon width={18} height={18} />
                   </button>
                 )}
 
@@ -445,10 +443,7 @@ const AdminDashboard: React.FC = () => {
                     aria-label="Search"
                     title="Search"
                   >
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <circle cx="11" cy="11" r="8"></circle>
-                      <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                    </svg>
+                    <SearchIcon width={18} height={18} />
                   </button>
                 )}
 
@@ -458,9 +453,7 @@ const AdminDashboard: React.FC = () => {
                   aria-label="Filter"
                   title="Toggle Filter Panel"
                 >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
-                  </svg>
+                  <FilterIcon width={18} height={18} />
                 </button>
 
                 <button
@@ -469,17 +462,7 @@ const AdminDashboard: React.FC = () => {
                   aria-label="Toggle Menu"
                   title="Toggle Navigation"
                 >
-                  {menuOpen ? (
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <line x1="18" y1="6" x2="6" y2="18"></line>
-                      <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                  ) : (
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <line x1="3" y1="8" x2="21" y2="8"></line>
-                      <line x1="9" y1="16" x2="21" y2="16"></line>
-                    </svg>
-                  )}
+                  {menuOpen ? <CloseIcon width={18} height={18} /> : <MenuIcon width={20} height={20} />}
                 </button>
               </div>
             </div>
