@@ -1,5 +1,5 @@
 import React, { useState, lazy, Suspense } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react.router-dom';
 
 import { CartProvider } from './context/CartContext';
 import { useSession } from './hooks/useSession';
@@ -16,13 +16,13 @@ import AuthForm from './components/auth/AuthForm';
 
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 const AmbassadorJoin = lazy(() => import('./components/ambassador/AmbassadorJoin'));
-const AmbassadorStore = lazy(() => import('./components/ambassador/AmbassadorStore'));
 
 const AppContent = ({ session, setIsSearchOpen, setIsAuthOpen }: any) => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const showHeader = !['/profile', '/admin', '/update-password'].includes(location.pathname) && !location.pathname.startsWith('/vip');
+  // অ্যাডমিন, প্রোফাইল এবং কাস্টম অনবোর্ডিং পেজে হেডার হাইড থাকবে
+  const showHeader = !['/profile', '/admin', '/update-password'].includes(location.pathname);
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: 'black', color: '#fff' }}>
@@ -51,20 +51,12 @@ const AppContent = ({ session, setIsSearchOpen, setIsAuthOpen }: any) => {
 
         <Route path="/profile" element={session ? <ProfilePage /> : <Navigate to="/" replace />} />
 
-        <Route 
-          path="/vip/:token" 
-          element={
-            <Suspense fallback={null}>
-              <AmbassadorJoin />
-            </Suspense>
-          } 
-        />
-
+        {/* নতুন ইনভাইটেশন রুট (যেমন: nomadbd.vercel.app/toha) */}
         <Route 
           path="/:slug" 
           element={
             <Suspense fallback={null}>
-              <AmbassadorStore />
+              <AmbassadorJoin />
             </Suspense>
           } 
         />
