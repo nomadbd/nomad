@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { supabase } from '@/supabaseClient';
+import { SendIcon } from '@/components/icons';
 
 interface SendInviteProps {
   isOpen?: boolean;
@@ -9,72 +10,106 @@ interface SendInviteProps {
 
 const SendInvite: React.FC<SendInviteProps> = ({ isOpen = true, onClose, onInviteSuccess }) => {
   const [recipientName, setRecipientName] = useState('');
-  const [recipientIdentifier, setRecipientIdentifier] = useState('');
-  
-  const [loading, setLoading] = useState(false);
+  const [validityDays, setValidityDays] = useState<number | string>(7);
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+
+  const [loadingAction, setLoadingAction] = useState<'email' | 'whatsapp' | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const handleSend = async (e: React.FormEvent) => {
+  // ইনভাইট তৈরি ও ডাটাবেজে সেভ করার কমন ফাংশন
+  const createInviteData = async () => {
+    if (!recipientName.trim()) {
+      throw new Error('RECIPIENT NAME IS REQUIRED');
+    }
+
+    const name = recipientName.trim();
+    const token = name.toLowerCase().replace(/[^a-z0-9]+/g, '');
+    const days = Number(validityDays) > 0 ? Number(validityDays) : 7;
+
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + days);
+
+    const targetIdentifier = email.trim() || phone.trim() || 'N/A';
+
+    const { error } = await supabase
+      .from('ambassador')
+      .upsert(
+        {
+          display_name: name,
+          recipient_identifier: targetIdentifier,
+          assigned_slug: token,
+          token: token,
+          is_registered: false,
+          is_active: true,
+          invite_sent_at: new Date().toISOString(),
+          expires_at: expiresAt.toISOString(),
+        },
+        { onConflict: 'token' }
+      );
+
+    if (error) throw error;
+
+    const inviteUrl = `https://nomadbd.vercel.app/invite/${token}`;
+    
+    // অত্যন্ত প্রফেশনাল ও প্রিমিয়াম অফিশিয়াল চিঠি
+    const message = `NOMAD | OFFICIAL VIP AMBASSADOR INVITATION\n\nDear ${name},\n\nIt is our distinct privilege to officially nominate you as an Exclusive VIP Ambassador for NOMAD.\n\nPlease access your private portal to claim your credentials:\n${inviteUrl}\n\nKindly note that this private portal access remains active for ${days} days.\n\nYours sincerely,\nNOMAD Executive Office`;
+
+    return { name, token, message };
+  };
+
+  // ইমেইল মাধ্যমে ইনভাইট পাঠানো
+  const handleSendEmail = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!recipientName.trim() || !recipientIdentifier.trim()) return;
+    if (!email.trim()) {
+      setErrorMessage('PLEASE ENTER AN EMAIL ADDRESS');
+      return;
+    }
 
     setErrorMessage(null);
-    setLoading(true);
+    setLoadingAction('email');
 
     try {
-      const name = recipientName.trim();
-      const identifier = recipientIdentifier.trim();
+      const { message } = await createInviteData();
+      const subject = 'NOMAD | Official VIP Ambassador Nomination';
       
-      // ১. নাম থেকে ছোট ও পরিষ্কার টোকেন তৈরি (যেমন: Liton -> liton)
-      const token = name.toLowerCase().replace(/[^a-z0-9]+/g, '');
-
-      // ২. ইনভাইটের মেয়াদ নির্ধারণ (আজ থেকে ৭ দিন পর)
-      const expiresAt = new Date();
-      expiresAt.setDate(expiresAt.getDate() + 7);
-
-      // ৩. Supabase-এ Upsert করা
-      const { error } = await supabase
-        .from('ambassador')
-        .upsert(
-          {
-            display_name: name,
-            recipient_identifier: identifier,
-            assigned_slug: token,
-            token: token,
-            is_registered: false,
-            is_active: true,
-            invite_sent_at: new Date().toISOString(),
-            expires_at: expiresAt.toISOString(), // মেয়াদ সেভ হলো
-          },
-          { onConflict: 'token' }
-        );
-
-      if (error) throw error;
-
-      // ৪. শর্ট ইনভাইট লিংক
-      const inviteUrl = `https://nomadbd.vercel.app/invite/${token}`;
-      const message = `OFFICIAL INVITATION | NOMAD VIP PROGRAM\n\nDear ${name},\n\nYou have been nominated to join NOMAD as an exclusive VIP Ambassador.\n\nAccess your private portal:\n${inviteUrl}`;
-
-      // ৫. সরাসরি মেসেজ বা ইমেইল পাঠানোর ব্যবস্থা
-      if (identifier.includes('@')) {
-        window.location.href = `mailto:${identifier}?subject=${encodeURIComponent('NOMAD VIP Ambassador Invitation')}&body=${encodeURIComponent(message)}`;
-      } else {
-        const cleanPhone = identifier.replace(/[^0-9+]/g, '');
-        const formattedPhone = cleanPhone.startsWith('0') ? `88${cleanPhone}` : cleanPhone;
-        window.open(`https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`, '_blank');
-      }
-
-      setRecipientName('');
-      setRecipientIdentifier('');
+      window.location.href = `mailto:${email.trim()}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message)}`;
 
       if (onInviteSuccess) onInviteSuccess();
       if (onClose) onClose();
-
     } catch (err: any) {
-      console.error('Error sending invite:', err);
-      setErrorMessage(err.message || 'FAILED TO SEND INVITATION');
+      console.error('Email Invite Error:', err);
+      setErrorMessage(err.message || 'FAILED TO PROCESS EMAIL INVITATION');
     } finally {
-      setLoading(false);
+      setLoadingAction(null);
+    }
+  };
+
+  // হোয়াটসঅ্যাপ মাধ্যমে ইনভাইট পাঠানো
+  const handleSendWhatsApp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!phone.trim()) {
+      setErrorMessage('PLEASE ENTER A PHONE NUMBER');
+      return;
+    }
+
+    setErrorMessage(null);
+    setLoadingAction('whatsapp');
+
+    try {
+      const { message } = await createInviteData();
+      const cleanPhone = phone.replace(/[^0-9+]/g, '');
+      const formattedPhone = cleanPhone.startsWith('0') ? `88${cleanPhone}` : cleanPhone;
+
+      window.open(`https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`, '_blank');
+
+      if (onInviteSuccess) onInviteSuccess();
+      if (onClose) onClose();
+    } catch (err: any) {
+      console.error('WhatsApp Invite Error:', err);
+      setErrorMessage(err.message || 'FAILED TO PROCESS WHATSAPP INVITATION');
+    } finally {
+      setLoadingAction(null);
     }
   };
 
@@ -90,8 +125,8 @@ const SendInvite: React.FC<SendInviteProps> = ({ isOpen = true, onClose, onInvit
             left: 0;
             right: 0;
             bottom: 0;
-            background-color: rgba(3, 3, 3, 0.85);
-            backdrop-filter: blur(8px);
+            background-color: rgba(3, 3, 3, 0.88);
+            backdrop-filter: blur(10px);
             z-index: 1200;
             display: flex;
             align-items: center;
@@ -101,26 +136,26 @@ const SendInvite: React.FC<SendInviteProps> = ({ isOpen = true, onClose, onInvit
 
           .invite-wrapper {
             width: 100%;
-            max-width: 400px;
-            background: #080808;
-            border: 1px solid #1f1f1f;
-            padding: 28px 24px;
+            max-width: 380px;
+            background: #050505;
+            border: 1px solid #1a1a1a;
+            padding: 32px 28px;
             font-family: monospace, sans-serif;
             color: #ffffff;
             position: relative;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.8);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.9);
           }
 
           .close-modal-btn {
             position: absolute;
-            top: 16px;
-            right: 16px;
+            top: 18px;
+            right: 18px;
             background: transparent;
             border: none;
-            color: #888888;
+            color: #666666;
             font-size: 16px;
             cursor: pointer;
-            padding: 4px 8px;
+            padding: 4px;
             transition: color 0.2s ease;
           }
 
@@ -129,7 +164,7 @@ const SendInvite: React.FC<SendInviteProps> = ({ isOpen = true, onClose, onInvit
           }
 
           .invite-header {
-            margin-bottom: 24px;
+            margin-bottom: 28px;
           }
 
           .invite-title {
@@ -138,85 +173,79 @@ const SendInvite: React.FC<SendInviteProps> = ({ isOpen = true, onClose, onInvit
             letter-spacing: 3px;
             text-transform: uppercase;
             color: #ffffff;
+            margin: 0;
           }
 
-          .input-group {
+          .form-group-container {
             display: flex;
             flex-direction: column;
-            gap: 20px;
-            margin-bottom: 28px;
-          }
-
-          .input-field {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-          }
-
-          .input-label {
-            font-size: 9px;
-            letter-spacing: 2px;
-            color: #666666;
-            text-transform: uppercase;
-            font-weight: 600;
+            gap: 22px;
           }
 
           .minimal-input {
             width: 100%;
             background: transparent !important;
             border: none !important;
-            border-bottom: 1px solid #222222 !important;
+            border-bottom: 1px solid #ffffff !important;
             border-radius: 0 !important;
             padding: 8px 0 !important;
             color: #ffffff !important;
             font-family: inherit !important;
-            font-size: 13px !important;
+            font-size: 12px !important;
             outline: none !important;
-            transition: border-color 0.3s ease !important;
             box-shadow: none !important;
             box-sizing: border-box;
-          }
-
-          .minimal-input:focus {
-            border-bottom-color: #ffffff !important;
+            letter-spacing: 0.5px;
           }
 
           .minimal-input::placeholder {
-            color: #333333;
+            color: #888888 !important;
+            opacity: 1 !important;
+          }
+
+          .input-action-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+          }
+
+          .send-icon-btn {
+            background: #ffffff;
+            color: #000000;
+            border: none;
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: opacity 0.2s ease, transform 0.1s ease;
+            height: 33px;
+            min-width: 42px;
+          }
+
+          .send-icon-btn:hover {
+            opacity: 0.88;
+          }
+
+          .send-icon-btn:active {
+            transform: scale(0.96);
+          }
+
+          .send-icon-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
           }
 
           .error-box {
-            font-size: 10px;
+            font-size: 9px;
             color: #ef4444;
             background: rgba(239, 68, 68, 0.08);
             border: 1px solid rgba(239, 68, 68, 0.2);
             padding: 8px 10px;
-            margin-bottom: 16px;
-            letter-spacing: 0.5px;
-          }
-
-          .submit-btn {
-            width: 100%;
-            background-color: #ffffff;
-            color: #000000;
-            border: none;
-            padding: 14px;
-            font-family: inherit;
-            font-size: 10px;
-            font-weight: 800;
-            letter-spacing: 2px;
+            margin-bottom: 18px;
+            letter-spacing: 1px;
             text-transform: uppercase;
-            cursor: pointer;
-            transition: opacity 0.2s ease;
-          }
-
-          .submit-btn:hover {
-            opacity: 0.88;
-          }
-
-          .submit-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
           }
         `}</style>
 
@@ -232,39 +261,70 @@ const SendInvite: React.FC<SendInviteProps> = ({ isOpen = true, onClose, onInvit
 
         {errorMessage && <div className="error-box">{errorMessage}</div>}
 
-        <form onSubmit={handleSend}>
-          <div className="input-group">
-            <div className="input-field">
-              <label className="input-label">RECIPIENT NAME</label>
-              <input
-                type="text"
-                className="minimal-input"
-                placeholder="e.g. Liton"
-                value={recipientName}
-                onChange={(e) => setRecipientName(e.target.value)}
-                required
-                autoComplete="off"
-              />
-            </div>
+        <div className="form-group-container">
+          {/* ১. প্রাপকের নাম */}
+          <input
+            type="text"
+            className="minimal-input"
+            placeholder="Recipient Name"
+            value={recipientName}
+            onChange={(e) => setRecipientName(e.target.value)}
+            required
+            autoComplete="off"
+          />
 
-            <div className="input-field">
-              <label className="input-label">EMAIL / PHONE IDENTIFIER</label>
-              <input
-                type="text"
-                className="minimal-input"
-                placeholder="e.g. liton@example.com / 015..."
-                value={recipientIdentifier}
-                onChange={(e) => setRecipientIdentifier(e.target.value)}
-                required
-                autoComplete="off"
-              />
-            </div>
-          </div>
+          {/* ২. লিংকের মেয়াদের দিন */}
+          <input
+            type="number"
+            className="minimal-input"
+            placeholder="Validity (Days)"
+            value={validityDays}
+            onChange={(e) => setValidityDays(e.target.value)}
+            min="1"
+            required
+            autoComplete="off"
+          />
 
-          <button type="submit" className="submit-btn" disabled={loading}>
-            {loading ? 'SENDING...' : 'SEND INVITATION'}
-          </button>
-        </form>
+          {/* ৩. ইমেইল ইনপুট এবং সেন্ড বাটন */}
+          <form onSubmit={handleSendEmail} className="input-action-row">
+            <input
+              type="email"
+              className="minimal-input"
+              placeholder="Email Address"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              autoComplete="off"
+            />
+            <button
+              type="submit"
+              className="send-icon-btn"
+              title="Send via Email"
+              disabled={loadingAction === 'email'}
+            >
+              {loadingAction === 'email' ? '...' : <SendIcon size={13} color="#000000" />}
+            </button>
+          </form>
+
+          {/* ৪. হোয়াটসঅ্যাপ/ফোন ইনপুট এবং সেন্ড বাটন */}
+          <form onSubmit={handleSendWhatsApp} className="input-action-row">
+            <input
+              type="text"
+              className="minimal-input"
+              placeholder="WhatsApp Number"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              autoComplete="off"
+            />
+            <button
+              type="submit"
+              className="send-icon-btn"
+              title="Send via WhatsApp"
+              disabled={loadingAction === 'whatsapp'}
+            >
+              {loadingAction === 'whatsapp' ? '...' : <SendIcon size={13} color="#000000" />}
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   );
