@@ -10,15 +10,16 @@ import {
   AdminLogistics,
   StaffProfile
 } from '../components/admin';
+import SendInvite from '../components/admin/ambassadors/invitations/SendInvite';
 
-type TabType = 'overview' | 'orders' | 'products' | 'logistics' | 'staff' | 'customers';
+type TabType = 'overview' | 'orders' | 'products' | 'logistics' | 'ambassadors' | 'staff' | 'customers';
 
 const AdminDashboard: React.FC = () => {
   const getTabFromURL = (): TabType => {
     if (typeof window === 'undefined') return 'overview';
     const params = new URLSearchParams(window.location.search);
     const tab = params.get('tab') as TabType;
-    const validTabs: TabType[] = ['overview', 'orders', 'products', 'logistics', 'staff', 'customers'];
+    const validTabs: TabType[] = ['overview', 'orders', 'products', 'logistics', 'ambassadors', 'staff', 'customers'];
     return validTabs.includes(tab) ? tab : 'overview';
   };
 
@@ -517,6 +518,13 @@ const AdminDashboard: React.FC = () => {
               </button>
 
               <button
+                className={`nav-btn ${activeTab === 'ambassadors' ? 'active' : ''}`}
+                onClick={() => handleTabChange('ambassadors')}
+              >
+                AMBASSADORS
+              </button>
+
+              <button
                 className={`nav-btn ${activeTab === 'staff' ? 'active' : ''}`}
                 onClick={() => handleTabChange('staff')}
               >
@@ -608,6 +616,9 @@ const AdminDashboard: React.FC = () => {
               searchQuery={searchQuery}
               isFilterOpen={isFilterOpen}
             />
+          )}
+          {activeTab === 'ambassadors' && (
+            <SendInvite key="ambassadors" />
           )}
           {activeTab === 'staff' && (
             <AdminStaff 
