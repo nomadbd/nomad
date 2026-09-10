@@ -80,7 +80,7 @@ const Header: React.FC<HeaderProps> = ({ onSearchOpen, onAuthOpen }) => {
           style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'block', lineHeight: 0 }}
           aria-label="Profile"
         >
-          <UserIcon />
+          <ProfileIcon />
         </button>
       </div>
     </header>
