@@ -2,66 +2,90 @@ import React, { useState } from 'react';
 
 const SendInvite: React.FC = () => {
   const [recipientName, setRecipientName] = useState('');
-  const [customSlug, setCustomSlug] = useState('');
-  const [generatedUrl, setGeneratedUrl] = useState<string | null>(null);
+  const [inviteData, setInviteData] = useState<{ name: string; url: string; message: string } | null>(null);
   const [copied, setCopied] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleGenerate = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!recipientName) return;
+    if (!recipientName.trim()) return;
 
-    const slug = customSlug.trim() 
-      ? customSlug.trim().toLowerCase().replace(/\s+/g, '-') 
-      : recipientName.trim().toLowerCase().replace(/\s+/g, '-');
-    
-    const url = `https://nomadbd.vercel.app/vip/${slug}`;
-    setGeneratedUrl(url);
+    const name = recipientName.trim();
+    const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    const token = Math.random().toString(36).substring(2, 7);
+    const generatedUrl = `https://nomadbd.vercel.app/invite/${slug}-${token}`;
+
+    // অফিশিয়াল প্রিমিয়াম মেসেজ টেমপ্লেট
+    const officialMessage = `OFFICIAL INVITATION | NOMAD VIP PROGRAM\n\nDear ${name},\n\nYou have been nominated to join NOMAD as an exclusive VIP Ambassador.\n\nAccess your private onboarding portal:\n${generatedUrl}\n\n(This invitation link is strictly confidential and non-transferable.)`;
+
+    setInviteData({
+      name,
+      url: generatedUrl,
+      message: officialMessage,
+    });
+    setCopied(false);
+  };
+
+  const handleShare = async () => {
+    if (!inviteData) return;
+
+    // ব্রাউজারের নেটিভ শেয়ার অপশন (WhatsApp, Email, Telegram ইত্যাদি)
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'NOMAD VIP Invitation',
+          text: inviteData.message,
+        });
+      } catch (err) {
+        // শেয়ার ক্যান্সেল করলে বা সাপোর্ট না করলে কপির ব্যবস্থা
+        handleCopy();
+      }
+    } else {
+      handleCopy();
+    }
   };
 
   const handleCopy = () => {
-    if (!generatedUrl) return;
-    navigator.clipboard.writeText(generatedUrl);
+    if (!inviteData) return;
+    navigator.clipboard.writeText(inviteData.message);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
   return (
-    <div className="invite-container">
+    <div className="invite-wrapper">
       <style>{`
-        .invite-container {
+        .invite-wrapper {
           width: 100%;
-          max-width: 420px;
+          max-width: 400px;
           margin: 40px auto 0 auto;
-          padding: 0 12px;
+          padding: 0 16px;
           font-family: monospace, sans-serif;
           color: #ffffff;
         }
 
-        .invite-title {
-          font-size: 13px;
-          font-weight: 700;
-          letter-spacing: 4px;
-          text-transform: uppercase;
-          color: #ffffff;
-          margin-bottom: 40px;
+        .invite-header {
+          margin-bottom: 36px;
         }
 
-        .invite-form {
-          display: flex;
-          flex-direction: column;
-          gap: 36px;
+        .invite-title {
+          font-size: 11px;
+          font-weight: 700;
+          letter-spacing: 3px;
+          text-transform: uppercase;
+          color: #ffffff;
         }
 
         .input-group {
           display: flex;
           flex-direction: column;
-          gap: 10px;
+          gap: 12px;
+          margin-bottom: 28px;
         }
 
         .input-label {
           font-size: 9px;
           letter-spacing: 2px;
-          color: #666666;
+          color: #555555;
           text-transform: uppercase;
           font-weight: 600;
         }
@@ -70,9 +94,9 @@ const SendInvite: React.FC = () => {
           width: 100%;
           background: transparent !important;
           border: none !important;
-          border-bottom: 1px solid #262626 !important;
+          border-bottom: 1px solid #222222 !important;
           border-radius: 0 !important;
-          padding: 8px 0 !important;
+          padding: 10px 0 !important;
           color: #ffffff !important;
           font-family: inherit !important;
           font-size: 14px !important;
@@ -90,7 +114,6 @@ const SendInvite: React.FC = () => {
         }
 
         .submit-btn {
-          margin-top: 12px;
           width: 100%;
           background-color: #ffffff;
           color: #000000;
@@ -106,89 +129,113 @@ const SendInvite: React.FC = () => {
         }
 
         .submit-btn:hover {
-          opacity: 0.85;
+          opacity: 0.88;
         }
 
-        .result-box {
+        .document-preview {
           margin-top: 40px;
           padding-top: 24px;
-          border-top: 1px solid #1a1a1a;
+          border-top: 1px solid #141414;
           display: flex;
           flex-direction: column;
-          gap: 12px;
+          gap: 16px;
         }
 
-        .url-display {
-          font-size: 12px;
-          color: #888888;
-          word-break: break-all;
-          padding: 10px 0;
-          border-bottom: 1px solid #222222;
+        .doc-box {
+          background: #080808;
+          border-left: 2px solid #ffffff;
+          padding: 16px;
+          font-size: 11px;
+          line-height: 1.6;
+          color: #a0a0a0;
+          white-space: pre-wrap;
+          letter-spacing: 0.5px;
+        }
+
+        .action-grid {
+          display: flex;
+          gap: 10px;
+        }
+
+        .share-btn {
+          flex: 1;
+          background: #ffffff;
+          color: #000000;
+          border: none;
+          padding: 12px;
+          font-family: inherit;
+          font-size: 9px;
+          font-weight: 800;
+          letter-spacing: 2px;
+          cursor: pointer;
+          text-transform: uppercase;
+          transition: opacity 0.2s ease;
         }
 
         .copy-btn {
+          flex: 1;
           background: transparent;
           border: 1px solid #333333;
           color: #ffffff;
-          padding: 10px;
+          padding: 12px;
           font-family: inherit;
           font-size: 9px;
           letter-spacing: 2px;
           cursor: pointer;
-          transition: all 0.2s ease;
           text-transform: uppercase;
+          transition: all 0.2s ease;
         }
 
         .copy-btn:hover {
-          background: #ffffff;
-          color: #000000;
+          border-color: #ffffff;
         }
 
         @media (max-width: 767px) {
-          .invite-container {
+          .invite-wrapper {
             margin-top: 10px;
           }
         }
       `}</style>
 
-      <h2 className="invite-title">CREATE VIP LINK</h2>
+      <div className="invite-header">
+        <h2 className="invite-title">VIP INVITATION</h2>
+      </div>
 
-      <form className="invite-form" onSubmit={handleSubmit}>
+      <form onSubmit={handleGenerate}>
         <div className="input-group">
-          <label className="input-label">RECIPIENT NAME *</label>
+          <label className="input-label">RECIPIENT NAME</label>
           <input
             type="text"
             className="minimal-input"
-            placeholder="John Doe"
+            placeholder="e.g. John Doe"
             value={recipientName}
             onChange={(e) => setRecipientName(e.target.value)}
             required
-          />
-        </div>
-
-        <div className="input-group">
-          <label className="input-label">CUSTOM SLUG</label>
-          <input
-            type="text"
-            className="minimal-input"
-            placeholder="john-doe"
-            value={customSlug}
-            onChange={(e) => setCustomSlug(e.target.value)}
+            autoComplete="off"
           />
         </div>
 
         <button type="submit" className="submit-btn">
-          GENERATE LINK
+          GENERATE INVITATION
         </button>
       </form>
 
-      {generatedUrl && (
-        <div className="result-box">
-          <span className="input-label">GENERATED VIP LINK</span>
-          <div className="url-display">{generatedUrl}</div>
-          <button className="copy-btn" onClick={handleCopy}>
-            {copied ? 'COPIED TO CLIPBOARD' : 'COPY LINK'}
-          </button>
+      {inviteData && (
+        <div className="document-preview">
+          <span className="input-label">OFFICIAL DOCUMENT PREVIEW</span>
+          
+          <div className="doc-box">
+            {inviteData.message}
+          </div>
+
+          <div className="action-grid">
+            <button type="button" className="share-btn" onClick={handleShare}>
+              SHARE INVITATION
+            </button>
+            <button type="button" className="copy-btn" onClick={handleCopy}>
+              {copied ? 'COPIED' : 'COPY TEXT'}
+            </button>
+          </div>
         </div>
       )}
     </div>
