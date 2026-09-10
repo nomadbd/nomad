@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useCart } from '@/context/CartContext'; 
+import { SearchIcon, CartIcon, UserIcon } from '@/components/icons';
 
 interface HeaderProps {
   onSearchOpen: () => void;
@@ -9,7 +10,6 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = ({ onSearchOpen, onAuthOpen }) => {
   const [show, setShow] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
-
 
   const { setIsCartOpen, cartItems } = useCart();
 
@@ -47,29 +47,20 @@ const Header: React.FC<HeaderProps> = ({ onSearchOpen, onAuthOpen }) => {
       </div>
 
       <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
-        {/* সার্চ আইকন */}
         <button 
           onClick={onSearchOpen} 
           style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
           aria-label="Search"
         >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="m21 21-4.34-4.34"/>
-            <circle cx="11" cy="11" r="8"/>
-          </svg>
+          <SearchIcon />
         </button>
 
-        {/* কার্ট আইকন */}
         <button 
           onClick={() => setIsCartOpen(true)} 
           style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'block', lineHeight: 0, position: 'relative' }} 
           aria-label="Cart"
         >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M2.048 18.566A2 2 0 0 0 4 21h16a2 2 0 0 0 1.952-2.434l-2-9A2 2 0 0 0 18 8H6a2 2 0 0 0-1.952 1.566z"/>
-            <path d="M8 11V6a4 4 0 0 1 8 0v5"/>
-          </svg>
-
+          <CartIcon />
 
           {cartItems.length > 0 && (
             <span style={{
@@ -84,16 +75,12 @@ const Header: React.FC<HeaderProps> = ({ onSearchOpen, onAuthOpen }) => {
           )}
         </button>
 
-
         <button 
           onClick={onAuthOpen} 
           style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'block', lineHeight: 0 }}
           aria-label="Profile"
         >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
-            <circle cx="12" cy="7" r="4"/>
-          </svg>
+          <UserIcon />
         </button>
       </div>
     </header>
