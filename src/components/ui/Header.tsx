@@ -87,4 +87,4 @@ const Header: React.FC<HeaderProps> = ({ onSearchOpen, onAuthOpen }) => {
   );
 };
 
-export default Header;
+export default Header; 
