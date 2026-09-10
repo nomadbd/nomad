@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/supabaseClient';
 
-
 export default function AmbassadorJoin() {
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
@@ -23,7 +22,7 @@ export default function AmbassadorJoin() {
 
   useEffect(() => {
     if (!token) {
-      setErrorMessage('No invitation token provided.');
+      setErrorMessage('NO INVITATION TOKEN PROVIDED');
       setLoading(false);
       return;
     }
@@ -37,23 +36,30 @@ export default function AmbassadorJoin() {
           .single();
 
         if (error || !data) {
-          setErrorMessage('Invalid or expired invitation link.');
+          setErrorMessage('INVALID OR EXPIRED INVITATION LINK');
           setLoading(false);
           return;
         }
 
         const isTimeExpired = new Date(data.expires_at) < new Date();
+        setInviteData(data);
+
+        // অ্যাডমিনের দেওয়া নাম ও ইমেইল স্বয়ংক্রিয়ভাবে ইনপুট ফিল্ডে সেট করা
+        if (data.display_name) {
+          setFullName(data.display_name);
+        }
+        if (data.recipient_identifier && data.recipient_identifier.includes('@')) {
+          setEmail(data.recipient_identifier);
+        }
+
         if (isTimeExpired || data.is_registered) {
           setIsExpired(true);
-          setInviteData(data);
           if (data.reissue_requested) {
             setReissueSubmitted(true);
           }
-        } else {
-          setInviteData(data);
         }
       } catch (err) {
-        setErrorMessage('Failed to validate invitation.');
+        setErrorMessage('FAILED TO VALIDATE INVITATION');
       } finally {
         setLoading(false);
       }
@@ -84,7 +90,7 @@ export default function AmbassadorJoin() {
         });
 
         if (authError || !authData.user) {
-          throw new Error(authError?.message || 'Sign up failed.');
+          throw new Error(authError?.message || 'SIGN UP FAILED');
         }
         userId = authData.user.id;
       } else {
@@ -94,7 +100,7 @@ export default function AmbassadorJoin() {
         });
 
         if (authError || !authData.user) {
-          throw new Error('Invalid email or password.');
+          throw new Error('INVALID EMAIL OR PASSWORD');
         }
         userId = authData.user.id;
         userEmail = authData.user.email || email;
@@ -113,12 +119,12 @@ export default function AmbassadorJoin() {
       });
 
       if (rpcErr || !rpcRes?.success) {
-        throw new Error(rpcRes?.message || rpcErr?.message || 'Failed to complete registration.');
+        throw new Error(rpcRes?.message || rpcErr?.message || 'FAILED TO COMPLETE REGISTRATION');
       }
 
       navigate('/profile');
     } catch (err: any) {
-      setErrorMessage(err.message || 'Something went wrong.');
+      setErrorMessage(err.message || 'SOMETHING WENT WRONG');
     } finally {
       setSubmitting(false);
     }
@@ -136,12 +142,12 @@ export default function AmbassadorJoin() {
       });
 
       if (error || !data?.success) {
-        setErrorMessage(data?.message || 'Failed to submit request.');
+        setErrorMessage(data?.message || 'FAILED TO SUBMIT REQUEST');
       } else {
         setReissueSubmitted(true);
       }
     } catch (err) {
-      setErrorMessage('An unexpected error occurred.');
+      setErrorMessage('AN UNEXPECTED ERROR OCCURRED');
     } finally {
       setSubmitting(false);
     }
@@ -155,29 +161,31 @@ export default function AmbassadorJoin() {
     alignItems: 'center',
     justifyContent: 'center',
     padding: '20px',
-    fontFamily: "'Inter', sans-serif",
+    fontFamily: 'monospace, sans-serif',
   };
 
   const cardStyle: React.CSSProperties = {
     width: '100%',
-    maxWidth: '420px',
-    border: '1px solid #222',
-    backgroundColor: '#0a0a0a',
-    padding: '28px',
-    borderRadius: '8px',
+    maxWidth: '400px',
+    border: '1px solid #1a1a1a',
+    backgroundColor: '#050505',
+    padding: '36px 30px',
     boxSizing: 'border-box',
+    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.9)',
   };
 
   const inputStyle: React.CSSProperties = {
     width: '100%',
-    padding: '12px',
-    marginBottom: '16px',
-    backgroundColor: '#141414',
-    border: '1px solid #333',
-    color: '#fff',
-    borderRadius: '4px',
-    boxSizing: 'border-box',
+    padding: '8px 0',
+    marginBottom: '20px',
+    backgroundColor: 'transparent',
+    border: 'none',
+    borderBottom: '1px solid #ffffff',
+    color: '#ffffff',
+    fontSize: '12px',
     outline: 'none',
+    boxSizing: 'border-box',
+    letterSpacing: '0.5px',
   };
 
   const buttonStyle: React.CSSProperties = {
@@ -188,28 +196,29 @@ export default function AmbassadorJoin() {
     border: 'none',
     fontWeight: 'bold',
     cursor: 'pointer',
-    borderRadius: '4px',
-    letterSpacing: '1px',
-    marginTop: '10px'
+    fontSize: '11px',
+    letterSpacing: '2px',
+    marginTop: '12px',
+    textTransform: 'uppercase',
   };
 
   const tabStyle = (active: boolean): React.CSSProperties => ({
     flex: 1,
-    padding: '10px',
+    padding: '10px 0',
     textAlign: 'center',
     cursor: 'pointer',
-    fontSize: '12px',
+    fontSize: '10px',
     fontWeight: 'bold',
-    letterSpacing: '1px',
-    borderBottom: active ? '2px solid #fff' : '2px solid #222',
-    color: active ? '#fff' : '#666',
+    letterSpacing: '2px',
+    borderBottom: active ? '1px solid #ffffff' : '1px solid #222222',
+    color: active ? '#ffffff' : '#555555',
     transition: 'all 0.2s ease',
   });
 
   if (loading) {
     return (
       <div style={containerStyle}>
-        <p style={{ letterSpacing: '2px', fontSize: '12px', color: '#888' }}>VERIFYING LINK...</p>
+        <p style={{ letterSpacing: '3px', fontSize: '10px', color: '#888888' }}>VERIFYING INVITATION...</p>
       </div>
     );
   }
@@ -218,8 +227,8 @@ export default function AmbassadorJoin() {
     return (
       <div style={containerStyle}>
         <div style={cardStyle}>
-          <h3 style={{ color: '#ff4d4d', marginTop: 0 }}>Access Denied</h3>
-          <p style={{ color: '#aaa', fontSize: '14px' }}>{errorMessage}</p>
+          <h3 style={{ color: '#ef4444', marginTop: 0, fontSize: '12px', letterSpacing: '2px' }}>ACCESS DENIED</h3>
+          <p style={{ color: '#888888', fontSize: '11px', letterSpacing: '0.5px' }}>{errorMessage}</p>
         </div>
       </div>
     );
@@ -229,21 +238,21 @@ export default function AmbassadorJoin() {
     return (
       <div style={containerStyle}>
         <div style={cardStyle}>
-          <h2 style={{ marginTop: 0, letterSpacing: '1px', fontSize: '20px' }}>LINK EXPIRED</h2>
-          <p style={{ color: '#888', fontSize: '13px', lineHeight: '1.5' }}>
-            This invitation link is no longer active. Request a renewal below.
+          <h2 style={{ marginTop: 0, letterSpacing: '2px', fontSize: '14px' }}>LINK EXPIRED</h2>
+          <p style={{ color: '#888888', fontSize: '11px', lineHeight: '1.6' }}>
+            This private invitation link is no longer active. You may request a renewal below.
           </p>
 
           {reissueSubmitted ? (
-            <div style={{ padding: '14px', backgroundColor: '#112211', border: '1px solid #225522', borderRadius: '4px', marginTop: '16px' }}>
-              <p style={{ margin: 0, color: '#4edf4e', fontSize: '13px' }}>
-                ✓ Renewal request sent to admin.
+            <div style={{ padding: '12px', backgroundColor: 'rgba(34, 197, 94, 0.08)', border: '1px solid rgba(34, 197, 94, 0.2)', marginTop: '20px' }}>
+              <p style={{ margin: 0, color: '#22c55e', fontSize: '10px', letterSpacing: '1px' }}>
+                ✓ RENEWAL REQUEST SENT TO ADMIN.
               </p>
             </div>
           ) : (
-            <form onSubmit={handleReissueRequest} style={{ marginTop: '20px' }}>
+            <form onSubmit={handleReissueRequest} style={{ marginTop: '24px' }}>
               <textarea
-                style={{ ...inputStyle, minHeight: '80px', resize: 'vertical' }}
+                style={{ ...inputStyle, minHeight: '70px', resize: 'vertical' }}
                 placeholder="Message for requesting new link..."
                 value={reissueMsg}
                 onChange={(e) => setReissueMsg(e.target.value)}
@@ -262,20 +271,14 @@ export default function AmbassadorJoin() {
   return (
     <div style={containerStyle}>
       <div style={cardStyle}>
-        <div style={{ textTransform: 'uppercase', fontSize: '11px', letterSpacing: '3px', color: '#888', marginBottom: '6px' }}>
-          Exclusive VIP Invitation
+        <div style={{ textTransform: 'uppercase', fontSize: '10px', letterSpacing: '3px', color: '#888888', marginBottom: '8px' }}>
+          NOMAD AMBASSADOR CIRCLE
         </div>
-        <h2 style={{ marginTop: 0, fontSize: '20px', fontWeight: '500', letterSpacing: '1px' }}>
-          WELCOME, {inviteData?.recipient_identifier}
+        <h2 style={{ marginTop: 0, fontSize: '16px', fontWeight: '700', letterSpacing: '1px', marginBottom: '24px', textTransform: 'uppercase' }}>
+          WELCOME, {inviteData?.display_name || inviteData?.recipient_identifier}
         </h2>
 
-        {inviteData?.initial_admin_message && (
-          <div style={{ padding: '12px', backgroundColor: '#141414', borderLeft: '2px solid #fff', marginBottom: '20px', fontSize: '13px', color: '#ccc' }}>
-            "{inviteData.initial_admin_message}"
-          </div>
-        )}
-
-        <div style={{ display: 'flex', marginBottom: '20px' }}>
+        <div style={{ display: 'flex', marginBottom: '24px' }}>
           <div style={tabStyle(mode === 'signup')} onClick={() => setMode('signup')}>
             NEW ACCOUNT
           </div>
@@ -285,13 +288,15 @@ export default function AmbassadorJoin() {
         </div>
 
         {errorMessage && (
-          <p style={{ color: '#ff4d4d', fontSize: '13px', marginBottom: '16px' }}>{errorMessage}</p>
+          <div style={{ fontSize: '10px', color: '#ef4444', backgroundColor: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.2)', padding: '8px 10px', marginBottom: '18px', letterSpacing: '1px' }}>
+            {errorMessage}
+          </div>
         )}
 
         <form onSubmit={handleSubmit}>
           {mode === 'signup' && (
             <>
-              <label style={{ fontSize: '11px', color: '#aaa', display: 'block', marginBottom: '6px' }}>FULL NAME</label>
+              <label style={{ fontSize: '9px', color: '#888888', display: 'block', marginBottom: '4px', letterSpacing: '1px' }}>FULL NAME</label>
               <input
                 type="text"
                 style={inputStyle}
@@ -302,7 +307,7 @@ export default function AmbassadorJoin() {
             </>
           )}
 
-          <label style={{ fontSize: '11px', color: '#aaa', display: 'block', marginBottom: '6px' }}>EMAIL ADDRESS</label>
+          <label style={{ fontSize: '9px', color: '#888888', display: 'block', marginBottom: '4px', letterSpacing: '1px' }}>EMAIL ADDRESS</label>
           <input
             type="email"
             style={inputStyle}
@@ -311,7 +316,7 @@ export default function AmbassadorJoin() {
             required
           />
 
-          <label style={{ fontSize: '11px', color: '#aaa', display: 'block', marginBottom: '6px' }}>
+          <label style={{ fontSize: '9px', color: '#888888', display: 'block', marginBottom: '4px', letterSpacing: '1px' }}>
             {mode === 'signup' ? 'CREATE PASSWORD' : 'PASSWORD'}
           </label>
           <input
@@ -324,7 +329,7 @@ export default function AmbassadorJoin() {
           />
 
           <button type="submit" disabled={submitting} style={buttonStyle}>
-            {submitting ? 'PROCESSING...' : mode === 'signup' ? 'JOIN AS AMBASSADOR' : 'UPGRADE MY ACCOUNT'}
+            {submitting ? 'PROCESSING...' : mode === 'signup' ? 'JOIN AS AMBASSADOR' : 'CLAIM MY STORE'}
           </button>
         </form>
       </div>
