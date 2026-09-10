@@ -10,12 +10,14 @@ const SendInvite: React.FC = () => {
     if (!recipientName.trim()) return;
 
     const name = recipientName.trim();
-    const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-    const token = Math.random().toString(36).substring(2, 7);
-    const generatedUrl = `https://nomadbd.vercel.app/invite/${slug}-${token}`;
+    // নামের ওপর ভিত্তি করে সরাসরি ক্লিন স্লাগ (যেমন: toha বা john-doe)
+    const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    
+    // সরাসরি ডোমেইনের পর নাম
+    const generatedUrl = `https://nomadbd.vercel.app/${slug}`;
 
-    // অফিশিয়াল প্রিমিয়াম মেসেজ টেমপ্লেট
-    const officialMessage = `OFFICIAL INVITATION | NOMAD VIP PROGRAM\n\nDear ${name},\n\nYou have been nominated to join NOMAD as an exclusive VIP Ambassador.\n\nAccess your private onboarding portal:\n${generatedUrl}\n\n(This invitation link is strictly confidential and non-transferable.)`;
+    // অফিশিয়াল প্রিমিয়াম মেসেজ
+    const officialMessage = `OFFICIAL INVITATION | NOMAD VIP PROGRAM\n\nDear ${name},\n\nYou have been nominated to join NOMAD as an exclusive VIP Ambassador.\n\nAccess your private portal:\n${generatedUrl}\n\n(This invitation is confidential and non-transferable.)`;
 
     setInviteData({
       name,
@@ -28,7 +30,6 @@ const SendInvite: React.FC = () => {
   const handleShare = async () => {
     if (!inviteData) return;
 
-    // ব্রাউজারের নেটিভ শেয়ার অপশন (WhatsApp, Email, Telegram ইত্যাদি)
     if (navigator.share) {
       try {
         await navigator.share({
@@ -36,7 +37,6 @@ const SendInvite: React.FC = () => {
           text: inviteData.message,
         });
       } catch (err) {
-        // শেয়ার ক্যান্সেল করলে বা সাপোর্ট না করলে কপির ব্যবস্থা
         handleCopy();
       }
     } else {
