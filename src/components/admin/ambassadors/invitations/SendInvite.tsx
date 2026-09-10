@@ -16,7 +16,7 @@ const SendInvite: React.FC<SendInviteProps> = ({ isOpen = true, onClose, onInvit
 
   const [loadingAction, setLoadingAction] = useState<'email' | 'whatsapp' | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  
+
   // ওয়ার্নিং ও কনফ্লিক্ট স্টেট
   const [activeConflict, setActiveConflict] = useState<{ type: 'email' | 'whatsapp'; message: string } | null>(null);
 
@@ -87,7 +87,8 @@ const SendInvite: React.FC<SendInviteProps> = ({ isOpen = true, onClose, onInvit
     // সরাসরি site/name লিংক তৈরি
     const inviteUrl = `https://nomadbd.vercel.app/${token}`;
 
-    const message = `NOMAD | OFFICIAL VIP AMBASSADOR INVITATION\n\nDear ${name},\n\nIt is our distinct privilege to officially nominate you as an Exclusive VIP Ambassador for NOMAD.\n\nPlease access your private portal to claim your credentials:\n${inviteUrl}\n\nKindly note that this private portal access remains active for ${days} days.\n\nYours sincerely,\nNOMAD Executive Office`;
+    // শর্ট, মিনিমাল ও এলিগেন্ট প্রথম মেসেজ
+    const message = `NOMAD\nAMBASSADOR INVITATION\n\nDear ${name},\n\nWe would be honored to invite you to join the NOMAD Ambassador Circle.\n\nTo review the details and decide if you would like to accept, please access your private link:\n${inviteUrl}\n\nNote: This link will remain active for ${days} days.\n\nWarm regards,\nNOMAD`;
 
     return { name, token, message, targetIdentifier };
   };
@@ -109,7 +110,7 @@ const SendInvite: React.FC<SendInviteProps> = ({ isOpen = true, onClose, onInvit
       if (!result) return;
 
       const { message, targetIdentifier } = result;
-      const subject = 'NOMAD | Official VIP Ambassador Nomination';
+      const subject = 'NOMAD | Ambassador Invitation';
 
       window.location.href = `mailto:${targetIdentifier}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message)}`;
 
