@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useCart } from '@/context/CartContext'; 
-import { SearchIcon, CartIcon, ProfileIcon } from '@/components/icons';
+import { SearchIcon, CartIcon, UserIcon } from '@/components/icons';
 
 interface HeaderProps {
   onSearchOpen: () => void;
@@ -47,20 +47,22 @@ const Header: React.FC<HeaderProps> = ({ onSearchOpen, onAuthOpen }) => {
       </div>
 
       <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+        {/* সার্চ আইকন */}
         <button 
           onClick={onSearchOpen} 
           style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
           aria-label="Search"
         >
-          <SearchIcon />
+          <SearchIcon stroke="white" />
         </button>
 
+        {/* কার্ট আইকন */}
         <button 
           onClick={() => setIsCartOpen(true)} 
           style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'block', lineHeight: 0, position: 'relative' }} 
           aria-label="Cart"
         >
-          <CartIcon />
+          <CartIcon stroke="white" />
 
           {cartItems.length > 0 && (
             <span style={{
@@ -75,12 +77,13 @@ const Header: React.FC<HeaderProps> = ({ onSearchOpen, onAuthOpen }) => {
           )}
         </button>
 
+        {/* প্রোফাইল আইকন */}
         <button 
           onClick={onAuthOpen} 
-          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'block', lineHeight: 0, color: 'white' }}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'block', lineHeight: 0 }}
           aria-label="Profile"
         >
-          <ProfileIcon className="w-6 h-6 text-white" />
+          <UserIcon stroke="white" />
         </button>
       </div>
     </header>
