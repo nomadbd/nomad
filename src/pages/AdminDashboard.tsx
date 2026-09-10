@@ -425,12 +425,12 @@ const AdminDashboard: React.FC = () => {
               </a>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                {activeTab === 'products' && (
+                {(activeTab === 'products' || activeTab === 'ambassadors') && (
                   <button
                     className={`nomad-action-btn ${isAddOpen ? 'active' : ''}`}
                     onClick={() => setIsAddOpen(!isAddOpen)}
-                    aria-label="Add Product"
-                    title="Add Product"
+                    aria-label={activeTab === 'products' ? 'Add Product' : 'Add Ambassador'}
+                    title={activeTab === 'products' ? 'Add Product' : 'Add Ambassador'}
                   >
                     <PlusIcon width={18} height={18} />
                   </button>
