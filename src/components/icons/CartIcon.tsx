@@ -5,7 +5,7 @@ interface IconProps extends React.SVGProps<SVGSVGElement> {
   color?: string;
 }
 
-const CartIcon: React.FC<IconProps> = ({ size = 24, color = 'white', ...props }) => (
+export const CartIcon: React.FC<IconProps> = ({ size = 24, color = 'white', ...props }) => (
   <svg 
     width={size} 
     height={size} 
@@ -21,5 +21,3 @@ const CartIcon: React.FC<IconProps> = ({ size = 24, color = 'white', ...props })
     <path d="M8 11V6a4 4 0 0 1 8 0v5"/>
   </svg>
 );
-
-export default CartIcon;
