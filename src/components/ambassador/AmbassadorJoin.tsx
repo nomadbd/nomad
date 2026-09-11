@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/supabaseClient';
+import { CloseButton, SendIcon } from '@/components/icons';
 
 interface AmbassadorJoinProps {
   initialInviteData: any;
@@ -33,12 +34,14 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
   const [mounted, setMounted] = useState(false);
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
 
-  // Concierge Support Overlay States
+  // Concierge Support & Chat States
   const [isConciergeOpen, setIsConciergeOpen] = useState(false);
   const [supportMsg, setSupportMsg] = useState('');
   const [customSupportEmail, setCustomSupportEmail] = useState('');
   const [isSendingSupport, setIsSendingSupport] = useState(false);
-  const [supportSentSuccess, setSupportSentSuccess] = useState(false);
+  const [messages, setMessages] = useState<any[]>([]);
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+  const chatEndRef = useRef<HTMLDivElement>(null);
 
   const rawDisplayName = inviteData?.display_name || 'GUEST';
   const headerDisplayName = rawDisplayName.toUpperCase();
@@ -115,6 +118,43 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
 
     return () => clearTimeout(timer);
   }, [email, defaultEmail]);
+
+  // Fetch Concierge Chat History
+  const fetchMessages = async () => {
+    const activeEmail = (email.trim() || defaultEmail || customSupportEmail.trim()).toLowerCase();
+    const channelId = inviteData?.token || activeEmail || 'general_inquiry';
+
+    if (!channelId && !activeEmail) return;
+
+    setIsLoadingMessages(true);
+    try {
+      const { data, error } = await supabase
+        .from('communications')
+        .select('*')
+        .or(`channel_id.eq.${channelId},sender_email.eq.${activeEmail}`)
+        .order('created_at', { ascending: true });
+
+      if (!error && data) {
+        setMessages(data);
+      }
+    } catch (err) {
+      console.error('Error fetching chat history:', err);
+    } finally {
+      setIsLoadingMessages(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isConciergeOpen) {
+      fetchMessages();
+    }
+  }, [isConciergeOpen, email, defaultEmail]);
+
+  useEffect(() => {
+    if (isConciergeOpen && messages.length > 0) {
+      chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages, isConciergeOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -206,23 +246,26 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
     const activeEmail = (email.trim() || defaultEmail || customSupportEmail.trim()).toLowerCase();
 
     try {
-      const { error } = await supabase.from('communications').insert([
-        {
-          channel_type: 'ambassador',
-          channel_id: inviteData?.token || 'general_inquiry',
-          sender_email: activeEmail,
-          sender_role: 'ambassador',
-          message: supportMsg.trim(),
-        },
-      ]);
+      const newMessagePayload = {
+        channel_type: 'ambassador',
+        channel_id: inviteData?.token || activeEmail || 'general_inquiry',
+        sender_email: activeEmail,
+        sender_role: 'ambassador',
+        message: supportMsg.trim(),
+      };
+
+      const { data, error } = await supabase
+        .from('communications')
+        .insert([newMessagePayload])
+        .select();
 
       if (!error) {
-        setSupportSentSuccess(true);
         setSupportMsg('');
-        setTimeout(() => {
-          setSupportSentSuccess(false);
-          setIsConciergeOpen(false);
-        }, 2800);
+        if (data && data.length > 0) {
+          setMessages((prev) => [...prev, data[0]]);
+        } else {
+          fetchMessages();
+        }
       }
     } catch (err) {
       console.error('Support message submission failed', err);
@@ -281,6 +324,15 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
         .underline-input::placeholder {
           color: #888888 !important;
           opacity: 1 !important;
+        }
+        .concierge-scroll::-webkit-scrollbar {
+          width: 3px;
+        }
+        .concierge-scroll::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .concierge-scroll::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.2);
         }
       `}</style>
 
@@ -424,7 +476,6 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
             </button>
           </form>
 
-          {/* পেজ-নির্দিষ্ট কাস্টম ফুটার (Dynamic Concierge Integration) */}
           <div style={footerContainerStyle}>
             <div style={footerLinksStyle}>
               <a 
@@ -448,7 +499,7 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
         </div>
       </div>
 
-      {/* Full-Screen Concierge Suite (DB Connected) */}
+      {/* Full-Screen Concierge Suite with Thread / History View */}
       {isConciergeOpen && (
         <div style={fullScreenOverlayStyle}>
           <div style={conciergeHeaderStyle}>
@@ -459,60 +510,101 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
             <button 
               type="button" 
               onClick={() => setIsConciergeOpen(false)} 
-              style={closeButtonStyle}
+              style={iconButtonStyle}
+              aria-label="Close"
             >
-              CLOSE ✕
+              <CloseButton />
             </button>
           </div>
 
           <div style={conciergeBodyStyle}>
-            {supportSentSuccess ? (
-              <div style={successStateStyle}>
-                <div style={{ fontSize: '18px', color: '#ffffff', marginBottom: '8px' }}>✓</div>
-                <div style={{ fontSize: '11px', letterSpacing: '2px', color: '#ffffff', fontWeight: 500 }}>
-                  DISPATCH TRANSMITTED
-                </div>
-                <p style={{ fontSize: '11px', color: '#888888', marginTop: '8px', lineHeight: '1.6' }}>
-                  Our private desk has received your request. A response will be dispatched directly to your channel.
-                </p>
+            <p style={{ fontSize: '11px', color: '#888888', lineHeight: '1.6', fontWeight: 300, margin: '0 0 20px 0' }}>
+              Direct communication line with NOMAD administration.
+            </p>
+
+            {/* Email field if not logged in / default email not present */}
+            {!(email || defaultEmail) && (
+              <div style={{ marginBottom: '20px' }}>
+                <input
+                  type="text"
+                  inputMode="email"
+                  className="underline-input"
+                  style={underlineInputStyle}
+                  placeholder="Your Return Email Address"
+                  value={customSupportEmail}
+                  onChange={(e) => setCustomSupportEmail(e.target.value)}
+                  required
+                />
               </div>
-            ) : (
-              <form onSubmit={handleSendSupportMessage} style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
-                <p style={{ fontSize: '12px', color: '#aaa', lineHeight: '1.7', fontWeight: 300, margin: 0 }}>
-                  Direct communication line with NOMAD administration. Enter your message below.
-                </p>
-
-                {!(email || defaultEmail) && (
-                  <div style={inputWrapperStyle}>
-                    <input
-                      type="text"
-                      inputMode="email"
-                      className="underline-input"
-                      style={underlineInputStyle}
-                      placeholder="Your Return Email Address"
-                      value={customSupportEmail}
-                      onChange={(e) => setCustomSupportEmail(e.target.value)}
-                      required
-                    />
-                  </div>
-                )}
-
-                <div style={inputWrapperStyle}>
-                  <textarea
-                    className="underline-input"
-                    style={{ ...underlineInputStyle, minHeight: '120px', resize: 'none' }}
-                    placeholder="Describe your inquiry..."
-                    value={supportMsg}
-                    onChange={(e) => setSupportMsg(e.target.value)}
-                    required
-                  />
-                </div>
-
-                <button type="submit" disabled={isSendingSupport} style={buttonStyle}>
-                  {isSendingSupport ? 'TRANSMITTING...' : 'DISPATCH MESSAGE'}
-                </button>
-              </form>
             )}
+
+            {/* Chat Thread History */}
+            <div className="concierge-scroll" style={chatContainerStyle}>
+              {isLoadingMessages ? (
+                <div style={{ fontSize: '10px', color: '#666', letterSpacing: '1px', textAlign: 'center', padding: '20px 0' }}>
+                  FETCHING HISTORY...
+                </div>
+              ) : messages.length === 0 ? (
+                <div style={{ fontSize: '11px', color: '#555', textAlign: 'center', padding: '30px 0', fontWeight: 300 }}>
+                  No previous dispatches found. Begin a new conversation below.
+                </div>
+              ) : (
+                messages.map((msg, index) => {
+                  const isAdmin = msg.sender_role === 'admin' || msg.sender_role === 'support';
+                  return (
+                    <div 
+                      key={msg.id || index} 
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: isAdmin ? 'flex-start' : 'flex-end',
+                        marginBottom: '14px'
+                      }}
+                    >
+                      <span style={{ fontSize: '8px', color: '#666', letterSpacing: '1px', marginBottom: '4px' }}>
+                        {isAdmin ? 'NOMAD DESK' : 'YOU'}
+                      </span>
+                      <div 
+                        style={{
+                          backgroundColor: isAdmin ? 'rgba(255, 255, 255, 0.08)' : '#ffffff',
+                          color: isAdmin ? '#ffffff' : '#000000',
+                          padding: '12px 16px',
+                          borderRadius: '1px',
+                          maxWidth: '85%',
+                          fontSize: '12px',
+                          lineHeight: '1.6',
+                          fontWeight: 300,
+                          wordBreak: 'break-word',
+                          borderLeft: isAdmin ? '2px solid rgba(255, 255, 255, 0.4)' : 'none',
+                        }}
+                      >
+                        {msg.message}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+              <div ref={chatEndRef} />
+            </div>
+
+            {/* Message Input Form */}
+            <form onSubmit={handleSendSupportMessage} style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={inputWrapperStyle}>
+                <textarea
+                  className="underline-input"
+                  style={{ ...underlineInputStyle, minHeight: '70px', resize: 'none' }}
+                  placeholder="Describe your inquiry..."
+                  value={supportMsg}
+                  onChange={(e) => setSupportMsg(e.target.value)}
+                  required
+                />
+              </div>
+
+              <button type="submit" disabled={isSendingSupport} style={actionButtonStyle}>
+                <span>{isSendingSupport ? 'TRANSMITTING...' : 'DISPATCH MESSAGE'}</span>
+                <SendIcon />
+              </button>
+            </form>
           </div>
         </div>
       )}
@@ -699,6 +791,25 @@ const buttonStyle: React.CSSProperties = {
   outline: 'none',
 };
 
+const actionButtonStyle: React.CSSProperties = {
+  width: '100%',
+  padding: '16px',
+  backgroundColor: '#ffffff',
+  color: '#000000',
+  border: 'none',
+  borderRadius: '1px',
+  fontWeight: 600,
+  cursor: 'pointer',
+  fontSize: '11px',
+  letterSpacing: '3px',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: '10px',
+  transition: 'background-color 0.25s ease, opacity 0.25s ease',
+  outline: 'none',
+};
+
 const statusBannerStyle = (color: string): React.CSSProperties => ({
   fontSize: '10px',
   color,
@@ -756,14 +867,13 @@ const fullScreenOverlayStyle: React.CSSProperties = {
   flexDirection: 'column',
   padding: '40px 24px',
   boxSizing: 'border-box',
-  overflowY: 'auto',
 };
 
 const conciergeHeaderStyle: React.CSSProperties = {
   display: 'flex',
   justifyContent: 'space-between',
   alignItems: 'flex-start',
-  paddingBottom: '24px',
+  paddingBottom: '20px',
   borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
 };
 
@@ -784,26 +894,34 @@ const conciergeTitleStyle: React.CSSProperties = {
   margin: 0,
 };
 
-const closeButtonStyle: React.CSSProperties = {
+const iconButtonStyle: React.CSSProperties = {
   background: 'none',
   border: 'none',
-  color: '#888888',
-  fontSize: '10px',
-  letterSpacing: '2px',
+  color: '#ffffff',
   cursor: 'pointer',
   outline: 'none',
-  padding: '4px 0',
+  padding: '4px',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
 };
 
 const conciergeBodyStyle: React.CSSProperties = {
   maxWidth: '390px',
   width: '100%',
-  margin: '40px auto 0 auto',
+  margin: '24px auto 0 auto',
+  display: 'flex',
+  flexDirection: 'column',
+  flex: 1,
+  overflow: 'hidden',
 };
 
-const successStateStyle: React.CSSProperties = {
-  textAlign: 'center',
-  padding: '40px 0',
-  border: '1px solid rgba(255, 255, 255, 0.1)',
-  backgroundColor: 'rgba(255, 255, 255, 0.01)',
+const chatContainerStyle: React.CSSProperties = {
+  flex: 1,
+  maxHeight: '320px',
+  overflowY: 'auto',
+  paddingRight: '6px',
+  marginBottom: '10px',
+  display: 'flex',
+  flexDirection: 'column',
 };
