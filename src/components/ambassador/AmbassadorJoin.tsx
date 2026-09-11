@@ -1,7 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/supabaseClient';
-
-// সঠিক Named Export ইমপোর্ট (index.ts এর মাধ্যমে)
 import { CloseIcon, SendIcon } from '@/components/icons';
 
 interface AmbassadorJoinProps {
@@ -43,7 +41,9 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
   const [isSendingSupport, setIsSendingSupport] = useState(false);
   const [messages, setMessages] = useState<any[]>([]);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+  
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const rawDisplayName = inviteData?.display_name || 'GUEST';
   const headerDisplayName = rawDisplayName.toUpperCase();
@@ -240,8 +240,8 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
     }
   };
 
-  const handleSendSupportMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSendSupportMessage = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (!supportMsg.trim() || isSendingSupport) return;
 
     setIsSendingSupport(true);
@@ -263,6 +263,9 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
 
       if (!error) {
         setSupportMsg('');
+        if (textareaRef.current) {
+          textareaRef.current.style.height = 'auto';
+        }
         if (data && data.length > 0) {
           setMessages((prev) => [...prev, data[0]]);
         } else {
@@ -335,6 +338,9 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
         }
         .concierge-scroll::-webkit-scrollbar-thumb {
           background: rgba(255, 255, 255, 0.2);
+        }
+        .chat-pill-input::placeholder {
+          color: #777777 !important;
         }
       `}</style>
 
@@ -520,12 +526,12 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
           </div>
 
           <div style={conciergeBodyStyle}>
-            <p style={{ fontSize: '11px', color: '#888888', lineHeight: '1.6', fontWeight: 300, margin: '0 0 20px 0' }}>
+            <p style={{ fontSize: '11px', color: '#888888', lineHeight: '1.6', fontWeight: 300, margin: '0 0 16px 0' }}>
               Direct communication line with NOMAD administration.
             </p>
 
             {!(email || defaultEmail) && (
-              <div style={{ marginBottom: '20px' }}>
+              <div style={{ marginBottom: '16px' }}>
                 <input
                   type="text"
                   inputMode="email"
@@ -587,23 +593,43 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
               <div ref={chatEndRef} />
             </div>
 
-            <form onSubmit={handleSendSupportMessage} style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div style={inputWrapperStyle}>
-                <textarea
-                  className="underline-input"
-                  style={{ ...underlineInputStyle, minHeight: '70px', resize: 'none' }}
-                  placeholder="Describe your inquiry..."
-                  value={supportMsg}
-                  onChange={(e) => setSupportMsg(e.target.value)}
-                  required
-                />
-              </div>
+            {/* মিনিমাল এবং পিল-শেপড মেসেজিং ইনপুট বার */}
+            <form onSubmit={handleSendSupportMessage} style={chatInputFormStyle}>
+              <textarea
+                ref={textareaRef}
+                className="chat-pill-input concierge-scroll"
+                rows={1}
+                placeholder="Type your message..."
+                value={supportMsg}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSendSupportMessage();
+                  }
+                }}
+                onChange={(e) => {
+                  setSupportMsg(e.target.value);
+                  e.target.style.height = 'auto';
+                  e.target.style.height = `${Math.min(e.target.scrollHeight, 110)}px`;
+                }}
+                style={chatPillInputStyle}
+                required
+              />
 
-              <button type="submit" disabled={isSendingSupport} style={actionButtonStyle}>
-                <span>{isSendingSupport ? 'TRANSMITTING...' : 'DISPATCH MESSAGE'}</span>
+              <button 
+                type="submit" 
+                disabled={isSendingSupport || !supportMsg.trim()} 
+                style={{
+                  ...sendIconButtonStyle,
+                  opacity: (isSendingSupport || !supportMsg.trim()) ? 0.3 : 1,
+                  cursor: (isSendingSupport || !supportMsg.trim()) ? 'not-allowed' : 'pointer',
+                }}
+                aria-label="Send Message"
+              >
                 <SendIcon />
               </button>
             </form>
+
           </div>
         </div>
       )}
@@ -790,25 +816,6 @@ const buttonStyle: React.CSSProperties = {
   outline: 'none',
 };
 
-const actionButtonStyle: React.CSSProperties = {
-  width: '100%',
-  padding: '16px',
-  backgroundColor: '#ffffff',
-  color: '#000000',
-  border: 'none',
-  borderRadius: '1px',
-  fontWeight: 600,
-  cursor: 'pointer',
-  fontSize: '11px',
-  letterSpacing: '3px',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  gap: '10px',
-  transition: 'background-color 0.25s ease, opacity 0.25s ease',
-  outline: 'none',
-};
-
 const statusBannerStyle = (color: string): React.CSSProperties => ({
   fontSize: '10px',
   color,
@@ -907,7 +914,7 @@ const iconButtonStyle: React.CSSProperties = {
 const conciergeBodyStyle: React.CSSProperties = {
   maxWidth: '390px',
   width: '100%',
-  margin: '24px auto 0 auto',
+  margin: '20px auto 0 auto',
   display: 'flex',
   flexDirection: 'column',
   flex: 1,
@@ -916,10 +923,52 @@ const conciergeBodyStyle: React.CSSProperties = {
 
 const chatContainerStyle: React.CSSProperties = {
   flex: 1,
-  maxHeight: '320px',
   overflowY: 'auto',
   paddingRight: '6px',
-  marginBottom: '10px',
+  marginBottom: '12px',
   display: 'flex',
   flexDirection: 'column',
+};
+
+// নতুন মডার্ন পিল টাইপ ইনপুট স্টাইল
+const chatInputFormStyle: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'flex-end',
+  backgroundColor: 'rgba(255, 255, 255, 0.05)',
+  border: '1px solid rgba(255, 255, 255, 0.15)',
+  borderRadius: '24px',
+  padding: '6px 8px 6px 16px',
+  gap: '8px',
+  transition: 'border-color 0.2s ease',
+};
+
+const chatPillInputStyle: React.CSSProperties = {
+  flex: 1,
+  backgroundColor: 'transparent',
+  border: 'none',
+  color: '#ffffff',
+  fontSize: '13px',
+  fontWeight: 300,
+  outline: 'none',
+  resize: 'none',
+  maxHeight: '110px',
+  lineHeight: '1.4',
+  padding: '6px 0',
+  boxSizing: 'border-box',
+};
+
+const sendIconButtonStyle: React.CSSProperties = {
+  width: '34px',
+  height: '34px',
+  borderRadius: '50%',
+  backgroundColor: '#ffffff',
+  color: '#000000',
+  border: 'none',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  flexShrink: 0,
+  transition: 'opacity 0.2s ease, transform 0.1s ease',
+  outline: 'none',
+  marginBottom: '1px',
 };
