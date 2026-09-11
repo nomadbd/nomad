@@ -5,36 +5,41 @@ import AmbassadorJoin from './AmbassadorJoin';
 import AmbassadorWorkspace from './AmbassadorWorkspace';
 
 export default function AmbassadorStore() {
-  const { token } = useParams<{ token: string }>(); // এখানে token মানেই ইউজারের দেওয়া নাম/স্ল্যাগ (যেমন: toha)
+  // App.tsx এর /:slug রাউটের সাথে সামঞ্জস্য রেখে slug রিসিভ করা হচ্ছে
+  const { slug } = useParams<{ slug: string }>();
   const [loading, setLoading] = useState(true);
   const [ambassadorData, setAmbassadorData] = useState<any>(null);
   const [currentUser, setCurrentUser] = useState<any>(null);
 
   useEffect(() => {
     async function init() {
-      if (!token) {
+      if (!slug) {
         setLoading(false);
         return;
       }
 
-      // ১. বর্তমান লগইন ইউজার চেক
+      // ১. বর্তমান লগইন ইউজার সেশন চেক
       const { data: { user } } = await supabase.auth.getUser();
       setCurrentUser(user);
 
-      // ২. নাম/টোকেন/স্ল্যাগ দিয়ে ডাটাবেজে সার্চ (সব ক্ষেত্রেই এটি মিলবে)
-      const cleanToken = token.trim().toLowerCase();
-      const { data } = await supabase
+      // ২. স্ল্যাগ বা টোকেন দিয়ে ডাটাবেজে অমিল ছাড়া সার্চ করা
+      const cleanSlug = slug.trim().toLowerCase();
+      const { data, error } = await supabase
         .from('ambassador')
         .select('*')
-        .or(`token.ilike.${cleanToken},assigned_slug.ilike.${cleanToken}`)
+        .or(`token.ilike.${cleanSlug},assigned_slug.ilike.${cleanSlug}`)
         .maybeSingle();
+
+      if (error) {
+        console.error('Error fetching ambassador data:', error);
+      }
 
       setAmbassadorData(data);
       setLoading(false);
     }
 
     init();
-  }, [token]);
+  }, [slug]);
 
   if (loading) {
     return (
@@ -58,12 +63,12 @@ export default function AmbassadorStore() {
     );
   }
 
-  // ৩. এখনো রেজিস্ট্রেশন না করে থাকলে -> অনবোর্ডিং পেজ
+  // ৩. এখনো রেজিস্ট্রেশন/অনবোর্ডিং না করে থাকলে -> জয়েন পেজ
   if (!ambassadorData.is_registered) {
     return <AmbassadorJoin initialInviteData={ambassadorData} />;
   }
 
-  // ৪. রেজিস্ট্রেশন সম্পূর্ণ থাকলে -> স্টোরফ্রন্ট / ড্যাশবোর্ড
+  // ৪. রেজিস্ট্রেশন সম্পূর্ণ থাকলে -> কাস্টমার স্টোরফ্রন্ট / ওনার ড্যাশবোর্ড
   const isOwner = currentUser?.id === ambassadorData.user_id;
 
   return (
