@@ -27,7 +27,7 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
   const displayName = (inviteData?.display_name || 'GUEST').toUpperCase();
 
   useEffect(() => {
-    const timer = setTimeout(() => setMounted(true), 50);
+    const timer = setTimeout(() => setMounted(true), 60);
     return () => clearTimeout(timer);
   }, []);
 
@@ -176,31 +176,36 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
   if (isExpired) {
     return (
       <div style={containerStyle}>
-        <div style={{ ...wrapperStyle, textAlign: 'center' }}>
-          <h2 style={{ fontSize: '14px', fontWeight: 500, letterSpacing: '4px', color: '#ef4444', margin: '0 0 16px 0' }}>
+        <div style={{ ...cardStyle, maxWidth: '420px', textAlign: 'center' }}>
+          <h2 style={{ fontSize: '18px', fontWeight: 300, letterSpacing: '3px', color: '#ef4444', margin: '0 0 12px 0' }}>
             INVITATION EXPIRED
           </h2>
           <p style={{ color: '#666', fontSize: '12px', lineHeight: '1.8', margin: 0, fontWeight: 300 }}>
-            This pass key is no longer active. Request authorization renewal below.
+            This private pass key is no longer active. Submit a request to the administrator for renewal.
           </p>
 
           {reissueSubmitted ? (
-            <div style={statusStyle('#22c55e')}>✓ RENEWAL REQUEST SUBMITTED</div>
+            <div style={statusBannerStyle('#22c55e')}>
+              ✓ RENEWAL REQUEST SENT
+            </div>
           ) : (
-            <form onSubmit={handleReissueRequest} style={{ marginTop: '32px' }}>
-              <input
-                style={{
-                  ...underlineInputStyle,
-                  borderColor: focusedInput === 'reissue' ? '#ffffff' : 'rgba(255,255,255,0.15)',
-                  marginBottom: '24px'
-                }}
-                placeholder="Reason for renewal request..."
-                value={reissueMsg}
-                onFocus={() => setFocusedInput('reissue')}
-                onBlur={() => setFocusedInput(null)}
-                onChange={(e) => setReissueMsg(e.target.value)}
-                required
-              />
+            <form onSubmit={handleReissueRequest} style={{ marginTop: '30px' }}>
+              <div style={{ position: 'relative', marginBottom: '24px' }}>
+                <textarea
+                  style={{
+                    ...underlineInputStyle,
+                    minHeight: '60px',
+                    resize: 'none',
+                    borderColor: focusedInput === 'reissue' ? '#ffffff' : 'rgba(255,255,255,0.15)'
+                  }}
+                  placeholder="Reason for renewal request..."
+                  value={reissueMsg}
+                  onFocus={() => setFocusedInput('reissue')}
+                  onBlur={() => setFocusedInput(null)}
+                  onChange={(e) => setReissueMsg(e.target.value)}
+                  required
+                />
+              </div>
               <button type="submit" disabled={submitting} style={buttonStyle}>
                 {submitting ? 'SENDING...' : 'REQUEST RENEWAL'}
               </button>
@@ -213,138 +218,151 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
 
   return (
     <div style={containerStyle}>
-      <div style={{
-        ...wrapperStyle,
-        opacity: mounted ? 1 : 0,
-        transform: mounted ? 'translateY(0)' : 'translateY(10px)',
-        transition: 'opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1)'
-      }}>
+      <div style={bgAmbientStyle} />
 
-        {/* Title Block - Clean 2-Line High Fashion Typography */}
-        <div>
-          <h1 style={titleStyle}>
-            <span style={{ color: 'rgba(255, 255, 255, 0.45)', fontWeight: 200 }}>WELCOME,</span>
+      <div style={mainContentWrapperStyle}>
+        
+        {/* Title Block - Clean Static 2-Line Typography */}
+        <div style={getFadeStyle(mounted, 0)}>
+          <h1 style={welcomeTitleStyle}>
+            WELCOME,
             <br />
-            <span style={{ color: '#ffffff', fontWeight: 400 }}>{displayName}</span>
+            <span style={nameSpanStyle}>{displayName}</span>
           </h1>
 
           <p style={descriptionStyle}>
-            Exclusive authorization to represent NOMAD and curate selected allocations.
+            You have been granted exclusive access to curate selected allocations and represent NOMAD.
           </p>
         </div>
 
-        {/* Benefit Items */}
-        <div style={benefitsStyle}>
-          <div style={benefitItemStyle}>
-            <span style={numberStyle}>01</span>
-            <div>
-              <div style={benefitTitleStyle}>CURATED ALLOCATION</div>
-              <p style={benefitDescStyle}>Access designated high-margin drops for your private storefront.</p>
-            </div>
+        {/* Benefits Grid */}
+        <div style={benefitsGridStyle}>
+          <div style={{ ...benefitCardStyle, ...getFadeStyle(mounted, 150) }}>
+            <span style={benefitNumberStyle}>01</span>
+            <div style={benefitTitleStyle}>CURATED ALLOCATION</div>
+            <p style={benefitDescStyle}>Select products from our high-tier ambassador allocation to feature in your private gallery.</p>
           </div>
 
-          <div style={benefitItemStyle}>
-            <span style={numberStyle}>02</span>
-            <div>
-              <div style={benefitTitleStyle}>AUTOMATED PAYOUTS</div>
-              <p style={benefitDescStyle}>Real-time order attribution and direct settlement reporting.</p>
-            </div>
+          <div style={{ ...benefitCardStyle, ...getFadeStyle(mounted, 300) }}>
+            <span style={benefitNumberStyle}>02</span>
+            <div style={benefitTitleStyle}>AUTOMATED COMMISSIONS</div>
+            <p style={benefitDescStyle}>Real-time performance metrics and automated payout tracking for every sales conversion.</p>
           </div>
 
-          <div style={benefitItemStyle}>
-            <span style={numberStyle}>03</span>
-            <div>
-              <div style={benefitTitleStyle}>PRIVÉ ACCESS</div>
-              <p style={benefitDescStyle}>Bespoke tracking links and early access to archival releases.</p>
-            </div>
+          <div style={{ ...benefitCardStyle, ...getFadeStyle(mounted, 450) }}>
+            <span style={benefitNumberStyle}>03</span>
+            <div style={benefitTitleStyle}>PRIVÉ PRIVILEGES</div>
+            <p style={benefitDescStyle}>Bespoke invitation links, early release access, and direct portal management.</p>
           </div>
         </div>
 
-        {/* Minimal Form */}
-        <div>
-          <div style={tabHeaderStyle}>
+        {/* Interactive Form */}
+        <div style={{ ...cardStyle, ...getFadeStyle(mounted, 600) }}>
+          <div style={tabContainerStyle}>
             <button 
               type="button" 
-              style={tabStyle(mode === 'signup')} 
+              style={tabButtonStyle(mode === 'signup')} 
               onClick={() => setMode('signup')}
             >
               SIGN UP
             </button>
             <button 
               type="button" 
-              style={tabStyle(mode === 'login')} 
+              style={tabButtonStyle(mode === 'login')} 
               onClick={() => setMode('login')}
             >
               LOG IN
             </button>
           </div>
 
-          {isCheckingEmail && <div style={statusStyle('#3b82f6')}>VERIFYING...</div>}
-          {!isCheckingEmail && accountFound === true && <div style={statusStyle('#22c55e')}>✓ ACCOUNT DETECTED</div>}
-          {errorMessage && <div style={statusStyle('#ef4444')}>{errorMessage}</div>}
+          {/* Reserved Height Status Area to avoid vertical jumps */}
+          <div style={statusContainerStyle}>
+            {isCheckingEmail && <span style={{ color: '#3b82f6' }}>VERIFYING ACCOUNT...</span>}
+            {!isCheckingEmail && accountFound === true && <span style={{ color: '#22c55e' }}>✓ EXISTING ACCOUNT DETECTED</span>}
+            {errorMessage && <span style={{ color: '#ef4444' }}>{errorMessage}</span>}
+          </div>
 
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            {mode === 'signup' && (
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            
+            {/* Smoothly Collapsible Full Name Field */}
+            <div style={{
+              maxHeight: mode === 'signup' ? '65px' : '0px',
+              opacity: mode === 'signup' ? 1 : 0,
+              overflow: 'hidden',
+              transition: 'max-height 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease',
+              pointerEvents: mode === 'signup' ? 'auto' : 'none',
+            }}>
+              <div style={inputWrapperStyle}>
+                <input 
+                  type="text" 
+                  style={{
+                    ...underlineInputStyle,
+                    borderColor: focusedInput === 'fullName' ? '#ffffff' : 'rgba(255, 255, 255, 0.15)',
+                  }} 
+                  value={fullName} 
+                  onFocus={() => setFocusedInput('fullName')}
+                  onBlur={() => setFocusedInput(null)}
+                  onChange={(e) => setFullName(e.target.value)} 
+                  placeholder="Full Name"
+                  required={mode === 'signup'}
+                />
+              </div>
+            </div>
+
+            <div style={inputWrapperStyle}>
               <input 
-                type="text" 
+                type="email" 
                 style={{
                   ...underlineInputStyle,
-                  borderColor: focusedInput === 'fullName' ? '#ffffff' : 'rgba(255, 255, 255, 0.15)',
+                  borderColor: focusedInput === 'email' ? '#ffffff' : 'rgba(255, 255, 255, 0.15)',
                 }} 
-                value={fullName} 
-                onFocus={() => setFocusedInput('fullName')}
+                value={email} 
+                onFocus={() => setFocusedInput('email')}
                 onBlur={() => setFocusedInput(null)}
-                onChange={(e) => setFullName(e.target.value)} 
-                placeholder="Full Name"
+                onChange={(e) => setEmail(e.target.value)} 
+                placeholder="Email Address"
                 required 
               />
-            )}
+            </div>
 
-            <input 
-              type="email" 
-              style={{
-                ...underlineInputStyle,
-                borderColor: focusedInput === 'email' ? '#ffffff' : 'rgba(255, 255, 255, 0.15)',
-              }} 
-              value={email} 
-              onFocus={() => setFocusedInput('email')}
-              onBlur={() => setFocusedInput(null)}
-              onChange={(e) => setEmail(e.target.value)} 
-              placeholder="Email Address"
-              required 
-            />
-
-            <input 
-              type="password" 
-              style={{
-                ...underlineInputStyle,
-                borderColor: focusedInput === 'password' ? '#ffffff' : 'rgba(255, 255, 255, 0.15)',
-              }} 
-              value={password} 
-              onFocus={() => setFocusedInput('password')}
-              onBlur={() => setFocusedInput(null)}
-              onChange={(e) => setPassword(e.target.value)} 
-              placeholder={mode === 'signup' ? 'Create Password' : 'Password'}
-              required 
-              minLength={6} 
-            />
+            <div style={inputWrapperStyle}>
+              <input 
+                type="password" 
+                style={{
+                  ...underlineInputStyle,
+                  borderColor: focusedInput === 'password' ? '#ffffff' : 'rgba(255, 255, 255, 0.15)',
+                }} 
+                value={password} 
+                onFocus={() => setFocusedInput('password')}
+                onBlur={() => setFocusedInput(null)}
+                onChange={(e) => setPassword(e.target.value)} 
+                placeholder={mode === 'signup' ? 'Create Password' : 'Password'}
+                required 
+                minLength={6} 
+              />
+            </div>
 
             <button type="submit" disabled={submitting || isCheckingEmail} style={buttonStyle}>
               {submitting 
                 ? 'PROCESSING...' 
                 : mode === 'signup' 
                   ? 'JOIN AMBASSADOR CIRCLE' 
-                  : 'ENTER PRIVÉ PORTAL'}
+                  : 'ENTER PRIVÉ DASHBOARD'}
             </button>
           </form>
         </div>
-
       </div>
     </div>
   );
 }
 
 // ---------------- STYLES ----------------
+
+const getFadeStyle = (mounted: boolean, delayMs: number): React.CSSProperties => ({
+  opacity: mounted ? 1 : 0,
+  transform: mounted ? 'translateY(0)' : 'translateY(14px)',
+  transition: `opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1) ${delayMs}ms, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1) ${delayMs}ms`,
+});
 
 const containerStyle: React.CSSProperties = {
   minHeight: '100vh',
@@ -353,95 +371,140 @@ const containerStyle: React.CSSProperties = {
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  padding: '60px 24px',
-  fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif',
+  padding: '60px 20px',
+  fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif',
   boxSizing: 'border-box',
+  position: 'relative',
+  overflow: 'hidden',
 };
 
-const wrapperStyle: React.CSSProperties = {
+const bgAmbientStyle: React.CSSProperties = {
+  position: 'absolute',
+  top: '25%',
+  left: '50%',
+  transform: 'translate(-50%, -50%)',
+  width: '380px',
+  height: '380px',
+  background: 'radial-gradient(circle, rgba(255, 255, 255, 0.04) 0%, rgba(0, 0, 0, 0) 75%)',
+  pointerEvents: 'none',
+  zIndex: 0,
+};
+
+const mainContentWrapperStyle: React.CSSProperties = {
   width: '100%',
-  maxWidth: '360px',
+  maxWidth: '390px',
   display: 'flex',
   flexDirection: 'column',
-  gap: '40px',
+  gap: '32px',
+  position: 'relative',
+  zIndex: 1,
 };
 
-const titleStyle: React.CSSProperties = {
-  fontSize: '26px',
+const welcomeTitleStyle: React.CSSProperties = {
+  fontSize: '28px',
+  fontWeight: 200,
+  letterSpacing: '5px',
+  margin: '0 0 14px 0',
+  lineHeight: '1.25',
+  color: '#888888',
+};
+
+const nameSpanStyle: React.CSSProperties = {
+  color: '#ffffff',
+  fontWeight: 400,
   letterSpacing: '4px',
-  margin: '0 0 12px 0',
-  lineHeight: '1.3',
-  fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif',
 };
 
 const descriptionStyle: React.CSSProperties = {
   fontSize: '12px',
-  color: '#777777',
+  color: '#666666',
   lineHeight: '1.7',
   margin: 0,
   fontWeight: 300,
-  letterSpacing: '0.2px',
+  letterSpacing: '0.3px',
 };
 
-const benefitsStyle: React.CSSProperties = {
+const benefitsGridStyle: React.CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
-  gap: '20px',
-  padding: '8px 0',
+  gap: '10px',
 };
 
-const benefitItemStyle: React.CSSProperties = {
-  display: 'flex',
-  gap: '16px',
-  alignItems: 'flex-start',
+const benefitCardStyle: React.CSSProperties = {
+  backgroundColor: 'rgba(255, 255, 255, 0.015)',
+  borderLeft: '1px solid rgba(255, 255, 255, 0.2)',
+  padding: '14px 18px',
 };
 
-const numberStyle: React.CSSProperties = {
-  fontSize: '10px',
-  fontWeight: 500,
+const benefitNumberStyle: React.CSSProperties = {
+  fontSize: '9px',
+  fontWeight: 600,
   color: '#444444',
-  letterSpacing: '1px',
-  paddingTop: '2px',
+  letterSpacing: '2px',
+  display: 'block',
+  marginBottom: '4px',
 };
 
 const benefitTitleStyle: React.CSSProperties = {
-  fontSize: '11px',
+  fontSize: '10px',
   fontWeight: 600,
   letterSpacing: '2px',
   color: '#ffffff',
-  marginBottom: '3px',
+  marginBottom: '4px',
 };
 
 const benefitDescStyle: React.CSSProperties = {
   fontSize: '11px',
-  color: '#666666',
+  color: '#777777',
   margin: 0,
-  lineHeight: '1.5',
+  lineHeight: '1.6',
   fontWeight: 300,
 };
 
-const tabHeaderStyle: React.CSSProperties = {
-  display: 'flex',
-  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-  marginBottom: '28px',
+const cardStyle: React.CSSProperties = {
+  width: '100%',
+  boxSizing: 'border-box',
 };
 
-const tabStyle = (active: boolean): React.CSSProperties => ({
+const tabContainerStyle: React.CSSProperties = {
+  display: 'flex',
+  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+  marginBottom: '16px',
+};
+
+const tabButtonStyle = (active: boolean): React.CSSProperties => ({
   flex: 1,
-  padding: '10px 0',
+  padding: '12px 0',
   textAlign: 'center',
   cursor: 'pointer',
   fontSize: '10px',
   fontWeight: 600,
   letterSpacing: '2.5px',
-  color: active ? '#ffffff' : '#444444',
+  color: active ? '#ffffff' : '#333333',
   backgroundColor: 'transparent',
   border: 'none',
-  borderBottom: active ? '1px solid #ffffff' : '1px solid transparent',
+  borderBottom: active ? '1.5px solid #ffffff' : '1.5px solid transparent',
   marginBottom: '-1px',
-  transition: 'color 0.2s ease, border-color 0.2s ease',
+  transition: 'color 0.25s ease, border-color 0.25s ease',
   outline: 'none',
 });
+
+const statusContainerStyle: React.CSSProperties = {
+  minHeight: '22px',
+  fontSize: '10px',
+  letterSpacing: '1.5px',
+  fontWeight: 500,
+  textAlign: 'center',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  marginBottom: '12px',
+};
+
+const inputWrapperStyle: React.CSSProperties = {
+  position: 'relative',
+  width: '100%',
+};
 
 const underlineInputStyle: React.CSSProperties = {
   width: '100%',
@@ -455,7 +518,7 @@ const underlineInputStyle: React.CSSProperties = {
   letterSpacing: '0.5px',
   outline: 'none',
   boxSizing: 'border-box',
-  transition: 'border-color 0.25s ease',
+  transition: 'border-color 0.3s ease',
 };
 
 const buttonStyle: React.CSSProperties = {
@@ -464,7 +527,7 @@ const buttonStyle: React.CSSProperties = {
   backgroundColor: '#ffffff',
   color: '#000000',
   border: 'none',
-  borderRadius: '0px',
+  borderRadius: '2px',
   fontWeight: 600,
   cursor: 'pointer',
   fontSize: '10px',
@@ -473,10 +536,11 @@ const buttonStyle: React.CSSProperties = {
   transition: 'opacity 0.2s ease',
 };
 
-const statusStyle = (color: string): React.CSSProperties => ({
+const statusBannerStyle = (color: string): React.CSSProperties => ({
   fontSize: '10px',
   color,
   letterSpacing: '1.5px',
   fontWeight: 500,
-  marginBottom: '20px',
+  textAlign: 'center',
+  marginTop: '20px',
 });
