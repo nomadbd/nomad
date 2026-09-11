@@ -41,9 +41,6 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
   const [isSendingSupport, setIsSendingSupport] = useState(false);
   const [messages, setMessages] = useState<any[]>([]);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
-  
-  // Dynamic Viewport Height for Mobile Keyboards
-  const [viewportHeight, setViewportHeight] = useState<number | null>(null);
 
   const chatEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -66,50 +63,6 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
     const timer = setTimeout(() => setMounted(true), 60);
     return () => clearTimeout(timer);
   }, []);
-
-  // Lock background scroll and handle visual viewport for mobile keyboard
-  useEffect(() => {
-    if (!isConciergeOpen) return;
-
-    // Lock background page scroll
-    const originalOverflow = document.body.style.overflow;
-    const originalPosition = document.body.style.position;
-    const originalWidth = document.body.style.width;
-    
-    document.body.style.overflow = 'hidden';
-    document.body.style.position = 'fixed';
-    document.body.style.width = '100%';
-
-    const updateViewportHeight = () => {
-      if (window.visualViewport) {
-        setViewportHeight(window.visualViewport.height);
-      } else {
-        setViewportHeight(window.innerHeight);
-      }
-    };
-
-    updateViewportHeight();
-
-    if (window.visualViewport) {
-      window.visualViewport.addEventListener('resize', updateViewportHeight);
-      window.visualViewport.addEventListener('scroll', updateViewportHeight);
-    } else {
-      window.addEventListener('resize', updateViewportHeight);
-    }
-
-    return () => {
-      document.body.style.overflow = originalOverflow;
-      document.body.style.position = originalPosition;
-      document.body.style.width = originalWidth;
-
-      if (window.visualViewport) {
-        window.visualViewport.removeEventListener('resize', updateViewportHeight);
-        window.visualViewport.removeEventListener('scroll', updateViewportHeight);
-      } else {
-        window.removeEventListener('resize', updateViewportHeight);
-      }
-    };
-  }, [isConciergeOpen]);
 
   const checkEmailExistence = async (emailToCheck: string) => {
     const cleanEmail = emailToCheck.trim().toLowerCase();
@@ -194,13 +147,11 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
   };
 
   useEffect(() => {
-    if (isConciergeOpen) {
-      fetchMessages();
-    }
-  }, [isConciergeOpen, email, defaultEmail]);
+    fetchMessages();
+  }, [email, defaultEmail]);
 
   useEffect(() => {
-    if (isConciergeOpen && messages.length > 0) {
+    if ((isConciergeOpen || messages.length > 0) && messages.length > 0) {
       chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages, isConciergeOpen]);
@@ -370,6 +321,8 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
     );
   }
 
+  const showInlineChat = isConciergeOpen || messages.length > 0;
+
   return (
     <div style={containerStyle}>
       <style>{`
@@ -531,157 +484,147 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
             </button>
           </form>
 
-          <div style={footerContainerStyle}>
-            <div style={footerLinksStyle}>
-              <a 
-                href="#concierge" 
-                onClick={(e) => {
-                  e.preventDefault();
-                  setIsConciergeOpen(true);
-                }} 
-                style={footerLinkStyle}
-              >
-                CONCIERGE SUPPORT
-              </a>
-              <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '9px' }}>•</span>
-              <a href="/privacy" style={footerLinkStyle}>PRIVACY POLICY</a>
-              <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '9px' }}>•</span>
-              <a href="/terms" style={footerLinkStyle}>TERMS</a>
+          {/* Dynamic Footer Area: Shows Links if no message, Inline Chat if messaged */}
+          {!showInlineChat ? (
+            <div style={footerContainerStyle}>
+              <div style={footerLinksStyle}>
+                <button 
+                  type="button" 
+                  onClick={() => setIsConciergeOpen(true)} 
+                  style={footerLinkButtonStyle}
+                >
+                  CONCIERGE SUPPORT
+                </button>
+                <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '9px' }}>•</span>
+                <a href="/privacy" style={footerLinkStyle}>PRIVACY POLICY</a>
+                <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '9px' }}>•</span>
+                <a href="/terms" style={footerLinkStyle}>TERMS</a>
+              </div>
+              <p style={copyrightStyle}>© 2026 NOMAD. ALL RIGHTS RESERVED.</p>
             </div>
-            <p style={copyrightStyle}>© 2026 NOMAD. ALL RIGHTS RESERVED.</p>
-          </div>
+          ) : (
+            <div style={inlineChatWrapperStyle}>
+              <div style={inlineChatHeaderStyle}>
+                <div>
+                  <span style={conciergeTagStyle}>PRIVATE DESK</span>
+                  <h3 style={conciergeTitleStyle}>NOMAD CONCIERGE</h3>
+                </div>
+                {messages.length === 0 && (
+                  <button 
+                    type="button" 
+                    onClick={() => setIsConciergeOpen(false)} 
+                    style={iconButtonStyle}
+                    aria-label="Close Chat"
+                  >
+                    <CloseIcon />
+                  </button>
+                )}
+              </div>
+
+              {!(email || defaultEmail) && (
+                <div style={{ marginBottom: '12px' }}>
+                  <input
+                    type="text"
+                    inputMode="email"
+                    className="underline-input"
+                    style={underlineInputStyle}
+                    placeholder="Your Return Email Address"
+                    value={customSupportEmail}
+                    onChange={(e) => setCustomSupportEmail(e.target.value)}
+                    required
+                  />
+                </div>
+              )}
+
+              <div className="concierge-scroll" style={inlineChatMessagesStyle}>
+                {isLoadingMessages ? (
+                  <div style={{ fontSize: '10px', color: '#666', letterSpacing: '1px', textAlign: 'center', padding: '15px 0' }}>
+                    FETCHING HISTORY...
+                  </div>
+                ) : messages.length === 0 ? (
+                  <div style={{ fontSize: '11px', color: '#666', textAlign: 'center', padding: '15px 0', fontWeight: 300 }}>
+                    Direct communication line with NOMAD administration. Type below to start.
+                  </div>
+                ) : (
+                  messages.map((msg, index) => {
+                    const isAdmin = msg.sender_role === 'admin' || msg.sender_role === 'support';
+                    return (
+                      <div 
+                        key={msg.id || index} 
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: isAdmin ? 'flex-start' : 'flex-end',
+                          marginBottom: '10px'
+                        }}
+                      >
+                        <span style={{ fontSize: '8px', color: '#666', letterSpacing: '1px', marginBottom: '3px', textTransform: 'uppercase' }}>
+                          {isAdmin ? 'NOMAD DESK' : 'YOU'}
+                        </span>
+                        <div 
+                          style={{
+                            backgroundColor: isAdmin ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.12)',
+                            color: '#ffffff',
+                            padding: '10px 14px',
+                            borderRadius: isAdmin ? '14px 14px 14px 2px' : '14px 14px 2px 14px',
+                            border: isAdmin ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid rgba(255, 255, 255, 0.18)',
+                            maxWidth: '85%',
+                            fontSize: '12px',
+                            lineHeight: '1.5',
+                            fontWeight: 300,
+                            wordBreak: 'break-word',
+                            whiteSpace: 'pre-wrap',
+                          }}
+                        >
+                          {msg.message}
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+                <div ref={chatEndRef} />
+              </div>
+
+              <form onSubmit={handleSendSupportMessage} style={chatInputFormStyle}>
+                <textarea
+                  ref={textareaRef}
+                  className="chat-pill-input concierge-scroll"
+                  rows={1}
+                  placeholder="Type your message..."
+                  value={supportMsg}
+                  onChange={(e) => {
+                    setSupportMsg(e.target.value);
+                    e.target.style.height = 'auto';
+                    e.target.style.height = `${Math.min(e.target.scrollHeight, 100)}px`;
+                  }}
+                  style={chatPillInputStyle}
+                  required
+                />
+
+                <button 
+                  type="submit" 
+                  disabled={isSendingSupport || !supportMsg.trim()} 
+                  style={{
+                    ...sendIconButtonStyle,
+                    opacity: (isSendingSupport || !supportMsg.trim()) ? 0.25 : 1,
+                    cursor: (isSendingSupport || !supportMsg.trim()) ? 'not-allowed' : 'pointer',
+                    backgroundColor: supportMsg.trim() ? '#ffffff' : 'rgba(255, 255, 255, 0.1)',
+                    color: supportMsg.trim() ? '#000000' : '#ffffff',
+                  }}
+                  aria-label="Send Message"
+                >
+                  <SendIcon />
+                </button>
+              </form>
+
+              <div style={{ marginTop: '20px', textAlign: 'center' }}>
+                <p style={copyrightStyle}>© 2026 NOMAD. ALL RIGHTS RESERVED.</p>
+              </div>
+            </div>
+          )}
 
         </div>
       </div>
-
-      {/* Locked Full-Screen Concierge Suite */}
-      {isConciergeOpen && (
-        <div style={getConciergeOverlayStyle(viewportHeight)}>
-          <div style={conciergeHeaderStyle}>
-            <div>
-              <span style={conciergeTagStyle}>PRIVATE DESK</span>
-              <h2 style={conciergeTitleStyle}>NOMAD CONCIERGE</h2>
-            </div>
-            <button 
-              type="button" 
-              onClick={() => setIsConciergeOpen(false)} 
-              style={iconButtonStyle}
-              aria-label="Close"
-            >
-              <CloseIcon />
-            </button>
-          </div>
-
-          <div style={conciergeBodyStyle}>
-            <p style={{ fontSize: '11px', color: '#888888', lineHeight: '1.6', fontWeight: 300, margin: '0 0 12px 0' }}>
-              Direct communication line with NOMAD administration.
-            </p>
-
-            {!(email || defaultEmail) && (
-              <div style={{ marginBottom: '14px' }}>
-                <input
-                  type="text"
-                  inputMode="email"
-                  className="underline-input"
-                  style={underlineInputStyle}
-                  placeholder="Your Return Email Address"
-                  value={customSupportEmail}
-                  onChange={(e) => setCustomSupportEmail(e.target.value)}
-                  required
-                />
-              </div>
-            )}
-
-            <div className="concierge-scroll" style={chatContainerStyle}>
-              {isLoadingMessages ? (
-                <div style={{ fontSize: '10px', color: '#666', letterSpacing: '1px', textAlign: 'center', padding: '20px 0' }}>
-                  FETCHING HISTORY...
-                </div>
-              ) : messages.length === 0 ? (
-                <div style={{ fontSize: '11px', color: '#555', textAlign: 'center', padding: '30px 0', fontWeight: 300 }}>
-                  No previous dispatches found. Begin a new conversation below.
-                </div>
-              ) : (
-                messages.map((msg, index) => {
-                  const isAdmin = msg.sender_role === 'admin' || msg.sender_role === 'support';
-                  return (
-                    <div 
-                      key={msg.id || index} 
-                      style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: isAdmin ? 'flex-start' : 'flex-end',
-                        marginBottom: '12px'
-                      }}
-                    >
-                      <span style={{ fontSize: '8px', color: '#666', letterSpacing: '1px', marginBottom: '4px', textTransform: 'uppercase' }}>
-                        {isAdmin ? 'NOMAD DESK' : 'YOU'}
-                      </span>
-                      <div 
-                        style={{
-                          backgroundColor: isAdmin ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.14)',
-                          color: '#ffffff',
-                          padding: '10px 14px',
-                          borderRadius: isAdmin ? '14px 14px 14px 2px' : '14px 14px 2px 14px',
-                          border: isAdmin ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid rgba(255, 255, 255, 0.2)',
-                          maxWidth: '82%',
-                          fontSize: '13px',
-                          lineHeight: '1.5',
-                          fontWeight: 300,
-                          wordBreak: 'break-word',
-                          whiteSpace: 'pre-wrap',
-                          backdropFilter: 'blur(10px)',
-                        }}
-                      >
-                        {msg.message}
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-              <div ref={chatEndRef} />
-            </div>
-
-            <form onSubmit={handleSendSupportMessage} style={chatInputFormStyle}>
-              <textarea
-                ref={textareaRef}
-                className="chat-pill-input concierge-scroll"
-                rows={1}
-                placeholder="Type your message..."
-                value={supportMsg}
-                onFocus={() => {
-                  setTimeout(() => {
-                    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-                  }, 200);
-                }}
-                onChange={(e) => {
-                  setSupportMsg(e.target.value);
-                  e.target.style.height = 'auto';
-                  e.target.style.height = `${Math.min(e.target.scrollHeight, 100)}px`;
-                }}
-                style={chatPillInputStyle}
-                required
-              />
-
-              <button 
-                type="submit" 
-                disabled={isSendingSupport || !supportMsg.trim()} 
-                style={{
-                  ...sendIconButtonStyle,
-                  opacity: (isSendingSupport || !supportMsg.trim()) ? 0.25 : 1,
-                  cursor: (isSendingSupport || !supportMsg.trim()) ? 'not-allowed' : 'pointer',
-                  backgroundColor: supportMsg.trim() ? '#ffffff' : 'rgba(255, 255, 255, 0.1)',
-                  color: supportMsg.trim() ? '#000000' : '#ffffff',
-                }}
-                aria-label="Send Message"
-              >
-                <SendIcon />
-              </button>
-            </form>
-
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -703,7 +646,6 @@ const containerStyle: React.CSSProperties = {
   fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif',
   boxSizing: 'border-box',
   position: 'relative',
-  overflow: 'hidden',
 };
 
 const bgAmbientStyle: React.CSSProperties = {
@@ -901,6 +843,14 @@ const footerLinkStyle: React.CSSProperties = {
   transition: 'color 0.2s ease',
 };
 
+const footerLinkButtonStyle: React.CSSProperties = {
+  ...footerLinkStyle,
+  background: 'none',
+  border: 'none',
+  cursor: 'pointer',
+  padding: 0,
+};
+
 const copyrightStyle: React.CSSProperties = {
   color: '#555555',
   fontSize: '8px',
@@ -909,33 +859,23 @@ const copyrightStyle: React.CSSProperties = {
   fontWeight: 300,
 };
 
-const getConciergeOverlayStyle = (vh: number | null): React.CSSProperties => ({
-  position: 'fixed',
-  top: 0,
-  left: 0,
-  right: 0,
-  bottom: 0,
-  height: vh ? `${vh}px` : '100dvh',
-  backgroundColor: '#000000',
-  zIndex: 99999,
+const inlineChatWrapperStyle: React.CSSProperties = {
+  marginTop: '35px',
+  paddingTop: '20px',
+  borderTop: '1px solid rgba(255, 255, 255, 0.12)',
   display: 'flex',
   flexDirection: 'column',
-  padding: '20px 20px 10px 20px',
-  boxSizing: 'border-box',
-  overflow: 'hidden',
-});
+  gap: '12px',
+};
 
-const conciergeHeaderStyle: React.CSSProperties = {
+const inlineChatHeaderStyle: React.CSSProperties = {
   display: 'flex',
   justifyContent: 'space-between',
-  alignItems: 'flex-start',
-  paddingBottom: '12px',
-  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-  flexShrink: 0,
+  alignItems: 'center',
 };
 
 const conciergeTagStyle: React.CSSProperties = {
-  fontSize: '9px',
+  fontSize: '8px',
   letterSpacing: '2.5px',
   color: '#666666',
   fontWeight: 600,
@@ -944,7 +884,7 @@ const conciergeTagStyle: React.CSSProperties = {
 };
 
 const conciergeTitleStyle: React.CSSProperties = {
-  fontSize: '15px',
+  fontSize: '13px',
   letterSpacing: '3px',
   fontWeight: 300,
   color: '#ffffff',
@@ -963,25 +903,13 @@ const iconButtonStyle: React.CSSProperties = {
   justifyContent: 'center',
 };
 
-const conciergeBodyStyle: React.CSSProperties = {
-  maxWidth: '390px',
-  width: '100%',
-  margin: '10px auto 0 auto',
-  display: 'flex',
-  flexDirection: 'column',
-  flex: 1,
-  overflow: 'hidden',
-  minHeight: 0,
-};
-
-const chatContainerStyle: React.CSSProperties = {
-  flex: 1,
+const inlineChatMessagesStyle: React.CSSProperties = {
+  maxHeight: '260px',
   overflowY: 'auto',
   paddingRight: '4px',
-  marginBottom: '10px',
   display: 'flex',
   flexDirection: 'column',
-  minHeight: 0,
+  gap: '4px',
 };
 
 const chatInputFormStyle: React.CSSProperties = {
@@ -992,7 +920,7 @@ const chatInputFormStyle: React.CSSProperties = {
   borderRadius: '28px',
   padding: '4px 6px 4px 16px',
   gap: '8px',
-  flexShrink: 0,
+  marginTop: '6px',
 };
 
 const chatPillInputStyle: React.CSSProperties = {
