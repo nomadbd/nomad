@@ -5,6 +5,7 @@ interface AmbassadorJoinProps {
   initialInviteData: any;
 }
 
+// Helper to convert names to Proper Title Case
 const toTitleCase = (str: string) => {
   if (!str) return '';
   return str
@@ -37,11 +38,8 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
   const headerDisplayName = rawDisplayName.toUpperCase();
   const defaultTitleName = toTitleCase(rawDisplayName);
 
-  // কমিশন ও ডিসকাউন্ট ডাটা (প্রয়োজনে ডায়নামিক করা যাবে)
-  const commissionRate = inviteData?.commission_rate || '15%';
-  const guestDiscount = inviteData?.guest_discount || '10%';
-
   useEffect(() => {
+    // সব উপাদানকে একদম একই ফ্রেম থেকে একসাথে অ্যানিমেট করার জন্য
     const timer = setTimeout(() => setMounted(true), 60);
     return () => clearTimeout(timer);
   }, []);
@@ -190,11 +188,11 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
   if (isExpired) {
     return (
       <div style={containerStyle}>
-        <div style={{ ...cardStyle, maxWidth: '400px', textAlign: 'center' }}>
-          <h2 style={{ fontSize: '16px', fontWeight: 300, letterSpacing: '3px', color: '#ef4444', margin: '0 0 12px 0' }}>
+        <div style={{ ...cardStyle, maxWidth: '420px', textAlign: 'center' }}>
+          <h2 style={{ fontSize: '18px', fontWeight: 300, letterSpacing: '3px', color: '#ef4444', margin: '0 0 12px 0' }}>
             INVITATION EXPIRED
           </h2>
-          <p style={{ color: '#666', fontSize: '12px', lineHeight: '1.7', margin: 0, fontWeight: 300 }}>
+          <p style={{ color: '#666', fontSize: '12px', lineHeight: '1.8', margin: 0, fontWeight: 300 }}>
             This private pass key is no longer active. Submit a request to the administrator for renewal.
           </p>
 
@@ -203,8 +201,8 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
               ✓ RENEWAL REQUEST SENT
             </div>
           ) : (
-            <form onSubmit={handleReissueRequest} style={{ marginTop: '24px' }}>
-              <div style={{ position: 'relative', marginBottom: '20px' }}>
+            <form onSubmit={handleReissueRequest} style={{ marginTop: '30px' }}>
+              <div style={{ position: 'relative', marginBottom: '24px' }}>
                 <textarea
                   style={{
                     ...underlineInputStyle,
@@ -236,7 +234,7 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
 
       <div style={mainContentWrapperStyle}>
         
-        {/* Title Block */}
+        {/* Title Block - Floats Up Together */}
         <div style={getFadeStyle(mounted)}>
           <h1 style={welcomeTitleStyle}>
             WELCOME,
@@ -249,34 +247,28 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
           </p>
         </div>
 
-        {/* Clean Minimal Benefits & Privileges Block */}
+        {/* Benefits Grid - Floats Up Together */}
         <div style={{ ...benefitsGridStyle, ...getFadeStyle(mounted) }}>
           <div style={benefitCardStyle}>
-            <div style={benefitHeaderRowStyle}>
-              <span style={benefitTitleStyle}>CURATED ALLOCATION</span>
-              <span style={benefitTagStyle}>PRIVATE GALLERY</span>
-            </div>
-            <p style={benefitDescStyle}>Select products from our high-tier ambassador allocation to feature in your personal portfolio.</p>
+            <span style={benefitNumberStyle}>01</span>
+            <div style={benefitTitleStyle}>CURATED ALLOCATION</div>
+            <p style={benefitDescStyle}>Select products from our high-tier ambassador allocation to feature in your private gallery.</p>
           </div>
 
           <div style={benefitCardStyle}>
-            <div style={benefitHeaderRowStyle}>
-              <span style={benefitTitleStyle}>DIRECT COMMISSION</span>
-              <span style={benefitHighlightTagStyle}>{commissionRate} PAYOUT</span>
-            </div>
-            <p style={benefitDescStyle}>Earn a baseline {commissionRate} commission on every successful sale generated via your exclusive link.</p>
+            <span style={benefitNumberStyle}>02</span>
+            <div style={benefitTitleStyle}>AUTOMATED COMMISSIONS</div>
+            <p style={benefitDescStyle}>Real-time performance metrics and automated payout tracking for every sales conversion.</p>
           </div>
 
           <div style={benefitCardStyle}>
-            <div style={benefitHeaderRowStyle}>
-              <span style={benefitTitleStyle}>GUEST PASS PRIVILEGE</span>
-              <span style={benefitTagStyle}>{guestDiscount} OFF CODE</span>
-            </div>
-            <p style={benefitDescStyle}>Offer your audience a complimentary {guestDiscount} discount on their orders with your custom privilege pass.</p>
+            <span style={benefitNumberStyle}>03</span>
+            <div style={benefitTitleStyle}>PRIVÉ PRIVILEGES</div>
+            <p style={benefitDescStyle}>Bespoke invitation links, early release access, and direct portal management.</p>
           </div>
         </div>
 
-        {/* Form Card */}
+        {/* Form Card - Floats Up Together */}
         <div style={{ ...cardStyle, ...getFadeStyle(mounted) }}>
           <div style={tabContainerStyle}>
             <button 
@@ -301,10 +293,10 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
             {errorMessage && <span style={{ color: '#ef4444' }}>{errorMessage}</span>}
           </div>
 
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             
             <div style={{
-              maxHeight: mode === 'signup' ? '55px' : '0px',
+              maxHeight: mode === 'signup' ? '65px' : '0px',
               opacity: mode === 'signup' ? 1 : 0,
               overflow: 'hidden',
               transition: 'max-height 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease',
@@ -373,12 +365,13 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
   );
 }
 
-// ---------------- STYLES (WITH RESPONSIVE CLAMPS) ----------------
+// ---------------- STYLES ----------------
 
+// কোনো ডিলে নেই — পুরো পেজ একসাথে স্মুথলি নিচ থেকে ২৪ পিক্সেল উপরে উঠে আসবে
 const getFadeStyle = (mounted: boolean): React.CSSProperties => ({
   opacity: mounted ? 1 : 0,
-  transform: mounted ? 'translateY(0px)' : 'translateY(20px)',
-  transition: 'opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1)',
+  transform: mounted ? 'translateY(0px)' : 'translateY(24px)',
+  transition: 'opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1), transform 0.85s cubic-bezier(0.16, 1, 0.3, 1)',
 });
 
 const containerStyle: React.CSSProperties = {
@@ -388,40 +381,40 @@ const containerStyle: React.CSSProperties = {
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  padding: 'clamp(30px, 6vh, 60px) 20px', // স্কেলিং লিমিট
+  padding: '60px 20px',
   fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif',
   boxSizing: 'border-box',
   position: 'relative',
-  overflowY: 'auto',
+  overflow: 'hidden',
 };
 
 const bgAmbientStyle: React.CSSProperties = {
   position: 'absolute',
-  top: '20%',
+  top: '25%',
   left: '50%',
   transform: 'translate(-50%, -50%)',
-  width: '350px',
-  height: '350px',
-  background: 'radial-gradient(circle, rgba(255, 255, 255, 0.03) 0%, rgba(0, 0, 0, 0) 75%)',
+  width: '380px',
+  height: '380px',
+  background: 'radial-gradient(circle, rgba(255, 255, 255, 0.04) 0%, rgba(0, 0, 0, 0) 75%)',
   pointerEvents: 'none',
   zIndex: 0,
 };
 
 const mainContentWrapperStyle: React.CSSProperties = {
   width: '100%',
-  maxWidth: '380px', // চওড়ায় লিমিট
+  maxWidth: '390px',
   display: 'flex',
   flexDirection: 'column',
-  gap: 'clamp(20px, 4vh, 32px)', // ভার্টিক্যাল গ্যাপের রেসপন্সিভ সীমা
+  gap: '32px',
   position: 'relative',
   zIndex: 1,
 };
 
 const welcomeTitleStyle: React.CSSProperties = {
-  fontSize: 'clamp(20px, 5vw, 26px)', // ফন্ট লিমিট: সর্বনিম্নে ২০px, সর্বোচ্চ ২৬px
+  fontSize: '28px',
   fontWeight: 200,
-  letterSpacing: '4px',
-  margin: '0 0 8px 0',
+  letterSpacing: '5px',
+  margin: '0 0 14px 0',
   lineHeight: '1.25',
   color: '#888888',
 };
@@ -429,34 +422,36 @@ const welcomeTitleStyle: React.CSSProperties = {
 const nameSpanStyle: React.CSSProperties = {
   color: '#ffffff',
   fontWeight: 400,
-  letterSpacing: '3px',
+  letterSpacing: '4px',
 };
 
 const descriptionStyle: React.CSSProperties = {
-  fontSize: 'clamp(11px, 3vw, 12.5px)',
+  fontSize: '12px',
   color: '#666666',
-  lineHeight: '1.6',
+  lineHeight: '1.7',
   margin: 0,
   fontWeight: 300,
-  letterSpacing: '0.2px',
+  letterSpacing: '0.3px',
 };
 
 const benefitsGridStyle: React.CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
-  gap: '14px',
+  gap: '10px',
 };
 
-// বাম পাশের বর্ডার রিমুভ করে স্পেস-সেভিং কন্টেইনার
 const benefitCardStyle: React.CSSProperties = {
-  padding: '10px 0',
-  borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+  backgroundColor: 'rgba(255, 255, 255, 0.015)',
+  borderLeft: '1px solid rgba(255, 255, 255, 0.2)',
+  padding: '14px 18px',
 };
 
-const benefitHeaderRowStyle: React.CSSProperties = {
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'center',
+const benefitNumberStyle: React.CSSProperties = {
+  fontSize: '9px',
+  fontWeight: 600,
+  color: '#444444',
+  letterSpacing: '2px',
+  display: 'block',
   marginBottom: '4px',
 };
 
@@ -465,30 +460,14 @@ const benefitTitleStyle: React.CSSProperties = {
   fontWeight: 600,
   letterSpacing: '2px',
   color: '#ffffff',
-};
-
-const benefitTagStyle: React.CSSProperties = {
-  fontSize: '8px',
-  fontWeight: 500,
-  letterSpacing: '1.5px',
-  color: '#666666',
-};
-
-const benefitHighlightTagStyle: React.CSSProperties = {
-  fontSize: '8px',
-  fontWeight: 600,
-  letterSpacing: '1.5px',
-  color: '#ffffff',
-  backgroundColor: 'rgba(255, 255, 255, 0.1)',
-  padding: '2px 6px',
-  borderRadius: '2px',
+  marginBottom: '4px',
 };
 
 const benefitDescStyle: React.CSSProperties = {
   fontSize: '11px',
   color: '#777777',
   margin: 0,
-  lineHeight: '1.5',
+  lineHeight: '1.6',
   fontWeight: 300,
 };
 
@@ -500,12 +479,12 @@ const cardStyle: React.CSSProperties = {
 const tabContainerStyle: React.CSSProperties = {
   display: 'flex',
   borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-  marginBottom: '12px',
+  marginBottom: '16px',
 };
 
 const tabButtonStyle = (active: boolean): React.CSSProperties => ({
   flex: 1,
-  padding: '10px 0',
+  padding: '12px 0',
   textAlign: 'center',
   cursor: 'pointer',
   fontSize: '10px',
@@ -521,15 +500,15 @@ const tabButtonStyle = (active: boolean): React.CSSProperties => ({
 });
 
 const statusContainerStyle: React.CSSProperties = {
-  minHeight: '18px',
-  fontSize: '9.5px',
-  letterSpacing: '1px',
+  minHeight: '22px',
+  fontSize: '10px',
+  letterSpacing: '1.5px',
   fontWeight: 500,
   textAlign: 'center',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  marginBottom: '8px',
+  marginBottom: '12px',
 };
 
 const inputWrapperStyle: React.CSSProperties = {
@@ -539,7 +518,7 @@ const inputWrapperStyle: React.CSSProperties = {
 
 const underlineInputStyle: React.CSSProperties = {
   width: '100%',
-  padding: '10px 0',
+  padding: '12px 0',
   backgroundColor: 'transparent',
   border: 'none',
   borderBottom: '1px solid rgba(255, 255, 255, 0.15)',
@@ -552,18 +531,19 @@ const underlineInputStyle: React.CSSProperties = {
   transition: 'border-color 0.3s ease',
 };
 
+// বাটন স্টাইল: পিওর মিনিমাল টাইপোগ্রাফি
 const buttonStyle: React.CSSProperties = {
   width: '100%',
-  padding: '15px',
+  padding: '16px',
   backgroundColor: '#ffffff',
   color: '#000000',
   border: 'none',
   borderRadius: '1px',
   fontWeight: 600,
   cursor: 'pointer',
-  fontSize: '10.5px',
+  fontSize: '11px',
   letterSpacing: '3px',
-  marginTop: '8px',
+  marginTop: '10px',
   transition: 'background-color 0.25s ease, opacity 0.25s ease',
   outline: 'none',
 };
