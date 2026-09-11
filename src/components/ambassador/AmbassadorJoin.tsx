@@ -1,13 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/supabaseClient';
 
-export default function AmbassadorJoin() {
-  const { token } = useParams<{ token: string }>();
-  const navigate = useNavigate();
+interface AmbassadorJoinProps {
+  initialInviteData: any;
+}
 
-  const [loading, setLoading] = useState(true);
-  const [inviteData, setInviteData] = useState<any>(null);
+export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProps) {
+  const [inviteData] = useState<any>(initialInviteData);
   const [isExpired, setIsExpired] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -19,59 +18,34 @@ export default function AmbassadorJoin() {
   const [submitting, setSubmitting] = useState(false);
   const [reissueSubmitted, setReissueSubmitted] = useState(false);
 
-  // ইমেইল চেকিং স্টেট
   const [isCheckingEmail, setIsCheckingEmail] = useState(false);
   const [accountFound, setAccountFound] = useState<boolean | null>(null);
 
-  // ১. ইনভাইট টোকেন ভ্যালিডেশন
+  // ১. মেয়াদ ও নাম ইনিশিয়াল সেটআপ
   useEffect(() => {
-    if (!token) {
-      setErrorMessage('NO INVITATION TOKEN PROVIDED');
-      setLoading(false);
-      return;
+    if (!inviteData) return;
+
+    const isTimeExpired = new Date(inviteData.expires_at) < new Date();
+    if (inviteData.display_name) setFullName(inviteData.display_name);
+
+    const initialEmail =
+      inviteData.email ||
+      (inviteData.recipient_identifier && inviteData.recipient_identifier.includes('@')
+        ? inviteData.recipient_identifier
+        : '');
+
+    if (initialEmail) {
+      setEmail(initialEmail);
+      checkEmailExistence(initialEmail);
     }
 
-    async function validateToken() {
-      try {
-        const { data, error } = await supabase
-          .from('ambassador')
-          .select('*')
-          .eq('token', token)
-          .single();
-
-        if (error || !data) {
-          setErrorMessage('INVALID OR EXPIRED INVITATION LINK');
-          setLoading(false);
-          return;
-        }
-
-        const isTimeExpired = new Date(data.expires_at) < new Date();
-        setInviteData(data);
-
-        if (data.display_name) setFullName(data.display_name);
-
-        // অ্যাডমিন ইমেইল বা আইডি ইনপুট দিয়ে থাকলে অটো-ফিল
-        const initialEmail = data.email || (data.recipient_identifier && data.recipient_identifier.includes('@') ? data.recipient_identifier : '');
-        if (initialEmail) {
-          setEmail(initialEmail);
-          checkEmailExistence(initialEmail);
-        }
-
-        if (isTimeExpired || data.is_registered) {
-          setIsExpired(true);
-          if (data.reissue_requested) setReissueSubmitted(true);
-        }
-      } catch (err) {
-        setErrorMessage('FAILED TO VALIDATE INVITATION');
-      } finally {
-        setLoading(false);
-      }
+    if (isTimeExpired || inviteData.is_registered) {
+      setIsExpired(true);
+      if (inviteData.reissue_requested) setReissueSubmitted(true);
     }
+  }, [inviteData]);
 
-    validateToken();
-  }, [token]);
-
-  // ২. ইমেইল ডাটাবেজে আছে কিনা চেক করার ফনশন
+  // ২. ইমেইল চেক ফাংশন
   const checkEmailExistence = async (emailToCheck: string) => {
     const cleanEmail = emailToCheck.trim().toLowerCase();
     if (!cleanEmail || !cleanEmail.includes('@')) {
@@ -81,27 +55,26 @@ export default function AmbassadorJoin() {
 
     setIsCheckingEmail(true);
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('profiles')
         .select('id')
         .eq('email', cleanEmail)
         .maybeSingle();
 
-      if (data) {
+      if (!error && data) {
         setAccountFound(true);
-        setMode('login'); // অ্যাকাউন্ট পাওয়া গেলে স্বয়ংক্রিয়ভাবে লগইন মোড
+        setMode('login');
       } else {
         setAccountFound(false);
-        setMode('signup'); // অ্যাকাউন্ট না থাকলে সাইন-আপ মোড
+        setMode('signup');
       }
     } catch (e) {
-      console.error('Email check error:', e);
+      setAccountFound(null);
     } finally {
       setIsCheckingEmail(false);
     }
   };
 
-  // ৩. ইমেইল ইনপুট টাইপিং ডিবাউন্স চেক
   useEffect(() => {
     const timer = setTimeout(() => {
       if (email.trim().length > 3 && email.includes('@')) {
@@ -114,10 +87,10 @@ export default function AmbassadorJoin() {
     return () => clearTimeout(timer);
   }, [email]);
 
-  // ৪. সাবমিট হ্যান্ডলার (সাইন-আপ বা লগইন)
+  // ৩. ফর্ম সাবমিট হ্যান্ডলার
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inviteData || submitting || !token) return;
+    if (!inviteData || submitting) return;
 
     setSubmitting(true);
     setErrorMessage('');
@@ -134,7 +107,9 @@ export default function AmbassadorJoin() {
           options: { data: { full_name: userName, role: 'AMBASSADOR' } }
         });
 
-        if (authError || !authData.user) throw new Error(authError?.message || 'SIGN UP FAILED');
+        if (authError || !authData.user) {
+          throw new Error(authError?.message || 'SIGN UP FAILED');
+        }
         userId = authData.user.id;
       } else {
         const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
@@ -142,14 +117,16 @@ export default function AmbassadorJoin() {
           password
         });
 
-        if (authError || !authData.user) throw new Error('INVALID EMAIL OR PASSWORD');
+        if (authError || !authData.user) {
+          throw new Error('INVALID EMAIL OR PASSWORD');
+        }
         userId = authData.user.id;
         userEmail = authData.user.email || userEmail;
       }
 
-      // ব্যাকএন্ডে অ্যাম্বাসেডর রোল যুক্ত ও ইনভাইট কমপ্লিট করা
+      // আসল ডাটাবেজ টোকেন পাঠানো হচ্ছে
       const { data: rpcRes, error: rpcErr } = await supabase.rpc('complete_ambassador_registration', {
-        invite_token: token,
+        invite_token: inviteData.token,
         new_user_id: userId,
         user_email: userEmail,
         user_name: userName
@@ -159,6 +136,7 @@ export default function AmbassadorJoin() {
         throw new Error(rpcRes?.message || rpcErr?.message || 'REGISTRATION FAILED');
       }
 
+      // সফল হলে রিলোড না করে পেজ রিফ্রেশ করে ড্যাশবোর্ডে নিয়ে যাবে
       window.location.reload();
     } catch (err: any) {
       setErrorMessage(err.message || 'SOMETHING WENT WRONG');
@@ -167,15 +145,15 @@ export default function AmbassadorJoin() {
     }
   };
 
-  // ৫. লিংক রি-ইস্যু রিকোয়েস্ট হ্যান্ডলার
+  // ৪. রিনিউ লিংক রিকোয়েস্ট
   const handleReissueRequest = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!token || !reissueMsg.trim() || submitting) return;
+    if (!inviteData?.token || !reissueMsg.trim() || submitting) return;
 
     setSubmitting(true);
     try {
       const { data, error } = await supabase.rpc('request_ambassador_invite_reissue', {
-        invite_token: token,
+        invite_token: inviteData.token,
         user_message: reissueMsg,
       });
 
@@ -191,9 +169,7 @@ export default function AmbassadorJoin() {
     }
   };
 
-  if (loading) return null;
-
-  // লিংক মেয়াদোত্তীর্ণ হলে
+  // মেয়াদ উত্তীর্ণ হলে
   if (isExpired) {
     return (
       <div style={containerStyle}>
@@ -231,8 +207,6 @@ export default function AmbassadorJoin() {
   return (
     <div style={containerStyle}>
       <div style={mainContentWrapperStyle}>
-        
-        {/* লাক্সারি প্রেজেন্টেশন ও ওয়েলকাম হেডার */}
         <div style={welcomeHeaderStyle}>
           <div style={subtitleStyle}>NOMAD AMBASSADOR CIRCLE</div>
           <h1 style={titleStyle}>
@@ -243,7 +217,6 @@ export default function AmbassadorJoin() {
           </p>
         </div>
 
-        {/* ৩টি হাইলাইট বেনিফিটস কার্ড */}
         <div style={benefitsGridStyle}>
           <div style={benefitCardStyle}>
             <span style={benefitNumberStyle}>01</span>
@@ -262,16 +235,12 @@ export default function AmbassadorJoin() {
           </div>
         </div>
 
-        {/* ফর্ম অ্যাকশন কার্ড */}
         <div style={cardStyle}>
-          
-          {/* ট্যাব বা ইন্টেলিজেন্ট স্টেট ব্যাজ */}
           <div style={{ display: 'flex', marginBottom: '20px' }}>
             <div style={tabStyle(mode === 'signup')} onClick={() => setMode('signup')}>NEW ACCOUNT</div>
             <div style={tabStyle(mode === 'login')} onClick={() => setMode('login')}>EXISTING USER</div>
           </div>
 
-          {/* ইমেইল চেকিং বা ডিটেকশন নোটিশ */}
           {isCheckingEmail && (
             <div style={infoStatusStyle}>CHECKING ACCOUNT STATUS...</div>
           )}
@@ -337,13 +306,11 @@ export default function AmbassadorJoin() {
             </button>
           </form>
         </div>
-
       </div>
     </div>
   );
 }
 
-// স্টাইলস
 const containerStyle: React.CSSProperties = {
   minHeight: '100vh',
   backgroundColor: '#030303',
@@ -467,7 +434,6 @@ const buttonStyle: React.CSSProperties = {
   fontSize: '11px',
   letterSpacing: '2px',
   marginTop: '12px',
-  transition: 'opacity 0.2s ease',
 };
 
 const tabStyle = (active: boolean): React.CSSProperties => ({
