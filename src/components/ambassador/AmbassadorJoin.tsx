@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/supabaseClient';
 import { CloseIcon, SendIcon } from '@/components/icons';
+import styles from './AmbassadorJoin.module.css';
 
 interface AmbassadorJoinProps {
   initialInviteData: any;
@@ -34,8 +35,9 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
   const [mounted, setMounted] = useState(false);
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
 
-  // Concierge Support & Chat States
+  // Concierge Support, Accordion & Chat States
   const [isConciergeOpen, setIsConciergeOpen] = useState(false);
+  const [isAccordionOpen, setIsAccordionOpen] = useState(true);
   const [supportMsg, setSupportMsg] = useState('');
   const [customSupportEmail, setCustomSupportEmail] = useState('');
   const [isSendingSupport, setIsSendingSupport] = useState(false);
@@ -183,11 +185,20 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
     };
   }, [email, defaultEmail, customSupportEmail, inviteData]);
 
+  const showInlineChat = isConciergeOpen || messages.length > 0;
+
+  // Auto-Collapse Accordion when entering Chat Mode
   useEffect(() => {
-    if ((isConciergeOpen || messages.length > 0) && messages.length > 0) {
+    if (showInlineChat) {
+      setIsAccordionOpen(false);
+    }
+  }, [showInlineChat]);
+
+  useEffect(() => {
+    if (showInlineChat && messages.length > 0) {
       chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [messages, isConciergeOpen]);
+  }, [messages, showInlineChat]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -322,39 +333,32 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
 
   if (isExpired) {
     return (
-      <div style={containerStyle}>
-        <div style={{ ...cardStyle, maxWidth: '420px', textAlign: 'center' }}>
+      <div className={styles.container}>
+        <div className={styles.cardStyle} style={{ maxWidth: '420px', textAlign: 'center' }}>
           <h2 style={{ fontSize: '18px', fontWeight: 300, letterSpacing: '3px', color: '#ef4444', margin: '0 0 12px 0' }}>
             INVITATION EXPIRED
           </h2>
-          <p style={{ color: '#888888', fontSize: '12px', lineHeight: '1.8', margin: 0, fontWeight: 300 }}>
+          <p className={styles.description}>
             This private pass key is no longer active. Submit a request to the administrator for renewal.
           </p>
 
           {reissueSubmitted ? (
-            <div style={statusBannerStyle('#22c55e')}>
+            <div style={{ fontSize: '10px', color: '#22c55e', letterSpacing: '1.5px', marginTop: '20px' }}>
               ✓ RENEWAL REQUEST SENT
             </div>
           ) : (
             <form onSubmit={handleReissueRequest} style={{ marginTop: '30px' }}>
               <div style={{ position: 'relative', marginBottom: '24px' }}>
                 <textarea
-                  className="underline-input"
-                  style={{
-                    ...underlineInputStyle,
-                    minHeight: '60px',
-                    resize: 'none',
-                    borderColor: focusedInput === 'reissue' ? '#ffffff' : 'rgba(255,255,255,0.2)'
-                  }}
+                  className={styles.underlineInput}
+                  style={{ minHeight: '60px', resize: 'none' }}
                   placeholder="Reason for renewal request..."
                   value={reissueMsg}
-                  onFocus={() => setFocusedInput('reissue')}
-                  onBlur={() => setFocusedInput(null)}
                   onChange={(e) => setReissueMsg(e.target.value)}
                   required
                 />
               </div>
-              <button type="submit" disabled={submitting} style={buttonStyle}>
+              <button type="submit" disabled={submitting} className={styles.submitButton}>
                 {submitting ? 'SENDING...' : 'REQUEST RENEWAL'}
               </button>
             </form>
@@ -364,632 +368,261 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
     );
   }
 
-  const showInlineChat = isConciergeOpen || messages.length > 0;
-
   return (
-    <div style={containerStyle}>
-      <style>{`
-        .underline-input::placeholder {
-          color: #888888 !important;
-          opacity: 1 !important;
-        }
-        .concierge-scroll::-webkit-scrollbar {
-          width: 3px;
-        }
-        .concierge-scroll::-webkit-scrollbar-track {
-          background: transparent;
-        }
-        .concierge-scroll::-webkit-scrollbar-thumb {
-          background: rgba(255, 255, 255, 0.2);
-        }
-        .chat-pill-input::placeholder {
-          color: #666666 !important;
-        }
-      `}</style>
+    <div className={`${styles.container} ${showInlineChat ? styles.containerChatMode : ''}`}>
+      <div className={styles.bgAmbient} />
 
-      <div style={bgAmbientStyle} />
+      <div className={styles.mainWrapper}>
 
-      <div style={mainContentWrapperStyle}>
+        {/* Collapsible Accordion Header Bar (Appears when in Chat mode) */}
+        {showInlineChat && (
+          <button 
+            type="button" 
+            className={styles.accordionToggle} 
+            onClick={() => setIsAccordionOpen(!isAccordionOpen)}
+          >
+            <span className={styles.accordionTitle}>
+              WELCOME, <span className={styles.accordionTitleHighlight}>{headerDisplayName}</span>
+            </span>
+            <span className={`${styles.chevronIcon} ${isAccordionOpen ? styles.chevronIconRotated : ''}`}>
+              ▼
+            </span>
+          </button>
+        )}
 
-        <div style={getFadeStyle(mounted)}>
-          <h1 style={welcomeTitleStyle}>
-            WELCOME,
-            <br />
-            <span style={nameSpanStyle}>{headerDisplayName}</span>
-          </h1>
+        {/* Collapsible Top Area: Title, Benefits, Form */}
+        <div className={`${styles.collapsibleContent} ${(!showInlineChat || isAccordionOpen) ? styles.collapsibleContentOpen : ''}`}>
+          
+          <div>
+            <h1 className={styles.welcomeTitle}>
+              WELCOME,
+              <br />
+              <span className={styles.nameSpan}>{headerDisplayName}</span>
+            </h1>
 
-          <p style={descriptionStyle}>
-            You have been granted exclusive access to curate selected allocations and represent NOMAD.
-          </p>
-        </div>
-
-        <div style={{ ...benefitsGridStyle, ...getFadeStyle(mounted) }}>
-          <div style={benefitCardStyle}>
-            <span style={benefitNumberStyle}>01</span>
-            <div style={benefitTitleStyle}>CURATED ALLOCATION</div>
-            <p style={benefitDescStyle}>Select products from our high-tier ambassador allocation to feature in your private gallery.</p>
-          </div>
-
-          <div style={benefitCardStyle}>
-            <span style={benefitNumberStyle}>02</span>
-            <div style={benefitTitleStyle}>AUTOMATED COMMISSIONS</div>
-            <p style={benefitDescStyle}>
-              Earn a baseline {commissionRate}% payout with real-time performance tracking for every sales conversion. Rates remain subject to periodic review by NOMAD.
+            <p className={styles.description}>
+              You have been granted exclusive access to curate selected allocations and represent NOMAD.
             </p>
           </div>
 
-          <div style={benefitCardStyle}>
-            <span style={benefitNumberStyle}>03</span>
-            <div style={benefitTitleStyle}>PRIVÉ PRIVILEGES</div>
-            <p style={benefitDescStyle}>
-              Bespoke invitation links offering an initial {discountPercent}% VIP pass for your audience, early release access, and direct portal management. Discount rates remain subject to adjustment by NOMAD.
-            </p>
-          </div>
-        </div>
+          <div className={styles.benefitsGrid}>
+            <div className={styles.benefitCard}>
+              <span className={styles.benefitNumber}>01</span>
+              <div className={styles.benefitTitle}>CURATED ALLOCATION</div>
+              <p className={styles.benefitDesc}>Select products from our high-tier ambassador allocation to feature in your private gallery.</p>
+            </div>
 
-        <div style={{ ...cardStyle, ...getFadeStyle(mounted) }}>
-          <div style={tabContainerStyle}>
-            <button 
-              type="button" 
-              style={tabButtonStyle(mode === 'signup')} 
-              onClick={() => setMode('signup')}
-            >
-              SIGN UP
-            </button>
-            <button 
-              type="button" 
-              style={tabButtonStyle(mode === 'login')} 
-              onClick={() => setMode('login')}
-            >
-              LOG IN
-            </button>
+            <div className={styles.benefitCard}>
+              <span className={styles.benefitNumber}>02</span>
+              <div className={styles.benefitTitle}>AUTOMATED COMMISSIONS</div>
+              <p className={styles.benefitDesc}>
+                Earn a baseline {commissionRate}% payout with real-time performance tracking for every sales conversion. Rates remain subject to periodic review by NOMAD.
+              </p>
+            </div>
+
+            <div className={styles.benefitCard}>
+              <span className={styles.benefitNumber}>03</span>
+              <div className={styles.benefitTitle}>PRIVÉ PRIVILEGES</div>
+              <p className={styles.benefitDesc}>
+                Bespoke invitation links offering an initial {discountPercent}% VIP pass for your audience, early release access, and direct portal management. Discount rates remain subject to adjustment by NOMAD.
+              </p>
+            </div>
           </div>
 
-          <div style={statusContainerStyle}>
-            {isCheckingEmail && <span style={{ color: '#60a5fa' }}>VERIFYING ACCOUNT...</span>}
-            {!isCheckingEmail && accountFound === true && <span style={{ color: '#4ade80' }}>✓ EXISTING ACCOUNT DETECTED</span>}
-            {errorMessage && <span style={{ color: '#f87171' }}>{errorMessage}</span>}
-          </div>
-
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-
-            <div style={{
-              maxHeight: mode === 'signup' ? '65px' : '0px',
-              opacity: mode === 'signup' ? 1 : 0,
-              overflow: 'hidden',
-              transition: 'max-height 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease',
-              pointerEvents: mode === 'signup' ? 'auto' : 'none',
-            }}>
-              <div style={inputWrapperStyle}>
-                <input 
-                  type="text" 
-                  name="ambassador_name_field"
-                  autoComplete="off"
-                  className="underline-input"
-                  style={{
-                    ...underlineInputStyle,
-                    borderColor: focusedInput === 'fullName' ? '#ffffff' : 'rgba(255, 255, 255, 0.2)',
-                  }} 
-                  value={fullName} 
-                  onFocus={() => setFocusedInput('fullName')}
-                  onBlur={() => setFocusedInput(null)}
-                  onChange={(e) => setFullName(e.target.value)} 
-                  placeholder={defaultTitleName || "Full Name"}
-                />
-              </div>
+          <div className={styles.cardStyle}>
+            <div className={styles.tabContainer}>
+              <button 
+                type="button" 
+                className={`${styles.tabButton} ${mode === 'signup' ? styles.tabButtonActive : ''}`} 
+                onClick={() => setMode('signup')}
+              >
+                SIGN UP
+              </button>
+              <button 
+                type="button" 
+                className={`${styles.tabButton} ${mode === 'login' ? styles.tabButtonActive : ''}`} 
+                onClick={() => setMode('login')}
+              >
+                LOG IN
+              </button>
             </div>
 
-            <div style={inputWrapperStyle}>
-              <input 
-                type="text" 
-                inputMode="email"
-                name="ambassador_user_id"
-                autoComplete="off"
-                className="underline-input"
-                style={{
-                  ...underlineInputStyle,
-                  borderColor: focusedInput === 'email' ? '#ffffff' : 'rgba(255, 255, 255, 0.2)',
-                }} 
-                value={email} 
-                onFocus={() => setFocusedInput('email')}
-                onBlur={() => setFocusedInput(null)}
-                onChange={(e) => setEmail(e.target.value)} 
-                placeholder={defaultEmail || "Email Address"}
-              />
+            <div className={styles.statusContainer}>
+              {isCheckingEmail && <span style={{ color: '#60a5fa' }}>VERIFYING ACCOUNT...</span>}
+              {!isCheckingEmail && accountFound === true && <span style={{ color: '#4ade80' }}>✓ EXISTING ACCOUNT DETECTED</span>}
+              {errorMessage && <span style={{ color: '#f87171' }}>{errorMessage}</span>}
             </div>
 
-            <div style={inputWrapperStyle}>
-              <input 
-                type="password" 
-                name="ambassador_password_field"
-                autoComplete="new-password"
-                className="underline-input"
-                style={{
-                  ...underlineInputStyle,
-                  borderColor: focusedInput === 'password' ? '#ffffff' : 'rgba(255, 255, 255, 0.2)',
-                }} 
-                value={password} 
-                onFocus={() => setFocusedInput('password')}
-                onBlur={() => setFocusedInput(null)}
-                onChange={(e) => setPassword(e.target.value)} 
-                placeholder={mode === 'signup' ? 'Create Password' : 'Password'}
-                required 
-                minLength={6} 
-              />
-            </div>
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
-            <button type="submit" disabled={submitting || isCheckingEmail} style={buttonStyle}>
-              {submitting 
-                ? 'PROCESSING...' 
-                : mode === 'signup' 
-                  ? 'JOIN CIRCLE' 
-                  : 'ENTER PORTAL'}
-            </button>
-          </form>
-
-          {/* Dynamic Footer Area: Shows Links if no message, Inline Chat if messaged */}
-          {!showInlineChat ? (
-            <div style={footerContainerStyle}>
-              <div style={footerLinksStyle}>
-                <button 
-                  type="button" 
-                  onClick={() => setIsConciergeOpen(true)} 
-                  style={footerLinkButtonStyle}
-                >
-                  CONCIERGE SUPPORT
-                </button>
-                <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '9px' }}>•</span>
-                <a href="/privacy" style={footerLinkStyle}>PRIVACY POLICY</a>
-                <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '9px' }}>•</span>
-                <a href="/terms" style={footerLinkStyle}>TERMS</a>
-              </div>
-              <p style={copyrightStyle}>© 2026 NOMAD. ALL RIGHTS RESERVED.</p>
-            </div>
-          ) : (
-            <div style={inlineChatWrapperStyle}>
-              <div style={inlineChatHeaderStyle}>
-                <div>
-                  <span style={conciergeTagStyle}>PRIVATE DESK</span>
-                  <h3 style={conciergeTitleStyle}>NOMAD CONCIERGE</h3>
-                </div>
-                {messages.length === 0 && (
-                  <button 
-                    type="button" 
-                    onClick={() => setIsConciergeOpen(false)} 
-                    style={iconButtonStyle}
-                    aria-label="Close Chat"
-                  >
-                    <CloseIcon />
-                  </button>
-                )}
-              </div>
-
-              {!(email || defaultEmail) && (
-                <div style={{ marginBottom: '12px' }}>
-                  <input
-                    type="text"
-                    inputMode="email"
-                    className="underline-input"
-                    style={underlineInputStyle}
-                    placeholder="Your Return Email Address"
-                    value={customSupportEmail}
-                    onChange={(e) => setCustomSupportEmail(e.target.value)}
-                    required
+              {mode === 'signup' && (
+                <div className={styles.inputWrapper}>
+                  <input 
+                    type="text" 
+                    name="ambassador_name_field"
+                    autoComplete="off"
+                    className={styles.underlineInput}
+                    value={fullName} 
+                    onChange={(e) => setFullName(e.target.value)} 
+                    placeholder={defaultTitleName || "Full Name"}
                   />
                 </div>
               )}
 
-              <div className="concierge-scroll" style={inlineChatMessagesStyle}>
-                {isLoadingMessages ? (
-                  <div style={{ fontSize: '10px', color: '#666', letterSpacing: '1px', textAlign: 'center', padding: '15px 0' }}>
-                    FETCHING HISTORY...
-                  </div>
-                ) : messages.length === 0 ? (
-                  <div style={{ fontSize: '11px', color: '#666', textAlign: 'center', padding: '15px 0', fontWeight: 300 }}>
-                    Direct communication line with NOMAD administration. Type below to start.
-                  </div>
-                ) : (
-                  messages.map((msg, index) => {
-                    const isAdmin = msg.sender_role === 'admin' || msg.sender_role === 'support';
-                    return (
-                      <div 
-                        key={msg.id || index} 
-                        style={{
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: isAdmin ? 'flex-start' : 'flex-end',
-                          marginBottom: '10px'
-                        }}
-                      >
-                        <span style={{ fontSize: '8px', color: '#666', letterSpacing: '1px', marginBottom: '3px', textTransform: 'uppercase' }}>
-                          {isAdmin ? 'NOMAD DESK' : 'YOU'}
-                        </span>
-                        <div 
-                          style={{
-                            backgroundColor: isAdmin ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.12)',
-                            color: '#ffffff',
-                            padding: '10px 14px',
-                            borderRadius: isAdmin ? '14px 14px 14px 2px' : '14px 14px 2px 14px',
-                            border: isAdmin ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid rgba(255, 255, 255, 0.18)',
-                            maxWidth: '85%',
-                            fontSize: '12px',
-                            lineHeight: '1.5',
-                            fontWeight: 300,
-                            wordBreak: 'break-word',
-                            whiteSpace: 'pre-wrap',
-                          }}
-                        >
-                          {msg.message}
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-                <div ref={chatEndRef} />
-              </div>
-
-              <form onSubmit={handleSendSupportMessage} style={chatInputFormStyle}>
-                <textarea
-                  ref={textareaRef}
-                  className="chat-pill-input concierge-scroll"
-                  rows={1}
-                  placeholder="Type your message..."
-                  value={supportMsg}
-                  onChange={(e) => {
-                    setSupportMsg(e.target.value);
-                    e.target.style.height = 'auto';
-                    e.target.style.height = `${Math.min(e.target.scrollHeight, 100)}px`;
-                  }}
-                  style={chatPillInputStyle}
-                  required
+              <div className={styles.inputWrapper}>
+                <input 
+                  type="text" 
+                  inputMode="email"
+                  name="ambassador_user_id"
+                  autoComplete="off"
+                  className={styles.underlineInput}
+                  value={email} 
+                  onChange={(e) => setEmail(e.target.value)} 
+                  placeholder={defaultEmail || "Email Address"}
                 />
-
-                <button 
-                  type="submit" 
-                  disabled={isSendingSupport || !supportMsg.trim()} 
-                  style={{
-                    ...sendIconButtonStyle,
-                    opacity: (isSendingSupport || !supportMsg.trim()) ? 0.25 : 1,
-                    cursor: (isSendingSupport || !supportMsg.trim()) ? 'not-allowed' : 'pointer',
-                    backgroundColor: supportMsg.trim() ? '#ffffff' : 'rgba(255, 255, 255, 0.1)',
-                    color: supportMsg.trim() ? '#000000' : '#ffffff',
-                  }}
-                  aria-label="Send Message"
-                >
-                  <SendIcon />
-                </button>
-              </form>
-
-              <div style={{ marginTop: '20px', textAlign: 'center' }}>
-                <p style={copyrightStyle}>© 2026 NOMAD. ALL RIGHTS RESERVED.</p>
               </div>
-            </div>
-          )}
+
+              <div className={styles.inputWrapper}>
+                <input 
+                  type="password" 
+                  name="ambassador_password_field"
+                  autoComplete="new-password"
+                  className={styles.underlineInput}
+                  value={password} 
+                  onChange={(e) => setPassword(e.target.value)} 
+                  placeholder={mode === 'signup' ? 'Create Password' : 'Password'}
+                  required 
+                  minLength={6} 
+                />
+              </div>
+
+              <button type="submit" disabled={submitting || isCheckingEmail} className={styles.submitButton}>
+                {submitting 
+                  ? 'PROCESSING...' 
+                  : mode === 'signup' 
+                    ? 'JOIN CIRCLE' 
+                    : 'ENTER PORTAL'}
+              </button>
+            </form>
+          </div>
 
         </div>
+
+        {/* Footer Area or Inline Native Chat View */}
+        {!showInlineChat ? (
+          <div className={styles.footerContainer}>
+            <div className={styles.footerLinks}>
+              <button 
+                type="button" 
+                onClick={() => setIsConciergeOpen(true)} 
+                className={styles.footerLink}
+              >
+                CONCIERGE SUPPORT
+              </button>
+              <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '9px' }}>•</span>
+              <a href="/privacy" className={styles.footerLink}>PRIVACY POLICY</a>
+              <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '9px' }}>•</span>
+              <a href="/terms" className={styles.footerLink}>TERMS</a>
+            </div>
+            <p className={styles.copyright}>© 2026 NOMAD. ALL RIGHTS RESERVED.</p>
+          </div>
+        ) : (
+          <div className={styles.chatWrapper}>
+            <div className={styles.chatHeader}>
+              <div>
+                <span className={styles.conciergeTag}>PRIVATE DESK</span>
+                <h3 className={styles.conciergeTitle}>NOMAD CONCIERGE</h3>
+              </div>
+              {messages.length === 0 && (
+                <button 
+                  type="button" 
+                  onClick={() => setIsConciergeOpen(false)} 
+                  className={styles.iconButton}
+                  aria-label="Close Chat"
+                >
+                  <CloseIcon />
+                </button>
+              )}
+            </div>
+
+            {!(email || defaultEmail) && (
+              <div style={{ marginBottom: '8px' }}>
+                <input
+                  type="text"
+                  inputMode="email"
+                  className={styles.underlineInput}
+                  placeholder="Your Return Email Address"
+                  value={customSupportEmail}
+                  onChange={(e) => setCustomSupportEmail(e.target.value)}
+                  required
+                />
+              </div>
+            )}
+
+            <div className={styles.messagesArea}>
+              {isLoadingMessages ? (
+                <div style={{ fontSize: '10px', color: '#666', letterSpacing: '1px', textAlign: 'center', padding: '15px 0' }}>
+                  FETCHING HISTORY...
+                </div>
+              ) : messages.length === 0 ? (
+                <div style={{ fontSize: '11px', color: '#666', textAlign: 'center', padding: '15px 0', fontWeight: 300 }}>
+                  Direct communication line with NOMAD administration. Type below to start.
+                </div>
+              ) : (
+                messages.map((msg, index) => {
+                  const isAdmin = msg.sender_role === 'admin' || msg.sender_role === 'support';
+                  return (
+                    <div 
+                      key={msg.id || index} 
+                      className={`${styles.msgItem} ${isAdmin ? styles.msgAdmin : styles.msgUser}`}
+                    >
+                      <span className={styles.msgLabel}>
+                        {isAdmin ? 'NOMAD DESK' : 'YOU'}
+                      </span>
+                      <div className={`${styles.msgBubble} ${isAdmin ? styles.msgBubbleAdmin : styles.msgBubbleUser}`}>
+                        {msg.message}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+              <div ref={chatEndRef} />
+            </div>
+
+            <form onSubmit={handleSendSupportMessage} className={styles.chatInputForm}>
+              <textarea
+                ref={textareaRef}
+                className={styles.chatPillInput}
+                rows={1}
+                placeholder="Type your message..."
+                value={supportMsg}
+                onChange={(e) => {
+                  setSupportMsg(e.target.value);
+                  e.target.style.height = 'auto';
+                  e.target.style.height = `${Math.min(e.target.scrollHeight, 80)}px`;
+                }}
+                required
+              />
+
+              <button 
+                type="submit" 
+                disabled={isSendingSupport || !supportMsg.trim()} 
+                className={styles.sendBtn}
+                style={{
+                  opacity: (isSendingSupport || !supportMsg.trim()) ? 0.25 : 1,
+                  cursor: (isSendingSupport || !supportMsg.trim()) ? 'not-allowed' : 'pointer',
+                  backgroundColor: supportMsg.trim() ? '#ffffff' : 'rgba(255, 255, 255, 0.1)',
+                  color: supportMsg.trim() ? '#000000' : '#ffffff',
+                }}
+                aria-label="Send Message"
+              >
+                <SendIcon />
+              </button>
+            </form>
+          </div>
+        )}
+
       </div>
     </div>
   );
 }
-
-const getFadeStyle = (mounted: boolean): React.CSSProperties => ({
-  opacity: mounted ? 1 : 0,
-  transform: mounted ? 'translateY(0px)' : 'translateY(24px)',
-  transition: 'opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1), transform 0.85s cubic-bezier(0.16, 1, 0.3, 1)',
-});
-
-const containerStyle: React.CSSProperties = {
-  minHeight: '100vh',
-  backgroundColor: '#000000',
-  color: '#ffffff',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  padding: '60px 20px',
-  fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif',
-  boxSizing: 'border-box',
-  position: 'relative',
-};
-
-const bgAmbientStyle: React.CSSProperties = {
-  position: 'absolute',
-  top: '25%',
-  left: '50%',
-  transform: 'translate(-50%, -50%)',
-  width: '380px',
-  height: '380px',
-  background: 'radial-gradient(circle, rgba(255, 255, 255, 0.05) 0%, rgba(0, 0, 0, 0) 75%)',
-  pointerEvents: 'none',
-  zIndex: 0,
-};
-
-const mainContentWrapperStyle: React.CSSProperties = {
-  width: '100%',
-  maxWidth: '390px',
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '32px',
-  position: 'relative',
-  zIndex: 1,
-};
-
-const welcomeTitleStyle: React.CSSProperties = {
-  fontSize: '28px',
-  fontWeight: 200,
-  letterSpacing: '5px',
-  margin: '0 0 14px 0',
-  lineHeight: '1.25',
-  color: '#a0a0a0',
-};
-
-const nameSpanStyle: React.CSSProperties = {
-  color: '#ffffff',
-  fontWeight: 400,
-  letterSpacing: '4px',
-};
-
-const descriptionStyle: React.CSSProperties = {
-  fontSize: '12px',
-  color: '#bbbbbb',
-  lineHeight: '1.7',
-  margin: 0,
-  fontWeight: 300,
-  letterSpacing: '0.3px',
-};
-
-const benefitsGridStyle: React.CSSProperties = {
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '10px',
-};
-
-const benefitCardStyle: React.CSSProperties = {
-  backgroundColor: 'rgba(255, 255, 255, 0.02)',
-  borderLeft: '1px solid rgba(255, 255, 255, 0.3)',
-  padding: '14px 18px',
-};
-
-const benefitNumberStyle: React.CSSProperties = {
-  fontSize: '9px',
-  fontWeight: 600,
-  color: '#888888',
-  letterSpacing: '2px',
-  display: 'block',
-  marginBottom: '4px',
-};
-
-const benefitTitleStyle: React.CSSProperties = {
-  fontSize: '10px',
-  fontWeight: 600,
-  letterSpacing: '2px',
-  color: '#ffffff',
-  marginBottom: '4px',
-};
-
-const benefitDescStyle: React.CSSProperties = {
-  fontSize: '11px',
-  color: '#cccccc',
-  margin: 0,
-  lineHeight: '1.6',
-  fontWeight: 300,
-};
-
-const cardStyle: React.CSSProperties = {
-  width: '100%',
-  boxSizing: 'border-box',
-};
-
-const tabContainerStyle: React.CSSProperties = {
-  display: 'flex',
-  borderBottom: '1px solid rgba(255, 255, 255, 0.15)',
-  marginBottom: '16px',
-};
-
-const tabButtonStyle = (active: boolean): React.CSSProperties => ({
-  flex: 1,
-  padding: '12px 0',
-  textAlign: 'center',
-  cursor: 'pointer',
-  fontSize: '10px',
-  fontWeight: 600,
-  letterSpacing: '2.5px',
-  color: active ? '#ffffff' : '#666666',
-  backgroundColor: 'transparent',
-  border: 'none',
-  borderBottom: active ? '1.5px solid #ffffff' : '1.5px solid transparent',
-  marginBottom: '-1px',
-  transition: 'color 0.25s ease, border-color 0.25s ease',
-  outline: 'none',
-});
-
-const statusContainerStyle: React.CSSProperties = {
-  minHeight: '22px',
-  fontSize: '10px',
-  letterSpacing: '1.5px',
-  fontWeight: 500,
-  textAlign: 'center',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  marginBottom: '12px',
-};
-
-const inputWrapperStyle: React.CSSProperties = {
-  position: 'relative',
-  width: '100%',
-};
-
-const underlineInputStyle: React.CSSProperties = {
-  width: '100%',
-  padding: '12px 0',
-  backgroundColor: 'transparent',
-  border: 'none',
-  borderBottom: '1px solid rgba(255, 255, 255, 0.2)',
-  color: '#ffffff',
-  fontSize: '13px',
-  fontWeight: 300,
-  letterSpacing: '0.5px',
-  outline: 'none',
-  boxSizing: 'border-box',
-  transition: 'border-color 0.3s ease',
-};
-
-const buttonStyle: React.CSSProperties = {
-  width: '100%',
-  padding: '16px',
-  backgroundColor: '#ffffff',
-  color: '#000000',
-  border: 'none',
-  borderRadius: '1px',
-  fontWeight: 600,
-  cursor: 'pointer',
-  fontSize: '11px',
-  letterSpacing: '3px',
-  marginTop: '10px',
-  transition: 'background-color 0.25s ease, opacity 0.25s ease',
-  outline: 'none',
-};
-
-const statusBannerStyle = (color: string): React.CSSProperties => ({
-  fontSize: '10px',
-  color,
-  letterSpacing: '1.5px',
-  fontWeight: 500,
-  textAlign: 'center',
-  marginTop: '20px',
-});
-
-const footerContainerStyle: React.CSSProperties = {
-  marginTop: '45px',
-  paddingTop: '20px',
-  borderTop: '1px solid rgba(255, 255, 255, 0.08)',
-  textAlign: 'center',
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '12px',
-};
-
-const footerLinksStyle: React.CSSProperties = {
-  display: 'flex',
-  justifyContent: 'center',
-  alignItems: 'center',
-  gap: '12px',
-  flexWrap: 'wrap',
-};
-
-const footerLinkStyle: React.CSSProperties = {
-  color: '#888888',
-  fontSize: '9px',
-  letterSpacing: '1.5px',
-  textDecoration: 'none',
-  fontWeight: 400,
-  transition: 'color 0.2s ease',
-};
-
-const footerLinkButtonStyle: React.CSSProperties = {
-  ...footerLinkStyle,
-  background: 'none',
-  border: 'none',
-  cursor: 'pointer',
-  padding: 0,
-};
-
-const copyrightStyle: React.CSSProperties = {
-  color: '#555555',
-  fontSize: '8px',
-  letterSpacing: '2px',
-  margin: 0,
-  fontWeight: 300,
-};
-
-const inlineChatWrapperStyle: React.CSSProperties = {
-  marginTop: '35px',
-  paddingTop: '20px',
-  borderTop: '1px solid rgba(255, 255, 255, 0.12)',
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '12px',
-};
-
-const inlineChatHeaderStyle: React.CSSProperties = {
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-};
-
-const conciergeTagStyle: React.CSSProperties = {
-  fontSize: '8px',
-  letterSpacing: '2.5px',
-  color: '#666666',
-  fontWeight: 600,
-  display: 'block',
-  marginBottom: '2px',
-};
-
-const conciergeTitleStyle: React.CSSProperties = {
-  fontSize: '13px',
-  letterSpacing: '3px',
-  fontWeight: 300,
-  color: '#ffffff',
-  margin: 0,
-};
-
-const iconButtonStyle: React.CSSProperties = {
-  background: 'none',
-  border: 'none',
-  color: '#ffffff',
-  cursor: 'pointer',
-  outline: 'none',
-  padding: '4px',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-};
-
-const inlineChatMessagesStyle: React.CSSProperties = {
-  maxHeight: '260px',
-  overflowY: 'auto',
-  paddingRight: '4px',
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '4px',
-};
-
-const chatInputFormStyle: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  backgroundColor: 'rgba(255, 255, 255, 0.05)',
-  border: '1px solid rgba(255, 255, 255, 0.15)',
-  borderRadius: '28px',
-  padding: '4px 6px 4px 16px',
-  gap: '8px',
-  marginTop: '6px',
-};
-
-const chatPillInputStyle: React.CSSProperties = {
-  flex: 1,
-  backgroundColor: 'transparent',
-  border: 'none',
-  color: '#ffffff',
-  fontSize: '13px',
-  fontWeight: 300,
-  outline: 'none',
-  resize: 'none',
-  maxHeight: '80px',
-  lineHeight: '1.4',
-  padding: '8px 0',
-  boxSizing: 'border-box',
-};
-
-const sendIconButtonStyle: React.CSSProperties = {
-  width: '32px',
-  height: '32px',
-  borderRadius: '50%',
-  border: 'none',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  flexShrink: 0,
-  transition: 'all 0.2s ease',
-  outline: 'none',
-};
