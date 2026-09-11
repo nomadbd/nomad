@@ -118,6 +118,7 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
 
     try {
       let userId = '';
+      // ইউজার টাইপ না করলে প্লেসহোল্ডারের defaultEmail ই ভ্যালু হিসেবে যাবে
       let userEmail = (email.trim() || defaultEmail).toLowerCase();
       let userName = fullName.trim() ? toTitleCase(fullName.trim()) : defaultTitleName;
 
@@ -242,13 +243,6 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
           color: #888888 !important;
           opacity: 1 !important;
         }
-        .underline-input:-webkit-autofill,
-        .underline-input:-webkit-autofill:hover, 
-        .underline-input:-webkit-autofill:focus {
-          -webkit-text-fill-color: #888888 !important;
-          -webkit-box-shadow: 0 0 0px 1000px #000000 inset !important;
-          transition: background-color 5000s ease-in-out 0s;
-        }
       `}</style>
 
       <div style={bgAmbientStyle} />
@@ -345,8 +339,9 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
 
             <div style={inputWrapperStyle}>
               <input 
-                type="email" 
-                name="ambassador_email_field"
+                type="text" 
+                inputMode="email"
+                name="ambassador_user_id"
                 autoComplete="off"
                 className="underline-input"
                 style={{
