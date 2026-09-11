@@ -21,7 +21,7 @@ export default function AmbassadorStore() {
       const { data: { user } } = await supabase.auth.getUser();
       setCurrentUser(user);
 
-      // ২. ইনভাইটেশন বা অ্যাম্বাসেডর ডাটা চেক
+      // ২. ইনভাইটেশন টোকেন বা অ্যাসাইন করা স্ল্যাগ দিয়ে অ্যাম্বাসেডর ডাটা খোঁজ করা
       const { data } = await supabase
         .from('ambassador')
         .select('*')
@@ -43,30 +43,33 @@ export default function AmbassadorStore() {
     );
   }
 
-  // ডাটা না পাওয়া গেলে
+  // ডাটা না পাওয়া গেলে (ভুল বা মুছে ফেলা লিংক)
   if (!ambassadorData) {
     return (
       <div style={statusContainerStyle}>
         <div style={cardStyle}>
           <h2 style={{ fontSize: '14px', letterSpacing: '2px', color: '#ef4444', margin: 0 }}>INVITATION NOT FOUND</h2>
-          <p style={{ color: '#888888', fontSize: '11px', marginTop: '12px' }}>
-            The link you accessed is invalid or has been removed.
+          <p style={{ color: '#888888', fontSize: '11px', marginTop: '12px', lineHeight: '1.6' }}>
+            The invitation link or storefront you accessed is invalid or has expired.
           </p>
         </div>
       </div>
     );
   }
 
-  // ১. ইউজার রেজিস্টার্ড না হলে -> রেজিস্ট্রেশন ফর্মে পাঠাবে
+  // ৩. ইউজার এখনো ইনভাইট গ্রহণ/রেজিস্ট্রেশন না করে থাকলে -> অনবোর্ডিং ফর্মে পাঠাবে
   if (!ambassadorData.is_registered) {
     return <AmbassadorJoin />;
   }
 
-  // ২. ইউজার রেজিস্টার্ড এবং লগইন করা থাকলে -> ড্যাশবোর্ড দেখাবে
+  // ৪. ইউজার রেজিস্টার্ড থাকলে -> ওয়ার্কস্পেস ও স্টোর পেজ দেখাবে
+  const isOwner = currentUser?.id === ambassadorData.user_id;
+
   return (
     <AmbassadorWorkspace
       ambassadorData={ambassadorData}
       profile={currentUser}
+      isOwner={isOwner}
       ambassadorState={{
         unpaidBalance: ambassadorData.unpaid_balance || 0,
         totalEarned: ambassadorData.total_earned || 0,
