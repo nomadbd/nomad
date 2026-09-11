@@ -33,6 +33,13 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
   const [mounted, setMounted] = useState(false);
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
 
+  // Concierge Support Overlay States
+  const [isConciergeOpen, setIsConciergeOpen] = useState(false);
+  const [supportMsg, setSupportMsg] = useState('');
+  const [customSupportEmail, setCustomSupportEmail] = useState('');
+  const [isSendingSupport, setIsSendingSupport] = useState(false);
+  const [supportSentSuccess, setSupportSentSuccess] = useState(false);
+
   const rawDisplayName = inviteData?.display_name || 'GUEST';
   const headerDisplayName = rawDisplayName.toUpperCase();
   const defaultTitleName = toTitleCase(rawDisplayName);
@@ -188,6 +195,39 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
       setErrorMessage('AN UNEXPECTED ERROR OCCURRED');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleSendSupportMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!supportMsg.trim() || isSendingSupport) return;
+
+    setIsSendingSupport(true);
+    const activeEmail = (email.trim() || defaultEmail || customSupportEmail.trim()).toLowerCase();
+
+    try {
+      const { error } = await supabase.from('communications').insert([
+        {
+          channel_type: 'ambassador',
+          channel_id: inviteData?.token || 'general_inquiry',
+          sender_email: activeEmail,
+          sender_role: 'ambassador',
+          message: supportMsg.trim(),
+        },
+      ]);
+
+      if (!error) {
+        setSupportSentSuccess(true);
+        setSupportMsg('');
+        setTimeout(() => {
+          setSupportSentSuccess(false);
+          setIsConciergeOpen(false);
+        }, 2800);
+      }
+    } catch (err) {
+      console.error('Support message submission failed', err);
+    } finally {
+      setIsSendingSupport(false);
     }
   };
 
@@ -384,10 +424,19 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
             </button>
           </form>
 
-          {/* পেজ-নির্দিষ্ট কাস্টম ফুটার */}
+          {/* পেজ-নির্দিষ্ট কাস্টম ফুটার (Dynamic Concierge Integration) */}
           <div style={footerContainerStyle}>
             <div style={footerLinksStyle}>
-              <a href="mailto:concierge@nomad.com" style={footerLinkStyle}>CONCIERGE SUPPORT</a>
+              <a 
+                href="#concierge" 
+                onClick={(e) => {
+                  e.preventDefault();
+                  setIsConciergeOpen(true);
+                }} 
+                style={footerLinkStyle}
+              >
+                CONCIERGE SUPPORT
+              </a>
               <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '9px' }}>•</span>
               <a href="/privacy" style={footerLinkStyle}>PRIVACY POLICY</a>
               <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '9px' }}>•</span>
@@ -398,6 +447,75 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
 
         </div>
       </div>
+
+      {/* Full-Screen Concierge Suite (DB Connected) */}
+      {isConciergeOpen && (
+        <div style={fullScreenOverlayStyle}>
+          <div style={conciergeHeaderStyle}>
+            <div>
+              <span style={conciergeTagStyle}>PRIVATE DESK</span>
+              <h2 style={conciergeTitleStyle}>NOMAD CONCIERGE</h2>
+            </div>
+            <button 
+              type="button" 
+              onClick={() => setIsConciergeOpen(false)} 
+              style={closeButtonStyle}
+            >
+              CLOSE ✕
+            </button>
+          </div>
+
+          <div style={conciergeBodyStyle}>
+            {supportSentSuccess ? (
+              <div style={successStateStyle}>
+                <div style={{ fontSize: '18px', color: '#ffffff', marginBottom: '8px' }}>✓</div>
+                <div style={{ fontSize: '11px', letterSpacing: '2px', color: '#ffffff', fontWeight: 500 }}>
+                  DISPATCH TRANSMITTED
+                </div>
+                <p style={{ fontSize: '11px', color: '#888888', marginTop: '8px', lineHeight: '1.6' }}>
+                  Our private desk has received your request. A response will be dispatched directly to your channel.
+                </p>
+              </div>
+            ) : (
+              <form onSubmit={handleSendSupportMessage} style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
+                <p style={{ fontSize: '12px', color: '#aaa', lineHeight: '1.7', fontWeight: 300, margin: 0 }}>
+                  Direct communication line with NOMAD administration. Enter your message below.
+                </p>
+
+                {!(email || defaultEmail) && (
+                  <div style={inputWrapperStyle}>
+                    <input
+                      type="text"
+                      inputMode="email"
+                      className="underline-input"
+                      style={underlineInputStyle}
+                      placeholder="Your Return Email Address"
+                      value={customSupportEmail}
+                      onChange={(e) => setCustomSupportEmail(e.target.value)}
+                      required
+                    />
+                  </div>
+                )}
+
+                <div style={inputWrapperStyle}>
+                  <textarea
+                    className="underline-input"
+                    style={{ ...underlineInputStyle, minHeight: '120px', resize: 'none' }}
+                    placeholder="Describe your inquiry..."
+                    value={supportMsg}
+                    onChange={(e) => setSupportMsg(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <button type="submit" disabled={isSendingSupport} style={buttonStyle}>
+                  {isSendingSupport ? 'TRANSMITTING...' : 'DISPATCH MESSAGE'}
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -623,4 +741,69 @@ const copyrightStyle: React.CSSProperties = {
   letterSpacing: '2px',
   margin: 0,
   fontWeight: 300,
+};
+
+// Concierge Overlay Styles
+const fullScreenOverlayStyle: React.CSSProperties = {
+  position: 'fixed',
+  top: 0,
+  left: 0,
+  width: '100vw',
+  height: '100vh',
+  backgroundColor: '#000000',
+  zIndex: 9999,
+  display: 'flex',
+  flexDirection: 'column',
+  padding: '40px 24px',
+  boxSizing: 'border-box',
+  overflowY: 'auto',
+};
+
+const conciergeHeaderStyle: React.CSSProperties = {
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'flex-start',
+  paddingBottom: '24px',
+  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+};
+
+const conciergeTagStyle: React.CSSProperties = {
+  fontSize: '9px',
+  letterSpacing: '2.5px',
+  color: '#666666',
+  fontWeight: 600,
+  display: 'block',
+  marginBottom: '4px',
+};
+
+const conciergeTitleStyle: React.CSSProperties = {
+  fontSize: '16px',
+  letterSpacing: '3px',
+  fontWeight: 300,
+  color: '#ffffff',
+  margin: 0,
+};
+
+const closeButtonStyle: React.CSSProperties = {
+  background: 'none',
+  border: 'none',
+  color: '#888888',
+  fontSize: '10px',
+  letterSpacing: '2px',
+  cursor: 'pointer',
+  outline: 'none',
+  padding: '4px 0',
+};
+
+const conciergeBodyStyle: React.CSSProperties = {
+  maxWidth: '390px',
+  width: '100%',
+  margin: '40px auto 0 auto',
+};
+
+const successStateStyle: React.CSSProperties = {
+  textAlign: 'center',
+  padding: '40px 0',
+  border: '1px solid rgba(255, 255, 255, 0.1)',
+  backgroundColor: 'rgba(255, 255, 255, 0.01)',
 };
