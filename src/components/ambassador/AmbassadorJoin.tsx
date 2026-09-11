@@ -19,6 +19,11 @@ export default function AmbassadorJoin() {
   const [submitting, setSubmitting] = useState(false);
   const [reissueSubmitted, setReissueSubmitted] = useState(false);
 
+  // ইমেইল চেকিং স্টেট
+  const [isCheckingEmail, setIsCheckingEmail] = useState(false);
+  const [accountFound, setAccountFound] = useState<boolean | null>(null);
+
+  // ১. ইনভাইট টোকেন ভ্যালিডেশন
   useEffect(() => {
     if (!token) {
       setErrorMessage('NO INVITATION TOKEN PROVIDED');
@@ -44,8 +49,12 @@ export default function AmbassadorJoin() {
         setInviteData(data);
 
         if (data.display_name) setFullName(data.display_name);
-        if (data.recipient_identifier && data.recipient_identifier.includes('@')) {
-          setEmail(data.recipient_identifier);
+
+        // অ্যাডমিন ইমেইল বা আইডি ইনপুট দিয়ে থাকলে অটো-ফিল
+        const initialEmail = data.email || (data.recipient_identifier && data.recipient_identifier.includes('@') ? data.recipient_identifier : '');
+        if (initialEmail) {
+          setEmail(initialEmail);
+          checkEmailExistence(initialEmail);
         }
 
         if (isTimeExpired || data.is_registered) {
@@ -62,6 +71,50 @@ export default function AmbassadorJoin() {
     validateToken();
   }, [token]);
 
+  // ২. ইমেইল ডাটাবেজে আছে কিনা চেক করার ফনশন
+  const checkEmailExistence = async (emailToCheck: string) => {
+    const cleanEmail = emailToCheck.trim().toLowerCase();
+    if (!cleanEmail || !cleanEmail.includes('@')) {
+      setAccountFound(null);
+      return;
+    }
+
+    setIsCheckingEmail(true);
+    try {
+      const { data } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', cleanEmail)
+        .maybeSingle();
+
+      if (data) {
+        setAccountFound(true);
+        setMode('login'); // অ্যাকাউন্ট পাওয়া গেলে স্বয়ংক্রিয়ভাবে লগইন মোড
+      } else {
+        setAccountFound(false);
+        setMode('signup'); // অ্যাকাউন্ট না থাকলে সাইন-আপ মোড
+      }
+    } catch (e) {
+      console.error('Email check error:', e);
+    } finally {
+      setIsCheckingEmail(false);
+    }
+  };
+
+  // ৩. ইমেইল ইনপুট টাইপিং ডিবাউন্স চেক
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (email.trim().length > 3 && email.includes('@')) {
+        checkEmailExistence(email);
+      } else {
+        setAccountFound(null);
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [email]);
+
+  // ৪. সাবমিট হ্যান্ডলার (সাইন-আপ বা লগইন)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inviteData || submitting || !token) return;
@@ -71,29 +124,30 @@ export default function AmbassadorJoin() {
 
     try {
       let userId = '';
-      let userEmail = email;
-      let userName = fullName;
+      let userEmail = email.trim();
+      let userName = fullName.trim();
 
       if (mode === 'signup') {
         const { data: authData, error: authError } = await supabase.auth.signUp({
-          email,
+          email: userEmail,
           password,
-          options: { data: { full_name: fullName, role: 'AMBASSADOR' } }
+          options: { data: { full_name: userName, role: 'AMBASSADOR' } }
         });
 
         if (authError || !authData.user) throw new Error(authError?.message || 'SIGN UP FAILED');
         userId = authData.user.id;
       } else {
         const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-          email,
+          email: userEmail,
           password
         });
 
         if (authError || !authData.user) throw new Error('INVALID EMAIL OR PASSWORD');
         userId = authData.user.id;
-        userEmail = authData.user.email || email;
+        userEmail = authData.user.email || userEmail;
       }
 
+      // ব্যাকএন্ডে অ্যাম্বাসেডর রোল যুক্ত ও ইনভাইট কমপ্লিট করা
       const { data: rpcRes, error: rpcErr } = await supabase.rpc('complete_ambassador_registration', {
         invite_token: token,
         new_user_id: userId,
@@ -113,6 +167,7 @@ export default function AmbassadorJoin() {
     }
   };
 
+  // ৫. লিংক রি-ইস্যু রিকোয়েস্ট হ্যান্ডলার
   const handleReissueRequest = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!token || !reissueMsg.trim() || submitting) return;
@@ -138,13 +193,14 @@ export default function AmbassadorJoin() {
 
   if (loading) return null;
 
+  // লিংক মেয়াদোত্তীর্ণ হলে
   if (isExpired) {
     return (
       <div style={containerStyle}>
         <div style={cardStyle}>
-          <h2 style={{ marginTop: 0, letterSpacing: '2px', fontSize: '14px' }}>LINK EXPIRED</h2>
+          <h2 style={{ marginTop: 0, letterSpacing: '2px', fontSize: '14px', color: '#ef4444' }}>LINK EXPIRED</h2>
           <p style={{ color: '#888888', fontSize: '11px', lineHeight: '1.6' }}>
-            This invitation link is no longer active. Request a renewal below.
+            This VIP invitation link is no longer active. You may request a renewal link from the administrator.
           </p>
 
           {reissueSubmitted ? (
@@ -174,48 +230,120 @@ export default function AmbassadorJoin() {
 
   return (
     <div style={containerStyle}>
-      <div style={cardStyle}>
-        <div style={{ textTransform: 'uppercase', fontSize: '10px', letterSpacing: '3px', color: '#888888', marginBottom: '8px' }}>
-          NOMAD AMBASSADOR CIRCLE
+      <div style={mainContentWrapperStyle}>
+        
+        {/* লাক্সারি প্রেজেন্টেশন ও ওয়েলকাম হেডার */}
+        <div style={welcomeHeaderStyle}>
+          <div style={subtitleStyle}>NOMAD AMBASSADOR CIRCLE</div>
+          <h1 style={titleStyle}>
+            EXCLUSIVELY PREPARED FOR {inviteData?.display_name?.toUpperCase() || 'YOU'}
+          </h1>
+          <p style={descriptionStyle}>
+            We invite you to represent NOMAD. Build your personalized storefront, curate iconic pieces, and earn exclusive privileges.
+          </p>
         </div>
-        <h2 style={{ marginTop: 0, fontSize: '15px', fontWeight: '700', letterSpacing: '1px', marginBottom: '24px', textTransform: 'uppercase' }}>
-          WELCOME, {inviteData?.display_name || 'AMBASSADOR'}
-        </h2>
 
-        <div style={{ display: 'flex', marginBottom: '24px' }}>
-          <div style={tabStyle(mode === 'signup')} onClick={() => setMode('signup')}>NEW ACCOUNT</div>
-          <div style={tabStyle(mode === 'login')} onClick={() => setMode('login')}>EXISTING USER</div>
-        </div>
-
-        {errorMessage && (
-          <div style={{ fontSize: '10px', color: '#ef4444', backgroundColor: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.2)', padding: '8px 10px', marginBottom: '18px', letterSpacing: '1px' }}>
-            {errorMessage}
+        {/* ৩টি হাইলাইট বেনিফিটস কার্ড */}
+        <div style={benefitsGridStyle}>
+          <div style={benefitCardStyle}>
+            <span style={benefitNumberStyle}>01</span>
+            <div style={benefitTitleStyle}>PERSONALIZED STOREFRONT</div>
+            <p style={benefitDescStyle}>Your bespoke brand storefront to share directly with your audience.</p>
           </div>
-        )}
+          <div style={benefitCardStyle}>
+            <span style={benefitNumberStyle}>02</span>
+            <div style={benefitTitleStyle}>EARN COMMISSIONS</div>
+            <p style={benefitDescStyle}>Automated earnings on orders with real-time payout tracking.</p>
+          </div>
+          <div style={benefitCardStyle}>
+            <span style={benefitNumberStyle}>03</span>
+            <div style={benefitTitleStyle}>CURATED SELECTION</div>
+            <p style={benefitDescStyle}>Curate and showcase your handpicked NOMAD collection freely.</p>
+          </div>
+        </div>
 
-        <form onSubmit={handleSubmit}>
-          {mode === 'signup' && (
-            <>
-              <label style={labelStyle}>FULL NAME</label>
-              <input type="text" style={inputStyle} value={fullName} onChange={(e) => setFullName(e.target.value)} required />
-            </>
+        {/* ফর্ম অ্যাকশন কার্ড */}
+        <div style={cardStyle}>
+          
+          {/* ট্যাব বা ইন্টেলিজেন্ট স্টেট ব্যাজ */}
+          <div style={{ display: 'flex', marginBottom: '20px' }}>
+            <div style={tabStyle(mode === 'signup')} onClick={() => setMode('signup')}>NEW ACCOUNT</div>
+            <div style={tabStyle(mode === 'login')} onClick={() => setMode('login')}>EXISTING USER</div>
+          </div>
+
+          {/* ইমেইল চেকিং বা ডিটেকশন নোটিশ */}
+          {isCheckingEmail && (
+            <div style={infoStatusStyle}>CHECKING ACCOUNT STATUS...</div>
           )}
 
-          <label style={labelStyle}>EMAIL ADDRESS</label>
-          <input type="email" style={inputStyle} value={email} onChange={(e) => setEmail(e.target.value)} required />
+          {!isCheckingEmail && accountFound === true && (
+            <div style={successStatusStyle}>
+              ✓ EXISTING ACCOUNT DETECTED — LOG IN TO CLAIM STORE
+            </div>
+          )}
 
-          <label style={labelStyle}>{mode === 'signup' ? 'CREATE PASSWORD' : 'PASSWORD'}</label>
-          <input type="password" style={inputStyle} value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} />
+          {!isCheckingEmail && accountFound === false && email.includes('@') && (
+            <div style={neutralStatusStyle}>
+              • NEW USER DETECTED — COMPLETE SIGN UP
+            </div>
+          )}
 
-          <button type="submit" disabled={submitting} style={buttonStyle}>
-            {submitting ? 'PROCESSING...' : mode === 'signup' ? 'JOIN AS AMBASSADOR' : 'CLAIM MY STORE'}
-          </button>
-        </form>
+          {errorMessage && (
+            <div style={errorStatusStyle}>{errorMessage}</div>
+          )}
+
+          <form onSubmit={handleSubmit}>
+            {mode === 'signup' && (
+              <>
+                <label style={labelStyle}>FULL NAME</label>
+                <input 
+                  type="text" 
+                  style={inputStyle} 
+                  value={fullName} 
+                  onChange={(e) => setFullName(e.target.value)} 
+                  placeholder="Enter full name"
+                  required 
+                />
+              </>
+            )}
+
+            <label style={labelStyle}>EMAIL ADDRESS</label>
+            <input 
+              type="email" 
+              style={inputStyle} 
+              value={email} 
+              onChange={(e) => setEmail(e.target.value)} 
+              placeholder="name@example.com"
+              required 
+            />
+
+            <label style={labelStyle}>{mode === 'signup' ? 'CREATE PASSWORD' : 'PASSWORD'}</label>
+            <input 
+              type="password" 
+              style={inputStyle} 
+              value={password} 
+              onChange={(e) => setPassword(e.target.value)} 
+              placeholder="••••••••"
+              required 
+              minLength={6} 
+            />
+
+            <button type="submit" disabled={submitting || isCheckingEmail} style={buttonStyle}>
+              {submitting 
+                ? 'PROCESSING...' 
+                : mode === 'signup' 
+                  ? 'JOIN AS AMBASSADOR' 
+                  : 'CLAIM MY STORE & UPGRADE'}
+            </button>
+          </form>
+        </div>
+
       </div>
     </div>
   );
 }
 
+// স্টাইলস
 const containerStyle: React.CSSProperties = {
   minHeight: '100vh',
   backgroundColor: '#030303',
@@ -223,22 +351,93 @@ const containerStyle: React.CSSProperties = {
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  padding: '20px',
+  padding: '40px 20px',
   fontFamily: 'monospace, sans-serif',
+  boxSizing: 'border-box',
+};
+
+const mainContentWrapperStyle: React.CSSProperties = {
+  width: '100%',
+  maxWidth: '460px',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '32px',
+};
+
+const welcomeHeaderStyle: React.CSSProperties = {
+  textAlign: 'center',
+};
+
+const subtitleStyle: React.CSSProperties = {
+  fontSize: '10px',
+  letterSpacing: '3px',
+  color: '#888888',
+  marginBottom: '10px',
+};
+
+const titleStyle: React.CSSProperties = {
+  fontSize: '18px',
+  fontWeight: '700',
+  letterSpacing: '1.5px',
+  margin: '0 0 12px 0',
+  lineHeight: '1.4',
+};
+
+const descriptionStyle: React.CSSProperties = {
+  fontSize: '11px',
+  color: '#aaaaaa',
+  lineHeight: '1.7',
+  margin: '0 auto',
+  maxWidth: '380px',
+};
+
+const benefitsGridStyle: React.CSSProperties = {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(1, 1fr)',
+  gap: '12px',
+};
+
+const benefitCardStyle: React.CSSProperties = {
+  backgroundColor: '#070707',
+  border: '1px solid #141414',
+  padding: '16px 20px',
+  position: 'relative',
+};
+
+const benefitNumberStyle: React.CSSProperties = {
+  fontSize: '9px',
+  color: '#555555',
+  letterSpacing: '1px',
+  display: 'block',
+  marginBottom: '4px',
+};
+
+const benefitTitleStyle: React.CSSProperties = {
+  fontSize: '10px',
+  fontWeight: 'bold',
+  letterSpacing: '1.5px',
+  color: '#ffffff',
+  marginBottom: '4px',
+};
+
+const benefitDescStyle: React.CSSProperties = {
+  fontSize: '10px',
+  color: '#777777',
+  margin: 0,
+  lineHeight: '1.5',
 };
 
 const cardStyle: React.CSSProperties = {
   width: '100%',
-  maxWidth: '380px',
   border: '1px solid #1a1a1a',
   backgroundColor: '#050505',
-  padding: '36px 28px',
+  padding: '32px 24px',
   boxSizing: 'border-box',
 };
 
 const inputStyle: React.CSSProperties = {
   width: '100%',
-  padding: '8px 0',
+  padding: '10px 0',
   marginBottom: '20px',
   backgroundColor: 'transparent',
   border: 'none',
@@ -268,6 +467,7 @@ const buttonStyle: React.CSSProperties = {
   fontSize: '11px',
   letterSpacing: '2px',
   marginTop: '12px',
+  transition: 'opacity 0.2s ease',
 };
 
 const tabStyle = (active: boolean): React.CSSProperties => ({
@@ -281,3 +481,43 @@ const tabStyle = (active: boolean): React.CSSProperties => ({
   borderBottom: active ? '1px solid #ffffff' : '1px solid #222222',
   color: active ? '#ffffff' : '#555555',
 });
+
+const infoStatusStyle: React.CSSProperties = {
+  fontSize: '9px',
+  color: '#3b82f6',
+  backgroundColor: 'rgba(59, 130, 246, 0.08)',
+  border: '1px solid rgba(59, 130, 246, 0.2)',
+  padding: '8px 10px',
+  marginBottom: '18px',
+  letterSpacing: '1px',
+};
+
+const successStatusStyle: React.CSSProperties = {
+  fontSize: '9px',
+  color: '#22c55e',
+  backgroundColor: 'rgba(34, 197, 94, 0.08)',
+  border: '1px solid rgba(34, 197, 94, 0.2)',
+  padding: '8px 10px',
+  marginBottom: '18px',
+  letterSpacing: '1px',
+};
+
+const neutralStatusStyle: React.CSSProperties = {
+  fontSize: '9px',
+  color: '#aaa',
+  backgroundColor: 'rgba(255, 255, 255, 0.05)',
+  border: '1px solid rgba(255, 255, 255, 0.1)',
+  padding: '8px 10px',
+  marginBottom: '18px',
+  letterSpacing: '1px',
+};
+
+const errorStatusStyle: React.CSSProperties = {
+  fontSize: '9px',
+  color: '#ef4444',
+  backgroundColor: 'rgba(239, 68, 68, 0.08)',
+  border: '1px solid rgba(239, 68, 68, 0.2)',
+  padding: '8px 10px',
+  marginBottom: '18px',
+  letterSpacing: '1px',
+};
