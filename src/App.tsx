@@ -22,7 +22,8 @@ const AppContent = ({ session, setIsSearchOpen, setIsAuthOpen }: any) => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const showHeader = !['/profile', '/admin', '/update-password'].includes(location.pathname) && !location.pathname.startsWith('/vip');
+  // হেডার কেবল হোম পেজে (/) দেখাবে, ইনভাইট লিংক, প্রোফাইল, এডমিন বা স্লগ পেজে দেখাবে না
+  const showHeader = location.pathname === '/';
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: 'black', color: '#fff' }}>
