@@ -340,7 +340,7 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
           background: rgba(255, 255, 255, 0.2);
         }
         .chat-pill-input::placeholder {
-          color: #777777 !important;
+          color: #666666 !important;
         }
       `}</style>
 
@@ -526,12 +526,12 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
           </div>
 
           <div style={conciergeBodyStyle}>
-            <p style={{ fontSize: '11px', color: '#888888', lineHeight: '1.6', fontWeight: 300, margin: '0 0 16px 0' }}>
+            <p style={{ fontSize: '11px', color: '#888888', lineHeight: '1.6', fontWeight: 300, margin: '0 0 12px 0' }}>
               Direct communication line with NOMAD administration.
             </p>
 
             {!(email || defaultEmail) && (
-              <div style={{ marginBottom: '16px' }}>
+              <div style={{ marginBottom: '14px' }}>
                 <input
                   type="text"
                   inputMode="email"
@@ -564,24 +564,26 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
                         display: 'flex',
                         flexDirection: 'column',
                         alignItems: isAdmin ? 'flex-start' : 'flex-end',
-                        marginBottom: '14px'
+                        marginBottom: '12px'
                       }}
                     >
-                      <span style={{ fontSize: '8px', color: '#666', letterSpacing: '1px', marginBottom: '4px' }}>
+                      <span style={{ fontSize: '8px', color: '#666', letterSpacing: '1px', marginBottom: '4px', textTransform: 'uppercase' }}>
                         {isAdmin ? 'NOMAD DESK' : 'YOU'}
                       </span>
                       <div 
                         style={{
-                          backgroundColor: isAdmin ? 'rgba(255, 255, 255, 0.08)' : '#ffffff',
-                          color: isAdmin ? '#ffffff' : '#000000',
-                          padding: '12px 16px',
-                          borderRadius: '1px',
-                          maxWidth: '85%',
-                          fontSize: '12px',
-                          lineHeight: '1.6',
+                          backgroundColor: isAdmin ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.14)',
+                          color: '#ffffff',
+                          padding: '10px 14px',
+                          borderRadius: isAdmin ? '14px 14px 14px 2px' : '14px 14px 2px 14px',
+                          border: isAdmin ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid rgba(255, 255, 255, 0.2)',
+                          maxWidth: '82%',
+                          fontSize: '13px',
+                          lineHeight: '1.5',
                           fontWeight: 300,
                           wordBreak: 'break-word',
-                          borderLeft: isAdmin ? '2px solid rgba(255, 255, 255, 0.4)' : 'none',
+                          whiteSpace: 'pre-wrap',
+                          backdropFilter: 'blur(10px)',
                         }}
                       >
                         {msg.message}
@@ -593,7 +595,7 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
               <div ref={chatEndRef} />
             </div>
 
-            {/* মিনিমাল এবং পিল-শেপড মেসেজিং ইনপুট বার */}
+            {/* শুধু বাটন ক্লিকে মেসেজ সেন্ড হবে, Enter চাপলে লাইন ব্রেক হবে */}
             <form onSubmit={handleSendSupportMessage} style={chatInputFormStyle}>
               <textarea
                 ref={textareaRef}
@@ -601,16 +603,10 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
                 rows={1}
                 placeholder="Type your message..."
                 value={supportMsg}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSendSupportMessage();
-                  }
-                }}
                 onChange={(e) => {
                   setSupportMsg(e.target.value);
                   e.target.style.height = 'auto';
-                  e.target.style.height = `${Math.min(e.target.scrollHeight, 110)}px`;
+                  e.target.style.height = `${Math.min(e.target.scrollHeight, 100)}px`;
                 }}
                 style={chatPillInputStyle}
                 required
@@ -621,8 +617,10 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
                 disabled={isSendingSupport || !supportMsg.trim()} 
                 style={{
                   ...sendIconButtonStyle,
-                  opacity: (isSendingSupport || !supportMsg.trim()) ? 0.3 : 1,
+                  opacity: (isSendingSupport || !supportMsg.trim()) ? 0.25 : 1,
                   cursor: (isSendingSupport || !supportMsg.trim()) ? 'not-allowed' : 'pointer',
+                  backgroundColor: supportMsg.trim() ? '#ffffff' : 'rgba(255, 255, 255, 0.1)',
+                  color: supportMsg.trim() ? '#000000' : '#ffffff',
                 }}
                 aria-label="Send Message"
               >
@@ -864,13 +862,14 @@ const fullScreenOverlayStyle: React.CSSProperties = {
   position: 'fixed',
   top: 0,
   left: 0,
-  width: '100vw',
-  height: '100vh',
+  right: 0,
+  bottom: 0,
+  height: '100dvh',
   backgroundColor: '#000000',
   zIndex: 9999,
   display: 'flex',
   flexDirection: 'column',
-  padding: '40px 24px',
+  padding: '24px 20px calc(16px + env(safe-area-inset-bottom)) 20px',
   boxSizing: 'border-box',
 };
 
@@ -878,7 +877,7 @@ const conciergeHeaderStyle: React.CSSProperties = {
   display: 'flex',
   justifyContent: 'space-between',
   alignItems: 'flex-start',
-  paddingBottom: '20px',
+  paddingBottom: '16px',
   borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
 };
 
@@ -914,7 +913,7 @@ const iconButtonStyle: React.CSSProperties = {
 const conciergeBodyStyle: React.CSSProperties = {
   maxWidth: '390px',
   width: '100%',
-  margin: '20px auto 0 auto',
+  margin: '16px auto 0 auto',
   display: 'flex',
   flexDirection: 'column',
   flex: 1,
@@ -924,20 +923,19 @@ const conciergeBodyStyle: React.CSSProperties = {
 const chatContainerStyle: React.CSSProperties = {
   flex: 1,
   overflowY: 'auto',
-  paddingRight: '6px',
+  paddingRight: '4px',
   marginBottom: '12px',
   display: 'flex',
   flexDirection: 'column',
 };
 
-// নতুন মডার্ন পিল টাইপ ইনপুট স্টাইল
 const chatInputFormStyle: React.CSSProperties = {
   display: 'flex',
-  alignItems: 'flex-end',
+  alignItems: 'center',
   backgroundColor: 'rgba(255, 255, 255, 0.05)',
   border: '1px solid rgba(255, 255, 255, 0.15)',
-  borderRadius: '24px',
-  padding: '6px 8px 6px 16px',
+  borderRadius: '28px',
+  padding: '4px 6px 4px 16px',
   gap: '8px',
   transition: 'border-color 0.2s ease',
 };
@@ -951,24 +949,21 @@ const chatPillInputStyle: React.CSSProperties = {
   fontWeight: 300,
   outline: 'none',
   resize: 'none',
-  maxHeight: '110px',
+  maxHeight: '100px',
   lineHeight: '1.4',
-  padding: '6px 0',
+  padding: '8px 0',
   boxSizing: 'border-box',
 };
 
 const sendIconButtonStyle: React.CSSProperties = {
-  width: '34px',
-  height: '34px',
+  width: '32px',
+  height: '32px',
   borderRadius: '50%',
-  backgroundColor: '#ffffff',
-  color: '#000000',
   border: 'none',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
   flexShrink: 0,
-  transition: 'opacity 0.2s ease, transform 0.1s ease',
+  transition: 'all 0.2s ease',
   outline: 'none',
-  marginBottom: '1px',
 };
