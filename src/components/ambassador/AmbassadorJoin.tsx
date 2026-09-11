@@ -242,6 +242,13 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
           color: #888888 !important;
           opacity: 1 !important;
         }
+        .underline-input:-webkit-autofill,
+        .underline-input:-webkit-autofill:hover, 
+        .underline-input:-webkit-autofill:focus {
+          -webkit-text-fill-color: #888888 !important;
+          -webkit-box-shadow: 0 0 0px 1000px #000000 inset !important;
+          transition: background-color 5000s ease-in-out 0s;
+        }
       `}</style>
 
       <div style={bgAmbientStyle} />
@@ -320,6 +327,8 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
               <div style={inputWrapperStyle}>
                 <input 
                   type="text" 
+                  name="ambassador_name_field"
+                  autoComplete="off"
                   className="underline-input"
                   style={{
                     ...underlineInputStyle,
@@ -337,6 +346,8 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
             <div style={inputWrapperStyle}>
               <input 
                 type="email" 
+                name="ambassador_email_field"
+                autoComplete="off"
                 className="underline-input"
                 style={{
                   ...underlineInputStyle,
@@ -353,6 +364,8 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
             <div style={inputWrapperStyle}>
               <input 
                 type="password" 
+                name="ambassador_password_field"
+                autoComplete="new-password"
                 className="underline-input"
                 style={{
                   ...underlineInputStyle,
