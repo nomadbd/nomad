@@ -37,6 +37,13 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
   const headerDisplayName = rawDisplayName.toUpperCase();
   const defaultTitleName = toTitleCase(rawDisplayName);
 
+  const defaultEmail = (
+    inviteData?.email ||
+    (inviteData?.recipient_identifier && inviteData?.recipient_identifier.includes('@')
+      ? inviteData.recipient_identifier
+      : '')
+  ).toLowerCase();
+
   const commissionRate = inviteData?.commission_rate ?? 15;
   const discountPercent = inviteData?.discount_percent ?? 10;
 
@@ -44,28 +51,6 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
     const timer = setTimeout(() => setMounted(true), 60);
     return () => clearTimeout(timer);
   }, []);
-
-  useEffect(() => {
-    if (!inviteData) return;
-
-    const isTimeExpired = new Date(inviteData.expires_at) < new Date();
-
-    const initialEmail =
-      inviteData.email ||
-      (inviteData.recipient_identifier && inviteData.recipient_identifier.includes('@')
-        ? inviteData.recipient_identifier
-        : '');
-
-    if (initialEmail) {
-      setEmail(initialEmail);
-      checkEmailExistence(initialEmail);
-    }
-
-    if (isTimeExpired || inviteData.is_registered) {
-      setIsExpired(true);
-      if (inviteData.reissue_requested) setReissueSubmitted(true);
-    }
-  }, [inviteData]);
 
   const checkEmailExistence = async (emailToCheck: string) => {
     const cleanEmail = emailToCheck.trim().toLowerCase();
@@ -97,16 +82,32 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
   };
 
   useEffect(() => {
+    if (!inviteData) return;
+
+    const isTimeExpired = new Date(inviteData.expires_at) < new Date();
+
+    if (defaultEmail) {
+      checkEmailExistence(defaultEmail);
+    }
+
+    if (isTimeExpired || inviteData.is_registered) {
+      setIsExpired(true);
+      if (inviteData.reissue_requested) setReissueSubmitted(true);
+    }
+  }, [inviteData, defaultEmail]);
+
+  useEffect(() => {
     const timer = setTimeout(() => {
-      if (email.trim().length > 3 && email.includes('@')) {
-        checkEmailExistence(email);
+      const activeEmail = email.trim() || defaultEmail;
+      if (activeEmail.length > 3 && activeEmail.includes('@')) {
+        checkEmailExistence(activeEmail);
       } else {
         setAccountFound(null);
       }
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [email]);
+  }, [email, defaultEmail]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -117,8 +118,12 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
 
     try {
       let userId = '';
-      let userEmail = email.trim();
+      let userEmail = (email.trim() || defaultEmail).toLowerCase();
       let userName = fullName.trim() ? toTitleCase(fullName.trim()) : defaultTitleName;
+
+      if (!userEmail) {
+        throw new Error('PLEASE ENTER A VALID EMAIL ADDRESS');
+      }
 
       if (mode === 'signup') {
         const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -193,7 +198,7 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
           <h2 style={{ fontSize: '18px', fontWeight: 300, letterSpacing: '3px', color: '#ef4444', margin: '0 0 12px 0' }}>
             INVITATION EXPIRED
           </h2>
-          <p style={{ color: '#666', fontSize: '12px', lineHeight: '1.8', margin: 0, fontWeight: 300 }}>
+          <p style={{ color: '#888888', fontSize: '12px', lineHeight: '1.8', margin: 0, fontWeight: 300 }}>
             This private pass key is no longer active. Submit a request to the administrator for renewal.
           </p>
 
@@ -205,11 +210,12 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
             <form onSubmit={handleReissueRequest} style={{ marginTop: '30px' }}>
               <div style={{ position: 'relative', marginBottom: '24px' }}>
                 <textarea
+                  className="underline-input"
                   style={{
                     ...underlineInputStyle,
                     minHeight: '60px',
                     resize: 'none',
-                    borderColor: focusedInput === 'reissue' ? '#ffffff' : 'rgba(255,255,255,0.15)'
+                    borderColor: focusedInput === 'reissue' ? '#ffffff' : 'rgba(255,255,255,0.2)'
                   }}
                   placeholder="Reason for renewal request..."
                   value={reissueMsg}
@@ -231,6 +237,13 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
 
   return (
     <div style={containerStyle}>
+      <style>{`
+        .underline-input::placeholder {
+          color: #888888 !important;
+          opacity: 1 !important;
+        }
+      `}</style>
+
       <div style={bgAmbientStyle} />
 
       <div style={mainContentWrapperStyle}>
@@ -290,9 +303,9 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
           </div>
 
           <div style={statusContainerStyle}>
-            {isCheckingEmail && <span style={{ color: '#3b82f6' }}>VERIFYING ACCOUNT...</span>}
-            {!isCheckingEmail && accountFound === true && <span style={{ color: '#22c55e' }}>✓ EXISTING ACCOUNT DETECTED</span>}
-            {errorMessage && <span style={{ color: '#ef4444' }}>{errorMessage}</span>}
+            {isCheckingEmail && <span style={{ color: '#60a5fa' }}>VERIFYING ACCOUNT...</span>}
+            {!isCheckingEmail && accountFound === true && <span style={{ color: '#4ade80' }}>✓ EXISTING ACCOUNT DETECTED</span>}
+            {errorMessage && <span style={{ color: '#f87171' }}>{errorMessage}</span>}
           </div>
 
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -307,9 +320,10 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
               <div style={inputWrapperStyle}>
                 <input 
                   type="text" 
+                  className="underline-input"
                   style={{
                     ...underlineInputStyle,
-                    borderColor: focusedInput === 'fullName' ? '#ffffff' : 'rgba(255, 255, 255, 0.15)',
+                    borderColor: focusedInput === 'fullName' ? '#ffffff' : 'rgba(255, 255, 255, 0.2)',
                   }} 
                   value={fullName} 
                   onFocus={() => setFocusedInput('fullName')}
@@ -323,25 +337,26 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
             <div style={inputWrapperStyle}>
               <input 
                 type="email" 
+                className="underline-input"
                 style={{
                   ...underlineInputStyle,
-                  borderColor: focusedInput === 'email' ? '#ffffff' : 'rgba(255, 255, 255, 0.15)',
+                  borderColor: focusedInput === 'email' ? '#ffffff' : 'rgba(255, 255, 255, 0.2)',
                 }} 
                 value={email} 
                 onFocus={() => setFocusedInput('email')}
                 onBlur={() => setFocusedInput(null)}
                 onChange={(e) => setEmail(e.target.value)} 
-                placeholder="Email Address"
-                required 
+                placeholder={defaultEmail || "Email Address"}
               />
             </div>
 
             <div style={inputWrapperStyle}>
               <input 
                 type="password" 
+                className="underline-input"
                 style={{
                   ...underlineInputStyle,
-                  borderColor: focusedInput === 'password' ? '#ffffff' : 'rgba(255, 255, 255, 0.15)',
+                  borderColor: focusedInput === 'password' ? '#ffffff' : 'rgba(255, 255, 255, 0.2)',
                 }} 
                 value={password} 
                 onFocus={() => setFocusedInput('password')}
@@ -394,7 +409,7 @@ const bgAmbientStyle: React.CSSProperties = {
   transform: 'translate(-50%, -50%)',
   width: '380px',
   height: '380px',
-  background: 'radial-gradient(circle, rgba(255, 255, 255, 0.04) 0%, rgba(0, 0, 0, 0) 75%)',
+  background: 'radial-gradient(circle, rgba(255, 255, 255, 0.05) 0%, rgba(0, 0, 0, 0) 75%)',
   pointerEvents: 'none',
   zIndex: 0,
 };
@@ -415,7 +430,7 @@ const welcomeTitleStyle: React.CSSProperties = {
   letterSpacing: '5px',
   margin: '0 0 14px 0',
   lineHeight: '1.25',
-  color: '#888888',
+  color: '#a0a0a0',
 };
 
 const nameSpanStyle: React.CSSProperties = {
@@ -426,7 +441,7 @@ const nameSpanStyle: React.CSSProperties = {
 
 const descriptionStyle: React.CSSProperties = {
   fontSize: '12px',
-  color: '#666666',
+  color: '#bbbbbb',
   lineHeight: '1.7',
   margin: 0,
   fontWeight: 300,
@@ -440,15 +455,15 @@ const benefitsGridStyle: React.CSSProperties = {
 };
 
 const benefitCardStyle: React.CSSProperties = {
-  backgroundColor: 'rgba(255, 255, 255, 0.015)',
-  borderLeft: '1px solid rgba(255, 255, 255, 0.2)',
+  backgroundColor: 'rgba(255, 255, 255, 0.02)',
+  borderLeft: '1px solid rgba(255, 255, 255, 0.3)',
   padding: '14px 18px',
 };
 
 const benefitNumberStyle: React.CSSProperties = {
   fontSize: '9px',
   fontWeight: 600,
-  color: '#444444',
+  color: '#888888',
   letterSpacing: '2px',
   display: 'block',
   marginBottom: '4px',
@@ -464,7 +479,7 @@ const benefitTitleStyle: React.CSSProperties = {
 
 const benefitDescStyle: React.CSSProperties = {
   fontSize: '11px',
-  color: '#777777',
+  color: '#cccccc',
   margin: 0,
   lineHeight: '1.6',
   fontWeight: 300,
@@ -477,7 +492,7 @@ const cardStyle: React.CSSProperties = {
 
 const tabContainerStyle: React.CSSProperties = {
   display: 'flex',
-  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+  borderBottom: '1px solid rgba(255, 255, 255, 0.15)',
   marginBottom: '16px',
 };
 
@@ -489,7 +504,7 @@ const tabButtonStyle = (active: boolean): React.CSSProperties => ({
   fontSize: '10px',
   fontWeight: 600,
   letterSpacing: '2.5px',
-  color: active ? '#ffffff' : '#333333',
+  color: active ? '#ffffff' : '#666666',
   backgroundColor: 'transparent',
   border: 'none',
   borderBottom: active ? '1.5px solid #ffffff' : '1.5px solid transparent',
@@ -520,7 +535,7 @@ const underlineInputStyle: React.CSSProperties = {
   padding: '12px 0',
   backgroundColor: 'transparent',
   border: 'none',
-  borderBottom: '1px solid rgba(255, 255, 255, 0.15)',
+  borderBottom: '1px solid rgba(255, 255, 255, 0.2)',
   color: '#ffffff',
   fontSize: '13px',
   fontWeight: 300,
