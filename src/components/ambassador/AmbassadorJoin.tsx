@@ -38,7 +38,7 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
   const defaultTitleName = toTitleCase(rawDisplayName);
 
   useEffect(() => {
-    const timer = setTimeout(() => setMounted(true), 60);
+    const timer = setTimeout(() => setMounted(true), 50);
     return () => clearTimeout(timer);
   }, []);
 
@@ -187,10 +187,10 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
     return (
       <div style={containerStyle}>
         <div style={{ ...cardStyle, maxWidth: '420px', textAlign: 'center' }}>
-          <h2 style={{ fontSize: '18px', fontWeight: 300, letterSpacing: '3px', color: '#ef4444', margin: '0 0 12px 0' }}>
+          <h2 style={{ fontSize: '16px', fontWeight: 300, letterSpacing: '3px', color: '#ef4444', margin: '0 0 10px 0' }}>
             INVITATION EXPIRED
           </h2>
-          <p style={{ color: '#666', fontSize: '12px', lineHeight: '1.8', margin: 0, fontWeight: 300 }}>
+          <p style={{ color: '#666', fontSize: '11px', lineHeight: '1.6', margin: 0, fontWeight: 300 }}>
             This private pass key is no longer active. Submit a request to the administrator for renewal.
           </p>
 
@@ -199,12 +199,12 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
               ✓ RENEWAL REQUEST SENT
             </div>
           ) : (
-            <form onSubmit={handleReissueRequest} style={{ marginTop: '30px' }}>
-              <div style={{ position: 'relative', marginBottom: '24px' }}>
+            <form onSubmit={handleReissueRequest} style={{ marginTop: '20px' }}>
+              <div style={{ position: 'relative', marginBottom: '16px' }}>
                 <textarea
                   style={{
                     ...underlineInputStyle,
-                    minHeight: '60px',
+                    minHeight: '50px',
                     resize: 'none',
                     borderColor: focusedInput === 'reissue' ? '#ffffff' : 'rgba(255,255,255,0.15)'
                   }}
@@ -245,18 +245,18 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
           </p>
         </div>
 
-        {/* Compact Benefits Grid */}
+        {/* Ultra Compact Benefits Grid */}
         <div style={{ ...benefitsGridStyle, ...getFadeStyle(mounted) }}>
           <div style={benefitCardStyle}>
             <span style={benefitNumberStyle}>01</span>
             <div style={benefitTitleStyle}>CURATED ALLOCATION</div>
-            <p style={benefitDescStyle}>Select products from our high-tier ambassador allocation to feature in your private gallery.</p>
+            <p style={benefitDescStyle}>Select products from our high-tier ambassador allocation to feature in your gallery.</p>
           </div>
 
           <div style={benefitCardStyle}>
             <span style={benefitNumberStyle}>02</span>
             <div style={benefitTitleStyle}>AUTOMATED COMMISSIONS</div>
-            <p style={benefitDescStyle}>Real-time performance metrics and automated payout tracking for every sales conversion.</p>
+            <p style={benefitDescStyle}>Real-time performance metrics and automated payout tracking for sales conversions.</p>
           </div>
 
           <div style={benefitCardStyle}>
@@ -291,13 +291,13 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
             {errorMessage && <span style={{ color: '#ef4444' }}>{errorMessage}</span>}
           </div>
 
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             
             <div style={{
-              maxHeight: mode === 'signup' ? '65px' : '0px',
+              maxHeight: mode === 'signup' ? '50px' : '0px',
               opacity: mode === 'signup' ? 1 : 0,
               overflow: 'hidden',
-              transition: 'max-height 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease',
+              transition: 'max-height 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease',
               pointerEvents: mode === 'signup' ? 'auto' : 'none',
             }}>
               <div style={inputWrapperStyle}>
@@ -367,8 +367,8 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
 
 const getFadeStyle = (mounted: boolean): React.CSSProperties => ({
   opacity: mounted ? 1 : 0,
-  transform: mounted ? 'translateY(0px)' : 'translateY(24px)',
-  transition: 'opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1), transform 0.85s cubic-bezier(0.16, 1, 0.3, 1)',
+  transform: mounted ? 'translateY(0px)' : 'translateY(16px)',
+  transition: 'opacity 0.75s cubic-bezier(0.16, 1, 0.3, 1), transform 0.75s cubic-bezier(0.16, 1, 0.3, 1)',
 });
 
 const containerStyle: React.CSSProperties = {
@@ -378,7 +378,7 @@ const containerStyle: React.CSSProperties = {
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  padding: '40px 20px', // padding reduced from 60px to 40px
+  padding: '24px 16px', // Tightened overall padding
   fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif',
   boxSizing: 'border-box',
   position: 'relative',
@@ -387,85 +387,84 @@ const containerStyle: React.CSSProperties = {
 
 const bgAmbientStyle: React.CSSProperties = {
   position: 'absolute',
-  top: '25%',
+  top: '20%',
   left: '50%',
   transform: 'translate(-50%, -50%)',
-  width: '380px',
-  height: '380px',
-  background: 'radial-gradient(circle, rgba(255, 255, 255, 0.04) 0%, rgba(0, 0, 0, 0) 75%)',
+  width: '320px',
+  height: '320px',
+  background: 'radial-gradient(circle, rgba(255, 255, 255, 0.035) 0%, rgba(0, 0, 0, 0) 75%)',
   pointerEvents: 'none',
   zIndex: 0,
 };
 
 const mainContentWrapperStyle: React.CSSProperties = {
   width: '100%',
-  maxWidth: '390px',
+  maxWidth: '380px',
   display: 'flex',
   flexDirection: 'column',
-  gap: '22px', // section gap reduced from 32px to 22px
+  gap: '16px', // Tight gap between main blocks
   position: 'relative',
   zIndex: 1,
 };
 
 const welcomeTitleStyle: React.CSSProperties = {
-  fontSize: '26px',
+  fontSize: '22px',
   fontWeight: 200,
-  letterSpacing: '5px',
-  margin: '0 0 10px 0', // bottom margin reduced
-  lineHeight: '1.25',
+  letterSpacing: '4px',
+  margin: '0 0 6px 0',
+  lineHeight: '1.2',
   color: '#888888',
 };
 
 const nameSpanStyle: React.CSSProperties = {
   color: '#ffffff',
   fontWeight: 400,
-  letterSpacing: '4px',
+  letterSpacing: '3px',
 };
 
 const descriptionStyle: React.CSSProperties = {
-  fontSize: '12px',
+  fontSize: '11px',
   color: '#666666',
-  lineHeight: '1.6',
+  lineHeight: '1.5',
   margin: 0,
   fontWeight: 300,
-  letterSpacing: '0.3px',
+  letterSpacing: '0.2px',
 };
 
-// Cards brought closer together
 const benefitsGridStyle: React.CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
-  gap: '6px', // card gap reduced from 10px to 6px
+  gap: '4px', // Extremely compact card gaps
 };
 
 const benefitCardStyle: React.CSSProperties = {
-  backgroundColor: 'rgba(255, 255, 255, 0.015)',
+  backgroundColor: 'rgba(255, 255, 255, 0.012)',
   borderLeft: '1px solid rgba(255, 255, 255, 0.2)',
-  padding: '10px 14px', // padding inside card reduced from 14px 18px to 10px 14px
+  padding: '8px 12px', // Compact inner card padding
 };
 
 const benefitNumberStyle: React.CSSProperties = {
   fontSize: '8px',
   fontWeight: 600,
   color: '#444444',
-  letterSpacing: '2px',
+  letterSpacing: '1.5px',
   display: 'block',
-  marginBottom: '2px',
+  marginBottom: '1px',
 };
 
 const benefitTitleStyle: React.CSSProperties = {
-  fontSize: '10px',
+  fontSize: '9.5px',
   fontWeight: 600,
-  letterSpacing: '2px',
+  letterSpacing: '1.5px',
   color: '#ffffff',
-  marginBottom: '2px',
+  marginBottom: '1px',
 };
 
 const benefitDescStyle: React.CSSProperties = {
-  fontSize: '11px',
+  fontSize: '10.5px',
   color: '#777777',
   margin: 0,
-  lineHeight: '1.5',
+  lineHeight: '1.4',
   fontWeight: 300,
 };
 
@@ -477,17 +476,17 @@ const cardStyle: React.CSSProperties = {
 const tabContainerStyle: React.CSSProperties = {
   display: 'flex',
   borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-  marginBottom: '12px',
+  marginBottom: '8px',
 };
 
 const tabButtonStyle = (active: boolean): React.CSSProperties => ({
   flex: 1,
-  padding: '10px 0',
+  padding: '8px 0',
   textAlign: 'center',
   cursor: 'pointer',
-  fontSize: '10px',
+  fontSize: '9.5px',
   fontWeight: 600,
-  letterSpacing: '2.5px',
+  letterSpacing: '2px',
   color: active ? '#ffffff' : '#333333',
   backgroundColor: 'transparent',
   border: 'none',
@@ -498,15 +497,15 @@ const tabButtonStyle = (active: boolean): React.CSSProperties => ({
 });
 
 const statusContainerStyle: React.CSSProperties = {
-  minHeight: '20px',
-  fontSize: '10px',
-  letterSpacing: '1.5px',
+  minHeight: '16px',
+  fontSize: '9.5px',
+  letterSpacing: '1px',
   fontWeight: 500,
   textAlign: 'center',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  marginBottom: '8px',
+  marginBottom: '4px',
 };
 
 const inputWrapperStyle: React.CSSProperties = {
@@ -516,12 +515,12 @@ const inputWrapperStyle: React.CSSProperties = {
 
 const underlineInputStyle: React.CSSProperties = {
   width: '100%',
-  padding: '10px 0',
+  padding: '8px 0',
   backgroundColor: 'transparent',
   border: 'none',
   borderBottom: '1px solid rgba(255, 255, 255, 0.15)',
   color: '#ffffff',
-  fontSize: '13px',
+  fontSize: '12px',
   fontWeight: 300,
   letterSpacing: '0.5px',
   outline: 'none',
@@ -531,7 +530,7 @@ const underlineInputStyle: React.CSSProperties = {
 
 const buttonStyle: React.CSSProperties = {
   width: '100%',
-  padding: '14px',
+  padding: '13px',
   backgroundColor: '#ffffff',
   color: '#000000',
   border: 'none',
@@ -540,7 +539,7 @@ const buttonStyle: React.CSSProperties = {
   cursor: 'pointer',
   fontSize: '10px',
   letterSpacing: '2.5px',
-  marginTop: '6px',
+  marginTop: '4px',
   transition: 'background-color 0.25s ease, opacity 0.25s ease',
   outline: 'none',
 };
@@ -551,5 +550,5 @@ const statusBannerStyle = (color: string): React.CSSProperties => ({
   letterSpacing: '1.5px',
   fontWeight: 500,
   textAlign: 'center',
-  marginTop: '20px',
+  marginTop: '16px',
 });
