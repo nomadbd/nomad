@@ -67,9 +67,18 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
     return () => clearTimeout(timer);
   }, []);
 
-  // Handle Mobile Keyboard / Visual Viewport Resize
+  // Lock background scroll and handle visual viewport for mobile keyboard
   useEffect(() => {
     if (!isConciergeOpen) return;
+
+    // Lock background page scroll
+    const originalOverflow = document.body.style.overflow;
+    const originalPosition = document.body.style.position;
+    const originalWidth = document.body.style.width;
+    
+    document.body.style.overflow = 'hidden';
+    document.body.style.position = 'fixed';
+    document.body.style.width = '100%';
 
     const updateViewportHeight = () => {
       if (window.visualViewport) {
@@ -89,6 +98,10 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
     }
 
     return () => {
+      document.body.style.overflow = originalOverflow;
+      document.body.style.position = originalPosition;
+      document.body.style.width = originalWidth;
+
       if (window.visualViewport) {
         window.visualViewport.removeEventListener('resize', updateViewportHeight);
         window.visualViewport.removeEventListener('scroll', updateViewportHeight);
@@ -541,7 +554,7 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
         </div>
       </div>
 
-      {/* Dynamic Visual Viewport Handling for Mobile Keyboards */}
+      {/* Locked Full-Screen Concierge Suite */}
       {isConciergeOpen && (
         <div style={getConciergeOverlayStyle(viewportHeight)}>
           <div style={conciergeHeaderStyle}>
@@ -901,12 +914,13 @@ const getConciergeOverlayStyle = (vh: number | null): React.CSSProperties => ({
   top: 0,
   left: 0,
   right: 0,
+  bottom: 0,
   height: vh ? `${vh}px` : '100dvh',
   backgroundColor: '#000000',
-  zIndex: 9999,
+  zIndex: 99999,
   display: 'flex',
   flexDirection: 'column',
-  padding: '24px 20px calc(12px + env(safe-area-inset-bottom)) 20px',
+  padding: '20px 20px 10px 20px',
   boxSizing: 'border-box',
   overflow: 'hidden',
 });
@@ -915,8 +929,9 @@ const conciergeHeaderStyle: React.CSSProperties = {
   display: 'flex',
   justifyContent: 'space-between',
   alignItems: 'flex-start',
-  paddingBottom: '16px',
+  paddingBottom: '12px',
   borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+  flexShrink: 0,
 };
 
 const conciergeTagStyle: React.CSSProperties = {
@@ -925,11 +940,11 @@ const conciergeTagStyle: React.CSSProperties = {
   color: '#666666',
   fontWeight: 600,
   display: 'block',
-  marginBottom: '4px',
+  marginBottom: '2px',
 };
 
 const conciergeTitleStyle: React.CSSProperties = {
-  fontSize: '16px',
+  fontSize: '15px',
   letterSpacing: '3px',
   fontWeight: 300,
   color: '#ffffff',
@@ -951,20 +966,22 @@ const iconButtonStyle: React.CSSProperties = {
 const conciergeBodyStyle: React.CSSProperties = {
   maxWidth: '390px',
   width: '100%',
-  margin: '12px auto 0 auto',
+  margin: '10px auto 0 auto',
   display: 'flex',
   flexDirection: 'column',
   flex: 1,
   overflow: 'hidden',
+  minHeight: 0,
 };
 
 const chatContainerStyle: React.CSSProperties = {
   flex: 1,
   overflowY: 'auto',
   paddingRight: '4px',
-  marginBottom: '12px',
+  marginBottom: '10px',
   display: 'flex',
   flexDirection: 'column',
+  minHeight: 0,
 };
 
 const chatInputFormStyle: React.CSSProperties = {
@@ -975,7 +992,7 @@ const chatInputFormStyle: React.CSSProperties = {
   borderRadius: '28px',
   padding: '4px 6px 4px 16px',
   gap: '8px',
-  transition: 'border-color 0.2s ease',
+  flexShrink: 0,
 };
 
 const chatPillInputStyle: React.CSSProperties = {
@@ -987,7 +1004,7 @@ const chatPillInputStyle: React.CSSProperties = {
   fontWeight: 300,
   outline: 'none',
   resize: 'none',
-  maxHeight: '100px',
+  maxHeight: '80px',
   lineHeight: '1.4',
   padding: '8px 0',
   boxSizing: 'border-box',
