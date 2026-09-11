@@ -21,7 +21,9 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
   const [isCheckingEmail, setIsCheckingEmail] = useState(false);
   const [accountFound, setAccountFound] = useState<boolean | null>(null);
 
-  // ১. মেয়াদ ও নাম ইনিশিয়াল সেটআপ
+  // Focus states for dynamic underline accent
+  const [focusedInput, setFocusedInput] = useState<string | null>(null);
+
   useEffect(() => {
     if (!inviteData) return;
 
@@ -45,7 +47,6 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
     }
   }, [inviteData]);
 
-  // ২. ইমেইল চেক ফাংশন
   const checkEmailExistence = async (emailToCheck: string) => {
     const cleanEmail = emailToCheck.trim().toLowerCase();
     if (!cleanEmail || !cleanEmail.includes('@')) {
@@ -87,7 +88,6 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
     return () => clearTimeout(timer);
   }, [email]);
 
-  // ৩. ফর্ম সাবমিট হ্যান্ডলার
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inviteData || submitting) return;
@@ -124,7 +124,6 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
         userEmail = authData.user.email || userEmail;
       }
 
-      // আসল ডাটাবেজ টোকেন পাঠানো হচ্ছে
       const { data: rpcRes, error: rpcErr } = await supabase.rpc('complete_ambassador_registration', {
         invite_token: inviteData.token,
         new_user_id: userId,
@@ -136,7 +135,6 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
         throw new Error(rpcRes?.message || rpcErr?.message || 'REGISTRATION FAILED');
       }
 
-      // সফল হলে রিলোড না করে পেজ রিফ্রেশ করে ড্যাশবোর্ডে নিয়ে যাবে
       window.location.reload();
     } catch (err: any) {
       setErrorMessage(err.message || 'SOMETHING WENT WRONG');
@@ -145,7 +143,6 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
     }
   };
 
-  // ৪. রিনিউ লিংক রিকোয়েস্ট
   const handleReissueRequest = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inviteData?.token || !reissueMsg.trim() || submitting) return;
@@ -169,42 +166,47 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
     }
   };
 
-  // মেয়াদ উত্তীর্ণ হলে
   if (isExpired) {
     return (
       <div style={containerStyle}>
+        <style>{animationStyles}</style>
         <div style={bgGlowStyle} />
-        <div style={expiredCardStyle}>
-          <div style={badgeStyle('#ef4444')}>
+        <div style={{ ...cardStyle, maxWidth: '420px', textAlign: 'center' }} className="animate-fade-up">
+          <div style={badgeStyle}>
             <span style={dotStyle('#ef4444')} />
             INVITATION EXPIRED
           </div>
-          
-          <h2 style={{ fontSize: '20px', fontWeight: 600, letterSpacing: '-0.02em', margin: '16px 0 8px 0', color: '#fff' }}>
-            Link No Longer Active
+          <h2 style={{ fontSize: '20px', fontWeight: 300, letterSpacing: '2px', margin: '20px 0 10px 0', textTransform: 'uppercase' }}>
+            LINK INACTIVE
           </h2>
-          <p style={{ color: '#86868b', fontSize: '13px', lineHeight: '1.6', margin: 0 }}>
-            This VIP invitation link has reached its expiration window. You can request an updated invitation key directly from the administrator.
+          <p style={{ color: '#888', fontSize: '12px', lineHeight: '1.8', margin: 0, fontWeight: 300 }}>
+            This exclusive pass key has expired. Submit a request to the administrator for renewal.
           </p>
 
           {reissueSubmitted ? (
-            <div style={statusBannerStyle('#22c55e', 'rgba(34, 197, 94, 0.08)', 'rgba(34, 197, 94, 0.2)', '20px')}>
-              ✓ RENEWAL REQUEST SENT TO ADMIN
+            <div style={statusBannerStyle('#22c55e', '24px')}>
+              ✓ RENEWAL REQUEST SENT
             </div>
           ) : (
-            <form onSubmit={handleReissueRequest} style={{ marginTop: '24px' }}>
-              <div style={{ textAlign: 'left', marginBottom: '16px' }}>
-                <label style={labelStyle}>REQUEST MESSAGE</label>
+            <form onSubmit={handleReissueRequest} style={{ marginTop: '30px' }}>
+              <div style={{ position: 'relative', marginBottom: '24px' }}>
                 <textarea
-                  style={textareaStyle}
-                  placeholder="State your reason or leave a note for the admin..."
+                  style={{
+                    ...underlineInputStyle,
+                    minHeight: '60px',
+                    resize: 'none',
+                    borderColor: focusedInput === 'reissue' ? '#fff' : 'rgba(255,255,255,0.2)'
+                  }}
+                  placeholder="Reason for renewal request..."
                   value={reissueMsg}
+                  onFocus={() => setFocusedInput('reissue')}
+                  onBlur={() => setFocusedInput(null)}
                   onChange={(e) => setReissueMsg(e.target.value)}
                   required
                 />
               </div>
               <button type="submit" disabled={submitting} style={buttonStyle}>
-                {submitting ? 'SENDING REQUEST...' : 'REQUEST NEW LINK'}
+                {submitting ? 'SENDING...' : 'REQUEST RENEWAL'}
               </button>
             </form>
           )}
@@ -215,136 +217,135 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
 
   return (
     <div style={containerStyle}>
-      {/* Background Ambient Light */}
+      <style>{animationStyles}</style>
+
+      {/* Dynamic Ambient Background Glow */}
       <div style={bgGlowStyle} />
 
       <div style={mainContentWrapperStyle}>
-        {/* Apple Style Welcome Header */}
-        <div style={welcomeHeaderStyle}>
-          <div style={badgeStyle('#ffffff')}>
+        {/* Header Section */}
+        <div style={welcomeHeaderStyle} className="animate-fade-up">
+          <div style={badgeStyle}>
             <span style={dotStyle('#22c55e')} />
-            VIP AMBASSADOR INVITATION
+            NOMAD PRIVÉ
           </div>
 
           <h1 style={titleStyle}>
-            Prepared Exclusively for{' '}
-            <span style={{ color: '#ffffff', fontWeight: 700 }}>
-              {inviteData?.display_name || 'You'}
-            </span>
+            WELCOME, <span style={{ color: '#ffffff', fontWeight: 400 }}>{inviteData?.display_name?.toUpperCase() || 'GUEST'}</span>
           </h1>
 
           <p style={descriptionStyle}>
-            Represent NOMAD. Build your bespoke storefront, curate iconic pieces, and join our global private partner network.
+            An invitation to curate, influence, and shape the private circle of NOMAD.
           </p>
         </div>
 
-        {/* Benefits Grid - Clean Minimal Cards */}
+        {/* Benefits Section with staggered scroll animations */}
         <div style={benefitsGridStyle}>
-          <div style={benefitCardStyle}>
-            <div style={benefitHeaderStyle}>
-              <span style={benefitNumberStyle}>01</span>
-              <span style={benefitTitleStyle}>Bespoke Storefront</span>
-            </div>
-            <p style={benefitDescStyle}>Your branded destination to share collections directly with your community.</p>
+          <div style={benefitCardStyle} className="animate-fade-up delay-1">
+            <span style={benefitNumberStyle}>01</span>
+            <div style={benefitTitleStyle}>CURATED STOREFRONT</div>
+            <p style={benefitDescStyle}>Your personal digital gallery to display handpicked collections.</p>
           </div>
 
-          <div style={benefitCardStyle}>
-            <div style={benefitHeaderStyle}>
-              <span style={benefitNumberStyle}>02</span>
-              <span style={benefitTitleStyle}>Automated Commissions</span>
-            </div>
-            <p style={benefitDescStyle}>Real-time tracking on orders with automated payout reporting.</p>
+          <div style={benefitCardStyle} className="animate-fade-up delay-2">
+            <span style={benefitNumberStyle}>02</span>
+            <div style={benefitTitleStyle}>AUTOMATED EARNINGS</div>
+            <p style={benefitDescStyle}>Seamless real-time commission tracking and automated payouts.</p>
           </div>
 
-          <div style={benefitCardStyle}>
-            <div style={benefitHeaderStyle}>
-              <span style={benefitNumberStyle}>03</span>
-              <span style={benefitTitleStyle}>Curated Access</span>
-            </div>
-            <p style={benefitDescStyle}>Handpick products, access early drops, and set up custom offer links.</p>
+          <div style={benefitCardStyle} className="animate-fade-up delay-3">
+            <span style={benefitNumberStyle}>03</span>
+            <div style={benefitTitleStyle}>PRIVÉ PRIVILEGES</div>
+            <p style={benefitDescStyle}>Early access to archival drops and bespoke private links.</p>
           </div>
         </div>
 
-        {/* Form Card */}
-        <div style={cardStyle}>
-          {/* Segmented Controller (Apple style tabs) */}
-          <div style={segmentedControlStyle}>
+        {/* Interactive Form Box */}
+        <div style={cardStyle} className="animate-fade-up delay-4">
+          {/* Minimal Line Tab Controller */}
+          <div style={tabContainerStyle}>
             <button 
               type="button" 
               style={tabButtonStyle(mode === 'signup')} 
               onClick={() => setMode('signup')}
             >
-              New Account
+              SIGN UP
             </button>
             <button 
               type="button" 
               style={tabButtonStyle(mode === 'login')} 
               onClick={() => setMode('login')}
             >
-              Existing User
+              LOG IN
             </button>
           </div>
 
-          {/* Account Status Indicators */}
+          {/* Status Banners */}
           {isCheckingEmail && (
-            <div style={statusBannerStyle('#3b82f6', 'rgba(59, 130, 246, 0.08)', 'rgba(59, 130, 246, 0.2)', '0 0 20px 0')}>
-              Verifying account status...
+            <div style={statusBannerStyle('#3b82f6', '0 0 24px 0')}>
+              VERIFYING IDENTITY...
             </div>
           )}
 
           {!isCheckingEmail && accountFound === true && (
-            <div style={statusBannerStyle('#22c55e', 'rgba(34, 197, 94, 0.08)', 'rgba(34, 197, 94, 0.2)', '0 0 20px 0')}>
-              ✓ Account detected — Log in to claim store
-            </div>
-          )}
-
-          {!isCheckingEmail && accountFound === false && email.includes('@') && (
-            <div style={statusBannerStyle('#a1a1aa', 'rgba(255, 255, 255, 0.04)', 'rgba(255, 255, 255, 0.1)', '0 0 20px 0')}>
-              • New user detected — Complete sign up
+            <div style={statusBannerStyle('#22c55e', '0 0 24px 0')}>
+              ✓ EXISTING ACCOUNT DETECTED
             </div>
           )}
 
           {errorMessage && (
-            <div style={statusBannerStyle('#ef4444', 'rgba(239, 68, 68, 0.08)', 'rgba(239, 68, 68, 0.2)', '0 0 20px 0')}>
+            <div style={statusBannerStyle('#ef4444', '0 0 24px 0')}>
               {errorMessage}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
             {mode === 'signup' && (
-              <div>
-                <label style={labelStyle}>FULL NAME</label>
+              <div style={inputWrapperStyle}>
                 <input 
                   type="text" 
-                  style={inputStyle} 
+                  style={{
+                    ...underlineInputStyle,
+                    borderColor: focusedInput === 'fullName' ? '#ffffff' : 'rgba(255, 255, 255, 0.2)',
+                  }} 
                   value={fullName} 
+                  onFocus={() => setFocusedInput('fullName')}
+                  onBlur={() => setFocusedInput(null)}
                   onChange={(e) => setFullName(e.target.value)} 
-                  placeholder="e.g. Alex Morgan"
+                  placeholder="Full Name"
                   required 
                 />
               </div>
             )}
 
-            <div>
-              <label style={labelStyle}>EMAIL ADDRESS</label>
+            <div style={inputWrapperStyle}>
               <input 
                 type="email" 
-                style={inputStyle} 
+                style={{
+                  ...underlineInputStyle,
+                  borderColor: focusedInput === 'email' ? '#ffffff' : 'rgba(255, 255, 255, 0.2)',
+                }} 
                 value={email} 
+                onFocus={() => setFocusedInput('email')}
+                onBlur={() => setFocusedInput(null)}
                 onChange={(e) => setEmail(e.target.value)} 
-                placeholder="name@example.com"
+                placeholder="Email Address"
                 required 
               />
             </div>
 
-            <div>
-              <label style={labelStyle}>{mode === 'signup' ? 'CREATE PASSWORD' : 'PASSWORD'}</label>
+            <div style={inputWrapperStyle}>
               <input 
                 type="password" 
-                style={inputStyle} 
+                style={{
+                  ...underlineInputStyle,
+                  borderColor: focusedInput === 'password' ? '#ffffff' : 'rgba(255, 255, 255, 0.2)',
+                }} 
                 value={password} 
+                onFocus={() => setFocusedInput('password')}
+                onBlur={() => setFocusedInput(null)}
                 onChange={(e) => setPassword(e.target.value)} 
-                placeholder="••••••••"
+                placeholder={mode === 'signup' ? 'Create Password' : 'Password'}
                 required 
                 minLength={6} 
               />
@@ -352,10 +353,10 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
 
             <button type="submit" disabled={submitting || isCheckingEmail} style={buttonStyle}>
               {submitting 
-                ? 'Processing...' 
+                ? 'PROCESSING...' 
                 : mode === 'signup' 
-                  ? 'Join as Ambassador' 
-                  : 'Claim Store & Upgrade'}
+                  ? 'JOIN AMBASSADOR CIRCLE' 
+                  : 'ENTER PRIVÉ DASHBOARD'}
             </button>
           </form>
         </div>
@@ -364,17 +365,44 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
   );
 }
 
-// ---------------- STYLES (Apple & Google Design Systems Inspired) ----------------
+// ---------------- ANIMATIONS & INLINE STYLES ----------------
+
+const animationStyles = `
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(24px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes pulseGlow {
+    0%, 100% { opacity: 0.4; transform: translate(-50%, -50%) scale(1); }
+    50% { opacity: 0.7; transform: translate(-50%, -50%) scale(1.08); }
+  }
+
+  .animate-fade-up {
+    animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  .delay-1 { animation-delay: 0.1s; opacity: 0; }
+  .delay-2 { animation-delay: 0.2s; opacity: 0; }
+  .delay-3 { animation-delay: 0.3s; opacity: 0; }
+  .delay-4 { animation-delay: 0.4s; opacity: 0; }
+`;
 
 const containerStyle: React.CSSProperties = {
   minHeight: '100vh',
   backgroundColor: '#000000',
-  color: '#f5f5f7',
+  color: '#ffffff',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
   padding: '60px 20px',
-  fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+  fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", sans-serif',
   boxSizing: 'border-box',
   position: 'relative',
   overflow: 'hidden',
@@ -382,22 +410,23 @@ const containerStyle: React.CSSProperties = {
 
 const bgGlowStyle: React.CSSProperties = {
   position: 'absolute',
-  top: '20%',
+  top: '30%',
   left: '50%',
   transform: 'translate(-50%, -50%)',
-  width: '600px',
-  height: '400px',
-  background: 'radial-gradient(circle, rgba(255,255,255,0.06) 0%, rgba(0,0,0,0) 70%)',
+  width: '500px',
+  height: '500px',
+  background: 'radial-gradient(circle, rgba(255, 255, 255, 0.08) 0%, rgba(0, 0, 0, 0) 70%)',
   pointerEvents: 'none',
   zIndex: 0,
+  animation: 'pulseGlow 8s ease-in-out infinite',
 };
 
 const mainContentWrapperStyle: React.CSSProperties = {
   width: '100%',
-  maxWidth: '460px',
+  maxWidth: '420px',
   display: 'flex',
   flexDirection: 'column',
-  gap: '28px',
+  gap: '36px',
   position: 'relative',
   zIndex: 1,
 };
@@ -409,191 +438,154 @@ const welcomeHeaderStyle: React.CSSProperties = {
   alignItems: 'center',
 };
 
-const badgeStyle = (textColor: string): React.CSSProperties => ({
+const badgeStyle: React.CSSProperties = {
   display: 'inline-flex',
   alignItems: 'center',
   gap: '8px',
-  padding: '6px 14px',
-  borderRadius: '99px',
-  backgroundColor: 'rgba(255, 255, 255, 0.05)',
-  border: '1px solid rgba(255, 255, 255, 0.1)',
-  fontSize: '11px',
+  padding: '6px 16px',
+  borderRadius: '100px',
+  border: '1px solid rgba(255, 255, 255, 0.15)',
+  backgroundColor: 'rgba(255, 255, 255, 0.03)',
+  fontSize: '10px',
   fontWeight: 600,
-  letterSpacing: '0.08em',
-  color: textColor,
-  marginBottom: '20px',
-});
+  letterSpacing: '2.5px',
+  color: '#ffffff',
+  marginBottom: '24px',
+};
 
 const dotStyle = (color: string): React.CSSProperties => ({
-  width: '6px',
-  height: '6px',
+  width: '5px',
+  height: '5px',
   borderRadius: '50%',
   backgroundColor: color,
-  boxShadow: `0 0 8px ${color}`,
+  boxShadow: `0 0 6px ${color}`,
 });
 
 const titleStyle: React.CSSProperties = {
-  fontSize: '28px',
-  fontWeight: 500,
-  letterSpacing: '-0.03em',
-  margin: '0 0 12px 0',
-  lineHeight: '1.25',
-  color: '#86868b',
+  fontSize: '26px',
+  fontWeight: 200,
+  letterSpacing: '3px',
+  margin: '0 0 14px 0',
+  lineHeight: '1.3',
+  color: 'rgba(255, 255, 255, 0.6)',
 };
 
 const descriptionStyle: React.CSSProperties = {
-  fontSize: '14px',
-  color: '#86868b',
-  lineHeight: '1.6',
-  margin: '0 auto',
-  maxWidth: '400px',
-  fontWeight: 400,
+  fontSize: '13px',
+  color: '#777777',
+  lineHeight: '1.7',
+  margin: 0,
+  fontWeight: 300,
+  letterSpacing: '0.2px',
 };
 
 const benefitsGridStyle: React.CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
-  gap: '10px',
+  gap: '12px',
 };
 
 const benefitCardStyle: React.CSSProperties = {
   backgroundColor: 'rgba(255, 255, 255, 0.02)',
-  border: '1px solid rgba(255, 255, 255, 0.07)',
-  borderRadius: '16px',
+  borderLeft: '1px solid rgba(255, 255, 255, 0.15)',
   padding: '16px 20px',
-  backdropFilter: 'blur(20px)',
-};
-
-const benefitHeaderStyle: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: '10px',
-  marginBottom: '4px',
+  transition: 'border-color 0.3s ease, background-color 0.3s ease',
 };
 
 const benefitNumberStyle: React.CSSProperties = {
-  fontSize: '11px',
-  fontWeight: 700,
-  color: '#6e6e73',
-  letterSpacing: '0.05em',
+  fontSize: '9px',
+  fontWeight: 600,
+  color: '#555555',
+  letterSpacing: '2px',
+  display: 'block',
+  marginBottom: '4px',
 };
 
 const benefitTitleStyle: React.CSSProperties = {
-  fontSize: '13px',
+  fontSize: '11px',
   fontWeight: 600,
-  letterSpacing: '-0.01em',
-  color: '#f5f5f7',
+  letterSpacing: '2px',
+  color: '#ffffff',
+  marginBottom: '4px',
 };
 
 const benefitDescStyle: React.CSSProperties = {
   fontSize: '12px',
-  color: '#86868b',
+  color: '#888888',
   margin: 0,
-  lineHeight: '1.5',
-  paddingLeft: '24px',
+  lineHeight: '1.6',
+  fontWeight: 300,
 };
 
 const cardStyle: React.CSSProperties = {
   width: '100%',
-  borderRadius: '24px',
-  border: '1px solid rgba(255, 255, 255, 0.12)',
-  backgroundColor: 'rgba(18, 18, 18, 0.75)',
-  backdropFilter: 'blur(30px)',
-  padding: '32px 28px',
   boxSizing: 'border-box',
-  boxShadow: '0 20px 40px rgba(0, 0, 0, 0.6)',
+  padding: '10px 0',
 };
 
-const expiredCardStyle: React.CSSProperties = {
-  ...cardStyle,
-  maxWidth: '420px',
-  textAlign: 'center',
-  position: 'relative',
-  zIndex: 1,
-};
-
-const segmentedControlStyle: React.CSSProperties = {
+const tabContainerStyle: React.CSSProperties = {
   display: 'flex',
-  backgroundColor: 'rgba(255, 255, 255, 0.06)',
-  borderRadius: '12px',
-  padding: '3px',
-  marginBottom: '24px',
-  border: '1px solid rgba(255, 255, 255, 0.05)',
+  borderBottom: '1px solid rgba(255, 255, 255, 0.12)',
+  marginBottom: '28px',
 };
 
 const tabButtonStyle = (active: boolean): React.CSSProperties => ({
   flex: 1,
-  padding: '8px 0',
+  padding: '12px 0',
   textAlign: 'center',
   cursor: 'pointer',
-  fontSize: '12px',
-  fontWeight: active ? 600 : 400,
-  color: active ? '#ffffff' : '#86868b',
-  backgroundColor: active ? 'rgba(255, 255, 255, 0.12)' : 'transparent',
+  fontSize: '11px',
+  fontWeight: 600,
+  letterSpacing: '2.5px',
+  color: active ? '#ffffff' : '#444444',
+  backgroundColor: 'transparent',
   border: 'none',
-  borderRadius: '9px',
-  transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+  borderBottom: active ? '2px solid #ffffff' : '2px solid transparent',
+  marginBottom: '-1px',
+  transition: 'all 0.3s ease',
   outline: 'none',
 });
 
-const labelStyle: React.CSSProperties = {
-  fontSize: '10px',
-  color: '#86868b',
-  display: 'block',
-  marginBottom: '6px',
-  letterSpacing: '0.08em',
-  fontWeight: 600,
+const inputWrapperStyle: React.CSSProperties = {
+  position: 'relative',
+  width: '100%',
 };
 
-const inputStyle: React.CSSProperties = {
+const underlineInputStyle: React.CSSProperties = {
   width: '100%',
-  padding: '12px 14px',
-  backgroundColor: 'rgba(255, 255, 255, 0.04)',
-  border: '1px solid rgba(255, 255, 255, 0.1)',
-  borderRadius: '12px',
+  padding: '14px 0',
+  backgroundColor: 'transparent',
+  border: 'none',
+  borderBottom: '1px solid rgba(255, 255, 255, 0.2)',
   color: '#ffffff',
   fontSize: '14px',
+  fontWeight: 300,
+  letterSpacing: '0.5px',
   outline: 'none',
   boxSizing: 'border-box',
-  transition: 'border-color 0.2s ease, background-color 0.2s ease',
-};
-
-const textareaStyle: React.CSSProperties = {
-  ...inputStyle,
-  minHeight: '80px',
-  resize: 'vertical',
-  fontFamily: 'inherit',
+  transition: 'border-color 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
 };
 
 const buttonStyle: React.CSSProperties = {
   width: '100%',
-  padding: '14px',
+  padding: '16px',
   backgroundColor: '#ffffff',
   color: '#000000',
   border: 'none',
-  borderRadius: '12px',
+  borderRadius: '2px',
   fontWeight: 600,
   cursor: 'pointer',
-  fontSize: '13px',
-  letterSpacing: '-0.01em',
-  marginTop: '8px',
-  transition: 'transform 0.15s ease, opacity 0.2s ease',
+  fontSize: '11px',
+  letterSpacing: '2.5px',
+  marginTop: '12px',
+  transition: 'all 0.2s ease',
 };
 
-const statusBannerStyle = (
-  color: string,
-  bgColor: string,
-  borderColor: string,
-  margin: string
-): React.CSSProperties => ({
-  fontSize: '12px',
+const statusBannerStyle = (color: string, margin: string): React.CSSProperties => ({
+  fontSize: '11px',
   color,
-  backgroundColor: bgColor,
-  border: `1px solid ${borderColor}`,
-  borderRadius: '12px',
-  padding: '10px 14px',
-  margin,
-  letterSpacing: '-0.01em',
+  letterSpacing: '1.5px',
   fontWeight: 500,
   textAlign: 'center',
+  margin,
 });
