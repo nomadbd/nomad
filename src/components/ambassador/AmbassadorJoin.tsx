@@ -139,10 +139,8 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
   };
 
   useEffect(() => {
-    if (isConciergeOpen) {
-      fetchMessages();
-    }
-  }, [isConciergeOpen, email, defaultEmail]);
+    fetchMessages();
+  }, [email, defaultEmail]);
 
   useEffect(() => {
     if (isConciergeOpen && messages.length > 0) {
@@ -358,7 +356,7 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
           </div>
         </div>
 
-        {/* Signup / Login Form Area */}
+        {/* Signup / Login Form Area (Smooth Height Reserve) */}
         <div style={{ width: '100%' }}>
           <div style={{ display: 'flex', borderBottom: '1px solid rgba(255, 255, 255, 0.15)', marginBottom: '16px' }}>
             <button 
@@ -377,27 +375,31 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
             </button>
           </div>
 
-          <div style={{ minHeight: '20px', fontSize: '10px', letterSpacing: '1.5px', fontWeight: 500, textAlign: 'center', marginBottom: '12px' }}>
+          <div style={{ minHeight: '18px', fontSize: '10px', letterSpacing: '1.5px', fontWeight: 500, textAlign: 'center', marginBottom: '12px' }}>
             {isCheckingEmail && <span style={{ color: '#60a5fa' }}>VERIFYING ACCOUNT...</span>}
             {!isCheckingEmail && accountFound === true && <span style={{ color: '#4ade80' }}>✓ EXISTING ACCOUNT DETECTED</span>}
             {errorMessage && <span style={{ color: '#f87171' }}>{errorMessage}</span>}
           </div>
 
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
-            {mode === 'signup' && (
-              <div>
-                <input 
-                  type="text" 
-                  name="ambassador_name_field"
-                  autoComplete="off"
-                  style={underlineInputStyle}
-                  value={fullName} 
-                  onChange={(e) => setFullName(e.target.value)} 
-                  placeholder={defaultTitleName || "Full Name"}
-                />
-              </div>
-            )}
+            {/* Smooth height wrapper prevents layout jump */}
+            <div style={{ 
+              maxHeight: mode === 'signup' ? '60px' : '0px', 
+              opacity: mode === 'signup' ? 1 : 0, 
+              overflow: 'hidden', 
+              transition: 'max-height 0.3s ease, opacity 0.25s ease' 
+            }}>
+              <input 
+                type="text" 
+                name="ambassador_name_field"
+                autoComplete="off"
+                style={underlineInputStyle}
+                value={fullName} 
+                onChange={(e) => setFullName(e.target.value)} 
+                placeholder={defaultTitleName || "Full Name"}
+              />
+            </div>
 
             <div>
               <input 
@@ -436,19 +438,19 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
           </form>
         </div>
 
-        {/* Clean Footer Links */}
+        {/* Dynamic & Concise Footer Section */}
         <div style={footerStyle}>
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '12px' }}>
+          <div style={footerLinksContainerStyle}>
             <button 
               type="button" 
               onClick={() => setIsConciergeOpen(true)} 
-              style={footerLinkStyle}
+              style={{ ...footerLinkStyle, color: messages.length > 0 ? '#ffffff' : '#888888', fontWeight: messages.length > 0 ? 500 : 400 }}
             >
-              CONCIERGE SUPPORT
+              {messages.length > 0 ? `CONCIERGE (${messages.length})` : 'CONCIERGE SUPPORT'}
             </button>
-            <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '9px' }}>•</span>
+            <span style={dotStyle}>•</span>
             <a href="/privacy" style={footerLinkStyle}>PRIVACY POLICY</a>
-            <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '9px' }}>•</span>
+            <span style={dotStyle}>•</span>
             <a href="/terms" style={footerLinkStyle}>TERMS</a>
           </div>
           <p style={{ color: '#555555', fontSize: '8px', letterSpacing: '2px', margin: 0, fontWeight: 300 }}>
@@ -458,11 +460,12 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
 
       </div>
 
-      {/* Clean Concierge Support Overlay Modal */}
+      {/* Adaptive Screen Mobile-First Support Modal */}
       {isConciergeOpen && (
         <div style={modalBackdropStyle}>
           <div style={modalBoxStyle}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '12px', borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}>
+            
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '12px', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', flexShrink: 0 }}>
               <div>
                 <span style={{ fontSize: '8px', letterSpacing: '2.5px', color: '#666666', fontWeight: 600, display: 'block' }}>PRIVATE DESK</span>
                 <h3 style={{ fontSize: '13px', letterSpacing: '3px', fontWeight: 300, color: '#ffffff', margin: 0 }}>NOMAD CONCIERGE</h3>
@@ -477,7 +480,7 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
             </div>
 
             {!(email || defaultEmail) && (
-              <div style={{ margin: '12px 0 4px 0' }}>
+              <div style={{ padding: '8px 0', flexShrink: 0 }}>
                 <input
                   type="text"
                   inputMode="email"
@@ -529,6 +532,7 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
               <div ref={chatEndRef} />
             </div>
 
+            {/* Pinned Input Area Sticky Above Keyboard */}
             <form onSubmit={handleSendSupportMessage} style={chatInputFormStyle}>
               <textarea
                 ref={textareaRef}
@@ -565,6 +569,7 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
                 <SendIcon />
               </button>
             </form>
+
           </div>
         </div>
       )}
@@ -683,13 +688,13 @@ const submitButtonStyle: React.CSSProperties = {
   cursor: 'pointer',
   fontSize: '11px',
   letterSpacing: '3px',
-  marginTop: '10px',
+  marginTop: '6px',
   outline: 'none'
 };
 
 const footerStyle: React.CSSProperties = {
-  marginTop: '20px',
-  paddingTop: '20px',
+  marginTop: '16px',
+  paddingTop: '16px',
   borderTop: '1px solid rgba(255, 255, 255, 0.08)',
   textAlign: 'center',
   display: 'flex',
@@ -697,16 +702,29 @@ const footerStyle: React.CSSProperties = {
   gap: '12px'
 };
 
+const footerLinksContainerStyle: React.CSSProperties = {
+  display: 'flex',
+  justifyContent: 'center',
+  alignItems: 'center',
+  gap: '8px',
+  flexWrap: 'nowrap'
+};
+
 const footerLinkStyle: React.CSSProperties = {
   color: '#888888',
   fontSize: '9px',
-  letterSpacing: '1.5px',
+  letterSpacing: '1.2px',
   textDecoration: 'none',
-  fontWeight: 400,
   background: 'none',
   border: 'none',
   cursor: 'pointer',
-  padding: 0
+  padding: 0,
+  whiteSpace: 'nowrap'
+};
+
+const dotStyle: React.CSSProperties = {
+  color: 'rgba(255, 255, 255, 0.2)',
+  fontSize: '8px'
 };
 
 const modalBackdropStyle: React.CSSProperties = {
@@ -715,24 +733,22 @@ const modalBackdropStyle: React.CSSProperties = {
   left: 0,
   right: 0,
   bottom: 0,
-  backgroundColor: 'rgba(0, 0, 0, 0.85)',
+  backgroundColor: 'rgba(0, 0, 0, 0.88)',
   backdropFilter: 'blur(8px)',
   zIndex: 100,
   display: 'flex',
-  alignItems: 'center',
+  alignItems: 'flex-end',
   justifyContent: 'center',
-  padding: '16px'
 };
 
 const modalBoxStyle: React.CSSProperties = {
   width: '100%',
-  maxWidth: '390px',
-  height: '80vh',
-  maxHeight: '560px',
+  maxWidth: '430px',
+  height: '100dvh',
+  maxHeight: '100dvh',
   backgroundColor: '#0a0a0a',
-  border: '1px solid rgba(255, 255, 255, 0.15)',
-  borderRadius: '12px',
-  padding: '16px',
+  borderTop: '1px solid rgba(255, 255, 255, 0.15)',
+  padding: '16px 16px env(safe-area-inset-bottom, 16px) 16px',
   display: 'flex',
   flexDirection: 'column',
   boxSizing: 'border-box'
@@ -745,5 +761,9 @@ const chatInputFormStyle: React.CSSProperties = {
   border: '1px solid rgba(255, 255, 255, 0.15)',
   borderRadius: '28px',
   padding: '4px 6px 4px 16px',
-  gap: '8px'
+  gap: '8px',
+  position: 'sticky',
+  bottom: 0,
+  zIndex: 10,
+  flexShrink: 0
 };
