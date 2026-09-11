@@ -27,7 +27,8 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
   const displayName = (inviteData?.display_name || 'GUEST').toUpperCase();
 
   useEffect(() => {
-    const timer = setTimeout(() => setMounted(true), 60);
+    // 80ms ট্রিগার নিশ্চিত করে ব্রাউজার শুরুর ডিসপ্লেসমেন্ট সঠিক রেন্ডার করছে
+    const timer = setTimeout(() => setMounted(true), 80);
     return () => clearTimeout(timer);
   }, []);
 
@@ -222,7 +223,7 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
 
       <div style={mainContentWrapperStyle}>
         
-        {/* Title Block - Floats Up */}
+        {/* Title Block - Floats Up from below */}
         <div style={getFadeStyle(mounted, 0)}>
           <h1 style={welcomeTitleStyle}>
             WELCOME,
@@ -235,29 +236,29 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
           </p>
         </div>
 
-        {/* Benefits Grid - Sequential Fade Up */}
+        {/* Benefits Grid - Micro-staggered Float Up */}
         <div style={benefitsGridStyle}>
-          <div style={{ ...benefitCardStyle, ...getFadeStyle(mounted, 150) }}>
+          <div style={{ ...benefitCardStyle, ...getFadeStyle(mounted, 40) }}>
             <span style={benefitNumberStyle}>01</span>
             <div style={benefitTitleStyle}>CURATED ALLOCATION</div>
             <p style={benefitDescStyle}>Select products from our high-tier ambassador allocation to feature in your private gallery.</p>
           </div>
 
-          <div style={{ ...benefitCardStyle, ...getFadeStyle(mounted, 300) }}>
+          <div style={{ ...benefitCardStyle, ...getFadeStyle(mounted, 80) }}>
             <span style={benefitNumberStyle}>02</span>
             <div style={benefitTitleStyle}>AUTOMATED COMMISSIONS</div>
             <p style={benefitDescStyle}>Real-time performance metrics and automated payout tracking for every sales conversion.</p>
           </div>
 
-          <div style={{ ...benefitCardStyle, ...getFadeStyle(mounted, 450) }}>
+          <div style={{ ...benefitCardStyle, ...getFadeStyle(mounted, 120) }}>
             <span style={benefitNumberStyle}>03</span>
             <div style={benefitTitleStyle}>PRIVÉ PRIVILEGES</div>
             <p style={benefitDescStyle}>Bespoke invitation links, early release access, and direct portal management.</p>
           </div>
         </div>
 
-        {/* Form Card - Floats Up */}
-        <div style={{ ...cardStyle, ...getFadeStyle(mounted, 600) }}>
+        {/* Form Card - Floats Up together smoothly */}
+        <div style={{ ...cardStyle, ...getFadeStyle(mounted, 160) }}>
           <div style={tabContainerStyle}>
             <button 
               type="button" 
@@ -356,11 +357,11 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
 
 // ---------------- STYLES ----------------
 
-// Float-Up Animation (Starts 16px below, transitions smoothly to 0px)
+// 22px গভীরতা থেকে খুব আলতো করে উপরে উঠবে (Pure Float-Up)
 const getFadeStyle = (mounted: boolean, delayMs: number): React.CSSProperties => ({
   opacity: mounted ? 1 : 0,
-  transform: mounted ? 'translateY(0px)' : 'translateY(16px)',
-  transition: `opacity 0.65s cubic-bezier(0.16, 1, 0.3, 1) ${delayMs}ms, transform 0.65s cubic-bezier(0.16, 1, 0.3, 1) ${delayMs}ms`,
+  transform: mounted ? 'translateY(0px)' : 'translateY(22px)',
+  transition: `opacity 0.75s cubic-bezier(0.16, 1, 0.3, 1) ${delayMs}ms, transform 0.75s cubic-bezier(0.16, 1, 0.3, 1) ${delayMs}ms`,
 });
 
 const containerStyle: React.CSSProperties = {
