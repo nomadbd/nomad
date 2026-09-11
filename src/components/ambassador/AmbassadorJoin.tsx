@@ -222,7 +222,7 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
 
       <div style={mainContentWrapperStyle}>
         
-        {/* Title Block - Clean Static 2-Line Typography */}
+        {/* Title Block - Floats Up */}
         <div style={getFadeStyle(mounted, 0)}>
           <h1 style={welcomeTitleStyle}>
             WELCOME,
@@ -235,7 +235,7 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
           </p>
         </div>
 
-        {/* Benefits Grid */}
+        {/* Benefits Grid - Sequential Fade Up */}
         <div style={benefitsGridStyle}>
           <div style={{ ...benefitCardStyle, ...getFadeStyle(mounted, 150) }}>
             <span style={benefitNumberStyle}>01</span>
@@ -256,7 +256,7 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
           </div>
         </div>
 
-        {/* Interactive Form */}
+        {/* Form Card - Floats Up */}
         <div style={{ ...cardStyle, ...getFadeStyle(mounted, 600) }}>
           <div style={tabContainerStyle}>
             <button 
@@ -275,7 +275,6 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
             </button>
           </div>
 
-          {/* Reserved Height Status Area to avoid vertical jumps */}
           <div style={statusContainerStyle}>
             {isCheckingEmail && <span style={{ color: '#3b82f6' }}>VERIFYING ACCOUNT...</span>}
             {!isCheckingEmail && accountFound === true && <span style={{ color: '#22c55e' }}>✓ EXISTING ACCOUNT DETECTED</span>}
@@ -284,7 +283,6 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
 
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             
-            {/* Smoothly Collapsible Full Name Field */}
             <div style={{
               maxHeight: mode === 'signup' ? '65px' : '0px',
               opacity: mode === 'signup' ? 1 : 0,
@@ -346,8 +344,8 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
               {submitting 
                 ? 'PROCESSING...' 
                 : mode === 'signup' 
-                  ? 'JOIN AMBASSADOR CIRCLE' 
-                  : 'ENTER PRIVÉ DASHBOARD'}
+                  ? 'JOIN AMBASSADOR CIRCLE  →' 
+                  : 'ENTER PRIVÉ DASHBOARD  →'}
             </button>
           </form>
         </div>
@@ -358,10 +356,11 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
 
 // ---------------- STYLES ----------------
 
+// Float-Up Animation (Starts 16px below, transitions smoothly to 0px)
 const getFadeStyle = (mounted: boolean, delayMs: number): React.CSSProperties => ({
   opacity: mounted ? 1 : 0,
-  transform: mounted ? 'translateY(0)' : 'translateY(14px)',
-  transition: `opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1) ${delayMs}ms, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1) ${delayMs}ms`,
+  transform: mounted ? 'translateY(0px)' : 'translateY(16px)',
+  transition: `opacity 0.65s cubic-bezier(0.16, 1, 0.3, 1) ${delayMs}ms, transform 0.65s cubic-bezier(0.16, 1, 0.3, 1) ${delayMs}ms`,
 });
 
 const containerStyle: React.CSSProperties = {
