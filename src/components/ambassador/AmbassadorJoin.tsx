@@ -5,7 +5,7 @@ interface AmbassadorJoinProps {
   initialInviteData: any;
 }
 
-// Helper to convert names to Proper Title Case (e.g. "badol rahman" -> "Badol Rahman")
+// Helper to convert names to Proper Title Case
 const toTitleCase = (str: string) => {
   if (!str) return '';
   return str
@@ -21,8 +21,6 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
   const [errorMessage, setErrorMessage] = useState('');
 
   const [mode, setMode] = useState<'signup' | 'login'>('signup');
-  
-  // Keep fullName empty initially so placeholder shows and typing requires zero backspacing
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -36,13 +34,13 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
   const [mounted, setMounted] = useState(false);
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
 
-  // Formatted names for Header & Placeholder
   const rawDisplayName = inviteData?.display_name || 'GUEST';
   const headerDisplayName = rawDisplayName.toUpperCase();
   const defaultTitleName = toTitleCase(rawDisplayName);
 
   useEffect(() => {
-    const timer = setTimeout(() => setMounted(true), 80);
+    // সব উপাদানকে একদম একই ফ্রেম থেকে একসাথে অ্যানিমেট করার জন্য
+    const timer = setTimeout(() => setMounted(true), 60);
     return () => clearTimeout(timer);
   }, []);
 
@@ -119,8 +117,6 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
     try {
       let userId = '';
       let userEmail = email.trim();
-      
-      // Fallback Logic: Use typed fullName OR fall back to default formatted title name
       let userName = fullName.trim() ? toTitleCase(fullName.trim()) : defaultTitleName;
 
       if (mode === 'signup') {
@@ -238,8 +234,8 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
 
       <div style={mainContentWrapperStyle}>
         
-        {/* Title Block */}
-        <div style={getFadeStyle(mounted, 0)}>
+        {/* Title Block - Floats Up Together */}
+        <div style={getFadeStyle(mounted)}>
           <h1 style={welcomeTitleStyle}>
             WELCOME,
             <br />
@@ -251,29 +247,29 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
           </p>
         </div>
 
-        {/* Benefits Grid */}
-        <div style={benefitsGridStyle}>
-          <div style={{ ...benefitCardStyle, ...getFadeStyle(mounted, 40) }}>
+        {/* Benefits Grid - Floats Up Together */}
+        <div style={{ ...benefitsGridStyle, ...getFadeStyle(mounted) }}>
+          <div style={benefitCardStyle}>
             <span style={benefitNumberStyle}>01</span>
             <div style={benefitTitleStyle}>CURATED ALLOCATION</div>
             <p style={benefitDescStyle}>Select products from our high-tier ambassador allocation to feature in your private gallery.</p>
           </div>
 
-          <div style={{ ...benefitCardStyle, ...getFadeStyle(mounted, 80) }}>
+          <div style={benefitCardStyle}>
             <span style={benefitNumberStyle}>02</span>
             <div style={benefitTitleStyle}>AUTOMATED COMMISSIONS</div>
             <p style={benefitDescStyle}>Real-time performance metrics and automated payout tracking for every sales conversion.</p>
           </div>
 
-          <div style={{ ...benefitCardStyle, ...getFadeStyle(mounted, 120) }}>
+          <div style={benefitCardStyle}>
             <span style={benefitNumberStyle}>03</span>
             <div style={benefitTitleStyle}>PRIVÉ PRIVILEGES</div>
             <p style={benefitDescStyle}>Bespoke invitation links, early release access, and direct portal management.</p>
           </div>
         </div>
 
-        {/* Form Card */}
-        <div style={{ ...cardStyle, ...getFadeStyle(mounted, 160) }}>
+        {/* Form Card - Floats Up Together */}
+        <div style={{ ...cardStyle, ...getFadeStyle(mounted) }}>
           <div style={tabContainerStyle}>
             <button 
               type="button" 
@@ -359,8 +355,8 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
               {submitting 
                 ? 'PROCESSING...' 
                 : mode === 'signup' 
-                  ? 'JOIN AMBASSADOR CIRCLE  →' 
-                  : 'ENTER PRIVÉ DASHBOARD  →'}
+                  ? 'JOIN CIRCLE' 
+                  : 'ENTER PORTAL'}
             </button>
           </form>
         </div>
@@ -371,10 +367,11 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
 
 // ---------------- STYLES ----------------
 
-const getFadeStyle = (mounted: boolean, delayMs: number): React.CSSProperties => ({
+// কোনো ডিলে নেই — পুরো পেজ একসাথে স্মুথলি নিচ থেকে ২৪ পিক্সেল উপরে উঠে আসবে
+const getFadeStyle = (mounted: boolean): React.CSSProperties => ({
   opacity: mounted ? 1 : 0,
-  transform: mounted ? 'translateY(0px)' : 'translateY(22px)',
-  transition: `opacity 0.75s cubic-bezier(0.16, 1, 0.3, 1) ${delayMs}ms, transform 0.75s cubic-bezier(0.16, 1, 0.3, 1) ${delayMs}ms`,
+  transform: mounted ? 'translateY(0px)' : 'translateY(24px)',
+  transition: 'opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1), transform 0.85s cubic-bezier(0.16, 1, 0.3, 1)',
 });
 
 const containerStyle: React.CSSProperties = {
@@ -534,19 +531,21 @@ const underlineInputStyle: React.CSSProperties = {
   transition: 'border-color 0.3s ease',
 };
 
+// বাটন স্টাইল: পিওর মিনিমাল টাইপোগ্রাফি
 const buttonStyle: React.CSSProperties = {
   width: '100%',
-  padding: '15px',
+  padding: '16px',
   backgroundColor: '#ffffff',
   color: '#000000',
   border: 'none',
-  borderRadius: '2px',
+  borderRadius: '1px',
   fontWeight: 600,
   cursor: 'pointer',
-  fontSize: '10px',
-  letterSpacing: '2.5px',
-  marginTop: '8px',
-  transition: 'opacity 0.2s ease',
+  fontSize: '11px',
+  letterSpacing: '3px',
+  marginTop: '10px',
+  transition: 'background-color 0.25s ease, opacity 0.25s ease',
+  outline: 'none',
 };
 
 const statusBannerStyle = (color: string): React.CSSProperties => ({
