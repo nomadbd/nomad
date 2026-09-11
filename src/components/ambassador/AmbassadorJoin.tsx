@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/supabaseClient';
 import { CloseIcon, SendIcon } from '@/components/icons';
-import styles from './AmbassadorJoin.module.css';
 
 interface AmbassadorJoinProps {
   initialInviteData: any;
@@ -32,9 +31,8 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
   const [isCheckingEmail, setIsCheckingEmail] = useState(false);
   const [accountFound, setAccountFound] = useState<boolean | null>(null);
 
-  // Concierge Support, Accordion & Chat States
+  // Concierge Modal & Support Chat States
   const [isConciergeOpen, setIsConciergeOpen] = useState(false);
-  const [isAccordionOpen, setIsAccordionOpen] = useState(false);
   const [supportMsg, setSupportMsg] = useState('');
   const [customSupportEmail, setCustomSupportEmail] = useState('');
   const [isSendingSupport, setIsSendingSupport] = useState(false);
@@ -115,7 +113,7 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
     return () => clearTimeout(timer);
   }, [email, defaultEmail]);
 
-  // Fetch Concierge Chat History
+  // Fetch Support History
   const fetchMessages = async () => {
     const activeEmail = (email.trim() || defaultEmail || customSupportEmail.trim()).toLowerCase();
     const channelId = inviteData?.token || activeEmail || 'general_inquiry';
@@ -141,50 +139,16 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
   };
 
   useEffect(() => {
-    fetchMessages();
-  }, [email, defaultEmail]);
-
-  // Realtime Listener for Live Admin Replies
-  useEffect(() => {
-    const activeEmail = (email.trim() || defaultEmail || customSupportEmail.trim()).toLowerCase();
-    const channelId = inviteData?.token || activeEmail || 'general_inquiry';
-
-    if (!channelId) return;
-
-    const channel = supabase
-      .channel(`communications:${channelId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'communications',
-          filter: `channel_id=eq.${channelId}`,
-        },
-        (payload) => {
-          if (payload.new) {
-            setMessages((prev) => {
-              if (prev.some((m) => m.id === payload.new.id)) return prev;
-              return [...prev, payload.new];
-            });
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [email, defaultEmail, customSupportEmail, inviteData]);
-
-  const showInlineChat = isConciergeOpen || messages.length > 0;
-
-  // Internal Scroll Only for Messages (No Page Window Scroll)
-  useEffect(() => {
-    if (showInlineChat && messages.length > 0) {
-      chatEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    if (isConciergeOpen) {
+      fetchMessages();
     }
-  }, [messages, showInlineChat]);
+  }, [isConciergeOpen, email, defaultEmail]);
+
+  useEffect(() => {
+    if (isConciergeOpen && messages.length > 0) {
+      chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages, isConciergeOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -318,12 +282,12 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
 
   if (isExpired) {
     return (
-      <div className={styles.container}>
-        <div className={styles.cardStyle} style={{ maxWidth: '420px', textAlign: 'center' }}>
+      <div style={containerStyle}>
+        <div style={{ width: '100%', maxWidth: '420px', textAlign: 'center' }}>
           <h2 style={{ fontSize: '18px', fontWeight: 300, letterSpacing: '3px', color: '#ef4444', margin: '0 0 12px 0' }}>
             INVITATION EXPIRED
           </h2>
-          <p className={styles.description}>
+          <p style={descStyle}>
             This private pass key is no longer active. Submit a request to the administrator for renewal.
           </p>
 
@@ -335,15 +299,14 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
             <form onSubmit={handleReissueRequest} style={{ marginTop: '30px' }}>
               <div style={{ position: 'relative', marginBottom: '24px' }}>
                 <textarea
-                  className={styles.underlineInput}
-                  style={{ minHeight: '60px', resize: 'none' }}
+                  style={underlineInputStyle}
                   placeholder="Reason for renewal request..."
                   value={reissueMsg}
                   onChange={(e) => setReissueMsg(e.target.value)}
                   required
                 />
               </div>
-              <button type="submit" disabled={submitting} className={styles.submitButton}>
+              <button type="submit" disabled={submitting} style={submitButtonStyle}>
                 {submitting ? 'SENDING...' : 'REQUEST RENEWAL'}
               </button>
             </form>
@@ -354,192 +317,171 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
   }
 
   return (
-    <div className={`${styles.container} ${showInlineChat ? styles.containerChatMode : ''}`}>
-      <div className={styles.bgAmbient} />
+    <div style={containerStyle}>
+      <div style={mainWrapperStyle}>
+        
+        {/* Header Section */}
+        <div>
+          <h1 style={titleStyle}>
+            WELCOME,
+            <br />
+            <span style={{ color: '#ffffff', fontWeight: 400, letterSpacing: '3px' }}>{headerDisplayName}</span>
+          </h1>
 
-      <div className={styles.mainWrapper}>
+          <p style={descStyle}>
+            You have been granted exclusive access to curate selected allocations and represent NOMAD.
+          </p>
+        </div>
 
-        {/* Accordion Toggle Header Bar (Only visible when chat is active) */}
-        {showInlineChat && (
-          <button 
-            type="button" 
-            className={styles.accordionToggle} 
-            onClick={() => setIsAccordionOpen(!isAccordionOpen)}
-          >
-            <span className={styles.accordionTitle}>
-              WELCOME, <span className={styles.accordionTitleHighlight}>{headerDisplayName}</span>
-            </span>
-            <span className={`${styles.chevronIcon} ${isAccordionOpen ? styles.chevronIconRotated : ''}`}>
-              ▼
-            </span>
-          </button>
-        )}
+        {/* Benefits Section */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div style={cardStyle}>
+            <span style={numberStyle}>01</span>
+            <div style={benefitTitleStyle}>CURATED ALLOCATION</div>
+            <p style={benefitDescStyle}>Select products from our high-tier ambassador allocation to feature in your private gallery.</p>
+          </div>
 
-        {/* Clean CSS Grid Accordion for Top Section */}
-        <div className={`${styles.accordionGrid} ${(!showInlineChat || isAccordionOpen) ? styles.accordionGridOpen : ''}`}>
-          <div className={styles.accordionInner}>
-            <div className={styles.accordionContent}>
-              
-              <div>
-                <h1 className={styles.welcomeTitle}>
-                  WELCOME,
-                  <br />
-                  <span className={styles.nameSpan}>{headerDisplayName}</span>
-                </h1>
+          <div style={cardStyle}>
+            <span style={numberStyle}>02</span>
+            <div style={benefitTitleStyle}>AUTOMATED COMMISSIONS</div>
+            <p style={benefitDescStyle}>
+              Earn a baseline {commissionRate}% payout with real-time performance tracking for every sales conversion.
+            </p>
+          </div>
 
-                <p className={styles.description}>
-                  You have been granted exclusive access to curate selected allocations and represent NOMAD.
-                </p>
-              </div>
-
-              <div className={styles.benefitsGrid}>
-                <div className={styles.benefitCard}>
-                  <span className={styles.benefitNumber}>01</span>
-                  <div className={styles.benefitTitle}>CURATED ALLOCATION</div>
-                  <p className={styles.benefitDesc}>Select products from our high-tier ambassador allocation to feature in your private gallery.</p>
-                </div>
-
-                <div className={styles.benefitCard}>
-                  <span className={styles.benefitNumber}>02</span>
-                  <div className={styles.benefitTitle}>AUTOMATED COMMISSIONS</div>
-                  <p className={styles.benefitDesc}>
-                    Earn a baseline {commissionRate}% payout with real-time performance tracking for every sales conversion. Rates remain subject to periodic review by NOMAD.
-                  </p>
-                </div>
-
-                <div className={styles.benefitCard}>
-                  <span className={styles.benefitNumber}>03</span>
-                  <div className={styles.benefitTitle}>PRIVÉ PRIVILEGES</div>
-                  <p className={styles.benefitDesc}>
-                    Bespoke invitation links offering an initial {discountPercent}% VIP pass for your audience, early release access, and direct portal management. Discount rates remain subject to adjustment by NOMAD.
-                  </p>
-                </div>
-              </div>
-
-              <div className={styles.cardStyle}>
-                <div className={styles.tabContainer}>
-                  <button 
-                    type="button" 
-                    className={`${styles.tabButton} ${mode === 'signup' ? styles.tabButtonActive : ''}`} 
-                    onClick={() => setMode('signup')}
-                  >
-                    SIGN UP
-                  </button>
-                  <button 
-                    type="button" 
-                    className={`${styles.tabButton} ${mode === 'login' ? styles.tabButtonActive : ''}`} 
-                    onClick={() => setMode('login')}
-                  >
-                    LOG IN
-                  </button>
-                </div>
-
-                <div className={styles.statusContainer}>
-                  {isCheckingEmail && <span style={{ color: '#60a5fa' }}>VERIFYING ACCOUNT...</span>}
-                  {!isCheckingEmail && accountFound === true && <span style={{ color: '#4ade80' }}>✓ EXISTING ACCOUNT DETECTED</span>}
-                  {errorMessage && <span style={{ color: '#f87171' }}>{errorMessage}</span>}
-                </div>
-
-                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-
-                  {mode === 'signup' && (
-                    <div className={styles.inputWrapper}>
-                      <input 
-                        type="text" 
-                        name="ambassador_name_field"
-                        autoComplete="off"
-                        className={styles.underlineInput}
-                        value={fullName} 
-                        onChange={(e) => setFullName(e.target.value)} 
-                        placeholder={defaultTitleName || "Full Name"}
-                      />
-                    </div>
-                  )}
-
-                  <div className={styles.inputWrapper}>
-                    <input 
-                      type="text" 
-                      inputMode="email"
-                      name="ambassador_user_id"
-                      autoComplete="off"
-                      className={styles.underlineInput}
-                      value={email} 
-                      onChange={(e) => setEmail(e.target.value)} 
-                      placeholder={defaultEmail || "Email Address"}
-                    />
-                  </div>
-
-                  <div className={styles.inputWrapper}>
-                    <input 
-                      type="password" 
-                      name="ambassador_password_field"
-                      autoComplete="new-password"
-                      className={styles.underlineInput}
-                      value={password} 
-                      onChange={(e) => setPassword(e.target.value)} 
-                      placeholder={mode === 'signup' ? 'Create Password' : 'Password'}
-                      required 
-                      minLength={6} 
-                    />
-                  </div>
-
-                  <button type="submit" disabled={submitting || isCheckingEmail} className={styles.submitButton}>
-                    {submitting 
-                      ? 'PROCESSING...' 
-                      : mode === 'signup' 
-                        ? 'JOIN CIRCLE' 
-                        : 'ENTER PORTAL'}
-                  </button>
-                </form>
-              </div>
-
-            </div>
+          <div style={cardStyle}>
+            <span style={numberStyle}>03</span>
+            <div style={benefitTitleStyle}>PRIVÉ PRIVILEGES</div>
+            <p style={benefitDescStyle}>
+              Bespoke invitation links offering an initial {discountPercent}% VIP pass for your audience, early release access, and direct portal management.
+            </p>
           </div>
         </div>
 
-        {/* Footer Links (When chat is closed) OR Native Dynamic Chat UI */}
-        {!showInlineChat ? (
-          <div className={styles.footerContainer}>
-            <div className={styles.footerLinks}>
+        {/* Signup / Login Form Area */}
+        <div style={{ width: '100%' }}>
+          <div style={{ display: 'flex', borderBottom: '1px solid rgba(255, 255, 255, 0.15)', marginBottom: '16px' }}>
+            <button 
+              type="button" 
+              style={{ ...tabButtonStyle, borderBottomColor: mode === 'signup' ? '#ffffff' : 'transparent', color: mode === 'signup' ? '#ffffff' : '#666666' }} 
+              onClick={() => setMode('signup')}
+            >
+              SIGN UP
+            </button>
+            <button 
+              type="button" 
+              style={{ ...tabButtonStyle, borderBottomColor: mode === 'login' ? '#ffffff' : 'transparent', color: mode === 'login' ? '#ffffff' : '#666666' }} 
+              onClick={() => setMode('login')}
+            >
+              LOG IN
+            </button>
+          </div>
+
+          <div style={{ minHeight: '20px', fontSize: '10px', letterSpacing: '1.5px', fontWeight: 500, textAlign: 'center', marginBottom: '12px' }}>
+            {isCheckingEmail && <span style={{ color: '#60a5fa' }}>VERIFYING ACCOUNT...</span>}
+            {!isCheckingEmail && accountFound === true && <span style={{ color: '#4ade80' }}>✓ EXISTING ACCOUNT DETECTED</span>}
+            {errorMessage && <span style={{ color: '#f87171' }}>{errorMessage}</span>}
+          </div>
+
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+
+            {mode === 'signup' && (
+              <div>
+                <input 
+                  type="text" 
+                  name="ambassador_name_field"
+                  autoComplete="off"
+                  style={underlineInputStyle}
+                  value={fullName} 
+                  onChange={(e) => setFullName(e.target.value)} 
+                  placeholder={defaultTitleName || "Full Name"}
+                />
+              </div>
+            )}
+
+            <div>
+              <input 
+                type="text" 
+                inputMode="email"
+                name="ambassador_user_id"
+                autoComplete="off"
+                style={underlineInputStyle}
+                value={email} 
+                onChange={(e) => setEmail(e.target.value)} 
+                placeholder={defaultEmail || "Email Address"}
+              />
+            </div>
+
+            <div>
+              <input 
+                type="password" 
+                name="ambassador_password_field"
+                autoComplete="new-password"
+                style={underlineInputStyle}
+                value={password} 
+                onChange={(e) => setPassword(e.target.value)} 
+                placeholder={mode === 'signup' ? 'Create Password' : 'Password'}
+                required 
+                minLength={6} 
+              />
+            </div>
+
+            <button type="submit" disabled={submitting || isCheckingEmail} style={submitButtonStyle}>
+              {submitting 
+                ? 'PROCESSING...' 
+                : mode === 'signup' 
+                  ? 'JOIN CIRCLE' 
+                  : 'ENTER PORTAL'}
+            </button>
+          </form>
+        </div>
+
+        {/* Clean Footer Links */}
+        <div style={footerStyle}>
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '12px' }}>
+            <button 
+              type="button" 
+              onClick={() => setIsConciergeOpen(true)} 
+              style={footerLinkStyle}
+            >
+              CONCIERGE SUPPORT
+            </button>
+            <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '9px' }}>•</span>
+            <a href="/privacy" style={footerLinkStyle}>PRIVACY POLICY</a>
+            <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '9px' }}>•</span>
+            <a href="/terms" style={footerLinkStyle}>TERMS</a>
+          </div>
+          <p style={{ color: '#555555', fontSize: '8px', letterSpacing: '2px', margin: 0, fontWeight: 300 }}>
+            © 2026 NOMAD. ALL RIGHTS RESERVED.
+          </p>
+        </div>
+
+      </div>
+
+      {/* Clean Concierge Support Overlay Modal */}
+      {isConciergeOpen && (
+        <div style={modalBackdropStyle}>
+          <div style={modalBoxStyle}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '12px', borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}>
+              <div>
+                <span style={{ fontSize: '8px', letterSpacing: '2.5px', color: '#666666', fontWeight: 600, display: 'block' }}>PRIVATE DESK</span>
+                <h3 style={{ fontSize: '13px', letterSpacing: '3px', fontWeight: 300, color: '#ffffff', margin: 0 }}>NOMAD CONCIERGE</h3>
+              </div>
               <button 
                 type="button" 
-                onClick={() => setIsConciergeOpen(true)} 
-                className={styles.footerLink}
+                onClick={() => setIsConciergeOpen(false)} 
+                style={{ background: 'none', border: 'none', color: '#ffffff', cursor: 'pointer', padding: '4px' }}
               >
-                CONCIERGE SUPPORT
+                <CloseIcon />
               </button>
-              <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '9px' }}>•</span>
-              <a href="/privacy" className={styles.footerLink}>PRIVACY POLICY</a>
-              <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '9px' }}>•</span>
-              <a href="/terms" className={styles.footerLink}>TERMS</a>
-            </div>
-            <p className={styles.copyright}>© 2026 NOMAD. ALL RIGHTS RESERVED.</p>
-          </div>
-        ) : (
-          <div className={styles.chatWrapper}>
-            <div className={styles.chatHeader}>
-              <div>
-                <span className={styles.conciergeTag}>PRIVATE DESK</span>
-                <h3 className={styles.conciergeTitle}>NOMAD CONCIERGE</h3>
-              </div>
-              {messages.length === 0 && (
-                <button 
-                  type="button" 
-                  onClick={() => setIsConciergeOpen(false)} 
-                  className={styles.iconButton}
-                  aria-label="Close Chat"
-                >
-                  <CloseIcon />
-                </button>
-              )}
             </div>
 
             {!(email || defaultEmail) && (
-              <div style={{ marginBottom: '8px' }}>
+              <div style={{ margin: '12px 0 4px 0' }}>
                 <input
                   type="text"
                   inputMode="email"
-                  className={styles.underlineInput}
+                  style={underlineInputStyle}
                   placeholder="Your Return Email Address"
                   value={customSupportEmail}
                   onChange={(e) => setCustomSupportEmail(e.target.value)}
@@ -548,27 +490,36 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
               </div>
             )}
 
-            <div className={styles.messagesArea}>
+            <div style={{ flex: 1, overflowY: 'auto', margin: '12px 0', paddingRight: '4px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {isLoadingMessages ? (
-                <div style={{ fontSize: '10px', color: '#666', letterSpacing: '1px', textAlign: 'center', padding: '15px 0' }}>
+                <div style={{ fontSize: '10px', color: '#666', letterSpacing: '1px', textAlign: 'center', padding: '20px 0' }}>
                   FETCHING HISTORY...
                 </div>
               ) : messages.length === 0 ? (
-                <div style={{ fontSize: '11px', color: '#666', textAlign: 'center', padding: '15px 0', fontWeight: 300 }}>
+                <div style={{ fontSize: '11px', color: '#666', textAlign: 'center', padding: '20px 0', fontWeight: 300 }}>
                   Direct communication line with NOMAD administration. Type below to start.
                 </div>
               ) : (
                 messages.map((msg, index) => {
                   const isAdmin = msg.sender_role === 'admin' || msg.sender_role === 'support';
                   return (
-                    <div 
-                      key={msg.id || index} 
-                      className={`${styles.msgItem} ${isAdmin ? styles.msgAdmin : styles.msgUser}`}
-                    >
-                      <span className={styles.msgLabel}>
+                    <div key={msg.id || index} style={{ display: 'flex', flexDirection: 'column', alignItems: isAdmin ? 'flex-start' : 'flex-end' }}>
+                      <span style={{ fontSize: '8px', color: '#666666', letterSpacing: '1px', marginBottom: '3px' }}>
                         {isAdmin ? 'NOMAD DESK' : 'YOU'}
                       </span>
-                      <div className={`${styles.msgBubble} ${isAdmin ? styles.msgBubbleAdmin : styles.msgBubbleUser}`}>
+                      <div style={{
+                        maxWidth: '85%',
+                        padding: '10px 14px',
+                        fontSize: '12px',
+                        lineHeight: '1.5',
+                        fontWeight: 300,
+                        backgroundColor: isAdmin ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.12)',
+                        color: '#ffffff',
+                        borderRadius: isAdmin ? '14px 14px 14px 2px' : '14px 14px 2px 14px',
+                        border: isAdmin ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid rgba(255, 255, 255, 0.18)',
+                        wordBreak: 'break-word',
+                        whiteSpace: 'pre-wrap'
+                      }}>
                         {msg.message}
                       </div>
                     </div>
@@ -578,10 +529,10 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
               <div ref={chatEndRef} />
             </div>
 
-            <form onSubmit={handleSendSupportMessage} className={styles.chatInputForm}>
+            <form onSubmit={handleSendSupportMessage} style={chatInputFormStyle}>
               <textarea
                 ref={textareaRef}
-                className={styles.chatPillInput}
+                style={{ flex: 1, backgroundColor: 'transparent', border: 'none', color: '#ffffff', fontSize: '13px', fontWeight: 300, outline: 'none', resize: 'none', maxHeight: '80px', lineHeight: '1.4', padding: '8px 0' }}
                 rows={1}
                 placeholder="Type your message..."
                 value={supportMsg}
@@ -596,22 +547,203 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
               <button 
                 type="submit" 
                 disabled={isSendingSupport || !supportMsg.trim()} 
-                className={styles.sendBtn}
                 style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  border: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
                   opacity: (isSendingSupport || !supportMsg.trim()) ? 0.25 : 1,
-                  cursor: (isSendingSupport || !supportMsg.trim()) ? 'not-allowed' : 'pointer',
                   backgroundColor: supportMsg.trim() ? '#ffffff' : 'rgba(255, 255, 255, 0.1)',
                   color: supportMsg.trim() ? '#000000' : '#ffffff',
+                  cursor: (isSendingSupport || !supportMsg.trim()) ? 'not-allowed' : 'pointer'
                 }}
-                aria-label="Send Message"
               >
                 <SendIcon />
               </button>
             </form>
           </div>
-        )}
+        </div>
+      )}
 
-      </div>
     </div>
   );
 }
+
+// Inline Styles
+const containerStyle: React.CSSProperties = {
+  minHeight: '100vh',
+  backgroundColor: '#000000',
+  color: '#ffffff',
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  justifyContent: 'center',
+  padding: '40px 20px',
+  fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif',
+  boxSizing: 'border-box'
+};
+
+const mainWrapperStyle: React.CSSProperties = {
+  width: '100%',
+  maxWidth: '390px',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '24px'
+};
+
+const titleStyle: React.CSSProperties = {
+  fontSize: '26px',
+  fontWeight: 200,
+  letterSpacing: '4px',
+  margin: '0 0 10px 0',
+  lineHeight: 1.25,
+  color: '#a0a0a0'
+};
+
+const descStyle: React.CSSProperties = {
+  fontSize: '12px',
+  color: '#bbbbbb',
+  lineHeight: '1.6',
+  margin: 0,
+  fontWeight: 300
+};
+
+const cardStyle: React.CSSProperties = {
+  backgroundColor: 'rgba(255, 255, 255, 0.02)',
+  borderLeft: '1px solid rgba(255, 255, 255, 0.3)',
+  padding: '12px 16px'
+};
+
+const numberStyle: React.CSSProperties = {
+  fontSize: '9px',
+  fontWeight: 600,
+  color: '#888888',
+  letterSpacing: '2px',
+  display: 'block',
+  marginBottom: '2px'
+};
+
+const benefitTitleStyle: React.CSSProperties = {
+  fontSize: '10px',
+  fontWeight: 600,
+  letterSpacing: '2px',
+  color: '#ffffff',
+  marginBottom: '4px'
+};
+
+const benefitDescStyle: React.CSSProperties = {
+  fontSize: '11px',
+  color: '#cccccc',
+  margin: 0,
+  lineHeight: '1.5',
+  fontWeight: 300
+};
+
+const tabButtonStyle: React.CSSProperties = {
+  flex: 1,
+  padding: '12px 0',
+  textAlign: 'center',
+  cursor: 'pointer',
+  fontSize: '10px',
+  fontWeight: 600,
+  letterSpacing: '2.5px',
+  background: 'transparent',
+  border: 'none',
+  borderBottom: '1.5px solid transparent',
+  marginBottom: '-1px',
+  outline: 'none'
+};
+
+const underlineInputStyle: React.CSSProperties = {
+  width: '100%',
+  padding: '12px 0',
+  backgroundColor: 'transparent',
+  border: 'none',
+  borderBottom: '1px solid rgba(255, 255, 255, 0.2)',
+  color: '#ffffff',
+  fontSize: '13px',
+  fontWeight: 300,
+  letterSpacing: '0.5px',
+  outline: 'none',
+  boxSizing: 'border-box'
+};
+
+const submitButtonStyle: React.CSSProperties = {
+  width: '100%',
+  padding: '16px',
+  backgroundColor: '#ffffff',
+  color: '#000000',
+  border: 'none',
+  borderRadius: '1px',
+  fontWeight: 600,
+  cursor: 'pointer',
+  fontSize: '11px',
+  letterSpacing: '3px',
+  marginTop: '10px',
+  outline: 'none'
+};
+
+const footerStyle: React.CSSProperties = {
+  marginTop: '20px',
+  paddingTop: '20px',
+  borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+  textAlign: 'center',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '12px'
+};
+
+const footerLinkStyle: React.CSSProperties = {
+  color: '#888888',
+  fontSize: '9px',
+  letterSpacing: '1.5px',
+  textDecoration: 'none',
+  fontWeight: 400,
+  background: 'none',
+  border: 'none',
+  cursor: 'pointer',
+  padding: 0
+};
+
+const modalBackdropStyle: React.CSSProperties = {
+  position: 'fixed',
+  top: 0,
+  left: 0,
+  right: 0,
+  bottom: 0,
+  backgroundColor: 'rgba(0, 0, 0, 0.85)',
+  backdropFilter: 'blur(8px)',
+  zIndex: 100,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  padding: '16px'
+};
+
+const modalBoxStyle: React.CSSProperties = {
+  width: '100%',
+  maxWidth: '390px',
+  height: '80vh',
+  maxHeight: '560px',
+  backgroundColor: '#0a0a0a',
+  border: '1px solid rgba(255, 255, 255, 0.15)',
+  borderRadius: '12px',
+  padding: '16px',
+  display: 'flex',
+  flexDirection: 'column',
+  boxSizing: 'border-box'
+};
+
+const chatInputFormStyle: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  backgroundColor: 'rgba(255, 255, 255, 0.05)',
+  border: '1px solid rgba(255, 255, 255, 0.15)',
+  borderRadius: '28px',
+  padding: '4px 6px 4px 16px',
+  gap: '8px'
+};
