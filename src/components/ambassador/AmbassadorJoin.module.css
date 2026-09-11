@@ -1,5 +1,6 @@
 .container {
   min-height: 100vh;
+  min-height: 100dvh;
   background-color: #000000;
   color: #ffffff;
   display: flex;
@@ -7,16 +8,18 @@
   align-items: center;
   justify-content: center;
   padding: 40px 20px;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
   box-sizing: border-box;
   position: relative;
 }
 
+/* Strict Layout Lock for Mobile Keyboards in Chat Mode */
 .containerChatMode {
-  justify-content: flex-start;
-  padding: 24px 16px;
   height: 100vh;
+  height: 100dvh;
+  padding: 16px;
   overflow: hidden;
+  justify-content: flex-start;
 }
 
 .bgAmbient {
@@ -36,13 +39,13 @@
   max-width: 390px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 14px;
   position: relative;
   z-index: 1;
   height: 100%;
 }
 
-/* Accordion Top Bar */
+/* Accordion Top Header Bar */
 .accordionToggle {
   display: flex;
   align-items: center;
@@ -51,17 +54,11 @@
   padding: 12px 16px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 4px;
+  border-radius: 6px;
   color: #ffffff;
   cursor: pointer;
   outline: none;
-  transition: background 0.25s ease, border-color 0.25s ease;
   flex-shrink: 0;
-}
-
-.accordionToggle:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.25);
 }
 
 .accordionTitle {
@@ -72,7 +69,6 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  text-transform: uppercase;
 }
 
 .accordionTitleHighlight {
@@ -81,37 +77,41 @@
 }
 
 .chevronIcon {
-  font-size: 10px;
+  font-size: 9px;
   color: #aaaaaa;
-  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  display: inline-block;
+  transition: transform 0.35s ease;
 }
 
 .chevronIconRotated {
   transform: rotate(180deg);
 }
 
-/* Collapsible Content with Smooth Slide & Fade */
-.collapsibleContent {
-  max-height: 0;
-  opacity: 0;
-  overflow: hidden;
-  transition: max-height 0.5s cubic-bezier(0.16, 1, 0.3, 1),
-              opacity 0.35s ease,
-              margin 0.35s ease;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
+/* Pure CSS Grid Accordion Container (Eliminates translateY artifacts) */
+.accordionGrid {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+  width: 100%;
   flex-shrink: 0;
 }
 
-.collapsibleContentOpen {
-  max-height: 1200px;
-  opacity: 1;
-  margin-bottom: 8px;
+.accordionGridOpen {
+  grid-template-rows: 1fr;
 }
 
-/* Content Elements */
+.accordionInner {
+  overflow: hidden;
+}
+
+.accordionContent {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-top: 4px;
+  padding-bottom: 8px;
+}
+
+/* Content Typography & Cards */
 .welcomeTitle {
   font-size: 26px;
   font-weight: 200;
@@ -172,7 +172,6 @@
   font-weight: 300;
 }
 
-/* Tabs & Inputs */
 .cardStyle {
   width: 100%;
 }
@@ -196,7 +195,6 @@
   border: none;
   border-bottom: 1.5px solid transparent;
   margin-bottom: -1px;
-  transition: color 0.25s ease, border-color 0.25s ease;
   outline: none;
 }
 
@@ -217,11 +215,6 @@
   margin-bottom: 12px;
 }
 
-.inputWrapper {
-  position: relative;
-  width: 100%;
-}
-
 .underlineInput {
   width: 100%;
   padding: 12px 0;
@@ -234,12 +227,10 @@
   letter-spacing: 0.5px;
   outline: none;
   box-sizing: border-box;
-  transition: border-color 0.3s ease;
 }
 
 .underlineInput::placeholder {
   color: #888888 !important;
-  opacity: 1 !important;
 }
 
 .submitButton {
@@ -254,17 +245,17 @@
   font-size: 11px;
   letter-spacing: 3px;
   margin-top: 10px;
-  transition: background-color 0.25s ease, opacity 0.25s ease;
   outline: none;
 }
 
-/* Dedicated Chat Layout */
+/* Dedicated Native Mobile Chat Layout */
 .chatWrapper {
   display: flex;
   flex-direction: column;
   flex: 1;
   min-height: 0;
-  gap: 12px;
+  gap: 10px;
+  padding-bottom: env(safe-area-inset-bottom, 8px);
 }
 
 .chatHeader {
@@ -300,11 +291,9 @@
   cursor: pointer;
   outline: none;
   padding: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
+/* Internal Message Scrolling Only */
 .messagesArea {
   flex: 1;
   overflow-y: auto;
@@ -312,15 +301,11 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-  min-height: 160px;
+  min-height: 0;
 }
 
 .messagesArea::-webkit-scrollbar {
   width: 3px;
-}
-
-.messagesArea::-webkit-scrollbar-track {
-  background: transparent;
 }
 
 .messagesArea::-webkit-scrollbar-thumb {
@@ -372,6 +357,7 @@
   border: 1px solid rgba(255, 255, 255, 0.18);
 }
 
+/* Pinned Chat Input Area */
 .chatInputForm {
   display: flex;
   align-items: center;
@@ -388,7 +374,7 @@
   background-color: transparent;
   border: none;
   color: #ffffff;
-  fontSize: 13px;
+  font-size: 13px;
   font-weight: 300;
   outline: none;
   resize: none;
@@ -411,14 +397,13 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  transition: all 0.2s ease;
   outline: none;
 }
 
-/* Footer (Used Only When Chat is Closed) */
+/* Footer Container */
 .footerContainer {
-  margin-top: 30px;
-  padding-top: 20px;
+  margin-top: 20px;
+  padding-top: 16px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   text-align: center;
   display: flex;
@@ -440,7 +425,6 @@
   letter-spacing: 1.5px;
   text-decoration: none;
   font-weight: 400;
-  transition: color 0.2s ease;
   background: none;
   border: none;
   cursor: pointer;
