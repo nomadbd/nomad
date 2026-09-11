@@ -21,8 +21,33 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
   const [isCheckingEmail, setIsCheckingEmail] = useState(false);
   const [accountFound, setAccountFound] = useState<boolean | null>(null);
 
-  // Focus states for dynamic underline accent
+  // Entrance & Typewriter Animation States
+  const [mounted, setMounted] = useState(false);
+  const [typedName, setTypedName] = useState('');
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
+
+  const rawName = (inviteData?.display_name || 'GUEST').toUpperCase();
+
+  useEffect(() => {
+    // Mount delay to trigger smooth transition
+    const mountTimer = setTimeout(() => setMounted(true), 100);
+
+    // Typewriter effect for ambassador name
+    let index = 0;
+    const typeInterval = setInterval(() => {
+      if (index <= rawName.length) {
+        setTypedName(rawName.slice(0, index));
+        index++;
+      } else {
+        clearInterval(typeInterval);
+      }
+    }, 90);
+
+    return () => {
+      clearTimeout(mountTimer);
+      clearInterval(typeInterval);
+    };
+  }, [rawName]);
 
   useEffect(() => {
     if (!inviteData) return;
@@ -169,18 +194,12 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
   if (isExpired) {
     return (
       <div style={containerStyle}>
-        <style>{animationStyles}</style>
-        <div style={bgGlowStyle} />
-        <div style={{ ...cardStyle, maxWidth: '420px', textAlign: 'center' }} className="animate-fade-up">
-          <div style={badgeStyle}>
-            <span style={dotStyle('#ef4444')} />
+        <div style={{ ...cardStyle, maxWidth: '420px', textAlign: 'center' }}>
+          <h2 style={{ fontSize: '18px', fontWeight: 300, letterSpacing: '3px', color: '#ef4444', margin: '0 0 12px 0' }}>
             INVITATION EXPIRED
-          </div>
-          <h2 style={{ fontSize: '20px', fontWeight: 300, letterSpacing: '2px', margin: '20px 0 10px 0', textTransform: 'uppercase' }}>
-            LINK INACTIVE
           </h2>
-          <p style={{ color: '#888', fontSize: '12px', lineHeight: '1.8', margin: 0, fontWeight: 300 }}>
-            This exclusive pass key has expired. Submit a request to the administrator for renewal.
+          <p style={{ color: '#666', fontSize: '12px', lineHeight: '1.8', margin: 0, fontWeight: 300 }}>
+            This private pass key is no longer active. Submit a request to the administrator for renewal.
           </p>
 
           {reissueSubmitted ? (
@@ -195,7 +214,7 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
                     ...underlineInputStyle,
                     minHeight: '60px',
                     resize: 'none',
-                    borderColor: focusedInput === 'reissue' ? '#fff' : 'rgba(255,255,255,0.2)'
+                    borderColor: focusedInput === 'reissue' ? '#ffffff' : 'rgba(255,255,255,0.15)'
                   }}
                   placeholder="Reason for renewal request..."
                   value={reissueMsg}
@@ -217,52 +236,50 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
 
   return (
     <div style={containerStyle}>
-      <style>{animationStyles}</style>
-
-      {/* Dynamic Ambient Background Glow */}
-      <div style={bgGlowStyle} />
+      {/* Living Ambient Glow Light behind content */}
+      <div style={bgAmbientStyle} />
 
       <div style={mainContentWrapperStyle}>
-        {/* Header Section */}
-        <div style={welcomeHeaderStyle} className="animate-fade-up">
-          <div style={badgeStyle}>
-            <span style={dotStyle('#22c55e')} />
-            NOMAD PRIVÉ
-          </div>
-
-          <h1 style={titleStyle}>
-            WELCOME, <span style={{ color: '#ffffff', fontWeight: 400 }}>{inviteData?.display_name?.toUpperCase() || 'GUEST'}</span>
+        
+        {/* Welcome Title Block (2-Line layout with Typewriter Name) */}
+        <div style={getFadeStyle(mounted, 0)}>
+          <h1 style={welcomeTitleStyle}>
+            WELCOME,
+            <br />
+            <span style={nameSpanStyle}>
+              {typedName}
+              <span style={cursorStyle}>|</span>
+            </span>
           </h1>
 
           <p style={descriptionStyle}>
-            An invitation to curate, influence, and shape the private circle of NOMAD.
+            You have been granted exclusive access to curate selected allocations and represent NOMAD.
           </p>
         </div>
 
-        {/* Benefits Section with staggered scroll animations */}
+        {/* Benefits Section with Curated Allocation Focus */}
         <div style={benefitsGridStyle}>
-          <div style={benefitCardStyle} className="animate-fade-up delay-1">
+          <div style={{ ...benefitCardStyle, ...getFadeStyle(mounted, 200) }}>
             <span style={benefitNumberStyle}>01</span>
-            <div style={benefitTitleStyle}>CURATED STOREFRONT</div>
-            <p style={benefitDescStyle}>Your personal digital gallery to display handpicked collections.</p>
+            <div style={benefitTitleStyle}>CURATED ALLOCATION</div>
+            <p style={benefitDescStyle}>Select products from our high-tier ambassador allocation to feature in your private gallery.</p>
           </div>
 
-          <div style={benefitCardStyle} className="animate-fade-up delay-2">
+          <div style={{ ...benefitCardStyle, ...getFadeStyle(mounted, 350) }}>
             <span style={benefitNumberStyle}>02</span>
-            <div style={benefitTitleStyle}>AUTOMATED EARNINGS</div>
-            <p style={benefitDescStyle}>Seamless real-time commission tracking and automated payouts.</p>
+            <div style={benefitTitleStyle}>AUTOMATED COMMISSIONS</div>
+            <p style={benefitDescStyle}>Real-time performance metrics and automated payout tracking for every sales conversion.</p>
           </div>
 
-          <div style={benefitCardStyle} className="animate-fade-up delay-3">
+          <div style={{ ...benefitCardStyle, ...getFadeStyle(mounted, 500) }}>
             <span style={benefitNumberStyle}>03</span>
             <div style={benefitTitleStyle}>PRIVÉ PRIVILEGES</div>
-            <p style={benefitDescStyle}>Early access to archival drops and bespoke private links.</p>
+            <p style={benefitDescStyle}>Bespoke invitation links, early release access, and direct portal management.</p>
           </div>
         </div>
 
-        {/* Interactive Form Box */}
-        <div style={cardStyle} className="animate-fade-up delay-4">
-          {/* Minimal Line Tab Controller */}
+        {/* Interactive Form */}
+        <div style={{ ...cardStyle, ...getFadeStyle(mounted, 650) }}>
           <div style={tabContainerStyle}>
             <button 
               type="button" 
@@ -280,33 +297,32 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
             </button>
           </div>
 
-          {/* Status Banners */}
           {isCheckingEmail && (
-            <div style={statusBannerStyle('#3b82f6', '0 0 24px 0')}>
-              VERIFYING IDENTITY...
+            <div style={statusBannerStyle('#3b82f6', '0 0 20px 0')}>
+              VERIFYING ACCOUNT...
             </div>
           )}
 
           {!isCheckingEmail && accountFound === true && (
-            <div style={statusBannerStyle('#22c55e', '0 0 24px 0')}>
+            <div style={statusBannerStyle('#22c55e', '0 0 20px 0')}>
               ✓ EXISTING ACCOUNT DETECTED
             </div>
           )}
 
           {errorMessage && (
-            <div style={statusBannerStyle('#ef4444', '0 0 24px 0')}>
+            <div style={statusBannerStyle('#ef4444', '0 0 20px 0')}>
               {errorMessage}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
             {mode === 'signup' && (
               <div style={inputWrapperStyle}>
                 <input 
                   type="text" 
                   style={{
                     ...underlineInputStyle,
-                    borderColor: focusedInput === 'fullName' ? '#ffffff' : 'rgba(255, 255, 255, 0.2)',
+                    borderColor: focusedInput === 'fullName' ? '#ffffff' : 'rgba(255, 255, 255, 0.15)',
                   }} 
                   value={fullName} 
                   onFocus={() => setFocusedInput('fullName')}
@@ -323,7 +339,7 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
                 type="email" 
                 style={{
                   ...underlineInputStyle,
-                  borderColor: focusedInput === 'email' ? '#ffffff' : 'rgba(255, 255, 255, 0.2)',
+                  borderColor: focusedInput === 'email' ? '#ffffff' : 'rgba(255, 255, 255, 0.15)',
                 }} 
                 value={email} 
                 onFocus={() => setFocusedInput('email')}
@@ -339,7 +355,7 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
                 type="password" 
                 style={{
                   ...underlineInputStyle,
-                  borderColor: focusedInput === 'password' ? '#ffffff' : 'rgba(255, 255, 255, 0.2)',
+                  borderColor: focusedInput === 'password' ? '#ffffff' : 'rgba(255, 255, 255, 0.15)',
                 }} 
                 value={password} 
                 onFocus={() => setFocusedInput('password')}
@@ -365,34 +381,13 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
   );
 }
 
-// ---------------- ANIMATIONS & INLINE STYLES ----------------
+// ---------------- STYLES & DYNAMIC MOTION ----------------
 
-const animationStyles = `
-  @keyframes fadeInUp {
-    from {
-      opacity: 0;
-      transform: translateY(24px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  @keyframes pulseGlow {
-    0%, 100% { opacity: 0.4; transform: translate(-50%, -50%) scale(1); }
-    50% { opacity: 0.7; transform: translate(-50%, -50%) scale(1.08); }
-  }
-
-  .animate-fade-up {
-    animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  }
-
-  .delay-1 { animation-delay: 0.1s; opacity: 0; }
-  .delay-2 { animation-delay: 0.2s; opacity: 0; }
-  .delay-3 { animation-delay: 0.3s; opacity: 0; }
-  .delay-4 { animation-delay: 0.4s; opacity: 0; }
-`;
+const getFadeStyle = (mounted: boolean, delayMs: number): React.CSSProperties => ({
+  opacity: mounted ? 1 : 0,
+  transform: mounted ? 'translateY(0)' : 'translateY(18px)',
+  transition: `opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1) ${delayMs}ms, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1) ${delayMs}ms`,
+});
 
 const containerStyle: React.CSSProperties = {
   minHeight: '100vh',
@@ -402,107 +397,90 @@ const containerStyle: React.CSSProperties = {
   alignItems: 'center',
   justifyContent: 'center',
   padding: '60px 20px',
-  fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", sans-serif',
+  fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif',
   boxSizing: 'border-box',
   position: 'relative',
   overflow: 'hidden',
 };
 
-const bgGlowStyle: React.CSSProperties = {
+const bgAmbientStyle: React.CSSProperties = {
   position: 'absolute',
-  top: '30%',
+  top: '25%',
   left: '50%',
   transform: 'translate(-50%, -50%)',
-  width: '500px',
-  height: '500px',
-  background: 'radial-gradient(circle, rgba(255, 255, 255, 0.08) 0%, rgba(0, 0, 0, 0) 70%)',
+  width: '380px',
+  height: '380px',
+  background: 'radial-gradient(circle, rgba(255, 255, 255, 0.05) 0%, rgba(0, 0, 0, 0) 75%)',
   pointerEvents: 'none',
   zIndex: 0,
-  animation: 'pulseGlow 8s ease-in-out infinite',
 };
 
 const mainContentWrapperStyle: React.CSSProperties = {
   width: '100%',
-  maxWidth: '420px',
+  maxWidth: '390px',
   display: 'flex',
   flexDirection: 'column',
-  gap: '36px',
+  gap: '32px',
   position: 'relative',
   zIndex: 1,
 };
 
-const welcomeHeaderStyle: React.CSSProperties = {
-  textAlign: 'center',
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-};
-
-const badgeStyle: React.CSSProperties = {
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: '8px',
-  padding: '6px 16px',
-  borderRadius: '100px',
-  border: '1px solid rgba(255, 255, 255, 0.15)',
-  backgroundColor: 'rgba(255, 255, 255, 0.03)',
-  fontSize: '10px',
-  fontWeight: 600,
-  letterSpacing: '2.5px',
-  color: '#ffffff',
-  marginBottom: '24px',
-};
-
-const dotStyle = (color: string): React.CSSProperties => ({
-  width: '5px',
-  height: '5px',
-  borderRadius: '50%',
-  backgroundColor: color,
-  boxShadow: `0 0 6px ${color}`,
-});
-
-const titleStyle: React.CSSProperties = {
-  fontSize: '26px',
+const welcomeTitleStyle: React.CSSProperties = {
+  fontSize: '28px',
   fontWeight: 200,
-  letterSpacing: '3px',
+  letterSpacing: '5px',
   margin: '0 0 14px 0',
-  lineHeight: '1.3',
-  color: 'rgba(255, 255, 255, 0.6)',
+  lineHeight: '1.25',
+  color: '#888888',
+};
+
+const nameSpanStyle: React.CSSProperties = {
+  color: '#ffffff',
+  fontWeight: 400,
+  letterSpacing: '4px',
+  position: 'relative',
+};
+
+const cursorStyle: React.CSSProperties = {
+  fontSize: '24px',
+  fontWeight: 200,
+  color: '#ffffff',
+  opacity: 0.6,
+  marginLeft: '2px',
 };
 
 const descriptionStyle: React.CSSProperties = {
-  fontSize: '13px',
-  color: '#777777',
+  fontSize: '12px',
+  color: '#666666',
   lineHeight: '1.7',
   margin: 0,
   fontWeight: 300,
-  letterSpacing: '0.2px',
+  letterSpacing: '0.3px',
 };
 
 const benefitsGridStyle: React.CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
-  gap: '12px',
+  gap: '10px',
 };
 
 const benefitCardStyle: React.CSSProperties = {
-  backgroundColor: 'rgba(255, 255, 255, 0.02)',
-  borderLeft: '1px solid rgba(255, 255, 255, 0.15)',
-  padding: '16px 20px',
-  transition: 'border-color 0.3s ease, background-color 0.3s ease',
+  backgroundColor: 'rgba(255, 255, 255, 0.015)',
+  borderLeft: '1px solid rgba(255, 255, 255, 0.2)',
+  padding: '14px 18px',
 };
 
 const benefitNumberStyle: React.CSSProperties = {
   fontSize: '9px',
   fontWeight: 600,
-  color: '#555555',
+  color: '#444444',
   letterSpacing: '2px',
   display: 'block',
   marginBottom: '4px',
 };
 
 const benefitTitleStyle: React.CSSProperties = {
-  fontSize: '11px',
+  fontSize: '10px',
   fontWeight: 600,
   letterSpacing: '2px',
   color: '#ffffff',
@@ -510,8 +488,8 @@ const benefitTitleStyle: React.CSSProperties = {
 };
 
 const benefitDescStyle: React.CSSProperties = {
-  fontSize: '12px',
-  color: '#888888',
+  fontSize: '11px',
+  color: '#777777',
   margin: 0,
   lineHeight: '1.6',
   fontWeight: 300,
@@ -520,12 +498,11 @@ const benefitDescStyle: React.CSSProperties = {
 const cardStyle: React.CSSProperties = {
   width: '100%',
   boxSizing: 'border-box',
-  padding: '10px 0',
 };
 
 const tabContainerStyle: React.CSSProperties = {
   display: 'flex',
-  borderBottom: '1px solid rgba(255, 255, 255, 0.12)',
+  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
   marginBottom: '28px',
 };
 
@@ -534,13 +511,13 @@ const tabButtonStyle = (active: boolean): React.CSSProperties => ({
   padding: '12px 0',
   textAlign: 'center',
   cursor: 'pointer',
-  fontSize: '11px',
+  fontSize: '10px',
   fontWeight: 600,
   letterSpacing: '2.5px',
-  color: active ? '#ffffff' : '#444444',
+  color: active ? '#ffffff' : '#333333',
   backgroundColor: 'transparent',
   border: 'none',
-  borderBottom: active ? '2px solid #ffffff' : '2px solid transparent',
+  borderBottom: active ? '1.5px solid #ffffff' : '1.5px solid transparent',
   marginBottom: '-1px',
   transition: 'all 0.3s ease',
   outline: 'none',
@@ -553,36 +530,36 @@ const inputWrapperStyle: React.CSSProperties = {
 
 const underlineInputStyle: React.CSSProperties = {
   width: '100%',
-  padding: '14px 0',
+  padding: '12px 0',
   backgroundColor: 'transparent',
   border: 'none',
-  borderBottom: '1px solid rgba(255, 255, 255, 0.2)',
+  borderBottom: '1px solid rgba(255, 255, 255, 0.15)',
   color: '#ffffff',
-  fontSize: '14px',
+  fontSize: '13px',
   fontWeight: 300,
   letterSpacing: '0.5px',
   outline: 'none',
   boxSizing: 'border-box',
-  transition: 'border-color 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+  transition: 'border-color 0.3s ease',
 };
 
 const buttonStyle: React.CSSProperties = {
   width: '100%',
-  padding: '16px',
+  padding: '15px',
   backgroundColor: '#ffffff',
   color: '#000000',
   border: 'none',
   borderRadius: '2px',
   fontWeight: 600,
   cursor: 'pointer',
-  fontSize: '11px',
+  fontSize: '10px',
   letterSpacing: '2.5px',
-  marginTop: '12px',
+  marginTop: '8px',
   transition: 'all 0.2s ease',
 };
 
 const statusBannerStyle = (color: string, margin: string): React.CSSProperties => ({
-  fontSize: '11px',
+  fontSize: '10px',
   color,
   letterSpacing: '1.5px',
   fontWeight: 500,
