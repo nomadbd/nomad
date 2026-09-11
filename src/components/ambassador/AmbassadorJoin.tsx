@@ -42,6 +42,9 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
   const [messages, setMessages] = useState<any[]>([]);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   
+  // Dynamic Viewport Height for Mobile Keyboards
+  const [viewportHeight, setViewportHeight] = useState<number | null>(null);
+
   const chatEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -63,6 +66,37 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
     const timer = setTimeout(() => setMounted(true), 60);
     return () => clearTimeout(timer);
   }, []);
+
+  // Handle Mobile Keyboard / Visual Viewport Resize
+  useEffect(() => {
+    if (!isConciergeOpen) return;
+
+    const updateViewportHeight = () => {
+      if (window.visualViewport) {
+        setViewportHeight(window.visualViewport.height);
+      } else {
+        setViewportHeight(window.innerHeight);
+      }
+    };
+
+    updateViewportHeight();
+
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', updateViewportHeight);
+      window.visualViewport.addEventListener('scroll', updateViewportHeight);
+    } else {
+      window.addEventListener('resize', updateViewportHeight);
+    }
+
+    return () => {
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', updateViewportHeight);
+        window.visualViewport.removeEventListener('scroll', updateViewportHeight);
+      } else {
+        window.removeEventListener('resize', updateViewportHeight);
+      }
+    };
+  }, [isConciergeOpen]);
 
   const checkEmailExistence = async (emailToCheck: string) => {
     const cleanEmail = emailToCheck.trim().toLowerCase();
@@ -507,9 +541,9 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
         </div>
       </div>
 
-      {/* Full-Screen Concierge Suite */}
+      {/* Dynamic Visual Viewport Handling for Mobile Keyboards */}
       {isConciergeOpen && (
-        <div style={fullScreenOverlayStyle}>
+        <div style={getConciergeOverlayStyle(viewportHeight)}>
           <div style={conciergeHeaderStyle}>
             <div>
               <span style={conciergeTagStyle}>PRIVATE DESK</span>
@@ -595,7 +629,6 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
               <div ref={chatEndRef} />
             </div>
 
-            {/* শুধু বাটন ক্লিকে মেসেজ সেন্ড হবে, Enter চাপলে লাইন ব্রেক হবে */}
             <form onSubmit={handleSendSupportMessage} style={chatInputFormStyle}>
               <textarea
                 ref={textareaRef}
@@ -603,6 +636,11 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
                 rows={1}
                 placeholder="Type your message..."
                 value={supportMsg}
+                onFocus={() => {
+                  setTimeout(() => {
+                    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+                  }, 200);
+                }}
                 onChange={(e) => {
                   setSupportMsg(e.target.value);
                   e.target.style.height = 'auto';
@@ -858,20 +896,20 @@ const copyrightStyle: React.CSSProperties = {
   fontWeight: 300,
 };
 
-const fullScreenOverlayStyle: React.CSSProperties = {
+const getConciergeOverlayStyle = (vh: number | null): React.CSSProperties => ({
   position: 'fixed',
   top: 0,
   left: 0,
   right: 0,
-  bottom: 0,
-  height: '100dvh',
+  height: vh ? `${vh}px` : '100dvh',
   backgroundColor: '#000000',
   zIndex: 9999,
   display: 'flex',
   flexDirection: 'column',
-  padding: '24px 20px calc(16px + env(safe-area-inset-bottom)) 20px',
+  padding: '24px 20px calc(12px + env(safe-area-inset-bottom)) 20px',
   boxSizing: 'border-box',
-};
+  overflow: 'hidden',
+});
 
 const conciergeHeaderStyle: React.CSSProperties = {
   display: 'flex',
@@ -913,7 +951,7 @@ const iconButtonStyle: React.CSSProperties = {
 const conciergeBodyStyle: React.CSSProperties = {
   maxWidth: '390px',
   width: '100%',
-  margin: '16px auto 0 auto',
+  margin: '12px auto 0 auto',
   display: 'flex',
   flexDirection: 'column',
   flex: 1,
