@@ -11,16 +11,15 @@ interface SendInviteProps {
 const SendInvite: React.FC<SendInviteProps> = ({ isOpen = true, onClose, onInviteSuccess }) => {
   const [recipientName, setRecipientName] = useState('');
   const [validityDays, setValidityDays] = useState<number | string>('');
+  const [commissionRate, setCommissionRate] = useState<number | string>('');
+  const [discountPercent, setDiscountPercent] = useState<number | string>('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
 
   const [loadingAction, setLoadingAction] = useState<'email' | 'whatsapp' | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  // ওয়ার্নিং ও কনফ্লিক্ট স্টেট
   const [activeConflict, setActiveConflict] = useState<{ type: 'email' | 'whatsapp'; message: string } | null>(null);
 
-  // ইনভাইট সেন্ড ও ডাটাবেজ আপডেট করার মেইন ফাংশন
   const executeInviteSend = async (actionType: 'email' | 'whatsapp', forceSend: boolean = false) => {
     if (!recipientName.trim()) {
       throw new Error('RECIPIENT NAME IS REQUIRED');
@@ -30,8 +29,15 @@ const SendInvite: React.FC<SendInviteProps> = ({ isOpen = true, onClose, onInvit
       throw new Error('PLEASE ENTER VALIDITY DAYS');
     }
 
+    if (commissionRate === '' || Number(commissionRate) < 0) {
+      throw new Error('PLEASE ENTER COMMISSION RATE');
+    }
+
+    if (discountPercent === '' || Number(discountPercent) < 0) {
+      throw new Error('PLEASE ENTER DISCOUNT PERCENT');
+    }
+
     const name = recipientName.trim();
-    // নামের ওপর ভিত্তি করে টোকেন তৈরি (যেমন: Toha -> toha)
     const token = name.toLowerCase().replace(/[^a-z0-9]+/g, '');
 
     if (!token) {
@@ -42,7 +48,6 @@ const SendInvite: React.FC<SendInviteProps> = ({ isOpen = true, onClose, onInvit
     const trimmedEmail = email.trim().toLowerCase();
     const trimmedPhone = phone.trim();
 
-    // ১. [PRE-CHECK] ইমেইল দিয়ে চেক করা হচ্ছেProfiles টেবিলে ইতিমধ্যে অ্যাম্বাসেডর আছে কিনা
     if (trimmedEmail) {
       const { data: existingProfile } = await supabase
         .from('profiles')
@@ -55,11 +60,9 @@ const SendInvite: React.FC<SendInviteProps> = ({ isOpen = true, onClose, onInvit
       }
     }
 
-    // ইমেইল ইনপুট দেওয়া থাকলে সেটি প্রথম অগ্রাধিকার পাবে যেন অনবোর্ডিং পেজে অটো-ফিল হয়
     const primaryIdentifier = trimmedEmail || trimmedPhone;
     const targetIdentifier = actionType === 'email' ? trimmedEmail : trimmedPhone;
 
-    // ২. চেক করা হবে এই টোকেনে আগে কোনো সক্রিয় ইনভাইট আছে কিনা
     if (!forceSend) {
       const { data: existingRecord } = await supabase
         .from('ambassador')
@@ -79,11 +82,9 @@ const SendInvite: React.FC<SendInviteProps> = ({ isOpen = true, onClose, onInvit
       }
     }
 
-    // ৩. মেয়াদের সময় হিসাব (২৪ ঘণ্টা = ১ দিন)
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + days);
 
-    // ৪. ডাটাবেজে সেভ/আপডেট (Upsert) - ইমেইল ও ফোন দুটোই সেভ রাখা হচ্ছে
     const { error } = await supabase
       .from('ambassador')
       .upsert(
@@ -94,6 +95,8 @@ const SendInvite: React.FC<SendInviteProps> = ({ isOpen = true, onClose, onInvit
           phone: trimmedPhone || null,
           assigned_slug: token,
           token: token,
+          commission_rate: Number(commissionRate),
+          discount_percent: Number(discountPercent),
           is_registered: false,
           is_active: true,
           invite_sent_at: new Date().toISOString(),
@@ -104,16 +107,12 @@ const SendInvite: React.FC<SendInviteProps> = ({ isOpen = true, onClose, onInvit
 
     if (error) throw error;
 
-    // সরাসরি site/token লিংক তৈরি
     const inviteUrl = `https://nomadbd.vercel.app/${token}`;
-
-    // শর্ট, মিনিমাল ও এলিগেন্ট মেসেজ
     const message = `NOMAD\nAMBASSADOR INVITATION\n\nDear ${name},\n\nWe would be honored to invite you to join the NOMAD Ambassador Circle.\n\nTo review the details and decide if you would like to accept, please access your private link:\n${inviteUrl}\n\nNote: This link will remain active for ${days} days.\n\nWarm regards,\nNOMAD`;
 
     return { name, token, message, targetIdentifier };
   };
 
-  // ইমেইল সাবমিট হ্যান্ডলার
   const handleSendEmail = async (e?: React.FormEvent, force: boolean = false) => {
     if (e) e.preventDefault();
     if (!email.trim()) {
@@ -144,7 +143,6 @@ const SendInvite: React.FC<SendInviteProps> = ({ isOpen = true, onClose, onInvit
     }
   };
 
-  // হোয়াটসঅ্যাপ সাবমিট হ্যান্ডলার
   const handleSendWhatsApp = async (e?: React.FormEvent, force: boolean = false) => {
     if (e) e.preventDefault();
     if (!phone.trim()) {
@@ -246,6 +244,12 @@ const SendInvite: React.FC<SendInviteProps> = ({ isOpen = true, onClose, onInvit
             display: flex;
             flex-direction: column;
             gap: 22px;
+          }
+
+          .two-col-row {
+            display: flex;
+            gap: 16px;
+            width: 100%;
           }
 
           .minimal-input {
@@ -403,6 +407,32 @@ const SendInvite: React.FC<SendInviteProps> = ({ isOpen = true, onClose, onInvit
             required
             autoComplete="off"
           />
+
+          <div className="two-col-row">
+            <input
+              type="number"
+              className="minimal-input"
+              placeholder="Commission (%)"
+              value={commissionRate}
+              onChange={(e) => setCommissionRate(e.target.value)}
+              min="0"
+              step="0.01"
+              required
+              autoComplete="off"
+            />
+
+            <input
+              type="number"
+              className="minimal-input"
+              placeholder="Discount (%)"
+              value={discountPercent}
+              onChange={(e) => setDiscountPercent(e.target.value)}
+              min="0"
+              step="0.01"
+              required
+              autoComplete="off"
+            />
+          </div>
 
           <form onSubmit={(e) => handleSendEmail(e, false)} className="input-action-row">
             <input
