@@ -32,12 +32,9 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
   const [isCheckingEmail, setIsCheckingEmail] = useState(false);
   const [accountFound, setAccountFound] = useState<boolean | null>(null);
 
-  const [mounted, setMounted] = useState(false);
-  const [focusedInput, setFocusedInput] = useState<string | null>(null);
-
   // Concierge Support, Accordion & Chat States
   const [isConciergeOpen, setIsConciergeOpen] = useState(false);
-  const [isAccordionOpen, setIsAccordionOpen] = useState(true);
+  const [isAccordionOpen, setIsAccordionOpen] = useState(false);
   const [supportMsg, setSupportMsg] = useState('');
   const [customSupportEmail, setCustomSupportEmail] = useState('');
   const [isSendingSupport, setIsSendingSupport] = useState(false);
@@ -60,11 +57,6 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
 
   const commissionRate = inviteData?.commission_rate ?? 15;
   const discountPercent = inviteData?.discount_percent ?? 10;
-
-  useEffect(() => {
-    const timer = setTimeout(() => setMounted(true), 60);
-    return () => clearTimeout(timer);
-  }, []);
 
   const checkEmailExistence = async (emailToCheck: string) => {
     const cleanEmail = emailToCheck.trim().toLowerCase();
@@ -187,16 +179,10 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
 
   const showInlineChat = isConciergeOpen || messages.length > 0;
 
-  // Auto-Collapse Accordion when entering Chat Mode
-  useEffect(() => {
-    if (showInlineChat) {
-      setIsAccordionOpen(false);
-    }
-  }, [showInlineChat]);
-
+  // Internal Scroll Only for Messages (No Page Window Scroll)
   useEffect(() => {
     if (showInlineChat && messages.length > 0) {
-      chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      chatEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
   }, [messages, showInlineChat]);
 
@@ -314,7 +300,6 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
           ? data[0]
           : { id: 'user-' + Date.now(), sender_role: 'ambassador', message: currentText };
 
-        // Instant Premium Auto-Reply Message
         const autoReplyMsg = {
           id: 'auto-' + Date.now(),
           sender_role: 'admin',
@@ -374,7 +359,7 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
 
       <div className={styles.mainWrapper}>
 
-        {/* Collapsible Accordion Header Bar (Appears when in Chat mode) */}
+        {/* Accordion Toggle Header Bar (Only visible when chat is active) */}
         {showInlineChat && (
           <button 
             type="button" 
@@ -390,125 +375,129 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
           </button>
         )}
 
-        {/* Collapsible Top Area: Title, Benefits, Form */}
-        <div className={`${styles.collapsibleContent} ${(!showInlineChat || isAccordionOpen) ? styles.collapsibleContentOpen : ''}`}>
-          
-          <div>
-            <h1 className={styles.welcomeTitle}>
-              WELCOME,
-              <br />
-              <span className={styles.nameSpan}>{headerDisplayName}</span>
-            </h1>
+        {/* Clean CSS Grid Accordion for Top Section */}
+        <div className={`${styles.accordionGrid} ${(!showInlineChat || isAccordionOpen) ? styles.accordionGridOpen : ''}`}>
+          <div className={styles.accordionInner}>
+            <div className={styles.accordionContent}>
+              
+              <div>
+                <h1 className={styles.welcomeTitle}>
+                  WELCOME,
+                  <br />
+                  <span className={styles.nameSpan}>{headerDisplayName}</span>
+                </h1>
 
-            <p className={styles.description}>
-              You have been granted exclusive access to curate selected allocations and represent NOMAD.
-            </p>
-          </div>
+                <p className={styles.description}>
+                  You have been granted exclusive access to curate selected allocations and represent NOMAD.
+                </p>
+              </div>
 
-          <div className={styles.benefitsGrid}>
-            <div className={styles.benefitCard}>
-              <span className={styles.benefitNumber}>01</span>
-              <div className={styles.benefitTitle}>CURATED ALLOCATION</div>
-              <p className={styles.benefitDesc}>Select products from our high-tier ambassador allocation to feature in your private gallery.</p>
-            </div>
-
-            <div className={styles.benefitCard}>
-              <span className={styles.benefitNumber}>02</span>
-              <div className={styles.benefitTitle}>AUTOMATED COMMISSIONS</div>
-              <p className={styles.benefitDesc}>
-                Earn a baseline {commissionRate}% payout with real-time performance tracking for every sales conversion. Rates remain subject to periodic review by NOMAD.
-              </p>
-            </div>
-
-            <div className={styles.benefitCard}>
-              <span className={styles.benefitNumber}>03</span>
-              <div className={styles.benefitTitle}>PRIVÉ PRIVILEGES</div>
-              <p className={styles.benefitDesc}>
-                Bespoke invitation links offering an initial {discountPercent}% VIP pass for your audience, early release access, and direct portal management. Discount rates remain subject to adjustment by NOMAD.
-              </p>
-            </div>
-          </div>
-
-          <div className={styles.cardStyle}>
-            <div className={styles.tabContainer}>
-              <button 
-                type="button" 
-                className={`${styles.tabButton} ${mode === 'signup' ? styles.tabButtonActive : ''}`} 
-                onClick={() => setMode('signup')}
-              >
-                SIGN UP
-              </button>
-              <button 
-                type="button" 
-                className={`${styles.tabButton} ${mode === 'login' ? styles.tabButtonActive : ''}`} 
-                onClick={() => setMode('login')}
-              >
-                LOG IN
-              </button>
-            </div>
-
-            <div className={styles.statusContainer}>
-              {isCheckingEmail && <span style={{ color: '#60a5fa' }}>VERIFYING ACCOUNT...</span>}
-              {!isCheckingEmail && accountFound === true && <span style={{ color: '#4ade80' }}>✓ EXISTING ACCOUNT DETECTED</span>}
-              {errorMessage && <span style={{ color: '#f87171' }}>{errorMessage}</span>}
-            </div>
-
-            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-
-              {mode === 'signup' && (
-                <div className={styles.inputWrapper}>
-                  <input 
-                    type="text" 
-                    name="ambassador_name_field"
-                    autoComplete="off"
-                    className={styles.underlineInput}
-                    value={fullName} 
-                    onChange={(e) => setFullName(e.target.value)} 
-                    placeholder={defaultTitleName || "Full Name"}
-                  />
+              <div className={styles.benefitsGrid}>
+                <div className={styles.benefitCard}>
+                  <span className={styles.benefitNumber}>01</span>
+                  <div className={styles.benefitTitle}>CURATED ALLOCATION</div>
+                  <p className={styles.benefitDesc}>Select products from our high-tier ambassador allocation to feature in your private gallery.</p>
                 </div>
-              )}
 
-              <div className={styles.inputWrapper}>
-                <input 
-                  type="text" 
-                  inputMode="email"
-                  name="ambassador_user_id"
-                  autoComplete="off"
-                  className={styles.underlineInput}
-                  value={email} 
-                  onChange={(e) => setEmail(e.target.value)} 
-                  placeholder={defaultEmail || "Email Address"}
-                />
+                <div className={styles.benefitCard}>
+                  <span className={styles.benefitNumber}>02</span>
+                  <div className={styles.benefitTitle}>AUTOMATED COMMISSIONS</div>
+                  <p className={styles.benefitDesc}>
+                    Earn a baseline {commissionRate}% payout with real-time performance tracking for every sales conversion. Rates remain subject to periodic review by NOMAD.
+                  </p>
+                </div>
+
+                <div className={styles.benefitCard}>
+                  <span className={styles.benefitNumber}>03</span>
+                  <div className={styles.benefitTitle}>PRIVÉ PRIVILEGES</div>
+                  <p className={styles.benefitDesc}>
+                    Bespoke invitation links offering an initial {discountPercent}% VIP pass for your audience, early release access, and direct portal management. Discount rates remain subject to adjustment by NOMAD.
+                  </p>
+                </div>
               </div>
 
-              <div className={styles.inputWrapper}>
-                <input 
-                  type="password" 
-                  name="ambassador_password_field"
-                  autoComplete="new-password"
-                  className={styles.underlineInput}
-                  value={password} 
-                  onChange={(e) => setPassword(e.target.value)} 
-                  placeholder={mode === 'signup' ? 'Create Password' : 'Password'}
-                  required 
-                  minLength={6} 
-                />
+              <div className={styles.cardStyle}>
+                <div className={styles.tabContainer}>
+                  <button 
+                    type="button" 
+                    className={`${styles.tabButton} ${mode === 'signup' ? styles.tabButtonActive : ''}`} 
+                    onClick={() => setMode('signup')}
+                  >
+                    SIGN UP
+                  </button>
+                  <button 
+                    type="button" 
+                    className={`${styles.tabButton} ${mode === 'login' ? styles.tabButtonActive : ''}`} 
+                    onClick={() => setMode('login')}
+                  >
+                    LOG IN
+                  </button>
+                </div>
+
+                <div className={styles.statusContainer}>
+                  {isCheckingEmail && <span style={{ color: '#60a5fa' }}>VERIFYING ACCOUNT...</span>}
+                  {!isCheckingEmail && accountFound === true && <span style={{ color: '#4ade80' }}>✓ EXISTING ACCOUNT DETECTED</span>}
+                  {errorMessage && <span style={{ color: '#f87171' }}>{errorMessage}</span>}
+                </div>
+
+                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+
+                  {mode === 'signup' && (
+                    <div className={styles.inputWrapper}>
+                      <input 
+                        type="text" 
+                        name="ambassador_name_field"
+                        autoComplete="off"
+                        className={styles.underlineInput}
+                        value={fullName} 
+                        onChange={(e) => setFullName(e.target.value)} 
+                        placeholder={defaultTitleName || "Full Name"}
+                      />
+                    </div>
+                  )}
+
+                  <div className={styles.inputWrapper}>
+                    <input 
+                      type="text" 
+                      inputMode="email"
+                      name="ambassador_user_id"
+                      autoComplete="off"
+                      className={styles.underlineInput}
+                      value={email} 
+                      onChange={(e) => setEmail(e.target.value)} 
+                      placeholder={defaultEmail || "Email Address"}
+                    />
+                  </div>
+
+                  <div className={styles.inputWrapper}>
+                    <input 
+                      type="password" 
+                      name="ambassador_password_field"
+                      autoComplete="new-password"
+                      className={styles.underlineInput}
+                      value={password} 
+                      onChange={(e) => setPassword(e.target.value)} 
+                      placeholder={mode === 'signup' ? 'Create Password' : 'Password'}
+                      required 
+                      minLength={6} 
+                    />
+                  </div>
+
+                  <button type="submit" disabled={submitting || isCheckingEmail} className={styles.submitButton}>
+                    {submitting 
+                      ? 'PROCESSING...' 
+                      : mode === 'signup' 
+                        ? 'JOIN CIRCLE' 
+                        : 'ENTER PORTAL'}
+                  </button>
+                </form>
               </div>
 
-              <button type="submit" disabled={submitting || isCheckingEmail} className={styles.submitButton}>
-                {submitting 
-                  ? 'PROCESSING...' 
-                  : mode === 'signup' 
-                    ? 'JOIN CIRCLE' 
-                    : 'ENTER PORTAL'}
-              </button>
-            </form>
+            </div>
           </div>
-
         </div>
 
-        {/* Footer Area or Inline Native Chat View */}
+        {/* Footer Links (When chat is closed) OR Native Dynamic Chat UI */}
         {!showInlineChat ? (
           <div className={styles.footerContainer}>
             <div className={styles.footerLinks}>
