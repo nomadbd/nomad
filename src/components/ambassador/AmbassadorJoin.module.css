@@ -1,0 +1,456 @@
+.container {
+  min-height: 100vh;
+  background-color: #000000;
+  color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", sans-serif;
+  box-sizing: border-box;
+  position: relative;
+}
+
+.containerChatMode {
+  justify-content: flex-start;
+  padding: 24px 16px;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.bgAmbient {
+  position: absolute;
+  top: 25%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 380px;
+  height: 380px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.05) 0%, rgba(0, 0, 0, 0) 75%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.mainWrapper {
+  width: 100%;
+  max-width: 390px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  position: relative;
+  z-index: 1;
+  height: 100%;
+}
+
+/* Accordion Top Bar */
+.accordionToggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+  color: #ffffff;
+  cursor: pointer;
+  outline: none;
+  transition: background 0.25s ease, border-color 0.25s ease;
+  flex-shrink: 0;
+}
+
+.accordionToggle:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.accordionTitle {
+  font-size: 10px;
+  letter-spacing: 2.5px;
+  font-weight: 300;
+  color: #888888;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-transform: uppercase;
+}
+
+.accordionTitleHighlight {
+  color: #ffffff;
+  font-weight: 500;
+}
+
+.chevronIcon {
+  font-size: 10px;
+  color: #aaaaaa;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  display: inline-block;
+}
+
+.chevronIconRotated {
+  transform: rotate(180deg);
+}
+
+/* Collapsible Content with Smooth Slide & Fade */
+.collapsibleContent {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-height 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 0.35s ease,
+              margin 0.35s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  flex-shrink: 0;
+}
+
+.collapsibleContentOpen {
+  max-height: 1200px;
+  opacity: 1;
+  margin-bottom: 8px;
+}
+
+/* Content Elements */
+.welcomeTitle {
+  font-size: 26px;
+  font-weight: 200;
+  letter-spacing: 4px;
+  margin: 0 0 10px 0;
+  line-height: 1.25;
+  color: #a0a0a0;
+}
+
+.nameSpan {
+  color: #ffffff;
+  font-weight: 400;
+  letter-spacing: 3px;
+}
+
+.description {
+  font-size: 12px;
+  color: #bbbbbb;
+  line-height: 1.6;
+  margin: 0;
+  font-weight: 300;
+}
+
+.benefitsGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.benefitCard {
+  background-color: rgba(255, 255, 255, 0.02);
+  border-left: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 12px 16px;
+}
+
+.benefitNumber {
+  font-size: 9px;
+  font-weight: 600;
+  color: #888888;
+  letter-spacing: 2px;
+  display: block;
+  margin-bottom: 2px;
+}
+
+.benefitTitle {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  color: #ffffff;
+  margin-bottom: 4px;
+}
+
+.benefitDesc {
+  font-size: 11px;
+  color: #cccccc;
+  margin: 0;
+  line-height: 1.5;
+  font-weight: 300;
+}
+
+/* Tabs & Inputs */
+.cardStyle {
+  width: 100%;
+}
+
+.tabContainer {
+  display: flex;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  margin-bottom: 16px;
+}
+
+.tabButton {
+  flex: 1;
+  padding: 12px 0;
+  text-align: center;
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 2.5px;
+  color: #666666;
+  background: transparent;
+  border: none;
+  border-bottom: 1.5px solid transparent;
+  margin-bottom: -1px;
+  transition: color 0.25s ease, border-color 0.25s ease;
+  outline: none;
+}
+
+.tabButtonActive {
+  color: #ffffff;
+  border-bottom-color: #ffffff;
+}
+
+.statusContainer {
+  min-height: 20px;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  font-weight: 500;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.inputWrapper {
+  position: relative;
+  width: 100%;
+}
+
+.underlineInput {
+  width: 100%;
+  padding: 12px 0;
+  background-color: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 300;
+  letter-spacing: 0.5px;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.3s ease;
+}
+
+.underlineInput::placeholder {
+  color: #888888 !important;
+  opacity: 1 !important;
+}
+
+.submitButton {
+  width: 100%;
+  padding: 16px;
+  background-color: #ffffff;
+  color: #000000;
+  border: none;
+  border-radius: 1px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 11px;
+  letter-spacing: 3px;
+  margin-top: 10px;
+  transition: background-color 0.25s ease, opacity 0.25s ease;
+  outline: none;
+}
+
+/* Dedicated Chat Layout */
+.chatWrapper {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  gap: 12px;
+}
+
+.chatHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+}
+
+.conciergeTag {
+  font-size: 8px;
+  letter-spacing: 2.5px;
+  color: #666666;
+  font-weight: 600;
+  display: block;
+  margin-bottom: 2px;
+}
+
+.conciergeTitle {
+  font-size: 13px;
+  letter-spacing: 3px;
+  font-weight: 300;
+  color: #ffffff;
+  margin: 0;
+}
+
+.iconButton {
+  background: none;
+  border: none;
+  color: #ffffff;
+  cursor: pointer;
+  outline: none;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.messagesArea {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 160px;
+}
+
+.messagesArea::-webkit-scrollbar {
+  width: 3px;
+}
+
+.messagesArea::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.messagesArea::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.msgItem {
+  display: flex;
+  flex-direction: column;
+}
+
+.msgAdmin {
+  align-items: flex-start;
+}
+
+.msgUser {
+  align-items: flex-end;
+}
+
+.msgLabel {
+  font-size: 8px;
+  color: #666666;
+  letter-spacing: 1px;
+  margin-bottom: 3px;
+  text-transform: uppercase;
+}
+
+.msgBubble {
+  max-width: 85%;
+  padding: 10px 14px;
+  font-size: 12px;
+  line-height: 1.5;
+  font-weight: 300;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.msgBubbleAdmin {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
+  border-radius: 14px 14px 14px 2px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.msgBubbleUser {
+  background-color: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  border-radius: 14px 14px 2px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.chatInputForm {
+  display: flex;
+  align-items: center;
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 28px;
+  padding: 4px 6px 4px 16px;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.chatPillInput {
+  flex: 1;
+  background-color: transparent;
+  border: none;
+  color: #ffffff;
+  fontSize: 13px;
+  font-weight: 300;
+  outline: none;
+  resize: none;
+  max-height: 80px;
+  line-height: 1.4;
+  padding: 8px 0;
+  box-sizing: border-box;
+}
+
+.chatPillInput::placeholder {
+  color: #666666 !important;
+}
+
+.sendBtn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+/* Footer (Used Only When Chat is Closed) */
+.footerContainer {
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.footerLinks {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.footerLink {
+  color: #888888;
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  text-decoration: none;
+  font-weight: 400;
+  transition: color 0.2s ease;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.copyright {
+  color: #555555;
+  font-size: 8px;
+  letter-spacing: 2px;
+  margin: 0;
+  font-weight: 300;
+}
