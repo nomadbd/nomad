@@ -118,7 +118,6 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
 
     try {
       let userId = '';
-      // ইউজার টাইপ না করলে প্লেসহোল্ডারের defaultEmail ই ভ্যালু হিসেবে যাবে
       let userEmail = (email.trim() || defaultEmail).toLowerCase();
       let userName = fullName.trim() ? toTitleCase(fullName.trim()) : defaultTitleName;
 
@@ -384,6 +383,19 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
                   : 'ENTER PORTAL'}
             </button>
           </form>
+
+          {/* পেজ-নির্দিষ্ট কাস্টম ফুটার */}
+          <div style={footerContainerStyle}>
+            <div style={footerLinksStyle}>
+              <a href="mailto:concierge@nomad.com" style={footerLinkStyle}>CONCIERGE SUPPORT</a>
+              <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '9px' }}>•</span>
+              <a href="/privacy" style={footerLinkStyle}>PRIVACY POLICY</a>
+              <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '9px' }}>•</span>
+              <a href="/terms" style={footerLinkStyle}>TERMS</a>
+            </div>
+            <p style={copyrightStyle}>© 2026 NOMAD. ALL RIGHTS RESERVED.</p>
+          </div>
+
         </div>
       </div>
     </div>
@@ -577,3 +589,38 @@ const statusBannerStyle = (color: string): React.CSSProperties => ({
   textAlign: 'center',
   marginTop: '20px',
 });
+
+const footerContainerStyle: React.CSSProperties = {
+  marginTop: '45px',
+  paddingTop: '20px',
+  borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+  textAlign: 'center',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '12px',
+};
+
+const footerLinksStyle: React.CSSProperties = {
+  display: 'flex',
+  justifyContent: 'center',
+  alignItems: 'center',
+  gap: '12px',
+  flexWrap: 'wrap',
+};
+
+const footerLinkStyle: React.CSSProperties = {
+  color: '#888888',
+  fontSize: '9px',
+  letterSpacing: '1.5px',
+  textDecoration: 'none',
+  fontWeight: 400,
+  transition: 'color 0.2s ease',
+};
+
+const copyrightStyle: React.CSSProperties = {
+  color: '#555555',
+  fontSize: '8px',
+  letterSpacing: '2px',
+  margin: 0,
+  fontWeight: 300,
+};
