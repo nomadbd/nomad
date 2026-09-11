@@ -6,9 +6,25 @@ import OrderHistory from '../components/OrderHistory';
 import Toast from '../components/ui/Toast';
 import ProfileSkeleton from '../components/profile/ProfileSkeleton';
 import ProfileHeader from '../components/profile/ProfileHeader';
-import AmbassadorDashboard from './AmbassadorDashboard';
 import ProfileSettings from '../components/profile/ProfileSettings';
 import ImageCropModal from '../components/ui/ImageCropModal';
+import AmbassadorWorkspace from '../components/ambassador/AmbassadorWorkspace';
+import { useAmbassador } from '../hooks/useAmbassador';
+
+function AmbassadorDashboardSection({ ambassadorData, profile }: { ambassadorData: any; profile: any }) {
+  const ambassadorState = useAmbassador(ambassadorData);
+
+  return (
+    <div style={{ marginTop: '10px' }}>
+      <AmbassadorWorkspace 
+        ambassadorData={ambassadorData} 
+        profile={profile} 
+        isOwner={true}
+        ambassadorState={ambassadorState} 
+      />
+    </div>
+  );
+}
 
 export default function ProfilePage() {
   const navigate = useNavigate();
@@ -457,7 +473,7 @@ export default function ProfilePage() {
             />
 
             {portalMode === 'ambassador' && isAmbassador ? (
-              <AmbassadorDashboard ambassadorData={ambassadorData} profile={profile} />
+              <AmbassadorDashboardSection ambassadorData={ambassadorData} profile={profile} />
             ) : (
               <div style={{ marginTop: '20px', borderTop: '1px solid #111', paddingTop: '10px' }}>
                 <OrderHistory userId={profile?.id} />
