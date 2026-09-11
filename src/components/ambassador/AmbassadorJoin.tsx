@@ -279,7 +279,7 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
             <span style={benefitNumberStyle}>03</span>
             <div style={benefitTitleStyle}>PRIVÉ PRIVILEGES</div>
             <p style={benefitDescStyle}>
-              Bespoke invitation links offering an initial {discountPercent}% VIP pass for your audience, early release access, and direct portal management.
+              Bespoke invitation links offering an initial {discountPercent}% VIP pass for your audience, early release access, and direct portal management. Discount rates remain subject to adjustment by NOMAD.
             </p>
           </div>
         </div>
