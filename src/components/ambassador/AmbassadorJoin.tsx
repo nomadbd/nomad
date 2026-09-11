@@ -5,7 +5,6 @@ interface AmbassadorJoinProps {
   initialInviteData: any;
 }
 
-// Helper to convert names to Proper Title Case
 const toTitleCase = (str: string) => {
   if (!str) return '';
   return str
@@ -38,8 +37,10 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
   const headerDisplayName = rawDisplayName.toUpperCase();
   const defaultTitleName = toTitleCase(rawDisplayName);
 
+  const commissionRate = inviteData?.commission_rate ?? 15;
+  const discountPercent = inviteData?.discount_percent ?? 10;
+
   useEffect(() => {
-    // সব উপাদানকে একদম একই ফ্রেম থেকে একসাথে অ্যানিমেট করার জন্য
     const timer = setTimeout(() => setMounted(true), 60);
     return () => clearTimeout(timer);
   }, []);
@@ -233,8 +234,7 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
       <div style={bgAmbientStyle} />
 
       <div style={mainContentWrapperStyle}>
-        
-        {/* Title Block - Floats Up Together */}
+
         <div style={getFadeStyle(mounted)}>
           <h1 style={welcomeTitleStyle}>
             WELCOME,
@@ -247,7 +247,6 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
           </p>
         </div>
 
-        {/* Benefits Grid - Floats Up Together */}
         <div style={{ ...benefitsGridStyle, ...getFadeStyle(mounted) }}>
           <div style={benefitCardStyle}>
             <span style={benefitNumberStyle}>01</span>
@@ -258,17 +257,20 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
           <div style={benefitCardStyle}>
             <span style={benefitNumberStyle}>02</span>
             <div style={benefitTitleStyle}>AUTOMATED COMMISSIONS</div>
-            <p style={benefitDescStyle}>Real-time performance metrics and automated payout tracking for every sales conversion.</p>
+            <p style={benefitDescStyle}>
+              Earn a baseline {commissionRate}% payout with real-time performance tracking for every sales conversion. Rates remain subject to periodic review by NOMAD.
+            </p>
           </div>
 
           <div style={benefitCardStyle}>
             <span style={benefitNumberStyle}>03</span>
             <div style={benefitTitleStyle}>PRIVÉ PRIVILEGES</div>
-            <p style={benefitDescStyle}>Bespoke invitation links, early release access, and direct portal management.</p>
+            <p style={benefitDescStyle}>
+              Bespoke invitation links offering an initial {discountPercent}% VIP pass for your audience, early release access, and direct portal management.
+            </p>
           </div>
         </div>
 
-        {/* Form Card - Floats Up Together */}
         <div style={{ ...cardStyle, ...getFadeStyle(mounted) }}>
           <div style={tabContainerStyle}>
             <button 
@@ -294,7 +296,7 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
           </div>
 
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            
+
             <div style={{
               maxHeight: mode === 'signup' ? '65px' : '0px',
               opacity: mode === 'signup' ? 1 : 0,
@@ -365,9 +367,6 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
   );
 }
 
-// ---------------- STYLES ----------------
-
-// কোনো ডিলে নেই — পুরো পেজ একসাথে স্মুথলি নিচ থেকে ২৪ পিক্সেল উপরে উঠে আসবে
 const getFadeStyle = (mounted: boolean): React.CSSProperties => ({
   opacity: mounted ? 1 : 0,
   transform: mounted ? 'translateY(0px)' : 'translateY(24px)',
@@ -531,7 +530,6 @@ const underlineInputStyle: React.CSSProperties = {
   transition: 'border-color 0.3s ease',
 };
 
-// বাটন স্টাইল: পিওর মিনিমাল টাইপোগ্রাফি
 const buttonStyle: React.CSSProperties = {
   width: '100%',
   padding: '16px',
