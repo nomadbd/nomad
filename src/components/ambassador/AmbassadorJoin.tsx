@@ -5,12 +5,24 @@ interface AmbassadorJoinProps {
   initialInviteData: any;
 }
 
+// Helper to convert names to Proper Title Case (e.g. "badol rahman" -> "Badol Rahman")
+const toTitleCase = (str: string) => {
+  if (!str) return '';
+  return str
+    .toLowerCase()
+    .split(' ')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+};
+
 export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProps) {
   const [inviteData] = useState<any>(initialInviteData);
   const [isExpired, setIsExpired] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
   const [mode, setMode] = useState<'signup' | 'login'>('signup');
+  
+  // Keep fullName empty initially so placeholder shows and typing requires zero backspacing
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -24,10 +36,12 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
   const [mounted, setMounted] = useState(false);
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
 
-  const displayName = (inviteData?.display_name || 'GUEST').toUpperCase();
+  // Formatted names for Header & Placeholder
+  const rawDisplayName = inviteData?.display_name || 'GUEST';
+  const headerDisplayName = rawDisplayName.toUpperCase();
+  const defaultTitleName = toTitleCase(rawDisplayName);
 
   useEffect(() => {
-    // 80ms ট্রিগার নিশ্চিত করে ব্রাউজার শুরুর ডিসপ্লেসমেন্ট সঠিক রেন্ডার করছে
     const timer = setTimeout(() => setMounted(true), 80);
     return () => clearTimeout(timer);
   }, []);
@@ -36,7 +50,6 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
     if (!inviteData) return;
 
     const isTimeExpired = new Date(inviteData.expires_at) < new Date();
-    if (inviteData.display_name) setFullName(inviteData.display_name);
 
     const initialEmail =
       inviteData.email ||
@@ -106,7 +119,9 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
     try {
       let userId = '';
       let userEmail = email.trim();
-      let userName = fullName.trim();
+      
+      // Fallback Logic: Use typed fullName OR fall back to default formatted title name
+      let userName = fullName.trim() ? toTitleCase(fullName.trim()) : defaultTitleName;
 
       if (mode === 'signup') {
         const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -223,12 +238,12 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
 
       <div style={mainContentWrapperStyle}>
         
-        {/* Title Block - Floats Up from below */}
+        {/* Title Block */}
         <div style={getFadeStyle(mounted, 0)}>
           <h1 style={welcomeTitleStyle}>
             WELCOME,
             <br />
-            <span style={nameSpanStyle}>{displayName}</span>
+            <span style={nameSpanStyle}>{headerDisplayName}</span>
           </h1>
 
           <p style={descriptionStyle}>
@@ -236,7 +251,7 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
           </p>
         </div>
 
-        {/* Benefits Grid - Micro-staggered Float Up */}
+        {/* Benefits Grid */}
         <div style={benefitsGridStyle}>
           <div style={{ ...benefitCardStyle, ...getFadeStyle(mounted, 40) }}>
             <span style={benefitNumberStyle}>01</span>
@@ -257,7 +272,7 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
           </div>
         </div>
 
-        {/* Form Card - Floats Up together smoothly */}
+        {/* Form Card */}
         <div style={{ ...cardStyle, ...getFadeStyle(mounted, 160) }}>
           <div style={tabContainerStyle}>
             <button 
@@ -302,8 +317,7 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
                   onFocus={() => setFocusedInput('fullName')}
                   onBlur={() => setFocusedInput(null)}
                   onChange={(e) => setFullName(e.target.value)} 
-                  placeholder="Full Name"
-                  required={mode === 'signup'}
+                  placeholder={defaultTitleName || "Full Name"}
                 />
               </div>
             </div>
@@ -357,7 +371,6 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
 
 // ---------------- STYLES ----------------
 
-// 22px গভীরতা থেকে খুব আলতো করে উপরে উঠবে (Pure Float-Up)
 const getFadeStyle = (mounted: boolean, delayMs: number): React.CSSProperties => ({
   opacity: mounted ? 1 : 0,
   transform: mounted ? 'translateY(0px)' : 'translateY(22px)',
