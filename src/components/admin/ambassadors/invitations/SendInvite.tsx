@@ -39,14 +39,27 @@ const SendInvite: React.FC<SendInviteProps> = ({ isOpen = true, onClose, onInvit
     }
 
     const days = Number(validityDays);
-    const trimmedEmail = email.trim();
+    const trimmedEmail = email.trim().toLowerCase();
     const trimmedPhone = phone.trim();
+
+    // ১. [PRE-CHECK] ইমেইল দিয়ে চেক করা হচ্ছেProfiles টেবিলে ইতিমধ্যে অ্যাম্বাসেডর আছে কিনা
+    if (trimmedEmail) {
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('email, role')
+        .eq('email', trimmedEmail)
+        .maybeSingle();
+
+      if (existingProfile && existingProfile.role === 'AMBASSADOR') {
+        throw new Error('THIS EMAIL IS ALREADY AN ACTIVE AMBASSADOR!');
+      }
+    }
 
     // ইমেইল ইনপুট দেওয়া থাকলে সেটি প্রথম অগ্রাধিকার পাবে যেন অনবোর্ডিং পেজে অটো-ফিল হয়
     const primaryIdentifier = trimmedEmail || trimmedPhone;
     const targetIdentifier = actionType === 'email' ? trimmedEmail : trimmedPhone;
 
-    // ১. চেক করা হবে এই টোকেনে আগে কোনো সক্রিয় ইনভাইট আছে কিনা
+    // ২. চেক করা হবে এই টোকেনে আগে কোনো সক্রিয় ইনভাইট আছে কিনা
     if (!forceSend) {
       const { data: existingRecord } = await supabase
         .from('ambassador')
@@ -66,11 +79,11 @@ const SendInvite: React.FC<SendInviteProps> = ({ isOpen = true, onClose, onInvit
       }
     }
 
-    // ২. মেয়াদের সময় হিসাব (২৪ ঘণ্টা = ১ দিন)
+    // ৩. মেয়াদের সময় হিসাব (২৪ ঘণ্টা = ১ দিন)
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + days);
 
-    // ৩. ডাটাবেজে সেভ/আপডেট (Upsert) - ইমেইল ও ফোন দুটোই সেভ রাখা হচ্ছে
+    // ৪. ডাটাবেজে সেভ/আপডেট (Upsert) - ইমেইল ও ফোন দুটোই সেভ রাখা হচ্ছে
     const { error } = await supabase
       .from('ambassador')
       .upsert(
