@@ -150,6 +150,39 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
     fetchMessages();
   }, [email, defaultEmail]);
 
+  // Realtime Listener for Live Admin Replies
+  useEffect(() => {
+    const activeEmail = (email.trim() || defaultEmail || customSupportEmail.trim()).toLowerCase();
+    const channelId = inviteData?.token || activeEmail || 'general_inquiry';
+
+    if (!channelId) return;
+
+    const channel = supabase
+      .channel(`communications:${channelId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'communications',
+          filter: `channel_id=eq.${channelId}`,
+        },
+        (payload) => {
+          if (payload.new) {
+            setMessages((prev) => {
+              if (prev.some((m) => m.id === payload.new.id)) return prev;
+              return [...prev, payload.new];
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [email, defaultEmail, customSupportEmail, inviteData]);
+
   useEffect(() => {
     if ((isConciergeOpen || messages.length > 0) && messages.length > 0) {
       chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -244,6 +277,7 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
 
     setIsSendingSupport(true);
     const activeEmail = (email.trim() || defaultEmail || customSupportEmail.trim()).toLowerCase();
+    const currentText = supportMsg.trim();
 
     try {
       const newMessagePayload = {
@@ -251,7 +285,7 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
         channel_id: inviteData?.token || activeEmail || 'general_inquiry',
         sender_email: activeEmail,
         sender_role: 'ambassador',
-        message: supportMsg.trim(),
+        message: currentText,
       };
 
       const { data, error } = await supabase
@@ -264,11 +298,20 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
         if (textareaRef.current) {
           textareaRef.current.style.height = 'auto';
         }
-        if (data && data.length > 0) {
-          setMessages((prev) => [...prev, data[0]]);
-        } else {
-          fetchMessages();
-        }
+
+        const userMsg = (data && data.length > 0)
+          ? data[0]
+          : { id: 'user-' + Date.now(), sender_role: 'ambassador', message: currentText };
+
+        // Instant Premium Auto-Reply Message
+        const autoReplyMsg = {
+          id: 'auto-' + Date.now(),
+          sender_role: 'admin',
+          message: 'Message logged with NOMAD Desk. A representative will review and respond shortly.',
+          created_at: new Date().toISOString()
+        };
+
+        setMessages((prev) => [...prev, userMsg, autoReplyMsg]);
       }
     } catch (err) {
       console.error('Support message submission failed', err);
