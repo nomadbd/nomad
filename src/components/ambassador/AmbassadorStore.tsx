@@ -5,7 +5,7 @@ import AmbassadorJoin from './AmbassadorJoin';
 import AmbassadorWorkspace from './AmbassadorWorkspace';
 
 export default function AmbassadorStore() {
-  const { token } = useParams<{ token: string }>();
+  const { token } = useParams<{ token: string }>(); // এখানে token মানেই ইউজারের দেওয়া নাম/স্ল্যাগ (যেমন: toha)
   const [loading, setLoading] = useState(true);
   const [ambassadorData, setAmbassadorData] = useState<any>(null);
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -21,11 +21,12 @@ export default function AmbassadorStore() {
       const { data: { user } } = await supabase.auth.getUser();
       setCurrentUser(user);
 
-      // ২. ইনভাইটেশন বা অ্যাম্বাসেডর ডাটা চেক (টোকেন বা স্ল্যাগ দুটো দিয়েই মিল পাওয়া যাবে)
+      // ২. নাম/টোকেন/স্ল্যাগ দিয়ে ডাটাবেজে সার্চ (সব ক্ষেত্রেই এটি মিলবে)
+      const cleanToken = token.trim().toLowerCase();
       const { data } = await supabase
         .from('ambassador')
         .select('*')
-        .or(`token.eq.${token},assigned_slug.eq.${token}`)
+        .or(`token.ilike.${cleanToken},assigned_slug.ilike.${cleanToken}`)
         .maybeSingle();
 
       setAmbassadorData(data);
@@ -57,12 +58,12 @@ export default function AmbassadorStore() {
     );
   }
 
-  // ৩. ইউজার রেজিস্টার্ড না হলে -> Prop হিসেবে ডাটা পাঠাবে (ডাবল ফেচ বন্ধ)
+  // ৩. এখনো রেজিস্ট্রেশন না করে থাকলে -> অনবোর্ডিং পেজ
   if (!ambassadorData.is_registered) {
     return <AmbassadorJoin initialInviteData={ambassadorData} />;
   }
 
-  // ৪. ইউজার রেজিস্টার্ড থাকলে
+  // ৪. রেজিস্ট্রেশন সম্পূর্ণ থাকলে -> স্টোরফ্রন্ট / ড্যাশবোর্ড
   const isOwner = currentUser?.id === ambassadorData.user_id;
 
   return (
