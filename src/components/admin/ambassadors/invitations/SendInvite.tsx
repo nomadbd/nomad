@@ -20,7 +20,7 @@ const SendInvite: React.FC<SendInviteProps> = ({ isOpen = true, onClose, onInvit
   // ওয়ার্নিং ও কনফ্লিক্ট স্টেট
   const [activeConflict, setActiveConflict] = useState<{ type: 'email' | 'whatsapp'; message: string } | null>(null);
 
-  // ইনভাইট সেন্ড ও ডাটাবেজ আপডেট করার মেন ফাংশন
+  // ইনভাইট সেন্ড ও ডাটাবেজ আপডেট করার মেইন ফাংশন
   const executeInviteSend = async (actionType: 'email' | 'whatsapp', forceSend: boolean = false) => {
     if (!recipientName.trim()) {
       throw new Error('RECIPIENT NAME IS REQUIRED');
@@ -39,7 +39,12 @@ const SendInvite: React.FC<SendInviteProps> = ({ isOpen = true, onClose, onInvit
     }
 
     const days = Number(validityDays);
-    const targetIdentifier = actionType === 'email' ? email.trim() : phone.trim();
+    const trimmedEmail = email.trim();
+    const trimmedPhone = phone.trim();
+
+    // ইমেইল ইনপুট দেওয়া থাকলে সেটি প্রথম অগ্রাধিকার পাবে যেন অনবোর্ডিং পেজে অটো-ফিল হয়
+    const primaryIdentifier = trimmedEmail || trimmedPhone;
+    const targetIdentifier = actionType === 'email' ? trimmedEmail : trimmedPhone;
 
     // ১. চেক করা হবে এই টোকেনে আগে কোনো সক্রিয় ইনভাইট আছে কিনা
     if (!forceSend) {
@@ -65,13 +70,15 @@ const SendInvite: React.FC<SendInviteProps> = ({ isOpen = true, onClose, onInvit
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + days);
 
-    // ৩. ডাটাবেজে সেভ/আপডেট (Upsert)
+    // ৩. ডাটাবেজে সেভ/আপডেট (Upsert) - ইমেইল ও ফোন দুটোই সেভ রাখা হচ্ছে
     const { error } = await supabase
       .from('ambassador')
       .upsert(
         {
           display_name: name,
-          recipient_identifier: targetIdentifier,
+          recipient_identifier: primaryIdentifier,
+          email: trimmedEmail || null,
+          phone: trimmedPhone || null,
           assigned_slug: token,
           token: token,
           is_registered: false,
@@ -84,10 +91,10 @@ const SendInvite: React.FC<SendInviteProps> = ({ isOpen = true, onClose, onInvit
 
     if (error) throw error;
 
-    // সরাসরি site/name লিংক তৈরি
+    // সরাসরি site/token লিংক তৈরি
     const inviteUrl = `https://nomadbd.vercel.app/${token}`;
 
-    // শর্ট, মিনিমাল ও এলিগেন্ট প্রথম মেসেজ
+    // শর্ট, মিনিমাল ও এলিগেন্ট মেসেজ
     const message = `NOMAD\nAMBASSADOR INVITATION\n\nDear ${name},\n\nWe would be honored to invite you to join the NOMAD Ambassador Circle.\n\nTo review the details and decide if you would like to accept, please access your private link:\n${inviteUrl}\n\nNote: This link will remain active for ${days} days.\n\nWarm regards,\nNOMAD`;
 
     return { name, token, message, targetIdentifier };
