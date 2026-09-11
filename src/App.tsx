@@ -22,7 +22,7 @@ const AppContent = ({ session, setIsSearchOpen, setIsAuthOpen }: any) => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // হেডার কেবল হোম পেজে (/) দেখাবে, ইনভাইট লিংক, প্রোফাইল, এডমিন বা স্লগ পেজে দেখাবে না
+  
   const showHeader = location.pathname === '/';
 
   return (
