@@ -5,7 +5,6 @@ interface AmbassadorJoinProps {
   initialInviteData: any;
 }
 
-// Helper to convert names to Proper Title Case
 const toTitleCase = (str: string) => {
   if (!str) return '';
   return str
@@ -39,7 +38,6 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
   const defaultTitleName = toTitleCase(rawDisplayName);
 
   useEffect(() => {
-    // সব উপাদানকে একদম একই ফ্রেম থেকে একসাথে অ্যানিমেট করার জন্য
     const timer = setTimeout(() => setMounted(true), 60);
     return () => clearTimeout(timer);
   }, []);
@@ -234,7 +232,7 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
 
       <div style={mainContentWrapperStyle}>
         
-        {/* Title Block - Floats Up Together */}
+        {/* Title Block */}
         <div style={getFadeStyle(mounted)}>
           <h1 style={welcomeTitleStyle}>
             WELCOME,
@@ -247,7 +245,7 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
           </p>
         </div>
 
-        {/* Benefits Grid - Floats Up Together */}
+        {/* Compact Benefits Grid */}
         <div style={{ ...benefitsGridStyle, ...getFadeStyle(mounted) }}>
           <div style={benefitCardStyle}>
             <span style={benefitNumberStyle}>01</span>
@@ -268,7 +266,7 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
           </div>
         </div>
 
-        {/* Form Card - Floats Up Together */}
+        {/* Form Card */}
         <div style={{ ...cardStyle, ...getFadeStyle(mounted) }}>
           <div style={tabContainerStyle}>
             <button 
@@ -293,7 +291,7 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
             {errorMessage && <span style={{ color: '#ef4444' }}>{errorMessage}</span>}
           </div>
 
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             
             <div style={{
               maxHeight: mode === 'signup' ? '65px' : '0px',
@@ -367,7 +365,6 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
 
 // ---------------- STYLES ----------------
 
-// কোনো ডিলে নেই — পুরো পেজ একসাথে স্মুথলি নিচ থেকে ২৪ পিক্সেল উপরে উঠে আসবে
 const getFadeStyle = (mounted: boolean): React.CSSProperties => ({
   opacity: mounted ? 1 : 0,
   transform: mounted ? 'translateY(0px)' : 'translateY(24px)',
@@ -381,7 +378,7 @@ const containerStyle: React.CSSProperties = {
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  padding: '60px 20px',
+  padding: '40px 20px', // padding reduced from 60px to 40px
   fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif',
   boxSizing: 'border-box',
   position: 'relative',
@@ -405,16 +402,16 @@ const mainContentWrapperStyle: React.CSSProperties = {
   maxWidth: '390px',
   display: 'flex',
   flexDirection: 'column',
-  gap: '32px',
+  gap: '22px', // section gap reduced from 32px to 22px
   position: 'relative',
   zIndex: 1,
 };
 
 const welcomeTitleStyle: React.CSSProperties = {
-  fontSize: '28px',
+  fontSize: '26px',
   fontWeight: 200,
   letterSpacing: '5px',
-  margin: '0 0 14px 0',
+  margin: '0 0 10px 0', // bottom margin reduced
   lineHeight: '1.25',
   color: '#888888',
 };
@@ -428,31 +425,32 @@ const nameSpanStyle: React.CSSProperties = {
 const descriptionStyle: React.CSSProperties = {
   fontSize: '12px',
   color: '#666666',
-  lineHeight: '1.7',
+  lineHeight: '1.6',
   margin: 0,
   fontWeight: 300,
   letterSpacing: '0.3px',
 };
 
+// Cards brought closer together
 const benefitsGridStyle: React.CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
-  gap: '10px',
+  gap: '6px', // card gap reduced from 10px to 6px
 };
 
 const benefitCardStyle: React.CSSProperties = {
   backgroundColor: 'rgba(255, 255, 255, 0.015)',
   borderLeft: '1px solid rgba(255, 255, 255, 0.2)',
-  padding: '14px 18px',
+  padding: '10px 14px', // padding inside card reduced from 14px 18px to 10px 14px
 };
 
 const benefitNumberStyle: React.CSSProperties = {
-  fontSize: '9px',
+  fontSize: '8px',
   fontWeight: 600,
   color: '#444444',
   letterSpacing: '2px',
   display: 'block',
-  marginBottom: '4px',
+  marginBottom: '2px',
 };
 
 const benefitTitleStyle: React.CSSProperties = {
@@ -460,14 +458,14 @@ const benefitTitleStyle: React.CSSProperties = {
   fontWeight: 600,
   letterSpacing: '2px',
   color: '#ffffff',
-  marginBottom: '4px',
+  marginBottom: '2px',
 };
 
 const benefitDescStyle: React.CSSProperties = {
   fontSize: '11px',
   color: '#777777',
   margin: 0,
-  lineHeight: '1.6',
+  lineHeight: '1.5',
   fontWeight: 300,
 };
 
@@ -479,12 +477,12 @@ const cardStyle: React.CSSProperties = {
 const tabContainerStyle: React.CSSProperties = {
   display: 'flex',
   borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-  marginBottom: '16px',
+  marginBottom: '12px',
 };
 
 const tabButtonStyle = (active: boolean): React.CSSProperties => ({
   flex: 1,
-  padding: '12px 0',
+  padding: '10px 0',
   textAlign: 'center',
   cursor: 'pointer',
   fontSize: '10px',
@@ -500,7 +498,7 @@ const tabButtonStyle = (active: boolean): React.CSSProperties => ({
 });
 
 const statusContainerStyle: React.CSSProperties = {
-  minHeight: '22px',
+  minHeight: '20px',
   fontSize: '10px',
   letterSpacing: '1.5px',
   fontWeight: 500,
@@ -508,7 +506,7 @@ const statusContainerStyle: React.CSSProperties = {
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  marginBottom: '12px',
+  marginBottom: '8px',
 };
 
 const inputWrapperStyle: React.CSSProperties = {
@@ -518,7 +516,7 @@ const inputWrapperStyle: React.CSSProperties = {
 
 const underlineInputStyle: React.CSSProperties = {
   width: '100%',
-  padding: '12px 0',
+  padding: '10px 0',
   backgroundColor: 'transparent',
   border: 'none',
   borderBottom: '1px solid rgba(255, 255, 255, 0.15)',
@@ -531,19 +529,18 @@ const underlineInputStyle: React.CSSProperties = {
   transition: 'border-color 0.3s ease',
 };
 
-// বাটন স্টাইল: পিওর মিনিমাল টাইপোগ্রাফি
 const buttonStyle: React.CSSProperties = {
   width: '100%',
-  padding: '16px',
+  padding: '14px',
   backgroundColor: '#ffffff',
   color: '#000000',
   border: 'none',
   borderRadius: '1px',
   fontWeight: 600,
   cursor: 'pointer',
-  fontSize: '11px',
-  letterSpacing: '3px',
-  marginTop: '10px',
+  fontSize: '10px',
+  letterSpacing: '2.5px',
+  marginTop: '6px',
   transition: 'background-color 0.25s ease, opacity 0.25s ease',
   outline: 'none',
 };
