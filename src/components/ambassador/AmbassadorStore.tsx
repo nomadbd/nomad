@@ -21,7 +21,7 @@ export default function AmbassadorStore() {
       const { data: { user } } = await supabase.auth.getUser();
       setCurrentUser(user);
 
-      // ২. ইনভাইটেশন টোকেন বা অ্যাসাইন করা স্ল্যাগ দিয়ে অ্যাম্বাসেডর ডাটা খোঁজ করা
+      // ২. ইনভাইটেশন বা অ্যাম্বাসেডর ডাটা চেক (টোকেন বা স্ল্যাগ দুটো দিয়েই মিল পাওয়া যাবে)
       const { data } = await supabase
         .from('ambassador')
         .select('*')
@@ -43,7 +43,7 @@ export default function AmbassadorStore() {
     );
   }
 
-  // ডাটা না পাওয়া গেলে (ভুল বা মুছে ফেলা লিংক)
+  // ডাটা না পাওয়া গেলে
   if (!ambassadorData) {
     return (
       <div style={statusContainerStyle}>
@@ -57,12 +57,12 @@ export default function AmbassadorStore() {
     );
   }
 
-  // ৩. ইউজার এখনো ইনভাইট গ্রহণ/রেজিস্ট্রেশন না করে থাকলে -> অনবোর্ডিং ফর্মে পাঠাবে
+  // ৩. ইউজার রেজিস্টার্ড না হলে -> Prop হিসেবে ডাটা পাঠাবে (ডাবল ফেচ বন্ধ)
   if (!ambassadorData.is_registered) {
-    return <AmbassadorJoin />;
+    return <AmbassadorJoin initialInviteData={ambassadorData} />;
   }
 
-  // ৪. ইউজার রেজিস্টার্ড থাকলে -> ওয়ার্কস্পেস ও স্টোর পেজ দেখাবে
+  // ৪. ইউজার রেজিস্টার্ড থাকলে
   const isOwner = currentUser?.id === ambassadorData.user_id;
 
   return (
