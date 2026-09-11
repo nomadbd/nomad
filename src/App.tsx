@@ -16,7 +16,7 @@ import AuthForm from './components/auth/AuthForm';
 
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 const AmbassadorJoin = lazy(() => import('./components/ambassador/AmbassadorJoin'));
-const AmbassadorStore = lazy(() => import('./components/ambassador/AmbassadorStore'));
+const AmbassadorPortal = lazy(() => import('./components/ambassador/AmbassadorPortal'));
 
 const AppContent = ({ session, setIsSearchOpen, setIsAuthOpen }: any) => {
   const location = useLocation();
@@ -64,7 +64,7 @@ const AppContent = ({ session, setIsSearchOpen, setIsAuthOpen }: any) => {
           path="/:slug" 
           element={
             <Suspense fallback={null}>
-              <AmbassadorStore />
+              <AmbassadorPortal />
             </Suspense>
           } 
         />
