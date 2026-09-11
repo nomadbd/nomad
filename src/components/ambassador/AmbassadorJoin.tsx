@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/supabaseClient';
-import { CloseButton, SendIcon } from '@/components/icons';
+
+// সঠিক Named Export ইমপোর্ট (index.ts এর মাধ্যমে)
+import { CloseIcon, SendIcon } from '@/components/icons';
 
 interface AmbassadorJoinProps {
   initialInviteData: any;
@@ -499,7 +501,7 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
         </div>
       </div>
 
-      {/* Full-Screen Concierge Suite with Thread / History View */}
+      {/* Full-Screen Concierge Suite */}
       {isConciergeOpen && (
         <div style={fullScreenOverlayStyle}>
           <div style={conciergeHeaderStyle}>
@@ -513,7 +515,7 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
               style={iconButtonStyle}
               aria-label="Close"
             >
-              <CloseButton />
+              <CloseIcon />
             </button>
           </div>
 
@@ -522,7 +524,6 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
               Direct communication line with NOMAD administration.
             </p>
 
-            {/* Email field if not logged in / default email not present */}
             {!(email || defaultEmail) && (
               <div style={{ marginBottom: '20px' }}>
                 <input
@@ -538,7 +539,6 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
               </div>
             )}
 
-            {/* Chat Thread History */}
             <div className="concierge-scroll" style={chatContainerStyle}>
               {isLoadingMessages ? (
                 <div style={{ fontSize: '10px', color: '#666', letterSpacing: '1px', textAlign: 'center', padding: '20px 0' }}>
@@ -587,7 +587,6 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
               <div ref={chatEndRef} />
             </div>
 
-            {/* Message Input Form */}
             <form onSubmit={handleSendSupportMessage} style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div style={inputWrapperStyle}>
                 <textarea
@@ -854,7 +853,6 @@ const copyrightStyle: React.CSSProperties = {
   fontWeight: 300,
 };
 
-// Concierge Overlay Styles
 const fullScreenOverlayStyle: React.CSSProperties = {
   position: 'fixed',
   top: 0,
