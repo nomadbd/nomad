@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/supabaseClient';
-import { SendIcon, CloseIcon } from '@/components/icons';
+import { SendIcon } from '@/components/icons';
 
 interface AdminMessagesProps {
   searchQuery?: string;
@@ -117,7 +117,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
         const threadList = Object.values(threadMap);
         setThreads(threadList);
 
-        if (threadList.length > 0 && !activeThreadId) {
+        if (threadList.length > 0 && !activeThreadId && !isMobile) {
           setActiveThreadId(threadList[0].id);
         }
       }
@@ -242,14 +242,14 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
 
   return (
     <div style={containerStyle}>
-      {/* FILTER BAR */}
+      {/* FILTER BAR - FULL WIDTH */}
       {isFilterOpen && (
         <div style={headerFilterBarStyle}>
           <span style={{ fontSize: '8px', color: '#666666', fontWeight: 600, letterSpacing: '2.5px' }}>
             FILTER BY ROLE
           </span>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            {['ALL', 'AMBASSADOR', 'CUSTOMER', 'STAFF'].map((role) => (
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            {['ALL', 'STAFF', 'CUSTOMER', 'INVITED', 'AMBASSADOR'].map((role) => (
               <button
                 key={role}
                 onClick={() => setRoleFilter(role)}
@@ -268,16 +268,16 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
       )}
 
       <div style={mainContentStyle}>
-        {/* 1. THREAD LIST */}
+        {/* 1. THREAD LIST SECTION */}
         {(!isMobile || showListOnMobile) && (
-          <div style={{ ...threadListColumnStyle, width: isMobile ? '100%' : '320px' }}>
+          <div style={{ ...threadListColumnStyle, width: isMobile ? '100%' : '340px' }}>
             <div style={listHeaderStyle}>
-              <span style={sectionTitleStyle}>INBOX ({filteredThreads.length})</span>
+              <span style={sectionTitleStyle}>MESSAGES ({filteredThreads.length})</span>
             </div>
 
             <div style={scrollListStyle}>
               {filteredThreads.length === 0 ? (
-                <div style={emptyTextStyle}>NO MESSAGES LOGGED</div>
+                <div style={emptyTextStyle}>NO MESSAGES FOUND</div>
               ) : (
                 filteredThreads.map((thread) => {
                   const isActive = thread.id === activeThreadId;
@@ -288,8 +288,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
                       style={{
                         ...threadCardStyle,
                         backgroundColor: isActive ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.02)',
-                        borderLeft: isActive ? '2px solid #ffffff' : '2px solid transparent',
-                        borderColor: isActive ? '#ffffff' : 'rgba(255, 255, 255, 0.05)',
+                        borderLeft: isActive ? '3px solid #ffffff' : '3px solid transparent',
                       }}
                     >
                       <div style={threadHeaderRow}>
@@ -311,33 +310,34 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
           </div>
         )}
 
-        {/* 2. CHAT PANEL */}
+        {/* 2. MAIN CHAT VIEWPORT */}
         {(!isMobile || showChatOnMobile) && (
           <div style={chatPanelStyle}>
             {activeThread ? (
               <>
-                {/* Chat Header */}
+                {/* Chat Panel Header */}
                 <div style={chatHeaderStyle}>
-                  <div>
-                    <span style={{ fontSize: '8px', letterSpacing: '2.5px', color: '#666666', fontWeight: 600, display: 'block' }}>
-                      PRIVATE DESK
-                    </span>
-                    <h3 style={{ fontSize: '13px', letterSpacing: '3px', fontWeight: 300, color: '#ffffff', margin: 0 }}>
-                      {activeThread.userName}
-                    </h3>
-                    <span style={{ fontSize: '10px', color: '#888888', display: 'block', marginTop: '2px', fontWeight: 300 }}>
-                      {activeThread.userEmail} • <span style={{ color: '#aaa' }}>{activeThread.role}</span>
-                    </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    {isMobile && (
+                      <button onClick={() => setActiveThreadId(null)} style={backBtnStyle}>
+                        ← BACK
+                      </button>
+                    )}
+                    <div>
+                      <span style={{ fontSize: '8px', letterSpacing: '2.5px', color: '#666666', fontWeight: 600, display: 'block' }}>
+                        CONVERSATION WITH
+                      </span>
+                      <h3 style={{ fontSize: '13px', letterSpacing: '2px', fontWeight: 400, color: '#ffffff', margin: 0 }}>
+                        {activeThread.userName}
+                      </h3>
+                      <span style={{ fontSize: '10px', color: '#888888', display: 'block', marginTop: '2px', fontWeight: 300 }}>
+                        {activeThread.userEmail} • <span style={{ color: '#aaa' }}>{activeThread.role}</span>
+                      </span>
+                    </div>
                   </div>
-
-                  {isMobile && (
-                    <button onClick={() => setActiveThreadId(null)} style={closeIconBtnStyle}>
-                      <CloseIcon />
-                    </button>
-                  )}
                 </div>
 
-                {/* Messages Viewport */}
+                {/* Messages Feed */}
                 <div ref={chatContainerRef} style={messageFeedStyle}>
                   <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     {activeThread.messages.map((msg) => {
@@ -378,14 +378,14 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
                   </div>
                 </div>
 
-                {/* Input Area (Using SendIcon) */}
+                {/* Message Input Bar */}
                 <div style={chatInputAreaStyle}>
                   <form onSubmit={handleSendMessage} style={chatInputFormStyle}>
                     <textarea
                       ref={textareaRef}
                       style={textareaInputStyle}
                       rows={1}
-                      placeholder="Type your message..."
+                      placeholder="Type your response..."
                       value={inputText}
                       onChange={(e) => {
                         setInputText(e.target.value);
@@ -437,13 +437,13 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
 
 export default AdminMessages;
 
-/* --- STYLES ALIGNED WITH AMBASSADOR JOIN --- */
+/* --- TELEGRAM / MESSAGING STYLE SHEET --- */
 const containerStyle: React.CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
   width: '100%',
   height: 'calc(100vh - 60px)',
-  backgroundColor: '#0a0a0a',
+  backgroundColor: '#000000',
   color: '#ffffff',
   fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif',
   boxSizing: 'border-box',
@@ -460,7 +460,6 @@ const statusContainerStyle: React.CSSProperties = {
   fontSize: '11px',
   letterSpacing: '2px',
   gap: '12px',
-  fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif',
 };
 
 const retryBtnStyle: React.CSSProperties = {
@@ -479,7 +478,7 @@ const headerFilterBarStyle: React.CSSProperties = {
   alignItems: 'center',
   justifyContent: 'space-between',
   padding: '12px 16px',
-  backgroundColor: '#000000',
+  backgroundColor: '#050505',
   borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
   flexWrap: 'wrap',
   gap: '10px',
@@ -505,7 +504,7 @@ const mainContentStyle: React.CSSProperties = {
 };
 
 const threadListColumnStyle: React.CSSProperties = {
-  borderRight: '1px solid rgba(255, 255, 255, 0.1)',
+  borderRight: '1px solid rgba(255, 255, 255, 0.08)',
   display: 'flex',
   flexDirection: 'column',
   backgroundColor: '#000000',
@@ -527,7 +526,7 @@ const sectionTitleStyle: React.CSSProperties = {
 const scrollListStyle: React.CSSProperties = {
   flex: 1,
   overflowY: 'auto',
-  padding: '8px',
+  padding: '8px 0',
 };
 
 const emptyTextStyle: React.CSSProperties = {
@@ -540,10 +539,11 @@ const emptyTextStyle: React.CSSProperties = {
 };
 
 const threadCardStyle: React.CSSProperties = {
-  padding: '14px',
-  marginBottom: '6px',
+  padding: '12px 16px',
+  marginBottom: '2px',
   cursor: 'pointer',
   transition: 'all 0.2s ease',
+  borderBottom: '1px solid rgba(255, 255, 255, 0.03)',
 };
 
 const threadHeaderRow: React.CSSProperties = {
@@ -555,8 +555,8 @@ const threadHeaderRow: React.CSSProperties = {
 
 const userNameStyle: React.CSSProperties = {
   fontSize: '12px',
-  fontWeight: 400,
-  letterSpacing: '1px',
+  fontWeight: 500,
+  letterSpacing: '0.5px',
   color: '#ffffff',
 };
 
@@ -604,25 +604,29 @@ const chatPanelStyle: React.CSSProperties = {
   flex: 1,
   display: 'flex',
   flexDirection: 'column',
-  backgroundColor: '#0a0a0a',
+  backgroundColor: '#000000',
   height: '100%',
 };
 
 const chatHeaderStyle: React.CSSProperties = {
-  padding: '16px',
-  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+  padding: '14px 16px',
+  borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
   display: 'flex',
   justifyContent: 'space-between',
   alignItems: 'center',
-  backgroundColor: '#0a0a0a',
+  backgroundColor: '#050505',
 };
 
-const closeIconBtnStyle: React.CSSProperties = {
+const backBtnStyle: React.CSSProperties = {
   background: 'none',
-  border: 'none',
+  border: '1px solid rgba(255, 255, 255, 0.2)',
   color: '#ffffff',
+  padding: '4px 8px',
+  fontSize: '9px',
+  fontWeight: 600,
   cursor: 'pointer',
-  padding: '6px',
+  borderRadius: '2px',
+  letterSpacing: '1px',
 };
 
 const messageFeedStyle: React.CSSProperties = {
@@ -642,7 +646,8 @@ const msgTimeStyle: React.CSSProperties = {
 const chatInputAreaStyle: React.CSSProperties = {
   padding: '16px',
   flexShrink: 0,
-  backgroundColor: '#0a0a0a',
+  backgroundColor: '#000000',
+  borderTop: '1px solid rgba(255, 255, 255, 0.08)',
 };
 
 const chatInputFormStyle: React.CSSProperties = {
