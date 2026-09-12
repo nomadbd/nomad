@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { supabase } from '../../../supabaseClient';
 
 interface AdminMessagesProps {
   searchQuery?: string;
@@ -25,75 +26,111 @@ interface Thread {
   messages: Message[];
 }
 
-const MOCK_THREADS: Thread[] = [
-  {
-    id: 'th-1',
-    userName: 'SABBIR',
-    userEmail: 'mdtohaali@zohomail.com',
-    role: 'AMBASSADOR',
-    status: 'ACTIVE',
-    unreadCount: 1,
-    lastMessage: 'তোহা',
-    lastMessageTime: '08:46 AM',
-    messages: [
-      { id: 'm1', sender: 'USER', text: 'আমার সোনার বাংলা, আমি তোমায় ভালোবাসি।', timestamp: '08:40 AM' },
-      { id: 'm2', sender: 'USER', text: 'This for checking', timestamp: '08:42 AM' },
-      { id: 'm3', sender: 'USER', text: 'তোহা', timestamp: '08:46 AM' },
-      { id: 'm4', sender: 'ADMIN', text: 'Received. Your inquiry has been routed to NOMAD Desk.', timestamp: '08:46 AM' }
-    ]
-  },
-  {
-    id: 'th-2',
-    userName: 'RAHIM AHMED',
-    userEmail: 'rahim@nomad.link',
-    role: 'CUSTOMER',
-    status: 'PENDING',
-    unreadCount: 0,
-    lastMessage: 'When will my order ship?',
-    lastMessageTime: 'Yesterday',
-    messages: [
-      { id: 'm5', sender: 'USER', text: 'When will my order ship?', timestamp: 'Yesterday 04:15 PM' }
-    ]
-  },
-  {
-    id: 'th-3',
-    userName: 'ANIKA RAHMAN',
-    userEmail: 'anika@nomad.com',
-    role: 'STAFF',
-    status: 'RESOLVED',
-    unreadCount: 0,
-    lastMessage: 'Product inventory updated.',
-    lastMessageTime: '10 Sep',
-    messages: [
-      { id: 'm6', sender: 'USER', text: 'Product inventory updated.', timestamp: '10 Sep 11:00 AM' }
-    ]
-  }
-];
-
 export const AdminMessages: React.FC<AdminMessagesProps> = ({
   searchQuery = '',
   isFilterOpen = false,
   isSearchOpen = false
 }) => {
-  const [threads, setThreads] = useState<Thread[]>(MOCK_THREADS);
-  const [activeThreadId, setActiveThreadId] = useState<string | null>('th-1');
+  const [threads, setThreads] = useState<Thread[]>([]);
+  const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
   const [roleFilter, setRoleFilter] = useState<'ALL' | 'AMBASSADOR' | 'CUSTOMER' | 'STAFF'>('ALL');
   const [inputText, setInputText] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(true);
   const [isMobile, setIsMobile] = useState<boolean>(false);
 
-  // Screen size check for mobile responsiveness
+  // Screen size check for responsive mobile view
   useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
     handleResize();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // 1. Supabase থেকে চ্যাট ও মেসেজ লোড করা
+  const fetchMessagesAndThreads = async () => {
+    try {
+      setLoading(true);
+
+      // 'messages' টেবিল থেকে সব ডাটা রিড করা (আপনার টেবিল নাম অনুযায়ী প্রয়োজনে এডজাস্ট করুন)
+      const { data, error } = await supabase
+        .from('messages')
+        .select('*')
+        .order('created_at', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching messages:', error);
+        return;
+      }
+
+      if (data) {
+        // মেসেজগুলোকে থ্রেড অনুযায়ী গ্রুপ করা
+        const threadMap: { [key: string]: Thread } = {};
+
+        data.forEach((item: any) => {
+          const threadId = item.thread_id || item.user_id || item.user_email;
+          const formattedTime = new Date(item.created_at).toLocaleTimeString([], {
+            hour: '2-digit',
+            minute: '2-digit'
+          });
+
+          if (!threadMap[threadId]) {
+            threadMap[threadId] = {
+              id: threadId,
+              userName: item.user_name || 'USER',
+              userEmail: item.user_email || '',
+              role: item.user_role || 'CUSTOMER',
+              status: item.status || 'ACTIVE',
+              unreadCount: 0,
+              lastMessage: item.text || item.message,
+              lastMessageTime: formattedTime,
+              messages: []
+            };
+          }
+
+          threadMap[threadId].messages.push({
+            id: item.id,
+            sender: item.sender, // 'USER' or 'ADMIN'
+            text: item.text || item.message,
+            timestamp: formattedTime
+          });
+
+          threadMap[threadId].lastMessage = item.text || item.message;
+          threadMap[threadId].lastMessageTime = formattedTime;
+        });
+
+        const threadList = Object.values(threadMap);
+        setThreads(threadList);
+
+        if (threadList.length > 0 && !activeThreadId) {
+          setActiveThreadId(threadList[0].id);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load conversations:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchMessagesAndThreads();
+
+    // Supabase Realtime Subscription (রিয়েল-টাইম মেসেজ আপডেট পাওয়ার জন্য)
+    const channel = supabase
+      .channel('public:messages')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, () => {
+        fetchMessagesAndThreads();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
   const activeThread = threads.find((t) => t.id === activeThreadId) || null;
 
-  // Filter threads using Header search and Header filter toggle
+  // Filter threads using Top Nav Search and Filter Icon
   const filteredThreads = threads.filter((t) => {
     const matchesRole = roleFilter === 'ALL' || t.role === roleFilter;
     const query = searchQuery.trim().toLowerCase();
@@ -105,39 +142,51 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
     return matchesRole && matchesSearch;
   });
 
-  const handleSendMessage = () => {
-    if (!inputText.trim() || !activeThreadId) return;
+  // 2. Supabase-এ অ্যাডমিনের মেসেজ সেভ করা
+  const handleSendMessage = async () => {
+    if (!inputText.trim() || !activeThread) return;
 
-    const newMsg: Message = {
-      id: `m-${Date.now()}`,
-      sender: 'ADMIN',
-      text: inputText.trim(),
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    };
-
-    setThreads((prev) =>
-      prev.map((t) => {
-        if (t.id === activeThreadId) {
-          return {
-            ...t,
-            lastMessage: newMsg.text,
-            lastMessageTime: newMsg.timestamp,
-            messages: [...t.messages, newMsg]
-          };
-        }
-        return t;
-      })
-    );
-
+    const messageText = inputText.trim();
     setInputText('');
+
+    try {
+      const { error } = await supabase.from('messages').insert([
+        {
+          thread_id: activeThread.id,
+          user_email: activeThread.userEmail,
+          user_name: activeThread.userName,
+          user_role: activeThread.role,
+          sender: 'ADMIN',
+          text: messageText,
+          status: 'ACTIVE'
+        }
+      ]);
+
+      if (error) {
+        console.error('Error saving message to Supabase:', error);
+        alert('মেসেজটি ডাটাবেজে সেভ হতে ব্যর্থ হয়েছে!');
+      } else {
+        fetchMessagesAndThreads(); // পাঠানোর পরপরই থ্রেড রিফ্রেশ
+      }
+    } catch (err) {
+      console.error('Send message failed:', err);
+    }
   };
 
   const showListOnMobile = isMobile && !activeThreadId;
   const showChatOnMobile = isMobile && !!activeThreadId;
 
+  if (loading && threads.length === 0) {
+    return (
+      <div style={{ color: '#888', padding: '40px', textAlign: 'center', fontFamily: 'monospace' }}>
+        LOADING MESSAGES FROM SUPABASE...
+      </div>
+    );
+  }
+
   return (
     <div style={containerStyle}>
-      {/* HEADER FILTER DRAWER (Triggered by Top Nav Filter Icon) */}
+      {/* HEADER FILTER DRAWER */}
       {isFilterOpen && (
         <div style={headerFilterBarStyle}>
           <span style={{ fontSize: '9px', color: '#888', fontWeight: 'bold', letterSpacing: '1px' }}>
@@ -205,12 +254,11 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
           </div>
         )}
 
-        {/* 2. CHAT CONVERSATION PANEL */}
+        {/* 2. CHAT PANEL */}
         {(!isMobile || showChatOnMobile) && (
           <div style={chatPanelStyle}>
             {activeThread ? (
               <>
-                {/* Chat Top Header */}
                 <div style={chatHeaderStyle}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     {isMobile && (
@@ -230,7 +278,6 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
                   <span style={statusTagStyle}>{activeThread.status}</span>
                 </div>
 
-                {/* Messages Feed */}
                 <div style={messageFeedStyle}>
                   {activeThread.messages.map((msg) => {
                     const isAdmin = msg.sender === 'ADMIN';
@@ -261,7 +308,6 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
                   })}
                 </div>
 
-                {/* Bottom Input Area */}
                 <div style={chatInputAreaStyle}>
                   <input
                     type="text"
