@@ -232,25 +232,8 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
             </div>
 
             <div style={styles.headerInfoStyle} onClick={openDrawer}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
-                <span style={styles.headerNameTitle}>{headerTitle}</span>
-                <span
-                  style={{
-                    ...styles.roleBadgeStyle,
-                    borderColor: activeThread?.role.includes('INVITED') ? '#eab308' : 'rgba(255, 255, 255, 0.3)',
-                    color: activeThread?.role.includes('INVITED') ? '#eab308' : '#ffffff',
-                    fontSize: '8px',
-                  }}
-                >
-                  {activeThread?.role}
-                </span>
-              </div>
-
+              <span style={styles.headerNameTitle}>{headerTitle}</span>
               {headerSubtitle && <span style={styles.headerSubtitleStyle}>{headerSubtitle}</span>}
-            </div>
-
-            <div style={styles.infoIconStyle} onClick={openDrawer} title="View Profile Info">
-              ⓘ
             </div>
           </div>
 
