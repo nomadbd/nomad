@@ -41,6 +41,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
   const [inputText, setInputText] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [viewportHeight, setViewportHeight] = useState<number | null>(null);
 
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -58,6 +59,40 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
       onSelectThread(threadId, thread);
     }
   };
+
+  // Mobile Visual Viewport & Keyboard Handler
+  useEffect(() => {
+    if (!activeThreadId) return;
+
+    const handleViewportChange = () => {
+      if (window.visualViewport) {
+        setViewportHeight(window.visualViewport.height);
+        window.scrollTo(0, 0);
+      }
+    };
+
+    if (window.visualViewport) {
+      setViewportHeight(window.visualViewport.height);
+      window.visualViewport.addEventListener('resize', handleViewportChange);
+      window.visualViewport.addEventListener('scroll', handleViewportChange);
+    }
+
+    const originalOverflow = document.body.style.overflow;
+    const originalPosition = document.body.style.position;
+    document.body.style.overflow = 'hidden';
+    document.body.style.position = 'fixed';
+    document.body.style.width = '100%';
+
+    return () => {
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', handleViewportChange);
+        window.visualViewport.removeEventListener('scroll', handleViewportChange);
+      }
+      document.body.style.overflow = originalOverflow;
+      document.body.style.position = originalPosition;
+      document.body.style.width = '';
+    };
+  }, [activeThreadId]);
 
   // Mobile Back Button Handler
   useEffect(() => {
@@ -92,7 +127,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
         clearTimeout(t2);
       };
     }
-  }, [activeThreadId, activeThread?.messages.length]);
+  }, [activeThreadId, activeThread?.messages.length, viewportHeight]);
 
   const fetchCommunicationsAndUsers = async () => {
     try {
@@ -382,9 +417,14 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
           )}
         </div>
       ) : (
-        /* VIEW 2: FIXED FULLSCREEN CHAT VIEW */
-        <div style={chatScreenContainerStyle}>
-          {/* HEADER */}
+        /* VIEW 2: VISUAL VIEWPORT LOCKED CHAT SCREEN */
+        <div
+          style={{
+            ...chatScreenContainerStyle,
+            height: viewportHeight ? `${viewportHeight}px` : '100dvh',
+          }}
+        >
+          {/* PINNED HEADER */}
           <div style={whatsappHeaderStyle}>
             <button
               onClick={() => handleSelectThread(null)}
@@ -417,7 +457,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
             </div>
           </div>
 
-          {/* MESSAGES FEED */}
+          {/* SCROLLABLE CHAT MESSAGES */}
           <div ref={chatContainerRef} style={chatFeedStyle}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {activeThread?.messages.map((msg) => {
@@ -455,7 +495,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
             </div>
           </div>
 
-          {/* INPUT BAR */}
+          {/* PINNED INPUT AREA */}
           <div style={chatInputAreaStyle}>
             <form onSubmit={handleSendMessage} style={chatInputFormStyle}>
               <textarea
@@ -670,13 +710,12 @@ const unreadBadgeStyle: React.CSSProperties = {
   flexShrink: 0,
 };
 
-/* --- FIXED FULLSCREEN OVERLAY FOR ACTIVE CHAT --- */
+/* --- FIXED CHAT OVERLAY --- */
 const chatScreenContainerStyle: React.CSSProperties = {
   position: 'fixed',
   top: 0,
   left: 0,
   right: 0,
-  bottom: 0,
   zIndex: 9999,
   display: 'flex',
   flexDirection: 'column',
