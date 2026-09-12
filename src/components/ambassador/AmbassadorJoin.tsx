@@ -31,6 +31,9 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
   const [isCheckingEmail, setIsCheckingEmail] = useState(false);
   const [accountFound, setAccountFound] = useState<boolean | null>(null);
 
+  // Main Page Mount Animation State
+  const [isPageMounted, setIsPageMounted] = useState(false);
+
   // Concierge Modal, Animation & Support Chat States
   const [isConciergeOpen, setIsConciergeOpen] = useState(false);
   const [isModalAnimating, setIsModalAnimating] = useState(false);
@@ -43,7 +46,7 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
   // Dynamic Viewport Style state to lock modal height & offset on mobile keyboard focus
   const [viewportStyle, setViewportStyle] = useState<React.CSSProperties>({});
 
-  const chatEndRef = useRef<HTMLDivElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const rawDisplayName = inviteData?.display_name || 'GUEST';
@@ -60,7 +63,24 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
   const commissionRate = inviteData?.commission_rate ?? 15;
   const discountPercent = inviteData?.discount_percent ?? 10;
 
-  // Complete Lock on Body and Visual Viewport Mapping for Mobile Keyboard
+  // Trigger main page entrance animation on mount
+  useEffect(() => {
+    setIsPageMounted(true);
+  }, []);
+
+  // Helper function to scroll chat to bottom
+  const scrollToBottom = (smooth = true) => {
+    requestAnimationFrame(() => {
+      if (chatContainerRef.current) {
+        chatContainerRef.current.scrollTo({
+          top: chatContainerRef.current.scrollHeight,
+          behavior: smooth ? 'smooth' : 'auto',
+        });
+      }
+    });
+  };
+
+  // Lock Body and Handle Visual Viewport Mapping for Mobile Keyboard
   useEffect(() => {
     if (!isConciergeOpen) return;
 
@@ -76,6 +96,7 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
           height: `${window.visualViewport.height}px`,
           top: `${window.visualViewport.offsetTop}px`,
         });
+        scrollToBottom(false);
       }
     };
 
@@ -105,6 +126,7 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
     setIsConciergeOpen(true);
     setTimeout(() => {
       setIsModalAnimating(true);
+      scrollToBottom(false);
     }, 20);
   };
 
@@ -203,7 +225,7 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
 
   useEffect(() => {
     if (isConciergeOpen && messages.length > 0) {
-      chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      scrollToBottom(true);
     }
   }, [messages, isConciergeOpen]);
 
@@ -329,6 +351,7 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
         };
 
         setMessages((prev) => [...prev, userMsg, autoReplyMsg]);
+        setTimeout(() => scrollToBottom(true), 50);
       }
     } catch (err) {
       console.error('Support message submission failed', err);
@@ -340,7 +363,16 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
   if (isExpired) {
     return (
       <div style={containerStyle}>
-        <div style={{ width: '100%', maxWidth: '420px', textAlign: 'center' }}>
+        <div 
+          style={{
+            width: '100%',
+            maxWidth: '420px',
+            textAlign: 'center',
+            transform: isPageMounted ? 'translateY(0)' : 'translateY(35px)',
+            opacity: isPageMounted ? 1 : 0,
+            transition: 'transform 0.7s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.7s ease'
+          }}
+        >
           <h2 style={{ fontSize: '18px', fontWeight: 300, letterSpacing: '3px', color: '#ef4444', margin: '0 0 12px 0' }}>
             INVITATION EXPIRED
           </h2>
@@ -375,7 +407,15 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
 
   return (
     <div style={containerStyle}>
-      <div style={mainWrapperStyle}>
+      {/* Animated Main Page Wrapper */}
+      <div 
+        style={{
+          ...mainWrapperStyle,
+          transform: isPageMounted ? 'translateY(0)' : 'translateY(35px)',
+          opacity: isPageMounted ? 1 : 0,
+          transition: 'transform 0.7s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.7s ease'
+        }}
+      >
         
         {/* Header Section */}
         <div>
@@ -567,7 +607,10 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
             )}
 
             {/* Scrollable Messages Container */}
-            <div style={{ flex: 1, overflowY: 'auto', padding: '12px 16px', display: 'flex', flexDirection: 'column' }}>
+            <div 
+              ref={chatContainerRef}
+              style={{ flex: 1, overflowY: 'auto', padding: '12px 16px', display: 'flex', flexDirection: 'column' }}
+            >
               {isLoadingMessages ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: 'auto' }}>
                   <div style={{ alignSelf: 'flex-start', width: '60%', height: '38px', backgroundColor: 'rgba(255, 255, 255, 0.05)', borderRadius: '12px 12px 12px 2px' }} />
@@ -605,7 +648,6 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
                       </div>
                     );
                   })}
-                  <div ref={chatEndRef} />
                 </div>
               )}
             </div>
@@ -619,6 +661,8 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
                   rows={1}
                   placeholder="Type your message..."
                   value={supportMsg}
+                  onFocus={() => setTimeout(() => scrollToBottom(true), 250)}
+                  onClick={() => setTimeout(() => scrollToBottom(true), 250)}
                   onChange={(e) => {
                     setSupportMsg(e.target.value);
                     e.target.style.height = 'auto';
