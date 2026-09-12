@@ -9,19 +9,20 @@ import {
   AdminStaff,
   AdminCustomers,
   AdminLogistics,
-  StaffProfile
+  StaffProfile,
+  AdminMessages
 } from '../components/admin';
 import SendInvite from '../components/admin/ambassadors/invitations/SendInvite';
 import { PlusIcon, SearchIcon, FilterIcon, MenuIcon, CloseIcon } from '../components/icons';
 
-type TabType = 'overview' | 'orders' | 'products' | 'logistics' | 'ambassadors' | 'staff' | 'customers';
+type TabType = 'overview' | 'messages' | 'orders' | 'products' | 'ambassadors' | 'customers' | 'logistics' | 'staff';
 
 const AdminDashboard: React.FC = () => {
   const getTabFromURL = (): TabType => {
     if (typeof window === 'undefined') return 'overview';
     const params = new URLSearchParams(window.location.search);
     const tab = params.get('tab') as TabType;
-    const validTabs: TabType[] = ['overview', 'orders', 'products', 'logistics', 'ambassadors', 'staff', 'customers'];
+    const validTabs: TabType[] = ['overview', 'messages', 'orders', 'products', 'ambassadors', 'customers', 'logistics', 'staff'];
     return validTabs.includes(tab) ? tab : 'overview';
   };
 
@@ -223,6 +224,13 @@ const AdminDashboard: React.FC = () => {
               </button>
 
               <button
+                className={`${styles.navBtn} ${activeTab === 'messages' ? styles.navBtnActive : ''}`}
+                onClick={() => handleTabChange('messages')}
+              >
+                MESSAGES
+              </button>
+
+              <button
                 className={`${styles.navBtn} ${activeTab === 'orders' ? styles.navBtnActive : ''}`}
                 onClick={() => handleTabChange('orders')}
               >
@@ -237,13 +245,6 @@ const AdminDashboard: React.FC = () => {
               </button>
 
               <button
-                className={`${styles.navBtn} ${activeTab === 'logistics' ? styles.navBtnActive : ''}`}
-                onClick={() => handleTabChange('logistics')}
-              >
-                LOGISTICS
-              </button>
-
-              <button
                 className={`${styles.navBtn} ${activeTab === 'ambassadors' ? styles.navBtnActive : ''}`}
                 onClick={() => handleTabChange('ambassadors')}
               >
@@ -251,17 +252,24 @@ const AdminDashboard: React.FC = () => {
               </button>
 
               <button
-                className={`${styles.navBtn} ${activeTab === 'staff' ? styles.navBtnActive : ''}`}
-                onClick={() => handleTabChange('staff')}
-              >
-                STAFF
-              </button>
-
-              <button
                 className={`${styles.navBtn} ${activeTab === 'customers' ? styles.navBtnActive : ''}`}
                 onClick={() => handleTabChange('customers')}
               >
                 CUSTOMERS
+              </button>
+
+              <button
+                className={`${styles.navBtn} ${activeTab === 'logistics' ? styles.navBtnActive : ''}`}
+                onClick={() => handleTabChange('logistics')}
+              >
+                LOGISTICS
+              </button>
+
+              <button
+                className={`${styles.navBtn} ${activeTab === 'staff' ? styles.navBtnActive : ''}`}
+                onClick={() => handleTabChange('staff')}
+              >
+                STAFF
               </button>
             </nav>
           </div>
@@ -310,6 +318,14 @@ const AdminDashboard: React.FC = () => {
         <main className={styles.nomadMain}>
           {activeTab === 'overview' && (
             <AdminOverview key="overview" userRole={userRole} showFilter={isFilterOpen} dateFormat="DD/MM/YYYY" />
+          )}
+          {activeTab === 'messages' && (
+            <AdminMessages 
+              key="messages" 
+              searchQuery={searchQuery}
+              isFilterOpen={isFilterOpen}
+              isSearchOpen={isSearchOpen}
+            />
           )}
           {activeTab === 'orders' && (
             <AdminOrders 
