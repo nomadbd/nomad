@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { supabase } from '@/supabaseClient';
 import { SendIcon } from '@/components/icons';
 
@@ -40,10 +40,12 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
   const [roleFilter, setRoleFilter] = useState<string>('ALL');
   const [inputText, setInputText] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
+  const [isThreadReady, setIsThreadReady] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const prevMessagesCountRef = useRef<number>(0);
 
   useEffect(() => {
     setInternalActiveThreadId(propActiveThreadId);
@@ -59,16 +61,41 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
     }
   };
 
-  const scrollToBottom = (smooth = true) => {
-    requestAnimationFrame(() => {
-      if (chatContainerRef.current) {
-        chatContainerRef.current.scrollTo({
-          top: chatContainerRef.current.scrollHeight,
-          behavior: smooth ? 'smooth' : 'auto',
-        });
-      }
-    });
-  };
+  const activeThread = threads.find((t) => t.id === activeThreadId) || null;
+
+  // Handles thread change: shows skeleton, instantly sets scroll to bottom, then fades in
+  useLayoutEffect(() => {
+    if (activeThreadId) {
+      setIsThreadReady(false);
+      
+      const timer = setTimeout(() => {
+        if (chatContainerRef.current) {
+          chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+        }
+        setIsThreadReady(true);
+      }, 120);
+
+      return () => clearTimeout(timer);
+    }
+  }, [activeThreadId]);
+
+  // Smooth scroll down ONLY when a new message is added while chat is already active
+  useEffect(() => {
+    if (!activeThread) return;
+    const currentCount = activeThread.messages.length;
+
+    if (isThreadReady && currentCount > prevMessagesCountRef.current) {
+      requestAnimationFrame(() => {
+        if (chatContainerRef.current) {
+          chatContainerRef.current.scrollTo({
+            top: chatContainerRef.current.scrollHeight,
+            behavior: 'smooth',
+          });
+        }
+      });
+    }
+    prevMessagesCountRef.current = currentCount;
+  }, [activeThread?.messages.length, isThreadReady]);
 
   const fetchCommunicationsAndUsers = async () => {
     try {
@@ -201,14 +228,6 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
     };
   }, []);
 
-  const activeThread = threads.find((t) => t.id === activeThreadId) || null;
-
-  useEffect(() => {
-    if (activeThread) {
-      scrollToBottom(true);
-    }
-  }, [activeThread?.messages.length, activeThreadId]);
-
   const filteredThreads = threads.filter((t) => {
     const matchesRole = roleFilter === 'ALL' || t.role.toLowerCase().includes(roleFilter.toLowerCase());
     const query = searchQuery.trim().toLowerCase();
@@ -253,7 +272,6 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
     }
-    setTimeout(() => scrollToBottom(true), 50);
 
     try {
       const { error } = await supabase.from('communications').insert([
@@ -296,6 +314,24 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
 
   return (
     <div style={containerStyle}>
+      {/* CSS KEYFRAMES INJECTION */}
+      <style>{`
+        @keyframes skeletonPulse {
+          0%, 100% { opacity: 0.15; }
+          50% { opacity: 0.35; }
+        }
+        @keyframes chatFadeIn {
+          from { opacity: 0; transform: translateY(4px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .skeleton-bubble {
+          animation: skeletonPulse 1.2s ease-in-out infinite;
+        }
+        .chat-fade-in-content {
+          animation: chatFadeIn 0.22s ease-out forwards;
+        }
+      `}</style>
+
       {/* FILTER BAR */}
       {isFilterOpen && !activeThreadId && (
         <div style={headerFilterBarStyle}>
@@ -365,9 +401,9 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
           )}
         </div>
       ) : (
-        /* VIEW 2: CHAT VIEWPORT WITH INTEGRATED PREMIUM HEADER */
+        /* VIEW 2: CHAT VIEWPORT WITH INTEGRATED HEADER */
         <div style={chatScreenContainerStyle}>
-          {/* PREMIUM CHAT HEADER */}
+          {/* HEADER */}
           <div style={whatsappHeaderStyle}>
             <button
               onClick={() => handleSelectThread(null)}
@@ -405,43 +441,54 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
 
           {/* CHAT MESSAGES FEED */}
           <div ref={chatContainerRef} style={chatFeedStyle}>
-            <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {activeThread?.messages.map((msg) => {
-                const isAdmin = msg.sender === 'ADMIN';
-                return (
-                  <div
-                    key={msg.id}
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: isAdmin ? 'flex-end' : 'flex-start',
-                    }}
-                  >
-                    <span style={{ fontSize: '8px', color: '#666666', letterSpacing: '1px', marginBottom: '3px' }}>
-                      {isAdmin ? 'NOMAD DESK' : activeThread.userName}
-                    </span>
+            {!isThreadReady ? (
+              /* SKELETON LOADER WHILE INITIALIZING CHAT POSITION */
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: 'auto', padding: '10px 0' }}>
+                <div className="skeleton-bubble" style={{ ...skeletonStyle, alignSelf: 'flex-start', width: '60%', height: '42px' }} />
+                <div className="skeleton-bubble" style={{ ...skeletonStyle, alignSelf: 'flex-end', width: '45%', height: '36px' }} />
+                <div className="skeleton-bubble" style={{ ...skeletonStyle, alignSelf: 'flex-start', width: '70%', height: '50px' }} />
+                <div className="skeleton-bubble" style={{ ...skeletonStyle, alignSelf: 'flex-end', width: '50%', height: '40px' }} />
+              </div>
+            ) : (
+              /* ACTUAL CHAT FEED WITH SMOOTH FADE IN */
+              <div className="chat-fade-in-content" style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {activeThread?.messages.map((msg) => {
+                  const isAdmin = msg.sender === 'ADMIN';
+                  return (
                     <div
+                      key={msg.id}
                       style={{
-                        maxWidth: '85%',
-                        padding: '10px 14px',
-                        fontSize: '12px',
-                        lineHeight: '1.5',
-                        fontWeight: 300,
-                        backgroundColor: isAdmin ? 'rgba(255, 255, 255, 0.12)' : 'rgba(255, 255, 255, 0.05)',
-                        color: '#ffffff',
-                        borderRadius: isAdmin ? '14px 14px 2px 14px' : '14px 14px 14px 2px',
-                        border: isAdmin ? '1px solid rgba(255, 255, 255, 0.18)' : '1px solid rgba(255, 255, 255, 0.08)',
-                        wordBreak: 'break-word',
-                        whiteSpace: 'pre-wrap',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: isAdmin ? 'flex-end' : 'flex-start',
                       }}
                     >
-                      {msg.text}
+                      <span style={{ fontSize: '8px', color: '#666666', letterSpacing: '1px', marginBottom: '3px' }}>
+                        {isAdmin ? 'NOMAD DESK' : activeThread.userName}
+                      </span>
+                      <div
+                        style={{
+                          maxWidth: '85%',
+                          padding: '10px 14px',
+                          fontSize: '12px',
+                          lineHeight: '1.5',
+                          fontWeight: 300,
+                          backgroundColor: isAdmin ? 'rgba(255, 255, 255, 0.12)' : 'rgba(255, 255, 255, 0.05)',
+                          color: '#ffffff',
+                          borderRadius: isAdmin ? '14px 14px 2px 14px' : '14px 14px 14px 2px',
+                          border: isAdmin ? '1px solid rgba(255, 255, 255, 0.18)' : '1px solid rgba(255, 255, 255, 0.08)',
+                          wordBreak: 'break-word',
+                          whiteSpace: 'pre-wrap',
+                        }}
+                      >
+                        {msg.text}
+                      </div>
+                      <span style={msgTimeStyle}>{msg.timestamp}</span>
                     </div>
-                    <span style={msgTimeStyle}>{msg.timestamp}</span>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {/* MESSAGE INPUT BAR */}
@@ -453,6 +500,11 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
                 rows={1}
                 placeholder="Type your response..."
                 value={inputText}
+                onFocus={() => {
+                  if (chatContainerRef.current) {
+                    chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+                  }
+                }}
                 onChange={(e) => {
                   setInputText(e.target.value);
                   e.target.style.height = 'auto';
@@ -664,7 +716,7 @@ const unreadBadgeStyle: React.CSSProperties = {
   flexShrink: 0,
 };
 
-/* --- CONVERSATION VIEW STYLES (UPDATED FOR FULL MOBILE VIEWPORT) --- */
+/* --- CONVERSATION VIEW STYLES --- */
 const chatScreenContainerStyle: React.CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
@@ -743,6 +795,11 @@ const chatFeedStyle: React.CSSProperties = {
   WebkitOverflowScrolling: 'touch',
 };
 
+const skeletonStyle: React.CSSProperties = {
+  backgroundColor: 'rgba(255, 255, 255, 0.1)',
+  borderRadius: '14px',
+};
+
 const msgTimeStyle: React.CSSProperties = {
   fontSize: '8px',
   color: '#555555',
@@ -751,6 +808,7 @@ const msgTimeStyle: React.CSSProperties = {
 
 const chatInputAreaStyle: React.CSSProperties = {
   padding: '12px 16px',
+  paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))',
   flexShrink: 0,
   backgroundColor: '#0a0a0a',
   borderTop: '1px solid rgba(255, 255, 255, 0.08)',
