@@ -1,5 +1,6 @@
 export { default as AdminCustomers } from './AdminCustomers';
 export { default as AdminLogistics } from './logistics/AdminLogistics';
+export { default as AdminMessages } from './messages/AdminMessages';
 export { default as AdminOrders } from './orders/AdminOrders';
 export { default as AdminOverview } from './overview/AdminOverview';
 export { default as AdminProducts } from './products/AdminProducts';
