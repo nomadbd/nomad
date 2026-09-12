@@ -15,14 +15,14 @@ import {
 import SendInvite from '../components/admin/ambassadors/invitations/SendInvite';
 import { PlusIcon, SearchIcon, FilterIcon, MenuIcon, CloseIcon } from '../components/icons';
 
-type TabType = 'overview' | 'messages' | 'orders' | 'products' | 'ambassadors' | 'customers' | 'logistics' | 'staff';
+type TabType = 'overview' | 'orders' | 'products' | 'logistics' | 'messages' | 'ambassadors' | 'staff' | 'customers';
 
 const AdminDashboard: React.FC = () => {
   const getTabFromURL = (): TabType => {
     if (typeof window === 'undefined') return 'overview';
     const params = new URLSearchParams(window.location.search);
     const tab = params.get('tab') as TabType;
-    const validTabs: TabType[] = ['overview', 'messages', 'orders', 'products', 'ambassadors', 'customers', 'logistics', 'staff'];
+    const validTabs: TabType[] = ['overview', 'orders', 'products', 'logistics', 'messages', 'ambassadors', 'staff', 'customers'];
     return validTabs.includes(tab) ? tab : 'overview';
   };
 
@@ -224,13 +224,6 @@ const AdminDashboard: React.FC = () => {
               </button>
 
               <button
-                className={`${styles.navBtn} ${activeTab === 'messages' ? styles.navBtnActive : ''}`}
-                onClick={() => handleTabChange('messages')}
-              >
-                MESSAGES
-              </button>
-
-              <button
                 className={`${styles.navBtn} ${activeTab === 'orders' ? styles.navBtnActive : ''}`}
                 onClick={() => handleTabChange('orders')}
               >
@@ -245,20 +238,6 @@ const AdminDashboard: React.FC = () => {
               </button>
 
               <button
-                className={`${styles.navBtn} ${activeTab === 'ambassadors' ? styles.navBtnActive : ''}`}
-                onClick={() => handleTabChange('ambassadors')}
-              >
-                AMBASSADORS
-              </button>
-
-              <button
-                className={`${styles.navBtn} ${activeTab === 'customers' ? styles.navBtnActive : ''}`}
-                onClick={() => handleTabChange('customers')}
-              >
-                CUSTOMERS
-              </button>
-
-              <button
                 className={`${styles.navBtn} ${activeTab === 'logistics' ? styles.navBtnActive : ''}`}
                 onClick={() => handleTabChange('logistics')}
               >
@@ -266,10 +245,31 @@ const AdminDashboard: React.FC = () => {
               </button>
 
               <button
+                className={`${styles.navBtn} ${activeTab === 'messages' ? styles.navBtnActive : ''}`}
+                onClick={() => handleTabChange('messages')}
+              >
+                MESSAGES
+              </button>
+
+              <button
+                className={`${styles.navBtn} ${activeTab === 'ambassadors' ? styles.navBtnActive : ''}`}
+                onClick={() => handleTabChange('ambassadors')}
+              >
+                AMBASSADORS
+              </button>
+
+              <button
                 className={`${styles.navBtn} ${activeTab === 'staff' ? styles.navBtnActive : ''}`}
                 onClick={() => handleTabChange('staff')}
               >
                 STAFF
+              </button>
+
+              <button
+                className={`${styles.navBtn} ${activeTab === 'customers' ? styles.navBtnActive : ''}`}
+                onClick={() => handleTabChange('customers')}
+              >
+                CUSTOMERS
               </button>
             </nav>
           </div>
@@ -319,14 +319,6 @@ const AdminDashboard: React.FC = () => {
           {activeTab === 'overview' && (
             <AdminOverview key="overview" userRole={userRole} showFilter={isFilterOpen} dateFormat="DD/MM/YYYY" />
           )}
-          {activeTab === 'messages' && (
-            <AdminMessages 
-              key="messages" 
-              searchQuery={searchQuery}
-              isFilterOpen={isFilterOpen}
-              isSearchOpen={isSearchOpen}
-            />
-          )}
           {activeTab === 'orders' && (
             <AdminOrders 
               key="orders" 
@@ -357,6 +349,14 @@ const AdminDashboard: React.FC = () => {
               key="logistics"
               searchQuery={searchQuery}
               isFilterOpen={isFilterOpen}
+            />
+          )}
+          {activeTab === 'messages' && (
+            <AdminMessages 
+              key="messages" 
+              searchQuery={searchQuery}
+              isFilterOpen={isFilterOpen}
+              isSearchOpen={isSearchOpen}
             />
           )}
           {activeTab === 'ambassadors' && (
