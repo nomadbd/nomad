@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
-import { SendIcon, BackIcon, CloseIcon } from '@/components/icons';
+import { SendIcon, BackIcon, CloseIcon, EmailIcon, CallIcon, MessageIcon } from '@/components/icons';
 import { AdminMessagesProps } from './types';
 import { useAdminMessages } from './useAdminMessages';
 import * as styles from './AdminMessages.styles';
@@ -358,44 +358,111 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
               </div>
             </div>
 
-            {/* QUICK ACTIONS */}
-            <div style={styles.actionGridStyle}>
+            {/* QUICK ACTIONS (iOS-Style Circular Action Buttons) */}
+            <div style={{ display: 'flex', justifyContent: 'space-around', margin: '20px 0' }}>
+              {/* EMAIL ACTION */}
               <a
                 href={`mailto:${activeThread.userEmail}`}
-                style={styles.actionBtnStyle}
                 target="_blank"
                 rel="noopener noreferrer"
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '6px',
+                  textDecoration: 'none',
+                }}
               >
-                <span style={{ fontSize: '16px' }}>✉️</span>
-                <span>EMAIL</span>
+                <div
+                  style={{
+                    width: '46px',
+                    height: '46px',
+                    borderRadius: '50%',
+                    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#eab308',
+                  }}
+                >
+                  <EmailIcon />
+                </div>
+                <span style={{ fontSize: '9px', fontWeight: 600, color: '#888888', letterSpacing: '0.8px' }}>
+                  EMAIL
+                </span>
               </a>
+
+              {/* CALL ACTION */}
               <a
                 href={activeThread.userPhone ? `tel:${activeThread.userPhone}` : '#'}
                 style={{
-                  ...styles.actionBtnStyle,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '6px',
+                  textDecoration: 'none',
                   opacity: activeThread.userPhone ? 1 : 0.3,
                   pointerEvents: activeThread.userPhone ? 'auto' : 'none',
                 }}
               >
-                <span style={{ fontSize: '16px' }}>📞</span>
-                <span>CALL</span>
+                <div
+                  style={{
+                    width: '46px',
+                    height: '46px',
+                    borderRadius: '50%',
+                    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#ffffff',
+                  }}
+                >
+                  <CallIcon />
+                </div>
+                <span style={{ fontSize: '9px', fontWeight: 600, color: '#888888', letterSpacing: '0.8px' }}>
+                  CALL
+                </span>
               </a>
+
+              {/* WHATSAPP ACTION */}
               <a
                 href={
                   activeThread.userPhone
                     ? `https://wa.me/${activeThread.userPhone.replace(/[^0-9]/g, '')}`
                     : '#'
                 }
+                target="_blank"
+                rel="noopener noreferrer"
                 style={{
-                  ...styles.actionBtnStyle,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '6px',
+                  textDecoration: 'none',
                   opacity: activeThread.userPhone ? 1 : 0.3,
                   pointerEvents: activeThread.userPhone ? 'auto' : 'none',
                 }}
-                target="_blank"
-                rel="noopener noreferrer"
               >
-                <span style={{ fontSize: '16px' }}>💬</span>
-                <span>WHATSAPP</span>
+                <div
+                  style={{
+                    width: '46px',
+                    height: '46px',
+                    borderRadius: '50%',
+                    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#22c55e',
+                  }}
+                >
+                  <MessageIcon />
+                </div>
+                <span style={{ fontSize: '9px', fontWeight: 600, color: '#888888', letterSpacing: '0.8px' }}>
+                  WHATSAPP
+                </span>
               </a>
             </div>
 
