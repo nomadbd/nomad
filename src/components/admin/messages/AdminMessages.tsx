@@ -664,13 +664,19 @@ const unreadBadgeStyle: React.CSSProperties = {
   flexShrink: 0,
 };
 
-/* --- CONVERSATION VIEW STYLES --- */
+/* --- CONVERSATION VIEW STYLES (UPDATED FOR FULL MOBILE VIEWPORT) --- */
 const chatScreenContainerStyle: React.CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
-  height: '100%',
-  width: '100%',
+  position: 'fixed',
+  top: 0,
+  left: 0,
+  right: 0,
+  bottom: 0,
+  height: '100dvh',
+  width: '100vw',
   backgroundColor: '#000000',
+  zIndex: 9999,
   overflow: 'hidden',
 };
 
@@ -678,7 +684,7 @@ const whatsappHeaderStyle: React.CSSProperties = {
   display: 'flex',
   alignItems: 'center',
   gap: '12px',
-  padding: '10px 16px',
+  padding: '12px 16px',
   backgroundColor: '#0a0a0a',
   borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
   flexShrink: 0,
@@ -734,6 +740,7 @@ const chatFeedStyle: React.CSSProperties = {
   padding: '16px',
   display: 'flex',
   flexDirection: 'column',
+  WebkitOverflowScrolling: 'touch',
 };
 
 const msgTimeStyle: React.CSSProperties = {
