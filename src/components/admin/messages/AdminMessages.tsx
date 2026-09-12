@@ -193,9 +193,13 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                         <span
                           style={{
-                            ...styles.roleBadgeStyle,
-                            borderColor: thread.role.includes('INVITED') ? '#eab308' : 'rgba(255, 255, 255, 0.2)',
-                            color: thread.role.includes('INVITED') ? '#eab308' : '#aaa',
+                            fontSize: '9px',
+                            fontWeight: 600,
+                            letterSpacing: '0.6px',
+                            padding: '2px 7px',
+                            borderRadius: '4px',
+                            backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                            color: '#aaaaaa',
                           }}
                         >
                           {thread.role}
@@ -343,14 +347,20 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
               <div style={styles.drawerHeroTextStyle}>
                 <span style={styles.drawerNameStyle}>{headerTitle}</span>
                 <span style={{ fontSize: '11px', color: '#888888' }}>{activeThread.userEmail}</span>
+                
+                {/* SUBTLE GREY ROLE BADGE (BORDERLESS) */}
                 <span
                   style={{
-                    ...styles.roleBadgeStyle,
+                    fontSize: '9px',
+                    fontWeight: 600,
+                    letterSpacing: '0.8px',
+                    padding: '3px 8px',
+                    borderRadius: '4px',
+                    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                    color: '#aaaaaa',
                     display: 'inline-block',
                     width: 'fit-content',
-                    marginTop: '4px',
-                    borderColor: activeThread.role.includes('INVITED') ? '#eab308' : 'rgba(255, 255, 255, 0.3)',
-                    color: activeThread.role.includes('INVITED') ? '#eab308' : '#ffffff',
+                    marginTop: '6px',
                   }}
                 >
                   {activeThread.role}
@@ -358,7 +368,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
               </div>
             </div>
 
-            {/* QUICK ACTIONS (iOS-Style Circular Action Buttons) */}
+            {/* UNIFORM MONOCHROME QUICK ACTIONS */}
             <div style={{ display: 'flex', justifyContent: 'space-around', margin: '20px 0' }}>
               {/* EMAIL ACTION */}
               <a
@@ -378,17 +388,17 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
                     width: '46px',
                     height: '46px',
                     borderRadius: '50%',
-                    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: '#eab308',
+                    color: '#e5e5e5', // Uniform subtle white
                   }}
                 >
                   <EmailIcon />
                 </div>
-                <span style={{ fontSize: '9px', fontWeight: 600, color: '#888888', letterSpacing: '0.8px' }}>
+                <span style={{ fontSize: '9px', fontWeight: 600, color: '#777777', letterSpacing: '0.8px' }}>
                   EMAIL
                 </span>
               </a>
@@ -411,17 +421,17 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
                     width: '46px',
                     height: '46px',
                     borderRadius: '50%',
-                    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: '#ffffff',
+                    color: '#e5e5e5', // Uniform subtle white
                   }}
                 >
                   <CallIcon />
                 </div>
-                <span style={{ fontSize: '9px', fontWeight: 600, color: '#888888', letterSpacing: '0.8px' }}>
+                <span style={{ fontSize: '9px', fontWeight: 600, color: '#777777', letterSpacing: '0.8px' }}>
                   CALL
                 </span>
               </a>
@@ -450,17 +460,17 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
                     width: '46px',
                     height: '46px',
                     borderRadius: '50%',
-                    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: '#22c55e',
+                    color: '#e5e5e5', // Uniform subtle white
                   }}
                 >
                   <MessageIcon />
                 </div>
-                <span style={{ fontSize: '9px', fontWeight: 600, color: '#888888', letterSpacing: '0.8px' }}>
+                <span style={{ fontSize: '9px', fontWeight: 600, color: '#777777', letterSpacing: '0.8px' }}>
                   WHATSAPP
                 </span>
               </a>
