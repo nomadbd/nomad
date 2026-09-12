@@ -31,8 +31,9 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
   const [isCheckingEmail, setIsCheckingEmail] = useState(false);
   const [accountFound, setAccountFound] = useState<boolean | null>(null);
 
-  // Concierge Modal & Support Chat States
+  // Concierge Modal, Animation & Support Chat States
   const [isConciergeOpen, setIsConciergeOpen] = useState(false);
+  const [isModalAnimating, setIsModalAnimating] = useState(false);
   const [supportMsg, setSupportMsg] = useState('');
   const [customSupportEmail, setCustomSupportEmail] = useState('');
   const [isSendingSupport, setIsSendingSupport] = useState(false);
@@ -55,6 +56,21 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
 
   const commissionRate = inviteData?.commission_rate ?? 15;
   const discountPercent = inviteData?.discount_percent ?? 10;
+
+  // Handle Smooth Open/Close Animation
+  const handleOpenConcierge = () => {
+    setIsConciergeOpen(true);
+    setTimeout(() => {
+      setIsModalAnimating(true);
+    }, 10);
+  };
+
+  const handleCloseConcierge = () => {
+    setIsModalAnimating(false);
+    setTimeout(() => {
+      setIsConciergeOpen(false);
+    }, 300);
+  };
 
   const checkEmailExistence = async (emailToCheck: string) => {
     const cleanEmail = emailToCheck.trim().toLowerCase();
@@ -339,24 +355,26 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
             <p style={benefitDescStyle}>Select products from our high-tier ambassador allocation to feature in your private gallery.</p>
           </div>
 
+          {/* Benefit 02 - Restored Premium Language */}
           <div style={cardStyle}>
             <span style={numberStyle}>02</span>
             <div style={benefitTitleStyle}>AUTOMATED COMMISSIONS</div>
             <p style={benefitDescStyle}>
-              Earn a baseline {commissionRate}% payout with real-time performance tracking for every sales conversion.
+              Earn a baseline {commissionRate}% payout with real-time performance tracking for every sales conversion. NOMAD reserves the right to dynamically adjust commission structures based on tier performance.
             </p>
           </div>
 
+          {/* Benefit 03 - Restored Premium Language */}
           <div style={cardStyle}>
             <span style={numberStyle}>03</span>
             <div style={benefitTitleStyle}>PRIVÉ PRIVILEGES</div>
             <p style={benefitDescStyle}>
-              Bespoke invitation links offering an initial {discountPercent}% VIP pass for your audience, early release access, and direct portal management.
+              Bespoke invitation links offering an initial {discountPercent}% VIP pass for your audience, early release access, and direct portal management. Rates and privileges remain subject to periodic revision at NOMAD’s discretion.
             </p>
           </div>
         </div>
 
-        {/* Signup / Login Form Area (Smooth Height Reserve) */}
+        {/* Signup / Login Form Area */}
         <div style={{ width: '100%' }}>
           <div style={{ display: 'flex', borderBottom: '1px solid rgba(255, 255, 255, 0.15)', marginBottom: '16px' }}>
             <button 
@@ -382,8 +400,6 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
           </div>
 
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-
-            {/* Smooth height wrapper prevents layout jump */}
             <div style={{ 
               maxHeight: mode === 'signup' ? '60px' : '0px', 
               opacity: mode === 'signup' ? 1 : 0, 
@@ -438,20 +454,20 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
           </form>
         </div>
 
-        {/* Dynamic & Concise Footer Section */}
+        {/* Footer Section: Clean & Reordered */}
         <div style={footerStyle}>
           <div style={footerLinksContainerStyle}>
             <button 
               type="button" 
-              onClick={() => setIsConciergeOpen(true)} 
-              style={{ ...footerLinkStyle, color: messages.length > 0 ? '#ffffff' : '#888888', fontWeight: messages.length > 0 ? 500 : 400 }}
+              onClick={handleOpenConcierge} 
+              style={footerLinkStyle}
             >
-              {messages.length > 0 ? `CONCIERGE (${messages.length})` : 'CONCIERGE SUPPORT'}
+              CONCIERGE
             </button>
             <span style={dotStyle}>•</span>
-            <a href="/privacy" style={footerLinkStyle}>PRIVACY POLICY</a>
-            <span style={dotStyle}>•</span>
             <a href="/terms" style={footerLinkStyle}>TERMS</a>
+            <span style={dotStyle}>•</span>
+            <a href="/privacy" style={footerLinkStyle}>PRIVACY POLICY</a>
           </div>
           <p style={{ color: '#555555', fontSize: '8px', letterSpacing: '2px', margin: 0, fontWeight: 300 }}>
             © 2026 NOMAD. ALL RIGHTS RESERVED.
@@ -460,27 +476,42 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
 
       </div>
 
-      {/* Adaptive Screen Mobile-First Support Modal */}
+      {/* Animated Concierge Support Modal */}
       {isConciergeOpen && (
-        <div style={modalBackdropStyle}>
-          <div style={modalBoxStyle}>
+        <div 
+          style={{
+            ...modalBackdropStyle,
+            opacity: isModalAnimating ? 1 : 0,
+            transition: 'opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
+          }}
+          onClick={handleCloseConcierge}
+        >
+          <div 
+            style={{
+              ...modalBoxStyle,
+              transform: isModalAnimating ? 'translateY(0)' : 'translateY(100%)',
+              transition: 'transform 0.35s cubic-bezier(0.16, 1, 0.3, 1)'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
             
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '12px', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', flexShrink: 0 }}>
+            {/* Always Visible Sticky Header */}
+            <div style={modalHeaderStyle}>
               <div>
                 <span style={{ fontSize: '8px', letterSpacing: '2.5px', color: '#666666', fontWeight: 600, display: 'block' }}>PRIVATE DESK</span>
                 <h3 style={{ fontSize: '13px', letterSpacing: '3px', fontWeight: 300, color: '#ffffff', margin: 0 }}>NOMAD CONCIERGE</h3>
               </div>
               <button 
                 type="button" 
-                onClick={() => setIsConciergeOpen(false)} 
-                style={{ background: 'none', border: 'none', color: '#ffffff', cursor: 'pointer', padding: '4px' }}
+                onClick={handleCloseConcierge} 
+                style={{ background: 'none', border: 'none', color: '#ffffff', cursor: 'pointer', padding: '6px' }}
               >
                 <CloseIcon />
               </button>
             </div>
 
             {!(email || defaultEmail) && (
-              <div style={{ padding: '8px 0', flexShrink: 0 }}>
+              <div style={{ padding: '8px 16px', flexShrink: 0 }}>
                 <input
                   type="text"
                   inputMode="email"
@@ -493,82 +524,90 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
               </div>
             )}
 
-            <div style={{ flex: 1, overflowY: 'auto', margin: '12px 0', paddingRight: '4px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {/* Scrollable Messages Container */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: '12px 16px', display: 'flex', flexDirection: 'column' }}>
               {isLoadingMessages ? (
-                <div style={{ fontSize: '10px', color: '#666', letterSpacing: '1px', textAlign: 'center', padding: '20px 0' }}>
-                  FETCHING HISTORY...
+                /* Skeleton Loader */
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: 'auto' }}>
+                  <div style={{ alignSelf: 'flex-start', width: '60%', height: '38px', backgroundColor: 'rgba(255, 255, 255, 0.05)', borderRadius: '12px 12px 12px 2px' }} />
+                  <div style={{ alignSelf: 'flex-end', width: '75%', height: '48px', backgroundColor: 'rgba(255, 255, 255, 0.08)', borderRadius: '12px 12px 2px 12px' }} />
+                  <div style={{ alignSelf: 'flex-start', width: '50%', height: '38px', backgroundColor: 'rgba(255, 255, 255, 0.05)', borderRadius: '12px 12px 12px 2px' }} />
                 </div>
               ) : messages.length === 0 ? (
-                <div style={{ fontSize: '11px', color: '#666', textAlign: 'center', padding: '20px 0', fontWeight: 300 }}>
+                <div style={{ margin: 'auto', fontSize: '11px', color: '#666', textAlign: 'center', fontWeight: 300, letterSpacing: '0.5px' }}>
                   Direct communication line with NOMAD administration. Type below to start.
                 </div>
               ) : (
-                messages.map((msg, index) => {
-                  const isAdmin = msg.sender_role === 'admin' || msg.sender_role === 'support';
-                  return (
-                    <div key={msg.id || index} style={{ display: 'flex', flexDirection: 'column', alignItems: isAdmin ? 'flex-start' : 'flex-end' }}>
-                      <span style={{ fontSize: '8px', color: '#666666', letterSpacing: '1px', marginBottom: '3px' }}>
-                        {isAdmin ? 'NOMAD DESK' : 'YOU'}
-                      </span>
-                      <div style={{
-                        maxWidth: '85%',
-                        padding: '10px 14px',
-                        fontSize: '12px',
-                        lineHeight: '1.5',
-                        fontWeight: 300,
-                        backgroundColor: isAdmin ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.12)',
-                        color: '#ffffff',
-                        borderRadius: isAdmin ? '14px 14px 14px 2px' : '14px 14px 2px 14px',
-                        border: isAdmin ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid rgba(255, 255, 255, 0.18)',
-                        wordBreak: 'break-word',
-                        whiteSpace: 'pre-wrap'
-                      }}>
-                        {msg.message}
+                <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {messages.map((msg, index) => {
+                    const isAdmin = msg.sender_role === 'admin' || msg.sender_role === 'support';
+                    return (
+                      <div key={msg.id || index} style={{ display: 'flex', flexDirection: 'column', alignItems: isAdmin ? 'flex-start' : 'flex-end' }}>
+                        <span style={{ fontSize: '8px', color: '#666666', letterSpacing: '1px', marginBottom: '3px' }}>
+                          {isAdmin ? 'NOMAD DESK' : 'YOU'}
+                        </span>
+                        <div style={{
+                          maxWidth: '85%',
+                          padding: '10px 14px',
+                          fontSize: '12px',
+                          lineHeight: '1.5',
+                          fontWeight: 300,
+                          backgroundColor: isAdmin ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.12)',
+                          color: '#ffffff',
+                          borderRadius: isAdmin ? '14px 14px 14px 2px' : '14px 14px 2px 14px',
+                          border: isAdmin ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid rgba(255, 255, 255, 0.18)',
+                          wordBreak: 'break-word',
+                          whiteSpace: 'pre-wrap'
+                        }}>
+                          {msg.message}
+                        </div>
                       </div>
-                    </div>
-                  );
-                })
+                    );
+                  })}
+                  <div ref={chatEndRef} />
+                </div>
               )}
-              <div ref={chatEndRef} />
             </div>
 
-            {/* Pinned Input Area Sticky Above Keyboard */}
-            <form onSubmit={handleSendSupportMessage} style={chatInputFormStyle}>
-              <textarea
-                ref={textareaRef}
-                style={{ flex: 1, backgroundColor: 'transparent', border: 'none', color: '#ffffff', fontSize: '13px', fontWeight: 300, outline: 'none', resize: 'none', maxHeight: '80px', lineHeight: '1.4', padding: '8px 0' }}
-                rows={1}
-                placeholder="Type your message..."
-                value={supportMsg}
-                onChange={(e) => {
-                  setSupportMsg(e.target.value);
-                  e.target.style.height = 'auto';
-                  e.target.style.height = `${Math.min(e.target.scrollHeight, 80)}px`;
-                }}
-                required
-              />
+            {/* Fixed Bottom Input Area */}
+            <div style={{ padding: '0 16px 16px 16px', flexShrink: 0 }}>
+              <form onSubmit={handleSendSupportMessage} style={chatInputFormStyle}>
+                <textarea
+                  ref={textareaRef}
+                  style={{ flex: 1, backgroundColor: 'transparent', border: 'none', color: '#ffffff', fontSize: '13px', fontWeight: 300, outline: 'none', resize: 'none', maxHeight: '80px', lineHeight: '1.4', padding: '8px 0' }}
+                  rows={1}
+                  placeholder="Type your message..."
+                  value={supportMsg}
+                  onChange={(e) => {
+                    setSupportMsg(e.target.value);
+                    e.target.style.height = 'auto';
+                    e.target.style.height = `${Math.min(e.target.scrollHeight, 80)}px`;
+                  }}
+                  required
+                />
 
-              <button 
-                type="submit" 
-                disabled={isSendingSupport || !supportMsg.trim()} 
-                style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '50%',
-                  border: 'none',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                  opacity: (isSendingSupport || !supportMsg.trim()) ? 0.25 : 1,
-                  backgroundColor: supportMsg.trim() ? '#ffffff' : 'rgba(255, 255, 255, 0.1)',
-                  color: supportMsg.trim() ? '#000000' : '#ffffff',
-                  cursor: (isSendingSupport || !supportMsg.trim()) ? 'not-allowed' : 'pointer'
-                }}
-              >
-                <SendIcon />
-              </button>
-            </form>
+                <button 
+                  type="submit" 
+                  disabled={isSendingSupport || !supportMsg.trim()} 
+                  style={{
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '50%',
+                    border: 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                    opacity: (isSendingSupport || !supportMsg.trim()) ? 0.25 : 1,
+                    backgroundColor: supportMsg.trim() ? '#ffffff' : 'rgba(255, 255, 255, 0.1)',
+                    color: supportMsg.trim() ? '#000000' : '#ffffff',
+                    cursor: (isSendingSupport || !supportMsg.trim()) ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  <SendIcon />
+                </button>
+              </form>
+            </div>
 
           </div>
         </div>
@@ -578,7 +617,7 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
   );
 }
 
-// Inline Styles
+// Styles Definition
 const containerStyle: React.CSSProperties = {
   minHeight: '100vh',
   backgroundColor: '#000000',
@@ -734,7 +773,7 @@ const modalBackdropStyle: React.CSSProperties = {
   right: 0,
   bottom: 0,
   backgroundColor: 'rgba(0, 0, 0, 0.88)',
-  backdropFilter: 'blur(8px)',
+  backdropFilter: 'blur(10px)',
   zIndex: 100,
   display: 'flex',
   alignItems: 'flex-end',
@@ -748,10 +787,23 @@ const modalBoxStyle: React.CSSProperties = {
   maxHeight: '100dvh',
   backgroundColor: '#0a0a0a',
   borderTop: '1px solid rgba(255, 255, 255, 0.15)',
-  padding: '16px 16px env(safe-area-inset-bottom, 16px) 16px',
   display: 'flex',
   flexDirection: 'column',
-  boxSizing: 'border-box'
+  boxSizing: 'border-box',
+  overflow: 'hidden'
+};
+
+const modalHeaderStyle: React.CSSProperties = {
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  padding: '16px 16px 12px 16px',
+  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+  position: 'sticky',
+  top: 0,
+  backgroundColor: '#0a0a0a',
+  zIndex: 20,
+  flexShrink: 0
 };
 
 const chatInputFormStyle: React.CSSProperties = {
@@ -762,8 +814,6 @@ const chatInputFormStyle: React.CSSProperties = {
   borderRadius: '28px',
   padding: '4px 6px 4px 16px',
   gap: '8px',
-  position: 'sticky',
-  bottom: 0,
-  zIndex: 10,
-  flexShrink: 0
+  width: '100%',
+  boxSizing: 'border-box'
 };
