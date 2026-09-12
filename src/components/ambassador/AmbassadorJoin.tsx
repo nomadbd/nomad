@@ -40,9 +40,6 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
   const [messages, setMessages] = useState<any[]>([]);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
 
-  // Mobile Keyboard & Viewport Fix State
-  const [viewportHeight, setViewportHeight] = useState<number | null>(null);
-
   const chatEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -60,7 +57,7 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
   const commissionRate = inviteData?.commission_rate ?? 15;
   const discountPercent = inviteData?.discount_percent ?? 10;
 
-  // Fix 1: Body Overflow Lock when Modal is Open
+  // Body Overflow Lock when Modal is Open
   useEffect(() => {
     if (isConciergeOpen) {
       document.body.style.overflow = 'hidden';
@@ -69,32 +66,6 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
     }
     return () => {
       document.body.style.overflow = '';
-    };
-  }, [isConciergeOpen]);
-
-  // Fix 2: Visual Viewport Tracker to handle Mobile Keyboard
-  useEffect(() => {
-    if (!isConciergeOpen) return;
-
-    const updateViewportHeight = () => {
-      if (window.visualViewport) {
-        setViewportHeight(window.visualViewport.height);
-        window.scrollTo(0, 0); // Stops mobile browser auto-scroll
-      }
-    };
-
-    updateViewportHeight();
-
-    if (window.visualViewport) {
-      window.visualViewport.addEventListener('resize', updateViewportHeight);
-      window.visualViewport.addEventListener('scroll', updateViewportHeight);
-    }
-
-    return () => {
-      if (window.visualViewport) {
-        window.visualViewport.removeEventListener('resize', updateViewportHeight);
-        window.visualViewport.removeEventListener('scroll', updateViewportHeight);
-      }
     };
   }, [isConciergeOpen]);
 
@@ -520,7 +491,6 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
         <div 
           style={{
             ...modalBackdropStyle,
-            height: viewportHeight ? `${viewportHeight}px` : '100vh',
             opacity: isModalAnimating ? 1 : 0,
             transition: 'opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
           }}
@@ -529,8 +499,6 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
           <div 
             style={{
               ...modalBoxStyle,
-              height: viewportHeight ? `${viewportHeight}px` : '100%',
-              maxHeight: viewportHeight ? `${viewportHeight}px` : '100%',
               transform: isModalAnimating ? 'translateY(0)' : 'translateY(100%)',
               transition: 'transform 0.35s cubic-bezier(0.16, 1, 0.3, 1)'
             }}
@@ -784,7 +752,7 @@ const footerStyle: React.CSSProperties = {
 
 const footerLinksContainerStyle: React.CSSProperties = {
   display: 'flex',
-  justify.content: 'center',
+  justifyContent: 'center',
   alignItems: 'center',
   gap: '8px',
   flexWrap: 'nowrap'
@@ -812,11 +780,13 @@ const modalBackdropStyle: React.CSSProperties = {
   top: 0,
   left: 0,
   right: 0,
+  bottom: 0,
+  height: '100dvh', // Modern dynamic viewport height handles mobile keyboard smoothly
   backgroundColor: 'rgba(0, 0, 0, 0.88)',
   backdropFilter: 'blur(10px)',
   zIndex: 100,
   display: 'flex',
-  alignItems: 'flex-start',
+  alignItems: 'flex-end',
   justifyContent: 'center',
   overflow: 'hidden'
 };
@@ -824,6 +794,7 @@ const modalBackdropStyle: React.CSSProperties = {
 const modalBoxStyle: React.CSSProperties = {
   width: '100%',
   maxWidth: '430px',
+  height: '100%',
   backgroundColor: '#0a0a0a',
   borderTop: '1px solid rgba(255, 255, 255, 0.15)',
   display: 'flex',
