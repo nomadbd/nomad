@@ -40,6 +40,9 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
   const [messages, setMessages] = useState<any[]>([]);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
 
+  // Dynamic Viewport Style state to lock modal height & offset on mobile keyboard focus
+  const [viewportStyle, setViewportStyle] = useState<React.CSSProperties>({});
+
   const chatEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -57,31 +60,59 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
   const commissionRate = inviteData?.commission_rate ?? 15;
   const discountPercent = inviteData?.discount_percent ?? 10;
 
-  // Body Overflow Lock when Modal is Open
+  // Complete Lock on Body and Visual Viewport Mapping for Mobile Keyboard
   useEffect(() => {
-    if (isConciergeOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
+    if (!isConciergeOpen) return;
+
+    const scrollY = window.scrollY;
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = '100%';
+    document.body.style.overflow = 'hidden';
+
+    const updateViewport = () => {
+      if (window.visualViewport) {
+        setViewportStyle({
+          height: `${window.visualViewport.height}px`,
+          top: `${window.visualViewport.offsetTop}px`,
+        });
+      }
+    };
+
+    updateViewport();
+
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', updateViewport);
+      window.visualViewport.addEventListener('scroll', updateViewport);
     }
+
     return () => {
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
       document.body.style.overflow = '';
+      window.scrollTo(0, scrollY);
+
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', updateViewport);
+        window.visualViewport.removeEventListener('scroll', updateViewport);
+      }
     };
   }, [isConciergeOpen]);
 
-  // Handle Smooth Open/Close Animation
+  // Handle Smooth Open/Close Slide Animation
   const handleOpenConcierge = () => {
     setIsConciergeOpen(true);
     setTimeout(() => {
       setIsModalAnimating(true);
-    }, 10);
+    }, 20);
   };
 
   const handleCloseConcierge = () => {
     setIsModalAnimating(false);
     setTimeout(() => {
       setIsConciergeOpen(false);
-    }, 300);
+    }, 350);
   };
 
   const checkEmailExistence = async (emailToCheck: string) => {
@@ -491,6 +522,7 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
         <div 
           style={{
             ...modalBackdropStyle,
+            ...viewportStyle,
             opacity: isModalAnimating ? 1 : 0,
             transition: 'opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
           }}
@@ -777,11 +809,10 @@ const dotStyle: React.CSSProperties = {
 
 const modalBackdropStyle: React.CSSProperties = {
   position: 'fixed',
-  top: 0,
   left: 0,
   right: 0,
-  bottom: 0,
-  height: '100dvh', // Modern dynamic viewport height handles mobile keyboard smoothly
+  top: 0,
+  height: '100vh',
   backgroundColor: 'rgba(0, 0, 0, 0.88)',
   backdropFilter: 'blur(10px)',
   zIndex: 100,
