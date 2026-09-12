@@ -61,7 +61,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
     }
   };
 
-  // Native Mobile Back Button Support
+  // Browser & Hardware Back Button Handling
   useEffect(() => {
     if (activeThreadId) {
       window.history.pushState({ threadOpen: true }, '');
@@ -77,7 +77,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
 
   const activeThread = threads.find((t) => t.id === activeThreadId) || null;
 
-  // Instant scroll to bottom on thread open with skeleton load
+  // Auto scroll to bottom when thread loads
   useLayoutEffect(() => {
     if (activeThreadId) {
       setIsThreadReady(false);
@@ -86,13 +86,13 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
           chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
         }
         setIsThreadReady(true);
-      }, 100);
+      }, 80);
 
       return () => clearTimeout(timer);
     }
   }, [activeThreadId]);
 
-  // Smooth scroll for new live messages
+  // Smooth scroll for new messages
   useEffect(() => {
     if (!activeThread) return;
     const currentCount = activeThread.messages.length;
@@ -308,14 +308,14 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
     }
   };
 
-  // Header display logic: prevents duplicate email rendering
-  const isNameSameAsEmail =
+  // Prevent duplicate email rendering in Header
+  const isEmailSameAsName =
     !activeThread?.userName ||
     activeThread.userName.toLowerCase().trim() === activeThread.userEmail.toLowerCase().trim();
 
-  const headerTitle = isNameSameAsEmail ? activeThread?.userEmail : activeThread?.userName;
-  const headerSubtitle = isNameSameAsEmail
-    ? activeThread?.userPhone || ''
+  const headerTitle = isEmailSameAsName ? activeThread?.userEmail : activeThread?.userName;
+  const headerSubtitle = isEmailSameAsName
+    ? (activeThread?.userPhone || '')
     : `${activeThread?.userEmail}${activeThread?.userPhone ? ` • ${activeThread.userPhone}` : ''}`;
 
   if (loading && threads.length === 0) {
@@ -379,7 +379,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
         </div>
       )}
 
-      {/* VIEW 1: CONVERSATION LIST */}
+      {/* VIEW 1: THREAD LIST */}
       {!activeThreadId ? (
         <div style={listContainerStyle}>
           {filteredThreads.length === 0 ? (
@@ -423,10 +423,18 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
           )}
         </div>
       ) : (
-        /* VIEW 2: FULL CHAT VIEWPORT */
+        /* VIEW 2: ACTIVE CHAT SCREEN */
         <div style={chatScreenContainerStyle}>
-          {/* HEADER (Sticky Top inside viewport) */}
+          {/* HEADER (ALWAYS PINNED TOP) */}
           <div style={whatsappHeaderStyle}>
+            <button
+              onClick={() => handleSelectThread(null)}
+              style={backBtnStyle}
+              aria-label="Back to threads"
+            >
+              ‹
+            </button>
+
             <div style={headerAvatarStyle}>
               {headerTitle ? headerTitle.charAt(0).toUpperCase() : 'U'}
             </div>
@@ -450,7 +458,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
             </div>
           </div>
 
-          {/* CHAT MESSAGES FEED */}
+          {/* CHAT MESSAGES SCROLL AREA ONLY */}
           <div ref={chatContainerRef} style={chatFeedStyle}>
             {!isThreadReady ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginTop: 'auto', padding: '10px 0' }}>
@@ -497,7 +505,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
             )}
           </div>
 
-          {/* MESSAGE INPUT BAR */}
+          {/* MESSAGE INPUT BAR (ALWAYS PINNED BOTTOM) */}
           <div style={chatInputAreaStyle}>
             <form onSubmit={handleSendMessage} style={chatInputFormStyle}>
               <textarea
@@ -563,7 +571,8 @@ const containerStyle: React.CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
   width: '100%',
-  height: '100%',
+  height: '100dvh',
+  maxHeight: '100dvh',
   backgroundColor: '#000000',
   color: '#ffffff',
   fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif',
@@ -577,7 +586,7 @@ const statusContainerStyle: React.CSSProperties = {
   flexDirection: 'column',
   alignItems: 'center',
   justifyContent: 'center',
-  height: '80vh',
+  height: '100dvh',
   color: '#888888',
   fontSize: '11px',
   letterSpacing: '2px',
@@ -724,12 +733,13 @@ const unreadBadgeStyle: React.CSSProperties = {
   flexShrink: 0,
 };
 
-/* --- FULL VIEWPORT CHAT SCREEN STYLES --- */
+/* --- FIXED CHAT VIEWPORT --- */
 const chatScreenContainerStyle: React.CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
   width: '100%',
-  height: '100%',
+  height: '100dvh',
+  maxHeight: '100dvh',
   backgroundColor: '#000000',
   overflow: 'hidden',
 };
@@ -737,11 +747,27 @@ const chatScreenContainerStyle: React.CSSProperties = {
 const whatsappHeaderStyle: React.CSSProperties = {
   display: 'flex',
   alignItems: 'center',
-  gap: '12px',
-  padding: '12px 16px',
+  gap: '10px',
+  padding: '10px 14px',
   backgroundColor: '#0a0a0a',
   borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
   flexShrink: 0,
+  position: 'sticky',
+  top: 0,
+  zIndex: 20,
+};
+
+const backBtnStyle: React.CSSProperties = {
+  background: 'none',
+  border: 'none',
+  color: '#ffffff',
+  fontSize: '24px',
+  lineHeight: '1',
+  cursor: 'pointer',
+  padding: '0 8px 0 0',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
 };
 
 const headerAvatarStyle: React.CSSProperties = {
@@ -782,7 +808,7 @@ const headerSubtitleStyle: React.CSSProperties = {
 const chatFeedStyle: React.CSSProperties = {
   flex: 1,
   overflowY: 'auto',
-  padding: '16px',
+  padding: '14px',
   display: 'flex',
   flexDirection: 'column',
   WebkitOverflowScrolling: 'touch',
@@ -800,11 +826,14 @@ const msgTimeStyle: React.CSSProperties = {
 };
 
 const chatInputAreaStyle: React.CSSProperties = {
-  padding: '10px 16px',
+  padding: '10px 14px',
   paddingBottom: 'max(10px, env(safe-area-inset-bottom))',
   flexShrink: 0,
   backgroundColor: '#0a0a0a',
   borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+  position: 'sticky',
+  bottom: 0,
+  zIndex: 20,
 };
 
 const chatInputFormStyle: React.CSSProperties = {
