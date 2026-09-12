@@ -636,7 +636,7 @@ const timeStyle: React.CSSProperties = {
 
 const threadSubRow: React.CSSProperties = {
   display: 'flex',
-  justify.content: 'space-between',
+  justifyContent: 'space-between',
   alignItems: 'center',
   gap: '8px',
 };
