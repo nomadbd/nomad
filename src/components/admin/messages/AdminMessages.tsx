@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/supabaseClient';
-import { SendIcon, CloseIcon } from '@/components/icons';
+import { SendIcon } from '@/components/icons';
 
 interface AdminMessagesProps {
   searchQuery?: string;
@@ -19,8 +19,8 @@ interface Thread {
   id: string;
   userName: string;
   userEmail: string;
-  role: string;
-  status: 'ACTIVE' | 'RESOLVED' | 'PENDING';
+  userPhone?: string;
+  role: string; // 'ADMIN' | 'STAFF' | 'CUSTOMER' | 'AMBASSADOR' | 'INVITED AMBASSADOR' | 'GUEST'
   unreadCount: number;
   lastMessage: string;
   lastMessageTime: string;
@@ -32,15 +32,11 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
   isFilterOpen = false,
 }) => {
   const [threads, setThreads] = useState<Thread[]>([]);
-  const [selectedThread, setSelectedThread] = useState<Thread | null>(null);
+  const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
   const [roleFilter, setRoleFilter] = useState<string>('ALL');
   const [inputText, setInputText] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-
-  // Modal Animation & Height Lock States
-  const [isModalAnimating, setIsModalAnimating] = useState(false);
-  const [viewportStyle, setViewportStyle] = useState<React.CSSProperties>({});
 
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -56,96 +52,90 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
     });
   };
 
-  // Lock Body & Handle Keyboard Viewport Adjustment on Mobile
-  useEffect(() => {
-    if (!selectedThread) return;
-
-    const scrollY = window.scrollY;
-    document.body.style.position = 'fixed';
-    document.body.style.top = `-${scrollY}px`;
-    document.body.style.width = '100%';
-    document.body.style.overflow = 'hidden';
-
-    const updateViewport = () => {
-      if (window.visualViewport) {
-        setViewportStyle({
-          height: `${window.visualViewport.height}px`,
-          top: `${window.visualViewport.offsetTop}px`,
-        });
-        scrollToBottom(false);
-      }
-    };
-
-    updateViewport();
-
-    if (window.visualViewport) {
-      window.visualViewport.addEventListener('resize', updateViewport);
-      window.visualViewport.addEventListener('scroll', updateViewport);
-    }
-
-    return () => {
-      document.body.style.position = '';
-      document.body.style.top = '';
-      document.body.style.width = '';
-      document.body.style.overflow = '';
-      window.scrollTo(0, scrollY);
-
-      if (window.visualViewport) {
-        window.visualViewport.removeEventListener('resize', updateViewport);
-        window.visualViewport.removeEventListener('scroll', updateViewport);
-      }
-    };
-  }, [selectedThread]);
-
-  // Open Chat Slide Modal
-  const handleOpenThread = (thread: Thread) => {
-    setSelectedThread(thread);
-    setTimeout(() => {
-      setIsModalAnimating(true);
-      scrollToBottom(false);
-    }, 20);
-  };
-
-  // Close Chat Slide Modal
-  const handleCloseThread = () => {
-    setIsModalAnimating(false);
-    setTimeout(() => {
-      setSelectedThread(null);
-    }, 300);
-  };
-
-  const fetchCommunications = async () => {
+  // Fetch profiles, ambassadors & communications
+  const fetchCommunicationsAndUsers = async () => {
     try {
       setLoading(true);
       setErrorMsg(null);
 
-      const { data, error } = await supabase
-        .from('communications')
-        .select('*')
-        .order('created_at', { ascending: true });
+      // Parallel fetching from 3 tables
+      const [commsRes, profilesRes, ambRes] = await Promise.all([
+        supabase.from('communications').select('*').order('created_at', { ascending: true }),
+        supabase.from('profiles').select('email, name, full_name, role'),
+        supabase.from('ambassador').select('email, recipient_identifier, phone'),
+      ]);
 
-      if (error) throw error;
+      if (commsRes.error) throw commsRes.error;
 
-      if (data) {
+      // Map Profiles by email
+      const profileMap: Record<string, { name: string; role: string }> = {};
+      if (profilesRes.data) {
+        profilesRes.data.forEach((p: any) => {
+          if (p.email) {
+            profileMap[p.email.toLowerCase()] = {
+              name: p.full_name || p.name || '',
+              role: (p.role || 'CUSTOMER').toUpperCase(),
+            };
+          }
+        });
+      }
+
+      // Map Ambassador Invitations by email
+      const ambassadorMap: Record<string, { identifier: string; phone?: string }> = {};
+      if (ambRes.data) {
+        ambRes.data.forEach((a: any) => {
+          if (a.email) {
+            ambassadorMap[a.email.toLowerCase()] = {
+              identifier: a.recipient_identifier || '',
+              phone: a.phone || '',
+            };
+          }
+        });
+      }
+
+      // Process Communications Messages into Threads
+      if (commsRes.data) {
         const threadMap: { [key: string]: Thread } = {};
 
-        data.forEach((item: any) => {
+        commsRes.data.forEach((item: any) => {
           const isSenderAdmin = (item.sender_role || '').toLowerCase() === 'admin';
-          const userEmail = isSenderAdmin ? item.recipient_email : item.sender_email;
+          const userEmail = (isSenderAdmin ? item.recipient_email : item.sender_email || '').toLowerCase();
           const threadId = item.channel_id || userEmail || 'general';
 
           const formattedTime = item.created_at
             ? new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
             : '';
 
+          // Determine User Info across Profiles & Ambassador tables
+          let displayName = userEmail ? userEmail.split('@')[0].toUpperCase() : 'GUEST';
+          let userRole = 'GUEST';
+          let userPhone = '';
+
+          const profileData = profileMap[userEmail];
+          const ambData = ambassadorMap[userEmail];
+
+          if (profileData) {
+            // User registered in system profiles
+            displayName = profileData.name || displayName;
+            userRole = profileData.role; // e.g. AMBASSADOR, CUSTOMER, STAFF, ADMIN
+          } else if (ambData) {
+            // Invited ambassador but not yet registered profile
+            displayName = ambData.identifier || displayName;
+            userRole = 'INVITED AMBASSADOR';
+            userPhone = ambData.phone || '';
+          }
+
+          if (ambData && ambData.phone) {
+            userPhone = ambData.phone;
+          }
+
           if (!threadMap[threadId]) {
-            const displayEmail = userEmail || item.sender_email || '';
             threadMap[threadId] = {
               id: threadId,
-              userName: displayEmail ? displayEmail.split('@')[0].toUpperCase() : 'GUEST',
-              userEmail: displayEmail,
-              role: (item.channel_type || item.sender_role || 'USER').toUpperCase(),
-              status: 'ACTIVE',
+              userName: displayName,
+              userEmail: userEmail,
+              userPhone: userPhone,
+              role: userRole,
               unreadCount: item.is_read === false && !isSenderAdmin ? 1 : 0,
               lastMessage: item.message || '',
               lastMessageTime: formattedTime,
@@ -168,30 +158,23 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
           threadMap[threadId].lastMessageTime = formattedTime;
         });
 
-        const threadList = Object.values(threadMap);
-        setThreads(threadList);
-
-        // Keep selected thread in sync if open
-        if (selectedThread) {
-          const updated = threadList.find((t) => t.id === selectedThread.id);
-          if (updated) setSelectedThread(updated);
-        }
+        setThreads(Object.values(threadMap));
       }
     } catch (err: any) {
       console.error('Fetch error:', err);
-      setErrorMsg(err.message || 'FAILED TO FETCH COMMUNICATIONS');
+      setErrorMsg(err.message || 'FAILED TO LOAD COMMUNICATIONS');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchCommunications();
+    fetchCommunicationsAndUsers();
 
     const channel = supabase
       .channel('public:communications')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'communications' }, () => {
-        fetchCommunications();
+        fetchCommunicationsAndUsers();
       })
       .subscribe();
 
@@ -200,14 +183,16 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
     };
   }, []);
 
+  const activeThread = threads.find((t) => t.id === activeThreadId) || null;
+
   useEffect(() => {
-    if (selectedThread) {
+    if (activeThread) {
       scrollToBottom(true);
     }
-  }, [selectedThread?.messages.length]);
+  }, [activeThread?.messages.length, activeThreadId]);
 
   const filteredThreads = threads.filter((t) => {
-    const matchesRole = roleFilter === 'ALL' || t.role.toLowerCase() === roleFilter.toLowerCase();
+    const matchesRole = roleFilter === 'ALL' || t.role.toLowerCase().includes(roleFilter.toLowerCase());
     const query = searchQuery.trim().toLowerCase();
     const matchesSearch =
       !query ||
@@ -219,7 +204,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
 
   const handleSendMessage = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!inputText.trim() || !selectedThread) return;
+    if (!inputText.trim() || !activeThread) return;
 
     const messageText = inputText.trim();
     const nowTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -232,21 +217,9 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
       timestamp: nowTime,
     };
 
-    // Optimistic UI Update
-    setSelectedThread((prev) =>
-      prev
-        ? {
-            ...prev,
-            lastMessage: messageText,
-            lastMessageTime: nowTime,
-            messages: [...prev.messages, newMsg],
-          }
-        : null
-    );
-
     setThreads((prevThreads) =>
       prevThreads.map((t) => {
-        if (t.id === selectedThread.id) {
+        if (t.id === activeThread.id) {
           return {
             ...t,
             lastMessage: messageText,
@@ -269,17 +242,17 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
         {
           sender_email: 'admin@nomadbd.com',
           sender_role: 'admin',
-          recipient_email: selectedThread.userEmail || null,
+          recipient_email: activeThread.userEmail || null,
           message: messageText,
-          channel_type: selectedThread.role.toLowerCase(),
-          channel_id: selectedThread.id,
+          channel_type: activeThread.role.toLowerCase(),
+          channel_id: activeThread.id,
           is_read: false,
         },
       ]);
 
       if (error) {
         console.error('Send error:', error.message);
-        fetchCommunications();
+        fetchCommunicationsAndUsers();
       }
     } catch (err: any) {
       console.error('Send error:', err);
@@ -298,21 +271,21 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
     return (
       <div style={{ ...statusContainerStyle, color: '#f87171' }}>
         <span>ERROR: {errorMsg}</span>
-        <button onClick={fetchCommunications} style={retryBtnStyle}>RETRY</button>
+        <button onClick={fetchCommunicationsAndUsers} style={retryBtnStyle}>RETRY</button>
       </div>
     );
   }
 
   return (
     <div style={containerStyle}>
-      {/* FILTER CHIPS BAR */}
-      {isFilterOpen && (
+      {/* FILTER BAR - Shown when Filter Icon toggled */}
+      {isFilterOpen && !activeThreadId && (
         <div style={headerFilterBarStyle}>
           <span style={{ fontSize: '8px', color: '#666666', fontWeight: 600, letterSpacing: '2.5px' }}>
             FILTER BY ROLE
           </span>
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            {['ALL', 'AMBASSADOR', 'CUSTOMER', 'STAFF', 'INVITED'].map((role) => (
+            {['ALL', 'AMBASSADOR', 'INVITED', 'CUSTOMER', 'STAFF'].map((role) => (
               <button
                 key={role}
                 onClick={() => setRoleFilter(role)}
@@ -330,177 +303,174 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
         </div>
       )}
 
-      {/* WHATSAPP STYLE CHAT LIST */}
-      <div style={listContainerStyle}>
-        {filteredThreads.length === 0 ? (
-          <div style={emptyTextStyle}>NO CONVERSATIONS FOUND</div>
-        ) : (
-          filteredThreads.map((thread) => {
-            const initialLetter = thread.userName.charAt(0).toUpperCase();
-            return (
-              <div
-                key={thread.id}
-                onClick={() => handleOpenThread(thread)}
-                style={whatsappCardStyle}
-              >
-                {/* User Avatar Badge */}
-                <div style={avatarStyle}>
-                  {initialLetter}
-                </div>
+      {/* VIEW 1: WHATSAPP-LIKE CONVERSATION LIST */}
+      {!activeThreadId ? (
+        <div style={listContainerStyle}>
+          {filteredThreads.length === 0 ? (
+            <div style={emptyTextStyle}>NO CONVERSATIONS FOUND</div>
+          ) : (
+            filteredThreads.map((thread) => {
+              const initialLetter = thread.userName.charAt(0).toUpperCase();
+              return (
+                <div
+                  key={thread.id}
+                  onClick={() => setActiveThreadId(thread.id)}
+                  style={whatsappCardStyle}
+                >
+                  <div style={avatarStyle}>{initialLetter}</div>
 
-                {/* Information Body */}
-                <div style={cardContentStyle}>
-                  <div style={threadHeaderRow}>
-                    <span style={userNameStyle}>{thread.userName}</span>
-                    <span style={timeStyle}>{thread.lastMessageTime}</span>
-                  </div>
-
-                  <div style={threadSubRow}>
-                    <p style={previewMessageStyle}>{thread.lastMessage}</p>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span style={roleBadgeStyle}>{thread.role}</span>
-                      {thread.unreadCount > 0 && <span style={unreadBadgeStyle}>{thread.unreadCount}</span>}
+                  <div style={cardContentStyle}>
+                    <div style={threadHeaderRow}>
+                      <span style={userNameStyle}>{thread.userName}</span>
+                      <span style={timeStyle}>{thread.lastMessageTime}</span>
                     </div>
-                  </div>
-                </div>
-              </div>
-            );
-          })
-        )}
-      </div>
 
-      {/* CONVERSATION MODAL (SLIDE UP) */}
-      {selectedThread && (
-        <div
-          style={{
-            ...modalBackdropStyle,
-            ...viewportStyle,
-            opacity: isModalAnimating ? 1 : 0,
-            transition: 'opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
-          }}
-          onClick={handleCloseThread}
-        >
-          <div
-            style={{
-              ...modalBoxStyle,
-              transform: isModalAnimating ? 'translateY(0)' : 'translateY(100%)',
-              transition: 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header with Close Icon */}
-            <div style={modalHeaderStyle}>
-              <div>
-                <span style={{ fontSize: '8px', letterSpacing: '2.5px', color: '#666666', fontWeight: 600, display: 'block' }}>
-                  PRIVATE DESK
-                </span>
-                <h3 style={{ fontSize: '14px', letterSpacing: '2px', fontWeight: 400, color: '#ffffff', margin: 0 }}>
-                  {selectedThread.userName}
-                </h3>
-                <span style={{ fontSize: '10px', color: '#888888', display: 'block', marginTop: '2px', fontWeight: 300 }}>
-                  {selectedThread.userEmail} • <span style={{ color: '#aaa' }}>{selectedThread.role}</span>
-                </span>
-              </div>
-
-              <button
-                type="button"
-                onClick={handleCloseThread}
-                style={closeBtnStyle}
-              >
-                <CloseIcon />
-              </button>
-            </div>
-
-            {/* Chat Viewport */}
-            <div
-              ref={chatContainerRef}
-              style={chatFeedStyle}
-            >
-              <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {selectedThread.messages.map((msg) => {
-                  const isAdmin = msg.sender === 'ADMIN';
-                  return (
-                    <div
-                      key={msg.id}
-                      style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: isAdmin ? 'flex-end' : 'flex-start',
-                      }}
-                    >
-                      <span style={{ fontSize: '8px', color: '#666666', letterSpacing: '1px', marginBottom: '3px' }}>
-                        {isAdmin ? 'NOMAD DESK' : selectedThread.userName}
-                      </span>
-                      <div
-                        style={{
-                          maxWidth: '85%',
-                          padding: '10px 14px',
-                          fontSize: '12px',
-                          lineHeight: '1.5',
-                          fontWeight: 300,
-                          backgroundColor: isAdmin ? 'rgba(255, 255, 255, 0.12)' : 'rgba(255, 255, 255, 0.05)',
-                          color: '#ffffff',
-                          borderRadius: isAdmin ? '14px 14px 2px 14px' : '14px 14px 14px 2px',
-                          border: isAdmin ? '1px solid rgba(255, 255, 255, 0.18)' : '1px solid rgba(255, 255, 255, 0.08)',
-                          wordBreak: 'break-word',
-                          whiteSpace: 'pre-wrap',
-                        }}
-                      >
-                        {msg.text}
+                    <div style={threadSubRow}>
+                      <p style={previewMessageStyle}>{thread.lastMessage}</p>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span
+                          style={{
+                            ...roleBadgeStyle,
+                            borderColor: thread.role.includes('INVITED') ? '#eab308' : 'rgba(255, 255, 255, 0.2)',
+                            color: thread.role.includes('INVITED') ? '#eab308' : '#aaa',
+                          }}
+                        >
+                          {thread.role}
+                        </span>
+                        {thread.unreadCount > 0 && <span style={unreadBadgeStyle}>{thread.unreadCount}</span>}
                       </div>
-                      <span style={msgTimeStyle}>{msg.timestamp}</span>
                     </div>
-                  );
-                })}
-              </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      ) : (
+        /* VIEW 2: FULL CHAT VIEWPORT WITH FIXED WHATSAPP HEADER */
+        <div style={chatScreenContainerStyle}>
+          {/* WHATSAPP TOP BAR HEADER */}
+          <div style={whatsappHeaderStyle}>
+            <button
+              onClick={() => setActiveThreadId(null)}
+              style={backIconButtonStyle}
+              title="Back to List"
+            >
+              ←
+            </button>
+
+            <div style={headerAvatarStyle}>
+              {activeThread?.userName.charAt(0).toUpperCase()}
             </div>
 
-            {/* Input Bar */}
-            <div style={chatInputAreaStyle}>
-              <form onSubmit={handleSendMessage} style={chatInputFormStyle}>
-                <textarea
-                  ref={textareaRef}
-                  style={textareaInputStyle}
-                  rows={1}
-                  placeholder="Type your response..."
-                  value={inputText}
-                  onChange={(e) => {
-                    setInputText(e.target.value);
-                    e.target.style.height = 'auto';
-                    e.target.style.height = `${Math.min(e.target.scrollHeight, 80)}px`;
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSendMessage();
-                    }
-                  }}
-                  required
-                />
-
-                <button
-                  type="submit"
-                  disabled={!inputText.trim()}
+            <div style={headerInfoStyle}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={headerNameTitle}>{activeThread?.userName}</span>
+                <span
                   style={{
-                    width: '32px',
-                    height: '32px',
-                    borderRadius: '50%',
-                    border: 'none',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                    opacity: !inputText.trim() ? 0.25 : 1,
-                    backgroundColor: inputText.trim() ? '#ffffff' : 'rgba(255, 255, 255, 0.1)',
-                    color: inputText.trim() ? '#000000' : '#ffffff',
-                    cursor: !inputText.trim() ? 'not-allowed' : 'pointer',
-                    transition: 'all 0.2s ease',
+                    ...roleBadgeStyle,
+                    borderColor: activeThread?.role.includes('INVITED') ? '#eab308' : 'rgba(255, 255, 255, 0.3)',
+                    color: activeThread?.role.includes('INVITED') ? '#eab308' : '#ffffff',
+                    fontSize: '8px',
                   }}
                 >
-                  <SendIcon />
-                </button>
-              </form>
+                  {activeThread?.role}
+                </span>
+              </div>
+
+              <span style={headerSubtitle}>
+                {activeThread?.userEmail}
+                {activeThread?.userPhone ? ` • ${activeThread.userPhone}` : ''}
+              </span>
             </div>
+          </div>
+
+          {/* CHAT MESSAGES FEED */}
+          <div ref={chatContainerRef} style={chatFeedStyle}>
+            <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {activeThread?.messages.map((msg) => {
+                const isAdmin = msg.sender === 'ADMIN';
+                return (
+                  <div
+                    key={msg.id}
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: isAdmin ? 'flex-end' : 'flex-start',
+                    }}
+                  >
+                    <span style={{ fontSize: '8px', color: '#666666', letterSpacing: '1px', marginBottom: '3px' }}>
+                      {isAdmin ? 'NOMAD DESK' : activeThread.userName}
+                    </span>
+                    <div
+                      style={{
+                        maxWidth: '85%',
+                        padding: '10px 14px',
+                        fontSize: '12px',
+                        lineHeight: '1.5',
+                        fontWeight: 300,
+                        backgroundColor: isAdmin ? 'rgba(255, 255, 255, 0.12)' : 'rgba(255, 255, 255, 0.05)',
+                        color: '#ffffff',
+                        borderRadius: isAdmin ? '14px 14px 2px 14px' : '14px 14px 14px 2px',
+                        border: isAdmin ? '1px solid rgba(255, 255, 255, 0.18)' : '1px solid rgba(255, 255, 255, 0.08)',
+                        wordBreak: 'break-word',
+                        whiteSpace: 'pre-wrap',
+                      }}
+                    >
+                      {msg.text}
+                    </div>
+                    <span style={msgTimeStyle}>{msg.timestamp}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* MESSAGE INPUT BAR */}
+          <div style={chatInputAreaStyle}>
+            <form onSubmit={handleSendMessage} style={chatInputFormStyle}>
+              <textarea
+                ref={textareaRef}
+                style={textareaInputStyle}
+                rows={1}
+                placeholder="Type your response..."
+                value={inputText}
+                onChange={(e) => {
+                  setInputText(e.target.value);
+                  e.target.style.height = 'auto';
+                  e.target.style.height = `${Math.min(e.target.scrollHeight, 80)}px`;
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSendMessage();
+                  }
+                }}
+                required
+              />
+
+              <button
+                type="submit"
+                disabled={!inputText.trim()}
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  border: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  opacity: !inputText.trim() ? 0.25 : 1,
+                  backgroundColor: inputText.trim() ? '#ffffff' : 'rgba(255, 255, 255, 0.1)',
+                  color: inputText.trim() ? '#000000' : '#ffffff',
+                  cursor: !inputText.trim() ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                <SendIcon />
+              </button>
+            </form>
           </div>
         </div>
       )}
@@ -510,7 +480,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
 
 export default AdminMessages;
 
-/* --- WHATSAPP / TELEGRAM UI STYLES --- */
+/* --- STYLESHEET --- */
 const containerStyle: React.CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
@@ -656,7 +626,6 @@ const previewMessageStyle: React.CSSProperties = {
 
 const roleBadgeStyle: React.CSSProperties = {
   fontSize: '7px',
-  color: '#aaa',
   border: '1px solid rgba(255, 255, 255, 0.15)',
   padding: '1px 5px',
   borderRadius: '2px',
@@ -665,7 +634,7 @@ const roleBadgeStyle: React.CSSProperties = {
 };
 
 const unreadBadgeStyle: React.CSSProperties = {
-  backgroundColor: '#25D366', // WhatsApp Green Accent
+  backgroundColor: '#25D366',
   color: '#000000',
   fontSize: '9px',
   fontWeight: 700,
@@ -674,56 +643,73 @@ const unreadBadgeStyle: React.CSSProperties = {
   flexShrink: 0,
 };
 
-/* --- SLIDE-UP MODAL STYLES --- */
-const modalBackdropStyle: React.CSSProperties = {
-  position: 'fixed',
-  left: 0,
-  right: 0,
-  top: 0,
-  height: '100vh',
-  backgroundColor: 'rgba(0, 0, 0, 0.85)',
-  backdropFilter: 'blur(8px)',
-  zIndex: 100,
-  display: 'flex',
-  alignItems: 'flex-end',
-  justifyContent: 'center',
-  overflow: 'hidden',
-};
-
-const modalBoxStyle: React.CSSProperties = {
-  width: '100%',
-  maxWidth: '480px',
-  height: '100%',
-  backgroundColor: '#0a0a0a',
-  borderTop: '1px solid rgba(255, 255, 255, 0.15)',
+/* --- CONVERSATION VIEW STYLES --- */
+const chatScreenContainerStyle: React.CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
-  boxSizing: 'border-box',
-  overflow: 'hidden',
+  height: 'calc(100vh - 60px)',
+  width: '100%',
+  backgroundColor: '#000000',
 };
 
-const modalHeaderStyle: React.CSSProperties = {
+const whatsappHeaderStyle: React.CSSProperties = {
   display: 'flex',
-  justifyContent: 'space-between',
   alignItems: 'center',
-  padding: '16px',
-  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+  gap: '12px',
+  padding: '10px 16px',
   backgroundColor: '#0a0a0a',
+  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
   flexShrink: 0,
 };
 
-const closeBtnStyle: React.CSSProperties = {
+const backIconButtonStyle: React.CSSProperties = {
   background: 'none',
   border: 'none',
   color: '#ffffff',
+  fontSize: '20px',
   cursor: 'pointer',
-  padding: '6px',
+  padding: '0 4px',
+};
+
+const headerAvatarStyle: React.CSSProperties = {
+  width: '36px',
+  height: '36px',
+  borderRadius: '50%',
+  backgroundColor: 'rgba(255, 255, 255, 0.1)',
+  border: '1px solid rgba(255, 255, 255, 0.2)',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  fontSize: '13px',
+  fontWeight: 600,
+  color: '#ffffff',
+  flexShrink: 0,
+};
+
+const headerInfoStyle: React.CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  overflow: 'hidden',
+};
+
+const headerNameTitle: React.CSSProperties = {
+  fontSize: '13px',
+  fontWeight: 500,
+  color: '#ffffff',
+  letterSpacing: '0.5px',
+};
+
+const headerSubtitle: React.CSSProperties = {
+  fontSize: '10px',
+  color: '#888888',
+  fontWeight: 300,
+  marginTop: '1px',
 };
 
 const chatFeedStyle: React.CSSProperties = {
   flex: 1,
   overflowY: 'auto',
-  padding: '12px 16px',
+  padding: '16px',
   display: 'flex',
   flexDirection: 'column',
 };
