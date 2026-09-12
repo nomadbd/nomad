@@ -33,7 +33,7 @@ const AdminDashboard: React.FC = () => {
   const [isAddOpen, setIsAddOpen] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
 
-  // চ্যাট স্টেট হ্যান্ডেল করার নতুন স্টেট
+  // একটিভ চ্যাট স্টেট
   const [activeChat, setActiveChat] = useState<{
     id: string;
     userName: string;
@@ -157,6 +157,9 @@ const AdminDashboard: React.FC = () => {
     return null;
   }
 
+  // চ্যাট ওপেন থাকলে হেডার হাইড হবে
+  const isChatOpen = activeTab === 'messages' && !!activeChat;
+
   return (
     <div style={{ 
       backgroundColor: '#030303', 
@@ -171,66 +174,8 @@ const AdminDashboard: React.FC = () => {
       <div className={styles.nomadLayout}>
         <aside className={`${styles.nomadSidebar} ${menuOpen ? styles.menuOpen : ''} ${!isHeaderVisible ? styles.headerHidden : ''}`}>
           <div>
-            {/* ডাইনামিক হেডার: মেসেজ ট্যাবে চ্যাট ওপেন থাকলে WhatsApp হেডার দেখাবে, নয়তো সাধারণ NOMAD হেডার */}
-            {activeTab === 'messages' && activeChat ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', padding: '2px 0' }}>
-                <button
-                  onClick={() => setActiveChat(null)}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: '#ffffff',
-                    fontSize: '18px',
-                    cursor: 'pointer',
-                    padding: '0 4px 0 0',
-                    display: 'flex',
-                    alignItems: 'center'
-                  }}
-                  title="Back to Messages"
-                >
-                  ←
-                </button>
-
-                <div style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '50%',
-                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                  border: '1px solid rgba(255, 255, 255, 0.2)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '12px',
-                  fontWeight: 600,
-                  color: '#ffffff',
-                  flexShrink: 0
-                }}>
-                  {activeChat.userName.charAt(0).toUpperCase()}
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#ffffff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {activeChat.userName}
-                    </span>
-                    <span style={{
-                      fontSize: '7px',
-                      border: '1px solid rgba(255, 255, 255, 0.2)',
-                      padding: '1px 4px',
-                      borderRadius: '2px',
-                      color: activeChat.role.includes('INVITED') ? '#eab308' : '#aaa',
-                      borderColor: activeChat.role.includes('INVITED') ? '#eab308' : 'rgba(255, 255, 255, 0.2)',
-                      flexShrink: 0
-                    }}>
-                      {activeChat.role}
-                    </span>
-                  </div>
-                  <span style={{ fontSize: '9px', color: '#888888', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {activeChat.userEmail || activeChat.userPhone || ''}
-                  </span>
-                </div>
-              </div>
-            ) : (
+            {/* কোনো নির্দিষ্ট চ্যাট ওপেন থাকলে ড্যাশবোর্ডের মূল হেডার হাইড থাকবে */}
+            {!isChatOpen && (
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: '100%' }}>
                 <a href="/" className={styles.nomadBrandLink} title="Go to Store Homepage">
                   <h1 style={{ fontSize: '18px', fontWeight: '900', letterSpacing: '4px', margin: 0, color: '#fff' }}>
