@@ -61,25 +61,38 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
     }
   };
 
+  // Native Mobile Back Button Support
+  useEffect(() => {
+    if (activeThreadId) {
+      window.history.pushState({ threadOpen: true }, '');
+      const handlePopState = () => {
+        handleSelectThread(null);
+      };
+      window.addEventListener('popstate', handlePopState);
+      return () => {
+        window.removeEventListener('popstate', handlePopState);
+      };
+    }
+  }, [activeThreadId]);
+
   const activeThread = threads.find((t) => t.id === activeThreadId) || null;
 
-  // Handles thread change: shows skeleton, instantly sets scroll to bottom, then fades in
+  // Instant scroll to bottom on thread open with skeleton load
   useLayoutEffect(() => {
     if (activeThreadId) {
       setIsThreadReady(false);
-      
       const timer = setTimeout(() => {
         if (chatContainerRef.current) {
           chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
         }
         setIsThreadReady(true);
-      }, 120);
+      }, 100);
 
       return () => clearTimeout(timer);
     }
   }, [activeThreadId]);
 
-  // Smooth scroll down ONLY when a new message is added while chat is already active
+  // Smooth scroll for new live messages
   useEffect(() => {
     if (!activeThread) return;
     const currentCount = activeThread.messages.length;
@@ -146,15 +159,15 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
             ? new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
             : '';
 
-          let displayName = userEmail ? userEmail.split('@')[0].toUpperCase() : 'GUEST';
+          let displayName = userEmail;
           let userRole = 'GUEST';
           let userPhone = '';
 
           const profileData = profileMap[userEmail];
           const ambData = ambassadorMap[userEmail];
 
-          if (profileData) {
-            displayName = profileData.name || displayName;
+          if (profileData && profileData.name) {
+            displayName = profileData.name;
             userRole = profileData.role;
           } else if (ambData) {
             displayName = ambData.identifier || displayName;
@@ -295,6 +308,16 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
     }
   };
 
+  // Header display logic: prevents duplicate email rendering
+  const isNameSameAsEmail =
+    !activeThread?.userName ||
+    activeThread.userName.toLowerCase().trim() === activeThread.userEmail.toLowerCase().trim();
+
+  const headerTitle = isNameSameAsEmail ? activeThread?.userEmail : activeThread?.userName;
+  const headerSubtitle = isNameSameAsEmail
+    ? activeThread?.userPhone || ''
+    : `${activeThread?.userEmail}${activeThread?.userPhone ? ` • ${activeThread.userPhone}` : ''}`;
+
   if (loading && threads.length === 0) {
     return (
       <div style={statusContainerStyle}>
@@ -314,21 +337,20 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
 
   return (
     <div style={containerStyle}>
-      {/* CSS KEYFRAMES INJECTION */}
       <style>{`
         @keyframes skeletonPulse {
-          0%, 100% { opacity: 0.15; }
-          50% { opacity: 0.35; }
+          0%, 100% { opacity: 0.12; }
+          50% { opacity: 0.3; }
         }
         @keyframes chatFadeIn {
-          from { opacity: 0; transform: translateY(4px); }
+          from { opacity: 0; transform: translateY(3px); }
           to { opacity: 1; transform: translateY(0); }
         }
         .skeleton-bubble {
           animation: skeletonPulse 1.2s ease-in-out infinite;
         }
         .chat-fade-in-content {
-          animation: chatFadeIn 0.22s ease-out forwards;
+          animation: chatFadeIn 0.2s ease-out forwards;
         }
       `}</style>
 
@@ -401,25 +423,17 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
           )}
         </div>
       ) : (
-        /* VIEW 2: CHAT VIEWPORT WITH INTEGRATED HEADER */
+        /* VIEW 2: FULL CHAT VIEWPORT */
         <div style={chatScreenContainerStyle}>
-          {/* HEADER */}
+          {/* HEADER (Sticky Top inside viewport) */}
           <div style={whatsappHeaderStyle}>
-            <button
-              onClick={() => handleSelectThread(null)}
-              style={backIconButtonStyle}
-              title="Back to List"
-            >
-              ←
-            </button>
-
             <div style={headerAvatarStyle}>
-              {activeThread?.userName.charAt(0).toUpperCase()}
+              {headerTitle ? headerTitle.charAt(0).toUpperCase() : 'U'}
             </div>
 
             <div style={headerInfoStyle}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={headerNameTitle}>{activeThread?.userName}</span>
+                <span style={headerNameTitle}>{headerTitle}</span>
                 <span
                   style={{
                     ...roleBadgeStyle,
@@ -432,25 +446,20 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
                 </span>
               </div>
 
-              <span style={headerSubtitle}>
-                {activeThread?.userEmail}
-                {activeThread?.userPhone ? ` • ${activeThread.userPhone}` : ''}
-              </span>
+              {headerSubtitle && <span style={headerSubtitleStyle}>{headerSubtitle}</span>}
             </div>
           </div>
 
           {/* CHAT MESSAGES FEED */}
           <div ref={chatContainerRef} style={chatFeedStyle}>
             {!isThreadReady ? (
-              /* SKELETON LOADER WHILE INITIALIZING CHAT POSITION */
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: 'auto', padding: '10px 0' }}>
-                <div className="skeleton-bubble" style={{ ...skeletonStyle, alignSelf: 'flex-start', width: '60%', height: '42px' }} />
-                <div className="skeleton-bubble" style={{ ...skeletonStyle, alignSelf: 'flex-end', width: '45%', height: '36px' }} />
-                <div className="skeleton-bubble" style={{ ...skeletonStyle, alignSelf: 'flex-start', width: '70%', height: '50px' }} />
-                <div className="skeleton-bubble" style={{ ...skeletonStyle, alignSelf: 'flex-end', width: '50%', height: '40px' }} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginTop: 'auto', padding: '10px 0' }}>
+                <div className="skeleton-bubble" style={{ ...skeletonStyle, alignSelf: 'flex-start', width: '55%', height: '38px' }} />
+                <div className="skeleton-bubble" style={{ ...skeletonStyle, alignSelf: 'flex-end', width: '40%', height: '36px' }} />
+                <div className="skeleton-bubble" style={{ ...skeletonStyle, alignSelf: 'flex-start', width: '65%', height: '44px' }} />
+                <div className="skeleton-bubble" style={{ ...skeletonStyle, alignSelf: 'flex-end', width: '48%', height: '38px' }} />
               </div>
             ) : (
-              /* ACTUAL CHAT FEED WITH SMOOTH FADE IN */
               <div className="chat-fade-in-content" style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {activeThread?.messages.map((msg) => {
                   const isAdmin = msg.sender === 'ADMIN';
@@ -463,17 +472,14 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
                         alignItems: isAdmin ? 'flex-end' : 'flex-start',
                       }}
                     >
-                      <span style={{ fontSize: '8px', color: '#666666', letterSpacing: '1px', marginBottom: '3px' }}>
-                        {isAdmin ? 'NOMAD DESK' : activeThread.userName}
-                      </span>
                       <div
                         style={{
                           maxWidth: '85%',
                           padding: '10px 14px',
-                          fontSize: '12px',
-                          lineHeight: '1.5',
+                          fontSize: '13px',
+                          lineHeight: '1.45',
                           fontWeight: 300,
-                          backgroundColor: isAdmin ? 'rgba(255, 255, 255, 0.12)' : 'rgba(255, 255, 255, 0.05)',
+                          backgroundColor: isAdmin ? 'rgba(255, 255, 255, 0.12)' : 'rgba(255, 255, 255, 0.06)',
                           color: '#ffffff',
                           borderRadius: isAdmin ? '14px 14px 2px 14px' : '14px 14px 14px 2px',
                           border: isAdmin ? '1px solid rgba(255, 255, 255, 0.18)' : '1px solid rgba(255, 255, 255, 0.08)',
@@ -501,9 +507,11 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
                 placeholder="Type your response..."
                 value={inputText}
                 onFocus={() => {
-                  if (chatContainerRef.current) {
-                    chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
-                  }
+                  setTimeout(() => {
+                    if (chatContainerRef.current) {
+                      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+                    }
+                  }, 150);
                 }}
                 onChange={(e) => {
                   setInputText(e.target.value);
@@ -523,8 +531,8 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
                 type="submit"
                 disabled={!inputText.trim()}
                 style={{
-                  width: '32px',
-                  height: '32px',
+                  width: '34px',
+                  height: '34px',
                   borderRadius: '50%',
                   border: 'none',
                   display: 'flex',
@@ -550,7 +558,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
 
 export default AdminMessages;
 
-/* --- STYLESHEET --- */
+/* --- STYLES --- */
 const containerStyle: React.CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
@@ -561,6 +569,7 @@ const containerStyle: React.CSSProperties = {
   fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif',
   boxSizing: 'border-box',
   overflow: 'hidden',
+  position: 'relative',
 };
 
 const statusContainerStyle: React.CSSProperties = {
@@ -634,7 +643,6 @@ const whatsappCardStyle: React.CSSProperties = {
   borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
   cursor: 'pointer',
   backgroundColor: 'transparent',
-  transition: 'background-color 0.2s ease',
 };
 
 const avatarStyle: React.CSSProperties = {
@@ -716,19 +724,13 @@ const unreadBadgeStyle: React.CSSProperties = {
   flexShrink: 0,
 };
 
-/* --- CONVERSATION VIEW STYLES --- */
+/* --- FULL VIEWPORT CHAT SCREEN STYLES --- */
 const chatScreenContainerStyle: React.CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
-  position: 'fixed',
-  top: 0,
-  left: 0,
-  right: 0,
-  bottom: 0,
-  height: '100dvh',
-  width: '100vw',
+  width: '100%',
+  height: '100%',
   backgroundColor: '#000000',
-  zIndex: 9999,
   overflow: 'hidden',
 };
 
@@ -740,15 +742,6 @@ const whatsappHeaderStyle: React.CSSProperties = {
   backgroundColor: '#0a0a0a',
   borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
   flexShrink: 0,
-};
-
-const backIconButtonStyle: React.CSSProperties = {
-  background: 'none',
-  border: 'none',
-  color: '#ffffff',
-  fontSize: '20px',
-  cursor: 'pointer',
-  padding: '0 4px',
 };
 
 const headerAvatarStyle: React.CSSProperties = {
@@ -779,7 +772,7 @@ const headerNameTitle: React.CSSProperties = {
   letterSpacing: '0.5px',
 };
 
-const headerSubtitle: React.CSSProperties = {
+const headerSubtitleStyle: React.CSSProperties = {
   fontSize: '10px',
   color: '#888888',
   fontWeight: 300,
@@ -803,12 +796,12 @@ const skeletonStyle: React.CSSProperties = {
 const msgTimeStyle: React.CSSProperties = {
   fontSize: '8px',
   color: '#555555',
-  marginTop: '4px',
+  marginTop: '3px',
 };
 
 const chatInputAreaStyle: React.CSSProperties = {
-  padding: '12px 16px',
-  paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))',
+  padding: '10px 16px',
+  paddingBottom: 'max(10px, env(safe-area-inset-bottom))',
   flexShrink: 0,
   backgroundColor: '#0a0a0a',
   borderTop: '1px solid rgba(255, 255, 255, 0.08)',
@@ -819,8 +812,8 @@ const chatInputFormStyle: React.CSSProperties = {
   alignItems: 'center',
   backgroundColor: 'rgba(255, 255, 255, 0.05)',
   border: '1px solid rgba(255, 255, 255, 0.15)',
-  borderRadius: '28px',
-  padding: '4px 6px 4px 16px',
+  borderRadius: '24px',
+  padding: '2px 6px 2px 14px',
   gap: '8px',
   width: '100%',
   boxSizing: 'border-box',
