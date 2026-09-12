@@ -33,6 +33,15 @@ const AdminDashboard: React.FC = () => {
   const [isAddOpen, setIsAddOpen] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
 
+  // চ্যাট স্টেট হ্যান্ডেল করার নতুন স্টেট
+  const [activeChat, setActiveChat] = useState<{
+    id: string;
+    userName: string;
+    userEmail?: string;
+    userPhone?: string;
+    role: string;
+  } | null>(null);
+
   const [userName, setUserName] = useState<string>('');
   const [userEmail, setUserEmail] = useState<string>('');
   const [userRole, setUserRole] = useState<string>('');
@@ -48,6 +57,7 @@ const AdminDashboard: React.FC = () => {
     setMenuOpen(false);
     setIsSearchOpen(false);
     setIsAddOpen(false);
+    setActiveChat(null); // ট্যাব চেঞ্জ হলে চ্যাট স্টেট রিসেট হবে
 
     const searchParams = new URLSearchParams(window.location.search);
     searchParams.set('tab', tab);
@@ -161,55 +171,116 @@ const AdminDashboard: React.FC = () => {
       <div className={styles.nomadLayout}>
         <aside className={`${styles.nomadSidebar} ${menuOpen ? styles.menuOpen : ''} ${!isHeaderVisible ? styles.headerHidden : ''}`}>
           <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: '100%' }}>
-              <a href="/" className={styles.nomadBrandLink} title="Go to Store Homepage">
-                <h1 style={{ fontSize: '18px', fontWeight: '900', letterSpacing: '4px', margin: 0, color: '#fff' }}>
-                  NOMAD
-                </h1>
-              </a>
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                {(activeTab === 'products' || activeTab === 'ambassadors') && (
-                  <button
-                    className={`${styles.nomadActionBtn} ${isAddOpen ? styles.nomadActionBtnActive : ''}`}
-                    onClick={() => setIsAddOpen(!isAddOpen)}
-                    aria-label={activeTab === 'products' ? 'Add Product' : 'Add Ambassador'}
-                    title={activeTab === 'products' ? 'Add Product' : 'Add Ambassador'}
-                  >
-                    <PlusIcon width={18} height={18} />
-                  </button>
-                )}
-
-                {activeTab !== 'overview' && (
-                  <button
-                    className={`${styles.nomadActionBtn} ${isSearchOpen ? styles.nomadActionBtnActive : ''}`}
-                    onClick={() => setIsSearchOpen(!isSearchOpen)}
-                    aria-label="Search"
-                    title="Search"
-                  >
-                    <SearchIcon width={18} height={18} />
-                  </button>
-                )}
-
+            {/* ডাইনামিক হেডার: মেসেজ ট্যাবে চ্যাট ওপেন থাকলে WhatsApp হেডার দেখাবে, নয়তো সাধারণ NOMAD হেডার */}
+            {activeTab === 'messages' && activeChat ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', padding: '2px 0' }}>
                 <button
-                  className={`${styles.nomadActionBtn} ${isFilterOpen ? styles.nomadActionBtnActive : ''}`}
-                  onClick={() => setIsFilterOpen(!isFilterOpen)}
-                  aria-label="Filter"
-                  title="Toggle Filter Panel"
+                  onClick={() => setActiveChat(null)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#ffffff',
+                    fontSize: '18px',
+                    cursor: 'pointer',
+                    padding: '0 4px 0 0',
+                    display: 'flex',
+                    alignItems: 'center'
+                  }}
+                  title="Back to Messages"
                 >
-                  <FilterIcon width={18} height={18} />
+                  ←
                 </button>
 
-                <button
-                  className={`${styles.nomadMenuToggle} ${styles.nomadMenuToggleBtn} ${menuOpen ? styles.nomadMenuToggleBtnActive : ''}`}
-                  onClick={() => setMenuOpen(!menuOpen)}
-                  aria-label="Toggle Menu"
-                  title="Toggle Navigation"
-                >
-                  {menuOpen ? <CloseIcon width={18} height={18} /> : <MenuIcon width={20} height={20} />}
-                </button>
+                <div style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  color: '#ffffff',
+                  flexShrink: 0
+                }}>
+                  {activeChat.userName.charAt(0).toUpperCase()}
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#ffffff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {activeChat.userName}
+                    </span>
+                    <span style={{
+                      fontSize: '7px',
+                      border: '1px solid rgba(255, 255, 255, 0.2)',
+                      padding: '1px 4px',
+                      borderRadius: '2px',
+                      color: activeChat.role.includes('INVITED') ? '#eab308' : '#aaa',
+                      borderColor: activeChat.role.includes('INVITED') ? '#eab308' : 'rgba(255, 255, 255, 0.2)',
+                      flexShrink: 0
+                    }}>
+                      {activeChat.role}
+                    </span>
+                  </div>
+                  <span style={{ fontSize: '9px', color: '#888888', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {activeChat.userEmail || activeChat.userPhone || ''}
+                  </span>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: '100%' }}>
+                <a href="/" className={styles.nomadBrandLink} title="Go to Store Homepage">
+                  <h1 style={{ fontSize: '18px', fontWeight: '900', letterSpacing: '4px', margin: 0, color: '#fff' }}>
+                    NOMAD
+                  </h1>
+                </a>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  {(activeTab === 'products' || activeTab === 'ambassadors') && (
+                    <button
+                      className={`${styles.nomadActionBtn} ${isAddOpen ? styles.nomadActionBtnActive : ''}`}
+                      onClick={() => setIsAddOpen(!isAddOpen)}
+                      aria-label={activeTab === 'products' ? 'Add Product' : 'Add Ambassador'}
+                      title={activeTab === 'products' ? 'Add Product' : 'Add Ambassador'}
+                    >
+                      <PlusIcon width={18} height={18} />
+                    </button>
+                  )}
+
+                  {activeTab !== 'overview' && (
+                    <button
+                      className={`${styles.nomadActionBtn} ${isSearchOpen ? styles.nomadActionBtnActive : ''}`}
+                      onClick={() => setIsSearchOpen(!isSearchOpen)}
+                      aria-label="Search"
+                      title="Search"
+                    >
+                      <SearchIcon width={18} height={18} />
+                    </button>
+                  )}
+
+                  <button
+                    className={`${styles.nomadActionBtn} ${isFilterOpen ? styles.nomadActionBtnActive : ''}`}
+                    onClick={() => setIsFilterOpen(!isFilterOpen)}
+                    aria-label="Filter"
+                    title="Toggle Filter Panel"
+                  >
+                    <FilterIcon width={18} height={18} />
+                  </button>
+
+                  <button
+                    className={`${styles.nomadMenuToggle} ${styles.nomadMenuToggleBtn} ${menuOpen ? styles.nomadMenuToggleBtnActive : ''}`}
+                    onClick={() => setMenuOpen(!menuOpen)}
+                    aria-label="Toggle Menu"
+                    title="Toggle Navigation"
+                  >
+                    {menuOpen ? <CloseIcon width={18} height={18} /> : <MenuIcon width={20} height={20} />}
+                  </button>
+                </div>
+              </div>
+            )}
 
             <nav className={styles.nomadNav}>
               <span style={{ fontSize: '9px', color: '#888888', letterSpacing: '2px', marginBottom: '8px', fontWeight: 'bold' }}>
@@ -357,6 +428,20 @@ const AdminDashboard: React.FC = () => {
               searchQuery={searchQuery}
               isFilterOpen={isFilterOpen}
               isSearchOpen={isSearchOpen}
+              activeThreadId={activeChat?.id || null}
+              onSelectThread={(id, thread) => {
+                if (!id || !thread) {
+                  setActiveChat(null);
+                } else {
+                  setActiveChat({
+                    id: thread.id,
+                    userName: thread.userName,
+                    userEmail: thread.userEmail,
+                    userPhone: thread.userPhone,
+                    role: thread.role,
+                  });
+                }
+              }}
             />
           )}
           {activeTab === 'ambassadors' && (
