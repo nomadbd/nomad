@@ -9,6 +9,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
   isFilterOpen = false,
   activeThreadId: propActiveThreadId = null,
   onSelectThread,
+  onNavigateToTab,
 }) => {
   const {
     activeThreadId,
@@ -20,6 +21,9 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
     setInputText,
     loading,
     errorMsg,
+    isDrawerOpen,
+    openDrawer,
+    closeDrawer,
     handleSelectThread,
     handleSendMessage,
     fetchCommunicationsAndUsers,
@@ -95,6 +99,19 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
       };
     }
   }, [activeThreadId, activeThread?.messages.length, viewportHeight]);
+
+  const formatDate = (dateStr?: string) => {
+    if (!dateStr) return 'N/A';
+    try {
+      return new Date(dateStr).toLocaleDateString('en-US', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+      });
+    } catch {
+      return dateStr;
+    }
+  };
 
   const isEmailSameAsName =
     !activeThread?.userName ||
@@ -200,7 +217,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
             height: viewportHeight ? `${viewportHeight}px` : '100dvh',
           }}
         >
-          {/* PINNED HEADER */}
+          {/* PINNED HEADER WITH CLICKABLE CONTACT INFO */}
           <div style={styles.whatsappHeaderStyle}>
             <button
               onClick={() => handleSelectThread(null)}
@@ -210,12 +227,12 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
               ‹
             </button>
 
-            <div style={styles.headerAvatarStyle}>
+            <div style={styles.headerAvatarStyle} onClick={openDrawer}>
               {headerTitle ? headerTitle.charAt(0).toUpperCase() : 'U'}
             </div>
 
-            <div style={styles.headerInfoStyle}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={styles.headerInfoStyle} onClick={openDrawer}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
                 <span style={styles.headerNameTitle}>{headerTitle}</span>
                 <span
                   style={{
@@ -230,6 +247,10 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
               </div>
 
               {headerSubtitle && <span style={styles.headerSubtitleStyle}>{headerSubtitle}</span>}
+            </div>
+
+            <div style={styles.infoIconStyle} onClick={openDrawer} title="View Profile Info">
+              ⓘ
             </div>
           </div>
 
@@ -317,6 +338,129 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
                 <SendIcon />
               </button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* QUICK ACTION SLIDE-IN PROFILE DRAWER */}
+      {isDrawerOpen && activeThread && (
+        <div style={styles.drawerOverlayStyle} onClick={closeDrawer}>
+          <div style={styles.drawerContainerStyle} onClick={(e) => e.stopPropagation()}>
+            <div style={styles.drawerHeaderStyle}>
+              <span style={styles.drawerTitleStyle}>USER CONTACT DETAILS</span>
+              <button onClick={closeDrawer} style={styles.drawerCloseBtnStyle}>✕</button>
+            </div>
+
+            <div style={styles.profileHeroStyle}>
+              <div style={styles.drawerAvatarStyle}>
+                {headerTitle ? headerTitle.charAt(0).toUpperCase() : 'U'}
+              </div>
+              <div style={styles.drawerHeroTextStyle}>
+                <span style={styles.drawerNameStyle}>{headerTitle}</span>
+                <span style={{ fontSize: '11px', color: '#888888' }}>{activeThread.userEmail}</span>
+                <span
+                  style={{
+                    ...styles.roleBadgeStyle,
+                    display: 'inline-block',
+                    width: 'fit-content',
+                    marginTop: '4px',
+                    borderColor: activeThread.role.includes('INVITED') ? '#eab308' : 'rgba(255, 255, 255, 0.3)',
+                    color: activeThread.role.includes('INVITED') ? '#eab308' : '#ffffff',
+                  }}
+                >
+                  {activeThread.role}
+                </span>
+              </div>
+            </div>
+
+            {/* QUICK ACTIONS */}
+            <div style={styles.actionGridStyle}>
+              <a
+                href={`mailto:${activeThread.userEmail}`}
+                style={styles.actionBtnStyle}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <span style={{ fontSize: '16px' }}>✉️</span>
+                <span>EMAIL</span>
+              </a>
+              <a
+                href={activeThread.userPhone ? `tel:${activeThread.userPhone}` : '#'}
+                style={{
+                  ...styles.actionBtnStyle,
+                  opacity: activeThread.userPhone ? 1 : 0.3,
+                  pointerEvents: activeThread.userPhone ? 'auto' : 'none',
+                }}
+              >
+                <span style={{ fontSize: '16px' }}>📞</span>
+                <span>CALL</span>
+              </a>
+              <a
+                href={
+                  activeThread.userPhone
+                    ? `https://wa.me/${activeThread.userPhone.replace(/[^0-9]/g, '')}`
+                    : '#'
+                }
+                style={{
+                  ...styles.actionBtnStyle,
+                  opacity: activeThread.userPhone ? 1 : 0.3,
+                  pointerEvents: activeThread.userPhone ? 'auto' : 'none',
+                }}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <span style={{ fontSize: '16px' }}>💬</span>
+                <span>WHATSAPP</span>
+              </a>
+            </div>
+
+            {/* DETAILS LIST */}
+            <div style={styles.infoListStyle}>
+              <div style={styles.infoRowStyle}>
+                <span style={styles.infoLabelStyle}>Email Address</span>
+                <span style={styles.infoValueStyle}>{activeThread.userEmail}</span>
+              </div>
+              <div style={styles.infoRowStyle}>
+                <span style={styles.infoLabelStyle}>Phone Number</span>
+                <span style={styles.infoValueStyle}>{activeThread.userPhone || 'N/A'}</span>
+              </div>
+              <div style={styles.infoRowStyle}>
+                <span style={styles.infoLabelStyle}>Account Role</span>
+                <span style={styles.infoValueStyle}>{activeThread.role}</span>
+              </div>
+              {activeThread.createdAt && (
+                <div style={styles.infoRowStyle}>
+                  <span style={styles.infoLabelStyle}>Registered Date</span>
+                  <span style={styles.infoValueStyle}>{formatDate(activeThread.createdAt)}</span>
+                </div>
+              )}
+              {activeThread.inviteSentAt && (
+                <div style={styles.infoRowStyle}>
+                  <span style={styles.infoLabelStyle}>Invite Sent Date</span>
+                  <span style={styles.infoValueStyle}>{formatDate(activeThread.inviteSentAt)}</span>
+                </div>
+              )}
+            </div>
+
+            {/* LINK TO MAIN MANAGEMENT TAB */}
+            {onNavigateToTab && (
+              <button
+                onClick={() => {
+                  closeDrawer();
+                  const roleLower = activeThread.role.toLowerCase();
+                  if (roleLower.includes('ambassador')) {
+                    onNavigateToTab('ambassadors', activeThread.id);
+                  } else if (roleLower.includes('staff')) {
+                    onNavigateToTab('staff', activeThread.id);
+                  } else {
+                    onNavigateToTab('customers', activeThread.id);
+                  }
+                }}
+                style={styles.fullProfileBtnStyle}
+              >
+                GO TO FULL MANAGEMENT TAB →
+              </button>
+            )}
           </div>
         </div>
       )}
