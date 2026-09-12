@@ -375,44 +375,8 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
           )}
         </div>
       ) : (
-        /* VIEW 2: FULL CHAT VIEWPORT WITH FIXED WHATSAPP HEADER */
+        /* VIEW 2: CHAT VIEWPORT (NO DUPLICATE HEADER) */
         <div style={chatScreenContainerStyle}>
-          {/* WHATSAPP TOP BAR HEADER */}
-          <div style={whatsappHeaderStyle}>
-            <button
-              onClick={() => handleSelectThread(null)}
-              style={backIconButtonStyle}
-              title="Back to List"
-            >
-              ←
-            </button>
-
-            <div style={headerAvatarStyle}>
-              {activeThread?.userName.charAt(0).toUpperCase()}
-            </div>
-
-            <div style={headerInfoStyle}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={headerNameTitle}>{activeThread?.userName}</span>
-                <span
-                  style={{
-                    ...roleBadgeStyle,
-                    borderColor: activeThread?.role.includes('INVITED') ? '#eab308' : 'rgba(255, 255, 255, 0.3)',
-                    color: activeThread?.role.includes('INVITED') ? '#eab308' : '#ffffff',
-                    fontSize: '8px',
-                  }}
-                >
-                  {activeThread?.role}
-                </span>
-              </div>
-
-              <span style={headerSubtitle}>
-                {activeThread?.userEmail}
-                {activeThread?.userPhone ? ` • ${activeThread.userPhone}` : ''}
-              </span>
-            </div>
-          </div>
-
           {/* CHAT MESSAGES FEED */}
           <div ref={chatContainerRef} style={chatFeedStyle}>
             <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -513,7 +477,7 @@ const containerStyle: React.CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
   width: '100%',
-  height: 'calc(100vh - 60px)',
+  height: '100%',
   backgroundColor: '#000000',
   color: '#ffffff',
   fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif',
@@ -682,60 +646,6 @@ const chatScreenContainerStyle: React.CSSProperties = {
   width: '100%',
   backgroundColor: '#000000',
   overflow: 'hidden',
-};
-
-const whatsappHeaderStyle: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: '12px',
-  padding: '10px 16px',
-  backgroundColor: '#0a0a0a',
-  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-  flexShrink: 0,
-};
-
-const backIconButtonStyle: React.CSSProperties = {
-  background: 'none',
-  border: 'none',
-  color: '#ffffff',
-  fontSize: '20px',
-  cursor: 'pointer',
-  padding: '0 4px',
-};
-
-const headerAvatarStyle: React.CSSProperties = {
-  width: '36px',
-  height: '36px',
-  borderRadius: '50%',
-  backgroundColor: 'rgba(255, 255, 255, 0.1)',
-  border: '1px solid rgba(255, 255, 255, 0.2)',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  fontSize: '13px',
-  fontWeight: 600,
-  color: '#ffffff',
-  flexShrink: 0,
-};
-
-const headerInfoStyle: React.CSSProperties = {
-  display: 'flex',
-  flexDirection: 'column',
-  overflow: 'hidden',
-};
-
-const headerNameTitle: React.CSSProperties = {
-  fontSize: '13px',
-  fontWeight: 500,
-  color: '#ffffff',
-  letterSpacing: '0.5px',
-};
-
-const headerSubtitle: React.CSSProperties = {
-  fontSize: '10px',
-  color: '#888888',
-  fontWeight: 300,
-  marginTop: '1px',
 };
 
 const chatFeedStyle: React.CSSProperties = {
