@@ -11,3 +11,4 @@ export * from './UserIcon';
 export * from './PlusIcon';
 export * from './FilterIcon';
 export * from './MenuIcon';
+export * from './BackIcon';
