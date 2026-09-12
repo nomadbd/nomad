@@ -46,7 +46,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // communications টেবিল থেকে সরাসরি ডাটা লোড
+  // communications টেবিল থেকে সঠিক থ্রেড ম্যাপিং সহ ডাটা ফেচ
   const fetchCommunications = async () => {
     try {
       setLoading(true);
@@ -63,36 +63,38 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
         const threadMap: { [key: string]: Thread } = {};
 
         data.forEach((item: any) => {
-          // ইউনিক থ্রেড আইডেন্টিফায়ার (sender_email বা channel_id)
-          const threadId = item.sender_email || item.channel_id || 'unknown';
-          const senderRole = (item.sender_role || 'user').toUpperCase();
-          const isAdmin = senderRole === 'ADMIN';
-
+          const isSenderAdmin = (item.sender_role || '').toLowerCase() === 'admin';
+          
+          // ইউজার ও এডমিনের মেসেজ একই থ্রেডে রাখার জন্য আইডি ফিক্স
+          const userEmail = isSenderAdmin ? item.recipient_email : item.sender_email;
+          const threadId = item.channel_id || userEmail || 'general';
+          
           const formattedTime = item.created_at
             ? new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
             : '';
 
           if (!threadMap[threadId]) {
+            const displayEmail = userEmail || item.sender_email || '';
             threadMap[threadId] = {
               id: threadId,
-              userName: item.sender_email ? item.sender_email.split('@')[0] : 'User',
-              userEmail: item.sender_email || '',
-              role: senderRole,
+              userName: displayEmail ? displayEmail.split('@')[0] : 'User',
+              userEmail: displayEmail,
+              role: (item.channel_type || item.sender_role || 'user').toUpperCase(),
               status: 'ACTIVE',
-              unreadCount: item.is_read === false && !isAdmin ? 1 : 0,
+              unreadCount: item.is_read === false && !isSenderAdmin ? 1 : 0,
               lastMessage: item.message || '',
               lastMessageTime: formattedTime,
               messages: []
             };
           } else {
-            if (item.is_read === false && !isAdmin) {
+            if (item.is_read === false && !isSenderAdmin) {
               threadMap[threadId].unreadCount += 1;
             }
           }
 
           threadMap[threadId].messages.push({
             id: item.id || String(Math.random()),
-            sender: isAdmin ? 'ADMIN' : 'USER',
+            sender: isSenderAdmin ? 'ADMIN' : 'USER',
             text: item.message || '',
             timestamp: formattedTime
           });
@@ -109,7 +111,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
         }
       }
     } catch (err: any) {
-      console.error('Communications fetch error:', err);
+      console.error('Fetch error:', err);
       setErrorMsg(err.message || 'ডাটাবেজ থেকে তথ্য লোড করা যায়নি');
     } finally {
       setLoading(false);
@@ -119,7 +121,6 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
   useEffect(() => {
     fetchCommunications();
 
-    // communications টেবিলের রিয়েলটাইম সাবস্ক্রিপশন
     const channel = supabase
       .channel('public:communications')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'communications' }, () => {
@@ -145,19 +146,45 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
     return matchesRole && matchesSearch;
   });
 
-  // communications টেবিলে মেসেজ ইনসার্ট করা
+  // ইন্সট্যান্ট মেসেজ সেন্ডিং (Optimistic Update)
   const handleSendMessage = async () => {
     if (!inputText.trim() || !activeThread) return;
 
     const messageText = inputText.trim();
+    const nowTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const tempId = String(Date.now());
+
+    // ১. সাথে সাথে স্ক্রিনে মেসেজ দেখানো
+    const newMsg: Message = {
+      id: tempId,
+      sender: 'ADMIN',
+      text: messageText,
+      timestamp: nowTime
+    };
+
+    setThreads((prevThreads) =>
+      prevThreads.map((t) => {
+        if (t.id === activeThread.id) {
+          return {
+            ...t,
+            lastMessage: messageText,
+            lastMessageTime: nowTime,
+            messages: [...t.messages, newMsg]
+          };
+        }
+        return t;
+      })
+    );
+
     setInputText('');
 
+    // ২. Supabase-এ সেভ করা
     try {
       const { error } = await supabase.from('communications').insert([
         {
           sender_email: 'admin@nomadbd.com',
           sender_role: 'admin',
-          recipient_email: activeThread.userEmail,
+          recipient_email: activeThread.userEmail || null,
           message: messageText,
           channel_type: activeThread.role.toLowerCase(),
           channel_id: activeThread.id,
@@ -166,9 +193,8 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
       ]);
 
       if (error) {
-        alert(`মেসেজ পাঠানো সম্ভব হয়নি: ${error.message}`);
-      } else {
-        await fetchCommunications();
+        alert(`মেসেজ সেভ হতে সমস্যা হয়েছে: ${error.message}`);
+        fetchCommunications(); // এরর হলে রিলোড করে আগের অবস্থায় আনা
       }
     } catch (err: any) {
       console.error('Send error:', err);
@@ -302,7 +328,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
                           marginBottom: '14px'
                         }}
                       >
-                        <span style={senderTagStyle}>{isAdmin ? 'ADMIN' : activeThread.userName}</span>
+                        <span style={senderTagStyle}>{isAdmin ? 'NOMAD DESK' : activeThread.userName}</span>
                         <div
                           style={{
                             ...bubbleStyle,
