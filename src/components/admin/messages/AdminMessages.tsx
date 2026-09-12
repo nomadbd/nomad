@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
-import { SendIcon } from '@/components/icons';
+import { SendIcon, BackIcon, CloseIcon } from '@/components/icons';
 import { AdminMessagesProps } from './types';
 import { useAdminMessages } from './useAdminMessages';
 import * as styles from './AdminMessages.styles';
@@ -224,7 +224,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
               style={styles.backBtnStyle}
               aria-label="Back"
             >
-              ‹
+              <BackIcon />
             </button>
 
             <div style={styles.headerAvatarStyle} onClick={openDrawer}>
@@ -331,7 +331,9 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
           <div style={styles.drawerContainerStyle} onClick={(e) => e.stopPropagation()}>
             <div style={styles.drawerHeaderStyle}>
               <span style={styles.drawerTitleStyle}>USER CONTACT DETAILS</span>
-              <button onClick={closeDrawer} style={styles.drawerCloseBtnStyle}>✕</button>
+              <button onClick={closeDrawer} style={styles.drawerCloseBtnStyle} aria-label="Close">
+                <CloseIcon />
+              </button>
             </div>
 
             <div style={styles.profileHeroStyle}>
