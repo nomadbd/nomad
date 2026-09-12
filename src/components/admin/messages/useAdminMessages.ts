@@ -13,6 +13,7 @@ export const useAdminMessages = (
   const [inputText, setInputText] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
 
   useEffect(() => {
     setInternalActiveThreadId(propActiveThreadId);
@@ -28,6 +29,9 @@ export const useAdminMessages = (
     }
   };
 
+  const openDrawer = () => setIsDrawerOpen(true);
+  const closeDrawer = () => setIsDrawerOpen(false);
+
   const fetchCommunicationsAndUsers = async () => {
     try {
       setLoading(true);
@@ -35,31 +39,34 @@ export const useAdminMessages = (
 
       const [commsRes, profilesRes, ambRes] = await Promise.all([
         supabase.from('communications').select('*').order('created_at', { ascending: true }),
-        supabase.from('profiles').select('email, name, full_name, role'),
-        supabase.from('ambassador').select('email, recipient_identifier, phone'),
+        supabase.from('profiles').select('email, name, full_name, role, avatar_url, created_at'),
+        supabase.from('ambassador').select('email, recipient_identifier, phone, invite_sent_at'),
       ]);
 
       if (commsRes.error) throw commsRes.error;
 
-      const profileMap: Record<string, { name: string; role: string }> = {};
+      const profileMap: Record<string, { name: string; role: string; avatarUrl?: string; createdAt?: string }> = {};
       if (profilesRes.data) {
         profilesRes.data.forEach((p: any) => {
           if (p.email) {
             profileMap[p.email.toLowerCase()] = {
               name: p.full_name || p.name || '',
               role: (p.role || 'CUSTOMER').toUpperCase(),
+              avatarUrl: p.avatar_url || '',
+              createdAt: p.created_at || '',
             };
           }
         });
       }
 
-      const ambassadorMap: Record<string, { identifier: string; phone?: string }> = {};
+      const ambassadorMap: Record<string, { identifier: string; phone?: string; inviteSentAt?: string }> = {};
       if (ambRes.data) {
         ambRes.data.forEach((a: any) => {
           if (a.email) {
             ambassadorMap[a.email.toLowerCase()] = {
               identifier: a.recipient_identifier || '',
               phone: a.phone || '',
+              inviteSentAt: a.invite_sent_at || '',
             };
           }
         });
@@ -104,6 +111,9 @@ export const useAdminMessages = (
               userEmail: userEmail,
               userPhone: userPhone,
               role: userRole,
+              avatarUrl: profileData?.avatarUrl || '',
+              createdAt: profileData?.createdAt || '',
+              inviteSentAt: ambData?.inviteSentAt || '',
               unreadCount: item.is_read === false && !isSenderAdmin ? 1 : 0,
               lastMessage: item.message || '',
               lastMessageTime: formattedTime,
@@ -232,6 +242,9 @@ export const useAdminMessages = (
     setInputText,
     loading,
     errorMsg,
+    isDrawerOpen,
+    openDrawer,
+    closeDrawer,
     handleSelectThread,
     handleSendMessage,
     fetchCommunicationsAndUsers,
