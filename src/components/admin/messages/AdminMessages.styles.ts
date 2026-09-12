@@ -147,6 +147,7 @@ export const roleBadgeStyle: React.CSSProperties = {
   borderRadius: '2px',
   letterSpacing: '0.8px',
   flexShrink: 0,
+  textTransform: 'uppercase',
 };
 
 export const unreadBadgeStyle: React.CSSProperties = {
@@ -164,6 +165,7 @@ export const chatScreenContainerStyle: React.CSSProperties = {
   top: 0,
   left: 0,
   right: 0,
+  bottom: 0,
   zIndex: 9999,
   display: 'flex',
   flexDirection: 'column',
@@ -171,6 +173,7 @@ export const chatScreenContainerStyle: React.CSSProperties = {
   overflow: 'hidden',
 };
 
+/* --- চ্যাট হেডারে টেক্সট যাতে স্ক্রিনের বাইরে না যায় তার আপডেট --- */
 export const whatsappHeaderStyle: React.CSSProperties = {
   display: 'flex',
   alignItems: 'center',
@@ -179,6 +182,7 @@ export const whatsappHeaderStyle: React.CSSProperties = {
   backgroundColor: '#0a0a0a',
   borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
   flexShrink: 0,
+  justifyContent: 'space-between',
 };
 
 export const backBtnStyle: React.CSSProperties = {
@@ -207,12 +211,15 @@ export const headerAvatarStyle: React.CSSProperties = {
   fontWeight: 600,
   color: '#ffffff',
   flexShrink: 0,
+  cursor: 'pointer',
 };
 
 export const headerInfoStyle: React.CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
   overflow: 'hidden',
+  flex: 1,
+  cursor: 'pointer',
 };
 
 export const headerNameTitle: React.CSSProperties = {
@@ -220,6 +227,9 @@ export const headerNameTitle: React.CSSProperties = {
   fontWeight: 500,
   color: '#ffffff',
   letterSpacing: '0.5px',
+  whiteSpace: 'nowrap',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
 };
 
 export const headerSubtitleStyle: React.CSSProperties = {
@@ -227,6 +237,18 @@ export const headerSubtitleStyle: React.CSSProperties = {
   color: '#888888',
   fontWeight: 300,
   marginTop: '1px',
+  whiteSpace: 'nowrap',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+};
+
+export const infoIconStyle: React.CSSProperties = {
+  color: '#888888',
+  fontSize: '16px',
+  cursor: 'pointer',
+  padding: '4px',
+  display: 'flex',
+  alignItems: 'center',
 };
 
 export const chatFeedStyle: React.CSSProperties = {
@@ -277,4 +299,166 @@ export const textareaInputStyle: React.CSSProperties = {
   lineHeight: '1.4',
   padding: '8px 0',
   fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif',
+};
+
+/* --- কুইক প্রোফাইল ড্রয়ারের নতুন স্টাইলসমূহ --- */
+export const drawerOverlayStyle: React.CSSProperties = {
+  position: 'fixed',
+  top: 0,
+  left: 0,
+  right: 0,
+  bottom: 0,
+  backgroundColor: 'rgba(0, 0, 0, 0.75)',
+  backdropFilter: 'blur(4px)',
+  zIndex: 10000,
+  display: 'flex',
+  justifyContent: 'center',
+  alignItems: 'flex-end',
+};
+
+export const drawerContainerStyle: React.CSSProperties = {
+  width: '100%',
+  maxWidth: '500px',
+  backgroundColor: '#0a0a0a',
+  borderTopLeftRadius: '18px',
+  borderTopRightRadius: '18px',
+  border: '1px solid rgba(255, 255, 255, 0.15)',
+  borderBottom: 'none',
+  padding: '20px 18px 30px 18px',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '18px',
+  boxSizing: 'border-box',
+  animation: 'slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
+};
+
+export const drawerHeaderStyle: React.CSSProperties = {
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+};
+
+export const drawerTitleStyle: React.CSSProperties = {
+  fontSize: '12px',
+  fontWeight: 600,
+  letterSpacing: '1.5px',
+  color: '#888888',
+  textTransform: 'uppercase',
+};
+
+export const drawerCloseBtnStyle: React.CSSProperties = {
+  background: 'none',
+  border: 'none',
+  color: '#888888',
+  fontSize: '20px',
+  cursor: 'pointer',
+  padding: '0 4px',
+};
+
+export const profileHeroStyle: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '14px',
+  paddingBottom: '14px',
+  borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+};
+
+export const drawerAvatarStyle: React.CSSProperties = {
+  width: '54px',
+  height: '54px',
+  borderRadius: '50%',
+  backgroundColor: 'rgba(255, 255, 255, 0.1)',
+  border: '1px solid rgba(255, 255, 255, 0.2)',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  fontSize: '18px',
+  fontWeight: 600,
+  color: '#ffffff',
+  flexShrink: 0,
+};
+
+export const drawerHeroTextStyle: React.CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '4px',
+  overflow: 'hidden',
+};
+
+export const drawerNameStyle: React.CSSProperties = {
+  fontSize: '16px',
+  fontWeight: 600,
+  color: '#ffffff',
+  whiteSpace: 'nowrap',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+};
+
+export const actionGridStyle: React.CSSProperties = {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(3, 1fr)',
+  gap: '10px',
+};
+
+export const actionBtnStyle: React.CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  justifyContent: 'center',
+  padding: '10px 6px',
+  backgroundColor: 'rgba(255, 255, 255, 0.04)',
+  border: '1px solid rgba(255, 255, 255, 0.1)',
+  borderRadius: '10px',
+  color: '#ffffff',
+  fontSize: '10px',
+  fontWeight: 500,
+  textDecoration: 'none',
+  gap: '6px',
+  cursor: 'pointer',
+};
+
+export const infoListStyle: React.CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '10px',
+  backgroundColor: 'rgba(255, 255, 255, 0.02)',
+  padding: '12px',
+  borderRadius: '10px',
+  border: '1px solid rgba(255, 255, 255, 0.06)',
+};
+
+export const infoRowStyle: React.CSSProperties = {
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  fontSize: '11px',
+};
+
+export const infoLabelStyle: React.CSSProperties = {
+  color: '#777777',
+  fontWeight: 400,
+};
+
+export const infoValueStyle: React.CSSProperties = {
+  color: '#dddddd',
+  fontWeight: 500,
+  whiteSpace: 'nowrap',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  maxWidth: '60%',
+};
+
+export const fullProfileBtnStyle: React.CSSProperties = {
+  width: '100%',
+  padding: '12px',
+  backgroundColor: '#ffffff',
+  color: '#000000',
+  border: 'none',
+  borderRadius: '8px',
+  fontSize: '11px',
+  fontWeight: 600,
+  letterSpacing: '1px',
+  cursor: 'pointer',
+  textAlign: 'center',
+  marginTop: '4px',
 };
