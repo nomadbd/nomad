@@ -18,7 +18,7 @@ interface Thread {
   id: string;
   userName: string;
   userEmail: string;
-  role: 'AMBASSADOR' | 'CUSTOMER' | 'STAFF';
+  role: string;
   status: 'ACTIVE' | 'RESOLVED' | 'PENDING';
   unreadCount: number;
   lastMessage: string;
@@ -31,10 +31,9 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
   isFilterOpen = false,
   isSearchOpen = false
 }) => {
-  // কোনো মক ডাটা ছাড়াই ফাঁকা স্টেট
   const [threads, setThreads] = useState<Thread[]>([]);
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
-  const [roleFilter, setRoleFilter] = useState<'ALL' | 'AMBASSADOR' | 'CUSTOMER' | 'STAFF'>('ALL');
+  const [roleFilter, setRoleFilter] = useState<string>('ALL');
   const [inputText, setInputText] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -47,53 +46,58 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Supabase থেকে সরাসরি ডাটা ফেচ
-  const fetchMessagesAndThreads = async () => {
+  // communications টেবিল থেকে সরাসরি ডাটা লোড
+  const fetchCommunications = async () => {
     try {
       setLoading(true);
       setErrorMsg(null);
 
       const { data, error } = await supabase
-        .from('messages')
+        .from('communications')
         .select('*')
         .order('created_at', { ascending: true });
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
       if (data) {
         const threadMap: { [key: string]: Thread } = {};
 
         data.forEach((item: any) => {
-          const threadId = item.thread_id || item.user_id || item.user_email;
-          const formattedTime = new Date(item.created_at).toLocaleTimeString([], {
-            hour: '2-digit',
-            minute: '2-digit'
-          });
+          // ইউনিক থ্রেড আইডেন্টিফায়ার (sender_email বা channel_id)
+          const threadId = item.sender_email || item.channel_id || 'unknown';
+          const senderRole = (item.sender_role || 'user').toUpperCase();
+          const isAdmin = senderRole === 'ADMIN';
+
+          const formattedTime = item.created_at
+            ? new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            : '';
 
           if (!threadMap[threadId]) {
             threadMap[threadId] = {
               id: threadId,
-              userName: item.user_name || 'USER',
-              userEmail: item.user_email || '',
-              role: item.user_role || 'CUSTOMER',
-              status: item.status || 'ACTIVE',
-              unreadCount: 0,
-              lastMessage: item.text || item.message,
+              userName: item.sender_email ? item.sender_email.split('@')[0] : 'User',
+              userEmail: item.sender_email || '',
+              role: senderRole,
+              status: 'ACTIVE',
+              unreadCount: item.is_read === false && !isAdmin ? 1 : 0,
+              lastMessage: item.message || '',
               lastMessageTime: formattedTime,
               messages: []
             };
+          } else {
+            if (item.is_read === false && !isAdmin) {
+              threadMap[threadId].unreadCount += 1;
+            }
           }
 
           threadMap[threadId].messages.push({
-            id: item.id,
-            sender: item.sender,
-            text: item.text || item.message,
+            id: item.id || String(Math.random()),
+            sender: isAdmin ? 'ADMIN' : 'USER',
+            text: item.message || '',
             timestamp: formattedTime
           });
 
-          threadMap[threadId].lastMessage = item.text || item.message;
+          threadMap[threadId].lastMessage = item.message || '';
           threadMap[threadId].lastMessageTime = formattedTime;
         });
 
@@ -105,21 +109,21 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
         }
       }
     } catch (err: any) {
-      console.error('Database fetch error:', err);
-      setErrorMsg(err.message || 'ডাটাবেজ থেকে মেসেজ লোড করা যায়নি');
+      console.error('Communications fetch error:', err);
+      setErrorMsg(err.message || 'ডাটাবেজ থেকে তথ্য লোড করা যায়নি');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchMessagesAndThreads();
+    fetchCommunications();
 
-    // Supabase Realtime Channel
+    // communications টেবিলের রিয়েলটাইম সাবস্ক্রিপশন
     const channel = supabase
-      .channel('public:messages')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, () => {
-        fetchMessagesAndThreads();
+      .channel('public:communications')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'communications' }, () => {
+        fetchCommunications();
       })
       .subscribe();
 
@@ -131,7 +135,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
   const activeThread = threads.find((t) => t.id === activeThreadId) || null;
 
   const filteredThreads = threads.filter((t) => {
-    const matchesRole = roleFilter === 'ALL' || t.role === roleFilter;
+    const matchesRole = roleFilter === 'ALL' || t.role.toLowerCase() === roleFilter.toLowerCase();
     const query = searchQuery.trim().toLowerCase();
     const matchesSearch =
       !query ||
@@ -141,7 +145,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
     return matchesRole && matchesSearch;
   });
 
-  // Supabase-এ মেসেজ ইনসার্ট করা
+  // communications টেবিলে মেসেজ ইনসার্ট করা
   const handleSendMessage = async () => {
     if (!inputText.trim() || !activeThread) return;
 
@@ -149,22 +153,22 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
     setInputText('');
 
     try {
-      const { error } = await supabase.from('messages').insert([
+      const { error } = await supabase.from('communications').insert([
         {
-          thread_id: activeThread.id,
-          user_email: activeThread.userEmail,
-          user_name: activeThread.userName,
-          user_role: activeThread.role,
-          sender: 'ADMIN',
-          text: messageText,
-          status: 'ACTIVE'
+          sender_email: 'admin@nomadbd.com',
+          sender_role: 'admin',
+          recipient_email: activeThread.userEmail,
+          message: messageText,
+          channel_type: activeThread.role.toLowerCase(),
+          channel_id: activeThread.id,
+          is_read: false
         }
       ]);
 
       if (error) {
         alert(`মেসেজ পাঠানো সম্ভব হয়নি: ${error.message}`);
       } else {
-        await fetchMessagesAndThreads();
+        await fetchCommunications();
       }
     } catch (err: any) {
       console.error('Send error:', err);
@@ -177,7 +181,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
   if (loading && threads.length === 0) {
     return (
       <div style={statusContainerStyle}>
-        <span>CONNECTING TO SUPABASE DATABASE...</span>
+        <span>FETCHING DATA FROM COMMUNICATIONS TABLE...</span>
       </div>
     );
   }
@@ -186,7 +190,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
     return (
       <div style={{ ...statusContainerStyle, color: '#ff4444' }}>
         <span>DATABASE ERROR: {errorMsg}</span>
-        <button onClick={fetchMessagesAndThreads} style={retryBtnStyle}>RETRY</button>
+        <button onClick={fetchCommunications} style={retryBtnStyle}>RETRY</button>
       </div>
     );
   }
@@ -200,7 +204,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
             FILTER BY ROLE:
           </span>
           <div style={{ display: 'flex', gap: '8px' }}>
-            {(['ALL', 'AMBASSADOR', 'CUSTOMER', 'STAFF'] as const).map((role) => (
+            {['ALL', 'AMBASSADOR', 'CUSTOMER', 'STAFF'].map((role) => (
               <button
                 key={role}
                 onClick={() => setRoleFilter(role)}
@@ -228,7 +232,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
 
             <div style={scrollListStyle}>
               {filteredThreads.length === 0 ? (
-                <div style={emptyTextStyle}>NO MESSAGES IN DATABASE</div>
+                <div style={emptyTextStyle}>NO MESSAGES FOUND</div>
               ) : (
                 filteredThreads.map((thread) => {
                   const isActive = thread.id === activeThreadId;
@@ -298,7 +302,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
                           marginBottom: '14px'
                         }}
                       >
-                        <span style={senderTagStyle}>{isAdmin ? 'NOMAD DESK' : activeThread.userName}</span>
+                        <span style={senderTagStyle}>{isAdmin ? 'ADMIN' : activeThread.userName}</span>
                         <div
                           style={{
                             ...bubbleStyle,
