@@ -31,14 +31,15 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
   isFilterOpen = false,
   isSearchOpen = false
 }) => {
+  // কোনো মক ডাটা ছাড়াই ফাঁকা স্টেট
   const [threads, setThreads] = useState<Thread[]>([]);
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
   const [roleFilter, setRoleFilter] = useState<'ALL' | 'AMBASSADOR' | 'CUSTOMER' | 'STAFF'>('ALL');
   const [inputText, setInputText] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState<boolean>(false);
 
-  // Screen size check for responsive mobile view
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
     handleResize();
@@ -46,24 +47,22 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // 1. Supabase থেকে চ্যাট ও মেসেজ লোড করা
+  // Supabase থেকে সরাসরি ডাটা ফেচ
   const fetchMessagesAndThreads = async () => {
     try {
       setLoading(true);
+      setErrorMsg(null);
 
-      // 'messages' টেবিল থেকে সব ডাটা রিড করা (আপনার টেবিল নাম অনুযায়ী প্রয়োজনে এডজাস্ট করুন)
       const { data, error } = await supabase
         .from('messages')
         .select('*')
         .order('created_at', { ascending: true });
 
       if (error) {
-        console.error('Error fetching messages:', error);
-        return;
+        throw error;
       }
 
       if (data) {
-        // মেসেজগুলোকে থ্রেড অনুযায়ী গ্রুপ করা
         const threadMap: { [key: string]: Thread } = {};
 
         data.forEach((item: any) => {
@@ -89,7 +88,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
 
           threadMap[threadId].messages.push({
             id: item.id,
-            sender: item.sender, // 'USER' or 'ADMIN'
+            sender: item.sender,
             text: item.text || item.message,
             timestamp: formattedTime
           });
@@ -105,8 +104,9 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
           setActiveThreadId(threadList[0].id);
         }
       }
-    } catch (err) {
-      console.error('Failed to load conversations:', err);
+    } catch (err: any) {
+      console.error('Database fetch error:', err);
+      setErrorMsg(err.message || 'ডাটাবেজ থেকে মেসেজ লোড করা যায়নি');
     } finally {
       setLoading(false);
     }
@@ -115,7 +115,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
   useEffect(() => {
     fetchMessagesAndThreads();
 
-    // Supabase Realtime Subscription (রিয়েল-টাইম মেসেজ আপডেট পাওয়ার জন্য)
+    // Supabase Realtime Channel
     const channel = supabase
       .channel('public:messages')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, () => {
@@ -130,7 +130,6 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
 
   const activeThread = threads.find((t) => t.id === activeThreadId) || null;
 
-  // Filter threads using Top Nav Search and Filter Icon
   const filteredThreads = threads.filter((t) => {
     const matchesRole = roleFilter === 'ALL' || t.role === roleFilter;
     const query = searchQuery.trim().toLowerCase();
@@ -142,7 +141,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
     return matchesRole && matchesSearch;
   });
 
-  // 2. Supabase-এ অ্যাডমিনের মেসেজ সেভ করা
+  // Supabase-এ মেসেজ ইনসার্ট করা
   const handleSendMessage = async () => {
     if (!inputText.trim() || !activeThread) return;
 
@@ -163,13 +162,12 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
       ]);
 
       if (error) {
-        console.error('Error saving message to Supabase:', error);
-        alert('মেসেজটি ডাটাবেজে সেভ হতে ব্যর্থ হয়েছে!');
+        alert(`মেসেজ পাঠানো সম্ভব হয়নি: ${error.message}`);
       } else {
-        fetchMessagesAndThreads(); // পাঠানোর পরপরই থ্রেড রিফ্রেশ
+        await fetchMessagesAndThreads();
       }
-    } catch (err) {
-      console.error('Send message failed:', err);
+    } catch (err: any) {
+      console.error('Send error:', err);
     }
   };
 
@@ -178,8 +176,17 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
 
   if (loading && threads.length === 0) {
     return (
-      <div style={{ color: '#888', padding: '40px', textAlign: 'center', fontFamily: 'monospace' }}>
-        LOADING MESSAGES FROM SUPABASE...
+      <div style={statusContainerStyle}>
+        <span>CONNECTING TO SUPABASE DATABASE...</span>
+      </div>
+    );
+  }
+
+  if (errorMsg) {
+    return (
+      <div style={{ ...statusContainerStyle, color: '#ff4444' }}>
+        <span>DATABASE ERROR: {errorMsg}</span>
+        <button onClick={fetchMessagesAndThreads} style={retryBtnStyle}>RETRY</button>
       </div>
     );
   }
@@ -212,7 +219,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
       )}
 
       <div style={mainContentStyle}>
-        {/* 1. THREAD LIST COLUMN */}
+        {/* 1. THREAD LIST */}
         {(!isMobile || showListOnMobile) && (
           <div style={{ ...threadListColumnStyle, width: isMobile ? '100%' : '320px' }}>
             <div style={listHeaderStyle}>
@@ -221,7 +228,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
 
             <div style={scrollListStyle}>
               {filteredThreads.length === 0 ? (
-                <div style={emptyTextStyle}>NO CONVERSATIONS FOUND</div>
+                <div style={emptyTextStyle}>NO MESSAGES IN DATABASE</div>
               ) : (
                 filteredThreads.map((thread) => {
                   const isActive = thread.id === activeThreadId;
@@ -311,7 +318,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
                 <div style={chatInputAreaStyle}>
                   <input
                     type="text"
-                    placeholder="Type a message..."
+                    placeholder="Type response..."
                     value={inputText}
                     onChange={(e) => setInputText(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
@@ -347,6 +354,28 @@ const containerStyle: React.CSSProperties = {
   overflow: 'hidden'
 };
 
+const statusContainerStyle: React.CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  justifyContent: 'center',
+  height: '80vh',
+  color: '#888888',
+  fontSize: '11px',
+  fontFamily: 'monospace',
+  letterSpacing: '1px',
+  gap: '12px'
+};
+
+const retryBtnStyle: React.CSSProperties = {
+  backgroundColor: '#111',
+  border: '1px solid #333',
+  color: '#fff',
+  padding: '6px 16px',
+  fontSize: '10px',
+  cursor: 'pointer'
+};
+
 const headerFilterBarStyle: React.CSSProperties = {
   display: 'flex',
   alignItems: 'center',
@@ -365,8 +394,7 @@ const filterChipStyle: React.CSSProperties = {
   fontWeight: 'bold',
   letterSpacing: '1px',
   cursor: 'pointer',
-  borderRadius: '2px',
-  transition: 'all 0.2s ease'
+  borderRadius: '2px'
 };
 
 const mainContentStyle: React.CSSProperties = {
@@ -416,8 +444,7 @@ const threadCardStyle: React.CSSProperties = {
   borderRadius: '2px',
   border: '1px solid',
   marginBottom: '6px',
-  cursor: 'pointer',
-  transition: 'border-color 0.15s ease'
+  cursor: 'pointer'
 };
 
 const threadHeaderRow: React.CSSProperties = {
