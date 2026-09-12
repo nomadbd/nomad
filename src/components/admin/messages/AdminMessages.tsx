@@ -513,11 +513,12 @@ const containerStyle: React.CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
   width: '100%',
-  minHeight: 'calc(100vh - 60px)',
+  height: 'calc(100vh - 60px)',
   backgroundColor: '#000000',
   color: '#ffffff',
   fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif',
   boxSizing: 'border-box',
+  overflow: 'hidden',
 };
 
 const statusContainerStyle: React.CSSProperties = {
@@ -552,6 +553,7 @@ const headerFilterBarStyle: React.CSSProperties = {
   borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
   flexWrap: 'wrap',
   gap: '10px',
+  flexShrink: 0,
 };
 
 const filterChipStyle: React.CSSProperties = {
@@ -570,6 +572,7 @@ const listContainerStyle: React.CSSProperties = {
   width: '100%',
   display: 'flex',
   flexDirection: 'column',
+  overflowY: 'auto',
 };
 
 const emptyTextStyle: React.CSSProperties = {
@@ -675,9 +678,10 @@ const unreadBadgeStyle: React.CSSProperties = {
 const chatScreenContainerStyle: React.CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
-  height: 'calc(100vh - 60px)',
+  height: '100%',
   width: '100%',
   backgroundColor: '#000000',
+  overflow: 'hidden',
 };
 
 const whatsappHeaderStyle: React.CSSProperties = {
