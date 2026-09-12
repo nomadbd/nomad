@@ -12,3 +12,6 @@ export * from './PlusIcon';
 export * from './FilterIcon';
 export * from './MenuIcon';
 export * from './BackIcon';
+export * from './EmailIcon';
+export * from './CallIcon';
+export * from './MessageIcon';
