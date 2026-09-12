@@ -355,7 +355,6 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
             <p style={benefitDescStyle}>Select products from our high-tier ambassador allocation to feature in your private gallery.</p>
           </div>
 
-          {/* Benefit 02 - Restored Premium Language */}
           <div style={cardStyle}>
             <span style={numberStyle}>02</span>
             <div style={benefitTitleStyle}>AUTOMATED COMMISSIONS</div>
@@ -364,7 +363,6 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
             </p>
           </div>
 
-          {/* Benefit 03 - Restored Premium Language */}
           <div style={cardStyle}>
             <span style={numberStyle}>03</span>
             <div style={benefitTitleStyle}>PRIVÉ PRIVILEGES</div>
@@ -454,7 +452,7 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
           </form>
         </div>
 
-        {/* Footer Section: Clean & Reordered */}
+        {/* Footer Section */}
         <div style={footerStyle}>
           <div style={footerLinksContainerStyle}>
             <button 
@@ -527,7 +525,6 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
             {/* Scrollable Messages Container */}
             <div style={{ flex: 1, overflowY: 'auto', padding: '12px 16px', display: 'flex', flexDirection: 'column' }}>
               {isLoadingMessages ? (
-                /* Skeleton Loader */
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: 'auto' }}>
                   <div style={{ alignSelf: 'flex-start', width: '60%', height: '38px', backgroundColor: 'rgba(255, 255, 255, 0.05)', borderRadius: '12px 12px 12px 2px' }} />
                   <div style={{ alignSelf: 'flex-end', width: '75%', height: '48px', backgroundColor: 'rgba(255, 255, 255, 0.08)', borderRadius: '12px 12px 2px 12px' }} />
@@ -766,6 +763,7 @@ const dotStyle: React.CSSProperties = {
   fontSize: '8px'
 };
 
+// **Updated backdrop to align from top**
 const modalBackdropStyle: React.CSSProperties = {
   position: 'fixed',
   top: 0,
@@ -776,15 +774,16 @@ const modalBackdropStyle: React.CSSProperties = {
   backdropFilter: 'blur(10px)',
   zIndex: 100,
   display: 'flex',
-  alignItems: 'flex-end',
+  alignItems: 'flex-start',
   justifyContent: 'center',
 };
 
+// **Updated modal box height to fit viewport without overflow**
 const modalBoxStyle: React.CSSProperties = {
   width: '100%',
   maxWidth: '430px',
-  height: '100dvh',
-  maxHeight: '100dvh',
+  height: '100%',
+  maxHeight: '100%',
   backgroundColor: '#0a0a0a',
   borderTop: '1px solid rgba(255, 255, 255, 0.15)',
   display: 'flex',
