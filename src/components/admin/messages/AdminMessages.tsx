@@ -2,12 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/supabaseClient';
 import { SendIcon } from '@/components/icons';
 
-interface AdminMessagesProps {
-  searchQuery?: string;
-  isFilterOpen?: boolean;
-  isSearchOpen?: boolean;
-}
-
 interface Message {
   id: string;
   sender: 'USER' | 'ADMIN';
@@ -15,24 +9,32 @@ interface Message {
   timestamp: string;
 }
 
-interface Thread {
+export interface Thread {
   id: string;
   userName: string;
   userEmail: string;
   userPhone?: string;
-  role: string; // 'ADMIN' | 'STAFF' | 'CUSTOMER' | 'AMBASSADOR' | 'INVITED AMBASSADOR' | 'GUEST'
+  role: string;
   unreadCount: number;
   lastMessage: string;
   lastMessageTime: string;
   messages: Message[];
 }
 
+interface AdminMessagesProps {
+  searchQuery?: string;
+  isFilterOpen?: boolean;
+  activeThreadId: string | null;
+  onSelectThread: (threadId: string | null, thread: Thread | null) => void;
+}
+
 export const AdminMessages: React.FC<AdminMessagesProps> = ({
   searchQuery = '',
   isFilterOpen = false,
+  activeThreadId,
+  onSelectThread,
 }) => {
   const [threads, setThreads] = useState<Thread[]>([]);
-  const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
   const [roleFilter, setRoleFilter] = useState<string>('ALL');
   const [inputText, setInputText] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
@@ -52,13 +54,11 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
     });
   };
 
-  // Fetch profiles, ambassadors & communications
   const fetchCommunicationsAndUsers = async () => {
     try {
       setLoading(true);
       setErrorMsg(null);
 
-      // Parallel fetching from 3 tables
       const [commsRes, profilesRes, ambRes] = await Promise.all([
         supabase.from('communications').select('*').order('created_at', { ascending: true }),
         supabase.from('profiles').select('email, name, full_name, role'),
@@ -67,7 +67,6 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
 
       if (commsRes.error) throw commsRes.error;
 
-      // Map Profiles by email
       const profileMap: Record<string, { name: string; role: string }> = {};
       if (profilesRes.data) {
         profilesRes.data.forEach((p: any) => {
@@ -80,7 +79,6 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
         });
       }
 
-      // Map Ambassador Invitations by email
       const ambassadorMap: Record<string, { identifier: string; phone?: string }> = {};
       if (ambRes.data) {
         ambRes.data.forEach((a: any) => {
@@ -93,7 +91,6 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
         });
       }
 
-      // Process Communications Messages into Threads
       if (commsRes.data) {
         const threadMap: { [key: string]: Thread } = {};
 
@@ -106,7 +103,6 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
             ? new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
             : '';
 
-          // Determine User Info across Profiles & Ambassador tables
           let displayName = userEmail ? userEmail.split('@')[0].toUpperCase() : 'GUEST';
           let userRole = 'GUEST';
           let userPhone = '';
@@ -115,11 +111,9 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
           const ambData = ambassadorMap[userEmail];
 
           if (profileData) {
-            // User registered in system profiles
             displayName = profileData.name || displayName;
-            userRole = profileData.role; // e.g. AMBASSADOR, CUSTOMER, STAFF, ADMIN
+            userRole = profileData.role;
           } else if (ambData) {
-            // Invited ambassador but not yet registered profile
             displayName = ambData.identifier || displayName;
             userRole = 'INVITED AMBASSADOR';
             userPhone = ambData.phone || '';
@@ -158,7 +152,16 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
           threadMap[threadId].lastMessageTime = formattedTime;
         });
 
-        setThreads(Object.values(threadMap));
+        const newThreads = Object.values(threadMap);
+        setThreads(newThreads);
+
+        // যদি কোনো একটি থ্রেড আগে থেকেই সিলেক্টেড থাকে, তবে তার লেটেস্ট ডেটা প্যারেন্টকে আপডেট করে পাঠানো
+        if (activeThreadId) {
+          const updatedActive = newThreads.find((t) => t.id === activeThreadId);
+          if (updatedActive) {
+            onSelectThread(activeThreadId, updatedActive);
+          }
+        }
       }
     } catch (err: any) {
       console.error('Fetch error:', err);
@@ -278,7 +281,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
 
   return (
     <div style={containerStyle}>
-      {/* FILTER BAR - Shown when Filter Icon toggled */}
+      {/* FILTER BAR */}
       {isFilterOpen && !activeThreadId && (
         <div style={headerFilterBarStyle}>
           <span style={{ fontSize: '8px', color: '#666666', fontWeight: 600, letterSpacing: '2.5px' }}>
@@ -303,7 +306,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
         </div>
       )}
 
-      {/* VIEW 1: WHATSAPP-LIKE CONVERSATION LIST */}
+      {/* VIEW 1: CONVERSATION LIST */}
       {!activeThreadId ? (
         <div style={listContainerStyle}>
           {filteredThreads.length === 0 ? (
@@ -314,7 +317,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
               return (
                 <div
                   key={thread.id}
-                  onClick={() => setActiveThreadId(thread.id)}
+                  onClick={() => onSelectThread(thread.id, thread)}
                   style={whatsappCardStyle}
                 >
                   <div style={avatarStyle}>{initialLetter}</div>
@@ -347,45 +350,8 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
           )}
         </div>
       ) : (
-        /* VIEW 2: FULL CHAT VIEWPORT WITH FIXED WHATSAPP HEADER */
+        /* VIEW 2: CHAT MESSAGES & INPUT VIEW (হোয়াটসঅ্যাপের মতো ইন-চ্যাট ভিউ) */
         <div style={chatScreenContainerStyle}>
-          {/* WHATSAPP TOP BAR HEADER */}
-          <div style={whatsappHeaderStyle}>
-            <button
-              onClick={() => setActiveThreadId(null)}
-              style={backIconButtonStyle}
-              title="Back to List"
-            >
-              ←
-            </button>
-
-            <div style={headerAvatarStyle}>
-              {activeThread?.userName.charAt(0).toUpperCase()}
-            </div>
-
-            <div style={headerInfoStyle}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={headerNameTitle}>{activeThread?.userName}</span>
-                <span
-                  style={{
-                    ...roleBadgeStyle,
-                    borderColor: activeThread?.role.includes('INVITED') ? '#eab308' : 'rgba(255, 255, 255, 0.3)',
-                    color: activeThread?.role.includes('INVITED') ? '#eab308' : '#ffffff',
-                    fontSize: '8px',
-                  }}
-                >
-                  {activeThread?.role}
-                </span>
-              </div>
-
-              <span style={headerSubtitle}>
-                {activeThread?.userEmail}
-                {activeThread?.userPhone ? ` • ${activeThread.userPhone}` : ''}
-              </span>
-            </div>
-          </div>
-
-          {/* CHAT MESSAGES FEED */}
           <div ref={chatContainerRef} style={chatFeedStyle}>
             <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {activeThread?.messages.map((msg) => {
@@ -478,14 +444,12 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
   );
 };
 
-export default AdminMessages;
-
 /* --- STYLESHEET --- */
 const containerStyle: React.CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
   width: '100%',
-  minHeight: 'calc(100vh - 60px)',
+  minHeight: '100%',
   backgroundColor: '#000000',
   color: '#ffffff',
   fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif',
@@ -643,67 +607,13 @@ const unreadBadgeStyle: React.CSSProperties = {
   flexShrink: 0,
 };
 
-/* --- CONVERSATION VIEW STYLES --- */
 const chatScreenContainerStyle: React.CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
-  height: 'calc(100vh - 60px)',
+  flex: 1,
   width: '100%',
   backgroundColor: '#000000',
-};
-
-const whatsappHeaderStyle: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: '12px',
-  padding: '10px 16px',
-  backgroundColor: '#0a0a0a',
-  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-  flexShrink: 0,
-};
-
-const backIconButtonStyle: React.CSSProperties = {
-  background: 'none',
-  border: 'none',
-  color: '#ffffff',
-  fontSize: '20px',
-  cursor: 'pointer',
-  padding: '0 4px',
-};
-
-const headerAvatarStyle: React.CSSProperties = {
-  width: '36px',
-  height: '36px',
-  borderRadius: '50%',
-  backgroundColor: 'rgba(255, 255, 255, 0.1)',
-  border: '1px solid rgba(255, 255, 255, 0.2)',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  fontSize: '13px',
-  fontWeight: 600,
-  color: '#ffffff',
-  flexShrink: 0,
-};
-
-const headerInfoStyle: React.CSSProperties = {
-  display: 'flex',
-  flexDirection: 'column',
-  overflow: 'hidden',
-};
-
-const headerNameTitle: React.CSSProperties = {
-  fontSize: '13px',
-  fontWeight: 500,
-  color: '#ffffff',
-  letterSpacing: '0.5px',
-};
-
-const headerSubtitle: React.CSSProperties = {
-  fontSize: '10px',
-  color: '#888888',
-  fontWeight: 300,
-  marginTop: '1px',
+  height: '100%',
 };
 
 const chatFeedStyle: React.CSSProperties = {
