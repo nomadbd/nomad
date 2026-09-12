@@ -11,6 +11,9 @@ export interface Thread {
   userEmail: string;
   userPhone?: string;
   role: string;
+  avatarUrl?: string;
+  createdAt?: string;      // profiles টেবিলের created_at
+  inviteSentAt?: string;   // ambassadors টেবিলের invite_sent_at
   unreadCount: number;
   lastMessage: string;
   lastMessageTime: string;
@@ -23,4 +26,5 @@ export interface AdminMessagesProps {
   isSearchOpen?: boolean;
   activeThreadId?: string | null;
   onSelectThread?: (id: string | null, thread?: Thread | null) => void;
+  onNavigateToTab?: (tabName: 'customers' | 'ambassadors' | 'staff', userId?: string) => void;
 }
