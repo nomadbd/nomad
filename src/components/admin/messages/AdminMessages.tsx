@@ -30,17 +30,22 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
   } = useAdminMessages(searchQuery, propActiveThreadId, onSelectThread);
 
   const [viewportHeight, setViewportHeight] = useState<number | null>(null);
+  
+  // TRACK READ THREADS LOCALLY SO BADGE CLEARS IMMEDIATELY ON CLICK
+  const [readThreadIds, setReadThreadIds] = useState<Record<string, boolean>>({});
+
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Dynamic Smart Timestamp Logic for Chat List
-  const formatThreadTime = (dateStr?: string) => {
-    if (!dateStr) return '';
-    const date = new Date(dateStr);
-    
-    // Fallback if dateStr is already a formatted string like "04:52 PM" without full date info
+  // Dynamic Smart Timestamp Formatter
+  const formatThreadTime = (dateInput?: string | number | Date) => {
+    if (!dateInput) return '';
+
+    const date = new Date(dateInput);
+
+    // If dateInput is invalid ISO or just a raw time string like "04:52 PM"
     if (isNaN(date.getTime())) {
-      return dateStr;
+      return String(dateInput);
     }
 
     const now = new Date();
@@ -49,20 +54,26 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
     startOfYesterday.setDate(startOfYesterday.getDate() - 1);
 
     if (date >= startOfToday) {
-      // Today: show time only (04:52 PM)
+      // Today: 04:52 PM
       return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
     } else if (date >= startOfYesterday) {
-      // Yesterday: show 'Yesterday'
+      // Yesterday
       return 'Yesterday';
     } else {
       const diffDays = Math.floor((startOfToday.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
       if (diffDays < 6) {
-        // Within last 7 days: show day name (Mon, Tue, etc.)
+        // Within last 7 days: Mon, Tue, etc.
         return date.toLocaleDateString('en-US', { weekday: 'short' });
       }
-      // Older than 7 days: show Date (Sep 12 or 12/09/26)
+      // Older: Sep 12 or 12/09/26
       return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     }
+  };
+
+  // Handle Thread Click & Mark as Read
+  const handleThreadClick = (thread: any) => {
+    setReadThreadIds((prev) => ({ ...prev, [thread.id]: true }));
+    handleSelectThread(thread);
   };
 
   // Mobile Visual Viewport & Keyboard Handler
@@ -198,7 +209,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
         </div>
       )}
 
-      {/* VIEW 1: THREAD LIST (OPTIMIZED 3-LINE MINIMAL LAYOUT) */}
+      {/* VIEW 1: THREAD LIST */}
       {!activeThreadId ? (
         <div style={{ width: '100%', padding: '0 4px', boxSizing: 'border-box' }}>
           {filteredThreads.length === 0 ? (
@@ -207,11 +218,15 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
             filteredThreads.map((thread) => {
               const displayName = thread.userName && thread.userName.trim() ? thread.userName : thread.userEmail;
               const initialLetter = displayName.charAt(0).toUpperCase();
+              
+              // Calculate real unread status locally
+              const isRead = readThreadIds[thread.id];
+              const displayUnread = isRead ? 0 : (thread.unreadCount ?? 0);
 
               return (
                 <div
                   key={thread.id}
-                  onClick={() => handleSelectThread(thread)}
+                  onClick={() => handleThreadClick(thread)}
                   style={{
                     display: 'flex',
                     alignItems: 'flex-start',
@@ -224,7 +239,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
                     backgroundColor: 'transparent',
                   }}
                 >
-                  {/* AVATAR - EXACT FLUSH LEFT */}
+                  {/* AVATAR */}
                   <div
                     style={{
                       width: '40px',
@@ -245,7 +260,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
                     {initialLetter}
                   </div>
 
-                  {/* CARD CONTENT - 3 STRUCTURED LINES */}
+                  {/* CARD CONTENT */}
                   <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '3px' }}>
                     
                     {/* LINE 1: NAME / EMAIL + SMART TIME */}
@@ -296,7 +311,8 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
                         {thread.role}
                       </span>
 
-                      {thread.unreadCount > 0 && (
+                      {/* ONLY SHOW BADGE IF UNREAD > 0 AND NOT YET READ */}
+                      {displayUnread > 0 && (
                         <span
                           style={{
                             backgroundColor: '#ffffff',
@@ -314,12 +330,12 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
                             flexShrink: 0,
                           }}
                         >
-                          {thread.unreadCount}
+                          {displayUnread}
                         </span>
                       )}
                     </div>
 
-                    {/* LINE 3: MESSAGE PREVIEW (FULL WIDTH CAPACITY) */}
+                    {/* LINE 3: MESSAGE PREVIEW */}
                     <p
                       style={{
                         color: '#999999',
@@ -342,14 +358,14 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
           )}
         </div>
       ) : (
-        /* VIEW 2: VISUAL VIEWPORT LOCKED CHAT SCREEN */
+        /* VIEW 2: CHAT SCREEN */
         <div
           style={{
             ...styles.chatScreenContainerStyle,
             height: viewportHeight ? `${viewportHeight}px` : '100dvh',
           }}
         >
-          {/* PINNED HEADER WITH CLICKABLE CONTACT INFO */}
+          {/* HEADER */}
           <div style={styles.whatsappHeaderStyle}>
             <button
               onClick={() => handleSelectThread(null)}
@@ -369,7 +385,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
             </div>
           </div>
 
-          {/* SCROLLABLE CHAT MESSAGES */}
+          {/* CHAT MESSAGES */}
           <div ref={chatContainerRef} style={styles.chatFeedStyle}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {activeThread?.messages.map((msg) => {
@@ -407,7 +423,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
             </div>
           </div>
 
-          {/* PINNED INPUT AREA */}
+          {/* INPUT AREA */}
           <div style={styles.chatInputAreaStyle}>
             <form onSubmit={(e) => handleSendMessage(e, textareaRef)} style={styles.chatInputFormStyle}>
               <textarea
@@ -457,7 +473,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
         </div>
       )}
 
-      {/* QUICK ACTION SLIDE-IN PROFILE DRAWER */}
+      {/* QUICK ACTION DRAWER */}
       {isDrawerOpen && activeThread && (
         <div style={styles.drawerOverlayStyle} onClick={closeDrawer}>
           <div style={styles.drawerContainerStyle} onClick={(e) => e.stopPropagation()}>
@@ -476,7 +492,6 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
                 <span style={styles.drawerNameStyle}>{headerTitle}</span>
                 <span style={{ fontSize: '11px', color: '#888888' }}>{activeThread.userEmail}</span>
 
-                {/* SUBTLE GREY ROLE BADGE */}
                 <span
                   style={{
                     fontSize: '9px',
@@ -502,102 +517,34 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
                 href={`mailto:${activeThread.userEmail}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: '6px',
-                  textDecoration: 'none',
-                }}
+                style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', textDecoration: 'none' }}
               >
-                <div
-                  style={{
-                    width: '46px',
-                    height: '46px',
-                    borderRadius: '50%',
-                    backgroundColor: 'rgba(255, 255, 255, 0.06)',
-                    border: '1px solid rgba(255, 255, 255, 0.08)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#e5e5e5',
-                  }}
-                >
+                <div style={{ width: '46px', height: '46px', borderRadius: '50%', backgroundColor: 'rgba(255, 255, 255, 0.06)', border: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e5e5' }}>
                   <EmailIcon />
                 </div>
-                <span style={{ fontSize: '9px', fontWeight: 600, color: '#777777', letterSpacing: '0.8px' }}>
-                  EMAIL
-                </span>
+                <span style={{ fontSize: '9px', fontWeight: 600, color: '#777777', letterSpacing: '0.8px' }}>EMAIL</span>
               </a>
 
               <a
                 href={activeThread.userPhone ? `tel:${activeThread.userPhone}` : '#'}
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: '6px',
-                  textDecoration: 'none',
-                  opacity: activeThread.userPhone ? 1 : 0.3,
-                  pointerEvents: activeThread.userPhone ? 'auto' : 'none',
-                }}
+                style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', textDecoration: 'none', opacity: activeThread.userPhone ? 1 : 0.3, pointerEvents: activeThread.userPhone ? 'auto' : 'none' }}
               >
-                <div
-                  style={{
-                    width: '46px',
-                    height: '46px',
-                    borderRadius: '50%',
-                    backgroundColor: 'rgba(255, 255, 255, 0.06)',
-                    border: '1px solid rgba(255, 255, 255, 0.08)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#e5e5e5',
-                  }}
-                >
+                <div style={{ width: '46px', height: '46px', borderRadius: '50%', backgroundColor: 'rgba(255, 255, 255, 0.06)', border: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e5e5' }}>
                   <CallIcon />
                 </div>
-                <span style={{ fontSize: '9px', fontWeight: 600, color: '#777777', letterSpacing: '0.8px' }}>
-                  CALL
-                </span>
+                <span style={{ fontSize: '9px', fontWeight: 600, color: '#777777', letterSpacing: '0.8px' }}>CALL</span>
               </a>
 
               <a
-                href={
-                  activeThread.userPhone
-                    ? `https://wa.me/${activeThread.userPhone.replace(/[^0-9]/g, '')}`
-                    : '#'
-                }
+                href={activeThread.userPhone ? `https://wa.me/${activeThread.userPhone.replace(/[^0-9]/g, '')}` : '#'}
                 target="_blank"
                 rel="noopener noreferrer"
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: '6px',
-                  textDecoration: 'none',
-                  opacity: activeThread.userPhone ? 1 : 0.3,
-                  pointerEvents: activeThread.userPhone ? 'auto' : 'none',
-                }}
+                style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', textDecoration: 'none', opacity: activeThread.userPhone ? 1 : 0.3, pointerEvents: activeThread.userPhone ? 'auto' : 'none' }}
               >
-                <div
-                  style={{
-                    width: '46px',
-                    height: '46px',
-                    borderRadius: '50%',
-                    backgroundColor: 'rgba(255, 255, 255, 0.06)',
-                    border: '1px solid rgba(255, 255, 255, 0.08)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#e5e5e5',
-                  }}
-                >
+                <div style={{ width: '46px', height: '46px', borderRadius: '50%', backgroundColor: 'rgba(255, 255, 255, 0.06)', border: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e5e5' }}>
                   <MessageIcon />
                 </div>
-                <span style={{ fontSize: '9px', fontWeight: 600, color: '#777777', letterSpacing: '0.8px' }}>
-                  WHATSAPP
-                </span>
+                <span style={{ fontSize: '9px', fontWeight: 600, color: '#777777', letterSpacing: '0.8px' }}>WHATSAPP</span>
               </a>
             </div>
 
@@ -629,7 +576,6 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
               )}
             </div>
 
-            {/* LINK TO MAIN MANAGEMENT TAB */}
             {onNavigateToTab && (
               <button
                 onClick={() => {
