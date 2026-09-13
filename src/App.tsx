@@ -1,8 +1,9 @@
-import React, { useState, lazy, Suspense } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 
 import { CartProvider } from './context/CartContext';
 import { useSession } from './hooks/useSession';
+import { subscribeUserToPush } from './utils/pushManager';
 
 import ProfilePage from './pages/ProfilePage';
 
@@ -22,7 +23,13 @@ const AppContent = ({ session, setIsSearchOpen, setIsAuthOpen }: any) => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  
+  // ব্যাকগ্রাউন্ড নোটিফিকেশন সাবস্ক্রিপশন চালু করার জন্য
+  useEffect(() => {
+    if (session) {
+      subscribeUserToPush();
+    }
+  }, [session]);
+
   const showHeader = location.pathname === '/';
 
   return (
