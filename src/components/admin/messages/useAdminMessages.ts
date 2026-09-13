@@ -61,9 +61,10 @@ export const useAdminMessages = (
   const openDrawer = () => setIsDrawerOpen(true);
   const closeDrawer = () => setIsDrawerOpen(false);
 
-  const fetchCommunicationsAndUsers = async () => {
+  // Fetch data: supports silent background updates for Realtime listeners
+  const fetchCommunicationsAndUsers = async (isBackground = false) => {
     try {
-      setLoading(true);
+      if (!isBackground) setLoading(true);
       setErrorMsg(null);
 
       const [commsRes, profilesRes, ambRes] = await Promise.all([
@@ -167,24 +168,32 @@ export const useAdminMessages = (
           threadMap[threadId].lastMessageTime = rawCreatedAt;
         });
 
-        const updatedThreads = Object.values(threadMap);
+        // 🌟 REALTIME SORTING: Auto-sort threads so active/newest threads float to the top
+        const updatedThreads = Object.values(threadMap).sort((a, b) => {
+          const timeA = new Date(a.lastMessageTime).getTime();
+          const timeB = new Date(b.lastMessageTime).getTime();
+          return timeB - timeA;
+        });
+
         setThreads(updatedThreads);
       }
     } catch (err: any) {
       console.error('Fetch error:', err);
       setErrorMsg(err.message || 'FAILED TO LOAD COMMUNICATIONS');
     } finally {
-      setLoading(false);
+      if (!isBackground) setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchCommunicationsAndUsers();
+    // Initial fetch (shows loading UI)
+    fetchCommunicationsAndUsers(false);
 
+    // Realtime listener (silent background fetch, no loading UI flickering)
     const channel = supabase
       .channel('public:communications')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'communications' }, () => {
-        fetchCommunicationsAndUsers();
+        fetchCommunicationsAndUsers(true);
       })
       .subscribe();
 
@@ -222,8 +231,9 @@ export const useAdminMessages = (
       timestamp: nowTime,
     };
 
-    setThreads((prevThreads) =>
-      prevThreads.map((t) => {
+    // Optimistically update & float active thread to top immediately
+    setThreads((prevThreads) => {
+      const updated = prevThreads.map((t) => {
         if (t.id === activeThread.id) {
           return {
             ...t,
@@ -233,8 +243,10 @@ export const useAdminMessages = (
           };
         }
         return t;
-      })
-    );
+      });
+
+      return updated.sort((a, b) => new Date(b.lastMessageTime).getTime() - new Date(a.lastMessageTime).getTime());
+    });
 
     setInputText('');
     if (textareaRef?.current) {
@@ -256,7 +268,7 @@ export const useAdminMessages = (
 
       if (error) {
         console.error('Send error:', error.message);
-        fetchCommunicationsAndUsers();
+        fetchCommunicationsAndUsers(true);
       }
     } catch (err: any) {
       console.error('Send error:', err);
