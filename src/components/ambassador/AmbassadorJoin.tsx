@@ -221,7 +221,48 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
 
   useEffect(() => {
     fetchMessages();
-  }, [email, defaultEmail]);
+  }, [email, defaultEmail, customSupportEmail]);
+
+  // 🌟 REALTIME LISTENER FOR ADMIB RESPONSES
+  useEffect(() => {
+    const activeEmail = (email.trim() || defaultEmail || customSupportEmail.trim()).toLowerCase();
+    const channelId = inviteData?.token || activeEmail || 'general_inquiry';
+
+    if (!channelId && !activeEmail) return;
+
+    const channel = supabase
+      .channel(`concierge_realtime:${channelId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'communications',
+        },
+        (payload) => {
+          const newMsg = payload.new;
+          // ম্যাচ করানো হচ্ছে যে মেসেজটি এই ইউজারের চ্যানেলের কি না
+          const isTargetMsg =
+            newMsg.channel_id === channelId ||
+            (newMsg.sender_email && newMsg.sender_email.toLowerCase() === activeEmail);
+
+          if (isTargetMsg) {
+            setMessages((prev) => {
+              // ডুপ্লিকেট রোধের চেক
+              const exists = prev.some((m) => m.id === newMsg.id);
+              if (exists) return prev;
+              return [...prev, newMsg];
+            });
+            setTimeout(() => scrollToBottom(true), 50);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [email, defaultEmail, customSupportEmail, inviteData]);
 
   useEffect(() => {
     if (isConciergeOpen && messages.length > 0) {
@@ -350,7 +391,10 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
           created_at: new Date().toISOString()
         };
 
-        setMessages((prev) => [...prev, userMsg, autoReplyMsg]);
+        setMessages((prev) => {
+          const exists = prev.some((m) => m.id === userMsg.id);
+          return exists ? prev : [...prev, userMsg, autoReplyMsg];
+        });
         setTimeout(() => scrollToBottom(true), 50);
       }
     } catch (err) {
@@ -416,7 +460,7 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
           transition: 'transform 0.7s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.7s ease'
         }}
       >
-        
+
         {/* Header Section */}
         <div>
           <h1 style={titleStyle}>
@@ -576,7 +620,7 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            
+
             {/* Always Visible Sticky Header */}
             <div style={modalHeaderStyle}>
               <div>
@@ -880,7 +924,7 @@ const modalBoxStyle: React.CSSProperties = {
 
 const modalHeaderStyle: React.CSSProperties = {
   display: 'flex',
-  justifyContent: 'space-between',
+  justify.content: 'space-between',
   alignItems: 'center',
   padding: '16px 16px 12px 16px',
   borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
