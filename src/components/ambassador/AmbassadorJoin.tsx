@@ -42,6 +42,10 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
   const [isSendingSupport, setIsSendingSupport] = useState(false);
   const [messages, setMessages] = useState<any[]>([]);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+  
+  // 🌟 Unread Message Badge State & Modal Open Ref Tracking
+  const [hasUnread, setHasUnread] = useState(false);
+  const isConciergeOpenRef = useRef(isConciergeOpen);
 
   // Dynamic Viewport Style state to lock modal height & offset on mobile keyboard focus
   const [viewportStyle, setViewportStyle] = useState<React.CSSProperties>({});
@@ -63,13 +67,21 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
   const commissionRate = inviteData?.commission_rate ?? 15;
   const discountPercent = inviteData?.discount_percent ?? 10;
 
+  // Keep Ref synced for realtime scope
+  useEffect(() => {
+    isConciergeOpenRef.current = isConciergeOpen;
+    if (isConciergeOpen) {
+      setHasUnread(false); // Modal খোলা হলে ব্যাজ রিমুভ (Seen) হবে
+    }
+  }, [isConciergeOpen]);
+
   // Trigger main page entrance animation on mount
   useEffect(() => {
     setIsPageMounted(true);
   }, []);
 
-  // Helper function to scroll chat to bottom
-  const scrollToBottom = (smooth = true) => {
+  // Helper function to scroll chat directly to bottom without jump animation
+  const scrollToBottom = (smooth = false) => {
     requestAnimationFrame(() => {
       if (chatContainerRef.current) {
         chatContainerRef.current.scrollTo({
@@ -123,6 +135,7 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
 
   // Handle Smooth Open/Close Slide Animation
   const handleOpenConcierge = () => {
+    setHasUnread(false);
     setIsConciergeOpen(true);
     setTimeout(() => {
       setIsModalAnimating(true);
@@ -211,6 +224,16 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
 
       if (!error && data) {
         setMessages(data);
+
+        // 🌟 চেক করা হচ্ছে অ্যাডমিন থেকে শেষ মেসেজ আনরিড অবস্থায় এসেছে কিনা
+        const lastMsg = data[data.length - 1];
+        if (
+          lastMsg &&
+          (lastMsg.sender_role === 'admin' || lastMsg.sender_role === 'support') &&
+          !isConciergeOpenRef.current
+        ) {
+          setHasUnread(true);
+        }
       }
     } catch (err) {
       console.error('Error fetching chat history:', err);
@@ -223,7 +246,7 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
     fetchMessages();
   }, [email, defaultEmail, customSupportEmail]);
 
-  // 🌟 ১. ট্যাব সুইচ করে ব্যাকগ্রাউন্ড থেকে ফিরে আসলে অটো ফেচ
+  // ব্যাকগ্রাউন্ড থেকে ট্যাবে ফিরে আসলে অটো ফেচ
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
@@ -240,7 +263,7 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
     };
   }, [email, defaultEmail, customSupportEmail]);
 
-  // 🌟 ২. সুপাবেজ রিয়েলটাইম লিসেনার (অ্যাডমিন ও ইউজার দুই তরফ থেকেই মেসেজ সিঙ্ক)
+  // সুপাবেজ রিয়েলটাইম লিসেনার
   useEffect(() => {
     const activeEmail = (email.trim() || defaultEmail || customSupportEmail.trim()).toLowerCase();
     const token = inviteData?.token || '';
@@ -272,7 +295,18 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
               if (exists) return prev;
               return [...prev, newMsg];
             });
-            setTimeout(() => scrollToBottom(true), 50);
+
+            const isAdmin = newMsg.sender_role === 'admin' || newMsg.sender_role === 'support';
+            
+            // 🌟 অ্যাডমিন মেসেজ পাঠালে এবং মডাল বন্ধ থাকলে আনরিড ব্যাজ দেখাবে
+            if (isAdmin && !isConciergeOpenRef.current) {
+              setHasUnread(true);
+            }
+
+            // 🌟 স্ক্রল কোনো প্রকার অ্যানিমেশন ছাড়া দ্রুত একদম নিচে পাঠাবে
+            if (isConciergeOpenRef.current) {
+              scrollToBottom(false);
+            }
           }
         }
       )
@@ -285,7 +319,7 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
 
   useEffect(() => {
     if (isConciergeOpen && messages.length > 0) {
-      scrollToBottom(true);
+      scrollToBottom(false);
     }
   }, [messages, isConciergeOpen]);
 
@@ -407,7 +441,7 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
           const exists = prev.some((m) => m.id === userMsg.id);
           return exists ? prev : [...prev, userMsg];
         });
-        setTimeout(() => scrollToBottom(true), 50);
+        scrollToBottom(false);
       }
     } catch (err) {
       console.error('Support message submission failed', err);
@@ -594,12 +628,31 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
         {/* Footer Section */}
         <div style={footerStyle}>
           <div style={footerLinksContainerStyle}>
+            {/* 🌟 Unread Red Badge Indicator Added Here */}
             <button 
               type="button" 
               onClick={handleOpenConcierge} 
-              style={footerLinkStyle}
+              style={{
+                ...footerLinkStyle,
+                position: 'relative',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px'
+              }}
             >
               CONCIERGE
+              {hasUnread && (
+                <span 
+                  style={{
+                    width: '6px',
+                    height: '6px',
+                    backgroundColor: '#ef4444',
+                    borderRadius: '50%',
+                    display: 'inline-block',
+                    boxShadow: '0 0 6px #ef4444'
+                  }} 
+                />
+              )}
             </button>
             <span style={dotStyle}>•</span>
             <a href="/terms" style={footerLinkStyle}>TERMS</a>
@@ -717,8 +770,8 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
                   rows={1}
                   placeholder="Type your message..."
                   value={supportMsg}
-                  onFocus={() => setTimeout(() => scrollToBottom(true), 250)}
-                  onClick={() => setTimeout(() => scrollToBottom(true), 250)}
+                  onFocus={() => setTimeout(() => scrollToBottom(false), 150)}
+                  onClick={() => setTimeout(() => scrollToBottom(false), 150)}
                   onChange={(e) => {
                     setSupportMsg(e.target.value);
                     e.target.style.height = 'auto';
