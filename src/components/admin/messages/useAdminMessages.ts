@@ -19,11 +19,36 @@ export const useAdminMessages = (
     setInternalActiveThreadId(propActiveThreadId);
   }, [propActiveThreadId]);
 
-  const activeThreadId = propActiveThreadId !== undefined && propActiveThreadId !== null ? propActiveThreadId : internalActiveThreadId;
+  const activeThreadId =
+    propActiveThreadId !== undefined && propActiveThreadId !== null ? propActiveThreadId : internalActiveThreadId;
+
+  // Mark Messages as Read in Database & Local State
+  const markThreadAsRead = async (threadId: string) => {
+    // 1. Optimistically update local state
+    setThreads((prevThreads) =>
+      prevThreads.map((t) => (t.id === threadId ? { ...t, unreadCount: 0 } : t))
+    );
+
+    // 2. Update database (Mark all unread messages from user as read)
+    try {
+      await supabase
+        .from('communications')
+        .update({ is_read: true })
+        .eq('channel_id', threadId)
+        .eq('is_read', false);
+    } catch (err) {
+      console.error('Failed to mark messages as read:', err);
+    }
+  };
 
   const handleSelectThread = (thread: Thread | null) => {
     const threadId = thread ? thread.id : null;
     setInternalActiveThreadId(threadId);
+
+    if (threadId && thread && thread.unreadCount > 0) {
+      markThreadAsRead(threadId);
+    }
+
     if (onSelectThread) {
       onSelectThread(threadId, thread);
     }
@@ -80,6 +105,10 @@ export const useAdminMessages = (
           const userEmail = (isSenderAdmin ? item.recipient_email : item.sender_email || '').toLowerCase();
           const threadId = item.channel_id || userEmail || 'general';
 
+          // Keep full raw ISO date string for smart date calculations on UI
+          const rawCreatedAt = item.created_at || new Date().toISOString();
+
+          // Message time format inside chat bubble
           const formattedTime = item.created_at
             ? new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
             : '';
@@ -116,7 +145,7 @@ export const useAdminMessages = (
               inviteSentAt: ambData?.inviteSentAt || '',
               unreadCount: item.is_read === false && !isSenderAdmin ? 1 : 0,
               lastMessage: item.message || '',
-              lastMessageTime: formattedTime,
+              lastMessageTime: rawCreatedAt, // Full date timestamp stored here
               messages: [],
             };
           } else {
@@ -133,7 +162,7 @@ export const useAdminMessages = (
           });
 
           threadMap[threadId].lastMessage = item.message || '';
-          threadMap[threadId].lastMessageTime = formattedTime;
+          threadMap[threadId].lastMessageTime = rawCreatedAt;
         });
 
         const updatedThreads = Object.values(threadMap);
@@ -180,6 +209,7 @@ export const useAdminMessages = (
     if (!inputText.trim() || !activeThread) return;
 
     const messageText = inputText.trim();
+    const nowIso = new Date().toISOString();
     const nowTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const tempId = String(Date.now());
 
@@ -196,7 +226,7 @@ export const useAdminMessages = (
           return {
             ...t,
             lastMessage: messageText,
-            lastMessageTime: nowTime,
+            lastMessageTime: nowIso,
             messages: [...t.messages, newMsg],
           };
         }
@@ -218,7 +248,7 @@ export const useAdminMessages = (
           message: messageText,
           channel_type: activeThread.role.toLowerCase(),
           channel_id: activeThread.id,
-          is_read: false,
+          is_read: true, // Admin message is already read
         },
       ]);
 
