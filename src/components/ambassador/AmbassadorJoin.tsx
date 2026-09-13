@@ -43,7 +43,7 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
   const [messages, setMessages] = useState<any[]>([]);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   
-  // 🌟 Unread Message Badge State & Modal Open Ref Tracking
+  //  Unread Message Badge State & Modal Open Ref Tracking
   const [hasUnread, setHasUnread] = useState(false);
   const isConciergeOpenRef = useRef(isConciergeOpen);
 
