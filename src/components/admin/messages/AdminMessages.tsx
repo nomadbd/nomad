@@ -166,9 +166,9 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
         </div>
       )}
 
-      {/* VIEW 1: THREAD LIST (FIXED RESPONSIVE LAYOUT) */}
+      {/* VIEW 1: THREAD LIST (OPTIMIZED 3-LINE MINIMAL LAYOUT) */}
       {!activeThreadId ? (
-        <div style={{ width: '100%', padding: '0 12px', boxSizing: 'border-box' }}>
+        <div style={{ width: '100%', padding: '0 4px', boxSizing: 'border-box' }}>
           {filteredThreads.length === 0 ? (
             <div style={styles.emptyTextStyle}>NO CONVERSATIONS FOUND</div>
           ) : (
@@ -182,8 +182,8 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
                   onClick={() => handleSelectThread(thread)}
                   style={{
                     display: 'flex',
-                    alignItems: 'center',
-                    padding: '12px 4px',
+                    alignItems: 'flex-start',
+                    padding: '12px 0',
                     borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
                     cursor: 'pointer',
                     gap: '12px',
@@ -192,7 +192,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
                     backgroundColor: 'transparent',
                   }}
                 >
-                  {/* AVATAR - SAFE LEFT ALIGNMENT */}
+                  {/* AVATAR - EXACT FLUSH LEFT */}
                   <div
                     style={{
                       width: '40px',
@@ -207,15 +207,17 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
                       alignItems: 'center',
                       justifyContent: 'center',
                       flexShrink: 0,
+                      marginTop: '2px',
                     }}
                   >
                     {initialLetter}
                   </div>
 
-                  {/* CARD CONTENT */}
-                  <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  {/* CARD CONTENT - 3 STRUCTURED LINES */}
+                  <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                    
                     {/* LINE 1: NAME / EMAIL + TIME */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', width: '100%' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', width: '100%' }}>
                       <span
                         style={{
                           color: '#ffffff',
@@ -244,65 +246,63 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
                       </span>
                     </div>
 
-                    {/* LINE 2: MESSAGE PREVIEW + ROLE & UNREAD BADGES */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', width: '100%' }}>
-                      <p
+                    {/* LINE 2: ROLE BADGE + UNREAD COUNT */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', width: '100%', marginTop: '1px' }}>
+                      <span
                         style={{
+                          fontSize: '8.5px',
+                          fontWeight: 600,
+                          letterSpacing: '0.5px',
+                          padding: '2px 6px',
+                          borderRadius: '4px',
+                          backgroundColor: 'rgba(255, 255, 255, 0.06)',
                           color: '#888888',
-                          fontSize: '12px',
-                          fontWeight: 300,
-                          margin: 0,
                           whiteSpace: 'nowrap',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          flex: 1,
-                          minWidth: 0,
+                          textTransform: 'uppercase',
                         }}
                       >
-                        {thread.lastMessage || 'No messages yet'}
-                      </p>
+                        {thread.role}
+                      </span>
 
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
-                        {/* SUBTLE ROLE BADGE */}
+                      {thread.unreadCount > 0 && (
                         <span
                           style={{
-                            fontSize: '8.5px',
-                            fontWeight: 600,
-                            letterSpacing: '0.4px',
-                            padding: '2px 6px',
-                            borderRadius: '4px',
-                            backgroundColor: 'rgba(255, 255, 255, 0.08)',
-                            color: '#aaaaaa',
-                            whiteSpace: 'nowrap',
-                            textTransform: 'uppercase',
+                            backgroundColor: '#ffffff',
+                            color: '#000000',
+                            fontWeight: 700,
+                            fontSize: '9px',
+                            minWidth: '16px',
+                            height: '16px',
+                            borderRadius: '8px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            padding: '0 4px',
+                            lineHeight: 1,
+                            flexShrink: 0,
                           }}
                         >
-                          {thread.role}
+                          {thread.unreadCount}
                         </span>
-
-                        {/* HIGH-CONTRAST UNREAD BADGE */}
-                        {thread.unreadCount > 0 && (
-                          <span
-                            style={{
-                              backgroundColor: '#ffffff',
-                              color: '#000000',
-                              fontWeight: 700,
-                              fontSize: '9.5px',
-                              minWidth: '16px',
-                              height: '16px',
-                              borderRadius: '8px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              padding: '0 4px',
-                              lineHeight: 1,
-                            }}
-                          >
-                            {thread.unreadCount}
-                          </span>
-                        )}
-                      </div>
+                      )}
                     </div>
+
+                    {/* LINE 3: MESSAGE PREVIEW (FULL WIDTH CAPACITY) */}
+                    <p
+                      style={{
+                        color: '#999999',
+                        fontSize: '12px',
+                        fontWeight: 300,
+                        margin: 0,
+                        marginTop: '2px',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        width: '100%',
+                      }}
+                    >
+                      {thread.lastMessage || 'No messages yet'}
+                    </p>
                   </div>
                 </div>
               );
@@ -444,7 +444,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
                 <span style={styles.drawerNameStyle}>{headerTitle}</span>
                 <span style={{ fontSize: '11px', color: '#888888' }}>{activeThread.userEmail}</span>
 
-                {/* SUBTLE GREY ROLE BADGE (BORDERLESS) */}
+                {/* SUBTLE GREY ROLE BADGE */}
                 <span
                   style={{
                     fontSize: '9px',
@@ -464,9 +464,8 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
               </div>
             </div>
 
-            {/* UNIFORM MONOCHROME QUICK ACTIONS */}
+            {/* QUICK ACTIONS */}
             <div style={{ display: 'flex', justifyContent: 'space-around', margin: '20px 0' }}>
-              {/* EMAIL ACTION */}
               <a
                 href={`mailto:${activeThread.userEmail}`}
                 target="_blank"
@@ -499,7 +498,6 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
                 </span>
               </a>
 
-              {/* CALL ACTION */}
               <a
                 href={activeThread.userPhone ? `tel:${activeThread.userPhone}` : '#'}
                 style={{
@@ -532,7 +530,6 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
                 </span>
               </a>
 
-              {/* WHATSAPP ACTION */}
               <a
                 href={
                   activeThread.userPhone
