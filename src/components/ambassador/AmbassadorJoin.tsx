@@ -206,7 +206,7 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
       const { data, error } = await supabase
         .from('communications')
         .select('*')
-        .or(`channel_id.eq.${channelId},sender_email.eq.${activeEmail}`)
+        .or(`channel_id.eq.${channelId},sender_email.eq.${activeEmail},recipient_email.eq.${activeEmail}`)
         .order('created_at', { ascending: true });
 
       if (!error && data) {
@@ -223,15 +223,32 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
     fetchMessages();
   }, [email, defaultEmail, customSupportEmail]);
 
-  // 🌟 REALTIME LISTENER FOR ADMIB RESPONSES
+  // 🌟 ১. ট্যাব সুইচ করে ব্যাকগ্রাউন্ড থেকে ফিরে আসলে অটো ফেচ
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchMessages();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', fetchMessages);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', fetchMessages);
+    };
+  }, [email, defaultEmail, customSupportEmail]);
+
+  // 🌟 ২. সুপাবেজ রিয়েলটাইম লিসেনার (অ্যাডমিন ও ইউজার দুই তরফ থেকেই মেসেজ সিঙ্ক)
   useEffect(() => {
     const activeEmail = (email.trim() || defaultEmail || customSupportEmail.trim()).toLowerCase();
-    const channelId = inviteData?.token || activeEmail || 'general_inquiry';
+    const token = inviteData?.token || '';
 
-    if (!channelId && !activeEmail) return;
+    if (!token && !activeEmail) return;
 
     const channel = supabase
-      .channel(`concierge_realtime:${channelId}`)
+      .channel(`concierge_realtime:${token || activeEmail}`)
       .on(
         'postgres_changes',
         {
@@ -241,14 +258,16 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
         },
         (payload) => {
           const newMsg = payload.new;
-          // ম্যাচ করানো হচ্ছে যে মেসেজটি এই ইউজারের চ্যানেলের কি না
+          const msgSender = (newMsg.sender_email || '').toLowerCase();
+          const msgRecipient = (newMsg.recipient_email || '').toLowerCase();
+          const msgChannel = newMsg.channel_id || '';
+
           const isTargetMsg =
-            newMsg.channel_id === channelId ||
-            (newMsg.sender_email && newMsg.sender_email.toLowerCase() === activeEmail);
+            (token && msgChannel === token) ||
+            (activeEmail && (msgChannel === activeEmail || msgSender === activeEmail || msgRecipient === activeEmail));
 
           if (isTargetMsg) {
             setMessages((prev) => {
-              // ডুপ্লিকেট রোধের চেক
               const exists = prev.some((m) => m.id === newMsg.id);
               if (exists) return prev;
               return [...prev, newMsg];
@@ -384,16 +403,9 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
           ? data[0]
           : { id: 'user-' + Date.now(), sender_role: 'ambassador', message: currentText };
 
-        const autoReplyMsg = {
-          id: 'auto-' + Date.now(),
-          sender_role: 'admin',
-          message: 'Message logged with NOMAD Desk. A representative will review and respond shortly.',
-          created_at: new Date().toISOString()
-        };
-
         setMessages((prev) => {
           const exists = prev.some((m) => m.id === userMsg.id);
-          return exists ? prev : [...prev, userMsg, autoReplyMsg];
+          return exists ? prev : [...prev, userMsg];
         });
         setTimeout(() => scrollToBottom(true), 50);
       }
