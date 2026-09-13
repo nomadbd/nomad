@@ -1,4 +1,4 @@
-import { supabase } from './supabaseClient'; // আপনার প্রজেক্টের supabase client পাথ অনুযায়ী প্রয়োজন হলে পরিবর্তন করুন
+import { supabase } from '../supabaseClient';
 
 function urlBase64ToUint8Array(base64String: string) {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
