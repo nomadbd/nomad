@@ -23,19 +23,23 @@ export const useAdminMessages = (
     propActiveThreadId !== undefined && propActiveThreadId !== null ? propActiveThreadId : internalActiveThreadId;
 
   // Mark Messages as Read in Database & Local State
-  const markThreadAsRead = async (threadId: string) => {
+  const markThreadAsRead = async (thread: Thread) => {
     // 1. Optimistically update local state
     setThreads((prevThreads) =>
-      prevThreads.map((t) => (t.id === threadId ? { ...t, unreadCount: 0 } : t))
+      prevThreads.map((t) => (t.id === thread.id ? { ...t, unreadCount: 0 } : t))
     );
 
-    // 2. Update database (Mark all unread messages from user as read)
+    // 2. Update database (Check both channel_id and userEmail to handle NULL channel_id rows)
     try {
-      await supabase
+      const { error } = await supabase
         .from('communications')
         .update({ is_read: true })
-        .eq('channel_id', threadId)
+        .or(`channel_id.eq.${thread.id},sender_email.eq.${thread.userEmail}`)
         .eq('is_read', false);
+
+      if (error) {
+        console.error('Failed to mark messages as read in DB:', error.message);
+      }
     } catch (err) {
       console.error('Failed to mark messages as read:', err);
     }
@@ -45,8 +49,8 @@ export const useAdminMessages = (
     const threadId = thread ? thread.id : null;
     setInternalActiveThreadId(threadId);
 
-    if (threadId && thread && thread.unreadCount > 0) {
-      markThreadAsRead(threadId);
+    if (thread && thread.unreadCount > 0) {
+      markThreadAsRead(thread);
     }
 
     if (onSelectThread) {
@@ -105,10 +109,8 @@ export const useAdminMessages = (
           const userEmail = (isSenderAdmin ? item.recipient_email : item.sender_email || '').toLowerCase();
           const threadId = item.channel_id || userEmail || 'general';
 
-          // Keep full raw ISO date string for smart date calculations on UI
           const rawCreatedAt = item.created_at || new Date().toISOString();
 
-          // Message time format inside chat bubble
           const formattedTime = item.created_at
             ? new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
             : '';
@@ -145,7 +147,7 @@ export const useAdminMessages = (
               inviteSentAt: ambData?.inviteSentAt || '',
               unreadCount: item.is_read === false && !isSenderAdmin ? 1 : 0,
               lastMessage: item.message || '',
-              lastMessageTime: rawCreatedAt, // Full date timestamp stored here
+              lastMessageTime: rawCreatedAt,
               messages: [],
             };
           } else {
@@ -248,7 +250,7 @@ export const useAdminMessages = (
           message: messageText,
           channel_type: activeThread.role.toLowerCase(),
           channel_id: activeThread.id,
-          is_read: true, // Admin message is already read
+          is_read: true,
         },
       ]);
 
