@@ -924,7 +924,7 @@ const modalBoxStyle: React.CSSProperties = {
 
 const modalHeaderStyle: React.CSSProperties = {
   display: 'flex',
-  justify.content: 'space-between',
+  justifyContent: 'space-between',
   alignItems: 'center',
   padding: '16px 16px 12px 16px',
   borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
