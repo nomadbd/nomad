@@ -166,39 +166,47 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
         </div>
       )}
 
-      {/* VIEW 1: THREAD LIST (MINIMAL & PREMIUM OVERHAUL) */}
+      {/* VIEW 1: THREAD LIST (OPTIMIZED MONOCHROME LAYOUT) */}
       {!activeThreadId ? (
-        <div style={styles.listContainerStyle}>
+        <div style={{ ...styles.listContainerStyle, padding: '0 8px' }}>
           {filteredThreads.length === 0 ? (
             <div style={styles.emptyTextStyle}>NO CONVERSATIONS FOUND</div>
           ) : (
             filteredThreads.map((thread) => {
-              const initialLetter = thread.userName.charAt(0).toUpperCase();
+              const displayName = thread.userName && thread.userName.trim() ? thread.userName : thread.userEmail;
+              const initialLetter = displayName.charAt(0).toUpperCase();
+
               return (
                 <div
                   key={thread.id}
                   onClick={() => handleSelectThread(thread)}
                   style={{
-                    ...styles.whatsappCardStyle,
-                    padding: '14px 16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '12px 6px',
                     borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
-                    backgroundColor: 'transparent',
                     cursor: 'pointer',
-                    transition: 'background-color 0.2s ease',
+                    gap: '10px',
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    backgroundColor: 'transparent',
+                    transition: 'background-color 0.15s ease',
                   }}
                 >
-                  {/* AVATAR */}
+                  {/* AVATAR - SAFE LEFT ALIGNMENT */}
                   <div
                     style={{
-                      ...styles.avatarStyle,
-                      width: '44px',
-                      height: '44px',
+                      width: '40px',
+                      height: '40px',
                       borderRadius: '50%',
                       backgroundColor: 'rgba(255, 255, 255, 0.06)',
                       border: '1px solid rgba(255, 255, 255, 0.1)',
                       color: '#ffffff',
-                      fontSize: '15px',
-                      fontWeight: 500,
+                      fontSize: '14px',
+                      fontWeight: 600,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
                       flexShrink: 0,
                     }}
                   >
@@ -206,25 +214,30 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
                   </div>
 
                   {/* CARD CONTENT */}
-                  <div style={{ ...styles.cardContentStyle, marginLeft: '12px', flex: 1, overflow: 'hidden' }}>
-                    {/* USERNAME & TIME */}
-                    <div style={styles.threadHeaderRow}>
+                  <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                    {/* LINE 1: NAME / EMAIL + TIME */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '8px' }}>
                       <span
                         style={{
-                          ...styles.userNameStyle,
                           color: '#ffffff',
                           fontWeight: 500,
-                          fontSize: '13.5px',
-                          letterSpacing: '0.2px',
+                          fontSize: '13px',
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          flex: 1,
+                          minWidth: 0,
                         }}
+                        title={displayName}
                       >
-                        {thread.userName}
+                        {displayName}
                       </span>
                       <span
                         style={{
-                          ...styles.timeStyle,
                           color: '#666666',
                           fontSize: '10px',
+                          whiteSpace: 'nowrap',
+                          flexShrink: 0,
                           fontWeight: 400,
                         }}
                       >
@@ -232,52 +245,57 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
                       </span>
                     </div>
 
-                    {/* PREVIEW MESSAGE & BADGES */}
-                    <div style={{ ...styles.threadSubRow, marginTop: '4px', alignItems: 'center' }}>
+                    {/* LINE 2: MESSAGE PREVIEW + ROLE & UNREAD BADGES */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
                       <p
                         style={{
-                          ...styles.previewMessageStyle,
                           color: '#888888',
-                          fontSize: '12px',
+                          fontSize: '11.5px',
                           fontWeight: 300,
+                          margin: 0,
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
                           flex: 1,
-                          marginRight: '8px',
+                          minWidth: 0,
                         }}
                       >
-                        {thread.lastMessage}
+                        {thread.lastMessage || 'No messages yet'}
                       </p>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
-                        {/* ROLE BADGE */}
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flexShrink: 0 }}>
+                        {/* SUBTLE ROLE BADGE */}
                         <span
                           style={{
-                            fontSize: '9px',
+                            fontSize: '8.5px',
                             fontWeight: 600,
-                            letterSpacing: '0.6px',
-                            padding: '2px 7px',
+                            letterSpacing: '0.4px',
+                            padding: '2px 6px',
                             borderRadius: '4px',
                             backgroundColor: 'rgba(255, 255, 255, 0.08)',
                             color: '#aaaaaa',
+                            whiteSpace: 'nowrap',
                             textTransform: 'uppercase',
                           }}
                         >
                           {thread.role}
                         </span>
 
-                        {/* UNREAD COUNT BADGE (HIGH-CONTRAST MONOCHROME) */}
+                        {/* HIGH-CONTRAST UNREAD BADGE */}
                         {thread.unreadCount > 0 && (
                           <span
                             style={{
                               backgroundColor: '#ffffff',
                               color: '#000000',
                               fontWeight: 700,
-                              fontSize: '10px',
-                              minWidth: '18px',
-                              height: '18px',
-                              borderRadius: '9px',
+                              fontSize: '9.5px',
+                              minWidth: '16px',
+                              height: '16px',
+                              borderRadius: '8px',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
-                              padding: '0 5px',
+                              padding: '0 4px',
                               lineHeight: 1,
                             }}
                           >
