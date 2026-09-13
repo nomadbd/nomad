@@ -140,7 +140,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
   }
 
   return (
-    <div style={styles.containerStyle}>
+    <div style={{ ...styles.containerStyle, padding: 0 }}>
       {/* FILTER BAR */}
       {isFilterOpen && !activeThreadId && (
         <div style={styles.headerFilterBarStyle}>
@@ -166,9 +166,9 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
         </div>
       )}
 
-      {/* VIEW 1: THREAD LIST (OPTIMIZED MONOCHROME LAYOUT) */}
+      {/* VIEW 1: THREAD LIST (FIXED RESPONSIVE LAYOUT) */}
       {!activeThreadId ? (
-        <div style={{ ...styles.listContainerStyle, padding: '0 8px' }}>
+        <div style={{ width: '100%', padding: '0 12px', boxSizing: 'border-box' }}>
           {filteredThreads.length === 0 ? (
             <div style={styles.emptyTextStyle}>NO CONVERSATIONS FOUND</div>
           ) : (
@@ -183,14 +183,13 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
                   style={{
                     display: 'flex',
                     alignItems: 'center',
-                    padding: '12px 6px',
-                    borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+                    padding: '12px 4px',
+                    borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
                     cursor: 'pointer',
-                    gap: '10px',
+                    gap: '12px',
                     width: '100%',
                     boxSizing: 'border-box',
                     backgroundColor: 'transparent',
-                    transition: 'background-color 0.15s ease',
                   }}
                 >
                   {/* AVATAR - SAFE LEFT ALIGNMENT */}
@@ -200,7 +199,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
                       height: '40px',
                       borderRadius: '50%',
                       backgroundColor: 'rgba(255, 255, 255, 0.06)',
-                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      border: '1px solid rgba(255, 255, 255, 0.12)',
                       color: '#ffffff',
                       fontSize: '14px',
                       fontWeight: 600,
@@ -214,14 +213,14 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
                   </div>
 
                   {/* CARD CONTENT */}
-                  <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                  <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     {/* LINE 1: NAME / EMAIL + TIME */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '8px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', width: '100%' }}>
                       <span
                         style={{
                           color: '#ffffff',
                           fontWeight: 500,
-                          fontSize: '13px',
+                          fontSize: '13.5px',
                           whiteSpace: 'nowrap',
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
@@ -246,11 +245,11 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
                     </div>
 
                     {/* LINE 2: MESSAGE PREVIEW + ROLE & UNREAD BADGES */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', width: '100%' }}>
                       <p
                         style={{
                           color: '#888888',
-                          fontSize: '11.5px',
+                          fontSize: '12px',
                           fontWeight: 300,
                           margin: 0,
                           whiteSpace: 'nowrap',
@@ -263,7 +262,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
                         {thread.lastMessage || 'No messages yet'}
                       </p>
 
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flexShrink: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
                         {/* SUBTLE ROLE BADGE */}
                         <span
                           style={{
