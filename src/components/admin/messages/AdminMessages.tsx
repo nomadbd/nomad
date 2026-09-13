@@ -30,20 +30,19 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
   } = useAdminMessages(searchQuery, propActiveThreadId, onSelectThread);
 
   const [viewportHeight, setViewportHeight] = useState<number | null>(null);
-  
+
   // TRACK READ THREADS LOCALLY SO BADGE CLEARS IMMEDIATELY ON CLICK
   const [readThreadIds, setReadThreadIds] = useState<Record<string, boolean>>({});
 
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Dynamic Smart Timestamp Formatter
+  // Dynamic Smart Timestamp Formatter for List View
   const formatThreadTime = (dateInput?: string | number | Date) => {
     if (!dateInput) return '';
 
     const date = new Date(dateInput);
 
-    // If dateInput is invalid ISO or just a raw time string like "04:52 PM"
     if (isNaN(date.getTime())) {
       return String(dateInput);
     }
@@ -54,20 +53,32 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
     startOfYesterday.setDate(startOfYesterday.getDate() - 1);
 
     if (date >= startOfToday) {
-      // Today: 04:52 PM
       return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
     } else if (date >= startOfYesterday) {
-      // Yesterday
       return 'Yesterday';
     } else {
       const diffDays = Math.floor((startOfToday.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
       if (diffDays < 6) {
-        // Within last 7 days: Mon, Tue, etc.
         return date.toLocaleDateString('en-US', { weekday: 'short' });
       }
-      // Older: Sep 12 or 12/09/26
       return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     }
+  };
+
+  // Helper for Chat Date Separator Header
+  const getDateLabel = (dateInput?: string | number | Date) => {
+    if (!dateInput) return null;
+    const date = new Date(dateInput);
+    if (isNaN(date.getTime())) return null;
+
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfYesterday = new Date(startOfToday);
+    startOfYesterday.setDate(startOfYesterday.getDate() - 1);
+
+    if (date >= startOfToday) return 'Today';
+    if (date >= startOfYesterday) return 'Yesterday';
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
   // Handle Thread Click & Mark as Read
@@ -168,7 +179,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
   if (loading && filteredThreads.length === 0) {
     return (
       <div style={styles.statusContainerStyle}>
-        <span>FETCHING CHATS...</span>
+        <span style={{ color: '#cccccc' }}>FETCHING CHATS...</span>
       </div>
     );
   }
@@ -182,12 +193,14 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
     );
   }
 
+  let lastRenderedDate: string | null = null;
+
   return (
     <div style={{ ...styles.containerStyle, padding: 0 }}>
       {/* FILTER BAR */}
       {isFilterOpen && !activeThreadId && (
         <div style={styles.headerFilterBarStyle}>
-          <span style={{ fontSize: '8px', color: '#666666', fontWeight: 600, letterSpacing: '2.5px' }}>
+          <span style={{ fontSize: '8px', color: '#aaaaaa', fontWeight: 600, letterSpacing: '2.5px' }}>
             FILTER BY ROLE
           </span>
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
@@ -197,9 +210,9 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
                 onClick={() => setRoleFilter(role)}
                 style={{
                   ...styles.filterChipStyle,
-                  backgroundColor: roleFilter === role ? '#ffffff' : 'rgba(255, 255, 255, 0.05)',
-                  color: roleFilter === role ? '#000000' : '#888888',
-                  borderColor: roleFilter === role ? '#ffffff' : 'rgba(255, 255, 255, 0.1)',
+                  backgroundColor: roleFilter === role ? '#ffffff' : 'rgba(255, 255, 255, 0.08)',
+                  color: roleFilter === role ? '#000000' : '#bbbbbb',
+                  borderColor: roleFilter === role ? '#ffffff' : 'rgba(255, 255, 255, 0.15)',
                 }}
               >
                 {role}
@@ -213,12 +226,12 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
       {!activeThreadId ? (
         <div style={{ width: '100%', padding: '0 4px', boxSizing: 'border-box' }}>
           {filteredThreads.length === 0 ? (
-            <div style={styles.emptyTextStyle}>NO CONVERSATIONS FOUND</div>
+            <div style={{ ...styles.emptyTextStyle, color: '#aaaaaa' }}>NO CONVERSATIONS FOUND</div>
           ) : (
             filteredThreads.map((thread) => {
               const displayName = thread.userName && thread.userName.trim() ? thread.userName : thread.userEmail;
               const initialLetter = displayName.charAt(0).toUpperCase();
-              
+
               // Calculate real unread status locally
               const isRead = readThreadIds[thread.id];
               const displayUnread = isRead ? 0 : (thread.unreadCount ?? 0);
@@ -230,14 +243,18 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
                   style={{
                     display: 'flex',
                     alignItems: 'flex-start',
-                    padding: '12px 0',
-                    borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
+                    padding: '12px 8px',
+                    borderRadius: '8px',
+                    borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
                     cursor: 'pointer',
                     gap: '12px',
                     width: '100%',
                     boxSizing: 'border-box',
                     backgroundColor: 'transparent',
+                    transition: 'background-color 0.15s ease',
                   }}
+                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.04)')}
+                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                 >
                   {/* AVATAR */}
                   <div
@@ -245,8 +262,8 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
                       width: '40px',
                       height: '40px',
                       borderRadius: '50%',
-                      backgroundColor: 'rgba(255, 255, 255, 0.06)',
-                      border: '1px solid rgba(255, 255, 255, 0.12)',
+                      backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                      border: '1px solid rgba(255, 255, 255, 0.18)',
                       color: '#ffffff',
                       fontSize: '14px',
                       fontWeight: 600,
@@ -261,8 +278,8 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
                   </div>
 
                   {/* CARD CONTENT */}
-                  <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                    
+                  <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+
                     {/* LINE 1: NAME / EMAIL + SMART TIME */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', width: '100%' }}>
                       <span
@@ -282,8 +299,8 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
                       </span>
                       <span
                         style={{
-                          color: '#666666',
-                          fontSize: '10px',
+                          color: '#aaaaaa', // BRIGHTENED GREY
+                          fontSize: '11px',
                           whiteSpace: 'nowrap',
                           flexShrink: 0,
                           fontWeight: 400,
@@ -294,7 +311,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
                     </div>
 
                     {/* LINE 2: ROLE BADGE + UNREAD COUNT */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', width: '100%', marginTop: '1px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', width: '100%' }}>
                       <span
                         style={{
                           fontSize: '8.5px',
@@ -302,8 +319,8 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
                           letterSpacing: '0.5px',
                           padding: '2px 6px',
                           borderRadius: '4px',
-                          backgroundColor: 'rgba(255, 255, 255, 0.06)',
-                          color: '#888888',
+                          backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                          color: '#bbbbbb', // BRIGHTENED GREY
                           whiteSpace: 'nowrap',
                           textTransform: 'uppercase',
                         }}
@@ -338,11 +355,11 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
                     {/* LINE 3: MESSAGE PREVIEW */}
                     <p
                       style={{
-                        color: '#999999',
+                        color: '#cccccc', // BRIGHTENED GREY
                         fontSize: '12px',
                         fontWeight: 300,
                         margin: 0,
-                        marginTop: '2px',
+                        marginTop: '1px',
                         whiteSpace: 'nowrap',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
@@ -380,8 +397,10 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
             </div>
 
             <div style={styles.headerInfoStyle} onClick={openDrawer}>
-              <span style={styles.headerNameTitle}>{headerTitle}</span>
-              {headerSubtitle && <span style={styles.headerSubtitleStyle}>{headerSubtitle}</span>}
+              <span style={{ ...styles.headerNameTitle, color: '#ffffff' }}>{headerTitle}</span>
+              {headerSubtitle && (
+                <span style={{ ...styles.headerSubtitleStyle, color: '#bbbbbb' }}>{headerSubtitle}</span>
+              )}
             </div>
           </div>
 
@@ -390,34 +409,82 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {activeThread?.messages.map((msg) => {
                 const isAdmin = msg.sender === 'ADMIN';
+
+                // Date separator logic
+                const currentDateLabel = getDateLabel(activeThread.lastMessageTime);
+                let showDateDivider = false;
+                if (currentDateLabel && currentDateLabel !== lastRenderedDate) {
+                  showDateDivider = true;
+                  lastRenderedDate = currentDateLabel;
+                }
+
                 return (
-                  <div
-                    key={msg.id}
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: isAdmin ? 'flex-end' : 'flex-start',
-                    }}
-                  >
+                  <React.Fragment key={msg.id}>
+                    {/* DATE DIVIDER */}
+                    {showDateDivider && (
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'center',
+                          margin: '14px 0 6px 0',
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontSize: '10px',
+                            fontWeight: 500,
+                            color: '#dddddd',
+                            backgroundColor: 'rgba(255, 255, 255, 0.12)',
+                            padding: '4px 12px',
+                            borderRadius: '12px',
+                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                            letterSpacing: '0.4px',
+                          }}
+                        >
+                          {currentDateLabel}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* CHAT BUBBLE */}
                     <div
                       style={{
-                        maxWidth: '85%',
-                        padding: '10px 14px',
-                        fontSize: '13px',
-                        lineHeight: '1.45',
-                        fontWeight: 300,
-                        backgroundColor: isAdmin ? 'rgba(255, 255, 255, 0.12)' : 'rgba(255, 255, 255, 0.06)',
-                        color: '#ffffff',
-                        borderRadius: isAdmin ? '14px 14px 2px 14px' : '14px 14px 14px 2px',
-                        border: isAdmin ? '1px solid rgba(255, 255, 255, 0.18)' : '1px solid rgba(255, 255, 255, 0.08)',
-                        wordBreak: 'break-word',
-                        whiteSpace: 'pre-wrap',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: isAdmin ? 'flex-end' : 'flex-start',
                       }}
                     >
-                      {msg.text}
+                      <div
+                        style={{
+                          maxWidth: '85%',
+                          padding: '10px 14px',
+                          fontSize: '13px',
+                          lineHeight: '1.45',
+                          fontWeight: 300,
+                          backgroundColor: isAdmin ? 'rgba(255, 255, 255, 0.14)' : 'rgba(255, 255, 255, 0.08)',
+                          color: '#ffffff',
+                          borderRadius: isAdmin ? '14px 14px 2px 14px' : '14px 14px 14px 2px',
+                          border: isAdmin ? '1px solid rgba(255, 255, 255, 0.2)' : '1px solid rgba(255, 255, 255, 0.1)',
+                          wordBreak: 'break-word',
+                          whiteSpace: 'pre-wrap',
+                        }}
+                      >
+                        {msg.text}
+                      </div>
+                      {/* BRIGHTENED TIMESTAMP UNDER BUBBLE */}
+                      <span
+                        style={{
+                          fontSize: '10.5px',
+                          color: '#aaaaaa', // BRIGHTENED GREY FOR VISIBILITY
+                          marginTop: '3px',
+                          padding: '0 2px',
+                          fontWeight: 400,
+                        }}
+                      >
+                        {msg.timestamp}
+                      </span>
                     </div>
-                    <span style={styles.msgTimeStyle}>{msg.timestamp}</span>
-                  </div>
+                  </React.Fragment>
                 );
               })}
             </div>
@@ -459,8 +526,8 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
                   alignItems: 'center',
                   justifyContent: 'center',
                   flexShrink: 0,
-                  opacity: !inputText.trim() ? 0.25 : 1,
-                  backgroundColor: inputText.trim() ? '#ffffff' : 'rgba(255, 255, 255, 0.1)',
+                  opacity: !inputText.trim() ? 0.3 : 1,
+                  backgroundColor: inputText.trim() ? '#ffffff' : 'rgba(255, 255, 255, 0.12)',
                   color: inputText.trim() ? '#000000' : '#ffffff',
                   cursor: !inputText.trim() ? 'not-allowed' : 'pointer',
                   transition: 'all 0.2s ease',
@@ -490,7 +557,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
               </div>
               <div style={styles.drawerHeroTextStyle}>
                 <span style={styles.drawerNameStyle}>{headerTitle}</span>
-                <span style={{ fontSize: '11px', color: '#888888' }}>{activeThread.userEmail}</span>
+                <span style={{ fontSize: '11px', color: '#aaaaaa' }}>{activeThread.userEmail}</span>
 
                 <span
                   style={{
@@ -499,8 +566,8 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
                     letterSpacing: '0.8px',
                     padding: '3px 8px',
                     borderRadius: '4px',
-                    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-                    color: '#aaaaaa',
+                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                    color: '#cccccc',
                     display: 'inline-block',
                     width: 'fit-content',
                     marginTop: '6px',
@@ -519,20 +586,20 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
                 rel="noopener noreferrer"
                 style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', textDecoration: 'none' }}
               >
-                <div style={{ width: '46px', height: '46px', borderRadius: '50%', backgroundColor: 'rgba(255, 255, 255, 0.06)', border: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e5e5' }}>
+                <div style={{ width: '46px', height: '46px', borderRadius: '50%', backgroundColor: 'rgba(255, 255, 255, 0.08)', border: '1px solid rgba(255, 255, 255, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff' }}>
                   <EmailIcon />
                 </div>
-                <span style={{ fontSize: '9px', fontWeight: 600, color: '#777777', letterSpacing: '0.8px' }}>EMAIL</span>
+                <span style={{ fontSize: '9px', fontWeight: 600, color: '#aaaaaa', letterSpacing: '0.8px' }}>EMAIL</span>
               </a>
 
               <a
                 href={activeThread.userPhone ? `tel:${activeThread.userPhone}` : '#'}
                 style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', textDecoration: 'none', opacity: activeThread.userPhone ? 1 : 0.3, pointerEvents: activeThread.userPhone ? 'auto' : 'none' }}
               >
-                <div style={{ width: '46px', height: '46px', borderRadius: '50%', backgroundColor: 'rgba(255, 255, 255, 0.06)', border: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e5e5' }}>
+                <div style={{ width: '46px', height: '46px', borderRadius: '50%', backgroundColor: 'rgba(255, 255, 255, 0.08)', border: '1px solid rgba(255, 255, 255, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff' }}>
                   <CallIcon />
                 </div>
-                <span style={{ fontSize: '9px', fontWeight: 600, color: '#777777', letterSpacing: '0.8px' }}>CALL</span>
+                <span style={{ fontSize: '9px', fontWeight: 600, color: '#aaaaaa', letterSpacing: '0.8px' }}>CALL</span>
               </a>
 
               <a
@@ -541,10 +608,10 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
                 rel="noopener noreferrer"
                 style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', textDecoration: 'none', opacity: activeThread.userPhone ? 1 : 0.3, pointerEvents: activeThread.userPhone ? 'auto' : 'none' }}
               >
-                <div style={{ width: '46px', height: '46px', borderRadius: '50%', backgroundColor: 'rgba(255, 255, 255, 0.06)', border: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e5e5' }}>
+                <div style={{ width: '46px', height: '46px', borderRadius: '50%', backgroundColor: 'rgba(255, 255, 255, 0.08)', border: '1px solid rgba(255, 255, 255, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff' }}>
                   <MessageIcon />
                 </div>
-                <span style={{ fontSize: '9px', fontWeight: 600, color: '#777777', letterSpacing: '0.8px' }}>WHATSAPP</span>
+                <span style={{ fontSize: '9px', fontWeight: 600, color: '#aaaaaa', letterSpacing: '0.8px' }}>WHATSAPP</span>
               </a>
             </div>
 
@@ -552,26 +619,26 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
             <div style={styles.infoListStyle}>
               <div style={styles.infoRowStyle}>
                 <span style={styles.infoLabelStyle}>Email Address</span>
-                <span style={styles.infoValueStyle}>{activeThread.userEmail}</span>
+                <span style={{ ...styles.infoValueStyle, color: '#ffffff' }}>{activeThread.userEmail}</span>
               </div>
               <div style={styles.infoRowStyle}>
                 <span style={styles.infoLabelStyle}>Phone Number</span>
-                <span style={styles.infoValueStyle}>{activeThread.userPhone || 'N/A'}</span>
+                <span style={{ ...styles.infoValueStyle, color: '#ffffff' }}>{activeThread.userPhone || 'N/A'}</span>
               </div>
               <div style={styles.infoRowStyle}>
                 <span style={styles.infoLabelStyle}>Account Role</span>
-                <span style={styles.infoValueStyle}>{activeThread.role}</span>
+                <span style={{ ...styles.infoValueStyle, color: '#ffffff' }}>{activeThread.role}</span>
               </div>
               {activeThread.createdAt && (
                 <div style={styles.infoRowStyle}>
                   <span style={styles.infoLabelStyle}>Registered Date</span>
-                  <span style={styles.infoValueStyle}>{formatDate(activeThread.createdAt)}</span>
+                  <span style={{ ...styles.infoValueStyle, color: '#ffffff' }}>{formatDate(activeThread.createdAt)}</span>
                 </div>
               )}
               {activeThread.inviteSentAt && (
                 <div style={styles.infoRowStyle}>
                   <span style={styles.infoLabelStyle}>Invite Sent Date</span>
-                  <span style={styles.infoValueStyle}>{formatDate(activeThread.inviteSentAt)}</span>
+                  <span style={{ ...styles.infoValueStyle, color: '#ffffff' }}>{formatDate(activeThread.inviteSentAt)}</span>
                 </div>
               )}
             </div>
