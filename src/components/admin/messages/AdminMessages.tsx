@@ -33,6 +33,38 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  // Dynamic Smart Timestamp Logic for Chat List
+  const formatThreadTime = (dateStr?: string) => {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    
+    // Fallback if dateStr is already a formatted string like "04:52 PM" without full date info
+    if (isNaN(date.getTime())) {
+      return dateStr;
+    }
+
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfYesterday = new Date(startOfToday);
+    startOfYesterday.setDate(startOfYesterday.getDate() - 1);
+
+    if (date >= startOfToday) {
+      // Today: show time only (04:52 PM)
+      return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+    } else if (date >= startOfYesterday) {
+      // Yesterday: show 'Yesterday'
+      return 'Yesterday';
+    } else {
+      const diffDays = Math.floor((startOfToday.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+      if (diffDays < 6) {
+        // Within last 7 days: show day name (Mon, Tue, etc.)
+        return date.toLocaleDateString('en-US', { weekday: 'short' });
+      }
+      // Older than 7 days: show Date (Sep 12 or 12/09/26)
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+  };
+
   // Mobile Visual Viewport & Keyboard Handler
   useEffect(() => {
     if (!activeThreadId) return;
@@ -216,7 +248,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
                   {/* CARD CONTENT - 3 STRUCTURED LINES */}
                   <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '3px' }}>
                     
-                    {/* LINE 1: NAME / EMAIL + TIME */}
+                    {/* LINE 1: NAME / EMAIL + SMART TIME */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', width: '100%' }}>
                       <span
                         style={{
@@ -242,7 +274,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
                           fontWeight: 400,
                         }}
                       >
-                        {thread.lastMessageTime}
+                        {formatThreadTime(thread.lastMessageTime)}
                       </span>
                     </div>
 
