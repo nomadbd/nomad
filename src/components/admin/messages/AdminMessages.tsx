@@ -166,7 +166,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
         </div>
       )}
 
-      {/* VIEW 1: THREAD LIST */}
+      {/* VIEW 1: THREAD LIST (MINIMAL & PREMIUM OVERHAUL) */}
       {!activeThreadId ? (
         <div style={styles.listContainerStyle}>
           {filteredThreads.length === 0 ? (
@@ -178,19 +178,76 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
                 <div
                   key={thread.id}
                   onClick={() => handleSelectThread(thread)}
-                  style={styles.whatsappCardStyle}
+                  style={{
+                    ...styles.whatsappCardStyle,
+                    padding: '14px 16px',
+                    borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+                    backgroundColor: 'transparent',
+                    cursor: 'pointer',
+                    transition: 'background-color 0.2s ease',
+                  }}
                 >
-                  <div style={styles.avatarStyle}>{initialLetter}</div>
+                  {/* AVATAR */}
+                  <div
+                    style={{
+                      ...styles.avatarStyle,
+                      width: '44px',
+                      height: '44px',
+                      borderRadius: '50%',
+                      backgroundColor: 'rgba(255, 255, 255, 0.06)',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      color: '#ffffff',
+                      fontSize: '15px',
+                      fontWeight: 500,
+                      flexShrink: 0,
+                    }}
+                  >
+                    {initialLetter}
+                  </div>
 
-                  <div style={styles.cardContentStyle}>
+                  {/* CARD CONTENT */}
+                  <div style={{ ...styles.cardContentStyle, marginLeft: '12px', flex: 1, overflow: 'hidden' }}>
+                    {/* USERNAME & TIME */}
                     <div style={styles.threadHeaderRow}>
-                      <span style={styles.userNameStyle}>{thread.userName}</span>
-                      <span style={styles.timeStyle}>{thread.lastMessageTime}</span>
+                      <span
+                        style={{
+                          ...styles.userNameStyle,
+                          color: '#ffffff',
+                          fontWeight: 500,
+                          fontSize: '13.5px',
+                          letterSpacing: '0.2px',
+                        }}
+                      >
+                        {thread.userName}
+                      </span>
+                      <span
+                        style={{
+                          ...styles.timeStyle,
+                          color: '#666666',
+                          fontSize: '10px',
+                          fontWeight: 400,
+                        }}
+                      >
+                        {thread.lastMessageTime}
+                      </span>
                     </div>
 
-                    <div style={styles.threadSubRow}>
-                      <p style={styles.previewMessageStyle}>{thread.lastMessage}</p>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    {/* PREVIEW MESSAGE & BADGES */}
+                    <div style={{ ...styles.threadSubRow, marginTop: '4px', alignItems: 'center' }}>
+                      <p
+                        style={{
+                          ...styles.previewMessageStyle,
+                          color: '#888888',
+                          fontSize: '12px',
+                          fontWeight: 300,
+                          flex: 1,
+                          marginRight: '8px',
+                        }}
+                      >
+                        {thread.lastMessage}
+                      </p>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+                        {/* ROLE BADGE */}
                         <span
                           style={{
                             fontSize: '9px',
@@ -200,11 +257,33 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
                             borderRadius: '4px',
                             backgroundColor: 'rgba(255, 255, 255, 0.08)',
                             color: '#aaaaaa',
+                            textTransform: 'uppercase',
                           }}
                         >
                           {thread.role}
                         </span>
-                        {thread.unreadCount > 0 && <span style={styles.unreadBadgeStyle}>{thread.unreadCount}</span>}
+
+                        {/* UNREAD COUNT BADGE (HIGH-CONTRAST MONOCHROME) */}
+                        {thread.unreadCount > 0 && (
+                          <span
+                            style={{
+                              backgroundColor: '#ffffff',
+                              color: '#000000',
+                              fontWeight: 700,
+                              fontSize: '10px',
+                              minWidth: '18px',
+                              height: '18px',
+                              borderRadius: '9px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              padding: '0 5px',
+                              lineHeight: 1,
+                            }}
+                          >
+                            {thread.unreadCount}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -347,7 +426,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
               <div style={styles.drawerHeroTextStyle}>
                 <span style={styles.drawerNameStyle}>{headerTitle}</span>
                 <span style={{ fontSize: '11px', color: '#888888' }}>{activeThread.userEmail}</span>
-                
+
                 {/* SUBTLE GREY ROLE BADGE (BORDERLESS) */}
                 <span
                   style={{
@@ -393,7 +472,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: '#e5e5e5', // Uniform subtle white
+                    color: '#e5e5e5',
                   }}
                 >
                   <EmailIcon />
@@ -426,7 +505,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: '#e5e5e5', // Uniform subtle white
+                    color: '#e5e5e5',
                   }}
                 >
                   <CallIcon />
@@ -465,7 +544,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: '#e5e5e5', // Uniform subtle white
+                    color: '#e5e5e5',
                   }}
                 >
                   <MessageIcon />
