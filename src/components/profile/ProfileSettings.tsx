@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, RefObject } from 'react';
+import { useState, useEffect, RefObject } from 'react';
 import { isUserSubscribed, subscribeUserToPush, unsubscribeUserFromPush } from '@/utils/pushManager';
 
 interface ProfileSettingsProps {
@@ -70,37 +70,7 @@ export default function ProfileSettings({
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushLoading, setPushLoading] = useState(true);
 
-  const headerRef = useRef<HTMLDivElement>(null);
-
-  // ===== Jitter-free Fixed Header (Visual Viewport) =====
-  useEffect(() => {
-    const vv = window.visualViewport;
-    if (!vv || !headerRef.current) return;
-
-    let rafId = 0;
-
-    const update = () => {
-      cancelAnimationFrame(rafId);
-      rafId = requestAnimationFrame(() => {
-        if (headerRef.current) {
-          // offsetTop ব্যবহার করে হেডারকে কীবোর্ডের উপরে স্থির রাখা হয়
-          headerRef.current.style.transform = `translateY(${vv.offsetTop}px)`;
-        }
-      });
-    };
-
-    // প্রাথমিক সেট
-    update();
-
-    vv.addEventListener('resize', update, { passive: true });
-    vv.addEventListener('scroll', update, { passive: true });
-
-    return () => {
-      cancelAnimationFrame(rafId);
-      vv.removeEventListener('resize', update);
-      vv.removeEventListener('scroll', update);
-    };
-  }, []);
+  // JS-ভিত্তিক visualViewport হ্যাক তুলে দেওয়া হয়েছে যা টাইপিংয়ের সময় হেডারকে ঝাকুনি দিত।
 
   useEffect(() => {
     async function checkPushStatus() {
@@ -157,13 +127,25 @@ export default function ProfileSettings({
   const activeSlug = newSlug || currentSlug || 'slug';
 
   return (
-    <div style={{ position: 'relative', paddingTop: '48px' }}>
+    /* ===== ISOLATED FULL-SCREEN CONTAINER (মূল প্রোফাইলে স্ক্রল হওয়া আটকাবে) ===== */
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      height: '100dvh',
+      backgroundColor: '#000000',
+      zIndex: 999,
+      overflowY: 'auto',
+      overscrollBehavior: 'contain',
+      WebkitOverflowScrolling: 'touch'
+    }}>
       
-      {/* ===== FIXED HEADER (কীবোর্ড ওপেন হলেও দৃশ্যমান ও ঝাকুনিমুক্ত) ===== */}
+      {/* ===== STICKY HEADER (কীবোর্ড খোলা ও টাইপ করার সময় ঝাকুনিমুক্ত থাকবে) ===== */}
       <div
-        ref={headerRef}
         style={{ 
-          position: 'fixed', 
+          position: 'sticky', 
           top: 0,
           left: 0,
           width: '100%',
@@ -175,11 +157,7 @@ export default function ProfileSettings({
           alignItems: 'center', 
           borderBottom: '1px solid #1A1A1A',
           boxSizing: 'border-box',
-          transform: 'translateY(0)',
-          willChange: 'transform',
           paddingTop: 'max(12px, env(safe-area-inset-top))',
-          // GPU লেয়ার স্থির রাখার জন্য
-          backfaceVisibility: 'hidden',
         }}
       >
         <h2 style={{ fontWeight: '600', letterSpacing: '3px', fontSize: '15px', color: '#FFFFFF', margin: 0 }}>SETTINGS</h2>
@@ -212,263 +190,265 @@ export default function ProfileSettings({
         </div>
       </div>
 
-      {/* ===== CONTENT ===== */}
-      
-      {isAmbassadorActive && (
-        <div style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <div style={{ 
-            width: '56px', 
-            height: '56px', 
-            borderRadius: '50%', 
-            backgroundColor: '#111111', 
-            border: '1px solid #333333',
-            overflow: 'hidden', 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center',
-            fontWeight: '600',
-            color: '#FFFFFF',
-            flexShrink: 0
-          }}>
-            {avatarUrl ? (
-              <img src={avatarUrl} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            ) : (
-              <span style={{ fontSize: '18px', fontWeight: '500' }}>{getInitials(profile?.name, profile?.email)}</span>
-            )}
-          </div>
+      {/* ===== CONTENT CONTAINER ===== */}
+      <div style={{ padding: '20px 20px 40px 20px' }}>
+        
+        {isAmbassadorActive && (
+          <div style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <div style={{ 
+              width: '56px', 
+              height: '56px', 
+              borderRadius: '50%', 
+              backgroundColor: '#111111', 
+              border: '1px solid #333333',
+              overflow: 'hidden', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              fontWeight: '600',
+              color: '#FFFFFF',
+              flexShrink: 0
+            }}>
+              {avatarUrl ? (
+                <img src={avatarUrl} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : (
+                <span style={{ fontSize: '18px', fontWeight: '500' }}>{getInitials(profile?.name, profile?.email)}</span>
+              )}
+            </div>
 
-          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-            <button 
-              type="button"
-              disabled={uploadingAvatar}
-              onClick={() => fileInputRef.current?.click()}
-              style={{
-                background: '#161616',
-                border: '1px solid #2C2C2E',
-                color: '#FFFFFF',
-                padding: '8px 14px',
-                borderRadius: '4px',
-                fontSize: '11px',
-                letterSpacing: '1px',
-                lineHeight: '1.3',
-                textAlign: 'center',
-                cursor: uploadingAvatar ? 'not-allowed' : 'pointer'
-              }}>
-              CHANGE<br />PICTURE
-            </button>
-
-            {avatarUrl && (
+            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
               <button 
                 type="button"
                 disabled={uploadingAvatar}
-                onClick={handleDeleteAvatar}
+                onClick={() => fileInputRef.current?.click()}
                 style={{
-                  background: 'transparent',
-                  border: 'none',
+                  background: '#161616',
+                  border: '1px solid #2C2C2E',
                   color: '#FFFFFF',
-                  padding: '6px 4px',
+                  padding: '8px 14px',
+                  borderRadius: '4px',
                   fontSize: '11px',
                   letterSpacing: '1px',
                   lineHeight: '1.3',
                   textAlign: 'center',
-                  cursor: uploadingAvatar ? 'not-allowed' : 'pointer',
-                  opacity: uploadingAvatar ? 0.6 : 1
+                  cursor: uploadingAvatar ? 'not-allowed' : 'pointer'
                 }}>
-                REMOVE<br />PICTURE
+                CHANGE<br />PICTURE
               </button>
-            )}
-          </div>
-        </div>
-      )}
 
-      <p style={labelStyle}>NAME</p>
-      <input placeholder={profile?.name || "Full Name"} value={newName} onChange={(e) => setNewName(e.target.value)} style={inputStyle} />
-
-      <p style={labelStyle}>EMAIL ADDRESS</p>
-      <input placeholder={profile?.email || "Email Address"} value={newEmail} onChange={(e) => setNewEmail(e.target.value)} style={inputStyle} />
-
-      {isAmbassadorActive && (
-        <>
-          <p style={labelStyle}>DISPLAY NAME</p>
-          <input 
-            type="text"
-            maxLength={10}
-            placeholder={dynamicPlaceholder} 
-            value={newDisplayName} 
-            onChange={(e) => setNewDisplayName(e.target.value)} 
-            style={inputStyle} 
-          />
-
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <p style={labelStyle}>STORE SLUG</p>
-            <span style={{ fontSize: '10px', color: '#888888', marginBottom: '4px' }}>/{activeSlug}</span>
-          </div>
-          <input 
-            placeholder={currentSlug || "slug-name"} 
-            value={newSlug} 
-            onChange={(e) => {
-              const formattedSlug = e.target.value
-                .toLowerCase()
-                .replace(/\s+/g, '-')
-                .replace(/[^a-z0-9-]/g, '');
-              setNewSlug(formattedSlug);
-            }} 
-            style={inputStyle} 
-          />
-
-          <p style={labelStyle}>DEFAULT PAYOUT METHOD</p>
-          <div style={{
-            display: 'flex',
-            gap: '8px',
-            overflowX: 'auto',
-            paddingBottom: '6px',
-            marginBottom: '16px',
-            scrollbarWidth: 'none'
-          }}>
-            {payoutOptions.map((option) => {
-              const isSelected = Boolean(payoutMethod) && (payoutMethod === option || payoutMethod.startsWith(option));
-              return (
-                <button
-                  key={option}
+              {avatarUrl && (
+                <button 
                   type="button"
-                  onClick={() => setPayoutMethod(option)}
+                  disabled={uploadingAvatar}
+                  onClick={handleDeleteAvatar}
                   style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    padding: '6px 14px',
-                    borderRadius: '20px',
-                    background: isSelected ? '#1A1A1A' : 'transparent',
+                    background: 'transparent',
+                    border: 'none',
                     color: '#FFFFFF',
-                    border: isSelected ? '1px solid #FFFFFF' : '1px solid #222222',
+                    padding: '6px 4px',
                     fontSize: '11px',
-                    fontWeight: isSelected ? '500' : '400',
                     letterSpacing: '1px',
-                    whiteSpace: 'nowrap',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease',
-                    opacity: isSelected ? 1 : 0.6,
-                    flexShrink: 0
-                  }}
-                >
-                  <span style={{
-                    width: '5px',
-                    height: '5px',
-                    borderRadius: '50%',
-                    background: isSelected ? '#FFFFFF' : 'transparent',
-                    border: isSelected ? '1px solid #FFFFFF' : '1px solid #666666'
-                  }} />
-                  {option}
+                    lineHeight: '1.3',
+                    textAlign: 'center',
+                    cursor: uploadingAvatar ? 'not-allowed' : 'pointer',
+                    opacity: uploadingAvatar ? 0.6 : 1
+                  }}>
+                  REMOVE<br />PICTURE
                 </button>
-              );
-            })}
-          </div>
-
-          <p style={labelStyle}>PAYOUT NUMBER</p>
-          <input 
-            placeholder={cleanPayoutNumber(currentPayoutDetails) || "017XXXXXXXX"} 
-            value={newPayoutNumber} 
-            onChange={(e) => setNewPayoutNumber(e.target.value)} 
-            style={inputStyle} 
-          />
-
-          <p style={labelStyle}>REAL-TIME SALES ALERTS</p>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            background: '#111111',
-            border: '1px solid #222222',
-            padding: '10px 14px',
-            borderRadius: '6px',
-            marginBottom: '20px'
-          }}>
-            <span style={{ fontSize: '11px', color: '#FFFFFF', letterSpacing: '0.5px' }}>
-              Sales & admin alerts
-            </span>
-            <button
-              type="button"
-              disabled={pushLoading}
-              onClick={handlePushToggle}
-              style={{
-                background: pushEnabled ? '#FFFFFF' : 'transparent',
-                color: pushEnabled ? '#000000' : '#FFFFFF',
-                border: pushEnabled ? '1px solid #FFFFFF' : '1px solid #333333',
-                padding: '4px 12px',
-                borderRadius: '16px',
-                fontSize: '10px',
-                fontWeight: '600',
-                letterSpacing: '1px',
-                cursor: 'pointer',
-                transition: 'all 0.15s ease',
-                opacity: pushEnabled ? 1 : 0.6,
-                flexShrink: 0
-              }}
-            >
-              {pushLoading ? '...' : (pushEnabled ? 'ENABLED' : 'DISABLED')}
-            </button>
-          </div>
-        </>
-      )}
-
-      <div style={{ borderTop: '1px solid #1C1C1E', paddingTop: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        <div>
-          <button 
-            type="button"
-            onClick={() => {
-              setShowPasswordSection(!showPasswordSection);
-              if (showPasswordSection) {
-                setCurrentPassword('');
-                setNewPassword('');
-              }
-            }}
-            style={navButtonStyle}
-          >
-            <span>CHANGE PASSWORD</span>
-            <span style={{ 
-              fontSize: '10px', 
-              color: '#FFFFFF', 
-              transform: showPasswordSection ? 'rotate(180deg)' : 'rotate(0deg)', 
-              transition: 'transform 0.25s ease',
-              display: 'inline-block'
-            }}>▼</span>
-          </button>
-
-          {/* ===== Smooth Accordion (জিটার কমাতে) ===== */}
-          <div style={{
-            maxHeight: showPasswordSection ? '180px' : '0px',
-            opacity: showPasswordSection ? 1 : 0,
-            overflow: 'hidden',
-            transition: 'max-height 0.28s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.22s ease',
-            pointerEvents: showPasswordSection ? 'auto' : 'none',
-            willChange: 'max-height, opacity'
-          }}>
-            <div style={{ paddingTop: '8px' }}>
-              <p style={labelStyle}>CURRENT PASSWORD</p>
-              <input 
-                type="password" 
-                placeholder="Current Password" 
-                value={currentPassword} 
-                onChange={(e) => setCurrentPassword(e.target.value)} 
-                style={inputStyle} 
-              />
-
-              <p style={labelStyle}>NEW PASSWORD</p>
-              <input 
-                type="password" 
-                placeholder="New Password" 
-                value={newPassword} 
-                onChange={(e) => setNewPassword(e.target.value)} 
-                style={inputStyle} 
-              />
+              )}
             </div>
           </div>
+        )}
+
+        <p style={labelStyle}>NAME</p>
+        <input placeholder={profile?.name || "Full Name"} value={newName} onChange={(e) => setNewName(e.target.value)} style={inputStyle} />
+
+        <p style={labelStyle}>EMAIL ADDRESS</p>
+        <input placeholder={profile?.email || "Email Address"} value={newEmail} onChange={(e) => setNewEmail(e.target.value)} style={inputStyle} />
+
+        {isAmbassadorActive && (
+          <>
+            <p style={labelStyle}>DISPLAY NAME</p>
+            <input 
+              type="text"
+              maxLength={10}
+              placeholder={dynamicPlaceholder} 
+              value={newDisplayName} 
+              onChange={(e) => setNewDisplayName(e.target.value)} 
+              style={inputStyle} 
+            />
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <p style={labelStyle}>STORE SLUG</p>
+              <span style={{ fontSize: '10px', color: '#888888', marginBottom: '4px' }}>/{activeSlug}</span>
+            </div>
+            <input 
+              placeholder={currentSlug || "slug-name"} 
+              value={newSlug} 
+              onChange={(e) => {
+                const formattedSlug = e.target.value
+                  .toLowerCase()
+                  .replace(/\s+/g, '-')
+                  .replace(/[^a-z0-9-]/g, '');
+                setNewSlug(formattedSlug);
+              }} 
+              style={inputStyle} 
+            />
+
+            <p style={labelStyle}>DEFAULT PAYOUT METHOD</p>
+            <div style={{
+              display: 'flex',
+              gap: '8px',
+              overflowX: 'auto',
+              paddingBottom: '6px',
+              marginBottom: '16px',
+              scrollbarWidth: 'none'
+            }}>
+              {payoutOptions.map((option) => {
+                const isSelected = Boolean(payoutMethod) && (payoutMethod === option || payoutMethod.startsWith(option));
+                return (
+                  <button
+                    key={option}
+                    type="button"
+                    onClick={() => setPayoutMethod(option)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      padding: '6px 14px',
+                      borderRadius: '20px',
+                      background: isSelected ? '#1A1A1A' : 'transparent',
+                      color: '#FFFFFF',
+                      border: isSelected ? '1px solid #FFFFFF' : '1px solid #222222',
+                      fontSize: '11px',
+                      fontWeight: isSelected ? '500' : '400',
+                      letterSpacing: '1px',
+                      whiteSpace: 'nowrap',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease',
+                      opacity: isSelected ? 1 : 0.6,
+                      flexShrink: 0
+                    }}
+                  >
+                    <span style={{
+                      width: '5px',
+                      height: '5px',
+                      borderRadius: '50%',
+                      background: isSelected ? '#FFFFFF' : 'transparent',
+                      border: isSelected ? '1px solid #FFFFFF' : '1px solid #666666'
+                    }} />
+                    {option}
+                  </button>
+                );
+              })}
+            </div>
+
+            <p style={labelStyle}>PAYOUT NUMBER</p>
+            <input 
+              placeholder={cleanPayoutNumber(currentPayoutDetails) || "017XXXXXXXX"} 
+              value={newPayoutNumber} 
+              onChange={(e) => setNewPayoutNumber(e.target.value)} 
+              style={inputStyle} 
+            />
+
+            <p style={labelStyle}>REAL-TIME SALES ALERTS</p>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              background: '#111111',
+              border: '1px solid #222222',
+              padding: '10px 14px',
+              borderRadius: '6px',
+              marginBottom: '20px'
+            }}>
+              <span style={{ fontSize: '11px', color: '#FFFFFF', letterSpacing: '0.5px' }}>
+                Sales & admin alerts
+              </span>
+              <button
+                type="button"
+                disabled={pushLoading}
+                onClick={handlePushToggle}
+                style={{
+                  background: pushEnabled ? '#FFFFFF' : 'transparent',
+                  color: pushEnabled ? '#000000' : '#FFFFFF',
+                  border: pushEnabled ? '1px solid #FFFFFF' : '1px solid #333333',
+                  padding: '4px 12px',
+                  borderRadius: '16px',
+                  fontSize: '10px',
+                  fontWeight: '600',
+                  letterSpacing: '1px',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                  opacity: pushEnabled ? 1 : 0.6,
+                  flexShrink: 0
+                }}
+              >
+                {pushLoading ? '...' : (pushEnabled ? 'ENABLED' : 'DISABLED')}
+              </button>
+            </div>
+          </>
+        )}
+
+        <div style={{ borderTop: '1px solid #1C1C1E', paddingTop: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div>
+            <button 
+              type="button"
+              onClick={() => {
+                setShowPasswordSection(!showPasswordSection);
+                if (showPasswordSection) {
+                  setCurrentPassword('');
+                  setNewPassword('');
+                }
+              }}
+              style={navButtonStyle}
+            >
+              <span>CHANGE PASSWORD</span>
+              <span style={{ 
+                fontSize: '10px', 
+                color: '#FFFFFF', 
+                transform: showPasswordSection ? 'rotate(180deg)' : 'rotate(0deg)', 
+                transition: 'transform 0.25s ease',
+                display: 'inline-block'
+              }}>▼</span>
+            </button>
+
+            <div style={{
+              maxHeight: showPasswordSection ? '180px' : '0px',
+              opacity: showPasswordSection ? 1 : 0,
+              overflow: 'hidden',
+              transition: 'max-height 0.28s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.22s ease',
+              pointerEvents: showPasswordSection ? 'auto' : 'none',
+              willChange: 'max-height, opacity'
+            }}>
+              <div style={{ paddingTop: '8px' }}>
+                <p style={labelStyle}>CURRENT PASSWORD</p>
+                <input 
+                  type="password" 
+                  placeholder="Current Password" 
+                  value={currentPassword} 
+                  onChange={(e) => setCurrentPassword(e.target.value)} 
+                  style={inputStyle} 
+                />
+
+                <p style={labelStyle}>NEW PASSWORD</p>
+                <input 
+                  type="password" 
+                  placeholder="New Password" 
+                  value={newPassword} 
+                  onChange={(e) => setNewPassword(e.target.value)} 
+                  style={inputStyle} 
+                />
+              </div>
+            </div>
+          </div>
+
+          <button onClick={handleSignOut} style={navButtonStyle}>
+            <span>SIGN OUT</span>
+          </button>
+          <button onClick={() => setShowConfirm(true)} style={actionButtonStyle}>DELETE ACCOUNT</button>
         </div>
 
-        <button onClick={handleSignOut} style={navButtonStyle}>
-          <span>SIGN OUT</span>
-        </button>
-        <button onClick={() => setShowConfirm(true)} style={actionButtonStyle}>DELETE ACCOUNT</button>
       </div>
     </div>
   );
