@@ -93,10 +93,10 @@ export default function ProfileSettings({
     setPushLoading(false);
   };
 
-  const labelStyle = { fontSize: '10px', color: '#888', letterSpacing: '2px', marginBottom: '8px', marginTop: '10px' };
+  const labelStyle = { fontSize: '10px', color: '#888', letterSpacing: '2px', marginBottom: '8px' };
   const inputStyle = { width: '100%', padding: '10px 0', background: 'transparent', border: 'none', borderBottom: '1px solid #333', color: '#fff', marginBottom: '24px', outline: 'none', fontSize: '15px' };
-  const navButtonStyle = { background: 'transparent', border: 'none', color: '#aaa', cursor: 'pointer', fontSize: '12px', letterSpacing: '1px', display: 'block', width: '100%', textAlign: 'left', padding: '6px 0' };
-  const dangerButtonStyle = { background: 'transparent', border: 'none', color: '#ff4444', cursor: 'pointer', fontSize: '11px', letterSpacing: '2px', textTransform: 'uppercase' as const, display: 'block', width: '100%', textAlign: 'left', fontWeight: 'bold', marginTop: '10px' };
+  const navButtonStyle = { background: 'transparent', border: 'none', color: '#aaa', cursor: 'pointer', fontSize: '12px', letterSpacing: '1px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', textAlign: 'left' as const, padding: '8px 0' };
+  const dangerButtonStyle = { background: 'transparent', border: 'none', color: '#ff4444', cursor: 'pointer', fontSize: '11px', letterSpacing: '2px', textTransform: 'uppercase' as const, display: 'block', width: '100%', textAlign: 'left' as const, fontWeight: 'bold', marginTop: '12px' };
 
   const payoutOptions = ['bKash', 'Nagad', 'Rocket', 'Card'];
 
@@ -106,7 +106,14 @@ export default function ProfileSettings({
     return Array.from(firstWord).slice(0, 10).join('');
   };
 
+  // Payout Number থেকে মেথডের নাম ক্লিন করার ফংশন
+  const cleanPayoutNumber = (details?: string) => {
+    if (!details) return '';
+    return details.includes(':') ? details.split(':')[1].trim() : details;
+  };
+
   const dynamicPlaceholder = currentDisplayName || getFallbackDisplayName(profile?.name) || "Display Name";
+  const activeSlug = newSlug || currentSlug || 'slug';
 
   return (
     <>
@@ -204,7 +211,10 @@ export default function ProfileSettings({
             style={inputStyle} 
           />
 
-          <p style={labelStyle}>STORE SLUG</p>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <p style={labelStyle}>STORE SLUG</p>
+            <span style={{ fontSize: '10px', color: '#666', marginBottom: '8px' }}>/{activeSlug}</span>
+          </div>
           <input 
             placeholder={currentSlug || "slug-name"} 
             value={newSlug} 
@@ -229,7 +239,6 @@ export default function ProfileSettings({
             scrollbarWidth: 'none'
           }}>
             {payoutOptions.map((option) => {
-              // নিশ্চিত করা হচ্ছে payoutMethod এ্যালু থাাকলেই কেবল সিলেক্ট লজিক কাজ করবে
               const isSelected = Boolean(payoutMethod) && (payoutMethod === option || payoutMethod.startsWith(option));
               return (
                 <button
@@ -270,7 +279,7 @@ export default function ProfileSettings({
 
           <p style={labelStyle}>PAYOUT NUMBER</p>
           <input 
-            placeholder={currentPayoutDetails || "+1234567890"} 
+            placeholder={cleanPayoutNumber(currentPayoutDetails) || "017XXXXXXXX"} 
             value={newPayoutNumber} 
             onChange={(e) => setNewPayoutNumber(e.target.value)} 
             style={inputStyle} 
@@ -286,7 +295,7 @@ export default function ProfileSettings({
             border: '1px solid #282828',
             padding: '12px 16px',
             borderRadius: '8px',
-            marginBottom: '28px'
+            marginBottom: '32px'
           }}>
             <span style={{ fontSize: '12px', color: '#aaa', letterSpacing: '0.5px' }}>
               Sales & admin alerts
@@ -316,7 +325,7 @@ export default function ProfileSettings({
       )}
 
       {/* 6. SECURITY & ACCOUNT ACTIONS */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <div style={{ borderTop: '1px solid #1a1a1a', paddingTop: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
         <div>
           <button 
             type="button"
@@ -329,11 +338,12 @@ export default function ProfileSettings({
             }}
             style={navButtonStyle}
           >
-            CHANGE PASSWORD
+            <span>CHANGE PASSWORD</span>
+            <span style={{ fontSize: '10px', color: '#666', transform: showPasswordSection ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }}>▼</span>
           </button>
 
           {showPasswordSection && (
-            <div style={{ marginTop: '15px', marginBottom: '10px' }}>
+            <div style={{ marginTop: '16px', marginBottom: '8px' }}>
               <p style={labelStyle}>CURRENT PASSWORD</p>
               <input 
                 type="password" 
@@ -377,7 +387,9 @@ export default function ProfileSettings({
           SAVE CHANGES
         </button>
 
-        <button onClick={handleSignOut} style={navButtonStyle}>SIGN OUT</button>
+        <button onClick={handleSignOut} style={navButtonStyle}>
+          <span>SIGN OUT</span>
+        </button>
         <button onClick={() => setShowConfirm(true)} style={dangerButtonStyle}>DELETE ACCOUNT</button>
       </div>
     </>
