@@ -10,7 +10,7 @@ interface ProfileHeaderProps {
   getInitials: (name?: string, email?: string) => string;
   onChangeView: (view: 'profile' | 'settings') => void;
   onOpenMessages?: () => void;
-  onOpenProfileDetails?: () => void; // বটম শিট খোলার কলব্যাক
+  onOpenProfileDetails?: () => void; // বটম শিটের জন্য কলব্যাক
   hasUnread?: boolean;
 }
 
@@ -45,7 +45,7 @@ export default function ProfileHeader({
         flex: 1, 
         minWidth: 0 
       }}>
-        {/* ১. প্রোফাইল ছবি/অ্যাভাটার (ক্লিক করলে প্রোফাইল/মোড সুইচ হবে) */}
+        {/* ১. প্রোফাইল ছবি/অ্যাভাটার (ক্লিক করলে মোড সুইচ হবে) */}
         <div 
           onClick={isAmbassador ? togglePortalMode : undefined}
           title={isAmbassador ? "Click to switch profile mode" : "Profile Picture"}
@@ -75,7 +75,7 @@ export default function ProfileHeader({
           )}
         </div>
 
-        {/* ২. নাম এবং সাবটাইটেল (ক্লিক করলে বটম শিট ওপেন হবে) */}
+        {/* ২. নাম এবং সাবটাইটেল (ক্লিক করলে বটম শিট খুলবে) */}
         <div 
           onClick={onOpenProfileDetails}
           title="Click to view full details"
@@ -104,7 +104,7 @@ export default function ProfileHeader({
             {name}
           </h2>
 
-          {/* অ্যাম্বাসেডর এক্টিভ থাকলে ব্যাজ দেখাবে, কাস্টমার হলে কোনো রোল দেখাবে না */}
+          {/* অ্যাম্বাসেডর এক্টিভ থাকলে ব্যাজ দেখাবে, কাস্টমার হলে ইমেইল দেখাবে */}
           {isAmbassadorActive ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginTop: '3px' }}>
               <span style={{
@@ -138,14 +138,8 @@ export default function ProfileHeader({
         </div>
       </div>
 
-      {/* ডানপাশ: কমপ্যাক্ট আইকন বাটন */}
-      <div style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        gap: '6px', 
-        flexShrink: 0 
-      }}>
-        {/* মেসেজ / নোটিফিকেশন বাটন */}
+      {/* ডানপাশ: আইকন বাটনসমূহ */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
         <button
           onClick={onOpenMessages}
           style={{ 
@@ -170,7 +164,6 @@ export default function ProfileHeader({
             <NotificationIcon width={17} height={17} stroke="#FFFFFF" />
           )}
 
-          {/* অনরিড মেসেজ/নোটিফিকেশন ডট */}
           {hasUnread && (
             <span style={{
               position: 'absolute',
@@ -179,13 +172,11 @@ export default function ProfileHeader({
               width: '6px',
               height: '6px',
               backgroundColor: '#EF4444',
-              borderRadius: '50%',
-              boxShadow: '0 0 6px #EF4444'
+              borderRadius: '50%'
             }} />
           )}
         </button>
 
-        {/* সেটিংস বাটন */}
         <button
           onClick={() => onChangeView('settings')}
           style={{ 
