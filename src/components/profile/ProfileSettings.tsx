@@ -98,7 +98,7 @@ export default function ProfileSettings({
     return details.includes(':') ? details.split(':')[1].trim() : details;
   };
 
-  // Dynamic Dirty Check (ইনপুট দিলে সেভ বাটন লাইভ একটিভ হবে)
+  // Dynamic Dirty Check
   const isDirty = Boolean(
     (newName && newName !== profile?.name) ||
     (newEmail && newEmail !== profile?.email) ||
@@ -126,21 +126,22 @@ export default function ProfileSettings({
   const activeSlug = newSlug || currentSlug || 'slug';
 
   return (
-    <div style={{ position: 'relative' }}>
+    <div style={{ position: 'relative', paddingTop: '65px' }}>
       
-      {/* PERFECT ALWAYS-STICKY HEADER */}
+      {/* 100% FIXED HEADER */}
       <div style={{ 
-        position: 'sticky', 
+        position: 'fixed', 
         top: 0, 
-        zIndex: 100, 
+        left: 0,
+        width: '100%',
+        zIndex: 1000, 
         backgroundColor: '#000000',
-        margin: '-20px -20px 20px -20px',
         padding: '16px 20px',
         display: 'flex', 
         justifyContent: 'space-between', 
         alignItems: 'center', 
         borderBottom: '1px solid #1A1A1A',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.5)'
+        boxSizing: 'border-box'
       }}>
         <h2 style={{ fontWeight: '600', letterSpacing: '3px', fontSize: '15px', color: '#FFFFFF', margin: 0 }}>SETTINGS</h2>
         
