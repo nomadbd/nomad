@@ -66,9 +66,9 @@ export default function ProfileSettings({
   setShowConfirm,
   onChangeView
 }: ProfileSettingsProps) {
-  const [showPasswordSection, setShowPasswordSection] = useState(false);
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushLoading, setPushLoading] = useState(true);
+  const [isPasswordSheetOpen, setIsPasswordSheetOpen] = useState(false);
 
   const headerRef = useRef<HTMLDivElement>(null);
 
@@ -100,7 +100,7 @@ export default function ProfileSettings({
     };
   }, []);
 
-  // ===== Body scroll lock (পেছনের প্রোফাইল যাতে না নড়ে) =====
+  // ===== Body scroll lock =====
   useEffect(() => {
     const originalStyle = window.getComputedStyle(document.body).overflow;
     document.body.style.overflow = 'hidden';
@@ -148,6 +148,8 @@ export default function ProfileSettings({
     newPassword.length > 0
   );
 
+  const isPasswordDirty = currentPassword.length > 0 || newPassword.length > 0;
+
   const labelStyle = { fontSize: '10px', color: '#FFFFFF', letterSpacing: '1.5px', marginBottom: '4px', fontWeight: '500' };
   const inputStyle = { width: '100%', padding: '8px 0', background: 'transparent', border: 'none', borderBottom: '1px solid #282828', color: '#FFFFFF', marginBottom: '16px', outline: 'none', fontSize: '14px' };
   const navButtonStyle = { background: 'transparent', border: 'none', color: '#FFFFFF', cursor: 'pointer', fontSize: '12px', letterSpacing: '1px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', textAlign: 'left' as const, padding: '12px 0' };
@@ -163,6 +165,23 @@ export default function ProfileSettings({
 
   const dynamicPlaceholder = currentDisplayName || getFallbackDisplayName(profile?.name) || "Display Name";
   const activeSlug = newSlug || currentSlug || 'slug';
+
+  const openPasswordSheet = () => {
+    setIsPasswordSheetOpen(true);
+  };
+
+  const closePasswordSheet = () => {
+    setIsPasswordSheetOpen(false);
+    // শিট বন্ধ করার সময় পাসওয়ার্ড ক্লিয়ার করতে চাইলে আনকমেন্ট করুন
+    // setCurrentPassword('');
+    // setNewPassword('');
+  };
+
+  const handlePasswordUpdate = () => {
+    if (!isPasswordDirty) return;
+    handleUpdate();
+    closePasswordSheet();
+  };
 
   return (
     <div style={{ 
@@ -226,7 +245,7 @@ export default function ProfileSettings({
         </div>
       </div>
 
-      {/* ===== SCROLLABLE CONTENT (শুধু এই অংশ স্ক্রল হবে) ===== */}
+      {/* ===== SCROLLABLE CONTENT ===== */}
       <div style={{
         flex: 1,
         overflowY: 'auto',
@@ -235,7 +254,7 @@ export default function ProfileSettings({
         paddingLeft: '20px',
         paddingRight: '20px',
         paddingBottom: '40px',
-        WebkitOverflowScrolling: 'touch', // iOS smooth scroll
+        WebkitOverflowScrolling: 'touch',
       }}>
         
         {isAmbassadorActive && (
@@ -436,63 +455,127 @@ export default function ProfileSettings({
         )}
 
         <div style={{ borderTop: '1px solid #1C1C1E', paddingTop: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <div>
-            <button 
-              type="button"
-              onClick={() => {
-                setShowPasswordSection(!showPasswordSection);
-                if (showPasswordSection) {
-                  setCurrentPassword('');
-                  setNewPassword('');
-                }
-              }}
-              style={navButtonStyle}
-            >
-              <span>CHANGE PASSWORD</span>
-              <span style={{ 
-                fontSize: '10px', 
-                color: '#FFFFFF', 
-                transform: showPasswordSection ? 'rotate(180deg)' : 'rotate(0deg)', 
-                transition: 'transform 0.25s ease',
-                display: 'inline-block'
-              }}>▼</span>
-            </button>
-
-            <div style={{
-              maxHeight: showPasswordSection ? '180px' : '0px',
-              opacity: showPasswordSection ? 1 : 0,
-              overflow: 'hidden',
-              transition: 'max-height 0.28s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.22s ease',
-              pointerEvents: showPasswordSection ? 'auto' : 'none',
-              willChange: 'max-height, opacity'
-            }}>
-              <div style={{ paddingTop: '8px' }}>
-                <p style={labelStyle}>CURRENT PASSWORD</p>
-                <input 
-                  type="password" 
-                  placeholder="Current Password" 
-                  value={currentPassword} 
-                  onChange={(e) => setCurrentPassword(e.target.value)} 
-                  style={inputStyle} 
-                />
-
-                <p style={labelStyle}>NEW PASSWORD</p>
-                <input 
-                  type="password" 
-                  placeholder="New Password" 
-                  value={newPassword} 
-                  onChange={(e) => setNewPassword(e.target.value)} 
-                  style={inputStyle} 
-                />
-              </div>
-            </div>
-          </div>
+          
+          {/* ===== CHANGE PASSWORD BUTTON (Bottom Sheet Trigger) ===== */}
+          <button 
+            type="button"
+            onClick={openPasswordSheet}
+            style={navButtonStyle}
+          >
+            <span>CHANGE PASSWORD</span>
+            <span style={{ fontSize: '14px', color: '#888888' }}>›</span>
+          </button>
 
           <button onClick={handleSignOut} style={navButtonStyle}>
             <span>SIGN OUT</span>
           </button>
           <button onClick={() => setShowConfirm(true)} style={actionButtonStyle}>DELETE ACCOUNT</button>
         </div>
+      </div>
+
+      {/* ===== BOTTOM SHEET OVERLAY + SHEET ===== */}
+      {/* Backdrop */}
+      <div
+        onClick={closePasswordSheet}
+        style={{
+          position: 'fixed',
+          inset: 0,
+          backgroundColor: 'rgba(0,0,0,0.6)',
+          zIndex: 1100,
+          opacity: isPasswordSheetOpen ? 1 : 0,
+          pointerEvents: isPasswordSheetOpen ? 'auto' : 'none',
+          transition: 'opacity 0.3s ease',
+        }}
+      />
+
+      {/* Sheet */}
+      <div
+        style={{
+          position: 'fixed',
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 1101,
+          backgroundColor: '#111111',
+          borderTopLeftRadius: '20px',
+          borderTopRightRadius: '20px',
+          padding: '20px 20px 40px',
+          paddingBottom: 'max(40px, env(safe-area-inset-bottom))',
+          transform: isPasswordSheetOpen ? 'translateY(0)' : 'translateY(110%)',
+          transition: 'transform 0.35s cubic-bezier(0.32, 0.72, 0, 1)',
+          willChange: 'transform',
+          boxShadow: '0 -10px 40px rgba(0,0,0,0.5)',
+        }}
+      >
+        {/* Handle bar */}
+        <div style={{
+          width: '40px',
+          height: '4px',
+          backgroundColor: '#333333',
+          borderRadius: '2px',
+          margin: '0 auto 20px',
+        }} />
+
+        {/* Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+          <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '600', letterSpacing: '1.5px', color: '#FFFFFF' }}>
+            CHANGE PASSWORD
+          </h3>
+          <button
+            onClick={closePasswordSheet}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: '#888888',
+              fontSize: '22px',
+              cursor: 'pointer',
+              padding: '4px 8px',
+              lineHeight: 1,
+            }}
+          >
+            ×
+          </button>
+        </div>
+
+        {/* Fields */}
+        <p style={labelStyle}>CURRENT PASSWORD</p>
+        <input 
+          type="password" 
+          placeholder="Current Password" 
+          value={currentPassword} 
+          onChange={(e) => setCurrentPassword(e.target.value)} 
+          style={{ ...inputStyle, marginBottom: '20px' }} 
+        />
+
+        <p style={labelStyle}>NEW PASSWORD</p>
+        <input 
+          type="password" 
+          placeholder="New Password" 
+          value={newPassword} 
+          onChange={(e) => setNewPassword(e.target.value)} 
+          style={{ ...inputStyle, marginBottom: '28px' }} 
+        />
+
+        {/* Update Button */}
+        <button
+          onClick={handlePasswordUpdate}
+          disabled={!isPasswordDirty}
+          style={{
+            width: '100%',
+            padding: '14px',
+            borderRadius: '12px',
+            border: 'none',
+            background: isPasswordDirty ? '#FFFFFF' : '#222222',
+            color: isPasswordDirty ? '#000000' : '#666666',
+            fontSize: '13px',
+            fontWeight: '700',
+            letterSpacing: '1.5px',
+            cursor: isPasswordDirty ? 'pointer' : 'default',
+            transition: 'all 0.2s ease',
+          }}
+        >
+          UPDATE PASSWORD
+        </button>
       </div>
     </div>
   );
