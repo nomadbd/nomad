@@ -93,10 +93,11 @@ export default function ProfileSettings({
     setPushLoading(false);
   };
 
-  const labelStyle = { fontSize: '10px', color: '#888', letterSpacing: '2px', marginBottom: '8px' };
-  const inputStyle = { width: '100%', padding: '10px 0', background: 'transparent', border: 'none', borderBottom: '1px solid #333', color: '#fff', marginBottom: '24px', outline: 'none', fontSize: '15px' };
-  const navButtonStyle = { background: 'transparent', border: 'none', color: '#aaa', cursor: 'pointer', fontSize: '12px', letterSpacing: '1px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', textAlign: 'left' as const, padding: '8px 0' };
-  const dangerButtonStyle = { background: 'transparent', border: 'none', color: '#ff4444', cursor: 'pointer', fontSize: '11px', letterSpacing: '2px', textTransform: 'uppercase' as const, display: 'block', width: '100%', textAlign: 'left' as const, fontWeight: 'bold', marginTop: '12px' };
+  // OPTIMIZED BALANCED SPACING STYLES
+  const labelStyle = { fontSize: '10px', color: '#888', letterSpacing: '2px', marginBottom: '4px' };
+  const inputStyle = { width: '100%', padding: '8px 0', background: 'transparent', border: 'none', borderBottom: '1px solid #333', color: '#fff', marginBottom: '16px', outline: 'none', fontSize: '14px' };
+  const navButtonStyle = { background: 'transparent', border: 'none', color: '#aaa', cursor: 'pointer', fontSize: '12px', letterSpacing: '1px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', textAlign: 'left' as const, padding: '6px 0' };
+  const dangerButtonStyle = { background: 'transparent', border: 'none', color: '#ff4444', cursor: 'pointer', fontSize: '11px', letterSpacing: '2px', textTransform: 'uppercase' as const, display: 'block', width: '100%', textAlign: 'left' as const, fontWeight: 'bold', marginTop: '8px' };
 
   const payoutOptions = ['bKash', 'Nagad', 'Rocket', 'Card'];
 
@@ -106,7 +107,6 @@ export default function ProfileSettings({
     return Array.from(firstWord).slice(0, 10).join('');
   };
 
-  // Payout Number থেকে মেথডের নাম ক্লিন করার ফংশন
   const cleanPayoutNumber = (details?: string) => {
     if (!details) return '';
     return details.includes(':') ? details.split(':')[1].trim() : details;
@@ -118,38 +118,38 @@ export default function ProfileSettings({
   return (
     <>
       {/* HEADER */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <h2 style={{ fontWeight: '500', letterSpacing: '4px', fontSize: '18px', margin: 0 }}>SETTINGS</h2>
         <svg onClick={() => onChangeView('profile')} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" cursor="pointer"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
       </div>
 
       {/* 1. AVATAR SECTION */}
       {isAmbassadorActive && (
-        <div style={{ marginBottom: '32px', display: 'flex', alignItems: 'center', gap: '20px' }}>
+        <div style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '16px' }}>
           <div style={{ 
-            width: '64px', 
-            height: '64px', 
+            width: '56px', 
+            height: '56px', 
             borderRadius: '50%', 
             backgroundColor: '#181818', 
             border: '1px solid #ffffff',
-            boxShadow: '0 0 15px rgba(255, 255, 255, 0.4)',
+            boxShadow: '0 0 12px rgba(255, 255, 255, 0.3)',
             overflow: 'hidden', 
             display: 'flex', 
             alignItems: 'center', 
             justifyContent: 'center',
             fontWeight: '600',
             color: '#fff',
-            textShadow: '0 0 8px #ffffff, 0 0 16px #ffffff',
+            textShadow: '0 0 8px #ffffff',
             flexShrink: 0
           }}>
             {avatarUrl ? (
               <img src={avatarUrl} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             ) : (
-              <span style={{ fontSize: '20px', fontWeight: 'bold' }}>{getInitials(profile?.name, profile?.email)}</span>
+              <span style={{ fontSize: '18px', fontWeight: 'bold' }}>{getInitials(profile?.name, profile?.email)}</span>
             )}
           </div>
 
-          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             <button 
               type="button"
               disabled={uploadingAvatar}
@@ -158,9 +158,9 @@ export default function ProfileSettings({
                 background: '#1a1a1a',
                 border: '1px solid #333',
                 color: '#fff',
-                padding: '8px 16px',
+                padding: '6px 14px',
                 borderRadius: '4px',
-                fontSize: '12px',
+                fontSize: '11px',
                 letterSpacing: '1px',
                 cursor: uploadingAvatar ? 'not-allowed' : 'pointer',
                 opacity: uploadingAvatar ? 0.6 : 1
@@ -177,9 +177,9 @@ export default function ProfileSettings({
                   background: 'transparent',
                   border: '1px solid #ff4444',
                   color: '#ff4444',
-                  padding: '8px 16px',
+                  padding: '6px 14px',
                   borderRadius: '4px',
-                  fontSize: '12px',
+                  fontSize: '11px',
                   letterSpacing: '1px',
                   cursor: uploadingAvatar ? 'not-allowed' : 'pointer',
                   opacity: uploadingAvatar ? 0.6 : 1
@@ -213,7 +213,7 @@ export default function ProfileSettings({
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <p style={labelStyle}>STORE SLUG</p>
-            <span style={{ fontSize: '10px', color: '#666', marginBottom: '8px' }}>/{activeSlug}</span>
+            <span style={{ fontSize: '10px', color: '#666', marginBottom: '4px' }}>/{activeSlug}</span>
           </div>
           <input 
             placeholder={currentSlug || "slug-name"} 
@@ -232,10 +232,10 @@ export default function ProfileSettings({
           <p style={labelStyle}>DEFAULT PAYOUT METHOD</p>
           <div style={{
             display: 'flex',
-            gap: '10px',
+            gap: '8px',
             overflowX: 'auto',
-            paddingBottom: '10px',
-            marginBottom: '24px',
+            paddingBottom: '6px',
+            marginBottom: '16px',
             scrollbarWidth: 'none'
           }}>
             {payoutOptions.map((option) => {
@@ -248,13 +248,13 @@ export default function ProfileSettings({
                   style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '8px',
-                    padding: '8px 16px',
+                    gap: '6px',
+                    padding: '6px 14px',
                     borderRadius: '20px',
                     background: isSelected ? '#181818' : 'transparent',
                     color: isSelected ? '#cccccc' : '#555555',
                     border: isSelected ? '1px solid #333333' : '1px solid #1a1a1a',
-                    fontSize: '12px',
+                    fontSize: '11px',
                     fontWeight: '400',
                     letterSpacing: '1px',
                     whiteSpace: 'nowrap',
@@ -264,8 +264,8 @@ export default function ProfileSettings({
                   }}
                 >
                   <span style={{
-                    width: '6px',
-                    height: '6px',
+                    width: '5px',
+                    height: '5px',
                     borderRadius: '50%',
                     background: isSelected ? '#aaaaaa' : 'transparent',
                     border: isSelected ? '1px solid #aaaaaa' : '1px solid #333333',
@@ -291,13 +291,13 @@ export default function ProfileSettings({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            background: '#181818',
-            border: '1px solid #282828',
-            padding: '12px 16px',
-            borderRadius: '8px',
-            marginBottom: '32px'
+            background: '#141414',
+            border: '1px solid #222222',
+            padding: '10px 14px',
+            borderRadius: '6px',
+            marginBottom: '20px'
           }}>
-            <span style={{ fontSize: '12px', color: '#aaa', letterSpacing: '0.5px' }}>
+            <span style={{ fontSize: '11px', color: '#aaa', letterSpacing: '0.5px' }}>
               Sales & admin alerts
             </span>
             <button
@@ -308,8 +308,8 @@ export default function ProfileSettings({
                 background: pushEnabled ? '#22c55e' : 'transparent',
                 color: pushEnabled ? '#000' : '#888',
                 border: pushEnabled ? '1px solid #22c55e' : '1px solid #444',
-                padding: '6px 14px',
-                borderRadius: '20px',
+                padding: '4px 12px',
+                borderRadius: '16px',
                 fontSize: '10px',
                 fontWeight: 'bold',
                 letterSpacing: '1px',
@@ -325,7 +325,7 @@ export default function ProfileSettings({
       )}
 
       {/* 6. SECURITY & ACCOUNT ACTIONS */}
-      <div style={{ borderTop: '1px solid #1a1a1a', paddingTop: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <div style={{ borderTop: '1px solid #1a1a1a', paddingTop: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
         <div>
           <button 
             type="button"
@@ -343,7 +343,7 @@ export default function ProfileSettings({
           </button>
 
           {showPasswordSection && (
-            <div style={{ marginTop: '16px', marginBottom: '8px' }}>
+            <div style={{ marginTop: '12px', marginBottom: '4px' }}>
               <p style={labelStyle}>CURRENT PASSWORD</p>
               <input 
                 type="password" 
@@ -379,8 +379,8 @@ export default function ProfileSettings({
             fontWeight: '700',
             letterSpacing: '2px',
             cursor: 'pointer',
-            marginTop: '8px',
-            marginBottom: '8px',
+            marginTop: '4px',
+            marginBottom: '4px',
             transition: 'opacity 0.2s ease'
           }}
         >
