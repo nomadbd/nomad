@@ -1,5 +1,5 @@
 import React from 'react';
-import { MessageIcon, NotificationIcon, SettingsIcon } from './icons';
+import { MessageIcon, NotificationIcon, SettingsIcon } from '../icons';
 
 interface ProfileHeaderProps {
   profile: any;
