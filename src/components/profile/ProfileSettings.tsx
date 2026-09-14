@@ -1,5 +1,5 @@
 import { useState, useEffect, RefObject } from 'react';
-import { isUserSubscribed, subscribeUserToPush, unsubscribeUserFromPush } from '../utils/pushManager';
+import { isUserSubscribed, subscribeUserToPush, unsubscribeUserFromPush } from '@/utils/pushManager';
 
 interface ProfileSettingsProps {
   profile: any;
