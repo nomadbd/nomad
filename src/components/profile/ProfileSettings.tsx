@@ -110,11 +110,13 @@ export default function ProfileSettings({
 
   return (
     <>
+      {/* HEADER */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
         <h2 style={{ fontWeight: '500', letterSpacing: '4px', fontSize: '18px', margin: 0 }}>SETTINGS</h2>
         <svg onClick={() => onChangeView('profile')} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" cursor="pointer"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
       </div>
 
+      {/* 1. AVATAR SECTION */}
       {isAmbassadorActive && (
         <div style={{ marginBottom: '30px', display: 'flex', alignItems: 'center', gap: '20px' }}>
           <div style={{ 
@@ -182,12 +184,14 @@ export default function ProfileSettings({
         </div>
       )}
 
+      {/* 2. PERSONAL IDENTIFICATION */}
       <p style={labelStyle}>NAME</p>
       <input placeholder={profile?.name || "Full Name"} value={newName} onChange={(e) => setNewName(e.target.value)} style={inputStyle} />
 
       <p style={labelStyle}>EMAIL ADDRESS</p>
       <input placeholder={profile?.email || "Email Address"} value={newEmail} onChange={(e) => setNewEmail(e.target.value)} style={inputStyle} />
 
+      {/* 3. STORE & AMBASSADOR DETAILS */}
       {isAmbassadorActive && (
         <>
           <p style={labelStyle}>DISPLAY NAME</p>
@@ -214,41 +218,7 @@ export default function ProfileSettings({
             style={inputStyle} 
           />
 
-          <p style={labelStyle}>REAL-TIME SALES ALERTS</p>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            background: '#181818',
-            border: '1px solid #333',
-            padding: '12px 16px',
-            borderRadius: '8px',
-            marginBottom: '20px'
-          }}>
-            <span style={{ fontSize: '12px', color: '#aaa', letterSpacing: '0.5px' }}>
-              Push notifications for sales & admin messages
-            </span>
-            <button
-              type="button"
-              disabled={pushLoading}
-              onClick={handlePushToggle}
-              style={{
-                background: pushEnabled ? '#22c55e' : 'transparent',
-                color: pushEnabled ? '#000' : '#888',
-                border: pushEnabled ? '1px solid #22c55e' : '1px solid #444',
-                padding: '6px 14px',
-                borderRadius: '20px',
-                fontSize: '10px',
-                fontWeight: 'bold',
-                letterSpacing: '1px',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease'
-              }}
-            >
-              {pushLoading ? '...' : (pushEnabled ? 'ENABLED' : 'DISABLED')}
-            </button>
-          </div>
-
+          {/* 4. FINANCIAL & PAYOUT DETAILS */}
           <p style={labelStyle}>DEFAULT PAYOUT METHOD</p>
           <div style={{
             display: 'flex',
@@ -304,9 +274,46 @@ export default function ProfileSettings({
             onChange={(e) => setNewPayoutNumber(e.target.value)} 
             style={inputStyle} 
           />
+
+          {/* 5. APP PREFERENCES */}
+          <p style={labelStyle}>REAL-TIME SALES ALERTS</p>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            background: '#181818',
+            border: '1px solid #333',
+            padding: '12px 16px',
+            borderRadius: '8px',
+            marginBottom: '20px'
+          }}>
+            <span style={{ fontSize: '12px', color: '#aaa', letterSpacing: '0.5px' }}>
+              Instant sales & admin alerts
+            </span>
+            <button
+              type="button"
+              disabled={pushLoading}
+              onClick={handlePushToggle}
+              style={{
+                background: pushEnabled ? '#22c55e' : 'transparent',
+                color: pushEnabled ? '#000' : '#888',
+                border: pushEnabled ? '1px solid #22c55e' : '1px solid #444',
+                padding: '6px 14px',
+                borderRadius: '20px',
+                fontSize: '10px',
+                fontWeight: 'bold',
+                letterSpacing: '1px',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              {pushLoading ? '...' : (pushEnabled ? 'ENABLED' : 'DISABLED')}
+            </button>
+          </div>
         </>
       )}
 
+      {/* 6. SECURITY & ACCOUNT ACTIONS */}
       <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
         <div>
           <button 
