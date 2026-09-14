@@ -69,28 +69,34 @@ export default function ProfileSettings({
   const [showPasswordSection, setShowPasswordSection] = useState(false);
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushLoading, setPushLoading] = useState(true);
-  
+
   const headerRef = useRef<HTMLDivElement>(null);
 
-  // ===== স্থির হেডার রাখার জন্য Visual Viewport (jitter-free) =====
+  // ===== Jitter-free Fixed Header (Visual Viewport) =====
   useEffect(() => {
     const vv = window.visualViewport;
     if (!vv || !headerRef.current) return;
 
+    let rafId = 0;
+
     const update = () => {
-      // transform ব্যবহার করা হয়েছে যাতে লেআউট ভাঙে না এবং ঝাকুনি না হয়
-      if (headerRef.current) {
-        headerRef.current.style.transform = `translateY(${vv.offsetTop}px)`;
-      }
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => {
+        if (headerRef.current) {
+          // offsetTop ব্যবহার করে হেডারকে কীবোর্ডের উপরে স্থির রাখা হয়
+          headerRef.current.style.transform = `translateY(${vv.offsetTop}px)`;
+        }
+      });
     };
 
     // প্রাথমিক সেট
     update();
 
-    vv.addEventListener('resize', update);
-    vv.addEventListener('scroll', update);
+    vv.addEventListener('resize', update, { passive: true });
+    vv.addEventListener('scroll', update, { passive: true });
 
     return () => {
+      cancelAnimationFrame(rafId);
       vv.removeEventListener('resize', update);
       vv.removeEventListener('scroll', update);
     };
@@ -153,7 +159,7 @@ export default function ProfileSettings({
   return (
     <div style={{ position: 'relative', paddingTop: '48px' }}>
       
-      {/* ===== FIXED HEADER (কীবোর্ড ওপেন হলেও দৃশ্যমান থাকবে) ===== */}
+      {/* ===== FIXED HEADER (কীবোর্ড ওপেন হলেও দৃশ্যমান ও ঝাকুনিমুক্ত) ===== */}
       <div
         ref={headerRef}
         style={{ 
@@ -169,10 +175,11 @@ export default function ProfileSettings({
           alignItems: 'center', 
           borderBottom: '1px solid #1A1A1A',
           boxSizing: 'border-box',
-          WebkitTransform: 'translateZ(0)',
-          transform: 'translateY(0)', // initial
+          transform: 'translateY(0)',
           willChange: 'transform',
           paddingTop: 'max(12px, env(safe-area-inset-top))',
+          // GPU লেয়ার স্থির রাখার জন্য
+          backfaceVisibility: 'hidden',
         }}
       >
         <h2 style={{ fontWeight: '600', letterSpacing: '3px', fontSize: '15px', color: '#FFFFFF', margin: 0 }}>SETTINGS</h2>
@@ -418,15 +425,23 @@ export default function ProfileSettings({
             style={navButtonStyle}
           >
             <span>CHANGE PASSWORD</span>
-            <span style={{ fontSize: '10px', color: '#FFFFFF', transform: showPasswordSection ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease' }}>▼</span>
+            <span style={{ 
+              fontSize: '10px', 
+              color: '#FFFFFF', 
+              transform: showPasswordSection ? 'rotate(180deg)' : 'rotate(0deg)', 
+              transition: 'transform 0.25s ease',
+              display: 'inline-block'
+            }}>▼</span>
           </button>
 
+          {/* ===== Smooth Accordion (জিটার কমাতে) ===== */}
           <div style={{
             maxHeight: showPasswordSection ? '180px' : '0px',
             opacity: showPasswordSection ? 1 : 0,
             overflow: 'hidden',
-            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-            pointerEvents: showPasswordSection ? 'auto' : 'none'
+            transition: 'max-height 0.28s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.22s ease',
+            pointerEvents: showPasswordSection ? 'auto' : 'none',
+            willChange: 'max-height, opacity'
           }}>
             <div style={{ paddingTop: '8px' }}>
               <p style={labelStyle}>CURRENT PASSWORD</p>
