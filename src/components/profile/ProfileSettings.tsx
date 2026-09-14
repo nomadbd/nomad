@@ -196,7 +196,7 @@ export default function ProfileSettings({
       display: 'flex',
       flexDirection: 'column'
     }}>
-      
+
       {/* ===== FIXED HEADER ===== */}
       <div
         ref={headerRef}
@@ -220,7 +220,7 @@ export default function ProfileSettings({
         }}
       >
         <h2 style={{ fontWeight: '600', letterSpacing: '3px', fontSize: '15px', color: '#FFFFFF', margin: 0 }}>SETTINGS</h2>
-        
+
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
           <button
             onClick={handleUpdate}
@@ -254,13 +254,13 @@ export default function ProfileSettings({
         flex: 1,
         overflowY: 'auto',
         overflowX: 'hidden',
-        paddingTop: 'calc(48px + env(safe-area-inset-top))',
+        paddingTop: 'calc(51px + env(safe-area-inset-top))',
         paddingLeft: '20px',
         paddingRight: '20px',
         paddingBottom: '40px',
         WebkitOverflowScrolling: 'touch',
       }}>
-        
+
         {isAmbassadorActive && (
           <div style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '16px' }}>
             <div style={{ 
@@ -459,7 +459,7 @@ export default function ProfileSettings({
         )}
 
         <div style={{ borderTop: '1px solid #1C1C1E', paddingTop: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          
+
           <button 
             type="button"
             onClick={openPasswordSheet}
