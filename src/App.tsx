@@ -23,12 +23,16 @@ const AppContent = ({ session, setIsSearchOpen, setIsAuthOpen }: any) => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // ব্যাকগ্রাউন্ড নোটিফিকেশন সাবস্ক্রিপশন চালু করার জন্য
+  // শুধু অ্যাডমিন রাউটে প্রবেশ করলে অটোমেটিক ব্যাকগ্রাউন্ড নোটিফিকেশন সাবস্ক্রিপশন ট্রাইগার হবে
   useEffect(() => {
-    if (session) {
+    if (!session) return;
+
+    const isAdminRoute = location.pathname.startsWith('/admin');
+
+    if (isAdminRoute) {
       subscribeUserToPush();
     }
-  }, [session]);
+  }, [session, location.pathname]);
 
   const showHeader = location.pathname === '/';
 
