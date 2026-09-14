@@ -98,7 +98,7 @@ export default function ProfileSettings({
     return details.includes(':') ? details.split(':')[1].trim() : details;
   };
 
-  // Dynamic Dirty Check
+  // Dynamic Dirty Check (ইনপুট দিলে সেভ বাটন লাইভ একটিভ হবে)
   const isDirty = Boolean(
     (newName && newName !== profile?.name) ||
     (newEmail && newEmail !== profile?.email) ||
@@ -111,7 +111,7 @@ export default function ProfileSettings({
 
   const labelStyle = { fontSize: '10px', color: '#FFFFFF', letterSpacing: '1.5px', marginBottom: '4px', fontWeight: '500' };
   const inputStyle = { width: '100%', padding: '8px 0', background: 'transparent', border: 'none', borderBottom: '1px solid #282828', color: '#FFFFFF', marginBottom: '16px', outline: 'none', fontSize: '14px' };
-  const navButtonStyle = { background: 'transparent', border: 'none', color: '#FFFFFF', cursor: 'pointer', fontSize: '12px', letterSpacing: '1px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', textAlign: 'left' as const, padding: '8px 0' };
+  const navButtonStyle = { background: 'transparent', border: 'none', color: '#FFFFFF', cursor: 'pointer', fontSize: '12px', letterSpacing: '1px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', textAlign: 'left' as const, padding: '12px 0' };
   const actionButtonStyle = { background: 'transparent', border: 'none', color: '#FFFFFF', cursor: 'pointer', fontSize: '11px', letterSpacing: '1.5px', textTransform: 'uppercase' as const, display: 'block', width: '100%', textAlign: 'left' as const, fontWeight: '500', marginTop: '10px' };
 
   const payoutOptions = ['bKash', 'Nagad', 'Rocket', 'Card'];
@@ -127,26 +127,25 @@ export default function ProfileSettings({
 
   return (
     <div style={{ position: 'relative' }}>
-      {/* PERFECT STICKY HEADER */}
+      
+      {/* PERFECT ALWAYS-STICKY HEADER */}
       <div style={{ 
         position: 'sticky', 
         top: 0, 
-        zIndex: 50, 
+        zIndex: 100, 
         backgroundColor: '#000000',
-        backdropFilter: 'blur(12px)',
-        WebkitBackdropFilter: 'blur(12px)',
+        margin: '-20px -20px 20px -20px',
+        padding: '16px 20px',
         display: 'flex', 
         justifyContent: 'space-between', 
         alignItems: 'center', 
-        paddingTop: '12px',
-        paddingBottom: '16px',
-        marginBottom: '16px',
-        borderBottom: '1px solid rgba(255, 255, 255, 0.05)'
+        borderBottom: '1px solid #1A1A1A',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.5)'
       }}>
-        <h2 style={{ fontWeight: '600', letterSpacing: '3px', fontSize: '16px', color: '#FFFFFF', margin: 0 }}>SETTINGS</h2>
+        <h2 style={{ fontWeight: '600', letterSpacing: '3px', fontSize: '15px', color: '#FFFFFF', margin: 0 }}>SETTINGS</h2>
         
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          {/* HEADER SAVE BUTTON */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          {/* TOP RIGHT SAVE BUTTON */}
           <button
             onClick={handleUpdate}
             disabled={!isDirty}
@@ -154,14 +153,14 @@ export default function ProfileSettings({
               background: isDirty ? '#FFFFFF' : 'transparent',
               color: isDirty ? '#000000' : '#444444',
               border: isDirty ? '1px solid #FFFFFF' : '1px solid #333333',
-              padding: '5px 14px',
+              padding: '6px 16px',
               borderRadius: '16px',
               fontSize: '10px',
               fontWeight: '700',
               letterSpacing: '1.5px',
               cursor: isDirty ? 'pointer' : 'default',
               opacity: isDirty ? 1 : 0.4,
-              transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
+              transition: 'all 0.25s ease'
             }}
           >
             SAVE
@@ -401,7 +400,7 @@ export default function ProfileSettings({
             transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
             pointerEvents: showPasswordSection ? 'auto' : 'none'
           }}>
-            <div style={{ paddingTop: '12px' }}>
+            <div style={{ paddingTop: '8px' }}>
               <p style={labelStyle}>CURRENT PASSWORD</p>
               <input 
                 type="password" 
