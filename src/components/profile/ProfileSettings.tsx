@@ -69,22 +69,28 @@ export default function ProfileSettings({
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushLoading, setPushLoading] = useState(true);
   const [isPasswordSheetOpen, setIsPasswordSheetOpen] = useState(false);
+  const [keyboardOffset, setKeyboardOffset] = useState(0);
 
   const headerRef = useRef<HTMLDivElement>(null);
 
-  // ===== Jitter-free Fixed Header =====
+  // ===== Jitter-free Fixed Header + Keyboard Offset for Sheet =====
   useEffect(() => {
     const vv = window.visualViewport;
-    if (!vv || !headerRef.current) return;
+    if (!vv) return;
 
     let rafId = 0;
 
     const update = () => {
       cancelAnimationFrame(rafId);
       rafId = requestAnimationFrame(() => {
+        // Header
         if (headerRef.current) {
           headerRef.current.style.transform = `translateY(${vv.offsetTop}px)`;
         }
+
+        // Keyboard height calculation (for Bottom Sheet)
+        const offset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+        setKeyboardOffset(offset);
       });
     };
 
@@ -138,17 +144,16 @@ export default function ProfileSettings({
     return details.includes(':') ? details.split(':')[1].trim() : details;
   };
 
+  // ===== Header SAVE-এ পাসওয়ার্ড আর গণনা হবে না =====
   const isDirty = Boolean(
     (newName && newName !== profile?.name) ||
     (newEmail && newEmail !== profile?.email) ||
     (newDisplayName && newDisplayName !== currentDisplayName) ||
     (newSlug && newSlug !== currentSlug) ||
-    (newPayoutNumber && newPayoutNumber !== cleanPayoutNumber(currentPayoutDetails)) ||
-    currentPassword.length > 0 ||
-    newPassword.length > 0
+    (newPayoutNumber && newPayoutNumber !== cleanPayoutNumber(currentPayoutDetails))
   );
 
-  const isPasswordDirty = currentPassword.length > 0 || newPassword.length > 0;
+  const isPasswordDirty = currentPassword.length > 0 && newPassword.length > 0;
 
   const labelStyle = { fontSize: '10px', color: '#FFFFFF', letterSpacing: '1.5px', marginBottom: '4px', fontWeight: '500' };
   const inputStyle = { width: '100%', padding: '8px 0', background: 'transparent', border: 'none', borderBottom: '1px solid #282828', color: '#FFFFFF', marginBottom: '16px', outline: 'none', fontSize: '14px' };
@@ -172,9 +177,8 @@ export default function ProfileSettings({
 
   const closePasswordSheet = () => {
     setIsPasswordSheetOpen(false);
-    // শিট বন্ধ করার সময় পাসওয়ার্ড ক্লিয়ার করতে চাইলে আনকমেন্ট করুন
-    // setCurrentPassword('');
-    // setNewPassword('');
+    setCurrentPassword('');
+    setNewPassword('');
   };
 
   const handlePasswordUpdate = () => {
@@ -456,7 +460,6 @@ export default function ProfileSettings({
 
         <div style={{ borderTop: '1px solid #1C1C1E', paddingTop: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           
-          {/* ===== CHANGE PASSWORD BUTTON (Bottom Sheet Trigger) ===== */}
           <button 
             type="button"
             onClick={openPasswordSheet}
@@ -473,7 +476,7 @@ export default function ProfileSettings({
         </div>
       </div>
 
-      {/* ===== BOTTOM SHEET OVERLAY + SHEET ===== */}
+      {/* ===== BOTTOM SHEET ===== */}
       {/* Backdrop */}
       <div
         onClick={closePasswordSheet}
@@ -494,16 +497,17 @@ export default function ProfileSettings({
           position: 'fixed',
           left: 0,
           right: 0,
-          bottom: 0,
+          bottom: keyboardOffset, // ← কীবোর্ডের উপরে তুলে দেয়
           zIndex: 1101,
           backgroundColor: '#111111',
           borderTopLeftRadius: '20px',
           borderTopRightRadius: '20px',
-          padding: '20px 20px 40px',
-          paddingBottom: 'max(40px, env(safe-area-inset-bottom))',
+          display: 'flex',
+          flexDirection: 'column',
+          maxHeight: '85vh',
           transform: isPasswordSheetOpen ? 'translateY(0)' : 'translateY(110%)',
-          transition: 'transform 0.35s cubic-bezier(0.32, 0.72, 0, 1)',
-          willChange: 'transform',
+          transition: 'transform 0.35s cubic-bezier(0.32, 0.72, 0, 1), bottom 0.25s ease',
+          willChange: 'transform, bottom',
           boxShadow: '0 -10px 40px rgba(0,0,0,0.5)',
         }}
       >
@@ -513,11 +517,18 @@ export default function ProfileSettings({
           height: '4px',
           backgroundColor: '#333333',
           borderRadius: '2px',
-          margin: '0 auto 20px',
+          margin: '12px auto 8px',
+          flexShrink: 0,
         }} />
 
         {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center', 
+          padding: '8px 20px 16px',
+          flexShrink: 0,
+        }}>
           <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '600', letterSpacing: '1.5px', color: '#FFFFFF' }}>
             CHANGE PASSWORD
           </h3>
@@ -537,45 +548,58 @@ export default function ProfileSettings({
           </button>
         </div>
 
-        {/* Fields */}
-        <p style={labelStyle}>CURRENT PASSWORD</p>
-        <input 
-          type="password" 
-          placeholder="Current Password" 
-          value={currentPassword} 
-          onChange={(e) => setCurrentPassword(e.target.value)} 
-          style={{ ...inputStyle, marginBottom: '20px' }} 
-        />
+        {/* Scrollable Fields (যদি দরকার হয়) */}
+        <div style={{ 
+          padding: '0 20px', 
+          overflowY: 'auto',
+          flex: 1,
+        }}>
+          <p style={labelStyle}>CURRENT PASSWORD</p>
+          <input 
+            type="password" 
+            placeholder="Current Password" 
+            value={currentPassword} 
+            onChange={(e) => setCurrentPassword(e.target.value)} 
+            style={{ ...inputStyle, marginBottom: '20px' }} 
+          />
 
-        <p style={labelStyle}>NEW PASSWORD</p>
-        <input 
-          type="password" 
-          placeholder="New Password" 
-          value={newPassword} 
-          onChange={(e) => setNewPassword(e.target.value)} 
-          style={{ ...inputStyle, marginBottom: '28px' }} 
-        />
+          <p style={labelStyle}>NEW PASSWORD</p>
+          <input 
+            type="password" 
+            placeholder="New Password" 
+            value={newPassword} 
+            onChange={(e) => setNewPassword(e.target.value)} 
+            style={{ ...inputStyle, marginBottom: '8px' }} 
+          />
+        </div>
 
-        {/* Update Button */}
-        <button
-          onClick={handlePasswordUpdate}
-          disabled={!isPasswordDirty}
-          style={{
-            width: '100%',
-            padding: '14px',
-            borderRadius: '12px',
-            border: 'none',
-            background: isPasswordDirty ? '#FFFFFF' : '#222222',
-            color: isPasswordDirty ? '#000000' : '#666666',
-            fontSize: '13px',
-            fontWeight: '700',
-            letterSpacing: '1.5px',
-            cursor: isPasswordDirty ? 'pointer' : 'default',
-            transition: 'all 0.2s ease',
-          }}
-        >
-          UPDATE PASSWORD
-        </button>
+        {/* Sticky Footer Button - সবসময় দৃশ্যমান */}
+        <div style={{ 
+          padding: '16px 20px',
+          paddingBottom: 'max(20px, env(safe-area-inset-bottom))',
+          flexShrink: 0,
+          borderTop: '1px solid #1A1A1A',
+        }}>
+          <button
+            onClick={handlePasswordUpdate}
+            disabled={!isPasswordDirty}
+            style={{
+              width: '100%',
+              padding: '14px',
+              borderRadius: '12px',
+              border: 'none',
+              background: isPasswordDirty ? '#FFFFFF' : '#222222',
+              color: isPasswordDirty ? '#000000' : '#666666',
+              fontSize: '13px',
+              fontWeight: '700',
+              letterSpacing: '1.5px',
+              cursor: isPasswordDirty ? 'pointer' : 'default',
+              transition: 'all 0.2s ease',
+            }}
+          >
+            UPDATE PASSWORD
+          </button>
+        </div>
       </div>
     </div>
   );
