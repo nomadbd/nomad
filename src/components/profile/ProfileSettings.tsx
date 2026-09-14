@@ -1,4 +1,5 @@
-import { useState, RefObject } from 'react';
+import { useState, useEffect, RefObject } from 'react';
+import { isUserSubscribed, subscribeUserToPush, unsubscribeUserFromPush } from '../utils/pushManager';
 
 interface ProfileSettingsProps {
   profile: any;
@@ -66,6 +67,31 @@ export default function ProfileSettings({
   onChangeView
 }: ProfileSettingsProps) {
   const [showPasswordSection, setShowPasswordSection] = useState(false);
+  const [pushEnabled, setPushEnabled] = useState(false);
+  const [pushLoading, setPushLoading] = useState(true);
+
+  useEffect(() => {
+    async function checkPushStatus() {
+      if (isAmbassadorActive) {
+        const status = await isUserSubscribed();
+        setPushEnabled(status);
+        setPushLoading(false);
+      }
+    }
+    checkPushStatus();
+  }, [isAmbassadorActive]);
+
+  const handlePushToggle = async () => {
+    setPushLoading(true);
+    if (pushEnabled) {
+      const success = await unsubscribeUserFromPush();
+      if (success) setPushEnabled(false);
+    } else {
+      const success = await subscribeUserToPush();
+      if (success) setPushEnabled(true);
+    }
+    setPushLoading(false);
+  };
 
   const labelStyle = { fontSize: '10px', color: '#888', letterSpacing: '2px', marginBottom: '5px' };
   const inputStyle = { width: '100%', padding: '10px 0', background: 'transparent', border: 'none', borderBottom: '1px solid #333', color: '#fff', marginBottom: '20px', outline: 'none', fontSize: '15px' };
@@ -187,6 +213,41 @@ export default function ProfileSettings({
             }} 
             style={inputStyle} 
           />
+
+          <p style={labelStyle}>REAL-TIME SALES ALERTS</p>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            background: '#181818',
+            border: '1px solid #333',
+            padding: '12px 16px',
+            borderRadius: '8px',
+            marginBottom: '20px'
+          }}>
+            <span style={{ fontSize: '12px', color: '#aaa', letterSpacing: '0.5px' }}>
+              Push notifications for sales & admin messages
+            </span>
+            <button
+              type="button"
+              disabled={pushLoading}
+              onClick={handlePushToggle}
+              style={{
+                background: pushEnabled ? '#22c55e' : 'transparent',
+                color: pushEnabled ? '#000' : '#888',
+                border: pushEnabled ? '1px solid #22c55e' : '1px solid #444',
+                padding: '6px 14px',
+                borderRadius: '20px',
+                fontSize: '10px',
+                fontWeight: 'bold',
+                letterSpacing: '1px',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              {pushLoading ? '...' : (pushEnabled ? 'ENABLED' : 'DISABLED')}
+            </button>
+          </div>
 
           <p style={labelStyle}>DEFAULT PAYOUT METHOD</p>
           <div style={{
