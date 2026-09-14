@@ -98,7 +98,7 @@ export default function ProfileSettings({
     return details.includes(':') ? details.split(':')[1].trim() : details;
   };
 
-  // Dynamic Dirty Check (ইনপুট দেওয়া শুরু হলেই ট্রু হবে)
+  // Dynamic Dirty Check
   const isDirty = Boolean(
     (newName && newName !== profile?.name) ||
     (newEmail && newEmail !== profile?.email) ||
@@ -126,11 +126,38 @@ export default function ProfileSettings({
   const activeSlug = newSlug || currentSlug || 'slug';
 
   return (
-    <div style={{ paddingBottom: isDirty ? '80px' : '20px', transition: 'padding 0.3s ease' }}>
-      {/* HEADER */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+    <div>
+      {/* TOP HEADER WITH INTEGRATED SAVE BUTTON */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', sticky: 'top' }}>
         <h2 style={{ fontWeight: '600', letterSpacing: '3px', fontSize: '16px', color: '#FFFFFF', margin: 0 }}>SETTINGS</h2>
-        <svg onClick={() => onChangeView('profile')} width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2" cursor="pointer"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          {/* TOP HEADER SAVE BUTTON */}
+          <button
+            onClick={handleUpdate}
+            disabled={!isDirty}
+            style={{
+              background: isDirty ? '#FFFFFF' : 'transparent',
+              color: isDirty ? '#000000' : '#444444',
+              border: isDirty ? '1px solid #FFFFFF' : '1px solid #333333',
+              padding: '5px 14px',
+              borderRadius: '16px',
+              fontSize: '10px',
+              fontWeight: '700',
+              letterSpacing: '1.5px',
+              cursor: isDirty ? 'pointer' : 'default',
+              opacity: isDirty ? 1 : 0.4,
+              transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
+            }}
+          >
+            SAVE
+          </button>
+
+          <svg onClick={() => onChangeView('profile')} width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2" cursor="pointer">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </div>
       </div>
 
       {/* 1. AVATAR SECTION */}
@@ -386,47 +413,6 @@ export default function ProfileSettings({
           <span>SIGN OUT</span>
         </button>
         <button onClick={() => setShowConfirm(true)} style={actionButtonStyle}>DELETE ACCOUNT</button>
-      </div>
-
-      {/* ULTRA-PREMIUM DYNAMIC FLOATING GLASSBAR */}
-      <div style={{
-        position: 'fixed',
-        bottom: '16px',
-        left: '16px',
-        right: '16px',
-        maxWidth: '480px',
-        margin: '0 auto',
-        padding: '12px',
-        background: 'rgba(18, 18, 18, 0.8)',
-        backdropFilter: 'blur(16px)',
-        WebkitBackdropFilter: 'blur(16px)',
-        border: '1px solid rgba(255, 255, 255, 0.15)',
-        borderRadius: '12px',
-        boxShadow: '0 10px 30px rgba(0,0,0,0.8)',
-        zIndex: 99,
-        transform: isDirty ? 'translateY(0)' : 'translateY(120%)',
-        opacity: isDirty ? 1 : 0,
-        pointerEvents: isDirty ? 'auto' : 'none',
-        transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)'
-      }}>
-        <button 
-          onClick={handleUpdate} 
-          style={{ 
-            width: '100%',
-            padding: '12px 0',
-            background: '#FFFFFF',
-            color: '#000000',
-            border: 'none',
-            borderRadius: '6px',
-            fontSize: '11px',
-            fontWeight: '700',
-            letterSpacing: '2px',
-            cursor: 'pointer',
-            boxShadow: '0 4px 12px rgba(255, 255, 255, 0.2)'
-          }}
-        >
-          SAVE CHANGES
-        </button>
       </div>
     </div>
   );
