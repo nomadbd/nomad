@@ -98,7 +98,7 @@ export default function ProfileSettings({
     return details.includes(':') ? details.split(':')[1].trim() : details;
   };
 
-  // Dynamic Dirty Check
+  // Dynamic Dirty Check (ইনপুট দেওয়া শুরু হলেই ট্রু হবে)
   const isDirty = Boolean(
     (newName && newName !== profile?.name) ||
     (newEmail && newEmail !== profile?.email) ||
@@ -109,7 +109,6 @@ export default function ProfileSettings({
     newPassword.length > 0
   );
 
-  // ALL TEXT COLOR MATCHED TO 'ROCKET' PURE WHITE (#FFFFFF)
   const labelStyle = { fontSize: '10px', color: '#FFFFFF', letterSpacing: '1.5px', marginBottom: '4px', fontWeight: '500' };
   const inputStyle = { width: '100%', padding: '8px 0', background: 'transparent', border: 'none', borderBottom: '1px solid #282828', color: '#FFFFFF', marginBottom: '16px', outline: 'none', fontSize: '14px' };
   const navButtonStyle = { background: 'transparent', border: 'none', color: '#FFFFFF', cursor: 'pointer', fontSize: '12px', letterSpacing: '1px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', textAlign: 'left' as const, padding: '8px 0' };
@@ -127,7 +126,7 @@ export default function ProfileSettings({
   const activeSlug = newSlug || currentSlug || 'slug';
 
   return (
-    <>
+    <div style={{ paddingBottom: isDirty ? '80px' : '20px', transition: 'padding 0.3s ease' }}>
       {/* HEADER */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <h2 style={{ fontWeight: '600', letterSpacing: '3px', fontSize: '16px', color: '#FFFFFF', margin: 0 }}>SETTINGS</h2>
@@ -178,7 +177,6 @@ export default function ProfileSettings({
               CHANGE<br />PICTURE
             </button>
 
-            {/* REMOVE PICTURE WITH LINE BREAK TO MATCH CHANGE PICTURE */}
             {avatarUrl && (
               <button 
                 type="button"
@@ -355,7 +353,6 @@ export default function ProfileSettings({
             <span style={{ fontSize: '10px', color: '#FFFFFF', transform: showPasswordSection ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease' }}>▼</span>
           </button>
 
-          {/* SMOOTH ANIMATED ACCORDION */}
           <div style={{
             maxHeight: showPasswordSection ? '180px' : '0px',
             opacity: showPasswordSection ? 1 : 0,
@@ -385,34 +382,52 @@ export default function ProfileSettings({
           </div>
         </div>
 
-        {/* DYNAMIC SAVE BUTTON */}
-        <button 
-          onClick={handleUpdate} 
-          style={{ 
-            width: '100%',
-            padding: '12px 0',
-            background: isDirty ? '#FFFFFF' : 'transparent',
-            color: isDirty ? '#000000' : '#FFFFFF',
-            border: isDirty ? '1px solid #FFFFFF' : '1px solid #333333',
-            borderRadius: '6px',
-            fontSize: '11px',
-            fontWeight: '700',
-            letterSpacing: '2px',
-            cursor: isDirty ? 'pointer' : 'default',
-            marginTop: '8px',
-            marginBottom: '4px',
-            opacity: isDirty ? 1 : 0.6,
-            transition: 'all 0.3s ease'
-          }}
-        >
-          SAVE CHANGES
-        </button>
-
         <button onClick={handleSignOut} style={navButtonStyle}>
           <span>SIGN OUT</span>
         </button>
         <button onClick={() => setShowConfirm(true)} style={actionButtonStyle}>DELETE ACCOUNT</button>
       </div>
-    </>
+
+      {/* ULTRA-PREMIUM DYNAMIC FLOATING GLASSBAR */}
+      <div style={{
+        position: 'fixed',
+        bottom: '16px',
+        left: '16px',
+        right: '16px',
+        maxWidth: '480px',
+        margin: '0 auto',
+        padding: '12px',
+        background: 'rgba(18, 18, 18, 0.8)',
+        backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
+        border: '1px solid rgba(255, 255, 255, 0.15)',
+        borderRadius: '12px',
+        boxShadow: '0 10px 30px rgba(0,0,0,0.8)',
+        zIndex: 99,
+        transform: isDirty ? 'translateY(0)' : 'translateY(120%)',
+        opacity: isDirty ? 1 : 0,
+        pointerEvents: isDirty ? 'auto' : 'none',
+        transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)'
+      }}>
+        <button 
+          onClick={handleUpdate} 
+          style={{ 
+            width: '100%',
+            padding: '12px 0',
+            background: '#FFFFFF',
+            color: '#000000',
+            border: 'none',
+            borderRadius: '6px',
+            fontSize: '11px',
+            fontWeight: '700',
+            letterSpacing: '2px',
+            cursor: 'pointer',
+            boxShadow: '0 4px 12px rgba(255, 255, 255, 0.2)'
+          }}
+        >
+          SAVE CHANGES
+        </button>
+      </div>
+    </div>
   );
 }
