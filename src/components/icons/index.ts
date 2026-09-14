@@ -15,3 +15,4 @@ export * from './BackIcon';
 export * from './EmailIcon';
 export * from './CallIcon';
 export * from './MessageIcon';
+export * from './NotificationIcon';
