@@ -10,7 +10,8 @@ interface ProfileHeaderProps {
   getInitials: (name?: string, email?: string) => string;
   onChangeView: (view: 'profile' | 'settings') => void;
   onOpenMessages?: () => void;
-  hasUnread?: boolean; // নতুন মেসেজ/নোটিফিকেশন আছে কিনা
+  onOpenProfileDetails?: () => void; // বটম শিট খোলার কলব্যাক
+  hasUnread?: boolean;
 }
 
 export default function ProfileHeader({
@@ -22,6 +23,7 @@ export default function ProfileHeader({
   getInitials,
   onChangeView,
   onOpenMessages,
+  onOpenProfileDetails,
   hasUnread = false
 }: ProfileHeaderProps) {
   const name = profile?.name || "PROFILE";
@@ -33,19 +35,23 @@ export default function ProfileHeader({
       alignItems: 'center', 
       marginBottom: '24px',
       width: '100%',
-      gap: '8px'
+      gap: '12px'
     }}>
-      {/* বামপাশ: অ্যাভাটার ও ইউজার ইনফো */}
-      <div style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        gap: '10px', 
-        flex: 1, 
-        minWidth: 0 
-      }}>
+      {/* বামপাশ: নাম ও অ্যাভাটার (ক্লিক করলে বটম শিট ওপেন হবে) */}
+      <div 
+        onClick={onOpenProfileDetails}
+        style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '12px', 
+          flex: 1, 
+          minWidth: 0,
+          cursor: 'pointer',
+          userSelect: 'none'
+        }}
+      >
         {/* অ্যাভাটার */}
         <div 
-          onClick={togglePortalMode}
           style={{ 
             width: '42px', 
             height: '42px', 
@@ -60,9 +66,6 @@ export default function ProfileHeader({
             fontSize: '13px', 
             color: '#FFFFFF', 
             flexShrink: 0,
-            cursor: isAmbassador ? 'pointer' : 'default',
-            userSelect: 'none',
-            transition: 'all 0.2s ease',
             overflow: 'hidden'
           }}>
           {avatarUrl && isAmbassadorActive ? (
@@ -72,7 +75,7 @@ export default function ProfileHeader({
           )}
         </div>
 
-        {/* নাম এবং সাবটাইটেল/রোল ব্যাজ */}
+        {/* নাম ও সাবটাইটেল */}
         <div style={{ 
           display: 'flex', 
           flexDirection: 'column', 
@@ -81,10 +84,9 @@ export default function ProfileHeader({
           minWidth: 0 
         }}>
           <h2 
-            title={name}
             style={{ 
               margin: 0, 
-              fontSize: '15px', 
+              fontSize: '16px', 
               fontWeight: '600', 
               color: '#FFFFFF', 
               letterSpacing: '0.2px',
@@ -97,35 +99,24 @@ export default function ProfileHeader({
             {name}
           </h2>
 
-          {/* ইমেইলের বদলে মার্জিত রোল ইন্ডিকেটর */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginTop: '3px' }}>
-            <span style={{
-              width: '5px',
-              height: '5px',
-              borderRadius: '50%',
-              backgroundColor: isAmbassadorActive ? '#10B981' : '#71717A' // এক্টিভ থাকলে গ্রিন ডট
-            }} />
-            <span style={{ 
-              fontSize: '10px', 
-              color: isAmbassadorActive ? '#A1A1AA' : '#71717A', 
-              fontWeight: '500',
-              letterSpacing: '0.6px',
-              textTransform: 'uppercase'
-            }}>
-              {isAmbassadorActive ? 'AMBASSADOR' : 'CUSTOMER'}
+          {/* অ্যাম্বাসেডর একটিভ থাকলে ব্যাজ দেখাবে, না থাকলে আলতো সাবটাইটেল */}
+          {isAmbassadorActive ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginTop: '3px' }}>
+              <span style={{ width: '5px', height: '5px', borderRadius: '50%', backgroundColor: '#10B981' }} />
+              <span style={{ fontSize: '10px', color: '#A1A1AA', fontWeight: '500', letterSpacing: '0.6px', textTransform: 'uppercase' }}>
+                AMBASSADOR
+              </span>
+            </div>
+          ) : (
+            <span style={{ fontSize: '11px', color: '#71717A', marginTop: '2px' }}>
+              Tap for info
             </span>
-          </div>
+          )}
         </div>
       </div>
 
-      {/* ডানপাশ: কমপ্যাক্ট আইকন বাটন */}
-      <div style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        gap: '6px', 
-        flexShrink: 0 
-      }}>
-        {/* মেসেজ / নোটিফিকেশন বাটন */}
+      {/* ডানপাশ: আইকন বাটনসমূহ */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
         <button
           onClick={onOpenMessages}
           style={{ 
@@ -136,8 +127,8 @@ export default function ProfileHeader({
             background: '#121212', 
             border: '1px solid #27272A',
             borderRadius: '50%',
-            width: '35px',
-            height: '35px',
+            width: '36px',
+            height: '36px',
             color: '#FFFFFF',
             outline: 'none',
             position: 'relative'
@@ -150,7 +141,6 @@ export default function ProfileHeader({
             <NotificationIcon width={17} height={17} stroke="#FFFFFF" />
           )}
 
-          {/* অনরিড মেসেজ/নোটিফিকেশন ডট */}
           {hasUnread && (
             <span style={{
               position: 'absolute',
@@ -159,13 +149,11 @@ export default function ProfileHeader({
               width: '6px',
               height: '6px',
               backgroundColor: '#EF4444',
-              borderRadius: '50%',
-              boxShadow: '0 0 6px #EF4444'
+              borderRadius: '50%'
             }} />
           )}
         </button>
 
-        {/* সেটিংস বাটন */}
         <button
           onClick={() => onChangeView('settings')}
           style={{ 
@@ -176,8 +164,8 @@ export default function ProfileHeader({
             background: '#121212', 
             border: '1px solid #27272A',
             borderRadius: '50%',
-            width: '35px',
-            height: '35px',
+            width: '36px',
+            height: '36px',
             color: '#FFFFFF',
             outline: 'none'
           }}
