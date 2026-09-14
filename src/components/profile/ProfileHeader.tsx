@@ -1,3 +1,6 @@
+import React from 'react';
+import { MessageIcon, NotificationIcon, SettingsIcon } from './icons';
+
 interface ProfileHeaderProps {
   profile: any;
   avatarUrl: string | null;
@@ -6,6 +9,7 @@ interface ProfileHeaderProps {
   togglePortalMode: () => void;
   getInitials: (name?: string, email?: string) => string;
   onChangeView: (view: 'profile' | 'settings') => void;
+  onOpenMessages?: () => void;
 }
 
 export default function ProfileHeader({
@@ -15,7 +19,8 @@ export default function ProfileHeader({
   isAmbassadorActive,
   togglePortalMode,
   getInitials,
-  onChangeView
+  onChangeView,
+  onOpenMessages
 }: ProfileHeaderProps) {
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '35px' }}>
@@ -60,13 +65,44 @@ export default function ProfileHeader({
         </div>
       </div>
 
-      <div
-        onClick={() => onChangeView('settings')}
-        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: 'transparent', border: 'none', padding: '8px' }}>
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5">
-          <circle cx="12" cy="12" r="3"></circle>
-          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-        </svg>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <button
+          onClick={onOpenMessages}
+          style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            cursor: 'pointer', 
+            background: 'transparent', 
+            border: 'none', 
+            padding: '8px',
+            color: '#fff'
+          }}
+          title={isAmbassadorActive ? "Messages" : "Notifications"}
+        >
+          {isAmbassadorActive ? (
+            <MessageIcon width={22} height={22} stroke="#ffffff" />
+          ) : (
+            <NotificationIcon width={22} height={22} stroke="#ffffff" />
+          )}
+        </button>
+
+        <button
+          onClick={() => onChangeView('settings')}
+          style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            cursor: 'pointer', 
+            background: 'transparent', 
+            border: 'none', 
+            padding: '8px',
+            color: '#fff'
+          }}
+          title="Settings"
+        >
+          <SettingsIcon width={22} height={22} stroke="#ffffff" strokeWidth={1.5} />
+        </button>
       </div>
     </div>
   );
