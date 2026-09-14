@@ -70,8 +70,6 @@ export default function ProfileSettings({
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushLoading, setPushLoading] = useState(true);
 
-  // JS-ভিত্তিক visualViewport হ্যাক তুলে দেওয়া হয়েছে যা টাইপিংয়ের সময় হেডারকে ঝাকুনি দিত।
-
   useEffect(() => {
     async function checkPushStatus() {
       if (isAmbassadorActive) {
@@ -127,29 +125,26 @@ export default function ProfileSettings({
   const activeSlug = newSlug || currentSlug || 'slug';
 
   return (
-    /* ===== ISOLATED FULL-SCREEN CONTAINER (মূল প্রোফাইলে স্ক্রল হওয়া আটকাবে) ===== */
+    /* ===== FLEXBOX FULL SCREEN CONTAINER ===== */
     <div style={{
       position: 'fixed',
       top: 0,
       left: 0,
       right: 0,
       bottom: 0,
-      height: '100dvh',
+      height: '100%',
+      maxHeight: '100dvh',
       backgroundColor: '#000000',
-      zIndex: 999,
-      overflowY: 'auto',
-      overscrollBehavior: 'contain',
-      WebkitOverflowScrolling: 'touch'
+      zIndex: 9999,
+      display: 'flex',
+      flexDirection: 'column',
+      overflow: 'hidden' // বাইরের কোনো জায়গায় স্ক্রল হবে না
     }}>
       
-      {/* ===== STICKY HEADER (কীবোর্ড খোলা ও টাইপ করার সময় ঝাকুনিমুক্ত থাকবে) ===== */}
+      {/* ===== STRICTLY FIXED TOP HEADER (কীবোর্ড ও স্ক্রলে একদম স্থায়ী থাকবে) ===== */}
       <div
         style={{ 
-          position: 'sticky', 
-          top: 0,
-          left: 0,
-          width: '100%',
-          zIndex: 1000, 
+          flexShrink: 0, // কীবোর্ড ওপেন হলেও হেডার চ্যাপ্টা বা ছোট হবে না
           backgroundColor: '#000000',
           padding: '12px 20px',
           display: 'flex', 
@@ -158,6 +153,7 @@ export default function ProfileSettings({
           borderBottom: '1px solid #1A1A1A',
           boxSizing: 'border-box',
           paddingTop: 'max(12px, env(safe-area-inset-top))',
+          zIndex: 10
         }}
       >
         <h2 style={{ fontWeight: '600', letterSpacing: '3px', fontSize: '15px', color: '#FFFFFF', margin: 0 }}>SETTINGS</h2>
@@ -190,8 +186,14 @@ export default function ProfileSettings({
         </div>
       </div>
 
-      {/* ===== CONTENT CONTAINER ===== */}
-      <div style={{ padding: '20px 20px 40px 20px' }}>
+      {/* ===== ONLY THIS CONTENT AREA WILL SCROLL ===== */}
+      <div style={{ 
+        flex: 1, 
+        overflowY: 'auto', 
+        WebkitOverflowScrolling: 'touch',
+        padding: '20px 20px 40px 20px',
+        overscrollBehavior: 'contain'
+      }}>
         
         {isAmbassadorActive && (
           <div style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '16px' }}>
