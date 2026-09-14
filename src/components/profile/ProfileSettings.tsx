@@ -98,7 +98,7 @@ export default function ProfileSettings({
     return details.includes(':') ? details.split(':')[1].trim() : details;
   };
 
-  // Dynamic Dirty Check (যেকোনো ইনপুট পরিবর্তন বা টাইপিং শুরু হলে সত্য হবে)
+  // Dynamic Dirty Check
   const isDirty = Boolean(
     (newName && newName !== profile?.name) ||
     (newEmail && newEmail !== profile?.email) ||
@@ -109,11 +109,11 @@ export default function ProfileSettings({
     newPassword.length > 0
   );
 
-  // UNIFORM BRIGHT GRAY / WHITE PALETTE
-  const labelStyle = { fontSize: '10px', color: '#A0A0A0', letterSpacing: '1.5px', marginBottom: '4px', fontWeight: '500' };
+  // ALL TEXT COLOR MATCHED TO 'ROCKET' PURE WHITE (#FFFFFF)
+  const labelStyle = { fontSize: '10px', color: '#FFFFFF', letterSpacing: '1.5px', marginBottom: '4px', fontWeight: '500' };
   const inputStyle = { width: '100%', padding: '8px 0', background: 'transparent', border: 'none', borderBottom: '1px solid #282828', color: '#FFFFFF', marginBottom: '16px', outline: 'none', fontSize: '14px' };
-  const navButtonStyle = { background: 'transparent', border: 'none', color: '#D1D1D1', cursor: 'pointer', fontSize: '12px', letterSpacing: '1px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', textAlign: 'left' as const, padding: '8px 0' };
-  const actionButtonStyle = { background: 'transparent', border: 'none', color: '#D1D1D1', cursor: 'pointer', fontSize: '11px', letterSpacing: '1.5px', textTransform: 'uppercase' as const, display: 'block', width: '100%', textAlign: 'left' as const, fontWeight: '500', marginTop: '10px' };
+  const navButtonStyle = { background: 'transparent', border: 'none', color: '#FFFFFF', cursor: 'pointer', fontSize: '12px', letterSpacing: '1px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', textAlign: 'left' as const, padding: '8px 0' };
+  const actionButtonStyle = { background: 'transparent', border: 'none', color: '#FFFFFF', cursor: 'pointer', fontSize: '11px', letterSpacing: '1.5px', textTransform: 'uppercase' as const, display: 'block', width: '100%', textAlign: 'left' as const, fontWeight: '500', marginTop: '10px' };
 
   const payoutOptions = ['bKash', 'Nagad', 'Rocket', 'Card'];
 
@@ -131,7 +131,7 @@ export default function ProfileSettings({
       {/* HEADER */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <h2 style={{ fontWeight: '600', letterSpacing: '3px', fontSize: '16px', color: '#FFFFFF', margin: 0 }}>SETTINGS</h2>
-        <svg onClick={() => onChangeView('profile')} width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D1D1D1" strokeWidth="2" cursor="pointer"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        <svg onClick={() => onChangeView('profile')} width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2" cursor="pointer"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
       </div>
 
       {/* 1. AVATAR SECTION */}
@@ -166,17 +166,19 @@ export default function ProfileSettings({
               style={{
                 background: '#161616',
                 border: '1px solid #2C2C2E',
-                color: '#D1D1D1',
-                padding: '6px 12px',
+                color: '#FFFFFF',
+                padding: '8px 14px',
                 borderRadius: '4px',
                 fontSize: '11px',
                 letterSpacing: '1px',
+                lineHeight: '1.3',
+                textAlign: 'center',
                 cursor: uploadingAvatar ? 'not-allowed' : 'pointer'
               }}>
-              {uploadingAvatar ? 'UPLOADING...' : (avatarUrl ? 'CHANGE PICTURE' : 'UPLOAD PICTURE')}
+              CHANGE<br />PICTURE
             </button>
 
-            {/* RED REMOVED -> UNIFORM BRIGHT GRAY */}
+            {/* REMOVE PICTURE WITH LINE BREAK TO MATCH CHANGE PICTURE */}
             {avatarUrl && (
               <button 
                 type="button"
@@ -185,14 +187,16 @@ export default function ProfileSettings({
                 style={{
                   background: 'transparent',
                   border: 'none',
-                  color: '#D1D1D1',
+                  color: '#FFFFFF',
                   padding: '6px 4px',
                   fontSize: '11px',
                   letterSpacing: '1px',
+                  lineHeight: '1.3',
+                  textAlign: 'center',
                   cursor: uploadingAvatar ? 'not-allowed' : 'pointer',
                   opacity: uploadingAvatar ? 0.6 : 1
                 }}>
-                REMOVE
+                REMOVE<br />PICTURE
               </button>
             )}
           </div>
@@ -221,7 +225,7 @@ export default function ProfileSettings({
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <p style={labelStyle}>STORE SLUG</p>
-            <span style={{ fontSize: '10px', color: '#666666', marginBottom: '4px' }}>/{activeSlug}</span>
+            <span style={{ fontSize: '10px', color: '#888888', marginBottom: '4px' }}>/{activeSlug}</span>
           </div>
           <input 
             placeholder={currentSlug || "slug-name"} 
@@ -260,7 +264,7 @@ export default function ProfileSettings({
                     padding: '6px 14px',
                     borderRadius: '20px',
                     background: isSelected ? '#1A1A1A' : 'transparent',
-                    color: isSelected ? '#FFFFFF' : '#666666',
+                    color: '#FFFFFF',
                     border: isSelected ? '1px solid #FFFFFF' : '1px solid #222222',
                     fontSize: '11px',
                     fontWeight: isSelected ? '500' : '400',
@@ -268,6 +272,7 @@ export default function ProfileSettings({
                     whiteSpace: 'nowrap',
                     cursor: 'pointer',
                     transition: 'all 0.15s ease',
+                    opacity: isSelected ? 1 : 0.6,
                     flexShrink: 0
                   }}
                 >
@@ -276,7 +281,7 @@ export default function ProfileSettings({
                     height: '5px',
                     borderRadius: '50%',
                     background: isSelected ? '#FFFFFF' : 'transparent',
-                    border: isSelected ? '1px solid #FFFFFF' : '1px solid #444444'
+                    border: isSelected ? '1px solid #FFFFFF' : '1px solid #666666'
                   }} />
                   {option}
                 </button>
@@ -304,7 +309,7 @@ export default function ProfileSettings({
             borderRadius: '6px',
             marginBottom: '20px'
           }}>
-            <span style={{ fontSize: '11px', color: '#D1D1D1', letterSpacing: '0.5px' }}>
+            <span style={{ fontSize: '11px', color: '#FFFFFF', letterSpacing: '0.5px' }}>
               Sales & admin alerts
             </span>
             <button
@@ -313,7 +318,7 @@ export default function ProfileSettings({
               onClick={handlePushToggle}
               style={{
                 background: pushEnabled ? '#FFFFFF' : 'transparent',
-                color: pushEnabled ? '#000000' : '#888888',
+                color: pushEnabled ? '#000000' : '#FFFFFF',
                 border: pushEnabled ? '1px solid #FFFFFF' : '1px solid #333333',
                 padding: '4px 12px',
                 borderRadius: '16px',
@@ -322,6 +327,7 @@ export default function ProfileSettings({
                 letterSpacing: '1px',
                 cursor: 'pointer',
                 transition: 'all 0.15s ease',
+                opacity: pushEnabled ? 1 : 0.6,
                 flexShrink: 0
               }}
             >
@@ -346,10 +352,10 @@ export default function ProfileSettings({
             style={navButtonStyle}
           >
             <span>CHANGE PASSWORD</span>
-            <span style={{ fontSize: '10px', color: '#D1D1D1', transform: showPasswordSection ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease' }}>▼</span>
+            <span style={{ fontSize: '10px', color: '#FFFFFF', transform: showPasswordSection ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease' }}>▼</span>
           </button>
 
-          {/* SMOOTH ANIMATED ACCORDION (NO JERK) */}
+          {/* SMOOTH ANIMATED ACCORDION */}
           <div style={{
             maxHeight: showPasswordSection ? '180px' : '0px',
             opacity: showPasswordSection ? 1 : 0,
@@ -386,7 +392,7 @@ export default function ProfileSettings({
             width: '100%',
             padding: '12px 0',
             background: isDirty ? '#FFFFFF' : 'transparent',
-            color: isDirty ? '#000000' : '#888888',
+            color: isDirty ? '#000000' : '#FFFFFF',
             border: isDirty ? '1px solid #FFFFFF' : '1px solid #333333',
             borderRadius: '6px',
             fontSize: '11px',
@@ -395,6 +401,7 @@ export default function ProfileSettings({
             cursor: isDirty ? 'pointer' : 'default',
             marginTop: '8px',
             marginBottom: '4px',
+            opacity: isDirty ? 1 : 0.6,
             transition: 'all 0.3s ease'
           }}
         >
