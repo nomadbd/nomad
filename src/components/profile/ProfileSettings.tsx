@@ -93,11 +93,11 @@ export default function ProfileSettings({
     setPushLoading(false);
   };
 
-  // OPTIMIZED BALANCED SPACING STYLES
-  const labelStyle = { fontSize: '10px', color: '#888', letterSpacing: '2px', marginBottom: '4px' };
-  const inputStyle = { width: '100%', padding: '8px 0', background: 'transparent', border: 'none', borderBottom: '1px solid #333', color: '#fff', marginBottom: '16px', outline: 'none', fontSize: '14px' };
-  const navButtonStyle = { background: 'transparent', border: 'none', color: '#aaa', cursor: 'pointer', fontSize: '12px', letterSpacing: '1px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', textAlign: 'left' as const, padding: '6px 0' };
-  const dangerButtonStyle = { background: 'transparent', border: 'none', color: '#ff4444', cursor: 'pointer', fontSize: '11px', letterSpacing: '2px', textTransform: 'uppercase' as const, display: 'block', width: '100%', textAlign: 'left' as const, fontWeight: 'bold', marginTop: '8px' };
+  // BALANCED HIGH-CONTRAST PALETTE
+  const labelStyle = { fontSize: '10px', color: '#8A8A8E', letterSpacing: '1.5px', marginBottom: '4px', fontWeight: '500' };
+  const inputStyle = { width: '100%', padding: '8px 0', background: 'transparent', border: 'none', borderBottom: '1px solid #262626', color: '#FFFFFF', marginBottom: '18px', outline: 'none', fontSize: '14px' };
+  const navButtonStyle = { background: 'transparent', border: 'none', color: '#8A8A8E', cursor: 'pointer', fontSize: '12px', letterSpacing: '1px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', textAlign: 'left' as const, padding: '8px 0' };
+  const dangerButtonStyle = { background: 'transparent', border: 'none', color: '#E54D4D', cursor: 'pointer', fontSize: '11px', letterSpacing: '1.5px', textTransform: 'uppercase' as const, display: 'block', width: '100%', textAlign: 'left' as const, fontWeight: '500', marginTop: '12px' };
 
   const payoutOptions = ['bKash', 'Nagad', 'Rocket', 'Card'];
 
@@ -118,56 +118,54 @@ export default function ProfileSettings({
   return (
     <>
       {/* HEADER */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <h2 style={{ fontWeight: '500', letterSpacing: '4px', fontSize: '18px', margin: 0 }}>SETTINGS</h2>
-        <svg onClick={() => onChangeView('profile')} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" cursor="pointer"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+        <h2 style={{ fontWeight: '600', letterSpacing: '3px', fontSize: '16px', color: '#FFFFFF', margin: 0 }}>SETTINGS</h2>
+        <svg onClick={() => onChangeView('profile')} width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8A8A8E" strokeWidth="2" cursor="pointer"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
       </div>
 
-      {/* 1. AVATAR SECTION */}
+      {/* 1. AVATAR SECTION - CLEAN & BALANCED */}
       {isAmbassadorActive && (
-        <div style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '16px' }}>
+        <div style={{ marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '16px' }}>
           <div style={{ 
             width: '56px', 
             height: '56px', 
             borderRadius: '50%', 
-            backgroundColor: '#181818', 
-            border: '1px solid #ffffff',
-            boxShadow: '0 0 12px rgba(255, 255, 255, 0.3)',
+            backgroundColor: '#111111', 
+            border: '1px solid #333333',
             overflow: 'hidden', 
             display: 'flex', 
             alignItems: 'center', 
             justifyContent: 'center',
             fontWeight: '600',
-            color: '#fff',
-            textShadow: '0 0 8px #ffffff',
+            color: '#FFFFFF',
             flexShrink: 0
           }}>
             {avatarUrl ? (
               <img src={avatarUrl} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             ) : (
-              <span style={{ fontSize: '18px', fontWeight: 'bold' }}>{getInitials(profile?.name, profile?.email)}</span>
+              <span style={{ fontSize: '18px', fontWeight: '500' }}>{getInitials(profile?.name, profile?.email)}</span>
             )}
           </div>
 
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
             <button 
               type="button"
               disabled={uploadingAvatar}
               onClick={() => fileInputRef.current?.click()}
               style={{
-                background: '#1a1a1a',
-                border: '1px solid #333',
-                color: '#fff',
-                padding: '6px 14px',
+                background: '#161616',
+                border: '1px solid #2C2C2E',
+                color: '#FFFFFF',
+                padding: '6px 12px',
                 borderRadius: '4px',
                 fontSize: '11px',
                 letterSpacing: '1px',
-                cursor: uploadingAvatar ? 'not-allowed' : 'pointer',
-                opacity: uploadingAvatar ? 0.6 : 1
+                cursor: uploadingAvatar ? 'not-allowed' : 'pointer'
               }}>
               {uploadingAvatar ? 'UPLOADING...' : (avatarUrl ? 'CHANGE PICTURE' : 'UPLOAD PICTURE')}
             </button>
 
+            {/* REMOVED RED BORDER TO FIX BALANCE */}
             {avatarUrl && (
               <button 
                 type="button"
@@ -175,16 +173,15 @@ export default function ProfileSettings({
                 onClick={handleDeleteAvatar}
                 style={{
                   background: 'transparent',
-                  border: '1px solid #ff4444',
-                  color: '#ff4444',
-                  padding: '6px 14px',
-                  borderRadius: '4px',
+                  border: 'none',
+                  color: '#E54D4D',
+                  padding: '6px 4px',
                   fontSize: '11px',
                   letterSpacing: '1px',
                   cursor: uploadingAvatar ? 'not-allowed' : 'pointer',
                   opacity: uploadingAvatar ? 0.6 : 1
                 }}>
-                REMOVE PICTURE
+                REMOVE
               </button>
             )}
           </div>
@@ -213,7 +210,7 @@ export default function ProfileSettings({
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <p style={labelStyle}>STORE SLUG</p>
-            <span style={{ fontSize: '10px', color: '#666', marginBottom: '4px' }}>/{activeSlug}</span>
+            <span style={{ fontSize: '10px', color: '#555555', marginBottom: '4px' }}>/{activeSlug}</span>
           </div>
           <input 
             placeholder={currentSlug || "slug-name"} 
@@ -228,14 +225,14 @@ export default function ProfileSettings({
             style={inputStyle} 
           />
 
-          {/* 4. FINANCIAL & PAYOUT DETAILS */}
+          {/* 4. FINANCIAL & PAYOUT DETAILS (CLEAN PILLS) */}
           <p style={labelStyle}>DEFAULT PAYOUT METHOD</p>
           <div style={{
             display: 'flex',
             gap: '8px',
             overflowX: 'auto',
             paddingBottom: '6px',
-            marginBottom: '16px',
+            marginBottom: '18px',
             scrollbarWidth: 'none'
           }}>
             {payoutOptions.map((option) => {
@@ -251,15 +248,15 @@ export default function ProfileSettings({
                     gap: '6px',
                     padding: '6px 14px',
                     borderRadius: '20px',
-                    background: isSelected ? '#181818' : 'transparent',
-                    color: isSelected ? '#cccccc' : '#555555',
-                    border: isSelected ? '1px solid #333333' : '1px solid #1a1a1a',
+                    background: isSelected ? '#1A1A1A' : 'transparent',
+                    color: isSelected ? '#FFFFFF' : '#666666',
+                    border: isSelected ? '1px solid #FFFFFF' : '1px solid #222222',
                     fontSize: '11px',
-                    fontWeight: '400',
+                    fontWeight: isSelected ? '500' : '400',
                     letterSpacing: '1px',
                     whiteSpace: 'nowrap',
                     cursor: 'pointer',
-                    transition: 'all 0.2s ease',
+                    transition: 'all 0.15s ease',
                     flexShrink: 0
                   }}
                 >
@@ -267,9 +264,8 @@ export default function ProfileSettings({
                     width: '5px',
                     height: '5px',
                     borderRadius: '50%',
-                    background: isSelected ? '#aaaaaa' : 'transparent',
-                    border: isSelected ? '1px solid #aaaaaa' : '1px solid #333333',
-                    transition: 'all 0.2s ease'
+                    background: isSelected ? '#FFFFFF' : 'transparent',
+                    border: isSelected ? '1px solid #FFFFFF' : '1px solid #444444'
                   }} />
                   {option}
                 </button>
@@ -291,13 +287,13 @@ export default function ProfileSettings({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            background: '#141414',
+            background: '#111111',
             border: '1px solid #222222',
             padding: '10px 14px',
             borderRadius: '6px',
-            marginBottom: '20px'
+            marginBottom: '24px'
           }}>
-            <span style={{ fontSize: '11px', color: '#aaa', letterSpacing: '0.5px' }}>
+            <span style={{ fontSize: '11px', color: '#8A8A8E', letterSpacing: '0.5px' }}>
               Sales & admin alerts
             </span>
             <button
@@ -305,16 +301,16 @@ export default function ProfileSettings({
               disabled={pushLoading}
               onClick={handlePushToggle}
               style={{
-                background: pushEnabled ? '#22c55e' : 'transparent',
-                color: pushEnabled ? '#000' : '#888',
-                border: pushEnabled ? '1px solid #22c55e' : '1px solid #444',
+                background: pushEnabled ? '#22C55E' : 'transparent',
+                color: pushEnabled ? '#000000' : '#666666',
+                border: pushEnabled ? '1px solid #22C55E' : '1px solid #333333',
                 padding: '4px 12px',
                 borderRadius: '16px',
                 fontSize: '10px',
-                fontWeight: 'bold',
+                fontWeight: '600',
                 letterSpacing: '1px',
                 cursor: 'pointer',
-                transition: 'all 0.2s ease',
+                transition: 'all 0.15s ease',
                 flexShrink: 0
               }}
             >
@@ -324,8 +320,8 @@ export default function ProfileSettings({
         </>
       )}
 
-      {/* 6. SECURITY & ACCOUNT ACTIONS */}
-      <div style={{ borderTop: '1px solid #1a1a1a', paddingTop: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      {/* 6. SECURITY & ACTIONS */}
+      <div style={{ borderTop: '1px solid #1C1C1E', paddingTop: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
         <div>
           <button 
             type="button"
@@ -339,7 +335,7 @@ export default function ProfileSettings({
             style={navButtonStyle}
           >
             <span>CHANGE PASSWORD</span>
-            <span style={{ fontSize: '10px', color: '#666', transform: showPasswordSection ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }}>▼</span>
+            <span style={{ fontSize: '10px', color: '#555555', transform: showPasswordSection ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }}>▼</span>
           </button>
 
           {showPasswordSection && (
@@ -371,17 +367,16 @@ export default function ProfileSettings({
           style={{ 
             width: '100%',
             padding: '12px 0',
-            background: '#ffffff',
+            background: '#FFFFFF',
             color: '#000000',
             border: 'none',
             borderRadius: '6px',
-            fontSize: '12px',
+            fontSize: '11px',
             fontWeight: '700',
             letterSpacing: '2px',
             cursor: 'pointer',
-            marginTop: '4px',
-            marginBottom: '4px',
-            transition: 'opacity 0.2s ease'
+            marginTop: '8px',
+            marginBottom: '4px'
           }}
         >
           SAVE CHANGES
