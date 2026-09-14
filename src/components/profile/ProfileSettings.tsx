@@ -1,4 +1,4 @@
-import { useState, useEffect, RefObject } from 'react';
+import { useState, useEffect, useRef, RefObject } from 'react';
 import { isUserSubscribed, subscribeUserToPush, unsubscribeUserFromPush } from '@/utils/pushManager';
 
 interface ProfileSettingsProps {
@@ -69,6 +69,32 @@ export default function ProfileSettings({
   const [showPasswordSection, setShowPasswordSection] = useState(false);
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushLoading, setPushLoading] = useState(true);
+  
+  const headerRef = useRef<HTMLDivElement>(null);
+
+  // ===== স্থির হেডার রাখার জন্য Visual Viewport (jitter-free) =====
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv || !headerRef.current) return;
+
+    const update = () => {
+      // transform ব্যবহার করা হয়েছে যাতে লেআউট ভাঙে না এবং ঝাকুনি না হয়
+      if (headerRef.current) {
+        headerRef.current.style.transform = `translateY(${vv.offsetTop}px)`;
+      }
+    };
+
+    // প্রাথমিক সেট
+    update();
+
+    vv.addEventListener('resize', update);
+    vv.addEventListener('scroll', update);
+
+    return () => {
+      vv.removeEventListener('resize', update);
+      vv.removeEventListener('scroll', update);
+    };
+  }, []);
 
   useEffect(() => {
     async function checkPushStatus() {
@@ -98,7 +124,6 @@ export default function ProfileSettings({
     return details.includes(':') ? details.split(':')[1].trim() : details;
   };
 
-  // Dynamic Dirty Check
   const isDirty = Boolean(
     (newName && newName !== profile?.name) ||
     (newEmail && newEmail !== profile?.email) ||
@@ -128,26 +153,28 @@ export default function ProfileSettings({
   return (
     <div style={{ position: 'relative', paddingTop: '48px' }}>
       
-      {/* ===== COMPLETELY FIXED HEADER (কখনো নড়বে না) ===== */}
-      <div style={{ 
-        position: 'fixed', 
-        top: 0,
-        left: 0,
-        width: '100%',
-        zIndex: 1000, 
-        backgroundColor: '#000000',
-        padding: '12px 20px',
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center', 
-        borderBottom: '1px solid #1A1A1A',
-        boxSizing: 'border-box',
-        // iOS-এ স্থির রাখার জন্য
-        WebkitTransform: 'translateZ(0)',
-        transform: 'translateZ(0)',
-        // Safe area (নচ/স্ট্যাটাস বার)
-        paddingTop: 'max(12px, env(safe-area-inset-top))',
-      }}>
+      {/* ===== FIXED HEADER (কীবোর্ড ওপেন হলেও দৃশ্যমান থাকবে) ===== */}
+      <div
+        ref={headerRef}
+        style={{ 
+          position: 'fixed', 
+          top: 0,
+          left: 0,
+          width: '100%',
+          zIndex: 1000, 
+          backgroundColor: '#000000',
+          padding: '12px 20px',
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center', 
+          borderBottom: '1px solid #1A1A1A',
+          boxSizing: 'border-box',
+          WebkitTransform: 'translateZ(0)',
+          transform: 'translateY(0)', // initial
+          willChange: 'transform',
+          paddingTop: 'max(12px, env(safe-area-inset-top))',
+        }}
+      >
         <h2 style={{ fontWeight: '600', letterSpacing: '3px', fontSize: '15px', color: '#FFFFFF', margin: 0 }}>SETTINGS</h2>
         
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
@@ -178,9 +205,8 @@ export default function ProfileSettings({
         </div>
       </div>
 
-      {/* ===== CONTENT (হেডার থেকে আলাদা) ===== */}
+      {/* ===== CONTENT ===== */}
       
-      {/* 1. AVATAR SECTION */}
       {isAmbassadorActive && (
         <div style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '16px' }}>
           <div style={{ 
@@ -248,14 +274,12 @@ export default function ProfileSettings({
         </div>
       )}
 
-      {/* 2. PERSONAL IDENTIFICATION */}
       <p style={labelStyle}>NAME</p>
       <input placeholder={profile?.name || "Full Name"} value={newName} onChange={(e) => setNewName(e.target.value)} style={inputStyle} />
 
       <p style={labelStyle}>EMAIL ADDRESS</p>
       <input placeholder={profile?.email || "Email Address"} value={newEmail} onChange={(e) => setNewEmail(e.target.value)} style={inputStyle} />
 
-      {/* 3. STORE & AMBASSADOR DETAILS */}
       {isAmbassadorActive && (
         <>
           <p style={labelStyle}>DISPLAY NAME</p>
@@ -285,7 +309,6 @@ export default function ProfileSettings({
             style={inputStyle} 
           />
 
-          {/* 4. FINANCIAL & PAYOUT DETAILS */}
           <p style={labelStyle}>DEFAULT PAYOUT METHOD</p>
           <div style={{
             display: 'flex',
@@ -342,7 +365,6 @@ export default function ProfileSettings({
             style={inputStyle} 
           />
 
-          {/* 5. APP PREFERENCES */}
           <p style={labelStyle}>REAL-TIME SALES ALERTS</p>
           <div style={{
             display: 'flex',
@@ -382,7 +404,6 @@ export default function ProfileSettings({
         </>
       )}
 
-      {/* 6. SECURITY & ACTIONS */}
       <div style={{ borderTop: '1px solid #1C1C1E', paddingTop: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
         <div>
           <button 
