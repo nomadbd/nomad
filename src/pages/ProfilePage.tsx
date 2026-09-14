@@ -7,6 +7,7 @@ import Toast from '../components/ui/Toast';
 import ProfileSkeleton from '../components/profile/ProfileSkeleton';
 import ProfileHeader from '../components/profile/ProfileHeader';
 import ProfileSettings from '../components/profile/ProfileSettings';
+import ProfileDetailsSheet from '../components/profile/ProfileDetailsSheet';
 import ImageCropModal from '../components/ui/ImageCropModal';
 import AmbassadorWorkspace from '../components/ambassador/AmbassadorWorkspace';
 import { useAmbassador } from '../hooks/useAmbassador';
@@ -37,6 +38,8 @@ export default function ProfilePage() {
   const [portalMode, setPortalMode] = useState<'customer' | 'ambassador'>(() => {
     return (localStorage.getItem('portalMode') as 'customer' | 'ambassador') || 'customer';
   });
+
+  const [isDetailsSheetOpen, setIsDetailsSheetOpen] = useState(false);
 
   const [profile, setProfile] = useState<any>(null);
   const [ambassadorData, setAmbassadorData] = useState<any>(null);
@@ -459,6 +462,15 @@ export default function ProfilePage() {
         onApply={handleApplyCropAndUpload} 
       />
 
+      <ProfileDetailsSheet 
+        isOpen={isDetailsSheetOpen} 
+        onClose={() => setIsDetailsSheetOpen(false)} 
+        profile={profile} 
+        avatarUrl={avatarUrl} 
+        getInitials={getInitials} 
+        isAmbassador={isAmbassador} 
+      />
+
       <div style={{ width: '100%' }}>
         {view === 'profile' ? (
           <>
@@ -470,6 +482,7 @@ export default function ProfilePage() {
               togglePortalMode={togglePortalMode} 
               getInitials={getInitials} 
               onChangeView={changeView} 
+              onOpenProfileDetails={() => setIsDetailsSheetOpen(true)}
             />
 
             {portalMode === 'ambassador' && isAmbassador ? (
