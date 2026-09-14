@@ -126,13 +126,27 @@ export default function ProfileSettings({
   const activeSlug = newSlug || currentSlug || 'slug';
 
   return (
-    <div>
-      {/* TOP HEADER WITH INTEGRATED SAVE BUTTON */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', sticky: 'top' }}>
+    <div style={{ position: 'relative' }}>
+      {/* PERFECT STICKY HEADER */}
+      <div style={{ 
+        position: 'sticky', 
+        top: 0, 
+        zIndex: 50, 
+        backgroundColor: '#000000',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        paddingTop: '12px',
+        paddingBottom: '16px',
+        marginBottom: '16px',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.05)'
+      }}>
         <h2 style={{ fontWeight: '600', letterSpacing: '3px', fontSize: '16px', color: '#FFFFFF', margin: 0 }}>SETTINGS</h2>
         
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          {/* TOP HEADER SAVE BUTTON */}
+          {/* HEADER SAVE BUTTON */}
           <button
             onClick={handleUpdate}
             disabled={!isDirty}
