@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, RefObject } from 'react';
+import { useState, useEffect, RefObject } from 'react';
 import { isUserSubscribed, subscribeUserToPush, unsubscribeUserFromPush } from '@/utils/pushManager';
 
 interface ProfileSettingsProps {
@@ -69,33 +69,6 @@ export default function ProfileSettings({
   const [showPasswordSection, setShowPasswordSection] = useState(false);
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushLoading, setPushLoading] = useState(true);
-  
-  // হেডারের জন্য ref (jitter এড়াতে)
-  const headerRef = useRef<HTMLDivElement>(null);
-
-  // ===== Visual Viewport Fix (jitter-free) =====
-  useEffect(() => {
-    const vv = window.visualViewport;
-    if (!vv || !headerRef.current) return;
-
-    const updateHeaderPosition = () => {
-      // সরাসরি DOM আপডেট → React re-render হয় না → ঝাকুনি নেই
-      if (headerRef.current) {
-        headerRef.current.style.top = `${vv.offsetTop}px`;
-      }
-    };
-
-    // initial set
-    updateHeaderPosition();
-
-    vv.addEventListener('resize', updateHeaderPosition);
-    vv.addEventListener('scroll', updateHeaderPosition);
-
-    return () => {
-      vv.removeEventListener('resize', updateHeaderPosition);
-      vv.removeEventListener('scroll', updateHeaderPosition);
-    };
-  }, []);
 
   useEffect(() => {
     async function checkPushStatus() {
@@ -153,35 +126,31 @@ export default function ProfileSettings({
   const activeSlug = newSlug || currentSlug || 'slug';
 
   return (
-    <div style={{ position: 'relative', paddingTop: '52px' }}> {/* গ্যাপ কমানো হয়েছে */}
+    <div style={{ position: 'relative', paddingTop: '48px' }}>
       
-      {/* ===== FIXED HEADER ===== */}
-      <div 
-        ref={headerRef}
-        style={{ 
-          position: 'fixed', 
-          top: 0,                          // initial 0, JS দিয়ে আপডেট হবে
-          left: 0,
-          width: '100%',
-          zIndex: 1000, 
-          backgroundColor: '#000000',
-          padding: '14px 20px',            // সামান্য কমানো হয়েছে
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center', 
-          borderBottom: '1px solid #1A1A1A',
-          boxSizing: 'border-box',
-          // iOS stability
-          WebkitTransform: 'translateZ(0)',
-          transform: 'translateZ(0)',
-          // safe area support
-          paddingTop: 'max(14px, env(safe-area-inset-top))',
-        }}
-      >
+      {/* ===== COMPLETELY FIXED HEADER (কখনো নড়বে না) ===== */}
+      <div style={{ 
+        position: 'fixed', 
+        top: 0,
+        left: 0,
+        width: '100%',
+        zIndex: 1000, 
+        backgroundColor: '#000000',
+        padding: '12px 20px',
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        borderBottom: '1px solid #1A1A1A',
+        boxSizing: 'border-box',
+        // iOS-এ স্থির রাখার জন্য
+        WebkitTransform: 'translateZ(0)',
+        transform: 'translateZ(0)',
+        // Safe area (নচ/স্ট্যাটাস বার)
+        paddingTop: 'max(12px, env(safe-area-inset-top))',
+      }}>
         <h2 style={{ fontWeight: '600', letterSpacing: '3px', fontSize: '15px', color: '#FFFFFF', margin: 0 }}>SETTINGS</h2>
         
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-          {/* TOP RIGHT SAVE BUTTON */}
           <button
             onClick={handleUpdate}
             disabled={!isDirty}
@@ -209,6 +178,8 @@ export default function ProfileSettings({
         </div>
       </div>
 
+      {/* ===== CONTENT (হেডার থেকে আলাদা) ===== */}
+      
       {/* 1. AVATAR SECTION */}
       {isAmbassadorActive && (
         <div style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '16px' }}>
