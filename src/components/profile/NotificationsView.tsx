@@ -23,11 +23,8 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
-  
-  // একসাথে শুধুমাত্র একটি নোটিফিকেশন এক্সপ্যান্ড করে রাখার স্টেট
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  // স্মার্ট টাইম ফরম্যাটিং
   const getRelativeTime = (dateString: string) => {
     const now = new Date();
     const past = new Date(dateString);
@@ -135,7 +132,6 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
       .eq('id', id);
   };
 
-  // কার্ডে ক্লিক হ্যান্ডলার (পড়া হিসেবে মার্ক করা + টগল এক্সপ্যান্ড)
   const handleCardClick = (item: NotificationItem) => {
     markAsRead(item.id, item.is_read);
     setExpandedId(prev => (prev === item.id ? null : item.id));
@@ -271,17 +267,16 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
                 onClick={() => handleCardClick(item)}
                 style={{
                   background: item.is_read ? '#09090B' : '#121212',
-                  // আনরিড হলে হালকা চিকন সাদা বর্ডার, রিড হলে ধূসর বর্ডার
                   border: '1px solid',
                   borderColor: item.is_read ? '#27272A' : 'rgba(255, 255, 255, 0.35)',
                   borderRadius: '12px',
                   padding: '16px',
                   cursor: 'pointer',
                   position: 'relative',
-                  transition: 'border-color 0.25s ease, background-color 0.25s ease'
+                  transition: 'border-color 0.25s ease, background-color 0.25s ease',
+                  contain: 'layout paint'
                 }}
               >
-                {/* ব্লু ডট (আনরিড নির্দেশক) */}
                 {!item.is_read && (
                   <span
                     style={{
@@ -317,6 +312,7 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
                     </span>
                   </div>
 
+                  {/* মিনিমালিস্ট লাক্সারি ক্রস ডিলিট আইকন */}
                   <button
                     onClick={(e) => deleteNotification(e, item.id)}
                     title="Delete"
@@ -328,7 +324,8 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
                       padding: '4px',
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'center'
+                      justifyContent: 'center',
+                      outline: 'none'
                     }}
                   >
                     <CloseIcon width={14} height={14} stroke="#71717A" />
@@ -339,28 +336,32 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
                   {item.title}
                 </h3>
                 
-                {/* ৩ লাইন লাইন-ক্ল্যাম্প ও স্মার্ট এক্সপ্যান্ড টেক্সট */}
-                <p style={{ 
-                  margin: 0, 
-                  fontSize: '13px', 
-                  color: item.is_read ? '#8E8E93' : '#A1A1AA', 
-                  lineHeight: '1.5',
-                  overflowWrap: 'break-word',
-                  wordBreak: 'break-word',
-                  whiteSpace: isExpanded ? 'pre-line' : 'normal',
-                  
-                  // এক্সপ্যান্ড স্টেট অনুযায়ী টেক্সট নিয়ন্ত্রণ
-                  display: isExpanded ? 'block' : '-webkit-box',
-                  WebkitLineClamp: isExpanded ? 'unset' : 3,
-                  WebkitBoxOrient: 'vertical',
-                  overflow: isExpanded ? 'visible' : 'hidden'
+                {/* স্মুথ অ্যানিমেশনের জন্য স্ট্যাবল লেআউট கண்டেইனர் */}
+                <div style={{
+                  display: 'grid',
+                  gridTemplateRows: isExpanded ? '1fr' : 'auto',
+                  transition: 'all 0.25s ease-in-out'
                 }}>
-                  {item.message}
-                </p>
+                  <p style={{ 
+                    margin: 0, 
+                    fontSize: '13px', 
+                    color: item.is_read ? '#8E8E93' : '#A1A1AA', 
+                    lineHeight: '1.5',
+                    overflowWrap: 'break-word',
+                    wordBreak: 'break-word',
+                    whiteSpace: isExpanded ? 'pre-line' : 'normal',
+                    display: isExpanded ? 'block' : '-webkit-box',
+                    WebkitLineClamp: isExpanded ? 'none' : 3,
+                    WebkitBoxOrient: 'vertical',
+                    overflow: 'hidden'
+                  }}>
+                    {item.message}
+                  </p>
+                </div>
 
-                {/* লিংক অ্যাকশন পিল */}
+                {/* Explore বাটন */}
                 {item.link && (
-                  <div style={{ marginTop: '14px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '14px' }}>
                     <a
                       href={item.link}
                       target="_blank"
@@ -369,8 +370,7 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
                       style={{
                         display: 'inline-flex',
                         alignItems: 'center',
-                        gap: '6px',
-                        padding: '6px 12px',
+                        padding: '6px 14px',
                         borderRadius: '6px',
                         backgroundColor: '#18181B',
                         border: '1px solid #27272A',
@@ -381,8 +381,7 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
                         transition: 'all 0.2s ease'
                       }}
                     >
-                      <span>Explore</span>
-                      <span style={{ fontSize: '11px', color: '#A1A1AA' }}>→</span>
+                      Explore
                     </a>
                   </div>
                 )}
