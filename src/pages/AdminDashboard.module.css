@@ -264,3 +264,65 @@
     box-sizing: border-box;
   }
 }
+
+:global(body.nomad-menu-lock) {
+  position: fixed;
+  left: 0;
+  right: 0;
+  width: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+  touch-action: none;
+}
+
+.sidebarStack {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  max-width: 100%;
+}
+
+.nomadHeader {
+  flex-shrink: 0;
+}
+
+.nomadSidebar.menuOpen {
+  display: flex;
+  flex-direction: column;
+}
+
+.menuOpen .nomadNav {
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  max-height: min(42dvh, calc(100dvh - 13.5rem));
+  min-height: 0;
+}
+
+.menuLocked .nomadMain {
+  pointer-events: none;
+}
+
+.menuBackdrop {
+  display: none;
+}
+
+.menuLocked .menuBackdrop {
+  display: block;
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  border: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.nomadSidebar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
