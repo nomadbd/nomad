@@ -8,8 +8,10 @@ interface ProfileHeaderProps {
   isAmbassadorActive: boolean;
   togglePortalMode: () => void;
   getInitials: (name?: string, email?: string) => string;
-  onChangeView: (view: 'profile' | 'settings') => void;
+  onChangeView: (view: 'profile' | 'settings' | 'notifications' | 'communication') => void;
   onOpenMessages?: () => void;
+  onOpenNotifications?: () => void;
+  onOpenCommunication?: () => void;
   onOpenProfileDetails?: () => void; // বটম শিটের জন্য কলব্যাক
   hasUnread?: boolean;
 }
@@ -23,10 +25,28 @@ export default function ProfileHeader({
   getInitials,
   onChangeView,
   onOpenMessages,
+  onOpenNotifications,
+  onOpenCommunication,
   onOpenProfileDetails,
   hasUnread = false
 }: ProfileHeaderProps) {
   const name = profile?.name || "PROFILE";
+
+  const handleIconClick = () => {
+    if (isAmbassadorActive) {
+      if (onOpenCommunication) {
+        onOpenCommunication();
+      } else if (onOpenMessages) {
+        onOpenMessages();
+      }
+    } else {
+      if (onOpenNotifications) {
+        onOpenNotifications();
+      } else if (onOpenMessages) {
+        onOpenMessages();
+      }
+    }
+  };
 
   return (
     <div style={{ 
@@ -141,7 +161,7 @@ export default function ProfileHeader({
       {/* ডানপাশ: আইকন বাটনসমূহ */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
         <button
-          onClick={onOpenMessages}
+          onClick={handleIconClick}
           style={{ 
             display: 'flex', 
             alignItems: 'center', 
@@ -156,7 +176,7 @@ export default function ProfileHeader({
             outline: 'none',
             position: 'relative'
           }}
-          title={isAmbassadorActive ? "Messages" : "Notifications"}
+          title={isAmbassadorActive ? "Communication" : "Notifications"}
         >
           {isAmbassadorActive ? (
             <MessageIcon width={17} height={17} stroke="#FFFFFF" />
