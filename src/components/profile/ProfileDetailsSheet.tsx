@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react'; // ১. useEffect ইম্পোর্ট করুন
 
 interface ProfileDetailsSheetProps {
   isOpen: boolean;
@@ -20,6 +20,21 @@ export default function ProfileDetailsSheet({
   getInitials,
   portalMode = 'customer'
 }: ProfileDetailsSheetProps) {
+
+  // ২. বটম শিট ওপেন থাকলে ব্যাকগ্রাউন্ড স্ক্রল লক করার লজিক
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    // কম্পোনেন্ট আনমাউন্ট বা বন্ধ হলে ব্যাকগ্রাউন্ড স্ক্রল আগের অবস্থায় ফিরিয়ে আনা
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const isAmbassadorMode = portalMode === 'ambassador';
@@ -42,7 +57,8 @@ export default function ProfileDetailsSheet({
         zIndex: 9999,
         display: 'flex',
         justifyContent: 'center',
-        alignItems: 'flex-end'
+        alignItems: 'flex-end',
+        touchAction: 'none' // মোবাইল ডিভাইসে অতিরিক্ত স্ক্রল প্রিভেন্ট করার জন্য
       }}
     >
       <div 
@@ -60,7 +76,8 @@ export default function ProfileDetailsSheet({
           flexDirection: 'column',
           gap: '18px',
           maxHeight: '85vh',
-          overflowY: 'auto'
+          overflowY: 'auto',
+          overscrollBehavior: 'contain' // বটম শিটের ভেতরের স্ক্রল যেন বাইরে না যায়
         }}
       >
         <div style={{
@@ -116,7 +133,7 @@ export default function ProfileDetailsSheet({
 
         <div style={{ height: '1px', backgroundColor: '#27272A', width: '100%' }} />
 
-        {/* মোড অনুযায়ী ডায়নামিক ডাটা */}
+        {/* তথ্যসমূহ */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
           {isAmbassadorMode ? (
             <>
