@@ -21,9 +21,7 @@ export default function ProfileDetailsSheet({
 }: ProfileDetailsSheetProps) {
   if (!isOpen) return null;
 
-  // ডাটাবেস ডাটা ও কারেন্ট মোড অনুযায়ী সত্যিকারের রোল নির্ধারণ
-  const hasAmbassadorProfile = Boolean(ambassadorData) || String(profile?.role).toUpperCase().trim() === 'AMBASSADOR';
-  const isAmbassadorActive = hasAmbassadorProfile && portalMode === 'ambassador';
+  const isAmbassadorMode = portalMode === 'ambassador';
 
   const memberSince = profile?.created_at 
     ? new Date(profile.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
@@ -80,7 +78,7 @@ export default function ProfileDetailsSheet({
             height: '54px',
             borderRadius: '50%',
             backgroundColor: '#18181B',
-            border: isAmbassadorActive ? '1.5px solid #10B981' : '1px solid #3F3F46',
+            border: isAmbassadorMode ? '1.5px solid #10B981' : '1px solid #3F3F46',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -90,96 +88,43 @@ export default function ProfileDetailsSheet({
             overflow: 'hidden',
             flexShrink: 0
           }}>
-            {avatarUrl && isAmbassadorActive ? (
+            {avatarUrl && isAmbassadorMode ? (
               <img src={avatarUrl} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             ) : (
-              getInitials(profile?.name, profile?.email)
+              getInitials(isAmbassadorMode ? (ambassadorData?.display_name || profile?.name) : profile?.name, profile?.email)
             )}
           </div>
 
           <div style={{ overflow: 'hidden' }}>
             <h3 style={{ margin: 0, fontSize: '17px', fontWeight: '600', color: '#FFFFFF', wordBreak: 'break-word' }}>
-              {profile?.name || "User Profile"}
+              {isAmbassadorMode ? (ambassadorData?.display_name || profile?.name) : profile?.name || "User Profile"}
             </h3>
             
             <span style={{ 
               fontSize: '11px', 
-              color: isAmbassadorActive ? '#10B981' : '#A1A1AA', 
+              color: isAmbassadorMode ? '#10B981' : '#A1A1AA', 
               letterSpacing: '0.5px',
               textTransform: 'uppercase',
               fontWeight: '600',
               display: 'inline-block',
               marginTop: '3px'
             }}>
-              {isAmbassadorActive ? '★ NOMAD AMBASSADOR' : 'CUSTOMER ACCOUNT'}
+              {isAmbassadorMode ? '★ NOMAD AMBASSADOR' : 'CUSTOMER ACCOUNT'}
             </span>
           </div>
         </div>
 
         <div style={{ height: '1px', backgroundColor: '#27272A', width: '100%' }} />
 
-        {/* ডাইনামিক প্রকৃত তথ্য */}
+        {/* সুইচ করা মোড অনুযায়ী পৃথক তথ্য দেখাবে */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
           
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-            <span style={{ fontSize: '10px', color: '#71717A', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: '600' }}>
-              Full Name
-            </span>
-            <span style={{ fontSize: '14px', color: '#E4E4E7' }}>
-              {profile?.name || 'N/A'}
-            </span>
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-            <span style={{ fontSize: '10px', color: '#71717A', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: '600' }}>
-              Email Address
-            </span>
-            <span style={{ fontSize: '14px', color: '#E4E4E7', fontFamily: 'monospace', wordBreak: 'break-all' }}>
-              {profile?.email || 'N/A'}
-            </span>
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-            <span style={{ fontSize: '10px', color: '#71717A', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: '600' }}>
-              Phone Number
-            </span>
-            <span style={{ fontSize: '14px', color: profile?.phone ? '#E4E4E7' : '#52525B' }}>
-              {profile?.phone || 'Not provided'}
-            </span>
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-            <span style={{ fontSize: '10px', color: '#71717A', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: '600' }}>
-              Active Profile Mode
-            </span>
-            <span style={{ fontSize: '14px', color: isAmbassadorActive ? '#10B981' : '#E4E4E7', fontWeight: '600' }}>
-              {isAmbassadorActive ? 'Ambassador Partner Mode' : 'Customer Mode'}
-            </span>
-          </div>
-
-          {memberSince && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-              <span style={{ fontSize: '10px', color: '#71717A', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: '600' }}>
-                Member Since
-              </span>
-              <span style={{ fontSize: '14px', color: '#E4E4E7' }}>
-                {memberSince}
-              </span>
-            </div>
-          )}
-
-          {/* ডাটাবেসে অ্যাম্বাসেডর রেকর্ড থাকলে তবেই এই সেকশন ডাটা দেখাবে */}
-          {hasAmbassadorProfile && (
+          {isAmbassadorMode ? (
+            /* ================= শুধুমাত্র অ্যাম্বাসেডর মোডের তথ্য ================= */
             <>
-              <div style={{ height: '1px', backgroundColor: '#27272A', width: '100%', margin: '4px 0' }} />
-              
-              <span style={{ fontSize: '11px', color: '#10B981', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: '700' }}>
-                Ambassador Information
-              </span>
-
               <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                 <span style={{ fontSize: '10px', color: '#71717A', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: '600' }}>
-                  Display Name
+                  Ambassador Name
                 </span>
                 <span style={{ fontSize: '14px', color: '#E4E4E7' }}>
                   {ambassadorData?.display_name || profile?.name || 'N/A'}
@@ -188,9 +133,18 @@ export default function ProfileDetailsSheet({
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                 <span style={{ fontSize: '10px', color: '#71717A', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: '600' }}>
+                  Email Address
+                </span>
+                <span style={{ fontSize: '14px', color: '#E4E4E7', fontFamily: 'monospace', wordBreak: 'break-all' }}>
+                  {profile?.email || 'N/A'}
+                </span>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                <span style={{ fontSize: '10px', color: '#71717A', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: '600' }}>
                   Store URL Slug
                 </span>
-                <span style={{ fontSize: '14px', color: '#E4E4E7', fontFamily: 'monospace' }}>
+                <span style={{ fontSize: '14px', color: '#10B981', fontFamily: 'monospace' }}>
                   {ambassadorData?.assigned_slug ? `/${ambassadorData.assigned_slug}` : 'Not set'}
                 </span>
               </div>
@@ -203,6 +157,65 @@ export default function ProfileDetailsSheet({
                   {ambassadorData?.payout_details || 'Not provided'}
                 </span>
               </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                <span style={{ fontSize: '10px', color: '#71717A', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: '600' }}>
+                  Active Profile Mode
+                </span>
+                <span style={{ fontSize: '14px', color: '#10B981', fontWeight: '600' }}>
+                  Ambassador Partner Mode
+                </span>
+              </div>
+            </>
+          ) : (
+            /* ================= শুধুমাত্র কাস্টমার মোডের তথ্য ================= */
+            <>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                <span style={{ fontSize: '10px', color: '#71717A', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: '600' }}>
+                  Full Name
+                </span>
+                <span style={{ fontSize: '14px', color: '#E4E4E7' }}>
+                  {profile?.name || 'N/A'}
+                </span>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                <span style={{ fontSize: '10px', color: '#71717A', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: '600' }}>
+                  Email Address
+                </span>
+                <span style={{ fontSize: '14px', color: '#E4E4E7', fontFamily: 'monospace', wordBreak: 'break-all' }}>
+                  {profile?.email || 'N/A'}
+                </span>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                <span style={{ fontSize: '10px', color: '#71717A', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: '600' }}>
+                  Phone Number
+                </span>
+                <span style={{ fontSize: '14px', color: profile?.phone ? '#E4E4E7' : '#52525B' }}>
+                  {profile?.phone || 'Not provided'}
+                </span>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                <span style={{ fontSize: '10px', color: '#71717A', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: '600' }}>
+                  Active Profile Mode
+                </span>
+                <span style={{ fontSize: '14px', color: '#E4E4E7', fontWeight: '600' }}>
+                  Customer Mode
+                </span>
+              </div>
+
+              {memberSince && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <span style={{ fontSize: '10px', color: '#71717A', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: '600' }}>
+                    Member Since
+                  </span>
+                  <span style={{ fontSize: '14px', color: '#E4E4E7' }}>
+                    {memberSince}
+                  </span>
+                </div>
+              )}
             </>
           )}
 
