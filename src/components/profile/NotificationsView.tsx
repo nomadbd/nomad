@@ -156,7 +156,7 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
       overflow: 'hidden'
     }}>
       
-      {/* ১. ফিক্সড হেডার (স্ক্রল করলেও কখনো নড়বে না) */}
+      {/* ১. ফিক্সড হেডার (স্থির থাকবে) */}
       <div style={{ 
         flexShrink: 0,
         backgroundColor: 'rgba(9, 9, 11, 0.95)',
@@ -216,7 +216,7 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
         </button>
       </div>
 
-      {/* ২. স্বাধীনভাবে স্ক্রলযোগ্য নোটিফিকেশন বডি */}
+      {/* ২. স্বাধীনভাবে স্ক্রলযোগ্য নোটিফিকেশন লিস্ট */}
       <div style={{ 
         flex: 1, 
         overflowY: 'auto', 
@@ -338,87 +338,49 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
                       </span>
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      {/* এক্সপ্যান্ড বাটন ইন্ডিকেটর (Chevron) */}
-                      <svg
-                        width="14"
-                        height="14"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="#71717A"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        style={{
-                          transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
-                          transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
-                        }}
-                      >
-                        <polyline points="6 9 12 15 18 9" />
-                      </svg>
-
-                      {/* মিনিমালিস্ট ক্রস ডিলিট বাটন */}
-                      <button
-                        onClick={(e) => deleteNotification(e, item.id)}
-                        title="Delete"
-                        style={{
-                          background: 'transparent',
-                          border: 'none',
-                          color: '#52525B',
-                          cursor: 'pointer',
-                          padding: '4px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          outline: 'none'
-                        }}
-                      >
-                        <CloseIcon width={14} height={14} stroke="#71717A" />
-                      </button>
-                    </div>
+                    {/* একমাত্র সিঙ্গেল ডিসমিস/ডিলিট ক্রস বাটন */}
+                    <button
+                      onClick={(e) => deleteNotification(e, item.id)}
+                      title="Delete"
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        color: '#52525B',
+                        cursor: 'pointer',
+                        padding: '4px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        outline: 'none'
+                      }}
+                    >
+                      <CloseIcon width={14} height={14} stroke="#71717A" />
+                    </button>
                   </div>
 
                   <h3 style={{ margin: '0 0 6px 0', fontSize: '14px', fontWeight: '600', color: '#FFFFFF', lineHeight: '1.3' }}>
                     {item.title}
                   </h3>
                   
-                  {/* সংকুচিত অবস্থায় ৩ লাইনের পরিচ্ছন্ন ভিউ (...) সহ */}
-                  {!isExpanded ? (
-                    <p style={{ 
-                      margin: 0, 
-                      fontSize: '13px', 
-                      color: item.is_read ? '#8E8E93' : '#A1A1AA', 
-                      lineHeight: '1.5',
-                      overflowWrap: 'break-word',
-                      wordBreak: 'break-word',
-                      display: '-webkit-box',
-                      WebkitLineClamp: 3,
-                      WebkitBoxOrient: 'vertical',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis'
-                    }}>
-                      {item.message}
-                    </p>
-                  ) : (
-                    /* এক্সপ্যান্ডেড অবস্থায় সুপার-স্মুথ ফুল ভিউ */
-                    <div style={{
-                      display: 'grid',
-                      gridTemplateRows: '1fr',
-                      transition: 'all 0.35s cubic-bezier(0.4, 0, 0.2, 1)'
-                    }}>
-                      <p style={{ 
-                        margin: 0, 
-                        fontSize: '13px', 
-                        color: item.is_read ? '#8E8E93' : '#A1A1AA', 
-                        lineHeight: '1.5',
-                        overflowWrap: 'break-word',
-                        wordBreak: 'break-word',
-                        whiteSpace: 'pre-line'
-                      }}>
-                        {item.message}
-                      </p>
-                    </div>
-                  )}
+                  {/* উভয় দিকে (Open & Close) সুপার-স্মুথ অ্যানিমেটেড টেক্সট কন্টেইনার */}
+                  <p style={{ 
+                    margin: 0, 
+                    fontSize: '13px', 
+                    color: item.is_read ? '#8E8E93' : '#A1A1AA', 
+                    lineHeight: '1.5',
+                    overflowWrap: 'break-word',
+                    wordBreak: 'break-word',
+                    whiteSpace: isExpanded ? 'pre-line' : 'normal',
+                    display: isExpanded ? 'block' : '-webkit-box',
+                    WebkitLineClamp: isExpanded ? 'unset' : 3,
+                    WebkitBoxOrient: 'vertical',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    maxHeight: isExpanded ? '1000px' : '58px',
+                    transition: 'max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1), color 0.25s ease'
+                  }}>
+                    {item.message}
+                  </p>
 
                   {/* Explore বাটন */}
                   {item.link && (
