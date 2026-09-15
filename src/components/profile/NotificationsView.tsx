@@ -23,6 +23,9 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
+  
+  // একসাথে শুধুমাত্র একটি নোটিফিকেশন এক্সপ্যান্ড করে রাখার স্টেট
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   // স্মার্ট টাইম ফরম্যাটিং
   const getRelativeTime = (dateString: string) => {
@@ -124,11 +127,18 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
   const deleteNotification = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
     setNotifications(prev => prev.filter(item => item.id !== id));
+    if (expandedId === id) setExpandedId(null);
 
     await supabase
       .from('notifications')
       .delete()
       .eq('id', id);
+  };
+
+  // কার্ডে ক্লিক হ্যান্ডলার (পড়া হিসেবে মার্ক করা + টগল এক্সপ্যান্ড)
+  const handleCardClick = (item: NotificationItem) => {
+    markAsRead(item.id, item.is_read);
+    setExpandedId(prev => (prev === item.id ? null : item.id));
   };
 
   const unreadCount = notifications.filter(n => !n.is_read).length;
@@ -141,7 +151,7 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
   return (
     <div style={{ maxWidth: '600px', margin: '0 auto', padding: '16px 12px', color: '#FFF' }}>
       
-      {/* ১. হেডার ও একটিমাত্র Unread ফিল্টার বাটন */}
+      {/* ১. হেডার */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
         
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
@@ -170,7 +180,7 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
           </h2>
         </div>
 
-        {/* ডানপাশে শুধুমাত্র একক Unread ফিল্টার পিল */}
+        {/* ডানপাশে একক Unread ফিল্টার */}
         <button
           onClick={() => setFilter(prev => prev === 'unread' ? 'all' : 'unread')}
           style={{
@@ -190,7 +200,7 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
         </button>
       </div>
 
-      {/* আনরিড থাকলে তালিকা শুরুর আগে সূক্ষ্ম "Read all" অপশন */}
+      {/* Mark All Read বাটন */}
       {unreadCount > 0 && filter === 'all' && (
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '12px', paddingRight: '4px' }}>
           <button
@@ -213,7 +223,7 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
         </div>
       )}
 
-      {/* ২. নোটিফিকেশন লিস্ট ও বড় মেসেজ/লিংক হ্যান্ডলিং */}
+      {/* ২. নোটিফিকেশন লিস্ট */}
       {loading ? (
         <div style={{ textAlign: 'center', padding: '60px 0', color: '#71717A', fontSize: '13px' }}>
           Loading updates...
@@ -253,21 +263,25 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           {filteredNotifications.map((item) => {
             const badge = getTypeBadge(item.type);
+            const isExpanded = expandedId === item.id;
+            
             return (
               <div
                 key={item.id}
-                onClick={() => markAsRead(item.id, item.is_read)}
+                onClick={() => handleCardClick(item)}
                 style={{
                   background: item.is_read ? '#09090B' : '#121212',
+                  // আনরিড হলে হালকা চিকন সাদা বর্ডার, রিড হলে ধূসর বর্ডার
                   border: '1px solid',
-                  borderColor: item.is_read ? '#18181B' : '#27272A',
+                  borderColor: item.is_read ? '#27272A' : 'rgba(255, 255, 255, 0.35)',
                   borderRadius: '12px',
                   padding: '16px',
-                  cursor: item.is_read ? 'default' : 'pointer',
+                  cursor: 'pointer',
                   position: 'relative',
-                  transition: 'all 0.2s ease'
+                  transition: 'border-color 0.25s ease, background-color 0.25s ease'
                 }}
               >
+                {/* ব্লু ডট (আনরিড নির্দেশক) */}
                 {!item.is_read && (
                   <span
                     style={{
@@ -325,20 +339,26 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
                   {item.title}
                 </h3>
                 
-                {/* দীর্ঘ মেসেজ স্বাভাবিক টেক্সট র্যাপিং সহ */}
+                {/* ৩ লাইন লাইন-ক্ল্যাম্প ও স্মার্ট এক্সপ্যান্ড টেক্সট */}
                 <p style={{ 
                   margin: 0, 
                   fontSize: '13px', 
-                  color: '#A1A1AA', 
+                  color: item.is_read ? '#8E8E93' : '#A1A1AA', 
                   lineHeight: '1.5',
                   overflowWrap: 'break-word',
                   wordBreak: 'break-word',
-                  whiteSpace: 'pre-line'
+                  whiteSpace: isExpanded ? 'pre-line' : 'normal',
+                  
+                  // এক্সপ্যান্ড স্টেট অনুযায়ী টেক্সট নিয়ন্ত্রণ
+                  display: isExpanded ? 'block' : '-webkit-box',
+                  WebkitLineClamp: isExpanded ? 'unset' : 3,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: isExpanded ? 'visible' : 'hidden'
                 }}>
                   {item.message}
                 </p>
 
-                {/* লাক্সারি স্লিক অ্যাকশন লিংক পিল (যদি লিংক থাকে) */}
+                {/* লিংক অ্যাকশন পিল */}
                 {item.link && (
                   <div style={{ marginTop: '14px' }}>
                     <a
