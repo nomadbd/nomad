@@ -218,19 +218,21 @@
     min-width: 220px !important;
     max-width: 220px !important;
     height: 100dvh !important;
+    max-height: 100dvh !important;
     position: fixed !important;
     top: 0;
     left: 0;
     bottom: 0;
     z-index: 100;
     border-right: 1px solid #1a1a1a;
-    padding: 20px 14px calc(24px + env(safe-area-inset-bottom, 0px)) 14px !important;
+    padding: 20px 14px calc(20px + env(safe-area-inset-bottom, 0px)) 14px !important;
     display: flex !important;
     flex-direction: column !important;
     justify-content: space-between !important;
     overflow-y: auto;
     overflow-x: hidden !important;
     background-color: #060606;
+    box-sizing: border-box !important;
   }
 
   .nomadMenuToggle {
@@ -242,15 +244,18 @@
     flex-direction: column;
     gap: 8px;
     margin-top: 25px;
+    overflow-y: auto;
   }
 
   .userFooterBlock {
     display: block !important;
-    margin-top: auto;
+    margin-top: auto !important;
     padding-top: 16px;
+    padding-bottom: 12px;
     border-top: 1px solid #1a1a1a;
     width: 100%;
     max-width: 100%;
+    flex-shrink: 0 !important;
   }
 
   .nomadMain {
@@ -280,6 +285,7 @@
   flex-direction: column;
   min-height: 0;
   max-width: 100%;
+  flex: 1 1 auto;
 }
 
 .nomadHeader {
@@ -299,7 +305,7 @@
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
   touch-action: pan-y;
-  max-height: min(42dvh, calc(100dvh - 13.5rem));
+  max-height: calc(100dvh - 140px);
   min-height: 0;
 }
 
