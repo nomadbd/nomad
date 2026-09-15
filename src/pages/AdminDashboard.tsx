@@ -12,17 +12,18 @@ import {
   StaffProfile,
   AdminMessages
 } from '../components/admin';
+import AdminNotifications from '../components/admin/notifications/AdminNotifications';
 import SendInvite from '../components/admin/ambassadors/invitations/SendInvite';
 import { PlusIcon, SearchIcon, FilterIcon, MenuIcon, CloseIcon } from '../components/icons';
 
-type TabType = 'overview' | 'orders' | 'products' | 'logistics' | 'messages' | 'ambassadors' | 'staff' | 'customers';
+type TabType = 'overview' | 'orders' | 'products' | 'logistics' | 'messages' | 'notifications' | 'ambassadors' | 'staff' | 'customers';
 
 const AdminDashboard: React.FC = () => {
   const getTabFromURL = (): TabType => {
     if (typeof window === 'undefined') return 'overview';
     const params = new URLSearchParams(window.location.search);
     const tab = params.get('tab') as TabType;
-    const validTabs: TabType[] = ['overview', 'orders', 'products', 'logistics', 'messages', 'ambassadors', 'staff', 'customers'];
+    const validTabs: TabType[] = ['overview', 'orders', 'products', 'logistics', 'messages', 'notifications', 'ambassadors', 'staff', 'customers'];
     return validTabs.includes(tab) ? tab : 'overview';
   };
 
@@ -268,6 +269,13 @@ const AdminDashboard: React.FC = () => {
               </button>
 
               <button
+                className={`${styles.navBtn} ${activeTab === 'notifications' ? styles.navBtnActive : ''}`}
+                onClick={() => handleTabChange('notifications')}
+              >
+                NOTIFICATIONS
+              </button>
+
+              <button
                 className={`${styles.navBtn} ${activeTab === 'ambassadors' ? styles.navBtnActive : ''}`}
                 onClick={() => handleTabChange('ambassadors')}
               >
@@ -388,6 +396,9 @@ const AdminDashboard: React.FC = () => {
                 }
               }}
             />
+          )}
+          {activeTab === 'notifications' && (
+            <AdminNotifications key="notifications" />
           )}
           {activeTab === 'ambassadors' && (
             <SendInvite 
