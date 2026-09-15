@@ -126,7 +126,7 @@ export default function AdminNotifications() {
         }
       }
 
-      setStatusMsg({ type: 'success', text: 'Notification sent successfully' });
+      setStatusMsg({ type: 'success', text: 'Notification dispatched successfully' });
       setTitle('');
       setMessage('');
       setLink('');
@@ -166,7 +166,7 @@ export default function AdminNotifications() {
     padding: '12px 0',
     color: '#FFFFFF',
     fontSize: '13px',
-    lineHeight: '1.5',
+    lineHeight: '1.6',
     fontFamily: 'inherit',
     outline: 'none',
     boxSizing: 'border-box',
@@ -177,7 +177,7 @@ export default function AdminNotifications() {
   return (
     <div style={{ maxWidth: '640px', margin: '0 auto', color: '#FFF', fontFamily: 'system-ui, -apple-system, sans-serif', padding: '12px 8px' }}>
 
-      {/* Status Message Banner */}
+      {/* Status Alert Banner */}
       {statusMsg && (
         <div style={{
           padding: '10px 0',
@@ -192,7 +192,7 @@ export default function AdminNotifications() {
         </div>
       )}
 
-      {/* Target Toggle */}
+      {/* Target Navigation Switch */}
       <div style={{ display: 'flex', gap: '20px', borderBottom: '1px solid #141414', paddingBottom: '10px', marginBottom: '24px' }}>
         <button
           type="button"
@@ -232,7 +232,7 @@ export default function AdminNotifications() {
         </button>
       </div>
 
-      {/* Form Section */}
+      {/* Form Container */}
       <form onSubmit={handleSend} style={{ display: 'flex', flexDirection: 'column', gap: '22px', marginBottom: '40px' }}>
 
         {/* User Search Input */}
@@ -279,7 +279,7 @@ export default function AdminNotifications() {
           </div>
         )}
 
-        {/* Category Pills (Single line layout with text/border highlight) */}
+        {/* Category Pills (Text + Border highlight only) */}
         <div>
           <span style={{ display: 'block', fontSize: '9px', color: '#555', fontWeight: '700', letterSpacing: '1.5px', marginBottom: '10px' }}>
             CATEGORY
@@ -324,18 +324,36 @@ export default function AdminNotifications() {
           style={underlineInputStyle}
         />
 
-        {/* Message Input */}
-        <textarea
-          rows={2}
-          placeholder="Message content..."
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          style={{
-            ...underlineInputStyle,
-            resize: 'vertical',
-            minHeight: '60px'
-          }}
-        />
+        {/* Dynamic Auto-growing Textarea with Counter */}
+        <div style={{ position: 'relative' }}>
+          <textarea
+            rows={2}
+            placeholder="Message content..."
+            value={message}
+            onChange={(e) => {
+              setMessage(e.target.value);
+              e.currentTarget.style.height = 'auto';
+              e.currentTarget.style.height = `${e.currentTarget.scrollHeight}px`;
+            }}
+            style={{
+              ...underlineInputStyle,
+              resize: 'none',
+              overflow: 'hidden',
+              minHeight: '60px',
+              paddingBottom: '20px'
+            }}
+          />
+          <span style={{
+            position: 'absolute',
+            right: 0,
+            bottom: '2px',
+            fontSize: '9px',
+            fontWeight: '600',
+            color: message.length > 180 ? '#EAB308' : '#333'
+          }}>
+            {message.length} chars
+          </span>
+        </div>
 
         {/* Action Link Input */}
         <input
@@ -346,7 +364,7 @@ export default function AdminNotifications() {
           style={underlineInputStyle}
         />
 
-        {/* Send Button */}
+        {/* Submit Button */}
         <button
           type="submit"
           disabled={loading}
@@ -389,7 +407,7 @@ export default function AdminNotifications() {
             <div style={{ fontSize: '13px', fontWeight: '700', color: '#FFF', marginBottom: '4px' }}>
               {title || 'Title placeholder'}
             </div>
-            <div style={{ fontSize: '11px', color: '#888', lineHeight: '1.5', whiteSpace: 'pre-wrap' }}>
+            <div style={{ fontSize: '11px', color: '#888', lineHeight: '1.5', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
               {message || 'Message preview will appear here...'}
             </div>
             {link && (
