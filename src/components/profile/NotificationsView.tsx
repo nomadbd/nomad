@@ -42,7 +42,6 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
     return past.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
-  // নিরপেক্ষ টাইপ ব্যাজ
   const getTypeBadge = (type: string) => {
     switch (type) {
       case 'PROMO':
@@ -61,7 +60,6 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
 
     fetchNotifications();
 
-    // Supabase Realtime Subscription
     const channel = supabase
       .channel(`public:notifications:user_id=eq.${userId}`)
       .on(
@@ -134,7 +132,7 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
   };
 
   const unreadCount = notifications.filter(n => !n.is_read).length;
-  
+
   const filteredNotifications = notifications.filter(item => {
     if (filter === 'unread') return !item.is_read;
     return true;
@@ -143,10 +141,9 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
   return (
     <div style={{ maxWidth: '600px', margin: '0 auto', padding: '16px 12px', color: '#FFF' }}>
       
-      {/* ১. হেডার ও ডানের একশন বাটন (ইনলাইন ফিল্টার সহ) */}
+      {/* ১. হেডার ও একটিমাত্র Unread ফিল্টার বাটন */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
         
-        {/* বামপাশে: ব্যাক বাটন ও সাধারণ টাইটেল */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
           <button
             onClick={onBack}
@@ -161,7 +158,6 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
               alignItems: 'center',
               justifyContent: 'center',
               cursor: 'pointer',
-              transition: 'all 0.2s ease',
               outline: 'none'
             }}
             title="Back"
@@ -174,56 +170,55 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
           </h2>
         </div>
 
-        {/* ডানপাশে: Mark Read এবং Unread ফিল্টার */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          {unreadCount > 0 && (
-            <button
-              onClick={markAllAsRead}
-              title="Mark all as read"
-              style={{
-                background: 'transparent',
-                border: 'none',
-                color: '#A1A1AA',
-                fontSize: '12px',
-                fontWeight: '500',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-                padding: '4px 8px'
-              }}
-            >
-              <CheckIcon width={13} height={13} stroke="#A1A1AA" />
-              <span>Read all</span>
-            </button>
-          )}
-
-          <button
-            onClick={() => setFilter(prev => prev === 'unread' ? 'all' : 'unread')}
-            style={{
-              padding: '6px 14px',
-              borderRadius: '20px',
-              fontSize: '12px',
-              fontWeight: '500',
-              border: filter === 'unread' ? '1px solid #FFFFFF' : '1px solid #27272A',
-              background: filter === 'unread' ? 'rgba(255, 255, 255, 0.12)' : '#121212',
-              color: filter === 'unread' ? '#FFFFFF' : '#71717A',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease'
-            }}
-          >
-            Unread {unreadCount > 0 ? `(${unreadCount})` : ''}
-          </button>
-        </div>
+        {/* ডানপাশে শুধুমাত্র একক Unread ফিল্টার পিল */}
+        <button
+          onClick={() => setFilter(prev => prev === 'unread' ? 'all' : 'unread')}
+          style={{
+            padding: '6px 16px',
+            borderRadius: '20px',
+            fontSize: '12px',
+            fontWeight: '500',
+            border: filter === 'unread' ? '1px solid #FFFFFF' : '1px solid #27272A',
+            background: filter === 'unread' ? 'rgba(255, 255, 255, 0.12)' : '#121212',
+            color: filter === 'unread' ? '#FFFFFF' : '#71717A',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+            outline: 'none'
+          }}
+        >
+          Unread {unreadCount > 0 ? `(${unreadCount})` : ''}
+        </button>
       </div>
 
-      {/* ২. নোটিফিকেশন লিস্ট / নিরিবিলি খালি অবস্থা */}
+      {/* আনরিড থাকলে তালিকা শুরুর আগে সূক্ষ্ম "Read all" অপশন */}
+      {unreadCount > 0 && filter === 'all' && (
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '12px', paddingRight: '4px' }}>
+          <button
+            onClick={markAllAsRead}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: '#71717A',
+              fontSize: '11px',
+              fontWeight: '500',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px'
+            }}
+          >
+            <CheckIcon width={12} height={12} stroke="#71717A" />
+            <span>Mark all read</span>
+          </button>
+        </div>
+      )}
+
+      {/* ২. নোটিফিকেশন লিস্ট ও বড় মেসেজ/লিংক হ্যান্ডলিং */}
       {loading ? (
         <div style={{ textAlign: 'center', padding: '60px 0', color: '#71717A', fontSize: '13px' }}>
           Loading updates...
         </div>
       ) : filteredNotifications.length === 0 ? (
-        /* ফ্লোটিং নিউট্রাল Empty State */
         <div style={{ 
           display: 'flex',
           flexDirection: 'column',
@@ -255,7 +250,6 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
           </p>
         </div>
       ) : (
-        /* নোটিফিকেশন কার্ডসমূহ */
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           {filteredNotifications.map((item) => {
             const badge = getTypeBadge(item.type);
@@ -288,7 +282,7 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
                   />
                 )}
 
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', gap: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px', gap: '8px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span
                       style={{
@@ -327,32 +321,50 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
                   </button>
                 </div>
 
-                <h3 style={{ margin: '0 0 4px 0', fontSize: '14px', fontWeight: '600', color: '#FFFFFF' }}>
+                <h3 style={{ margin: '0 0 6px 0', fontSize: '14px', fontWeight: '600', color: '#FFFFFF', lineHeight: '1.3' }}>
                   {item.title}
                 </h3>
                 
-                <p style={{ margin: 0, fontSize: '13px', color: '#A1A1AA', lineHeight: '1.45' }}>
+                {/* দীর্ঘ মেসেজ স্বাভাবিক টেক্সট র্যাপিং সহ */}
+                <p style={{ 
+                  margin: 0, 
+                  fontSize: '13px', 
+                  color: '#A1A1AA', 
+                  lineHeight: '1.5',
+                  overflowWrap: 'break-word',
+                  wordBreak: 'break-word',
+                  whiteSpace: 'pre-line'
+                }}>
                   {item.message}
                 </p>
 
+                {/* লাক্সারি স্লিক অ্যাকশন লিংক পিল (যদি লিংক থাকে) */}
                 {item.link && (
-                  <a
-                    href={item.link}
-                    onClick={(e) => e.stopPropagation()}
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      marginTop: '10px',
-                      fontSize: '12px',
-                      color: '#38BDF8',
-                      textDecoration: 'none',
-                      fontWeight: '500'
-                    }}
-                  >
-                    <span>View Details</span>
-                    <span style={{ fontSize: '10px' }}>→</span>
-                  </a>
+                  <div style={{ marginTop: '14px' }}>
+                    <a
+                      href={item.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '6px 12px',
+                        borderRadius: '6px',
+                        backgroundColor: '#18181B',
+                        border: '1px solid #27272A',
+                        color: '#FFFFFF',
+                        fontSize: '12px',
+                        fontWeight: '500',
+                        textDecoration: 'none',
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      <span>Explore</span>
+                      <span style={{ fontSize: '11px', color: '#A1A1AA' }}>→</span>
+                    </a>
+                  </div>
                 )}
               </div>
             );
