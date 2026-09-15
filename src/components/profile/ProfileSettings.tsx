@@ -226,16 +226,17 @@ export default function ProfileSettings({
             onClick={handleUpdate}
             disabled={!isDirty}
             style={{
-              background: isDirty ? '#FFFFFF' : 'transparent',
-              color: isDirty ? '#000000' : '#444444',
-              border: isDirty ? '1px solid #FFFFFF' : '1px solid #333333',
+              background: '#FFFFFF',
+              color: '#000000',
+              border: '1px solid #FFFFFF',
               padding: '6px 16px',
               borderRadius: '16px',
               fontSize: '10px',
               fontWeight: '700',
               letterSpacing: '1.5px',
               cursor: isDirty ? 'pointer' : 'default',
-              opacity: isDirty ? 1 : 0.4,
+              opacity: isDirty ? 1 : 0,
+              pointerEvents: isDirty ? 'auto' : 'none',
               transition: 'all 0.25s ease'
             }}
           >
@@ -254,7 +255,7 @@ export default function ProfileSettings({
         flex: 1,
         overflowY: 'auto',
         overflowX: 'hidden',
-        paddingTop: 'calc(51px + env(safe-area-inset-top))',
+        paddingTop: 'calc(80px + env(safe-area-inset-top))',
         paddingLeft: '20px',
         paddingRight: '20px',
         paddingBottom: '40px',
@@ -458,7 +459,13 @@ export default function ProfileSettings({
           </>
         )}
 
-        <div style={{ borderTop: '1px solid #1C1C1E', paddingTop: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <div style={{ 
+          borderTop: isAmbassadorActive ? '1px solid #1C1C1E' : 'none', 
+          paddingTop: '16px', 
+          display: 'flex', 
+          flexDirection: 'column', 
+          gap: '8px' 
+        }}>
 
           <button 
             type="button"
@@ -497,7 +504,7 @@ export default function ProfileSettings({
           position: 'fixed',
           left: 0,
           right: 0,
-          bottom: keyboardOffset, // ← কীবোর্ডের উপরে তুলে দেয়
+          bottom: keyboardOffset,
           zIndex: 1101,
           backgroundColor: '#111111',
           borderTopLeftRadius: '20px',
@@ -548,7 +555,7 @@ export default function ProfileSettings({
           </button>
         </div>
 
-        {/* Scrollable Fields (যদি দরকার হয়) */}
+        {/* Scrollable Fields */}
         <div style={{ 
           padding: '0 20px', 
           overflowY: 'auto',
@@ -573,7 +580,7 @@ export default function ProfileSettings({
           />
         </div>
 
-        {/* Sticky Footer Button - সবসময় দৃশ্যমান */}
+        {/* Sticky Footer Button */}
         <div style={{ 
           padding: '16px 20px',
           paddingBottom: 'max(20px, env(safe-area-inset-bottom))',
