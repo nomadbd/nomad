@@ -1,16 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../../supabaseClient';
-
-interface SentNotification {
-  id: string;
-  user_id: string;
-  title: string;
-  message: string;
-  type: 'INFO' | 'PROMO' | 'SYSTEM' | 'ALERT';
-  link?: string | null;
-  target_audience: string;
-  created_at: string;
-}
+import { HistoryIcon } from '../icons';
+import NotificationLogs from './NotificationLogs';
 
 interface UserProfile {
   id: string;
@@ -21,6 +12,8 @@ interface UserProfile {
 type CategoryType = 'INFO' | 'PROMO' | 'SYSTEM' | 'ALERT' | null;
 
 export default function AdminNotifications() {
+  const [view, setView] = useState<'create' | 'logs'>('create');
+
   const [targetType, setTargetType] = useState<'all' | 'specific'>('all');
   const [specificUserId, setSpecificUserId] = useState('');
   const [userSearch, setUserSearch] = useState('');
@@ -34,14 +27,7 @@ export default function AdminNotifications() {
   const [loading, setLoading] = useState(false);
   const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  const [sentHistory, setSentHistory] = useState<SentNotification[]>([]);
-  const [fetchingHistory, setFetchingHistory] = useState(true);
-
   const mutedText = '#888888';
-
-  useEffect(() => {
-    fetchSentHistory();
-  }, []);
 
   useEffect(() => {
     if (targetType === 'specific' && userSearch.trim().length > 1) {
@@ -59,18 +45,6 @@ export default function AdminNotifications() {
       .limit(5);
 
     if (data) setUserOptions(data);
-  };
-
-  const fetchSentHistory = async () => {
-    setFetchingHistory(true);
-    const { data } = await supabase
-      .from('notifications')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(10);
-
-    if (data) setSentHistory(data as SentNotification[]);
-    setFetchingHistory(false);
   };
 
   const handleSend = async (e: React.FormEvent) => {
@@ -135,18 +109,10 @@ export default function AdminNotifications() {
       setType(null);
       setSpecificUserId('');
       setUserSearch('');
-      fetchSentHistory();
     } catch (err: any) {
       setStatusMsg({ type: 'error', text: err.message || 'Dispatch failed' });
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleDeleteSent = async (id: string) => {
-    const { error } = await supabase.from('notifications').delete().eq('id', id);
-    if (!error) {
-      setSentHistory(prev => prev.filter(item => item.id !== id));
     }
   };
 
@@ -176,6 +142,11 @@ export default function AdminNotifications() {
     transition: 'border-color 0.2s ease',
   };
 
+  // যদি ইউজার 'logs' ভিউ সিলেক্ট করে, তবে NotificationLogs ফাইলটি রেন্ডার হবে
+  if (view === 'logs') {
+    return <NotificationLogs onBack={() => setView('create')} />;
+  }
+
   return (
     <div style={{ maxWidth: '640px', margin: '0 auto', color: '#FFF', fontFamily: 'system-ui, -apple-system, sans-serif', padding: '12px 8px', paddingBottom: '120px' }}>
       
@@ -184,7 +155,6 @@ export default function AdminNotifications() {
           color: ${mutedText} !important;
           opacity: 1 !important;
         }
-        /* কাস্টম মসৃণ স্ক্রলবার */
         textarea::-webkit-scrollbar {
           width: 4px;
         }
@@ -193,6 +163,33 @@ export default function AdminNotifications() {
           border-radius: 2px;
         }
       `}</style>
+
+      {/* Top Header with HistoryIcon Action */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+        <span style={{ fontSize: '11px', fontWeight: '800', letterSpacing: '1.5px', color: '#FFF' }}>DISPATCHER</span>
+        
+        <button
+          type="button"
+          onClick={() => setView('logs')}
+          title="View Notification Logs"
+          style={{
+            background: '#141414',
+            border: '1px solid #282828',
+            color: '#FFF',
+            padding: '6px 12px',
+            borderRadius: '20px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            fontSize: '10px',
+            fontWeight: '700',
+            cursor: 'pointer'
+          }}
+        >
+          <HistoryIcon style={{ width: 14, height: 14, fill: '#FFF' }} />
+          <span>LOGS</span>
+        </button>
+      </div>
 
       {/* Status Alert Banner */}
       {statusMsg && (
@@ -209,7 +206,7 @@ export default function AdminNotifications() {
         </div>
       )}
 
-      {/* Target Navigation Switch */}
+      {/* Target Switcher */}
       <div style={{ display: 'flex', gap: '20px', borderBottom: '1px solid #181818', paddingBottom: '10px', marginBottom: '24px' }}>
         <button
           type="button"
@@ -223,8 +220,7 @@ export default function AdminNotifications() {
             fontWeight: '700',
             letterSpacing: '1.5px',
             paddingBottom: '8px',
-            cursor: 'pointer',
-            transition: 'all 0.2s ease'
+            cursor: 'pointer'
           }}
         >
           ALL USERS
@@ -241,8 +237,7 @@ export default function AdminNotifications() {
             fontWeight: '700',
             letterSpacing: '1.5px',
             paddingBottom: '8px',
-            cursor: 'pointer',
-            transition: 'all 0.2s ease'
+            cursor: 'pointer'
           }}
         >
           SINGLE USER
@@ -250,7 +245,7 @@ export default function AdminNotifications() {
       </div>
 
       {/* Form Container */}
-      <form onSubmit={handleSend} style={{ display: 'flex', flexDirection: 'column', gap: '22px', marginBottom: '40px' }}>
+      <form onSubmit={handleSend} style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
 
         {/* User Search Input */}
         {targetType === 'specific' && (
@@ -268,9 +263,7 @@ export default function AdminNotifications() {
             {userOptions.length > 0 && (
               <div style={{
                 position: 'absolute',
-                top: '100%',
-                left: 0,
-                right: 0,
+                top: '100%', left: 0, right: 0,
                 background: '#0B0B0B',
                 border: '1px solid #222',
                 borderRadius: '4px',
@@ -321,7 +314,6 @@ export default function AdminNotifications() {
                     border: `1px solid ${active ? catColor : '#2A2A2A'}`,
                     borderRadius: '4px',
                     cursor: 'pointer',
-                    transition: 'all 0.15s ease',
                     textAlign: 'center'
                   }}
                 >
@@ -341,7 +333,7 @@ export default function AdminNotifications() {
           style={underlineInputStyle}
         />
 
-        {/* Clamped Textarea with Internal Scroll (Fixes Keyboard Push Issue) */}
+        {/* Message Input with Clamped Internal Scroll */}
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
             <span style={{ fontSize: '9px', color: mutedText, fontWeight: '700', letterSpacing: '1.5px' }}>
@@ -362,7 +354,6 @@ export default function AdminNotifications() {
             onChange={(e) => {
               setMessage(e.target.value);
               e.currentTarget.style.height = 'auto';
-              // সর্বোচ্চ ১২০ পিক্সেল পর্যন্ত বড় হবে, এরপর ফিক্সড থেকে ভেতরে স্ক্রল হবে
               const nextHeight = Math.min(e.currentTarget.scrollHeight, 120);
               e.currentTarget.style.height = `${nextHeight}px`;
             }}
@@ -401,106 +392,12 @@ export default function AdminNotifications() {
             border: 'none',
             borderRadius: '2px',
             cursor: loading ? 'not-allowed' : 'pointer',
-            opacity: loading ? 0.5 : 1,
-            transition: 'opacity 0.2s'
+            opacity: loading ? 0.5 : 1
           }}
         >
           {loading ? 'SENDING...' : 'DISPATCH NOTIFICATION'}
         </button>
       </form>
-
-      {/* Live Preview Section */}
-      {(title || message || type) && (
-        <div style={{ marginBottom: '32px', paddingBottom: '20px', borderBottom: '1px solid #141414' }}>
-          <span style={{ fontSize: '9px', color: mutedText, letterSpacing: '1.5px', fontWeight: '700', display: 'block', marginBottom: '10px' }}>
-            PREVIEW
-          </span>
-          <div style={{ padding: '12px 0', borderTop: '1px dashed #222222' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-              {type ? (
-                <span style={{ fontSize: '9px', fontWeight: '800', color: getCategoryColor(type), letterSpacing: '1px' }}>
-                  {type}
-                </span>
-              ) : (
-                <span style={{ fontSize: '9px', color: mutedText }}>NO CATEGORY</span>
-              )}
-              <span style={{ fontSize: '9px', color: mutedText }}>• NOW</span>
-            </div>
-            <div style={{ fontSize: '13px', fontWeight: '700', color: '#FFF', marginBottom: '4px' }}>
-              {title || 'Title placeholder'}
-            </div>
-            <div style={{ fontSize: '11px', color: mutedText, lineHeight: '1.5', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-              {message || 'Message preview will appear here...'}
-            </div>
-            {link && (
-              <div style={{ marginTop: '8px', fontSize: '10px', color: '#3B82F6' }}>
-                {link} ↗
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Dispatch History Logs */}
-      <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-          <span style={{ fontSize: '9px', fontWeight: '800', letterSpacing: '1.5px', color: mutedText }}>DISPATCH LOGS</span>
-          <button
-            onClick={fetchSentHistory}
-            style={{ background: 'none', border: 'none', color: mutedText, fontSize: '9px', cursor: 'pointer' }}
-          >
-            REFRESH
-          </button>
-        </div>
-
-        {fetchingHistory ? (
-          <div style={{ color: mutedText, fontSize: '10px', padding: '8px 0' }}>Loading logs...</div>
-        ) : sentHistory.length === 0 ? (
-          <div style={{ color: mutedText, fontSize: '10px', padding: '8px 0' }}>No history found</div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            {sentHistory.map((item) => (
-              <div
-                key={item.id}
-                style={{
-                  padding: '10px 0',
-                  borderBottom: '1px solid #141414',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justify: 'space-between',
-                  gap: '12px'
-                }}
-              >
-                <div style={{ overflow: 'hidden' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px' }}>
-                    <span style={{ fontSize: '8px', fontWeight: '800', color: getCategoryColor(item.type) }}>
-                      {item.type}
-                    </span>
-                    <span style={{ fontSize: '11px', fontWeight: '600', color: '#DDD' }}>{item.title}</span>
-                  </div>
-                  <div style={{ fontSize: '10px', color: mutedText, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {item.message}
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
-                  <span style={{ fontSize: '8px', color: mutedText }}>
-                    {item.target_audience === 'ALL' ? 'GLOBAL' : item.user_id.slice(0, 6)}
-                  </span>
-                  <button
-                    onClick={() => handleDeleteSent(item.id)}
-                    style={{ background: 'none', border: 'none', color: mutedText, fontSize: '9px', cursor: 'pointer' }}
-                    onMouseEnter={(e) => (e.currentTarget.style.color = '#EF4444')}
-                    onMouseLeave={(e) => (e.currentTarget.style.color = mutedText)}
-                  >
-                    DEL
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
 
     </div>
   );
