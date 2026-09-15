@@ -10,9 +10,9 @@ import {
   AdminCustomers,
   AdminLogistics,
   StaffProfile,
-  AdminMessages
+  AdminMessages,
+  AdminNotifications
 } from '../components/admin';
-import AdminNotifications from '../components/admin/notifications/AdminNotifications';
 import SendInvite from '../components/admin/ambassadors/invitations/SendInvite';
 import { PlusIcon, SearchIcon, FilterIcon, MenuIcon, CloseIcon } from '../components/icons';
 
