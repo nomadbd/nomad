@@ -286,3 +286,4 @@ export default function NotificationLogs({ onBack }: NotificationLogsProps) {
     </div>
   );
 }
+ 
