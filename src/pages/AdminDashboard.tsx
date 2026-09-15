@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import styles from './AdminDashboard.module.css';
-import { supabase } from '../supabaseClient'; 
+import { supabase } from '../supabaseClient';
 
 import {
   AdminOverview,
@@ -34,7 +34,6 @@ const AdminDashboard: React.FC = () => {
   const [isAddOpen, setIsAddOpen] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
 
-  // একটিভ চ্যাট স্টেট
   const [activeChat, setActiveChat] = useState<{
     id: string;
     userName: string;
@@ -58,13 +57,25 @@ const AdminDashboard: React.FC = () => {
     setMenuOpen(false);
     setIsSearchOpen(false);
     setIsAddOpen(false);
-    setActiveChat(null); // ট্যাব চেঞ্জ হলে চ্যাট স্টেট রিসেট হবে
+    setActiveChat(null);
 
     const searchParams = new URLSearchParams(window.location.search);
     searchParams.set('tab', tab);
-    const newPath = `${window.location.pathname}?${searchParams.toString()}`;
+    const newPath = `\( {window.location.pathname}? \){searchParams.toString()}`;
 
     window.history.pushState({ path: newPath }, '', newPath);
+  };
+
+  const toggleMenu = () => {
+    setMenuOpen((wasOpen) => {
+      const next = !wasOpen;
+      if (next) {
+        setIsSearchOpen(false);
+        setIsFilterOpen(false);
+        setIsHeaderVisible(true);
+      }
+      return next;
+    });
   };
 
   useEffect(() => {
@@ -94,6 +105,34 @@ const AdminDashboard: React.FC = () => {
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, [lastScrollY, menuOpen]);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+
+    const scrollY = window.scrollY;
+    const { body } = document;
+    body.classList.add('nomad-menu-lock');
+    body.style.top = `-${scrollY}px`;
+
+    const preventPageScroll = (event: TouchEvent) => {
+      const nav = document.querySelector('[data-nomad-nav]');
+      const footer = document.querySelector('[data-nomad-menu-footer]');
+      const target = event.target as Node | null;
+      if (target && ((nav && nav.contains(target)) || (footer && footer.contains(target)))) {
+        return;
+      }
+      event.preventDefault();
+    };
+
+    document.addEventListener('touchmove', preventPageScroll, { passive: false });
+
+    return () => {
+      body.classList.remove('nomad-menu-lock');
+      body.style.top = '';
+      document.removeEventListener('touchmove', preventPageScroll);
+      window.scrollTo(0, scrollY);
+    };
+  }, [menuOpen]);
 
   const fetchCurrentUserAndRole = async () => {
     try {
@@ -158,26 +197,25 @@ const AdminDashboard: React.FC = () => {
     return null;
   }
 
-  // চ্যাট ওপেন থাকলে হেডার হাইড হবে
   const isChatOpen = activeTab === 'messages' && !!activeChat;
+  const showSearchFilter = !menuOpen;
 
   return (
-    <div style={{ 
-      backgroundColor: '#030303', 
-      color: '#fff', 
-      minHeight: '100dvh', 
-      fontFamily: 'monospace, sans-serif', 
+    <div style={{
+      backgroundColor: '#030303',
+      color: '#fff',
+      minHeight: '100dvh',
+      fontFamily: 'monospace, sans-serif',
       width: '100%',
       maxWidth: '100%',
       overflowX: 'hidden',
       position: 'relative'
     }}>
-      <div className={styles.nomadLayout}>
+      <div className={`${styles.nomadLayout} ${menuOpen ? styles.menuLocked : ''}`}>
         <aside className={`${styles.nomadSidebar} ${menuOpen ? styles.menuOpen : ''} ${!isHeaderVisible ? styles.headerHidden : ''}`}>
-          <div>
-            {/* কোনো নির্দিষ্ট চ্যাট ওপেন থাকলে ড্যাশবোর্ডের মূল হেডার হাইড থাকবে */}
+          <div className={styles.sidebarStack}>
             {!isChatOpen && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: '100%' }}>
+              <div className={styles.nomadHeader} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: '100%' }}>
                 <a href="/" className={styles.nomadBrandLink} title="Go to Store Homepage">
                   <h1 style={{ fontSize: '18px', fontWeight: '900', letterSpacing: '4px', margin: 0, color: '#fff' }}>
                     NOMAD
@@ -196,7 +234,7 @@ const AdminDashboard: React.FC = () => {
                     </button>
                   )}
 
-                  {activeTab !== 'overview' && (
+                  {showSearchFilter && activeTab !== 'overview' && (
                     <button
                       className={`${styles.nomadActionBtn} ${isSearchOpen ? styles.nomadActionBtnActive : ''}`}
                       onClick={() => setIsSearchOpen(!isSearchOpen)}
@@ -207,19 +245,22 @@ const AdminDashboard: React.FC = () => {
                     </button>
                   )}
 
-                  <button
-                    className={`${styles.nomadActionBtn} ${isFilterOpen ? styles.nomadActionBtnActive : ''}`}
-                    onClick={() => setIsFilterOpen(!isFilterOpen)}
-                    aria-label="Filter"
-                    title="Toggle Filter Panel"
-                  >
-                    <FilterIcon width={18} height={18} />
-                  </button>
+                  {showSearchFilter && (
+                    <button
+                      className={`${styles.nomadActionBtn} ${isFilterOpen ? styles.nomadActionBtnActive : ''}`}
+                      onClick={() => setIsFilterOpen(!isFilterOpen)}
+                      aria-label="Filter"
+                      title="Toggle Filter Panel"
+                    >
+                      <FilterIcon width={18} height={18} />
+                    </button>
+                  )}
 
                   <button
                     className={`${styles.nomadMenuToggle} ${styles.nomadMenuToggleBtn} ${menuOpen ? styles.nomadMenuToggleBtnActive : ''}`}
-                    onClick={() => setMenuOpen(!menuOpen)}
+                    onClick={toggleMenu}
                     aria-label="Toggle Menu"
+                    aria-expanded={menuOpen}
                     title="Toggle Navigation"
                   >
                     {menuOpen ? <CloseIcon width={18} height={18} /> : <MenuIcon width={20} height={20} />}
@@ -228,7 +269,7 @@ const AdminDashboard: React.FC = () => {
               </div>
             )}
 
-            <nav className={styles.nomadNav}>
+            <nav className={styles.nomadNav} data-nomad-nav>
               <span style={{ fontSize: '9px', color: '#888888', letterSpacing: '2px', marginBottom: '8px', fontWeight: 'bold' }}>
                 MAIN MENU
               </span>
@@ -298,8 +339,8 @@ const AdminDashboard: React.FC = () => {
             </nav>
           </div>
 
-          <div className={styles.userFooterBlock}>
-            <div 
+          <div className={styles.userFooterBlock} data-nomad-menu-footer>
+            <div
               onClick={() => setIsProfileOpen(true)}
               style={{
                 backgroundColor: '#0a0a0a',
@@ -315,11 +356,11 @@ const AdminDashboard: React.FC = () => {
               title="Click to view Staff Profile & Options"
             >
               <div style={{ width: '100%', overflow: 'hidden' }}>
-                <span 
+                <span
                   className={styles.userTextContainer}
-                  style={{ 
-                    color: '#ffffff', 
-                    display: 'block', 
+                  style={{
+                    color: '#ffffff',
+                    display: 'block',
                     fontWeight: 'bold',
                     textTransform: userName ? 'uppercase' : 'none',
                     fontSize: '10px',
@@ -339,45 +380,54 @@ const AdminDashboard: React.FC = () => {
           </div>
         </aside>
 
+        {menuOpen && (
+          <button
+            type="button"
+            className={styles.menuBackdrop}
+            aria-label="Close menu"
+            onClick={() => setMenuOpen(false)}
+          />
+        )}
+
         <main className={styles.nomadMain}>
           {activeTab === 'overview' && (
             <AdminOverview key="overview" userRole={userRole} showFilter={isFilterOpen} dateFormat="DD/MM/YYYY" />
           )}
           {activeTab === 'orders' && (
-            <AdminOrders 
-              key="orders" 
+            <AdminOrders
+              key="orders"
               isSearchOpen={isSearchOpen}
               isFilterOpen={isFilterOpen}
               onToggleSearch={() => setIsSearchOpen(prev => !prev)}
               onToggleFilter={() => setIsFilterOpen(prev => !prev)}
               searchQuery={searchQuery}
               onSearchChange={setSearchQuery}
-              dateFormat="DD/MM/YYYY" 
+              dateFormat="DD/MM/YYYY"
             />
           )}
           {activeTab === 'products' && (
-            <AdminProducts 
-              key="products" 
-              searchQuery={searchQuery} 
+            <AdminProducts
+              key="products"
+              searchQuery={searchQuery}
               onSearchChange={setSearchQuery}
-              isFilterOpen={isFilterOpen} 
+              isFilterOpen={isFilterOpen}
               isSearchOpen={isSearchOpen}
-              dateFormat="DD/MM/YYYY" 
+              dateFormat="DD/MM/YYYY"
               isAddOpen={isAddOpen}
               onToggleAdd={() => setIsAddOpen(prev => !prev)}
               onCloseAdd={() => setIsAddOpen(false)}
             />
           )}
           {activeTab === 'logistics' && (
-            <AdminLogistics 
+            <AdminLogistics
               key="logistics"
               searchQuery={searchQuery}
               isFilterOpen={isFilterOpen}
             />
           )}
           {activeTab === 'messages' && (
-            <AdminMessages 
-              key="messages" 
+            <AdminMessages
+              key="messages"
               searchQuery={searchQuery}
               isFilterOpen={isFilterOpen}
               isSearchOpen={isSearchOpen}
@@ -401,14 +451,14 @@ const AdminDashboard: React.FC = () => {
             <AdminNotifications key="notifications" />
           )}
           {activeTab === 'ambassadors' && (
-            <SendInvite 
-              key="ambassadors" 
-              isOpen={isAddOpen} 
-              onClose={() => setIsAddOpen(false)} 
+            <SendInvite
+              key="ambassadors"
+              isOpen={isAddOpen}
+              onClose={() => setIsAddOpen(false)}
             />
           )}
           {activeTab === 'staff' && (
-            <AdminStaff 
+            <AdminStaff
               key="staff"
               searchQuery={searchQuery}
               isFilterOpen={isFilterOpen}
@@ -417,7 +467,7 @@ const AdminDashboard: React.FC = () => {
             />
           )}
           {activeTab === 'customers' && (
-            <AdminCustomers 
+            <AdminCustomers
               key="customers"
               searchQuery={searchQuery}
               isFilterOpen={isFilterOpen}
@@ -427,9 +477,9 @@ const AdminDashboard: React.FC = () => {
         </main>
       </div>
 
-      <StaffProfile 
-        isOpen={isProfileOpen} 
-        onClose={() => setIsProfileOpen(false)} 
+      <StaffProfile
+        isOpen={isProfileOpen}
+        onClose={() => setIsProfileOpen(false)}
         profile={profileData}
         onRefreshProfile={fetchCurrentUserAndRole}
       />
