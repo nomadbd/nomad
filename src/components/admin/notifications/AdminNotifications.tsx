@@ -37,6 +37,8 @@ export default function AdminNotifications() {
   const [sentHistory, setSentHistory] = useState<SentNotification[]>([]);
   const [fetchingHistory, setFetchingHistory] = useState(true);
 
+  const mutedText = '#888888'; // Notification title এর মতো ইউনিফর্ম লাইট কালার
+
   useEffect(() => {
     fetchSentHistory();
   }, []);
@@ -154,7 +156,7 @@ export default function AdminNotifications() {
       case 'ALERT': return '#EF4444';
       case 'SYSTEM': return '#A855F7';
       case 'INFO': return '#3B82F6';
-      default: return '#555555';
+      default: return mutedText;
     }
   };
 
@@ -162,7 +164,7 @@ export default function AdminNotifications() {
     width: '100%',
     background: 'transparent',
     border: 'none',
-    borderBottom: '1px solid #1E1E1E',
+    borderBottom: '1px solid #222222',
     padding: '12px 0',
     color: '#FFFFFF',
     fontSize: '13px',
@@ -175,7 +177,15 @@ export default function AdminNotifications() {
   };
 
   return (
-    <div style={{ maxWidth: '640px', margin: '0 auto', color: '#FFF', fontFamily: 'system-ui, -apple-system, sans-serif', padding: '12px 8px' }}>
+    <div style={{ maxWidth: '640px', margin: '0 auto', color: '#FFF', fontFamily: 'system-ui, -apple-system, sans-serif', padding: '12px 8px', paddingBottom: '80px' }}>
+      
+      {/* Global placeholder style to guarantee visible light gray placeholders */}
+      <style>{`
+        input::placeholder, textarea::placeholder {
+          color: ${mutedText} !important;
+          opacity: 1 !important;
+        }
+      `}</style>
 
       {/* Status Alert Banner */}
       {statusMsg && (
@@ -193,7 +203,7 @@ export default function AdminNotifications() {
       )}
 
       {/* Target Navigation Switch */}
-      <div style={{ display: 'flex', gap: '20px', borderBottom: '1px solid #141414', paddingBottom: '10px', marginBottom: '24px' }}>
+      <div style={{ display: 'flex', gap: '20px', borderBottom: '1px solid #181818', paddingBottom: '10px', marginBottom: '24px' }}>
         <button
           type="button"
           onClick={() => setTargetType('all')}
@@ -201,7 +211,7 @@ export default function AdminNotifications() {
             background: 'none',
             border: 'none',
             borderBottom: targetType === 'all' ? '2px solid #FFF' : '2px solid transparent',
-            color: targetType === 'all' ? '#FFF' : '#444',
+            color: targetType === 'all' ? '#FFF' : mutedText,
             fontSize: '11px',
             fontWeight: '700',
             letterSpacing: '1.5px',
@@ -219,7 +229,7 @@ export default function AdminNotifications() {
             background: 'none',
             border: 'none',
             borderBottom: targetType === 'specific' ? '2px solid #FFF' : '2px solid transparent',
-            color: targetType === 'specific' ? '#FFF' : '#444',
+            color: targetType === 'specific' ? '#FFF' : mutedText,
             fontSize: '11px',
             fontWeight: '700',
             letterSpacing: '1.5px',
@@ -271,7 +281,7 @@ export default function AdminNotifications() {
                     style={{ padding: '10px 12px', fontSize: '11px', cursor: 'pointer', borderBottom: '1px solid #141414' }}
                   >
                     <div style={{ color: '#FFF', fontWeight: 'bold' }}>{u.name || 'User'}</div>
-                    <div style={{ fontSize: '9px', color: '#555', marginTop: '2px' }}>{u.email} ({u.id.slice(0, 8)}...)</div>
+                    <div style={{ fontSize: '9px', color: mutedText, marginTop: '2px' }}>{u.email} ({u.id.slice(0, 8)}...)</div>
                   </div>
                 ))}
               </div>
@@ -279,9 +289,9 @@ export default function AdminNotifications() {
           </div>
         )}
 
-        {/* Category Pills (Text + Border highlight only) */}
+        {/* Category Pills */}
         <div>
-          <span style={{ display: 'block', fontSize: '9px', color: '#555', fontWeight: '700', letterSpacing: '1.5px', marginBottom: '10px' }}>
+          <span style={{ display: 'block', fontSize: '9px', color: mutedText, fontWeight: '700', letterSpacing: '1.5px', marginBottom: '10px' }}>
             CATEGORY
           </span>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -300,8 +310,8 @@ export default function AdminNotifications() {
                     fontWeight: '700',
                     letterSpacing: '1px',
                     background: 'transparent',
-                    color: active ? catColor : '#444',
-                    border: `1px solid ${active ? catColor : '#1E1E1E'}`,
+                    color: active ? catColor : mutedText,
+                    border: `1px solid ${active ? catColor : '#2A2A2A'}`,
                     borderRadius: '4px',
                     cursor: 'pointer',
                     transition: 'all 0.15s ease',
@@ -324,8 +334,8 @@ export default function AdminNotifications() {
           style={underlineInputStyle}
         />
 
-        {/* Dynamic Auto-growing Textarea with Counter */}
-        <div style={{ position: 'relative' }}>
+        {/* Message Input with Dynamic Height & Visible Character Counter */}
+        <div>
           <textarea
             rows={2}
             placeholder="Message content..."
@@ -339,20 +349,18 @@ export default function AdminNotifications() {
               ...underlineInputStyle,
               resize: 'none',
               overflow: 'hidden',
-              minHeight: '60px',
-              paddingBottom: '20px'
+              minHeight: '60px'
             }}
           />
-          <span style={{
-            position: 'absolute',
-            right: 0,
-            bottom: '2px',
-            fontSize: '9px',
-            fontWeight: '600',
-            color: message.length > 180 ? '#EAB308' : '#333'
-          }}>
-            {message.length} chars
-          </span>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '4px' }}>
+            <span style={{
+              fontSize: '10px',
+              fontWeight: '600',
+              color: message.length > 180 ? '#EAB308' : mutedText
+            }}>
+              {message.length} chars
+            </span>
+          </div>
         </div>
 
         {/* Action Link Input */}
@@ -390,24 +398,24 @@ export default function AdminNotifications() {
       {/* Live Preview Section */}
       {(title || message || type) && (
         <div style={{ marginBottom: '32px', paddingBottom: '20px', borderBottom: '1px solid #141414' }}>
-          <span style={{ fontSize: '9px', color: '#444', letterSpacing: '1.5px', fontWeight: '700', display: 'block', marginBottom: '10px' }}>
+          <span style={{ fontSize: '9px', color: mutedText, letterSpacing: '1.5px', fontWeight: '700', display: 'block', marginBottom: '10px' }}>
             PREVIEW
           </span>
-          <div style={{ padding: '12px 0', borderTop: '1px dashed #1E1E1E' }}>
+          <div style={{ padding: '12px 0', borderTop: '1px dashed #222222' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
               {type ? (
                 <span style={{ fontSize: '9px', fontWeight: '800', color: getCategoryColor(type), letterSpacing: '1px' }}>
                   {type}
                 </span>
               ) : (
-                <span style={{ fontSize: '9px', color: '#444' }}>NO CATEGORY</span>
+                <span style={{ fontSize: '9px', color: mutedText }}>NO CATEGORY</span>
               )}
-              <span style={{ fontSize: '9px', color: '#333' }}>• NOW</span>
+              <span style={{ fontSize: '9px', color: mutedText }}>• NOW</span>
             </div>
             <div style={{ fontSize: '13px', fontWeight: '700', color: '#FFF', marginBottom: '4px' }}>
               {title || 'Title placeholder'}
             </div>
-            <div style={{ fontSize: '11px', color: '#888', lineHeight: '1.5', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+            <div style={{ fontSize: '11px', color: mutedText, lineHeight: '1.5', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
               {message || 'Message preview will appear here...'}
             </div>
             {link && (
@@ -422,19 +430,19 @@ export default function AdminNotifications() {
       {/* Dispatch History Logs */}
       <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-          <span style={{ fontSize: '9px', fontWeight: '800', letterSpacing: '1.5px', color: '#444' }}>DISPATCH LOGS</span>
+          <span style={{ fontSize: '9px', fontWeight: '800', letterSpacing: '1.5px', color: mutedText }}>DISPATCH LOGS</span>
           <button
             onClick={fetchSentHistory}
-            style={{ background: 'none', border: 'none', color: '#444', fontSize: '9px', cursor: 'pointer' }}
+            style={{ background: 'none', border: 'none', color: mutedText, fontSize: '9px', cursor: 'pointer' }}
           >
             REFRESH
           </button>
         </div>
 
         {fetchingHistory ? (
-          <div style={{ color: '#444', fontSize: '10px', padding: '8px 0' }}>Loading logs...</div>
+          <div style={{ color: mutedText, fontSize: '10px', padding: '8px 0' }}>Loading logs...</div>
         ) : sentHistory.length === 0 ? (
-          <div style={{ color: '#444', fontSize: '10px', padding: '8px 0' }}>No history found</div>
+          <div style={{ color: mutedText, fontSize: '10px', padding: '8px 0' }}>No history found</div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             {sentHistory.map((item) => (
@@ -442,7 +450,7 @@ export default function AdminNotifications() {
                 key={item.id}
                 style={{
                   padding: '10px 0',
-                  borderBottom: '1px solid #101010',
+                  borderBottom: '1px solid #141414',
                   display: 'flex',
                   alignItems: 'center',
                   justify: 'space-between',
@@ -456,20 +464,20 @@ export default function AdminNotifications() {
                     </span>
                     <span style={{ fontSize: '11px', fontWeight: '600', color: '#DDD' }}>{item.title}</span>
                   </div>
-                  <div style={{ fontSize: '10px', color: '#555', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <div style={{ fontSize: '10px', color: mutedText, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {item.message}
                   </div>
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
-                  <span style={{ fontSize: '8px', color: '#444' }}>
+                  <span style={{ fontSize: '8px', color: mutedText }}>
                     {item.target_audience === 'ALL' ? 'GLOBAL' : item.user_id.slice(0, 6)}
                   </span>
                   <button
                     onClick={() => handleDeleteSent(item.id)}
-                    style={{ background: 'none', border: 'none', color: '#333', fontSize: '9px', cursor: 'pointer' }}
+                    style={{ background: 'none', border: 'none', color: mutedText, fontSize: '9px', cursor: 'pointer' }}
                     onMouseEnter={(e) => (e.currentTarget.style.color = '#EF4444')}
-                    onMouseLeave={(e) => (e.currentTarget.style.color = '#333')}
+                    onMouseLeave={(e) => (e.currentTarget.style.color = mutedText)}
                   >
                     DEL
                   </button>
