@@ -18,6 +18,8 @@ interface UserProfile {
   name?: string;
 }
 
+type CategoryType = 'INFO' | 'PROMO' | 'SYSTEM' | 'ALERT' | null;
+
 export default function AdminNotifications() {
   const [targetType, setTargetType] = useState<'all' | 'specific'>('all');
   const [specificUserId, setSpecificUserId] = useState('');
@@ -26,7 +28,7 @@ export default function AdminNotifications() {
 
   const [title, setTitle] = useState('');
   const [message, setMessage] = useState('');
-  const [type, setType] = useState<'INFO' | 'PROMO' | 'SYSTEM' | 'ALERT'>('INFO');
+  const [type, setType] = useState<CategoryType>(null); // Default null
   const [link, setLink] = useState('');
 
   const [loading, setLoading] = useState(false);
@@ -71,13 +73,19 @@ export default function AdminNotifications() {
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!type) {
+      setStatusMsg({ type: 'error', text: 'Select a notification category' });
+      return;
+    }
+
     if (!title.trim() || !message.trim()) {
-      setStatusMsg({ type: 'error', text: 'ERR // Title & Message required' });
+      setStatusMsg({ type: 'error', text: 'Title & Message are required' });
       return;
     }
 
     if (targetType === 'specific' && !specificUserId.trim()) {
-      setStatusMsg({ type: 'error', text: 'ERR // Target user ID required' });
+      setStatusMsg({ type: 'error', text: 'Select or enter a recipient user' });
       return;
     }
 
@@ -118,15 +126,16 @@ export default function AdminNotifications() {
         }
       }
 
-      setStatusMsg({ type: 'success', text: 'SUCCESS // Dispatch sent' });
+      setStatusMsg({ type: 'success', text: 'Notification dispatched successfully' });
       setTitle('');
       setMessage('');
       setLink('');
+      setType(null); // Reset to null after sending
       setSpecificUserId('');
       setUserSearch('');
       fetchSentHistory();
     } catch (err: any) {
-      setStatusMsg({ type: 'error', text: err.message || 'ERR // Dispatch failed' });
+      setStatusMsg({ type: 'error', text: err.message || 'Dispatch failed' });
     } finally {
       setLoading(false);
     }
@@ -139,400 +148,312 @@ export default function AdminNotifications() {
     }
   };
 
-  const getTypeStyle = (category: string) => {
-    switch (category) {
-      case 'PROMO': return { color: '#EAB308', bg: 'rgba(234,179,8,0.1)', border: 'rgba(234,179,8,0.25)' };
-      case 'ALERT': return { color: '#EF4444', bg: 'rgba(239,68,68,0.1)', border: 'rgba(239,68,68,0.25)' };
-      case 'SYSTEM': return { color: '#A855F7', bg: 'rgba(168,85,247,0.1)', border: 'rgba(168,85,247,0.25)' };
-      default: return { color: '#3B82F6', bg: 'rgba(59,130,246,0.1)', border: 'rgba(59,130,246,0.25)' };
+  const getCategoryColor = (cat: CategoryType) => {
+    switch (cat) {
+      case 'PROMO': return '#EAB308';
+      case 'ALERT': return '#EF4444';
+      case 'SYSTEM': return '#A855F7';
+      case 'INFO': return '#3B82F6';
+      default: return '#666666';
     }
   };
 
-  // Modern Input Style Helper
-  const fieldStyle: React.CSSProperties = {
+  // Modern Underline Input Styling
+  const underlineInputStyle: React.CSSProperties = {
     width: '100%',
-    padding: '12px 14px',
-    background: '#090909',
-    border: '1px solid #1F1F1F',
-    borderRadius: '4px',
+    background: 'transparent',
+    border: 'none',
+    borderBottom: '1px solid #262626',
+    padding: '12px 0',
     color: '#FFFFFF',
-    fontSize: '12px',
-    fontFamily: 'monospace, sans-serif',
+    fontSize: '13px',
+    lineHeight: '1.6',
+    fontFamily: 'inherit',
     outline: 'none',
     boxSizing: 'border-box',
-    transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
-  };
-
-  const labelStyle: React.CSSProperties = {
-    display: 'block',
-    fontSize: '10px',
-    color: '#777',
-    fontWeight: '700',
-    letterSpacing: '1px',
-    marginBottom: '6px',
-    textTransform: 'uppercase'
+    borderRadius: 0,
+    transition: 'border-color 0.2s ease',
   };
 
   return (
-    <div style={{ maxWidth: '820px', margin: '0 auto', color: '#FFF', fontFamily: 'monospace, sans-serif', padding: '10px 4px' }}>
+    <div style={{ maxWidth: '780px', margin: '0 auto', color: '#FFF', fontFamily: 'system-ui, -apple-system, sans-serif', padding: '12px 4px' }}>
 
-      {/* Status Bar */}
+      {/* Status Alert Banner */}
       {statusMsg && (
         <div style={{
-          padding: '10px 14px',
-          borderRadius: '4px',
-          marginBottom: '16px',
-          fontSize: '11px',
-          fontWeight: 'bold',
-          letterSpacing: '0.5px',
-          background: statusMsg.type === 'success' ? 'rgba(34, 197, 94, 0.08)' : 'rgba(239, 68, 68, 0.08)',
-          border: `1px solid ${statusMsg.type === 'success' ? '#22C55E' : '#EF4444'}`,
+          padding: '10px 0',
+          marginBottom: '20px',
+          fontSize: '12px',
+          fontWeight: '500',
+          borderBottom: `1px solid ${statusMsg.type === 'success' ? '#22C55E' : '#EF4444'}`,
           color: statusMsg.type === 'success' ? '#4ADE80' : '#F87171'
         }}>
           {statusMsg.text}
         </div>
       )}
 
-      {/* Main Responsive Grid Layout */}
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', 
-        gap: '20px', 
-        marginBottom: '32px' 
-      }}>
+      {/* Target Tab Navigation */}
+      <div style={{ display: 'flex', gap: '24px', borderBottom: '1px solid #1A1A1A', paddingBottom: '10px', marginBottom: '24px' }}>
+        <button
+          type="button"
+          onClick={() => setTargetType('all')}
+          style={{
+            background: 'none',
+            border: 'none',
+            borderBottom: targetType === 'all' ? '2px solid #FFF' : '2px solid transparent',
+            color: targetType === 'all' ? '#FFF' : '#555',
+            fontSize: '11px',
+            fontWeight: '700',
+            letterSpacing: '1.5px',
+            paddingBottom: '8px',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease'
+          }}
+        >
+          ALL USERS
+        </button>
+        <button
+          type="button"
+          onClick={() => setTargetType('specific')}
+          style={{
+            background: 'none',
+            border: 'none',
+            borderBottom: targetType === 'specific' ? '2px solid #FFF' : '2px solid transparent',
+            color: targetType === 'specific' ? '#FFF' : '#555',
+            fontSize: '11px',
+            fontWeight: '700',
+            letterSpacing: '1.5px',
+            paddingBottom: '8px',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease'
+          }}
+        >
+          SINGLE USER
+        </button>
+      </div>
 
-        {/* Dispatch Form Panel */}
-        <form onSubmit={handleSend} style={{
-          background: '#050505',
-          border: '1px solid #141414',
-          borderRadius: '6px',
-          padding: '20px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '16px'
-        }}>
-          
-          {/* Target Audience Switcher */}
-          <div>
-            <label style={labelStyle}>Target</label>
-            <div style={{ display: 'flex', background: '#0A0A0A', padding: '3px', borderRadius: '4px', border: '1px solid #181818' }}>
-              <button
-                type="button"
-                onClick={() => setTargetType('all')}
-                style={{
-                  flex: 1,
-                  padding: '8px 0',
-                  fontSize: '10px',
-                  fontWeight: 'bold',
-                  letterSpacing: '0.5px',
-                  background: targetType === 'all' ? '#1F1F1F' : 'transparent',
-                  color: targetType === 'all' ? '#FFF' : '#666',
-                  border: 'none',
-                  borderRadius: '3px',
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease'
-                }}
-              >
-                ALL USERS
-              </button>
-              <button
-                type="button"
-                onClick={() => setTargetType('specific')}
-                style={{
-                  flex: 1,
-                  padding: '8px 0',
-                  fontSize: '10px',
-                  fontWeight: 'bold',
-                  letterSpacing: '0.5px',
-                  background: targetType === 'specific' ? '#1F1F1F' : 'transparent',
-                  color: targetType === 'specific' ? '#FFF' : '#666',
-                  border: 'none',
-                  borderRadius: '3px',
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease'
-                }}
-              >
-                SINGLE USER
-              </button>
-            </div>
-          </div>
+      {/* Form Container */}
+      <form onSubmit={handleSend} style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '40px' }}>
 
-          {/* User Search Input (Only for Specific) */}
-          {targetType === 'specific' && (
-            <div style={{ position: 'relative' }}>
-              <label style={labelStyle}>Recipient Search</label>
-              <input
-                type="text"
-                placeholder="Search Name / Email / User ID..."
-                value={userSearch}
-                onChange={(e) => {
-                  setUserSearch(e.target.value);
-                  setSpecificUserId(e.target.value);
-                }}
-                style={fieldStyle}
-              />
-              {userOptions.length > 0 && (
-                <div style={{ 
-                  position: 'absolute', 
-                  top: '100%', 
-                  left: 0, 
-                  right: 0, 
-                  background: '#0D0D0D', 
-                  border: '1px solid #222', 
-                  borderRadius: '4px',
-                  zIndex: 20, 
-                  marginTop: '4px',
-                  boxShadow: '0 8px 16px rgba(0,0,0,0.6)'
-                }}>
-                  {userOptions.map((u) => (
-                    <div
-                      key={u.id}
-                      onClick={() => {
-                        setSpecificUserId(u.id);
-                        setUserSearch(u.email || u.name || u.id);
-                        setUserOptions([]);
-                      }}
-                      style={{ padding: '10px 12px', fontSize: '11px', cursor: 'pointer', borderBottom: '1px solid #161616' }}
-                    >
-                      <div style={{ color: '#FFF', fontWeight: 'bold' }}>{u.name || 'Anonymous User'}</div>
-                      <div style={{ fontSize: '9px', color: '#666', marginTop: '2px' }}>{u.email} // {u.id.slice(0, 8)}...</div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Category Pills */}
-          <div>
-            <label style={labelStyle}>Category</label>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
-              {(['INFO', 'PROMO', 'ALERT', 'SYSTEM'] as const).map((cat) => {
-                const active = type === cat;
-                const style = getTypeStyle(cat);
-                return (
-                  <button
-                    key={cat}
-                    type="button"
-                    onClick={() => setType(cat)}
-                    style={{
-                      padding: '8px 0',
-                      fontSize: '9px',
-                      fontWeight: '800',
-                      letterSpacing: '0.5px',
-                      background: active ? style.bg : '#0A0A0A',
-                      color: active ? style.color : '#555',
-                      border: `1px solid ${active ? style.border : '#181818'}`,
-                      borderRadius: '4px',
-                      cursor: 'pointer',
-                      transition: 'all 0.15s ease'
-                    }}
-                  >
-                    {cat}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Headline Title */}
-          <div>
-            <label style={labelStyle}>Title</label>
+        {/* User Search Input (Only when single user is active) */}
+        {targetType === 'specific' && (
+          <div style={{ position: 'relative' }}>
             <input
               type="text"
-              placeholder="Headline title..."
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              style={fieldStyle}
+              placeholder="Search target user by Name, Email, or User ID..."
+              value={userSearch}
+              onChange={(e) => {
+                setUserSearch(e.target.value);
+                setSpecificUserId(e.target.value);
+              }}
+              style={underlineInputStyle}
             />
+            {userOptions.length > 0 && (
+              <div style={{
+                position: 'absolute',
+                top: '100%',
+                left: 0,
+                right: 0,
+                background: '#0D0D0D',
+                border: '1px solid #222',
+                borderRadius: '4px',
+                zIndex: 20,
+                marginTop: '4px'
+              }}>
+                {userOptions.map((u) => (
+                  <div
+                    key={u.id}
+                    onClick={() => {
+                      setSpecificUserId(u.id);
+                      setUserSearch(u.email || u.name || u.id);
+                      setUserOptions([]);
+                    }}
+                    style={{ padding: '10px 12px', fontSize: '12px', cursor: 'pointer', borderBottom: '1px solid #161616' }}
+                  >
+                    <div style={{ color: '#FFF', fontWeight: 'bold' }}>{u.name || 'User'}</div>
+                    <div style={{ fontSize: '10px', color: '#666', marginTop: '2px' }}>{u.email} ({u.id.slice(0, 8)}...)</div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
+        )}
 
-          {/* Message Body */}
-          <div>
-            <label style={labelStyle}>Message</label>
-            <textarea
-              rows={3}
-              placeholder="Enter details body text..."
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              style={{ ...fieldStyle, resize: 'vertical' }}
-            />
+        {/* Category Pills (Unselected by default) */}
+        <div>
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '4px' }}>
+            {(['INFO', 'PROMO', 'ALERT', 'SYSTEM'] as const).map((cat) => {
+              const active = type === cat;
+              const catColor = getCategoryColor(cat);
+              return (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => setType(cat)}
+                  style={{
+                    padding: '6px 14px',
+                    fontSize: '10px',
+                    fontWeight: '700',
+                    letterSpacing: '1px',
+                    background: active ? catColor : 'transparent',
+                    color: active ? '#000' : '#666',
+                    border: `1px solid ${active ? catColor : '#222'}`,
+                    borderRadius: '20px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  {cat}
+                </button>
+              );
+            })}
           </div>
+        </div>
 
-          {/* Action Link */}
-          <div>
-            <label style={labelStyle}>Action Link (Optional)</label>
-            <input
-              type="url"
-              placeholder="https://..."
-              value={link}
-              onChange={(e) => setLink(e.target.value)}
-              style={fieldStyle}
-            />
+        {/* Title Input */}
+        <input
+          type="text"
+          placeholder="Notification headline title..."
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          style={underlineInputStyle}
+        />
+
+        {/* Message Input (Scales easily for short & long texts) */}
+        <textarea
+          rows={3}
+          placeholder="Write notification message details here (supports short or multi-line detailed notes)..."
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          style={{
+            ...underlineInputStyle,
+            resize: 'vertical',
+            minHeight: '80px',
+            lineHeight: '1.6'
+          }}
+        />
+
+        {/* Action URL Input */}
+        <input
+          type="url"
+          placeholder="Action Link URL (optional, e.g. https://...)"
+          value={link}
+          onChange={(e) => setLink(e.target.value)}
+          style={underlineInputStyle}
+        />
+
+        {/* Send Button */}
+        <button
+          type="submit"
+          disabled={loading}
+          style={{
+            marginTop: '10px',
+            padding: '14px',
+            background: '#FFFFFF',
+            color: '#000000',
+            fontWeight: '800',
+            fontSize: '11px',
+            letterSpacing: '2px',
+            border: 'none',
+            borderRadius: '2px',
+            cursor: loading ? 'not-allowed' : 'pointer',
+            opacity: loading ? 0.5 : 1,
+            transition: 'opacity 0.2s'
+          }}
+        >
+          {loading ? 'SENDING...' : 'DISPATCH NOTIFICATION'}
+        </button>
+      </form>
+
+      {/* Minimal Live Preview */}
+      {(title || message || type) && (
+        <div style={{ marginBottom: '40px', paddingBottom: '24px', borderBottom: '1px solid #141414' }}>
+          <div style={{ fontSize: '9px', color: '#555', letterSpacing: '1.5px', fontWeight: 'bold', marginBottom: '12px' }}>
+            PREVIEW
           </div>
-
-          {/* Submit Button */}
-          <button
-            type="submit"
-            disabled={loading}
-            style={{
-              marginTop: '4px',
-              padding: '12px',
-              background: '#FFFFFF',
-              color: '#000000',
-              fontWeight: '900',
-              fontSize: '11px',
-              letterSpacing: '1.5px',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: loading ? 'not-allowed' : 'pointer',
-              opacity: loading ? 0.6 : 1,
-              transition: 'all 0.15s ease'
-            }}
-          >
-            {loading ? 'DISPATCHING...' : 'DISPATCH NOTIFICATION'}
-          </button>
-        </form>
-
-        {/* Live Preview Card (Device Push Notification Look) */}
-        <div style={{
-          background: '#050505',
-          border: '1px solid #141414',
-          borderRadius: '6px',
-          padding: '20px',
-          display: 'flex',
-          flexDirection: 'column'
-        }}>
-          <label style={labelStyle}>Live Preview</label>
-          
-          <div style={{
-            background: '#0A0A0A',
-            border: '1px solid #1C1C1C',
-            borderRadius: '6px',
-            padding: '14px 16px',
-            marginTop: '4px',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
-            display: 'flex',
-            flexDirection: 'column',
-            justify: 'space-between',
-            minHeight: '140px'
-          }}>
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                <span style={{
-                  fontSize: '8px',
-                  fontWeight: '800',
-                  padding: '3px 7px',
-                  borderRadius: '3px',
-                  letterSpacing: '0.5px',
-                  color: getTypeStyle(type).color,
-                  background: getTypeStyle(type).bg,
-                  border: `1px solid ${getTypeStyle(type).border}`
-                }}>
+          <div style={{ padding: '16px 0', borderTop: '1px dashed #222' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+              {type ? (
+                <span style={{ fontSize: '9px', fontWeight: '800', color: getCategoryColor(type), letterSpacing: '1px' }}>
                   {type}
                 </span>
-                <span style={{ fontSize: '9px', color: '#444' }}>JUST NOW</span>
-              </div>
-
-              <div style={{ fontSize: '12px', fontWeight: 'bold', color: title ? '#FFFFFF' : '#444', marginBottom: '6px' }}>
-                {title || 'Headline Title Placeholder'}
-              </div>
-
-              <div style={{ fontSize: '11px', color: message ? '#999999' : '#333333', lineHeight: '1.4' }}>
-                {message || 'Your notification body text preview will appear here in real-time as you type...'}
-              </div>
+              ) : (
+                <span style={{ fontSize: '9px', color: '#444' }}>NO CATEGORY</span>
+              )}
+              <span style={{ fontSize: '9px', color: '#444' }}>• NOW</span>
             </div>
-
+            <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#FFF', marginBottom: '6px' }}>
+              {title || 'Headline Title'}
+            </div>
+            <div style={{ fontSize: '12px', color: '#AAA', lineHeight: '1.6', whiteSpace: 'pre-wrap' }}>
+              {message || 'Notification content preview will render here...'}
+            </div>
             {link && (
-              <div style={{
-                marginTop: '14px',
-                paddingTop: '8px',
-                borderTop: '1px dashed #1C1C1C',
-                fontSize: '10px',
-                color: '#3B82F6',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-                fontWeight: 'bold'
-              }}>
-                <span>ACTION LINK</span>
-                <span>↗</span>
+              <div style={{ marginTop: '10px', fontSize: '11px', color: '#3B82F6' }}>
+                {link} ↗
               </div>
             )}
           </div>
         </div>
+      )}
 
-      </div>
-
-      {/* Dispatch History Logs */}
+      {/* History Log List */}
       <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', padding: '0 2px' }}>
-          <span style={{ fontSize: '10px', fontWeight: '800', letterSpacing: '1px', color: '#666' }}>DISPATCH HISTORY</span>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <span style={{ fontSize: '10px', fontWeight: '800', letterSpacing: '1.5px', color: '#555' }}>DISPATCH LOGS</span>
           <button
             onClick={fetchSentHistory}
-            style={{ background: 'none', border: 'none', color: '#555', fontSize: '10px', cursor: 'pointer', fontFamily: 'monospace' }}
+            style={{ background: 'none', border: 'none', color: '#555', fontSize: '10px', cursor: 'pointer' }}
           >
             REFRESH
           </button>
         </div>
 
         {fetchingHistory ? (
-          <div style={{ color: '#444', fontSize: '10px', padding: '12px', textAlign: 'center' }}>LOADING RECENT LOGS...</div>
+          <div style={{ color: '#444', fontSize: '11px', padding: '10px 0' }}>Loading logs...</div>
         ) : sentHistory.length === 0 ? (
-          <div style={{ color: '#444', fontSize: '10px', padding: '12px', textAlign: 'center' }}>NO DISPATCH LOGS FOUND</div>
+          <div style={{ color: '#444', fontSize: '11px', padding: '10px 0' }}>No dispatch history available</div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {sentHistory.map((item) => {
-              const b = getTypeStyle(item.type);
-              return (
-                <div
-                  key={item.id}
-                  style={{
-                    background: '#050505',
-                    border: '1px solid #141414',
-                    borderRadius: '4px',
-                    padding: '12px 14px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justify: 'space-between',
-                    gap: '12px'
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', overflow: 'hidden' }}>
-                    <span style={{
-                      fontSize: '8px',
-                      fontWeight: '800',
-                      padding: '2px 6px',
-                      borderRadius: '3px',
-                      color: b.color,
-                      border: `1px solid ${b.border}`,
-                      background: b.bg,
-                      flexShrink: 0
-                    }}>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            {sentHistory.map((item) => (
+              <div
+                key={item.id}
+                style={{
+                  padding: '12px 0',
+                  borderBottom: '1px solid #141414',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justify: 'space-between',
+                  gap: '12px'
+                }}
+              >
+                <div style={{ overflow: 'hidden' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px' }}>
+                    <span style={{ fontSize: '9px', fontWeight: '800', color: getCategoryColor(item.type) }}>
                       {item.type}
                     </span>
-                    <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#EEE', marginRight: '8px' }}>{item.title}</span>
-                      <span style={{ fontSize: '10px', color: '#666' }}>{item.message}</span>
-                    </div>
+                    <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#EEE' }}>{item.title}</span>
                   </div>
-
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
-                    <span style={{ fontSize: '9px', color: '#444', background: '#0A0A0A', padding: '2px 6px', borderRadius: '2px', border: '1px solid #141414' }}>
-                      {item.target_audience === 'ALL' ? 'GLOBAL' : `USER: ${item.user_id.slice(0, 6)}`}
-                    </span>
-                    <button
-                      onClick={() => handleDeleteSent(item.id)}
-                      style={{ background: 'none', border: 'none', color: '#555', fontSize: '10px', cursor: 'pointer', fontWeight: 'bold' }}
-                      onMouseEnter={(e) => (e.currentTarget.style.color = '#EF4444')}
-                      onMouseLeave={(e) => (e.currentTarget.style.color = '#555')}
-                    >
-                      DEL
-                    </button>
+                  <div style={{ fontSize: '11px', color: '#666', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {item.message}
                   </div>
                 </div>
-              );
-            })}
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
+                  <span style={{ fontSize: '9px', color: '#444' }}>
+                    {item.target_audience === 'ALL' ? 'GLOBAL' : item.user_id.slice(0, 6)}
+                  </span>
+                  <button
+                    onClick={() => handleDeleteSent(item.id)}
+                    style={{ background: 'none', border: 'none', color: '#444', fontSize: '10px', cursor: 'pointer' }}
+                    onMouseEnter={(e) => (e.currentTarget.style.color = '#EF4444')}
+                    onMouseLeave={(e) => (e.currentTarget.style.color = '#444')}
+                  >
+                    DEL
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
