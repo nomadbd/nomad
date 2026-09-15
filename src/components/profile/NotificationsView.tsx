@@ -145,23 +145,29 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
   });
 
   return (
-    <div style={{ maxWidth: '600px', margin: '0 auto', padding: '0 12px 24px', color: '#FFF' }}>
+    <div style={{ 
+      maxWidth: '600px', 
+      margin: '0 auto', 
+      height: '100vh', 
+      display: 'flex', 
+      flexDirection: 'column', 
+      backgroundColor: '#000000', 
+      color: '#FFF',
+      overflow: 'hidden'
+    }}>
       
-      {/* ১. স্টিকি হেডার (স্ক্রল করলেও ফিক্সড থাকবে) */}
+      {/* ১. ফিক্সড হেডার (স্ক্রল করলেও কখনো নড়বে না) */}
       <div style={{ 
-        position: 'sticky',
-        top: 0,
-        zIndex: 40,
-        backgroundColor: 'rgba(0, 0, 0, 0.85)',
-        backdropFilter: 'blur(12px)',
-        WebkitBackdropFilter: 'blur(12px)',
-        paddingTop: '16px',
-        paddingBottom: '16px',
-        marginBottom: '16px',
+        flexShrink: 0,
+        backgroundColor: 'rgba(9, 9, 11, 0.95)',
+        backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
+        padding: '16px 14px',
+        borderBottom: '1px solid #18181B',
         display: 'flex', 
         alignItems: 'center', 
         justifyContent: 'space-between',
-        borderBottom: '1px solid rgba(255, 255, 255, 0.05)'
+        zIndex: 50
       }}>
         
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
@@ -190,7 +196,7 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
           </h2>
         </div>
 
-        {/* ডানপাশে একক Unread ফিল্টার */}
+        {/* Unread ফিল্টার বাটন */}
         <button
           onClick={() => setFilter(prev => prev === 'unread' ? 'all' : 'unread')}
           style={{
@@ -210,194 +216,242 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
         </button>
       </div>
 
-      {/* Mark All Read বাটন */}
-      {unreadCount > 0 && filter === 'all' && (
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '12px', paddingRight: '4px' }}>
-          <button
-            onClick={markAllAsRead}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: '#71717A',
-              fontSize: '11px',
-              fontWeight: '500',
-              cursor: 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '4px'
-            }}
-          >
-            <CheckIcon width={12} height={12} stroke="#71717A" />
-            <span>Mark all read</span>
-          </button>
-        </div>
-      )}
+      {/* ২. স্বাধীনভাবে স্ক্রলযোগ্য নোটিফিকেশন বডি */}
+      <div style={{ 
+        flex: 1, 
+        overflowY: 'auto', 
+        padding: '16px 12px 32px 12px',
+        WebkitOverflowScrolling: 'touch'
+      }}>
 
-      {/* ২. নোটিফিকেশন লিস্ট */}
-      {loading ? (
-        <div style={{ textAlign: 'center', padding: '60px 0', color: '#71717A', fontSize: '13px' }}>
-          Loading updates...
-        </div>
-      ) : filteredNotifications.length === 0 ? (
-        <div style={{ 
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '80px 20px', 
-          textAlign: 'center' 
-        }}>
-          <div style={{
-            width: '52px',
-            height: '52px',
-            borderRadius: '50%',
-            backgroundColor: '#121212',
-            border: '1px solid #27272A',
+        {/* Mark All Read বাটন */}
+        {unreadCount > 0 && filter === 'all' && (
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '12px', paddingRight: '4px' }}>
+            <button
+              onClick={markAllAsRead}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: '#71717A',
+                fontSize: '11px',
+                fontWeight: '500',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}
+            >
+              <CheckIcon width={12} height={12} stroke="#71717A" />
+              <span>Mark all read</span>
+            </button>
+          </div>
+        )}
+
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: '60px 0', color: '#71717A', fontSize: '13px' }}>
+            Loading updates...
+          </div>
+        ) : filteredNotifications.length === 0 ? (
+          <div style={{ 
             display: 'flex',
+            flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            marginBottom: '16px'
+            padding: '80px 20px', 
+            textAlign: 'center' 
           }}>
-            <NotificationIcon width={22} height={22} stroke="#52525B" />
-          </div>
-          
-          <h3 style={{ margin: '0 0 6px 0', fontSize: '15px', color: '#FFFFFF', fontWeight: '500', letterSpacing: '0.2px' }}>
-            No Notifications
-          </h3>
-          
-          <p style={{ margin: 0, fontSize: '12px', color: '#71717A', maxWidth: '270px', lineHeight: '1.5' }}>
-            Important announcements and updates will appear here when available.
-          </p>
-        </div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {filteredNotifications.map((item) => {
-            const badge = getTypeBadge(item.type);
-            const isExpanded = expandedId === item.id;
+            <div style={{
+              width: '52px',
+              height: '52px',
+              borderRadius: '50%',
+              backgroundColor: '#121212',
+              border: '1px solid #27272A',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: '16px'
+            }}>
+              <NotificationIcon width={22} height={22} stroke="#52525B" />
+            </div>
             
-            return (
-              <div
-                key={item.id}
-                onClick={() => handleCardClick(item)}
-                style={{
-                  background: item.is_read ? '#09090B' : '#121212',
-                  border: '1px solid',
-                  borderColor: item.is_read ? '#27272A' : 'rgba(255, 255, 255, 0.35)',
-                  borderRadius: '12px',
-                  padding: '16px',
-                  cursor: 'pointer',
-                  position: 'relative',
-                  transition: 'border-color 0.25s ease, background-color 0.25s ease'
-                }}
-              >
-                {!item.is_read && (
-                  <span
-                    style={{
-                      position: 'absolute',
-                      top: '18px',
-                      left: '8px',
-                      width: '6px',
-                      height: '6px',
-                      borderRadius: '50%',
-                      backgroundColor: '#3B82F6'
-                    }}
-                  />
-                )}
-
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px', gap: '8px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <h3 style={{ margin: '0 0 6px 0', fontSize: '15px', color: '#FFFFFF', fontWeight: '500', letterSpacing: '0.2px' }}>
+              No Notifications
+            </h3>
+            
+            <p style={{ margin: 0, fontSize: '12px', color: '#71717A', maxWidth: '270px', lineHeight: '1.5' }}>
+              Important announcements and updates will appear here when available.
+            </p>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {filteredNotifications.map((item) => {
+              const badge = getTypeBadge(item.type);
+              const isExpanded = expandedId === item.id;
+              
+              return (
+                <div
+                  key={item.id}
+                  onClick={() => handleCardClick(item)}
+                  style={{
+                    background: item.is_read ? '#09090B' : '#121212',
+                    border: '1px solid',
+                    borderColor: item.is_read ? '#27272A' : 'rgba(255, 255, 255, 0.35)',
+                    borderRadius: '12px',
+                    padding: '16px',
+                    cursor: 'pointer',
+                    position: 'relative',
+                    transition: 'border-color 0.25s ease, background-color 0.25s ease'
+                  }}
+                >
+                  {!item.is_read && (
                     <span
                       style={{
-                        fontSize: '9px',
-                        fontWeight: '700',
-                        padding: '3px 7px',
-                        borderRadius: '4px',
-                        backgroundColor: badge.bg,
-                        color: badge.color,
-                        border: `1px solid ${badge.border}`,
-                        letterSpacing: '0.6px'
+                        position: 'absolute',
+                        top: '18px',
+                        left: '8px',
+                        width: '6px',
+                        height: '6px',
+                        borderRadius: '50%',
+                        backgroundColor: '#3B82F6'
                       }}
-                    >
-                      {badge.label}
-                    </span>
-                    <span style={{ fontSize: '11px', color: '#71717A' }}>
-                      {getRelativeTime(item.created_at)}
-                    </span>
+                    />
+                  )}
+
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px', gap: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span
+                        style={{
+                          fontSize: '9px',
+                          fontWeight: '700',
+                          padding: '3px 7px',
+                          borderRadius: '4px',
+                          backgroundColor: badge.bg,
+                          color: badge.color,
+                          border: `1px solid ${badge.border}`,
+                          letterSpacing: '0.6px'
+                        }}
+                      >
+                        {badge.label}
+                      </span>
+                      <span style={{ fontSize: '11px', color: '#71717A' }}>
+                        {getRelativeTime(item.created_at)}
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      {/* এক্সপ্যান্ড বাটন ইন্ডিকেটর (Chevron) */}
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="#71717A"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        style={{
+                          transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                          transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+                        }}
+                      >
+                        <polyline points="6 9 12 15 18 9" />
+                      </svg>
+
+                      {/* মিনিমালিস্ট ক্রস ডিলিট বাটন */}
+                      <button
+                        onClick={(e) => deleteNotification(e, item.id)}
+                        title="Delete"
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          color: '#52525B',
+                          cursor: 'pointer',
+                          padding: '4px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          outline: 'none'
+                        }}
+                      >
+                        <CloseIcon width={14} height={14} stroke="#71717A" />
+                      </button>
+                    </div>
                   </div>
 
-                  <button
-                    onClick={(e) => deleteNotification(e, item.id)}
-                    title="Delete"
-                    style={{
-                      background: 'transparent',
-                      border: 'none',
-                      color: '#52525B',
-                      cursor: 'pointer',
-                      padding: '4px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      outline: 'none'
-                    }}
-                  >
-                    <CloseIcon width={14} height={14} stroke="#71717A" />
-                  </button>
-                </div>
+                  <h3 style={{ margin: '0 0 6px 0', fontSize: '14px', fontWeight: '600', color: '#FFFFFF', lineHeight: '1.3' }}>
+                    {item.title}
+                  </h3>
+                  
+                  {/* সংকুচিত অবস্থায় ৩ লাইনের পরিচ্ছন্ন ভিউ (...) সহ */}
+                  {!isExpanded ? (
+                    <p style={{ 
+                      margin: 0, 
+                      fontSize: '13px', 
+                      color: item.is_read ? '#8E8E93' : '#A1A1AA', 
+                      lineHeight: '1.5',
+                      overflowWrap: 'break-word',
+                      wordBreak: 'break-word',
+                      display: '-webkit-box',
+                      WebkitLineClamp: 3,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis'
+                    }}>
+                      {item.message}
+                    </p>
+                  ) : (
+                    /* এক্সপ্যান্ডেড অবস্থায় সুপার-স্মুথ ফুল ভিউ */
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateRows: '1fr',
+                      transition: 'all 0.35s cubic-bezier(0.4, 0, 0.2, 1)'
+                    }}>
+                      <p style={{ 
+                        margin: 0, 
+                        fontSize: '13px', 
+                        color: item.is_read ? '#8E8E93' : '#A1A1AA', 
+                        lineHeight: '1.5',
+                        overflowWrap: 'break-word',
+                        wordBreak: 'break-word',
+                        whiteSpace: 'pre-line'
+                      }}>
+                        {item.message}
+                      </p>
+                    </div>
+                  )}
 
-                <h3 style={{ margin: '0 0 6px 0', fontSize: '14px', fontWeight: '600', color: '#FFFFFF', lineHeight: '1.3' }}>
-                  {item.title}
-                </h3>
-                
-                {/* আল্ট্রা-স্মুথ অ্যানিমেটেড টেক্সট কন্টেইনার (Zero Jank) */}
-                <div style={{
-                  maxHeight: isExpanded ? '1000px' : '58px', // ৩ লাইনের হাইট (~58px) থেকে স্মুথলি খুলবে
-                  overflow: 'hidden',
-                  transition: 'max-height 0.38s cubic-bezier(0.16, 1, 0.3, 1)'
-                }}>
-                  <p style={{ 
-                    margin: 0, 
-                    fontSize: '13px', 
-                    color: item.is_read ? '#8E8E93' : '#A1A1AA', 
-                    lineHeight: '1.5',
-                    overflowWrap: 'break-word',
-                    wordBreak: 'break-word',
-                    whiteSpace: 'pre-line'
-                  }}>
-                    {item.message}
-                  </p>
+                  {/* Explore বাটন */}
+                  {item.link && (
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '14px' }}>
+                      <a
+                        href={item.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          padding: '6px 14px',
+                          borderRadius: '6px',
+                          backgroundColor: '#18181B',
+                          border: '1px solid #27272A',
+                          color: '#FFFFFF',
+                          fontSize: '12px',
+                          fontWeight: '500',
+                          textDecoration: 'none',
+                          transition: 'all 0.2s ease'
+                        }}
+                      >
+                        Explore
+                      </a>
+                    </div>
+                  )}
                 </div>
-
-                {/* Explore বাটন */}
-                {item.link && (
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '14px' }}>
-                    <a
-                      href={item.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={(e) => e.stopPropagation()}
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        padding: '6px 14px',
-                        borderRadius: '6px',
-                        backgroundColor: '#18181B',
-                        border: '1px solid #27272A',
-                        color: '#FFFFFF',
-                        fontSize: '12px',
-                        fontWeight: '500',
-                        textDecoration: 'none',
-                        transition: 'all 0.2s ease'
-                      }}
-                    >
-                      Explore
-                    </a>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
