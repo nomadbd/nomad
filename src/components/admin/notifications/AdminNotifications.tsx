@@ -12,13 +12,24 @@ interface SentNotification {
   created_at: string;
 }
 
+interface UserProfile {
+  id: string;
+  email?: string;
+  name?: string;
+}
+
 export default function AdminNotifications() {
   const [targetType, setTargetType] = useState<'all' | 'specific'>('all');
   const [specificUserId, setSpecificUserId] = useState('');
+  const [userSearch, setUserSearch] = useState('');
+  const [userOptions, setUserOptions] = useState<UserProfile[]>([]);
+  const [isSearchingUsers, setIsSearchingUsers] = useState(false);
+
   const [title, setTitle] = useState('');
   const [message, setMessage] = useState('');
   const [type, setType] = useState<'INFO' | 'PROMO' | 'SYSTEM' | 'ALERT'>('INFO');
   const [link, setLink] = useState('');
+  
   const [loading, setLoading] = useState(false);
   const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
@@ -29,29 +40,47 @@ export default function AdminNotifications() {
     fetchSentHistory();
   }, []);
 
+  useEffect(() => {
+    if (targetType === 'specific' && userSearch.trim().length > 1) {
+      searchUsers(userSearch);
+    } else {
+      setUserOptions([]);
+    }
+  }, [userSearch, targetType]);
+
+  const searchUsers = async (query: string) => {
+    setIsSearchingUsers(true);
+    const { data } = await supabase
+      .from('profiles')
+      .select('id, email, name')
+      .or(`email.ilike.%${query}%,name.ilike.%${query}%,id.eq.${query}`)
+      .limit(5);
+
+    if (data) setUserOptions(data);
+    setIsSearchingUsers(false);
+  };
+
   const fetchSentHistory = async () => {
     setFetchingHistory(true);
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('notifications')
       .select('*')
       .order('created_at', { ascending: false })
-      .limit(20);
+      .limit(15);
 
-    if (!error && data) {
-      setSentHistory(data as SentNotification[]);
-    }
+    if (data) setSentHistory(data as SentNotification[]);
     setFetchingHistory(false);
   };
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !message.trim()) {
-      setStatusMsg({ type: 'error', text: 'REQUIRED FIELDS MISSING: Title & Message' });
+      setStatusMsg({ type: 'error', text: 'ERR: TITLE & MESSAGE REQUIRED' });
       return;
     }
 
     if (targetType === 'specific' && !specificUserId.trim()) {
-      setStatusMsg({ type: 'error', text: 'TARGET ERROR: Specific User ID is required' });
+      setStatusMsg({ type: 'error', text: 'ERR: TARGET USER REQUIRED' });
       return;
     }
 
@@ -71,13 +100,9 @@ export default function AdminNotifications() {
             is_read: false
           }
         ]);
-
         if (error) throw error;
       } else {
-        const { data: users, error: userError } = await supabase
-          .from('profiles')
-          .select('id');
-
+        const { data: users, error: userError } = await supabase.from('profiles').select('id');
         if (userError) throw userError;
 
         if (users && users.length > 0) {
@@ -91,19 +116,17 @@ export default function AdminNotifications() {
             is_read: false
           }));
 
-          const { error: bulkError } = await supabase
-            .from('notifications')
-            .insert(notificationsToInsert);
-
+          const { error: bulkError } = await supabase.from('notifications').insert(notificationsToInsert);
           if (bulkError) throw bulkError;
         }
       }
 
-      setStatusMsg({ type: 'success', text: 'DISPATCH SUCCESSFUL: Notification Broadcasted' });
+      setStatusMsg({ type: 'success', text: 'DISPATCH COMPLETED' });
       setTitle('');
       setMessage('');
       setLink('');
       setSpecificUserId('');
+      setUserSearch('');
       fetchSentHistory();
     } catch (err: any) {
       setStatusMsg({ type: 'error', text: err.message || 'DISPATCH FAILED' });
@@ -119,318 +142,290 @@ export default function AdminNotifications() {
     }
   };
 
-  const getTypeBadgeStyle = (badgeType: string) => {
+  const getBadgeStyle = (badgeType: string) => {
     switch (badgeType) {
-      case 'PROMO':
-        return { color: '#EAB308', borderColor: '#854D0E', background: 'rgba(234, 179, 8, 0.08)' };
-      case 'ALERT':
-        return { color: '#EF4444', borderColor: '#991B1B', background: 'rgba(239, 68, 68, 0.08)' };
-      case 'SYSTEM':
-        return { color: '#A855F7', borderColor: '#6B21A8', background: 'rgba(168, 85, 247, 0.08)' };
-      default:
-        return { color: '#3B82F6', borderColor: '#1E40AF', background: 'rgba(59, 130, 246, 0.08)' };
+      case 'PROMO': return { color: '#EAB308', border: '1px solid #854D0E', bg: 'rgba(234,179,8,0.06)' };
+      case 'ALERT': return { color: '#EF4444', border: '1px solid #991B1B', bg: 'rgba(239,68,68,0.06)' };
+      case 'SYSTEM': return { color: '#A855F7', border: '1px solid #6B21A8', bg: 'rgba(168,85,247,0.06)' };
+      default: return { color: '#3B82F6', border: '1px solid #1E40AF', bg: 'rgba(59,130,246,0.06)' };
     }
   };
 
   return (
-    <div style={{ padding: '20px 16px', maxWidth: '850px', margin: '0 auto', color: '#FFF', fontFamily: 'monospace' }}>
-
-      {/* Title Block */}
-      <div style={{ marginBottom: '24px', borderBottom: '1px solid #1A1A1A', paddingBottom: '16px' }}>
-        <span style={{ fontSize: '10px', color: '#666', letterSpacing: '2px', fontWeight: 'bold' }}>SYSTEM // DISPATCH</span>
-        <h1 style={{ fontSize: '20px', fontWeight: '900', margin: '4px 0 6px 0', letterSpacing: '2px' }}>
-          NOTIFICATION MANAGER
-        </h1>
-        <p style={{ margin: 0, fontSize: '11px', color: '#888', letterSpacing: '0.5px' }}>
-          Broadcast global alerts or send private updates directly to specific user accounts.
-        </p>
+    <div style={{ maxWidth: '780px', margin: '0 auto', color: '#FFF', fontFamily: 'monospace, sans-serif' }}>
+      
+      {/* Header */}
+      <div style={{ paddingBottom: '16px', marginBottom: '20px', borderBottom: '1px solid #141414', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+        <div>
+          <span style={{ fontSize: '9px', color: '#555', letterSpacing: '2px', fontWeight: 'bold' }}>SYS // DISPATCH</span>
+          <h1 style={{ fontSize: '16px', fontWeight: '900', margin: '2px 0 0 0', letterSpacing: '2px' }}>NOTIFICATIONS</h1>
+        </div>
+        {statusMsg && (
+          <span style={{
+            fontSize: '10px',
+            padding: '4px 8px',
+            color: statusMsg.type === 'success' ? '#4ADE80' : '#F87171',
+            border: `1px solid ${statusMsg.type === 'success' ? '#22C55E' : '#EF4444'}`,
+            background: '#000'
+          }}>
+            {statusMsg.text}
+          </span>
+        )}
       </div>
 
-      {/* Status Feedback */}
-      {statusMsg && (
-        <div style={{
-          padding: '12px 14px',
-          borderRadius: '2px',
-          marginBottom: '20px',
-          fontSize: '11px',
-          fontWeight: 600,
-          letterSpacing: '1px',
-          backgroundColor: statusMsg.type === 'success' ? 'rgba(34, 197, 94, 0.05)' : 'rgba(239, 68, 68, 0.05)',
-          border: `1px solid ${statusMsg.type === 'success' ? '#22C55E' : '#EF4444'}`,
-          color: statusMsg.type === 'success' ? '#4ADE80' : '#F87171'
-        }}>
-          {statusMsg.text}
-        </div>
-      )}
-
-      {/* Main Panel Form */}
-      <div style={{
-        background: '#070707',
-        border: '1px solid #1C1C1C',
-        borderRadius: '2px',
-        padding: '20px',
-        marginBottom: '32px'
-      }}>
-        <form onSubmit={handleSend} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-
+      {/* Main Grid: Form & Live Preview */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 260px', gap: '16px', marginBottom: '32px' }}>
+        
+        {/* Form Panel */}
+        <form onSubmit={handleSend} style={{ background: '#070707', border: '1px solid #181818', padding: '16px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          
           {/* Target Audience */}
           <div>
-            <label style={{ display: 'block', fontSize: '10px', color: '#888', marginBottom: '10px', letterSpacing: '1px', fontWeight: 'bold' }}>
-              TARGET AUDIENCE
-            </label>
-            <div style={{ display: 'flex', gap: '20px' }}>
-              <label style={{ fontSize: '11px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', color: targetType === 'all' ? '#FFF' : '#666' }}>
-                <input
-                  type="radio"
-                  name="audience"
-                  checked={targetType === 'all'}
-                  onChange={() => setTargetType('all')}
-                  style={{ accentColor: '#FFF' }}
-                />
-                BROADCAST ALL USERS
-              </label>
-              <label style={{ fontSize: '11px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', color: targetType === 'specific' ? '#FFF' : '#666' }}>
-                <input
-                  type="radio"
-                  name="audience"
-                  checked={targetType === 'specific'}
-                  onChange={() => setTargetType('specific')}
-                  style={{ accentColor: '#FFF' }}
-                />
-                SPECIFIC USER ID
-              </label>
+            <span style={{ display: 'block', fontSize: '9px', color: '#666', marginBottom: '8px', letterSpacing: '1px' }}>TARGET</span>
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button
+                type="button"
+                onClick={() => setTargetType('all')}
+                style={{
+                  flex: 1,
+                  padding: '6px',
+                  fontSize: '10px',
+                  background: targetType === 'all' ? '#FFF' : '#000',
+                  color: targetType === 'all' ? '#000' : '#666',
+                  border: '1px solid #222',
+                  cursor: 'pointer',
+                  fontWeight: 'bold'
+                }}
+              >
+                ALL USERS
+              </button>
+              <button
+                type="button"
+                onClick={() => setTargetType('specific')}
+                style={{
+                  flex: 1,
+                  padding: '6px',
+                  fontSize: '10px',
+                  background: targetType === 'specific' ? '#FFF' : '#000',
+                  color: targetType === 'specific' ? '#000' : '#666',
+                  border: '1px solid #222',
+                  cursor: 'pointer',
+                  fontWeight: 'bold'
+                }}
+              >
+                SINGLE USER
+              </button>
             </div>
           </div>
 
-          {/* User ID Input */}
+          {/* User Selector */}
           {targetType === 'specific' && (
-            <div>
-              <label style={{ display: 'block', fontSize: '10px', color: '#888', marginBottom: '6px', letterSpacing: '1px' }}>TARGET USER UUID</label>
+            <div style={{ position: 'relative' }}>
+              <span style={{ display: 'block', fontSize: '9px', color: '#666', marginBottom: '4px', letterSpacing: '1px' }}>RECIPIENT SEARCH</span>
               <input
                 type="text"
-                placeholder="e.g. 011074c5-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-                value={specificUserId}
-                onChange={(e) => setSpecificUserId(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '10px 12px',
-                  borderRadius: '2px',
-                  background: '#000',
-                  border: '1px solid #282828',
-                  color: '#FFF',
-                  fontSize: '12px',
-                  outline: 'none',
-                  boxSizing: 'border-box'
+                placeholder="Search Name / Email / UUID..."
+                value={userSearch}
+                onChange={(e) => {
+                  setUserSearch(e.target.value);
+                  setSpecificUserId(e.target.value);
                 }}
+                style={{ width: '100%', padding: '8px', background: '#000', border: '1px solid #262626', color: '#FFF', fontSize: '11px', outline: 'none', boxSizing: 'border-box' }}
               />
+              {userOptions.length > 0 && (
+                <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: '#0D0D0D', border: '1px solid #262626', zIndex: 10, marginTop: '2px' }}>
+                  {userOptions.map((u) => (
+                    <div
+                      key={u.id}
+                      onClick={() => {
+                        setSpecificUserId(u.id);
+                        setUserSearch(u.email || u.name || u.id);
+                        setUserOptions([]);
+                      }}
+                      style={{ padding: '8px', fontSize: '10px', cursor: 'pointer', borderBottom: '1px solid #1A1A1A', color: '#AAA' }}
+                    >
+                      <div style={{ color: '#FFF', fontWeight: 'bold' }}>{u.name || 'User'}</div>
+                      <div style={{ fontSize: '9px', color: '#555' }}>{u.email} | {u.id.slice(0, 8)}...</div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
-          {/* Notification Type */}
+          {/* Category Selector */}
           <div>
-            <label style={{ display: 'block', fontSize: '10px', color: '#888', marginBottom: '6px', letterSpacing: '1px' }}>NOTIFICATION CATEGORY</label>
-            <select
-              value={type}
-              onChange={(e: any) => setType(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '10px 12px',
-                borderRadius: '2px',
-                background: '#000',
-                border: '1px solid #282828',
-                color: '#FFF',
-                fontSize: '12px',
-                outline: 'none',
-                boxSizing: 'border-box'
-              }}
-            >
-              <option value="INFO">INFO (General Announcement)</option>
-              <option value="PROMO">PROMO (Offer & Discounts)</option>
-              <option value="ALERT">ALERT (Urgent Warning)</option>
-              <option value="SYSTEM">SYSTEM (Platform Maintenance)</option>
-            </select>
+            <span style={{ display: 'block', fontSize: '9px', color: '#666', marginBottom: '4px', letterSpacing: '1px' }}>CATEGORY</span>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '4px' }}>
+              {(['INFO', 'PROMO', 'ALERT', 'SYSTEM'] as const).map((cat) => (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => setType(cat)}
+                  style={{
+                    padding: '6px 0',
+                    fontSize: '9px',
+                    background: type === cat ? '#181818' : '#000',
+                    color: type === cat ? '#FFF' : '#555',
+                    border: `1px solid ${type === cat ? '#444' : '#1A1A1A'}`,
+                    cursor: 'pointer',
+                    fontWeight: 'bold'
+                  }}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
           </div>
 
-          {/* Title */}
+          {/* Inputs */}
           <div>
-            <label style={{ display: 'block', fontSize: '10px', color: '#888', marginBottom: '6px', letterSpacing: '1px' }}>HEADLINE TITLE</label>
+            <span style={{ display: 'block', fontSize: '9px', color: '#666', marginBottom: '4px', letterSpacing: '1px' }}>TITLE</span>
             <input
               type="text"
-              placeholder="Enter announcement header..."
+              placeholder="Notification headline..."
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '10px 12px',
-                borderRadius: '2px',
-                background: '#000',
-                border: '1px solid #282828',
-                color: '#FFF',
-                fontSize: '12px',
-                outline: 'none',
-                boxSizing: 'border-box'
-              }}
+              style={{ width: '100%', padding: '8px', background: '#000', border: '1px solid #262626', color: '#FFF', fontSize: '11px', outline: 'none', boxSizing: 'border-box' }}
             />
           </div>
 
-          {/* Message */}
           <div>
-            <label style={{ display: 'block', fontSize: '10px', color: '#888', marginBottom: '6px', letterSpacing: '1px' }}>MESSAGE BODY</label>
+            <span style={{ display: 'block', fontSize: '9px', color: '#666', marginBottom: '4px', letterSpacing: '1px' }}>MESSAGE</span>
             <textarea
               rows={3}
-              placeholder="Write the detailed notification payload..."
+              placeholder="Message body..."
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '10px 12px',
-                borderRadius: '2px',
-                background: '#000',
-                border: '1px solid #282828',
-                color: '#FFF',
-                fontSize: '12px',
-                outline: 'none',
-                resize: 'vertical',
-                boxSizing: 'border-box'
-              }}
+              style={{ width: '100%', padding: '8px', background: '#000', border: '1px solid #262626', color: '#FFF', fontSize: '11px', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }}
             />
           </div>
 
-          {/* Optional Action Link */}
           <div>
-            <label style={{ display: 'block', fontSize: '10px', color: '#888', marginBottom: '6px', letterSpacing: '1px' }}>ACTION URL (OPTIONAL)</label>
+            <span style={{ display: 'block', fontSize: '9px', color: '#666', marginBottom: '4px', letterSpacing: '1px' }}>ACTION URL (OPTIONAL)</span>
             <input
               type="url"
-              placeholder="https://nomadbd.com/offers"
+              placeholder="https://..."
               value={link}
               onChange={(e) => setLink(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '10px 12px',
-                borderRadius: '2px',
-                background: '#000',
-                border: '1px solid #282828',
-                color: '#FFF',
-                fontSize: '12px',
-                outline: 'none',
-                boxSizing: 'border-box'
-              }}
+              style={{ width: '100%', padding: '8px', background: '#000', border: '1px solid #262626', color: '#FFF', fontSize: '11px', outline: 'none', boxSizing: 'border-box' }}
             />
           </div>
 
-          {/* Dispatch Button */}
           <button
             type="submit"
             disabled={loading}
             style={{
-              marginTop: '10px',
-              padding: '12px 16px',
-              borderRadius: '2px',
-              backgroundColor: '#FFFFFF',
-              color: '#000000',
+              padding: '10px',
+              background: '#FFF',
+              color: '#000',
               fontWeight: '900',
-              fontSize: '11px',
+              fontSize: '10px',
               letterSpacing: '2px',
               border: 'none',
               cursor: loading ? 'not-allowed' : 'pointer',
               opacity: loading ? 0.5 : 1,
-              transition: 'all 0.2s ease'
+              marginTop: '4px'
             }}
           >
-            {loading ? 'DISPATCHING...' : 'DISPATCH NOTIFICATION'}
+            {loading ? 'SENDING...' : 'DISPATCH'}
           </button>
         </form>
+
+        {/* Live Preview Panel */}
+        <div style={{ background: '#070707', border: '1px solid #181818', padding: '16px', display: 'flex', flexDirection: 'column' }}>
+          <span style={{ fontSize: '9px', color: '#555', letterSpacing: '1px', marginBottom: '12px', fontWeight: 'bold' }}>LIVE PREVIEW</span>
+          
+          <div style={{ background: '#000', border: '1px solid #222', padding: '12px', borderRadius: '2px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'between' }}>
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <span style={{ fontSize: '8px', padding: '2px 4px', fontWeight: 'bold', ...getBadgeStyle(type) }}>
+                  {type}
+                </span>
+                <span style={{ fontSize: '8px', color: '#444' }}>NOW</span>
+              </div>
+              
+              <div style={{ fontSize: '11px', fontWeight: 'bold', color: title ? '#FFF' : '#444', marginBottom: '4px' }}>
+                {title || 'Headline Title'}
+              </div>
+
+              <div style={{ fontSize: '10px', color: message ? '#888' : '#333', lineHeight: '1.3' }}>
+                {message || 'Notification content display area preview...'}
+              </div>
+            </div>
+
+            {link && (
+              <div style={{ marginTop: '12px', paddingTop: '8px', borderTop: '1px dashed #1A1A1A', fontSize: '9px', color: '#3B82F6', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                LINK ↗
+              </div>
+            )}
+          </div>
+        </div>
+
       </div>
 
-      {/* History Log */}
+      {/* Dispatch History */}
       <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-          <span style={{ fontSize: '11px', fontWeight: 'bold', letterSpacing: '1.5px', color: '#FFF' }}>
-            RECENT DISPATCH LOGS
-          </span>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+          <span style={{ fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', color: '#666' }}>LOGS</span>
           <button 
             onClick={fetchSentHistory}
-            style={{ background: 'none', border: 'none', color: '#666', fontSize: '10px', cursor: 'pointer', letterSpacing: '1px' }}
+            style={{ background: 'none', border: 'none', color: '#444', fontSize: '9px', cursor: 'pointer' }}
           >
-            REFRESH LOGS
+            REFRESH
           </button>
         </div>
 
         {fetchingHistory ? (
-          <div style={{ color: '#555', fontSize: '11px', letterSpacing: '1px' }}>FETCHING HISTORY LOGS...</div>
+          <div style={{ color: '#444', fontSize: '10px' }}>LOADING LOGS...</div>
         ) : sentHistory.length === 0 ? (
-          <div style={{ color: '#555', fontSize: '11px', letterSpacing: '1px' }}>NO DISPATCH LOGS RECORDED</div>
+          <div style={{ color: '#444', fontSize: '10px' }}>NO RECENT LOGS</div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
             {sentHistory.map((item) => {
-              const badgeStyle = getTypeBadgeStyle(item.type);
+              const b = getBadgeStyle(item.type);
               return (
                 <div
                   key={item.id}
                   style={{
                     background: '#070707',
-                    border: '1px solid #1A1A1A',
-                    borderRadius: '2px',
-                    padding: '14px 16px',
+                    border: '1px solid #141414',
+                    padding: '10px 12px',
                     display: 'flex',
-                    flexDirection: 'column',
-                    gap: '8px'
+                    alignItems: 'center',
+                    justify: 'space-between'
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <span style={{
-                        fontSize: '9px',
-                        fontWeight: '800',
-                        padding: '2px 6px',
-                        borderRadius: '2px',
-                        letterSpacing: '1px',
-                        border: `1px solid ${badgeStyle.borderColor}`,
-                        color: badgeStyle.color,
-                        background: badgeStyle.background
-                      }}>
-                        {item.type}
-                      </span>
-                      <span style={{ fontSize: '10px', color: '#666', letterSpacing: '0.5px' }}>
-                        {item.target_audience === 'ALL' ? 'GLOBAL BROADCAST' : `USER: ${item.user_id.slice(0, 8)}...`}
-                      </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', overflow: 'hidden' }}>
+                    <span style={{ fontSize: '8px', fontWeight: 'bold', padding: '2px 5px', color: b.color, border: b.border, background: b.bg }}>
+                      {item.type}
+                    </span>
+                    <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#EEE', marginRight: '8px' }}>{item.title}</span>
+                      <span style={{ fontSize: '10px', color: '#666' }}>{item.message}</span>
                     </div>
+                  </div>
 
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', shrink: 0 }}>
+                    <span style={{ fontSize: '8px', color: '#444' }}>
+                      {item.target_audience === 'ALL' ? 'ALL' : item.user_id.slice(0, 6)}
+                    </span>
                     <button
                       onClick={() => handleDeleteSent(item.id)}
-                      style={{
-                        background: 'transparent',
-                        border: 'none',
-                        color: '#666',
-                        fontSize: '10px',
-                        cursor: 'pointer',
-                        letterSpacing: '1px'
-                      }}
+                      style={{ background: 'none', border: 'none', color: '#444', fontSize: '9px', cursor: 'pointer' }}
                       onMouseEnter={(e) => (e.currentTarget.style.color = '#EF4444')}
-                      onMouseLeave={(e) => (e.currentTarget.style.color = '#666')}
+                      onMouseLeave={(e) => (e.currentTarget.style.color = '#444')}
                     >
-                      DELETE
+                      DEL
                     </button>
                   </div>
-
-                  <div>
-                    <h4 style={{ margin: '0 0 4px 0', fontSize: '13px', color: '#FFF', fontWeight: 'bold' }}>{item.title}</h4>
-                    <p style={{ margin: 0, fontSize: '11px', color: '#888', lineHeight: '1.4' }}>
-                      {item.message}
-                    </p>
-                  </div>
-
-                  {item.link && (
-                    <div style={{ fontSize: '10px', color: '#444', borderTop: '1px dashed #1C1C1C', paddingTop: '6px', marginTop: '2px' }}>
-                      LINK: <a href={item.link} target="_blank" rel="noreferrer" style={{ color: '#888', textDecoration: 'underline' }}>{item.link}</a>
-                    </div>
-                  )}
                 </div>
               );
             })}
           </div>
         )}
       </div>
+
     </div>
   );
 }
