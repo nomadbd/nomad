@@ -19,6 +19,39 @@ interface NotificationsViewProps {
   onBack: () => void;
 }
 
+// আপনার ProfileSkeleton-এর আদলে তৈরি নোটিফিকেশন স্কেলিটন
+function NotificationSkeleton() {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+      {[1, 2, 3].map((item) => (
+        <div
+          key={item}
+          style={{
+            background: '#121212',
+            border: '1px solid #27272A',
+            borderRadius: '12px',
+            padding: '16px',
+            opacity: 0.35,
+            animation: 'pulse 1.5s infinite ease-in-out'
+          }}
+        >
+          {/* ব্যাজ ও টাইম স্কেলিটন */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+            <div style={{ height: '14px', width: '30%', background: '#333', borderRadius: '4px' }}></div>
+            <div style={{ height: '14px', width: '14px', background: '#333', borderRadius: '4px' }}></div>
+          </div>
+          {/* টাইটেল স্কেলিটন */}
+          <div style={{ height: '18px', width: '65%', background: '#333', marginBottom: '12px', borderRadius: '4px' }}></div>
+          {/* মেসেজ স্কেলিটন লাইন ১ */}
+          <div style={{ height: '13px', width: '90%', background: '#333', marginBottom: '8px', borderRadius: '4px' }}></div>
+          {/* মেসেজ স্কেলিটন লাইন ২ */}
+          <div style={{ height: '13px', width: '55%', background: '#333', borderRadius: '4px' }}></div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function NotificationsView({ userId, onBack }: NotificationsViewProps) {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -156,7 +189,7 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
       overflow: 'hidden'
     }}>
       
-      {/* ১. ফিক্সড হেডার (স্থির থাকবে) */}
+      {/* ১. ফিক্সড হেডার */}
       <div style={{ 
         flexShrink: 0,
         backgroundColor: 'rgba(9, 9, 11, 0.95)',
@@ -196,7 +229,6 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
           </h2>
         </div>
 
-        {/* Unread ফিল্টার বাটন */}
         <button
           onClick={() => setFilter(prev => prev === 'unread' ? 'all' : 'unread')}
           style={{
@@ -216,7 +248,7 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
         </button>
       </div>
 
-      {/* ২. স্বাধীনভাবে স্ক্রলযোগ্য নোটিফিকেশন লিস্ট */}
+      {/* ২. স্বাধীনভাবে স্ক্রলযোগ্য নোটিফিকেশন বডি */}
       <div style={{ 
         flex: 1, 
         overflowY: 'auto', 
@@ -224,7 +256,6 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
         WebkitOverflowScrolling: 'touch'
       }}>
 
-        {/* Mark All Read বাটন */}
         {unreadCount > 0 && filter === 'all' && (
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '12px', paddingRight: '4px' }}>
             <button
@@ -247,10 +278,9 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
           </div>
         )}
 
+        {/* ৩. লোডিং অবস্থায় স্কেলিটন কম্পোনেন্ট রেন্ডার হবে */}
         {loading ? (
-          <div style={{ textAlign: 'center', padding: '60px 0', color: '#71717A', fontSize: '13px' }}>
-            Loading updates...
-          </div>
+          <NotificationSkeleton />
         ) : filteredNotifications.length === 0 ? (
           <div style={{ 
             display: 'flex',
@@ -338,7 +368,6 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
                       </span>
                     </div>
 
-                    {/* একমাত্র সিঙ্গেল ডিসমিস/ডিলিট ক্রস বাটন */}
                     <button
                       onClick={(e) => deleteNotification(e, item.id)}
                       title="Delete"
@@ -362,7 +391,6 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
                     {item.title}
                   </h3>
                   
-                  {/* উভয় দিকে (Open & Close) সুপার-স্মুথ অ্যানিমেটেড টেক্সট কন্টেইনার */}
                   <p style={{ 
                     margin: 0, 
                     fontSize: '13px', 
@@ -382,7 +410,6 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
                     {item.message}
                   </p>
 
-                  {/* Explore বাটন */}
                   {item.link && (
                     <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '14px' }}>
                       <a
