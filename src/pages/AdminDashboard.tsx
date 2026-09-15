@@ -61,7 +61,7 @@ const AdminDashboard: React.FC = () => {
 
     const searchParams = new URLSearchParams(window.location.search);
     searchParams.set('tab', tab);
-    const newPath = `\( {window.location.pathname}? \){searchParams.toString()}`;
+    const newPath = `${window.location.pathname}?${searchParams.toString()}`;
 
     window.history.pushState({ path: newPath }, '', newPath);
   };
@@ -487,4 +487,4 @@ const AdminDashboard: React.FC = () => {
   );
 };
 
-export default AdminDashboard; 
+export default AdminDashboard;
