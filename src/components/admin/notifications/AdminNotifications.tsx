@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../../../supabaseClient';
-import { HistoryIcon } from '@/components/icons';
+import { supabase } from '../../supabaseClient';
+import { HistoryIcon } from '../../icons';
 import NotificationLogs from './NotificationLogs';
 
 interface UserProfile {
@@ -149,7 +149,7 @@ export default function AdminNotifications() {
 
   return (
     <div style={{ maxWidth: '640px', margin: '0 auto', color: '#FFF', fontFamily: 'system-ui, -apple-system, sans-serif', padding: '12px 8px', paddingBottom: '120px' }}>
-      
+
       <style>{`
         input::placeholder, textarea::placeholder {
           color: ${mutedText} !important;
@@ -167,7 +167,7 @@ export default function AdminNotifications() {
       {/* Top Header with HistoryIcon Action */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <span style={{ fontSize: '11px', fontWeight: '800', letterSpacing: '1.5px', color: '#FFF' }}>DISPATCHER</span>
-        
+
         <button
           type="button"
           onClick={() => setView('logs')}
