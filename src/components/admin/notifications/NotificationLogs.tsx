@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../../supabaseClient';
-import { HistoryIcon, SearchIcon, EditIcon, BackIcon } from '../icons';
+import { HistoryIcon, SearchIcon, EditIcon, BackIcon } from '@/components/icons';
 
 interface SentNotification {
   id: string;
