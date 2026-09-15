@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'; // ১. useEffect ইম্পোর্ট করুন
+import React, { useEffect } from 'react';
 
 interface ProfileDetailsSheetProps {
   isOpen: boolean;
@@ -21,7 +21,7 @@ export default function ProfileDetailsSheet({
   portalMode = 'customer'
 }: ProfileDetailsSheetProps) {
 
-  // ২. বটম শিট ওপেন থাকলে ব্যাকগ্রাউন্ড স্ক্রল লক করার লজিক
+  // ব্যাকগ্রাউন্ড স্ক্রল লক করার লজিক
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -29,7 +29,6 @@ export default function ProfileDetailsSheet({
       document.body.style.overflow = 'unset';
     }
 
-    // কম্পোনেন্ট আনমাউন্ট বা বন্ধ হলে ব্যাকগ্রাউন্ড স্ক্রল আগের অবস্থায় ফিরিয়ে আনা
     return () => {
       document.body.style.overflow = 'unset';
     };
@@ -58,7 +57,7 @@ export default function ProfileDetailsSheet({
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'flex-end',
-        touchAction: 'none' // মোবাইল ডিভাইসে অতিরিক্ত স্ক্রল প্রিভেন্ট করার জন্য
+        touchAction: 'none'
       }}
     >
       <div 
@@ -77,7 +76,7 @@ export default function ProfileDetailsSheet({
           gap: '18px',
           maxHeight: '85vh',
           overflowY: 'auto',
-          overscrollBehavior: 'contain' // বটম শিটের ভেতরের স্ক্রল যেন বাইরে না যায়
+          overscrollBehavior: 'contain'
         }}
       >
         <div style={{
