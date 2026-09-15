@@ -225,8 +225,8 @@
     bottom: 0;
     z-index: 100;
     border-right: 1px solid #1a1a1a;
-    /* বটম প্যাডিং বাড়িয়ে সেফ মার্জিন তৈরি করা হয়েছে যাতে ব্রাউজার অ্যাড্রেস বার চেপে না রাখে */
-    padding: 20px 14px calc(50px + env(safe-area-inset-bottom, 0px)) 14px !important;
+    /* মোবাইল ব্রাউজারের নেভিগেশন বারের ওপর নাম পুরোপুরি তুলে আনতে প্যাডিং ৯০পিক্সেল করা হলো */
+    padding: 20px 14px calc(90px + env(safe-area-inset-bottom, 0px)) 14px !important;
     display: flex !important;
     flex-direction: column !important;
     justify-content: space-between !important;
@@ -247,15 +247,15 @@
     margin-top: 25px;
     overflow-y: auto;
     flex: 1 1 auto;
-    /* ডেক্সটপে স্ক্রিন ছোট হলেও ফুটারকে নিচে ঠেলে দেবে না */
-    max-height: calc(100dvh - 200px);
+    /* প্যাডিং বাড়ানোর সাথে সাথে মেনুর জন্য সামঞ্জস্যপূর্ণ ম্যাক্স-হাইট */
+    max-height: calc(100dvh - 250px);
   }
 
   .userFooterBlock {
     display: block !important;
     margin-top: auto !important;
     padding-top: 16px;
-    padding-bottom: 8px;
+    padding-bottom: 12px;
     border-top: 1px solid #1a1a1a;
     width: 100%;
     max-width: 100%;
