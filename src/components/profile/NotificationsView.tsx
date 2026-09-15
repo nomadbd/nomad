@@ -1,135 +1,191 @@
-import React, { useEffect, useState } from 'react';
-import { supabase } from '../../supabaseClient';
+import { useEffect, useState } from 'react';
+import { supabase } from '@/supabaseClient';
+
+interface NotificationItem {
+  id: string;
+  user_id: string;
+  title: string;
+  message: string;
+  type: 'INFO' | 'ORDER' | 'PROMO' | 'SYSTEM' | 'ALERT';
+  link?: string | null;
+  target_audience: string;
+  is_read: boolean;
+  created_at: string;
+}
 
 interface NotificationsViewProps {
   userId: string;
   onBack: () => void;
 }
 
-interface NotificationItem {
-  id: string;
-  title: string;
-  message: string;
-  is_read: boolean;
-  created_at: string;
-  type?: string;
-}
-
 export default function NotificationsView({ userId, onBack }: NotificationsViewProps) {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<'all' | 'unread'>('all');
 
-  // ১. নোটিফিকেশন ফেচ করা
+  // স্মার্ট টাইম ফরম্যাটিং
+  const getRelativeTime = (dateString: string) => {
+    const now = new Date();
+    const past = new Date(dateString);
+    const diffInSeconds = Math.floor((now.getTime() - past.getTime()) / 1000);
+
+    if (diffInSeconds < 60) return 'Just now';
+    const diffInMinutes = Math.floor(diffInSeconds / 60);
+    if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24) return `${diffInHours}h ago`;
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays === 1) return 'Yesterday';
+    if (diffInDays < 7) return `${diffInDays}d ago`;
+
+    return past.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+
+  // টাইপ অনুযায়ী ব্যাজ ও কালার
+  const getTypeBadge = (type: string) => {
+    switch (type) {
+      case 'ORDER':
+        return { label: 'ORDER', bg: '#1E293B', color: '#38BDF8', border: '#0284C7' };
+      case 'PROMO':
+        return { label: 'OFFER', bg: '#2E1065', color: '#C084FC', border: '#7E22CE' };
+      case 'ALERT':
+        return { label: 'ALERT', bg: '#450A0A', color: '#F87171', border: '#DC2626' };
+      default:
+        return { label: 'INFO', bg: '#18181B', color: '#A1A1AA', border: '#27272A' };
+    }
+  };
+
   useEffect(() => {
+    if (!userId) return;
+
     fetchNotifications();
+
+    // Supabase Realtime Subscription (নতুন নোটিফিকেশন সাথে সাথে পাওয়ার জন্য)
+    const channel = supabase
+      .channel(`public:notifications:user_id=eq.${userId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${userId}`
+        },
+        () => {
+          fetchNotifications();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [userId]);
 
   const fetchNotifications = async () => {
-    if (!userId) return;
     setLoading(true);
+    const { data, error } = await supabase
+      .from('notifications')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
 
-    try {
-      const { data, error } = await supabase
-        .from('notifications')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setNotifications(data || []);
-    } catch (err) {
-      console.error('Error fetching notifications:', err);
-    } finally {
-      setLoading(false);
+    if (!error && data) {
+      setNotifications(data as NotificationItem[]);
     }
+    setLoading(false);
   };
 
-  // ২. নোটিফিকেশন রিড মার্ক করা
+  // একক নোটিফিকেশন Read চিহ্নিত করা
   const markAsRead = async (id: string, currentStatus: boolean) => {
-    if (currentStatus) return; // আগেই রিড করা থাকলে কিছু করার দরকার নেই
+    if (currentStatus) return;
 
-    try {
-      const { error } = await supabase
-        .from('notifications')
-        .update({ is_read: true })
-        .eq('id', id);
+    setNotifications(prev =>
+      prev.map(item => (item.id === id ? { ...item, is_read: true } : item))
+    );
 
-      if (!error) {
-        setNotifications((prev) =>
-          prev.map((n) => (n.id === id ? { ...n, is_read: true } : n))
-        );
-      }
-    } catch (err) {
-      console.error('Error marking notification as read:', err);
-    }
+    await supabase
+      .from('notifications')
+      .update({ is_read: true })
+      .eq('id', id);
   };
 
-  // ৩. সব নোটিফিকেশন একসাথে রিড মার্ক করা
+  // সব নোটিফিকেশন একসাথে Read চিহ্নিত করা
   const markAllAsRead = async () => {
-    try {
-      const { error } = await supabase
-        .from('notifications')
-        .update({ is_read: true })
-        .eq('user_id', userId)
-        .eq('is_read', false);
+    const unreadIds = notifications.filter(n => !n.is_read).map(n => n.id);
+    if (unreadIds.length === 0) return;
 
-      if (!error) {
-        setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
-      }
-    } catch (err) {
-      console.error('Error marking all as read:', err);
-    }
+    setNotifications(prev => prev.map(item => ({ ...item, is_read: true })));
+
+    await supabase
+      .from('notifications')
+      .update({ is_read: true })
+      .eq('user_id', userId)
+      .eq('is_read', false);
   };
+
+  // নোটিফিকেশন মুছে ফেলা
+  const deleteNotification = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    setNotifications(prev => prev.filter(item => item.id !== id));
+
+    await supabase
+      .from('notifications')
+      .delete()
+      .eq('id', id);
+  };
+
+  const filteredNotifications = notifications.filter(item => {
+    if (filter === 'unread') return !item.is_read;
+    return true;
+  });
+
+  const unreadCount = notifications.filter(n => !n.is_read).length;
 
   return (
-    <div style={{
-      width: '100%',
-      minHeight: '100vh',
-      backgroundColor: '#09090B',
-      color: '#FFFFFF',
-      display: 'flex',
-      flexDirection: 'column'
-    }}>
-      {/* টপ ব্যাক বার */}
-      <div style={{
-        padding: '16px 20px',
-        borderBottom: '1px solid #18181B',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        position: 'sticky',
-        top: 0,
-        backgroundColor: '#09090B',
-        zIndex: 10
-      }}>
+    <div style={{ maxWidth: '650px', margin: '0 auto', padding: '20px 16px', color: '#FFF' }}>
+      
+      {/* হেডার ও ব্যাক বাটন */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <button
             onClick={onBack}
             style={{
-              background: 'none',
-              border: 'none',
-              color: '#A1A1AA',
-              fontSize: '18px',
-              cursor: 'pointer',
-              padding: '4px',
+              background: '#121212',
+              border: '1px solid #27272A',
+              color: '#FFF',
+              width: '36px',
+              height: '36px',
+              borderRadius: '50%',
               display: 'flex',
-              alignItems: 'center'
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer'
             }}
           >
             ←
           </button>
-          <h2 style={{ margin: 0, fontSize: '16px', fontWeight: '600' }}>Notifications</h2>
+          <div>
+            <h2 style={{ fontSize: '18px', fontWeight: '600', margin: 0, letterSpacing: '0.3px' }}>
+              Notifications
+            </h2>
+            <span style={{ fontSize: '12px', color: '#71717A' }}>
+              {unreadCount > 0 ? `${unreadCount} unread message(s)` : 'All caught up'}
+            </span>
+          </div>
         </div>
 
-        {notifications.some(n => !n.is_read) && (
+        {unreadCount > 0 && (
           <button
             onClick={markAllAsRead}
             style={{
-              background: 'none',
+              background: 'transparent',
               border: 'none',
-              color: '#71717A',
+              color: '#A1A1AA',
               fontSize: '12px',
-              cursor: 'pointer'
+              fontWeight: '500',
+              cursor: 'pointer',
+              textDecoration: 'underline'
             }}
           >
             Mark all read
@@ -137,76 +193,154 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
         )}
       </div>
 
+      {/* ফিল্টার ট্যাব */}
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', borderBottom: '1px solid #18181B', paddingBottom: '12px' }}>
+        <button
+          onClick={() => setFilter('all')}
+          style={{
+            padding: '6px 14px',
+            borderRadius: '20px',
+            fontSize: '12px',
+            fontWeight: '500',
+            border: '1px solid',
+            borderColor: filter === 'all' ? '#FFF' : '#27272A',
+            background: filter === 'all' ? '#FFF' : '#121212',
+            color: filter === 'all' ? '#000' : '#A1A1AA',
+            cursor: 'pointer',
+            transition: 'all 0.2s'
+          }}
+        >
+          All ({notifications.length})
+        </button>
+        <button
+          onClick={() => setFilter('unread')}
+          style={{
+            padding: '6px 14px',
+            borderRadius: '20px',
+            fontSize: '12px',
+            fontWeight: '500',
+            border: '1px solid',
+            borderColor: filter === 'unread' ? '#FFF' : '#27272A',
+            background: filter === 'unread' ? '#FFF' : '#121212',
+            color: filter === 'unread' ? '#000' : '#A1A1AA',
+            cursor: 'pointer',
+            transition: 'all 0.2s'
+          }}
+        >
+          Unread ({unreadCount})
+        </button>
+      </div>
+
       {/* নোটিফিকেশন লিস্ট */}
-      <div style={{ padding: '16px 20px', flex: 1 }}>
-        {loading ? (
-          <p style={{ fontSize: '13px', color: '#71717A', textAlign: 'center', marginTop: '40px' }}>
-            Loading notifications...
-          </p>
-        ) : notifications.length === 0 ? (
-          <div style={{ textAlign: 'center', marginTop: '60px', color: '#71717A' }}>
-            <p style={{ fontSize: '14px', margin: 0 }}>No notifications yet</p>
-            <span style={{ fontSize: '12px' }}>Updates regarding your orders will appear here</span>
-          </div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {notifications.map((item) => (
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '40px 0', color: '#71717A', fontSize: '14px' }}>
+          Loading notifications...
+        </div>
+      ) : filteredNotifications.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '60px 20px', background: '#09090B', borderRadius: '12px', border: '1px solid #18181B' }}>
+          <div style={{ fontSize: '32px', marginBottom: '10px' }}>🔔</div>
+          <p style={{ margin: '0 0 6px 0', fontSize: '14px', color: '#FFF', fontWeight: '500' }}>No notifications found</p>
+          <span style={{ fontSize: '12px', color: '#71717A' }}>You're all up to date. We'll notify you when something comes up!</span>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          {filteredNotifications.map((item) => {
+            const badge = getTypeBadge(item.type);
+            return (
               <div
                 key={item.id}
                 onClick={() => markAsRead(item.id, item.is_read)}
                 style={{
+                  background: item.is_read ? '#09090B' : '#121212',
+                  border: '1px solid',
+                  borderColor: item.is_read ? '#18181B' : '#27272A',
+                  borderRadius: '10px',
                   padding: '14px 16px',
-                  backgroundColor: item.is_read ? '#0F0F0F' : '#141416',
-                  borderRadius: '12px',
-                  border: item.is_read ? '1px solid #18181B' : '1px solid #27272A',
-                  cursor: 'pointer',
+                  cursor: item.is_read ? 'default' : 'pointer',
                   position: 'relative',
-                  transition: 'background-color 0.2s'
+                  transition: 'all 0.2s ease'
                 }}
               >
+                {/* আনরিড নির্দেশক ডট */}
                 {!item.is_read && (
-                  <span style={{
-                    position: 'absolute',
-                    top: '16px',
-                    right: '16px',
-                    width: '6px',
-                    height: '6px',
-                    borderRadius: '50%',
-                    backgroundColor: '#FFFFFF'
-                  }} />
+                  <span
+                    style={{
+                      position: 'absolute',
+                      top: '16px',
+                      right: '16px',
+                      width: '8px',
+                      height: '8px',
+                      borderRadius: '50%',
+                      backgroundColor: '#3B82F6'
+                    }}
+                  />
                 )}
 
-                <h4 style={{
-                  margin: '0 0 4px 0',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  color: item.is_read ? '#A1A1AA' : '#FFFFFF'
-                }}>
-                  {item.title}
-                </h4>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span
+                      style={{
+                        fontSize: '9px',
+                        fontWeight: '700',
+                        padding: '2px 6px',
+                        borderRadius: '4px',
+                        backgroundColor: badge.bg,
+                        color: badge.color,
+                        border: `1px solid ${badge.border}`,
+                        letterSpacing: '0.5px'
+                      }}
+                    >
+                      {badge.label}
+                    </span>
+                    <span style={{ fontSize: '11px', color: '#71717A' }}>
+                      {getRelativeTime(item.created_at)}
+                    </span>
+                  </div>
 
-                <p style={{
-                  margin: '0 0 8px 0',
-                  fontSize: '13px',
-                  color: item.is_read ? '#71717A' : '#D4D4D8',
-                  lineHeight: '1.4'
-                }}>
+                  <button
+                    onClick={(e) => deleteNotification(e, item.id)}
+                    title="Delete"
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: '#52525B',
+                      fontSize: '14px',
+                      cursor: 'pointer',
+                      padding: '2px 6px'
+                    }}
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <h3 style={{ margin: '0 0 4px 0', fontSize: '14px', fontWeight: '600', color: '#FFF' }}>
+                  {item.title}
+                </h3>
+                <p style={{ margin: 0, fontSize: '13px', color: '#A1A1AA', lineHeight: '1.4' }}>
                   {item.message}
                 </p>
 
-                <span style={{ fontSize: '10px', color: '#52525B' }}>
-                  {new Date(item.created_at).toLocaleDateString('en-US', {
-                    month: 'short',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })}
-                </span>
+                {item.link && (
+                  <a
+                    href={item.link}
+                    onClick={(e) => e.stopPropagation()}
+                    style={{
+                      display: 'inline-block',
+                      marginTop: '10px',
+                      fontSize: '12px',
+                      color: '#38BDF8',
+                      textDecoration: 'none',
+                      fontWeight: '500'
+                    }}
+                  >
+                    View Details →
+                  </a>
+                )}
               </div>
-            ))}
-          </div>
-        )}
-      </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
