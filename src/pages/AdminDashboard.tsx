@@ -34,6 +34,7 @@ const AdminDashboard: React.FC = () => {
   const [isAddOpen, setIsAddOpen] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
 
+  // একটিভ চ্যাট স্টেট
   const [activeChat, setActiveChat] = useState<{
     id: string;
     userName: string;
@@ -57,7 +58,7 @@ const AdminDashboard: React.FC = () => {
     setMenuOpen(false);
     setIsSearchOpen(false);
     setIsAddOpen(false);
-    setActiveChat(null);
+    setActiveChat(null); // ট্যাব চেঞ্জ হলে চ্যাট স্টেট রিসেট হবে
 
     const searchParams = new URLSearchParams(window.location.search);
     searchParams.set('tab', tab);
@@ -65,17 +66,6 @@ const AdminDashboard: React.FC = () => {
 
     window.history.pushState({ path: newPath }, '', newPath);
   };
-
-  useEffect(() => {
-    if (menuOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [menuOpen]);
 
   useEffect(() => {
     const handlePopState = () => {
@@ -168,6 +158,7 @@ const AdminDashboard: React.FC = () => {
     return null;
   }
 
+  // চ্যাট ওপেন থাকলে হেডার হাইড হবে
   const isChatOpen = activeTab === 'messages' && !!activeChat;
 
   return (
@@ -183,20 +174,10 @@ const AdminDashboard: React.FC = () => {
     }}>
       <div className={styles.nomadLayout}>
         <aside className={`${styles.nomadSidebar} ${menuOpen ? styles.menuOpen : ''} ${!isHeaderVisible ? styles.headerHidden : ''}`}>
-          <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+          <div>
+            {/* কোনো নির্দিষ্ট চ্যাট ওপেন থাকলে ড্যাশবোর্ডের মূল হেডার হাইড থাকবে */}
             {!isChatOpen && (
-              <div style={{ 
-                display: 'flex', 
-                justify: 'space-between', 
-                alignItems: 'center', 
-                maxWidth: '100%',
-                position: 'sticky',
-                top: 0,
-                backgroundColor: '#030303',
-                zIndex: 10,
-                paddingTop: '4px',
-                paddingBottom: '8px'
-              }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: '100%' }}>
                 <a href="/" className={styles.nomadBrandLink} title="Go to Store Homepage">
                   <h1 style={{ fontSize: '18px', fontWeight: '900', letterSpacing: '4px', margin: 0, color: '#fff' }}>
                     NOMAD
@@ -204,7 +185,7 @@ const AdminDashboard: React.FC = () => {
                 </a>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  {!menuOpen && (activeTab === 'products' || activeTab === 'ambassadors') && (
+                  {(activeTab === 'products' || activeTab === 'ambassadors') && (
                     <button
                       className={`${styles.nomadActionBtn} ${isAddOpen ? styles.nomadActionBtnActive : ''}`}
                       onClick={() => setIsAddOpen(!isAddOpen)}
@@ -215,7 +196,7 @@ const AdminDashboard: React.FC = () => {
                     </button>
                   )}
 
-                  {!menuOpen && activeTab !== 'overview' && (
+                  {activeTab !== 'overview' && (
                     <button
                       className={`${styles.nomadActionBtn} ${isSearchOpen ? styles.nomadActionBtnActive : ''}`}
                       onClick={() => setIsSearchOpen(!isSearchOpen)}
@@ -226,16 +207,14 @@ const AdminDashboard: React.FC = () => {
                     </button>
                   )}
 
-                  {!menuOpen && (
-                    <button
-                      className={`${styles.nomadActionBtn} ${isFilterOpen ? styles.nomadActionBtnActive : ''}`}
-                      onClick={() => setIsFilterOpen(!isFilterOpen)}
-                      aria-label="Filter"
-                      title="Toggle Filter Panel"
-                    >
-                      <FilterIcon width={18} height={18} />
-                    </button>
-                  )}
+                  <button
+                    className={`${styles.nomadActionBtn} ${isFilterOpen ? styles.nomadActionBtnActive : ''}`}
+                    onClick={() => setIsFilterOpen(!isFilterOpen)}
+                    aria-label="Filter"
+                    title="Toggle Filter Panel"
+                  >
+                    <FilterIcon width={18} height={18} />
+                  </button>
 
                   <button
                     className={`${styles.nomadMenuToggle} ${styles.nomadMenuToggleBtn} ${menuOpen ? styles.nomadMenuToggleBtnActive : ''}`}
@@ -249,7 +228,7 @@ const AdminDashboard: React.FC = () => {
               </div>
             )}
 
-            <nav className={styles.nomadNav} style={{ overflowY: 'auto' }}>
+            <nav className={styles.nomadNav}>
               <span style={{ fontSize: '9px', color: '#888888', letterSpacing: '2px', marginBottom: '8px', fontWeight: 'bold' }}>
                 MAIN MENU
               </span>
