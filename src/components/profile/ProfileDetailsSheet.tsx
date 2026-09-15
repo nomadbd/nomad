@@ -7,8 +7,7 @@ interface ProfileDetailsSheetProps {
   ambassadorData?: any;
   avatarUrl: string | null;
   getInitials: (name?: string, email?: string) => string;
-  isAmbassador: boolean;
-  isAmbassadorActive: boolean;
+  portalMode: 'customer' | 'ambassador';
 }
 
 export default function ProfileDetailsSheet({
@@ -18,10 +17,13 @@ export default function ProfileDetailsSheet({
   ambassadorData,
   avatarUrl,
   getInitials,
-  isAmbassador,
-  isAmbassadorActive
+  portalMode
 }: ProfileDetailsSheetProps) {
   if (!isOpen) return null;
+
+  // ডাটাবেস ডাটা ও কারেন্ট মোড অনুযায়ী সত্যিকারের রোল নির্ধারণ
+  const hasAmbassadorProfile = Boolean(ambassadorData) || String(profile?.role).toUpperCase().trim() === 'AMBASSADOR';
+  const isAmbassadorActive = hasAmbassadorProfile && portalMode === 'ambassador';
 
   const memberSince = profile?.created_at 
     ? new Date(profile.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
@@ -109,14 +111,14 @@ export default function ProfileDetailsSheet({
               display: 'inline-block',
               marginTop: '3px'
             }}>
-              {isAmbassadorActive ? '★ Nomad Ambassador' : 'Customer Account'}
+              {isAmbassadorActive ? '★ NOMAD AMBASSADOR' : 'CUSTOMER ACCOUNT'}
             </span>
           </div>
         </div>
 
         <div style={{ height: '1px', backgroundColor: '#27272A', width: '100%' }} />
 
-        {/* বিস্তৃত তথ্য তালিকা */}
+        {/* ডাইনামিক প্রকৃত তথ্য */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
           
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
@@ -150,7 +152,7 @@ export default function ProfileDetailsSheet({
             <span style={{ fontSize: '10px', color: '#71717A', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: '600' }}>
               Active Profile Mode
             </span>
-            <span style={{ fontSize: '14px', color: '#E4E4E7' }}>
+            <span style={{ fontSize: '14px', color: isAmbassadorActive ? '#10B981' : '#E4E4E7', fontWeight: '600' }}>
               {isAmbassadorActive ? 'Ambassador Partner Mode' : 'Customer Mode'}
             </span>
           </div>
@@ -166,7 +168,8 @@ export default function ProfileDetailsSheet({
             </div>
           )}
 
-          {isAmbassador && (
+          {/* ডাটাবেসে অ্যাম্বাসেডর রেকর্ড থাকলে তবেই এই সেকশন ডাটা দেখাবে */}
+          {hasAmbassadorProfile && (
             <>
               <div style={{ height: '1px', backgroundColor: '#27272A', width: '100%', margin: '4px 0' }} />
               
@@ -174,38 +177,32 @@ export default function ProfileDetailsSheet({
                 Ambassador Information
               </span>
 
-              {ambassadorData?.display_name && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                  <span style={{ fontSize: '10px', color: '#71717A', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: '600' }}>
-                    Display Name
-                  </span>
-                  <span style={{ fontSize: '14px', color: '#E4E4E7' }}>
-                    {ambassadorData.display_name}
-                  </span>
-                </div>
-              )}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                <span style={{ fontSize: '10px', color: '#71717A', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: '600' }}>
+                  Display Name
+                </span>
+                <span style={{ fontSize: '14px', color: '#E4E4E7' }}>
+                  {ambassadorData?.display_name || profile?.name || 'N/A'}
+                </span>
+              </div>
 
-              {ambassadorData?.assigned_slug && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                  <span style={{ fontSize: '10px', color: '#71717A', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: '600' }}>
-                    Store URL Slug
-                  </span>
-                  <span style={{ fontSize: '14px', color: '#E4E4E7', fontFamily: 'monospace' }}>
-                    /{ambassadorData.assigned_slug}
-                  </span>
-                </div>
-              )}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                <span style={{ fontSize: '10px', color: '#71717A', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: '600' }}>
+                  Store URL Slug
+                </span>
+                <span style={{ fontSize: '14px', color: '#E4E4E7', fontFamily: 'monospace' }}>
+                  {ambassadorData?.assigned_slug ? `/${ambassadorData.assigned_slug}` : 'Not set'}
+                </span>
+              </div>
 
-              {ambassadorData?.payout_details && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                  <span style={{ fontSize: '10px', color: '#71717A', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: '600' }}>
-                    Payout Method & Number
-                  </span>
-                  <span style={{ fontSize: '14px', color: '#E4E4E7' }}>
-                    {ambassadorData.payout_details}
-                  </span>
-                </div>
-              )}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                <span style={{ fontSize: '10px', color: '#71717A', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: '600' }}>
+                  Payout Details
+                </span>
+                <span style={{ fontSize: '14px', color: ambassadorData?.payout_details ? '#E4E4E7' : '#52525B' }}>
+                  {ambassadorData?.payout_details || 'Not provided'}
+                </span>
+              </div>
             </>
           )}
 
