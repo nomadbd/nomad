@@ -225,8 +225,6 @@
     bottom: 0;
     z-index: 100;
     border-right: 1px solid #1a1a1a;
-    /* মোবাইল ব্রাউজারের নেভিগেশন বারের ওপর নাম পুরোপুরি তুলে আনতে প্যাডিং ৯০পিক্সেল করা হলো */
-    padding: 20px 14px calc(90px + env(safe-area-inset-bottom, 0px)) 14px !important;
     display: flex !important;
     flex-direction: column !important;
     justify-content: space-between !important;
@@ -247,8 +245,6 @@
     margin-top: 25px;
     overflow-y: auto;
     flex: 1 1 auto;
-    /* প্যাডিং বাড়ানোর সাথে সাথে মেনুর জন্য সামঞ্জস্যপূর্ণ ম্যাক্স-হাইট */
-    max-height: calc(100dvh - 250px);
   }
 
   .userFooterBlock {
@@ -271,6 +267,26 @@
     min-height: 100dvh;
     overflow-x: hidden !important;
     box-sizing: border-box;
+  }
+}
+
+/* পিসি ও ল্যাপটপের জন্য (Mouse / Trackpad) */
+@media screen and (min-width: 768px) and (pointer: fine) {
+  .nomadSidebar {
+    padding: 20px 14px calc(20px + env(safe-area-inset-bottom, 0px)) 14px !important;
+  }
+  .nomadNav {
+    max-height: calc(100dvh - 180px);
+  }
+}
+
+/* মোবাইলে ডেক্সটপ সাইট মোডের জন্য (Touch Screen) */
+@media screen and (min-width: 768px) and (pointer: coarse) {
+  .nomadSidebar {
+    padding: 20px 14px calc(90px + env(safe-area-inset-bottom, 0px)) 14px !important;
+  }
+  .nomadNav {
+    max-height: calc(100dvh - 250px);
   }
 }
 
