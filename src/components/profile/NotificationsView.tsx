@@ -145,10 +145,24 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
   });
 
   return (
-    <div style={{ maxWidth: '600px', margin: '0 auto', padding: '16px 12px', color: '#FFF' }}>
+    <div style={{ maxWidth: '600px', margin: '0 auto', padding: '0 12px 24px', color: '#FFF' }}>
       
-      {/* ১. হেডার */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
+      {/* ১. স্টিকি হেডার (স্ক্রল করলেও ফিক্সড থাকবে) */}
+      <div style={{ 
+        position: 'sticky',
+        top: 0,
+        zIndex: 40,
+        backgroundColor: 'rgba(0, 0, 0, 0.85)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
+        paddingTop: '16px',
+        paddingBottom: '16px',
+        marginBottom: '16px',
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'space-between',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.05)'
+      }}>
         
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
           <button
@@ -273,8 +287,7 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
                   padding: '16px',
                   cursor: 'pointer',
                   position: 'relative',
-                  transition: 'border-color 0.25s ease, background-color 0.25s ease',
-                  contain: 'layout paint'
+                  transition: 'border-color 0.25s ease, background-color 0.25s ease'
                 }}
               >
                 {!item.is_read && (
@@ -312,7 +325,6 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
                     </span>
                   </div>
 
-                  {/* মিনিমালিস্ট লাক্সারি ক্রস ডিলিট আইকন */}
                   <button
                     onClick={(e) => deleteNotification(e, item.id)}
                     title="Delete"
@@ -336,11 +348,11 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
                   {item.title}
                 </h3>
                 
-                {/* স্মুথ অ্যানিমেশনের জন্য স্ট্যাবল লেআউট கண்டেইனர் */}
+                {/* আল্ট্রা-স্মুথ অ্যানিমেটেড টেক্সট কন্টেইনার (Zero Jank) */}
                 <div style={{
-                  display: 'grid',
-                  gridTemplateRows: isExpanded ? '1fr' : 'auto',
-                  transition: 'all 0.25s ease-in-out'
+                  maxHeight: isExpanded ? '1000px' : '58px', // ৩ লাইনের হাইট (~58px) থেকে স্মুথলি খুলবে
+                  overflow: 'hidden',
+                  transition: 'max-height 0.38s cubic-bezier(0.16, 1, 0.3, 1)'
                 }}>
                   <p style={{ 
                     margin: 0, 
@@ -349,11 +361,7 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
                     lineHeight: '1.5',
                     overflowWrap: 'break-word',
                     wordBreak: 'break-word',
-                    whiteSpace: isExpanded ? 'pre-line' : 'normal',
-                    display: isExpanded ? 'block' : '-webkit-box',
-                    WebkitLineClamp: isExpanded ? 'none' : 3,
-                    WebkitBoxOrient: 'vertical',
-                    overflow: 'hidden'
+                    whiteSpace: 'pre-line'
                   }}>
                     {item.message}
                   </p>
