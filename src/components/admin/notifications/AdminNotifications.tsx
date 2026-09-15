@@ -23,13 +23,12 @@ export default function AdminNotifications() {
   const [specificUserId, setSpecificUserId] = useState('');
   const [userSearch, setUserSearch] = useState('');
   const [userOptions, setUserOptions] = useState<UserProfile[]>([]);
-  const [isSearchingUsers, setIsSearchingUsers] = useState(false);
 
   const [title, setTitle] = useState('');
   const [message, setMessage] = useState('');
   const [type, setType] = useState<'INFO' | 'PROMO' | 'SYSTEM' | 'ALERT'>('INFO');
   const [link, setLink] = useState('');
-  
+
   const [loading, setLoading] = useState(false);
   const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
@@ -49,7 +48,6 @@ export default function AdminNotifications() {
   }, [userSearch, targetType]);
 
   const searchUsers = async (query: string) => {
-    setIsSearchingUsers(true);
     const { data } = await supabase
       .from('profiles')
       .select('id, email, name')
@@ -57,7 +55,6 @@ export default function AdminNotifications() {
       .limit(5);
 
     if (data) setUserOptions(data);
-    setIsSearchingUsers(false);
   };
 
   const fetchSentHistory = async () => {
@@ -66,7 +63,7 @@ export default function AdminNotifications() {
       .from('notifications')
       .select('*')
       .order('created_at', { ascending: false })
-      .limit(15);
+      .limit(10);
 
     if (data) setSentHistory(data as SentNotification[]);
     setFetchingHistory(false);
@@ -75,12 +72,12 @@ export default function AdminNotifications() {
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !message.trim()) {
-      setStatusMsg({ type: 'error', text: 'ERR: TITLE & MESSAGE REQUIRED' });
+      setStatusMsg({ type: 'error', text: 'ERR // Title & Message required' });
       return;
     }
 
     if (targetType === 'specific' && !specificUserId.trim()) {
-      setStatusMsg({ type: 'error', text: 'ERR: TARGET USER REQUIRED' });
+      setStatusMsg({ type: 'error', text: 'ERR // Target user ID required' });
       return;
     }
 
@@ -121,7 +118,7 @@ export default function AdminNotifications() {
         }
       }
 
-      setStatusMsg({ type: 'success', text: 'DISPATCH COMPLETED' });
+      setStatusMsg({ type: 'success', text: 'SUCCESS // Dispatch sent' });
       setTitle('');
       setMessage('');
       setLink('');
@@ -129,7 +126,7 @@ export default function AdminNotifications() {
       setUserSearch('');
       fetchSentHistory();
     } catch (err: any) {
-      setStatusMsg({ type: 'error', text: err.message || 'DISPATCH FAILED' });
+      setStatusMsg({ type: 'error', text: err.message || 'ERR // Dispatch failed' });
     } finally {
       setLoading(false);
     }
@@ -142,59 +139,98 @@ export default function AdminNotifications() {
     }
   };
 
-  const getBadgeStyle = (badgeType: string) => {
-    switch (badgeType) {
-      case 'PROMO': return { color: '#EAB308', border: '1px solid #854D0E', bg: 'rgba(234,179,8,0.06)' };
-      case 'ALERT': return { color: '#EF4444', border: '1px solid #991B1B', bg: 'rgba(239,68,68,0.06)' };
-      case 'SYSTEM': return { color: '#A855F7', border: '1px solid #6B21A8', bg: 'rgba(168,85,247,0.06)' };
-      default: return { color: '#3B82F6', border: '1px solid #1E40AF', bg: 'rgba(59,130,246,0.06)' };
+  const getTypeStyle = (category: string) => {
+    switch (category) {
+      case 'PROMO': return { color: '#EAB308', bg: 'rgba(234,179,8,0.1)', border: 'rgba(234,179,8,0.25)' };
+      case 'ALERT': return { color: '#EF4444', bg: 'rgba(239,68,68,0.1)', border: 'rgba(239,68,68,0.25)' };
+      case 'SYSTEM': return { color: '#A855F7', bg: 'rgba(168,85,247,0.1)', border: 'rgba(168,85,247,0.25)' };
+      default: return { color: '#3B82F6', bg: 'rgba(59,130,246,0.1)', border: 'rgba(59,130,246,0.25)' };
     }
   };
 
-  return (
-    <div style={{ maxWidth: '780px', margin: '0 auto', color: '#FFF', fontFamily: 'monospace, sans-serif' }}>
-      
-      {/* Header */}
-      <div style={{ paddingBottom: '16px', marginBottom: '20px', borderBottom: '1px solid #141414', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-        <div>
-          <span style={{ fontSize: '9px', color: '#555', letterSpacing: '2px', fontWeight: 'bold' }}>SYS // DISPATCH</span>
-          <h1 style={{ fontSize: '16px', fontWeight: '900', margin: '2px 0 0 0', letterSpacing: '2px' }}>NOTIFICATIONS</h1>
-        </div>
-        {statusMsg && (
-          <span style={{
-            fontSize: '10px',
-            padding: '4px 8px',
-            color: statusMsg.type === 'success' ? '#4ADE80' : '#F87171',
-            border: `1px solid ${statusMsg.type === 'success' ? '#22C55E' : '#EF4444'}`,
-            background: '#000'
-          }}>
-            {statusMsg.text}
-          </span>
-        )}
-      </div>
+  // Modern Input Style Helper
+  const fieldStyle: React.CSSProperties = {
+    width: '100%',
+    padding: '12px 14px',
+    background: '#090909',
+    border: '1px solid #1F1F1F',
+    borderRadius: '4px',
+    color: '#FFFFFF',
+    fontSize: '12px',
+    fontFamily: 'monospace, sans-serif',
+    outline: 'none',
+    boxSizing: 'border-box',
+    transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
+  };
 
-      {/* Main Grid: Form & Live Preview */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 260px', gap: '16px', marginBottom: '32px' }}>
-        
-        {/* Form Panel */}
-        <form onSubmit={handleSend} style={{ background: '#070707', border: '1px solid #181818', padding: '16px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+  const labelStyle: React.CSSProperties = {
+    display: 'block',
+    fontSize: '10px',
+    color: '#777',
+    fontWeight: '700',
+    letterSpacing: '1px',
+    marginBottom: '6px',
+    textTransform: 'uppercase'
+  };
+
+  return (
+    <div style={{ maxWidth: '820px', margin: '0 auto', color: '#FFF', fontFamily: 'monospace, sans-serif', padding: '10px 4px' }}>
+
+      {/* Status Bar */}
+      {statusMsg && (
+        <div style={{
+          padding: '10px 14px',
+          borderRadius: '4px',
+          marginBottom: '16px',
+          fontSize: '11px',
+          fontWeight: 'bold',
+          letterSpacing: '0.5px',
+          background: statusMsg.type === 'success' ? 'rgba(34, 197, 94, 0.08)' : 'rgba(239, 68, 68, 0.08)',
+          border: `1px solid ${statusMsg.type === 'success' ? '#22C55E' : '#EF4444'}`,
+          color: statusMsg.type === 'success' ? '#4ADE80' : '#F87171'
+        }}>
+          {statusMsg.text}
+        </div>
+      )}
+
+      {/* Main Responsive Grid Layout */}
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', 
+        gap: '20px', 
+        marginBottom: '32px' 
+      }}>
+
+        {/* Dispatch Form Panel */}
+        <form onSubmit={handleSend} style={{
+          background: '#050505',
+          border: '1px solid #141414',
+          borderRadius: '6px',
+          padding: '20px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '16px'
+        }}>
           
-          {/* Target Audience */}
+          {/* Target Audience Switcher */}
           <div>
-            <span style={{ display: 'block', fontSize: '9px', color: '#666', marginBottom: '8px', letterSpacing: '1px' }}>TARGET</span>
-            <div style={{ display: 'flex', gap: '12px' }}>
+            <label style={labelStyle}>Target</label>
+            <div style={{ display: 'flex', background: '#0A0A0A', padding: '3px', borderRadius: '4px', border: '1px solid #181818' }}>
               <button
                 type="button"
                 onClick={() => setTargetType('all')}
                 style={{
                   flex: 1,
-                  padding: '6px',
+                  padding: '8px 0',
                   fontSize: '10px',
-                  background: targetType === 'all' ? '#FFF' : '#000',
-                  color: targetType === 'all' ? '#000' : '#666',
-                  border: '1px solid #222',
+                  fontWeight: 'bold',
+                  letterSpacing: '0.5px',
+                  background: targetType === 'all' ? '#1F1F1F' : 'transparent',
+                  color: targetType === 'all' ? '#FFF' : '#666',
+                  border: 'none',
+                  borderRadius: '3px',
                   cursor: 'pointer',
-                  fontWeight: 'bold'
+                  transition: 'all 0.15s ease'
                 }}
               >
                 ALL USERS
@@ -204,13 +240,16 @@ export default function AdminNotifications() {
                 onClick={() => setTargetType('specific')}
                 style={{
                   flex: 1,
-                  padding: '6px',
+                  padding: '8px 0',
                   fontSize: '10px',
-                  background: targetType === 'specific' ? '#FFF' : '#000',
-                  color: targetType === 'specific' ? '#000' : '#666',
-                  border: '1px solid #222',
+                  fontWeight: 'bold',
+                  letterSpacing: '0.5px',
+                  background: targetType === 'specific' ? '#1F1F1F' : 'transparent',
+                  color: targetType === 'specific' ? '#FFF' : '#666',
+                  border: 'none',
+                  borderRadius: '3px',
                   cursor: 'pointer',
-                  fontWeight: 'bold'
+                  transition: 'all 0.15s ease'
                 }}
               >
                 SINGLE USER
@@ -218,22 +257,33 @@ export default function AdminNotifications() {
             </div>
           </div>
 
-          {/* User Selector */}
+          {/* User Search Input (Only for Specific) */}
           {targetType === 'specific' && (
             <div style={{ position: 'relative' }}>
-              <span style={{ display: 'block', fontSize: '9px', color: '#666', marginBottom: '4px', letterSpacing: '1px' }}>RECIPIENT SEARCH</span>
+              <label style={labelStyle}>Recipient Search</label>
               <input
                 type="text"
-                placeholder="Search Name / Email / UUID..."
+                placeholder="Search Name / Email / User ID..."
                 value={userSearch}
                 onChange={(e) => {
                   setUserSearch(e.target.value);
                   setSpecificUserId(e.target.value);
                 }}
-                style={{ width: '100%', padding: '8px', background: '#000', border: '1px solid #262626', color: '#FFF', fontSize: '11px', outline: 'none', boxSizing: 'border-box' }}
+                style={fieldStyle}
               />
               {userOptions.length > 0 && (
-                <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: '#0D0D0D', border: '1px solid #262626', zIndex: 10, marginTop: '2px' }}>
+                <div style={{ 
+                  position: 'absolute', 
+                  top: '100%', 
+                  left: 0, 
+                  right: 0, 
+                  background: '#0D0D0D', 
+                  border: '1px solid #222', 
+                  borderRadius: '4px',
+                  zIndex: 20, 
+                  marginTop: '4px',
+                  boxShadow: '0 8px 16px rgba(0,0,0,0.6)'
+                }}>
                   {userOptions.map((u) => (
                     <div
                       key={u.id}
@@ -242,10 +292,10 @@ export default function AdminNotifications() {
                         setUserSearch(u.email || u.name || u.id);
                         setUserOptions([]);
                       }}
-                      style={{ padding: '8px', fontSize: '10px', cursor: 'pointer', borderBottom: '1px solid #1A1A1A', color: '#AAA' }}
+                      style={{ padding: '10px 12px', fontSize: '11px', cursor: 'pointer', borderBottom: '1px solid #161616' }}
                     >
-                      <div style={{ color: '#FFF', fontWeight: 'bold' }}>{u.name || 'User'}</div>
-                      <div style={{ fontSize: '9px', color: '#555' }}>{u.email} | {u.id.slice(0, 8)}...</div>
+                      <div style={{ color: '#FFF', fontWeight: 'bold' }}>{u.name || 'Anonymous User'}</div>
+                      <div style={{ fontSize: '9px', color: '#666', marginTop: '2px' }}>{u.email} // {u.id.slice(0, 8)}...</div>
                     </div>
                   ))}
                 </div>
@@ -253,110 +303,160 @@ export default function AdminNotifications() {
             </div>
           )}
 
-          {/* Category Selector */}
+          {/* Category Pills */}
           <div>
-            <span style={{ display: 'block', fontSize: '9px', color: '#666', marginBottom: '4px', letterSpacing: '1px' }}>CATEGORY</span>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '4px' }}>
-              {(['INFO', 'PROMO', 'ALERT', 'SYSTEM'] as const).map((cat) => (
-                <button
-                  key={cat}
-                  type="button"
-                  onClick={() => setType(cat)}
-                  style={{
-                    padding: '6px 0',
-                    fontSize: '9px',
-                    background: type === cat ? '#181818' : '#000',
-                    color: type === cat ? '#FFF' : '#555',
-                    border: `1px solid ${type === cat ? '#444' : '#1A1A1A'}`,
-                    cursor: 'pointer',
-                    fontWeight: 'bold'
-                  }}
-                >
-                  {cat}
-                </button>
-              ))}
+            <label style={labelStyle}>Category</label>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
+              {(['INFO', 'PROMO', 'ALERT', 'SYSTEM'] as const).map((cat) => {
+                const active = type === cat;
+                const style = getTypeStyle(cat);
+                return (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => setType(cat)}
+                    style={{
+                      padding: '8px 0',
+                      fontSize: '9px',
+                      fontWeight: '800',
+                      letterSpacing: '0.5px',
+                      background: active ? style.bg : '#0A0A0A',
+                      color: active ? style.color : '#555',
+                      border: `1px solid ${active ? style.border : '#181818'}`,
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    {cat}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
-          {/* Inputs */}
+          {/* Headline Title */}
           <div>
-            <span style={{ display: 'block', fontSize: '9px', color: '#666', marginBottom: '4px', letterSpacing: '1px' }}>TITLE</span>
+            <label style={labelStyle}>Title</label>
             <input
               type="text"
-              placeholder="Notification headline..."
+              placeholder="Headline title..."
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              style={{ width: '100%', padding: '8px', background: '#000', border: '1px solid #262626', color: '#FFF', fontSize: '11px', outline: 'none', boxSizing: 'border-box' }}
+              style={fieldStyle}
             />
           </div>
 
+          {/* Message Body */}
           <div>
-            <span style={{ display: 'block', fontSize: '9px', color: '#666', marginBottom: '4px', letterSpacing: '1px' }}>MESSAGE</span>
+            <label style={labelStyle}>Message</label>
             <textarea
               rows={3}
-              placeholder="Message body..."
+              placeholder="Enter details body text..."
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              style={{ width: '100%', padding: '8px', background: '#000', border: '1px solid #262626', color: '#FFF', fontSize: '11px', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }}
+              style={{ ...fieldStyle, resize: 'vertical' }}
             />
           </div>
 
+          {/* Action Link */}
           <div>
-            <span style={{ display: 'block', fontSize: '9px', color: '#666', marginBottom: '4px', letterSpacing: '1px' }}>ACTION URL (OPTIONAL)</span>
+            <label style={labelStyle}>Action Link (Optional)</label>
             <input
               type="url"
               placeholder="https://..."
               value={link}
               onChange={(e) => setLink(e.target.value)}
-              style={{ width: '100%', padding: '8px', background: '#000', border: '1px solid #262626', color: '#FFF', fontSize: '11px', outline: 'none', boxSizing: 'border-box' }}
+              style={fieldStyle}
             />
           </div>
 
+          {/* Submit Button */}
           <button
             type="submit"
             disabled={loading}
             style={{
-              padding: '10px',
-              background: '#FFF',
-              color: '#000',
+              marginTop: '4px',
+              padding: '12px',
+              background: '#FFFFFF',
+              color: '#000000',
               fontWeight: '900',
-              fontSize: '10px',
-              letterSpacing: '2px',
+              fontSize: '11px',
+              letterSpacing: '1.5px',
               border: 'none',
+              borderRadius: '4px',
               cursor: loading ? 'not-allowed' : 'pointer',
-              opacity: loading ? 0.5 : 1,
-              marginTop: '4px'
+              opacity: loading ? 0.6 : 1,
+              transition: 'all 0.15s ease'
             }}
           >
-            {loading ? 'SENDING...' : 'DISPATCH'}
+            {loading ? 'DISPATCHING...' : 'DISPATCH NOTIFICATION'}
           </button>
         </form>
 
-        {/* Live Preview Panel */}
-        <div style={{ background: '#070707', border: '1px solid #181818', padding: '16px', display: 'flex', flexDirection: 'column' }}>
-          <span style={{ fontSize: '9px', color: '#555', letterSpacing: '1px', marginBottom: '12px', fontWeight: 'bold' }}>LIVE PREVIEW</span>
+        {/* Live Preview Card (Device Push Notification Look) */}
+        <div style={{
+          background: '#050505',
+          border: '1px solid #141414',
+          borderRadius: '6px',
+          padding: '20px',
+          display: 'flex',
+          flexDirection: 'column'
+        }}>
+          <label style={labelStyle}>Live Preview</label>
           
-          <div style={{ background: '#000', border: '1px solid #222', padding: '12px', borderRadius: '2px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'between' }}>
+          <div style={{
+            background: '#0A0A0A',
+            border: '1px solid #1C1C1C',
+            borderRadius: '6px',
+            padding: '14px 16px',
+            marginTop: '4px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+            display: 'flex',
+            flexDirection: 'column',
+            justify: 'space-between',
+            minHeight: '140px'
+          }}>
             <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                <span style={{ fontSize: '8px', padding: '2px 4px', fontWeight: 'bold', ...getBadgeStyle(type) }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                <span style={{
+                  fontSize: '8px',
+                  fontWeight: '800',
+                  padding: '3px 7px',
+                  borderRadius: '3px',
+                  letterSpacing: '0.5px',
+                  color: getTypeStyle(type).color,
+                  background: getTypeStyle(type).bg,
+                  border: `1px solid ${getTypeStyle(type).border}`
+                }}>
                   {type}
                 </span>
-                <span style={{ fontSize: '8px', color: '#444' }}>NOW</span>
-              </div>
-              
-              <div style={{ fontSize: '11px', fontWeight: 'bold', color: title ? '#FFF' : '#444', marginBottom: '4px' }}>
-                {title || 'Headline Title'}
+                <span style={{ fontSize: '9px', color: '#444' }}>JUST NOW</span>
               </div>
 
-              <div style={{ fontSize: '10px', color: message ? '#888' : '#333', lineHeight: '1.3' }}>
-                {message || 'Notification content display area preview...'}
+              <div style={{ fontSize: '12px', fontWeight: 'bold', color: title ? '#FFFFFF' : '#444', marginBottom: '6px' }}>
+                {title || 'Headline Title Placeholder'}
+              </div>
+
+              <div style={{ fontSize: '11px', color: message ? '#999999' : '#333333', lineHeight: '1.4' }}>
+                {message || 'Your notification body text preview will appear here in real-time as you type...'}
               </div>
             </div>
 
             {link && (
-              <div style={{ marginTop: '12px', paddingTop: '8px', borderTop: '1px dashed #1A1A1A', fontSize: '9px', color: '#3B82F6', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
-                LINK ↗
+              <div style={{
+                marginTop: '14px',
+                paddingTop: '8px',
+                borderTop: '1px dashed #1C1C1C',
+                fontSize: '10px',
+                color: '#3B82F6',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                fontWeight: 'bold'
+              }}>
+                <span>ACTION LINK</span>
+                <span>↗</span>
               </div>
             )}
           </div>
@@ -364,40 +464,51 @@ export default function AdminNotifications() {
 
       </div>
 
-      {/* Dispatch History */}
+      {/* Dispatch History Logs */}
       <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-          <span style={{ fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', color: '#666' }}>LOGS</span>
-          <button 
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', padding: '0 2px' }}>
+          <span style={{ fontSize: '10px', fontWeight: '800', letterSpacing: '1px', color: '#666' }}>DISPATCH HISTORY</span>
+          <button
             onClick={fetchSentHistory}
-            style={{ background: 'none', border: 'none', color: '#444', fontSize: '9px', cursor: 'pointer' }}
+            style={{ background: 'none', border: 'none', color: '#555', fontSize: '10px', cursor: 'pointer', fontFamily: 'monospace' }}
           >
             REFRESH
           </button>
         </div>
 
         {fetchingHistory ? (
-          <div style={{ color: '#444', fontSize: '10px' }}>LOADING LOGS...</div>
+          <div style={{ color: '#444', fontSize: '10px', padding: '12px', textAlign: 'center' }}>LOADING RECENT LOGS...</div>
         ) : sentHistory.length === 0 ? (
-          <div style={{ color: '#444', fontSize: '10px' }}>NO RECENT LOGS</div>
+          <div style={{ color: '#444', fontSize: '10px', padding: '12px', textAlign: 'center' }}>NO DISPATCH LOGS FOUND</div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {sentHistory.map((item) => {
-              const b = getBadgeStyle(item.type);
+              const b = getTypeStyle(item.type);
               return (
                 <div
                   key={item.id}
                   style={{
-                    background: '#070707',
+                    background: '#050505',
                     border: '1px solid #141414',
-                    padding: '10px 12px',
+                    borderRadius: '4px',
+                    padding: '12px 14px',
                     display: 'flex',
                     alignItems: 'center',
-                    justify: 'space-between'
+                    justify: 'space-between',
+                    gap: '12px'
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', overflow: 'hidden' }}>
-                    <span style={{ fontSize: '8px', fontWeight: 'bold', padding: '2px 5px', color: b.color, border: b.border, background: b.bg }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', overflow: 'hidden' }}>
+                    <span style={{
+                      fontSize: '8px',
+                      fontWeight: '800',
+                      padding: '2px 6px',
+                      borderRadius: '3px',
+                      color: b.color,
+                      border: `1px solid ${b.border}`,
+                      background: b.bg,
+                      flexShrink: 0
+                    }}>
                       {item.type}
                     </span>
                     <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -406,15 +517,15 @@ export default function AdminNotifications() {
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', shrink: 0 }}>
-                    <span style={{ fontSize: '8px', color: '#444' }}>
-                      {item.target_audience === 'ALL' ? 'ALL' : item.user_id.slice(0, 6)}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
+                    <span style={{ fontSize: '9px', color: '#444', background: '#0A0A0A', padding: '2px 6px', borderRadius: '2px', border: '1px solid #141414' }}>
+                      {item.target_audience === 'ALL' ? 'GLOBAL' : `USER: ${item.user_id.slice(0, 6)}`}
                     </span>
                     <button
                       onClick={() => handleDeleteSent(item.id)}
-                      style={{ background: 'none', border: 'none', color: '#444', fontSize: '9px', cursor: 'pointer' }}
+                      style={{ background: 'none', border: 'none', color: '#555', fontSize: '10px', cursor: 'pointer', fontWeight: 'bold' }}
                       onMouseEnter={(e) => (e.currentTarget.style.color = '#EF4444')}
-                      onMouseLeave={(e) => (e.currentTarget.style.color = '#444')}
+                      onMouseLeave={(e) => (e.currentTarget.style.color = '#555')}
                     >
                       DEL
                     </button>
