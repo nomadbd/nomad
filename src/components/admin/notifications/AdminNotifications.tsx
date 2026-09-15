@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
-import { HistoryIcon } from '../../icons';
+import { HistoryIcon } from '../../../icons';
 import NotificationLogs from './NotificationLogs';
 
 interface UserProfile {
