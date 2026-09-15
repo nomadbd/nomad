@@ -39,7 +39,7 @@ export default function ProfileDetailsSheet({
     };
   }, [isOpen, portalMode, profile?.id]);
 
-  // ২. প্রয়োজনীয় ডাটা ফেচিং
+  // ২. ডাটা ফেচিং
   const fetchSummaryData = async () => {
     if (!profile?.id) return;
 
@@ -105,6 +105,7 @@ export default function ProfileDetailsSheet({
     }
   };
 
+  // স্টোর লিংক কপি করার লজিক (site/slug ফরমেট)
   const handleCopyLink = () => {
     if (!ambassadorData?.assigned_slug) return;
     const storeLink = `${window.location.origin}/${ambassadorData.assigned_slug}`;
@@ -163,7 +164,7 @@ export default function ProfileDetailsSheet({
           boxSizing: 'border-box'
         }}
       >
-        {/* ড্র্যাগ ইন্ডিকেটর বার */}
+        {/* ড্র্যাগ বার */}
         <div style={{
           width: '32px',
           height: '4px',
@@ -172,7 +173,7 @@ export default function ProfileDetailsSheet({
           margin: '0 auto'
         }} />
 
-        {/* হেডার (অ্যাভাটার ও নাম) */}
+        {/* হেডার */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
           <div style={{
             width: '48px',
@@ -189,7 +190,8 @@ export default function ProfileDetailsSheet({
             overflow: 'hidden',
             flexShrink: 0
           }}>
-            {avatarUrl ? (
+            {/* কাস্টমারের জন্য Initials এবং অ্যাম্বাসেডরের ক্ষেত্রে ছবি থাকলে ছবি দেখাবে */}
+            {isAmbassadorMode && avatarUrl ? (
               <img src={avatarUrl} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             ) : (
               getInitials(isAmbassadorMode ? (ambassadorData?.display_name || profile?.name) : profile?.name, profile?.email)
@@ -208,7 +210,7 @@ export default function ProfileDetailsSheet({
 
         <div style={{ height: '1px', backgroundColor: '#18181B', width: '100%' }} />
 
-        {/* তথ্যসমূহ - মিনিমাল লেআউট */}
+        {/* তথ্যসমূহ */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {isAmbassadorMode ? (
             <>
