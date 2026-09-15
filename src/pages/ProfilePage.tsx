@@ -466,8 +466,10 @@ export default function ProfilePage() {
         isOpen={isDetailsSheetOpen} 
         onClose={() => setIsDetailsSheetOpen(false)} 
         profile={profile} 
+        ambassadorData={ambassadorData}
         avatarUrl={avatarUrl} 
         getInitials={getInitials} 
+        portalMode={portalMode}
         isAmbassador={isAmbassador} 
       />
 
