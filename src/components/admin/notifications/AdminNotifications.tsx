@@ -1,5 +1,5 @@
- import React, { useState, useEffect } from 'react';
-import { supabase } from ' @/supabaseClient';
+import React, { useState, useEffect } from 'react';
+import { supabase } from '@/supabaseClient';
 import { HistoryIcon } from '@/components/icons';
 import NotificationLogs from './NotificationLogs';
 
@@ -41,7 +41,7 @@ export default function AdminNotifications() {
     const { data } = await supabase
       .from('profiles')
       .select('id, email, name')
-      .or(`email.ilike.%${query}%,name.ilike.%${query}%,id.eq.${query}`)
+      .or(`email.ilike.%\( {query}%,name.ilike.% \){query}%,id.eq.${query}`)
       .limit(5);
 
     if (data) setUserOptions(data);
