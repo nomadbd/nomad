@@ -8,6 +8,8 @@ import ProfileSkeleton from '../components/profile/ProfileSkeleton';
 import ProfileHeader from '../components/profile/ProfileHeader';
 import ProfileSettings from '../components/profile/ProfileSettings';
 import ProfileDetailsSheet from '../components/profile/ProfileDetailsSheet';
+import NotificationsView from '../components/profile/NotificationsView';
+import CommunicationView from '../components/profile/CommunicationView';
 import ImageCropModal from '../components/ui/ImageCropModal';
 import AmbassadorWorkspace from '../components/ambassador/AmbassadorWorkspace';
 import { useAmbassador } from '../hooks/useAmbassador';
@@ -31,8 +33,8 @@ export default function ProfilePage() {
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const [view, setView] = useState<'profile' | 'settings'>(() => {
-    return (localStorage.getItem('currentView') as 'profile' | 'settings') || 'profile';
+  const [view, setView] = useState<'profile' | 'settings' | 'notifications' | 'communication'>(() => {
+    return (localStorage.getItem('currentView') as any) || 'profile';
   });
 
   const [portalMode, setPortalMode] = useState<'customer' | 'ambassador'>(() => {
@@ -71,7 +73,7 @@ export default function ProfilePage() {
   const [cropModalOpen, setCropModalOpen] = useState(false);
   const [selectedImageSrc, setSelectedImageSrc] = useState<string | null>(null);
 
-  const changeView = (newView: 'profile' | 'settings') => {
+  const changeView = (newView: 'profile' | 'settings' | 'notifications' | 'communication') => {
     setView(newView);
     localStorage.setItem('currentView', newView);
   };
@@ -415,7 +417,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div style={{ backgroundColor: '#000', minHeight: '100vh', color: '#fff', padding: '40px 20px', fontFamily: "'Inter', sans-serif", width: '100%', boxSizing: 'border-box', overflowX: 'hidden' }}>
+    <div style={{ backgroundColor: '#000', minHeight: '100vh', color: '#fff', padding: view === 'notifications' || view === 'communication' ? '0' : '40px 20px', fontFamily: "'Inter', sans-serif", width: '100%', boxSizing: 'border-box', overflowX: 'hidden' }}>
       <input 
         type="file" 
         ref={fileInputRef} 
@@ -474,28 +476,17 @@ export default function ProfilePage() {
       />
 
       <div style={{ width: '100%' }}>
-        {view === 'profile' ? (
-          <>
-            <ProfileHeader 
-              profile={profile} 
-              avatarUrl={avatarUrl} 
-              isAmbassador={isAmbassador} 
-              isAmbassadorActive={isAmbassadorActive} 
-              togglePortalMode={togglePortalMode} 
-              getInitials={getInitials} 
-              onChangeView={changeView} 
-              onOpenProfileDetails={() => setIsDetailsSheetOpen(true)}
-            />
-
-            {portalMode === 'ambassador' && isAmbassador ? (
-              <AmbassadorDashboardSection ambassadorData={ambassadorData} profile={profile} />
-            ) : (
-              <div style={{ marginTop: '20px', borderTop: '1px solid #111', paddingTop: '10px' }}>
-                <OrderHistory userId={profile?.id} />
-              </div>
-            )}
-          </>
-        ) : (
+        {view === 'notifications' ? (
+          <NotificationsView 
+            userId={profile?.id} 
+            onBack={() => changeView('profile')} 
+          />
+        ) : view === 'communication' ? (
+          <CommunicationView 
+            userId={profile?.id} 
+            onBack={() => changeView('profile')} 
+          />
+        ) : view === 'settings' ? (
           <ProfileSettings 
             profile={profile} 
             avatarUrl={avatarUrl} 
@@ -528,6 +519,29 @@ export default function ProfilePage() {
             setShowConfirm={setShowConfirm} 
             onChangeView={changeView} 
           />
+        ) : (
+          <>
+            <ProfileHeader 
+              profile={profile} 
+              avatarUrl={avatarUrl} 
+              isAmbassador={isAmbassador} 
+              isAmbassadorActive={isAmbassadorActive} 
+              togglePortalMode={togglePortalMode} 
+              getInitials={getInitials} 
+              onChangeView={changeView} 
+              onOpenProfileDetails={() => setIsDetailsSheetOpen(true)}
+              onOpenNotifications={() => changeView('notifications')}
+              onOpenCommunication={() => changeView('communication')}
+            />
+
+            {portalMode === 'ambassador' && isAmbassador ? (
+              <AmbassadorDashboardSection ambassadorData={ambassadorData} profile={profile} />
+            ) : (
+              <div style={{ marginTop: '20px', borderTop: '1px solid #111', paddingTop: '10px' }}>
+                <OrderHistory userId={profile?.id} />
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
