@@ -37,7 +37,7 @@ export default function AdminNotifications() {
   const [sentHistory, setSentHistory] = useState<SentNotification[]>([]);
   const [fetchingHistory, setFetchingHistory] = useState(true);
 
-  const mutedText = '#888888'; // Notification title এর মতো ইউনিফর্ম লাইট কালার
+  const mutedText = '#888888';
 
   useEffect(() => {
     fetchSentHistory();
@@ -165,7 +165,7 @@ export default function AdminNotifications() {
     background: 'transparent',
     border: 'none',
     borderBottom: '1px solid #222222',
-    padding: '12px 0',
+    padding: '10px 0',
     color: '#FFFFFF',
     fontSize: '13px',
     lineHeight: '1.6',
@@ -177,13 +177,20 @@ export default function AdminNotifications() {
   };
 
   return (
-    <div style={{ maxWidth: '640px', margin: '0 auto', color: '#FFF', fontFamily: 'system-ui, -apple-system, sans-serif', padding: '12px 8px', paddingBottom: '80px' }}>
+    <div style={{ maxWidth: '640px', margin: '0 auto', color: '#FFF', fontFamily: 'system-ui, -apple-system, sans-serif', padding: '12px 8px', paddingBottom: '120px' }}>
       
-      {/* Global placeholder style to guarantee visible light gray placeholders */}
       <style>{`
         input::placeholder, textarea::placeholder {
           color: ${mutedText} !important;
           opacity: 1 !important;
+        }
+        /* কাস্টম মসৃণ স্ক্রলবার */
+        textarea::-webkit-scrollbar {
+          width: 4px;
+        }
+        textarea::-webkit-scrollbar-thumb {
+          background: #333333;
+          border-radius: 2px;
         }
       `}</style>
 
@@ -334,25 +341,12 @@ export default function AdminNotifications() {
           style={underlineInputStyle}
         />
 
-        {/* Message Input with Dynamic Height & Visible Character Counter */}
+        {/* Clamped Textarea with Internal Scroll (Fixes Keyboard Push Issue) */}
         <div>
-          <textarea
-            rows={2}
-            placeholder="Message content..."
-            value={message}
-            onChange={(e) => {
-              setMessage(e.target.value);
-              e.currentTarget.style.height = 'auto';
-              e.currentTarget.style.height = `${e.currentTarget.scrollHeight}px`;
-            }}
-            style={{
-              ...underlineInputStyle,
-              resize: 'none',
-              overflow: 'hidden',
-              minHeight: '60px'
-            }}
-          />
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '4px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+            <span style={{ fontSize: '9px', color: mutedText, fontWeight: '700', letterSpacing: '1.5px' }}>
+              MESSAGE
+            </span>
             <span style={{
               fontSize: '10px',
               fontWeight: '600',
@@ -361,6 +355,26 @@ export default function AdminNotifications() {
               {message.length} chars
             </span>
           </div>
+          <textarea
+            rows={2}
+            placeholder="Message content..."
+            value={message}
+            onChange={(e) => {
+              setMessage(e.target.value);
+              e.currentTarget.style.height = 'auto';
+              // সর্বোচ্চ ১২০ পিক্সেল পর্যন্ত বড় হবে, এরপর ফিক্সড থেকে ভেতরে স্ক্রল হবে
+              const nextHeight = Math.min(e.currentTarget.scrollHeight, 120);
+              e.currentTarget.style.height = `${nextHeight}px`;
+            }}
+            style={{
+              ...underlineInputStyle,
+              resize: 'none',
+              minHeight: '50px',
+              maxHeight: '120px',
+              overflowY: 'auto',
+              paddingTop: '4px'
+            }}
+          />
         </div>
 
         {/* Action Link Input */}
