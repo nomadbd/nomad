@@ -7,7 +7,8 @@ interface ProfileDetailsSheetProps {
   ambassadorData?: any;
   avatarUrl: string | null;
   getInitials: (name?: string, email?: string) => string;
-  portalMode: 'customer' | 'ambassador';
+  portalMode?: 'customer' | 'ambassador';
+  isAmbassador?: boolean;
 }
 
 export default function ProfileDetailsSheet({
@@ -17,7 +18,7 @@ export default function ProfileDetailsSheet({
   ambassadorData,
   avatarUrl,
   getInitials,
-  portalMode
+  portalMode = 'customer'
 }: ProfileDetailsSheetProps) {
   if (!isOpen) return null;
 
@@ -62,7 +63,6 @@ export default function ProfileDetailsSheet({
           overflowY: 'auto'
         }}
       >
-        {/* ড্র্যাগ বার */}
         <div style={{
           width: '36px',
           height: '4px',
@@ -116,11 +116,9 @@ export default function ProfileDetailsSheet({
 
         <div style={{ height: '1px', backgroundColor: '#27272A', width: '100%' }} />
 
-        {/* সুইচ করা মোড অনুযায়ী পৃথক তথ্য দেখাবে */}
+        {/* মোড অনুযায়ী ডায়নামিক ডাটা */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-          
           {isAmbassadorMode ? (
-            /* ================= শুধুমাত্র অ্যাম্বাসেডর মোডের তথ্য ================= */
             <>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                 <span style={{ fontSize: '10px', color: '#71717A', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: '600' }}>
@@ -168,7 +166,6 @@ export default function ProfileDetailsSheet({
               </div>
             </>
           ) : (
-            /* ================= শুধুমাত্র কাস্টমার মোডের তথ্য ================= */
             <>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                 <span style={{ fontSize: '10px', color: '#71717A', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: '600' }}>
@@ -218,7 +215,6 @@ export default function ProfileDetailsSheet({
               )}
             </>
           )}
-
         </div>
 
         <button 
