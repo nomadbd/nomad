@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '@/supabaseClient';
-import { HistoryIcon } from '@components/icons';
+import { supabase } from '../../../supabaseClient';
+import { HistoryIcon } from '../../../components/icons';
 import NotificationLogs from './NotificationLogs';
 
 interface UserProfile {
@@ -142,7 +142,6 @@ export default function AdminNotifications() {
     transition: 'border-color 0.2s ease',
   };
 
-  // যদি ইউজার 'logs' ভিউ সিলেক্ট করে, তবে NotificationLogs ফাইলটি রেন্ডার হবে
   if (view === 'logs') {
     return <NotificationLogs onBack={() => setView('create')} />;
   }
@@ -164,7 +163,7 @@ export default function AdminNotifications() {
         }
       `}</style>
 
-      {/* Top Header with HistoryIcon Action */}
+      {/* Top Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <span style={{ fontSize: '11px', fontWeight: '800', letterSpacing: '1.5px', color: '#FFF' }}>DISPATCHER</span>
 
@@ -191,7 +190,7 @@ export default function AdminNotifications() {
         </button>
       </div>
 
-      {/* Status Alert Banner */}
+      {/* Status Banner */}
       {statusMsg && (
         <div style={{
           padding: '10px 0',
@@ -247,7 +246,7 @@ export default function AdminNotifications() {
       {/* Form Container */}
       <form onSubmit={handleSend} style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
 
-        {/* User Search Input */}
+        {/* User Search */}
         {targetType === 'specific' && (
           <div style={{ position: 'relative' }}>
             <input
@@ -333,7 +332,7 @@ export default function AdminNotifications() {
           style={underlineInputStyle}
         />
 
-        {/* Message Input with Clamped Internal Scroll */}
+        {/* Message Input */}
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
             <span style={{ fontSize: '9px', color: mutedText, fontWeight: '700', letterSpacing: '1.5px' }}>
