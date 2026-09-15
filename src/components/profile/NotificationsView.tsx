@@ -7,7 +7,7 @@ interface NotificationItem {
   user_id: string;
   title: string;
   message: string;
-  type: 'INFO' | 'ORDER' | 'PROMO' | 'SYSTEM' | 'ALERT';
+  type: 'INFO' | 'PROMO' | 'SYSTEM' | 'ALERT';
   link?: string | null;
   target_audience: string;
   is_read: boolean;
@@ -42,15 +42,15 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
     return past.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
-  // টাইপ অনুযায়ী ব্যাজ ও কালার
+  // নিরপেক্ষ টাইপ ব্যাজ
   const getTypeBadge = (type: string) => {
     switch (type) {
-      case 'ORDER':
-        return { label: 'ORDER', bg: '#0F172A', color: '#38BDF8', border: '#1E293B' };
       case 'PROMO':
         return { label: 'OFFER', bg: '#1C102B', color: '#C084FC', border: '#3B0764' };
       case 'ALERT':
         return { label: 'ALERT', bg: '#2A0808', color: '#F87171', border: '#450A0A' };
+      case 'SYSTEM':
+        return { label: 'SYSTEM', bg: '#0F172A', color: '#38BDF8', border: '#1E293B' };
       default:
         return { label: 'INFO', bg: '#18181B', color: '#A1A1AA', border: '#27272A' };
     }
@@ -97,7 +97,6 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
     setLoading(false);
   };
 
-  // একক নোটিফিকেশন Read চিহ্নিত করা
   const markAsRead = async (id: string, currentStatus: boolean) => {
     if (currentStatus) return;
 
@@ -111,7 +110,6 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
       .eq('id', id);
   };
 
-  // সব নোটিফিকেশন একসাথে Read চিহ্নিত করা
   const markAllAsRead = async () => {
     const unreadIds = notifications.filter(n => !n.is_read).map(n => n.id);
     if (unreadIds.length === 0) return;
@@ -125,7 +123,6 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
       .eq('is_read', false);
   };
 
-  // নোটিফিকেশন মুছে ফেলা
   const deleteNotification = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
     setNotifications(prev => prev.filter(item => item.id !== id));
@@ -136,19 +133,21 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
       .eq('id', id);
   };
 
+  const unreadCount = notifications.filter(n => !n.is_read).length;
+  
   const filteredNotifications = notifications.filter(item => {
     if (filter === 'unread') return !item.is_read;
     return true;
   });
 
-  const unreadCount = notifications.filter(n => !n.is_read).length;
-
   return (
-    <div style={{ maxWidth: '650px', margin: '0 auto', padding: '16px 12px', color: '#FFF' }}>
+    <div style={{ maxWidth: '600px', margin: '0 auto', padding: '16px 12px', color: '#FFF' }}>
       
-      {/* ১. হেডার ও ব্যাক বাটন */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+      {/* ১. হেডার ও ডানের একশন বাটন (ইনলাইন ফিল্টার সহ) */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
+        
+        {/* বামপাশে: ব্যাক বাটন ও সাধারণ টাইটেল */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
           <button
             onClick={onBack}
             style={{
@@ -170,98 +169,72 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
             <BackIcon width={18} height={18} stroke="#FFFFFF" />
           </button>
 
-          <div>
-            <h2 style={{ fontSize: '18px', fontWeight: '600', margin: 0, letterSpacing: '0.2px', color: '#FFFFFF' }}>
-              Notifications
-            </h2>
-            <span style={{ fontSize: '12px', color: '#71717A', fontWeight: '400' }}>
-              {unreadCount > 0 ? `${unreadCount} unread notification${unreadCount > 1 ? 's' : ''}` : 'All caught up'}
-            </span>
-          </div>
+          <h2 style={{ fontSize: '18px', fontWeight: '600', margin: 0, letterSpacing: '0.2px', color: '#FFFFFF' }}>
+            Notifications
+          </h2>
         </div>
 
-        {unreadCount > 0 && (
+        {/* ডানপাশে: Mark Read এবং Unread ফিল্টার */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {unreadCount > 0 && (
+            <button
+              onClick={markAllAsRead}
+              title="Mark all as read"
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: '#A1A1AA',
+                fontSize: '12px',
+                fontWeight: '500',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                padding: '4px 8px'
+              }}
+            >
+              <CheckIcon width={13} height={13} stroke="#A1A1AA" />
+              <span>Read all</span>
+            </button>
+          )}
+
           <button
-            onClick={markAllAsRead}
+            onClick={() => setFilter(prev => prev === 'unread' ? 'all' : 'unread')}
             style={{
-              background: 'rgba(255, 255, 255, 0.05)',
-              border: '1px solid #27272A',
+              padding: '6px 14px',
               borderRadius: '20px',
-              padding: '6px 12px',
-              color: '#A1A1AA',
               fontSize: '12px',
               fontWeight: '500',
+              border: filter === 'unread' ? '1px solid #FFFFFF' : '1px solid #27272A',
+              background: filter === 'unread' ? 'rgba(255, 255, 255, 0.12)' : '#121212',
+              color: filter === 'unread' ? '#FFFFFF' : '#71717A',
               cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
               transition: 'all 0.2s ease'
             }}
           >
-            <CheckIcon width={13} height={13} stroke="#A1A1AA" />
-            <span>Mark all read</span>
+            Unread {unreadCount > 0 ? `(${unreadCount})` : ''}
           </button>
-        )}
+        </div>
       </div>
 
-      {/* ২. ফিল্টার ট্যাব */}
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', borderBottom: '1px solid #18181B', paddingBottom: '14px' }}>
-        <button
-          onClick={() => setFilter('all')}
-          style={{
-            padding: '7px 16px',
-            borderRadius: '20px',
-            fontSize: '12px',
-            fontWeight: '500',
-            border: filter === 'all' ? '1px solid #FFFFFF' : '1px solid #27272A',
-            background: filter === 'all' ? '#FFFFFF' : '#121212',
-            color: filter === 'all' ? '#000000' : '#A1A1AA',
-            cursor: 'pointer',
-            transition: 'all 0.2s ease'
-          }}
-        >
-          All ({notifications.length})
-        </button>
-        
-        <button
-          onClick={() => setFilter('unread')}
-          style={{
-            padding: '7px 16px',
-            borderRadius: '20px',
-            fontSize: '12px',
-            fontWeight: '500',
-            border: filter === 'unread' ? '1px solid #FFFFFF' : '1px solid #27272A',
-            background: filter === 'unread' ? '#FFFFFF' : '#121212',
-            color: filter === 'unread' ? '#000000' : '#A1A1AA',
-            cursor: 'pointer',
-            transition: 'all 0.2s ease'
-          }}
-        >
-          Unread ({unreadCount})
-        </button>
-      </div>
-
-      {/* ৩. নোটিফিকেশন কন্টেন্ট / লিস্ট */}
+      {/* ২. নোটিফিকেশন লিস্ট / নিরিবিলি খালি অবস্থা */}
       {loading ? (
         <div style={{ textAlign: 'center', padding: '60px 0', color: '#71717A', fontSize: '13px' }}>
-          Loading notifications...
+          Loading updates...
         </div>
       ) : filteredNotifications.length === 0 ? (
-        /* প্রিমিয়াম Empty State */
+        /* ফ্লোটিং নিউট্রাল Empty State */
         <div style={{ 
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: '60px 20px', 
-          background: '#09090B', 
-          borderRadius: '16px', 
-          border: '1px solid #18181B',
+          padding: '80px 20px', 
           textAlign: 'center' 
         }}>
           <div style={{
-            width: '56px',
-            height: '56px',
+            width: '52px',
+            height: '52px',
             borderRadius: '50%',
             backgroundColor: '#121212',
             border: '1px solid #27272A',
@@ -270,15 +243,15 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
             justifyContent: 'center',
             marginBottom: '16px'
           }}>
-            <NotificationIcon width={24} height={24} stroke="#A1A1AA" />
+            <NotificationIcon width={22} height={22} stroke="#52525B" />
           </div>
           
-          <h3 style={{ margin: '0 0 6px 0', fontSize: '15px', color: '#FFFFFF', fontWeight: '600' }}>
-            No notifications found
+          <h3 style={{ margin: '0 0 6px 0', fontSize: '15px', color: '#FFFFFF', fontWeight: '500', letterSpacing: '0.2px' }}>
+            No Notifications
           </h3>
           
-          <p style={{ margin: 0, fontSize: '13px', color: '#71717A', maxWidth: '280px', lineHeight: '1.4' }}>
-            You're all up to date. We'll notify you when something comes up!
+          <p style={{ margin: 0, fontSize: '12px', color: '#71717A', maxWidth: '270px', lineHeight: '1.5' }}>
+            Important announcements and updates will appear here when available.
           </p>
         </div>
       ) : (
@@ -301,7 +274,6 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
                   transition: 'all 0.2s ease'
                 }}
               >
-                {/* Unread নীল ডট */}
                 {!item.is_read && (
                   <span
                     style={{
@@ -337,28 +309,25 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
                     </span>
                   </div>
 
-                  {/* ডিলিট বাটন (CloseIcon ব্যবহার করা হয়েছে) */}
                   <button
                     onClick={(e) => deleteNotification(e, item.id)}
-                    title="Delete notification"
+                    title="Delete"
                     style={{
                       background: 'transparent',
                       border: 'none',
                       color: '#52525B',
                       cursor: 'pointer',
                       padding: '4px',
-                      borderRadius: '4px',
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'center',
-                      transition: 'color 0.2s ease'
+                      justifyContent: 'center'
                     }}
                   >
                     <CloseIcon width={14} height={14} stroke="#71717A" />
                   </button>
                 </div>
 
-                <h3 style={{ margin: '0 0 5px 0', fontSize: '14px', fontWeight: '600', color: '#FFFFFF', letterSpacing: '0.1px' }}>
+                <h3 style={{ margin: '0 0 4px 0', fontSize: '14px', fontWeight: '600', color: '#FFFFFF' }}>
                   {item.title}
                 </h3>
                 
