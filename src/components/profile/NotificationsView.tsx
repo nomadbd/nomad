@@ -52,11 +52,10 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
   const [expandedId, setExpandedId] = useState<string | null>(null);
-
-  // অ্যান্ড্রয়েড ফোনের স্ক্রিনে এরর ও ডাটা দেখানোর রাজ্য (Debug State)
   const [debugLog, setDebugLog] = useState<string>('লোডিং শুরু হচ্ছে...');
 
   const getRelativeTime = (dateString: string) => {
+    if (!dateString) return 'Recently';
     const now = new Date();
     const past = new Date(dateString);
     const diffInSeconds = Math.floor((now.getTime() - past.getTime()) / 1000);
@@ -88,44 +87,42 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
 
   const fetchNotifications = async (isSilent = false) => {
     if (!isSilent) setLoading(true);
-
-    let logText = `১. User ID: "${userId || 'ফাঁকা/Undefined'}"\n`;
+    let logText = `১. User ID: "${userId}"\n`;
 
     try {
       if (!userId) {
-        logText += '❌ ERROR: userId ফাঁকা আসছে! (প্যারেন্ট কম্পোনেন্ট থেকে ID দেওয়া হয় নি)';
+        logText += '❌ ERROR: userId পাওয়া যায়নি!';
         setDebugLog(logText);
         setLoading(false);
         return;
       }
 
+      // notification_recipients থেকে created_at বাদ দিয়ে notifications থেকে আনা হচ্ছে
       const { data, error } = await supabase
         .from('notification_recipients')
         .select(`
           id,
           is_read,
-          created_at,
           notifications!inner (
             id,
             title,
             message,
             type,
             link,
-            target_audience
+            target_audience,
+            created_at
           )
         `)
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
+        .eq('user_id', userId);
 
       if (error) {
-        logText += `❌ Supabase Error: ${error.message}\n(Code: ${error.code || 'N/A'})`;
+        logText += `❌ Supabase Error: ${error.message}`;
         setDebugLog(logText);
         setNotifications([]);
         return;
       }
 
-      logText += `✅ Query Success! ডাটা সংখ্যা: ${data?.length || 0}\n`;
-      logText += `কাঁচা ডাটা: ${JSON.stringify(data)}`;
+      logText += `✅ ডাটা সফলভাবে পাওয়া গেছে! সংখ্যা: ${data?.length || 0}`;
       setDebugLog(logText);
 
       if (data) {
@@ -142,15 +139,16 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
               link: notif.link,
               target_audience: notif.target_audience,
               is_read: item.is_read,
-              created_at: item.created_at,
+              created_at: notif.created_at || new Date().toISOString(),
             };
           })
-          .filter((item): item is NotificationItem => item !== null);
+          .filter((item): item is NotificationItem => item !== null)
+          .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
         setNotifications(formatted);
       }
     } catch (err: any) {
-      logText += `❌ Catch Exception: ${err?.message || err}`;
+      logText += `❌ Catch Error: ${err?.message || err}`;
       setDebugLog(logText);
     } finally {
       if (!isSilent) setLoading(false);
@@ -158,11 +156,7 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
   };
 
   useEffect(() => {
-    if (!userId) {
-      setDebugLog('❌ useEffect Warning: userId পাওয়া যায়নি!');
-      setLoading(false);
-      return;
-    }
+    if (!userId) return;
 
     fetchNotifications(false);
 
@@ -317,18 +311,18 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
       }}>
         {/* অন-স্ক্রিন ডিবাগ ইনফরমেশন বক্স */}
         <div style={{
-          backgroundColor: '#1E0A0A',
-          border: '1px solid #EF4444',
+          backgroundColor: '#0F1E0F',
+          border: '1px solid #22C55E',
           borderRadius: '8px',
           padding: '12px',
           marginBottom: '16px',
           fontSize: '11px',
           fontFamily: 'monospace',
-          color: '#FCA5A5',
+          color: '#86EFAC',
           whiteSpace: 'pre-wrap',
           wordBreak: 'break-all'
         }}>
-          <strong style={{ color: '#F87171', display: 'block', marginBottom: '4px' }}>[SCREEN DEBUGGER]</strong>
+          <strong style={{ color: '#4ADE80', display: 'block', marginBottom: '4px' }}>[STATUS DEBUGGER]</strong>
           {debugLog}
         </div>
 
