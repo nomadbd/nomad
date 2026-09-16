@@ -53,6 +53,9 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
+  // অ্যান্ড্রয়েড ফোনের স্ক্রিনে এরর ও ডাটা দেখানোর রাজ্য (Debug State)
+  const [debugLog, setDebugLog] = useState<string>('লোডিং শুরু হচ্ছে...');
+
   const getRelativeTime = (dateString: string) => {
     const now = new Date();
     const past = new Date(dateString);
@@ -86,8 +89,12 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
   const fetchNotifications = async (isSilent = false) => {
     if (!isSilent) setLoading(true);
 
+    let logText = `১. User ID: "${userId || 'ফাঁকা/Undefined'}"\n`;
+
     try {
       if (!userId) {
+        logText += '❌ ERROR: userId ফাঁকা আসছে! (প্যারেন্ট কম্পোনেন্ট থেকে ID দেওয়া হয় নি)';
+        setDebugLog(logText);
         setLoading(false);
         return;
       }
@@ -111,10 +118,15 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Fetch error:', error.message);
+        logText += `❌ Supabase Error: ${error.message}\n(Code: ${error.code || 'N/A'})`;
+        setDebugLog(logText);
         setNotifications([]);
         return;
       }
+
+      logText += `✅ Query Success! ডাটা সংখ্যা: ${data?.length || 0}\n`;
+      logText += `কাঁচা ডাটা: ${JSON.stringify(data)}`;
+      setDebugLog(logText);
 
       if (data) {
         const formatted: NotificationItem[] = data
@@ -137,15 +149,20 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
 
         setNotifications(formatted);
       }
-    } catch (err) {
-      console.error('Fetch error:', err);
+    } catch (err: any) {
+      logText += `❌ Catch Exception: ${err?.message || err}`;
+      setDebugLog(logText);
     } finally {
       if (!isSilent) setLoading(false);
     }
   };
 
   useEffect(() => {
-    if (!userId) return;
+    if (!userId) {
+      setDebugLog('❌ useEffect Warning: userId পাওয়া যায়নি!');
+      setLoading(false);
+      return;
+    }
 
     fetchNotifications(false);
 
@@ -298,6 +315,23 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
         padding: '16px 12px 32px 12px',
         WebkitOverflowScrolling: 'touch'
       }}>
+        {/* অন-স্ক্রিন ডিবাগ ইনফরমেশন বক্স */}
+        <div style={{
+          backgroundColor: '#1E0A0A',
+          border: '1px solid #EF4444',
+          borderRadius: '8px',
+          padding: '12px',
+          marginBottom: '16px',
+          fontSize: '11px',
+          fontFamily: 'monospace',
+          color: '#FCA5A5',
+          whiteSpace: 'pre-wrap',
+          wordBreak: 'break-all'
+        }}>
+          <strong style={{ color: '#F87171', display: 'block', marginBottom: '4px' }}>[SCREEN DEBUGGER]</strong>
+          {debugLog}
+        </div>
+
         {unreadCount > 0 && filter === 'all' && (
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '12px', paddingRight: '4px' }}>
             <button
