@@ -129,7 +129,7 @@ export default function AdminNotifications() {
     try {
       const isAllUsersSelected = allUsers.length > 0 && selectedUserIds.length === allUsers.length;
 
-      // ১.notifications টেবিলে মূল নোটিফিকেশন সেভ
+      // ১. notifications টেবিলে মূল নোটিফিকেশন সেভ
       const { data: notification, error: notifError } = await supabase
         .from('notifications')
         .insert([
@@ -313,7 +313,7 @@ export default function AdminNotifications() {
 
         {/* CATEGORY SELECTOR */}
         <div>
-          <span style={{ display: 'block', fontSize: '9px', color mutedText, fontWeight: '700', letterSpacing: '1.5px', marginBottom: '8px' }}>
+          <span style={{ display: 'block', fontSize: '9px', color: mutedText, fontWeight: '700', letterSpacing: '1.5px', marginBottom: '8px' }}>
             CATEGORY
           </span>
           <div style={{ display: 'flex', gap: '6px' }}>
