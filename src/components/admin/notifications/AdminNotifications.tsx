@@ -45,7 +45,6 @@ export default function AdminNotifications() {
     setLoadingUsers(true);
     setFetchError(null);
     try {
-      // Corrected select query - only requesting existing columns
       const { data, error } = await supabase
         .from('profiles')
         .select('id, email, name, role');
@@ -200,16 +199,6 @@ export default function AdminNotifications() {
     return <NotificationLogs onBack={() => setView('create')} />;
   }
 
-  const getRecipientSummaryText = () => {
-    if (selectedUserIds.length === 0) return 'No recipients selected';
-    if (allUsers.length > 0 && selectedUserIds.length === allUsers.length) return 'All Users selected';
-    if (selectedUserIds.length === 1) {
-      const u = allUsers.find((x) => x.id === selectedUserIds[0]);
-      return u ? `1 User (${u.name || u.email || 'Selected'})` : '1 User selected';
-    }
-    return `${selectedUserIds.length} Users selected`;
-  };
-
   return (
     <div style={{ maxWidth: '640px', margin: '0 auto', color: '#FFF', fontFamily: 'system-ui, -apple-system, sans-serif', padding: '12px 8px', paddingBottom: '120px' }}>
 
@@ -272,52 +261,132 @@ export default function AdminNotifications() {
       {/* Main Form */}
       <form onSubmit={handleSend} style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
 
-        {/* RECIPIENT SELECTOR BAR */}
+        {/* RECIPIENT SELECTOR BOX WITH SCROLLABLE CHIPS */}
         <div>
           <span style={{ display: 'block', fontSize: '9px', color: mutedText, fontWeight: '700', letterSpacing: '1.5px', marginBottom: '8px' }}>
             RECIPIENTS
           </span>
 
           <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
             background: '#0B0B0B',
             border: '1px solid #222222',
             borderRadius: '6px',
-            padding: '10px 14px'
+            padding: '12px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '10px'
           }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-              <span style={{ fontSize: '13px', fontWeight: '600', color: selectedUserIds.length > 0 ? '#FFF' : mutedText }}>
-                {getRecipientSummaryText()}
+            {/* Action Bar Header inside Recipient Box */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '11px', color: selectedUserIds.length > 0 ? '#FFF' : mutedText, fontWeight: '600' }}>
+                {selectedUserIds.length === 0 
+                  ? 'No recipients selected' 
+                  : `${selectedUserIds.length} user(s) selected`}
               </span>
-              <span style={{ fontSize: '10px', color: mutedText }}>
-                {selectedUserIds.length > 0 ? 'Click + to modify selection' : 'Click + to select from list'}
-              </span>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                {selectedUserIds.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedUserIds([])}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#EF4444',
+                      fontSize: '10px',
+                      fontWeight: '700',
+                      cursor: 'pointer',
+                      padding: 0
+                    }}
+                  >
+                    CLEAR ALL
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(true)}
+                  style={{
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '50%',
+                    background: '#181818',
+                    border: '1px solid #333',
+                    color: '#FFF',
+                    fontSize: '18px',
+                    fontWeight: '400',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    lineHeight: 1
+                  }}
+                  title="Add / Manage Recipients"
+                >
+                  +
+                </button>
+              </div>
             </div>
 
-            <button
-              type="button"
-              onClick={() => setIsModalOpen(true)}
-              style={{
-                width: '36px',
-                height: '36px',
-                borderRadius: '50%',
-                background: '#181818',
-                border: '1px solid #333',
-                color: '#FFF',
-                fontSize: '20px',
-                fontWeight: '400',
+            {/* Selected Users Chips Area */}
+            {selectedUserIds.length > 0 ? (
+              <div className="sheet-scroll" style={{
+                maxHeight: '130px',
+                overflowY: 'auto',
                 display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                lineHeight: 1
-              }}
-              title="Add / Manage Recipients"
-            >
-              +
-            </button>
+                flexWrap: 'wrap',
+                gap: '6px',
+                paddingRight: '4px'
+              }}>
+                {selectedUserIds.map((id) => {
+                  const u = allUsers.find((x) => x.id === id);
+                  const displayName = u?.name || u?.email || id;
+
+                  return (
+                    <div
+                      key={id}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        background: '#181818',
+                        border: '1px solid #2B2B2B',
+                        borderRadius: '16px',
+                        padding: '4px 10px',
+                        fontSize: '11px',
+                        color: '#E0E0E0'
+                      }}
+                    >
+                      <span style={{ maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {displayName}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => toggleSelectUser(id)}
+                        title="Remove recipient"
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: '#888888',
+                          fontSize: '12px',
+                          cursor: 'pointer',
+                          padding: '0 2px',
+                          lineHeight: 1,
+                          display: 'flex',
+                          alignItems: 'center'
+                        }}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <span style={{ fontSize: '11px', color: mutedText, fontStyle: 'italic' }}>
+                Click + button to choose users from database
+              </span>
+            )}
           </div>
         </div>
 
