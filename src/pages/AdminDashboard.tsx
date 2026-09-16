@@ -211,64 +211,65 @@ const AdminDashboard: React.FC = () => {
       overflowX: 'hidden',
       position: 'relative'
     }}>
-      <div className={`${styles.nomadLayout} ${menuOpen ? styles.menuLocked : ''}`}>
-        <aside className={`${styles.nomadSidebar} ${menuOpen ? styles.menuOpen : ''} ${!isHeaderVisible ? styles.headerHidden : ''}`}>
-          <div className={styles.sidebarStack}>
-            {!isChatOpen && (
-              <div className={styles.nomadHeader} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: '100%' }}>
-                <a href="/" className={styles.nomadBrandLink} title="Go to Store Homepage">
-                  <h1 style={{ fontSize: '18px', fontWeight: '900', letterSpacing: '4px', margin: 0, color: '#fff' }}>
-                    NOMAD
-                  </h1>
-                </a>
+      {/* মূল হেডার: এখন সাইডবার ও মেইন কন্টেন্টের উপরে ফুল-উইডথ হিসেবে থাকবে */}
+      {!isChatOpen && (
+        <header className={`${styles.nomadHeader} ${!isHeaderVisible ? styles.headerHidden : ''}`}>
+          <a href="/" className={styles.nomadBrandLink} title="Go to Store Homepage">
+            <h1 style={{ fontSize: '18px', fontWeight: '900', letterSpacing: '4px', margin: 0, color: '#fff' }}>
+              NOMAD
+            </h1>
+          </a>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  {(activeTab === 'products' || activeTab === 'ambassadors') && (
-                    <button
-                      className={`${styles.nomadActionBtn} ${isAddOpen ? styles.nomadActionBtnActive : ''}`}
-                      onClick={() => setIsAddOpen(!isAddOpen)}
-                      aria-label={activeTab === 'products' ? 'Add Product' : 'Add Ambassador'}
-                      title={activeTab === 'products' ? 'Add Product' : 'Add Ambassador'}
-                    >
-                      <PlusIcon width={18} height={18} />
-                    </button>
-                  )}
-
-                  {showSearchFilter && activeTab !== 'overview' && (
-                    <button
-                      className={`${styles.nomadActionBtn} ${isSearchOpen ? styles.nomadActionBtnActive : ''}`}
-                      onClick={() => setIsSearchOpen(!isSearchOpen)}
-                      aria-label="Search"
-                      title="Search"
-                    >
-                      <SearchIcon width={18} height={18} />
-                    </button>
-                  )}
-
-                  {showSearchFilter && (
-                    <button
-                      className={`${styles.nomadActionBtn} ${isFilterOpen ? styles.nomadActionBtnActive : ''}`}
-                      onClick={() => setIsFilterOpen(!isFilterOpen)}
-                      aria-label="Filter"
-                      title="Toggle Filter Panel"
-                    >
-                      <FilterIcon width={18} height={18} />
-                    </button>
-                  )}
-
-                  <button
-                    className={`${styles.nomadMenuToggle} ${styles.nomadMenuToggleBtn} ${menuOpen ? styles.nomadMenuToggleBtnActive : ''}`}
-                    onClick={toggleMenu}
-                    aria-label="Toggle Menu"
-                    aria-expanded={menuOpen}
-                    title="Toggle Navigation"
-                  >
-                    {menuOpen ? <CloseIcon width={18} height={18} /> : <MenuIcon width={20} height={20} />}
-                  </button>
-                </div>
-              </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            {(activeTab === 'products' || activeTab === 'ambassadors') && (
+              <button
+                className={`${styles.nomadActionBtn} ${isAddOpen ? styles.nomadActionBtnActive : ''}`}
+                onClick={() => setIsAddOpen(!isAddOpen)}
+                aria-label={activeTab === 'products' ? 'Add Product' : 'Add Ambassador'}
+                title={activeTab === 'products' ? 'Add Product' : 'Add Ambassador'}
+              >
+                <PlusIcon width={18} height={18} />
+              </button>
             )}
 
+            {showSearchFilter && activeTab !== 'overview' && (
+              <button
+                className={`${styles.nomadActionBtn} ${isSearchOpen ? styles.nomadActionBtnActive : ''}`}
+                onClick={() => setIsSearchOpen(!isSearchOpen)}
+                aria-label="Search"
+                title="Search"
+              >
+                <SearchIcon width={18} height={18} />
+              </button>
+            )}
+
+            {showSearchFilter && (
+              <button
+                className={`${styles.nomadActionBtn} ${isFilterOpen ? styles.nomadActionBtnActive : ''}`}
+                onClick={() => setIsFilterOpen(!isFilterOpen)}
+                aria-label="Filter"
+                title="Toggle Filter Panel"
+              >
+                <FilterIcon width={18} height={18} />
+              </button>
+            )}
+
+            <button
+              className={`${styles.nomadMenuToggle} ${styles.nomadMenuToggleBtn} ${menuOpen ? styles.nomadMenuToggleBtnActive : ''}`}
+              onClick={toggleMenu}
+              aria-label="Toggle Menu"
+              aria-expanded={menuOpen}
+              title="Toggle Navigation"
+            >
+              {menuOpen ? <CloseIcon width={18} height={18} /> : <MenuIcon width={20} height={20} />}
+            </button>
+          </div>
+        </header>
+      )}
+
+      <div className={`${styles.nomadLayout} ${menuOpen ? styles.menuLocked : ''}`}>
+        <aside className={`${styles.nomadSidebar} ${menuOpen ? styles.menuOpen : ''}`}>
+          <div className={styles.sidebarStack}>
             <nav className={styles.nomadNav} data-nomad-nav>
               <span style={{ fontSize: '9px', color: '#888888', letterSpacing: '2px', marginBottom: '8px', fontWeight: 'bold' }}>
                 MAIN MENU
