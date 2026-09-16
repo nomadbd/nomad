@@ -19,7 +19,6 @@ interface NotificationsViewProps {
   onBack: () => void;
 }
 
-// আপনার ProfileSkeleton-এর আদলে তৈরি নোটিফিকেশন স্কেলিটন
 function NotificationSkeleton() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -35,16 +34,12 @@ function NotificationSkeleton() {
             animation: 'pulse 1.5s infinite ease-in-out'
           }}
         >
-          {/* ব্যাজ ও টাইম স্কেলিটন */}
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
             <div style={{ height: '14px', width: '30%', background: '#333', borderRadius: '4px' }}></div>
             <div style={{ height: '14px', width: '14px', background: '#333', borderRadius: '4px' }}></div>
           </div>
-          {/* টাইটেল স্কেলিটন */}
           <div style={{ height: '18px', width: '65%', background: '#333', marginBottom: '12px', borderRadius: '4px' }}></div>
-          {/* মেসেজ স্কেলিটন লাইন ১ */}
           <div style={{ height: '13px', width: '90%', background: '#333', marginBottom: '8px', borderRadius: '4px' }}></div>
-          {/* মেসেজ স্কেলিটন লাইন ২ */}
           <div style={{ height: '13px', width: '55%', background: '#333', borderRadius: '4px' }}></div>
         </div>
       ))}
@@ -88,23 +83,52 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
     }
   };
 
+  // ডাটা ফেস করার ফাংশন (Silent параметр দিয়ে স্কেলিটন লোডার রোধ করা হয়েছে)
+  const fetchNotifications = async (isSilent = false) => {
+    if (!isSilent) setLoading(true);
+
+    try {
+      // Specific User এবং GLOBAL উভয় নোটিফিকেশনই নিয়ে আসবে
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .or(`user_id.eq.${userId},target_audience.eq.ALL`)
+        .order('created_at', { ascending: false });
+
+      if (!error && data) {
+        setNotifications(data as NotificationItem[]);
+      }
+    } catch (err) {
+      console.error('Fetch error:', err);
+    } finally {
+      if (!isSilent) setLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (!userId) return;
 
-    fetchNotifications();
+    fetchNotifications(false);
 
+    // Global ও Individual উভয় পরিবর্তন লাইভ রিয়েলটাইমে ক্যাচ করবে
     const channel = supabase
-      .channel(`public:notifications:user_id=eq.${userId}`)
+      .channel(`user_notifications_${userId}`)
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
-          table: 'notifications',
-          filter: `user_id=eq.${userId}`
+          table: 'notifications'
         },
-        () => {
-          fetchNotifications();
+        (payload) => {
+          if (payload.eventType === 'UPDATE') {
+            const updated = payload.new as NotificationItem;
+            setNotifications(prev =>
+              prev.map(item => (item.id === updated.id ? { ...item, ...updated } : item))
+            );
+          } else {
+            fetchNotifications(true);
+          }
         }
       )
       .subscribe();
@@ -114,31 +138,23 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
     };
   }, [userId]);
 
-  const fetchNotifications = async () => {
-    setLoading(true);
-    const { data, error } = await supabase
-      .from('notifications')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false });
-
-    if (!error && data) {
-      setNotifications(data as NotificationItem[]);
-    }
-    setLoading(false);
-  };
-
   const markAsRead = async (id: string, currentStatus: boolean) => {
     if (currentStatus) return;
 
+    // UI-তে তাৎক্ষণিক SEEN দেখাবে
     setNotifications(prev =>
       prev.map(item => (item.id === id ? { ...item, is_read: true } : item))
     );
 
-    await supabase
+    // ডাটাবেজে is_read = true আপডেট পাঠাবে
+    const { error } = await supabase
       .from('notifications')
       .update({ is_read: true })
       .eq('id', id);
+
+    if (error) {
+      console.error('Failed to update DB is_read status:', error.message);
+    }
   };
 
   const markAllAsRead = async () => {
@@ -150,8 +166,7 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
     await supabase
       .from('notifications')
       .update({ is_read: true })
-      .eq('user_id', userId)
-      .eq('is_read', false);
+      .in('id', unreadIds);
   };
 
   const deleteNotification = async (e: React.MouseEvent, id: string) => {
@@ -188,7 +203,6 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
       color: '#FFF',
       overflow: 'hidden'
     }}>
-      
       {/* ১. ফিক্সড হেডার */}
       <div style={{ 
         flexShrink: 0,
@@ -202,7 +216,6 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
         justifyContent: 'space-between',
         zIndex: 50
       }}>
-        
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
           <button
             onClick={onBack}
@@ -255,7 +268,6 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
         padding: '16px 12px 32px 12px',
         WebkitOverflowScrolling: 'touch'
       }}>
-
         {unreadCount > 0 && filter === 'all' && (
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '12px', paddingRight: '4px' }}>
             <button
@@ -278,7 +290,7 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
           </div>
         )}
 
-        {/* ৩. লোডিং অবস্থায় স্কেলিটন কম্পোনেন্ট রেন্ডার হবে */}
+        {/* ৩. লোডিং অবস্থায় স্কেলিটন কম্পোনেন্ট */}
         {loading ? (
           <NotificationSkeleton />
         ) : filteredNotifications.length === 0 ? (
@@ -303,11 +315,11 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
             }}>
               <NotificationIcon width={22} height={22} stroke="#52525B" />
             </div>
-            
+
             <h3 style={{ margin: '0 0 6px 0', fontSize: '15px', color: '#FFFFFF', fontWeight: '500', letterSpacing: '0.2px' }}>
               No Notifications
             </h3>
-            
+
             <p style={{ margin: 0, fontSize: '12px', color: '#71717A', maxWidth: '270px', lineHeight: '1.5' }}>
               Important announcements and updates will appear here when available.
             </p>
@@ -317,7 +329,7 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
             {filteredNotifications.map((item) => {
               const badge = getTypeBadge(item.type);
               const isExpanded = expandedId === item.id;
-              
+
               return (
                 <div
                   key={item.id}
@@ -390,7 +402,7 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
                   <h3 style={{ margin: '0 0 6px 0', fontSize: '14px', fontWeight: '600', color: '#FFFFFF', lineHeight: '1.3' }}>
                     {item.title}
                   </h3>
-                  
+
                   <p style={{ 
                     margin: 0, 
                     fontSize: '13px', 
@@ -399,7 +411,7 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
                     overflowWrap: 'break-word',
                     wordBreak: 'break-word',
                     whiteSpace: isExpanded ? 'pre-line' : 'normal',
-                    display: isExpanded ? 'block' : '-webkit-box',
+                    display: isExpanded ? '-webkit-box' : 'block',
                     WebkitLineClamp: isExpanded ? 'unset' : 3,
                     WebkitBoxOrient: 'vertical',
                     overflow: 'hidden',
