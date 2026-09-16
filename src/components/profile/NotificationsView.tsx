@@ -234,7 +234,7 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
       color: '#FFF',
       overflow: 'hidden'
     }}>
-      {/* ১. ফিক্সড হেডার */}
+      {/* ১. ফিক্সড হেডার (ভেতরের বেল আইকন বাদ দেওয়া হয়েছে) */}
       <div style={{ 
         flexShrink: 0,
         backgroundColor: 'rgba(9, 9, 11, 0.95)',
@@ -247,7 +247,7 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
         justifyContent: 'space-between',
         zIndex: 50
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
           <button
             onClick={onBack}
             style={{
@@ -268,40 +268,9 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
             <BackIcon width={18} height={18} stroke="#FFFFFF" />
           </button>
 
-          {/* হেডার টাইটেল এবং রেড ডট/কাউন্ট ব্যাজ সংবলিত বেল আইকন */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
-              <NotificationIcon width={20} height={20} stroke="#FFFFFF" />
-              {unreadCount > 0 && (
-                <span
-                  style={{
-                    position: 'absolute',
-                    top: '-3px',
-                    right: '-4px',
-                    backgroundColor: '#EF4444',
-                    color: '#FFFFFF',
-                    fontSize: '9px',
-                    fontWeight: '700',
-                    borderRadius: '10px',
-                    minWidth: '15px',
-                    height: '15px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: '0 3px',
-                    border: '1.5px solid #000000',
-                    lineHeight: 1
-                  }}
-                >
-                  {unreadCount > 99 ? '99+' : unreadCount}
-                </span>
-              )}
-            </div>
-
-            <h2 style={{ fontSize: '18px', fontWeight: '600', margin: 0, letterSpacing: '0.2px', color: '#FFFFFF' }}>
-              Notifications
-            </h2>
-          </div>
+          <h2 style={{ fontSize: '18px', fontWeight: '600', margin: 0, letterSpacing: '0.2px', color: '#FFFFFF' }}>
+            Notifications
+          </h2>
         </div>
 
         <button
@@ -323,7 +292,7 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
         </button>
       </div>
 
-      {/* ২. স্বাধীনভাবে স্ক্রলযোগ্য নোটিফিকেশন বডি */}
+      {/* ২. স্ক্রলযোগ্য নোটিফিকেশন তালিকা */}
       <div style={{ 
         flex: 1, 
         overflowY: 'auto', 
@@ -352,7 +321,6 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
           </div>
         )}
 
-        {/* ৩. লোডিং অবস্থায় স্কেলিটন কম্পোনেন্ট */}
         {loading ? (
           <NotificationSkeleton />
         ) : filteredNotifications.length === 0 ? (
