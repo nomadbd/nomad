@@ -10,7 +10,7 @@ interface SentNotification {
   type: 'INFO' | 'PROMO' | 'SYSTEM' | 'ALERT';
   link?: string | null;
   target_audience: string;
-  is_read: boolean;
+  is_read: boolean | string | number;
   created_at: string;
 }
 
@@ -27,13 +27,32 @@ export default function NotificationLogs({ onBack }: NotificationLogsProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [editingItem, setEditingItem] = useState<SentNotification | null>(null);
   const [updating, setUpdating] = useState(false);
+  
+  // Custom Toast Message State (Native Alert বিকল্প)
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   const mutedText = '#888888';
+
+  const triggerToast = (message: string, type: 'success' | 'error') => {
+    setToast({ message, type });
+    setTimeout(() => {
+      setToast(null);
+    }, 3500);
+  };
+
+  const checkIsRead = (item: SentNotification): boolean => {
+    const val = item.is_read ?? (item as any).read ?? (item as any).isRead;
+    if (val === true || val === 1) return true;
+    if (typeof val === 'string') {
+      const lower = val.trim().toLowerCase();
+      return lower === 'true' || lower === 't' || lower === '1';
+    }
+    return false;
+  };
 
   useEffect(() => {
     fetchLogs();
 
-    // Realtime Listener: গ্রাহক মেসেজ রিড করলে বা এডমিন সাইড চেঞ্জ করলে লাইভ আপডেট হবে
     const channel = supabase
       .channel('admin_notification_logs')
       .on(
@@ -73,7 +92,7 @@ export default function NotificationLogs({ onBack }: NotificationLogsProps) {
       if (error) throw error;
       if (data) setLogs(data as SentNotification[]);
     } catch (err: any) {
-      console.error('Error fetching notification logs:', err.message);
+      console.error('Error fetching logs:', err.message);
     } finally {
       setLoading(false);
     }
@@ -86,21 +105,22 @@ export default function NotificationLogs({ onBack }: NotificationLogsProps) {
       const { error } = await supabase.from('notifications').delete().eq('id', id);
       if (error) throw error;
       setLogs((prev) => prev.filter((item) => item.id !== id));
+      triggerToast('Log deleted successfully', 'success');
     } catch (err: any) {
-      alert('Delete failed: ' + err.message);
+      triggerToast('Delete failed: ' + err.message, 'error');
     }
   };
 
   const handleSilentUpdate = async () => {
     if (!editingItem) return;
     if (!editingItem.title.trim() || !editingItem.message.trim()) {
-      alert('Title and Message are required.');
+      triggerToast('Title and Message are required.', 'error');
       return;
     }
 
     setUpdating(true);
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('notifications')
         .update({
           title: editingItem.title.trim(),
@@ -108,16 +128,25 @@ export default function NotificationLogs({ onBack }: NotificationLogsProps) {
           type: editingItem.type,
           link: editingItem.link ? editingItem.link.trim() : null
         })
-        .eq('id', editingItem.id);
+        .eq('id', editingItem.id)
+        .select();
 
       if (error) throw error;
 
+      if (!data || data.length === 0) {
+        throw new Error('Update blocked! Check Supabase RLS policies.');
+      }
+
+      const updatedRow = data[0] as SentNotification;
+
       setLogs((prev) =>
-        prev.map((item) => (item.id === editingItem.id ? editingItem : item))
+        prev.map((item) => (item.id === updatedRow.id ? updatedRow : item))
       );
+
+      triggerToast('Notification silently updated live!', 'success');
       setEditingItem(null);
     } catch (err: any) {
-      alert('Silent update failed: ' + err.message);
+      triggerToast(err.message || 'Update failed', 'error');
     } finally {
       setUpdating(false);
     }
@@ -159,7 +188,31 @@ export default function NotificationLogs({ onBack }: NotificationLogsProps) {
   }, [logs, searchQuery, selectedCategory]);
 
   return (
-    <div style={{ maxWidth: '640px', margin: '0 auto', color: '#FFF', fontFamily: 'system-ui, -apple-system, sans-serif', padding: '12px 8px', paddingBottom: '120px' }}>
+    <div style={{ maxWidth: '640px', margin: '0 auto', color: '#FFF', fontFamily: 'system-ui, -apple-system, sans-serif', padding: '12px 8px', paddingBottom: '120px', position: 'relative' }}>
+
+      {/* CUSTOM TOAST NOTIFICATION */}
+      {toast && (
+        <div style={{
+          position: 'fixed',
+          top: '20px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 10000,
+          background: toast.type === 'success' ? '#10B981' : '#EF4444',
+          color: '#FFF',
+          padding: '10px 18px',
+          borderRadius: '20px',
+          fontSize: '12px',
+          fontWeight: '700',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          animation: 'fadeIn 0.2s ease-in-out'
+        }}>
+          {toast.type === 'success' ? '✓' : '✕'} {toast.message}
+        </div>
+      )}
 
       {/* Header with Back Navigation */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', borderBottom: '1px solid #1A1A1A', paddingBottom: '12px' }}>
@@ -173,7 +226,7 @@ export default function NotificationLogs({ onBack }: NotificationLogsProps) {
         <span style={{ fontSize: '10px', color: mutedText, fontWeight: '700', letterSpacing: '1px' }}>LOGS & ANALYTICS</span>
       </div>
 
-      {/* Internal Log Search Bar */}
+      {/* Search Bar */}
       <div style={{ position: 'relative', marginBottom: '16px' }}>
         <input
           type="text"
@@ -194,7 +247,7 @@ export default function NotificationLogs({ onBack }: NotificationLogsProps) {
         />
       </div>
 
-      {/* Category Filter Chips */}
+      {/* Category Chips */}
       <div style={{ display: 'flex', gap: '6px', marginBottom: '20px', overflowX: 'auto', paddingBottom: '4px' }}>
         {['ALL', 'INFO', 'PROMO', 'ALERT', 'SYSTEM'].map((cat) => {
           const active = selectedCategory === cat;
@@ -212,8 +265,7 @@ export default function NotificationLogs({ onBack }: NotificationLogsProps) {
                 background: active ? '#FFFFFF' : '#141414',
                 color: active ? '#000000' : mutedText,
                 cursor: 'pointer',
-                whiteSpace: 'nowrap',
-                transition: 'all 0.2s ease'
+                whiteSpace: 'nowrap'
               }}
             >
               {cat}
@@ -229,124 +281,198 @@ export default function NotificationLogs({ onBack }: NotificationLogsProps) {
         <div style={{ textAlign: 'center', color: mutedText, fontSize: '12px', padding: '40px 0' }}>No logs matched your criteria</div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {filteredLogs.map((item) => (
-            <div
-              key={item.id}
-              style={{
-                background: '#0D0D0D',
-                border: '1px solid #1A1A1A',
-                borderRadius: '8px',
-                padding: '14px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '10px'
-              }}
-            >
-              {/* Item Top Bar */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontSize: '9px', fontWeight: '800', color: getCategoryColor(item.type), letterSpacing: '0.5px' }}>
-                    {item.type}
+          {filteredLogs.map((item) => {
+            const isSeen = checkIsRead(item);
+            return (
+              <div
+                key={item.id}
+                style={{
+                  background: '#0D0D0D',
+                  border: '1px solid #1A1A1A',
+                  borderRadius: '8px',
+                  padding: '14px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '10px'
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '9px', fontWeight: '800', color: getCategoryColor(item.type), letterSpacing: '0.5px' }}>
+                      {item.type}
+                    </span>
+                    <span style={{ fontSize: '9px', color: mutedText }}>• {getRelativeTime(item.created_at)}</span>
+                    <span style={{ fontSize: '9px', color: '#555555' }}>({new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})</span>
+                  </div>
+
+                  <span style={{
+                    fontSize: '9px',
+                    fontWeight: '800',
+                    padding: '3px 8px',
+                    borderRadius: '4px',
+                    background: isSeen ? 'rgba(34, 197, 94, 0.15)' : 'rgba(255, 255, 255, 0.05)',
+                    color: isSeen ? '#4ADE80' : mutedText,
+                    border: `1px solid ${isSeen ? 'rgba(34, 197, 94, 0.3)' : '#222222'}`
+                  }}>
+                    {isSeen ? '✓ SEEN' : 'UNSEEN'}
                   </span>
-                  <span style={{ fontSize: '9px', color: mutedText }}>• {getRelativeTime(item.created_at)}</span>
-                  <span style={{ fontSize: '9px', color: '#555555' }}>({new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})</span>
                 </div>
 
-                {/* Dynamic Seen / Unseen Status Badge */}
-                <span style={{
-                  fontSize: '9px',
-                  fontWeight: '800',
-                  padding: '3px 8px',
-                  borderRadius: '4px',
-                  background: item.is_read ? 'rgba(34, 197, 94, 0.15)' : 'rgba(255, 255, 255, 0.05)',
-                  color: item.is_read ? '#4ADE80' : mutedText,
-                  border: `1px solid ${item.is_read ? 'rgba(34, 197, 94, 0.3)' : '#222222'}`
-                }}>
-                  {item.is_read ? '✓ SEEN' : 'UNSEEN'}
-                </span>
-              </div>
+                <div>
+                  <div style={{ fontSize: '13px', fontWeight: '700', color: '#FFF', marginBottom: '4px' }}>{item.title}</div>
+                  <div style={{ fontSize: '11px', color: mutedText, lineHeight: '1.5', whiteSpace: 'pre-wrap' }}>{item.message}</div>
+                  {item.link && <div style={{ fontSize: '10px', color: '#3B82F6', marginTop: '4px', wordBreak: 'break-all' }}>{item.link}</div>}
+                </div>
 
-              {/* Title & Message Body */}
-              <div>
-                <div style={{ fontSize: '13px', fontWeight: '700', color: '#FFF', marginBottom: '4px' }}>{item.title}</div>
-                <div style={{ fontSize: '11px', color: mutedText, lineHeight: '1.5', whiteSpace: 'pre-wrap' }}>{item.message}</div>
-                {item.link && <div style={{ fontSize: '10px', color: '#3B82F6', marginTop: '4px', wordBreak: 'break-all' }}>{item.link}</div>}
-              </div>
-
-              {/* Footer Info & Actions */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '8px', borderTop: '1px solid #141414' }}>
-                <span style={{ fontSize: '9px', color: '#666666' }}>
-                  TARGET: {item.target_audience === 'ALL' ? 'GLOBAL' : `USER (${item.user_id ? item.user_id.slice(0, 8) : 'SPECIFIC'}...)`}
-                </span>
-                <div style={{ display: 'flex', gap: '12px' }}>
-                  <button
-                    type="button"
-                    onClick={() => setEditingItem({ ...item })}
-                    style={{ background: 'none', border: 'none', color: '#3B82F6', fontSize: '10px', fontWeight: '700', cursor: 'pointer', padding: 0 }}
-                  >
-                    SILENT EDIT
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleDelete(item.id)}
-                    style={{ background: 'none', border: 'none', color: '#EF4444', fontSize: '10px', fontWeight: '700', cursor: 'pointer', padding: 0 }}
-                  >
-                    DELETE
-                  </button>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '8px', borderTop: '1px solid #141414' }}>
+                  <span style={{ fontSize: '9px', color: '#666666' }}>
+                    TARGET: {item.target_audience === 'ALL' ? 'GLOBAL' : `USER (${item.user_id ? item.user_id.slice(0, 8) : 'SPECIFIC'}...)`}
+                  </span>
+                  <div style={{ display: 'flex', gap: '12px' }}>
+                    <button
+                      type="button"
+                      onClick={() => setEditingItem({ ...item })}
+                      style={{ background: 'none', border: 'none', color: '#3B82F6', fontSize: '10px', fontWeight: '700', cursor: 'pointer', padding: 0 }}
+                    >
+                      SILENT EDIT
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(item.id)}
+                      style={{ background: 'none', border: 'none', color: '#EF4444', fontSize: '10px', fontWeight: '700', cursor: 'pointer', padding: 0 }}
+                    >
+                      DELETE
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
-      {/* SILENT EDIT MODAL */}
+      {/* MINIMAL POPUP MODAL (WITH KEYBOARD SCROLL SAFEGUARD) */}
       {editingItem && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(4px)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
-          <div style={{ width: '100%', maxWidth: '480px', background: '#111111', border: '1px solid #222222', borderRadius: '8px', padding: '20px', boxSizing: 'border-box' }}>
-            <div style={{ fontSize: '12px', fontWeight: '800', color: '#FFF', marginBottom: '4px' }}>SILENT EDIT NOTIFICATION</div>
-            <div style={{ fontSize: '10px', color: mutedText, marginBottom: '16px' }}>Updates database live without triggering a new push notification alert to the user.</div>
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.85)',
+          backdropFilter: 'blur(4px)',
+          zIndex: 999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '16px'
+        }}>
+          <div style={{
+            width: '100%',
+            maxWidth: '460px',
+            background: '#111111',
+            border: '1px solid #222222',
+            borderRadius: '10px',
+            padding: '20px',
+            boxSizing: 'border-box',
+            maxHeight: '85vh',
+            overflowY: 'auto'
+          }}>
+            <div style={{ fontSize: '12px', fontWeight: '800', color: '#FFF', marginBottom: '2px', letterSpacing: '0.5px' }}>
+              SILENT EDIT NOTIFICATION
+            </div>
+            <div style={{ fontSize: '10px', color: mutedText, marginBottom: '16px' }}>
+              Updates database live without sending a new push alert.
+            </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '9px', color: mutedText, fontWeight: '700', marginBottom: '4px' }}>TITLE</label>
+                <label style={{ display: 'block', fontSize: '9px', color: mutedText, fontWeight: '700', marginBottom: '4px' }}>
+                  TITLE
+                </label>
                 <input
                   type="text"
                   value={editingItem.title}
                   onChange={(e) => setEditingItem({ ...editingItem, title: e.target.value })}
                   placeholder="Title"
-                  style={{ width: '100%', background: '#000000', border: '1px solid #222222', padding: '8px 10px', color: '#FFF', fontSize: '12px', outline: 'none', borderRadius: '4px', boxSizing: 'border-box' }}
+                  style={{
+                    width: '100%',
+                    background: '#000000',
+                    border: '1px solid #222222',
+                    padding: '10px',
+                    color: '#FFF',
+                    fontSize: '12px',
+                    outline: 'none',
+                    borderRadius: '6px',
+                    boxSizing: 'border-box'
+                  }}
                 />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '9px', color: mutedText, fontWeight: '700', marginBottom: '4px' }}>MESSAGE</label>
+                <label style={{ display: 'block', fontSize: '9px', color: mutedText, fontWeight: '700', marginBottom: '4px' }}>
+                  MESSAGE
+                </label>
                 <textarea
                   value={editingItem.message}
                   onChange={(e) => setEditingItem({ ...editingItem, message: e.target.value })}
                   placeholder="Message"
                   rows={3}
-                  style={{ width: '100%', background: '#000000', border: '1px solid #222222', padding: '8px 10px', color: '#FFF', fontSize: '12px', outline: 'none', resize: 'vertical', borderRadius: '4px', boxSizing: 'border-box' }}
+                  style={{
+                    width: '100%',
+                    background: '#000000',
+                    border: '1px solid #222222',
+                    padding: '10px',
+                    color: '#FFF',
+                    fontSize: '12px',
+                    outline: 'none',
+                    resize: 'vertical',
+                    borderRadius: '6px',
+                    boxSizing: 'border-box'
+                  }}
                 />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '9px', color: mutedText, fontWeight: '700', marginBottom: '4px' }}>ACTION LINK (OPTIONAL)</label>
+                <label style={{ display: 'block', fontSize: '9px', color: mutedText, fontWeight: '700', marginBottom: '4px' }}>
+                  ACTION LINK (OPTIONAL)
+                </label>
                 <input
                   type="url"
                   value={editingItem.link || ''}
                   onChange={(e) => setEditingItem({ ...editingItem, link: e.target.value })}
-                  placeholder="Action Link"
-                  style={{ width: '100%', background: '#000000', border: '1px solid #222222', padding: '8px 10px', color: '#FFF', fontSize: '12px', outline: 'none', borderRadius: '4px', boxSizing: 'border-box' }}
+                  placeholder="https://..."
+                  style={{
+                    width: '100%',
+                    background: '#000000',
+                    border: '1px solid #222222',
+                    padding: '10px',
+                    color: '#FFF',
+                    fontSize: '12px',
+                    outline: 'none',
+                    borderRadius: '6px',
+                    boxSizing: 'border-box'
+                  }}
                 />
               </div>
 
-              <div style={{ display: 'flex', gap: '10px', marginTop: '12px' }}>
+              <div style={{ display: 'flex', gap: '10px', marginTop: '6px' }}>
                 <button
                   type="button"
                   onClick={handleSilentUpdate}
                   disabled={updating}
-                  style={{ flex: 1, padding: '10px', background: '#FFFFFF', color: '#000000', border: 'none', fontWeight: '800', fontSize: '11px', cursor: updating ? 'not-allowed' : 'pointer', borderRadius: '4px', opacity: updating ? 0.7 : 1 }}
+                  style={{
+                    flex: 1,
+                    padding: '12px',
+                    background: '#FFFFFF',
+                    color: '#000000',
+                    border: 'none',
+                    fontWeight: '800',
+                    fontSize: '11px',
+                    cursor: updating ? 'not-allowed' : 'pointer',
+                    borderRadius: '6px',
+                    opacity: updating ? 0.7 : 1
+                  }}
                 >
                   {updating ? 'SAVING...' : 'SAVE LIVE'}
                 </button>
@@ -354,7 +480,16 @@ export default function NotificationLogs({ onBack }: NotificationLogsProps) {
                   type="button"
                   onClick={() => setEditingItem(null)}
                   disabled={updating}
-                  style={{ padding: '10px 16px', background: 'transparent', color: mutedText, border: '1px solid #333333', fontSize: '11px', cursor: 'pointer', borderRadius: '4px' }}
+                  style={{
+                    padding: '12px 18px',
+                    background: 'transparent',
+                    color: mutedText,
+                    border: '1px solid #333333',
+                    fontSize: '11px',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                    borderRadius: '6px'
+                  }}
                 >
                   CANCEL
                 </button>
