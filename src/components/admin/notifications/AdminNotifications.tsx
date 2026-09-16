@@ -8,7 +8,6 @@ interface UserProfile {
   email?: string;
   name?: string;
   role?: string;
-  roll?: string;
 }
 
 type CategoryType = 'INFO' | 'PROMO' | 'SYSTEM' | 'ALERT' | null;
@@ -46,15 +45,16 @@ export default function AdminNotifications() {
     setLoadingUsers(true);
     setFetchError(null);
     try {
+      // Corrected select query - only requesting existing columns
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, email, name, role, roll');
+        .select('id, email, name, role');
 
       if (error) throw error;
       if (data) setAllUsers(data);
     } catch (err: any) {
       console.error('Error fetching users:', err.message);
-      setFetchError(err.message || 'Failed to load users. Check Supabase RLS policies.');
+      setFetchError(err.message || 'Failed to load users.');
     } finally {
       setLoadingUsers(false);
     }
@@ -62,7 +62,7 @@ export default function AdminNotifications() {
 
   const filteredUsers = useMemo(() => {
     return allUsers.filter((user) => {
-      const userRole = (user.role || user.roll || '').toUpperCase();
+      const userRole = (user.role || '').toUpperCase();
       
       if (roleFilter !== 'ALL' && userRole !== roleFilter) {
         return false;
@@ -168,10 +168,15 @@ export default function AdminNotifications() {
   const getRoleBadgeStyle = (roleStr?: string) => {
     const role = (roleStr || '').toUpperCase();
     switch (role) {
-      case 'AMBASSADOR': return { bg: 'rgba(234, 179, 8, 0.15)', color: '#EAB308', border: 'rgba(234, 179, 8, 0.3)' };
-      case 'ADMIN': return { bg: 'rgba(168, 85, 247, 0.15)', color: '#A855F7', border: 'rgba(168, 85, 247, 0.3)' };
-      case 'CUSTOMER': return { bg: 'rgba(59, 130, 246, 0.15)', color: '#3B82F6', border: 'rgba(59, 130, 246, 0.3)' };
-      default: return { bg: 'rgba(255, 255, 255, 0.08)', color: '#AAA', border: '#333' };
+      case 'SUPER_ADMIN':
+      case 'ADMIN': 
+        return { bg: 'rgba(168, 85, 247, 0.15)', color: '#A855F7', border: 'rgba(168, 85, 247, 0.3)' };
+      case 'AMBASSADOR': 
+        return { bg: 'rgba(234, 179, 8, 0.15)', color: '#EAB308', border: 'rgba(234, 179, 8, 0.3)' };
+      case 'CUSTOMER': 
+        return { bg: 'rgba(59, 130, 246, 0.15)', color: '#3B82F6', border: 'rgba(59, 130, 246, 0.3)' };
+      default: 
+        return { bg: 'rgba(255, 255, 255, 0.08)', color: '#AAA', border: '#333' };
     }
   };
 
@@ -426,13 +431,11 @@ export default function AdminNotifications() {
         </button>
       </form>
 
-      {/* ========================================================= */}
-      {/* FULL SCREEN / BOTTOM SHEET RECIPIENT SELECTOR             */}
-      {/* ========================================================= */}
+      {/* FULL SCREEN / BOTTOM SHEET RECIPIENT SELECTOR */}
       {isModalOpen && (
         <div style={{
           position: 'fixed',
-          top: '20px', // নিচের দিকে একটু ফাঁকা রেখে ফুল স্ক্রিন বা বটম শিট স্টাইল
+          top: '20px',
           left: 0,
           right: 0,
           bottom: 0,
@@ -502,7 +505,7 @@ export default function AdminNotifications() {
 
             {/* Role Filter Pills */}
             <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '2px' }}>
-              {['ALL', 'AMBASSADOR', 'CUSTOMER', 'ADMIN'].map((role) => {
+              {['ALL', 'SUPER_ADMIN', 'AMBASSADOR', 'CUSTOMER'].map((role) => {
                 const active = roleFilter === role;
                 return (
                   <button
@@ -566,7 +569,7 @@ export default function AdminNotifications() {
               </div>
             ) : fetchError ? (
               <div style={{ textAlign: 'center', padding: '40px', fontSize: '11px', color: '#EF4444' }}>
-                {fetchError} <br /><span style={{ fontSize: '10px', color: mutedText }}>Check Supabase RLS Policies for profiles table.</span>
+                {fetchError}
               </div>
             ) : filteredUsers.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '40px', fontSize: '12px', color: mutedText }}>
@@ -575,7 +578,7 @@ export default function AdminNotifications() {
             ) : (
               filteredUsers.map((user) => {
                 const isSelected = selectedUserIds.includes(user.id);
-                const roleStr = user.role || user.roll || 'USER';
+                const roleStr = user.role || 'USER';
                 const badgeStyle = getRoleBadgeStyle(roleStr);
 
                 return (
