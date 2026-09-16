@@ -4,7 +4,7 @@ import { HistoryIcon, SearchIcon, EditIcon, BackIcon } from '@/components/icons'
 
 interface SentNotification {
   id: string;
-  user_id: string | null;
+  user_id: string;
   title: string;
   message: string;
   type: 'INFO' | 'PROMO' | 'SYSTEM' | 'ALERT';
@@ -109,7 +109,6 @@ export default function NotificationLogs({ onBack }: NotificationLogsProps) {
     }
   };
 
-  // সংশোধিত সাইলেন্ট আপডেট (ID এর পাশাপাশি Batch Created Date ম্যাচ করে আপডেট করবে)
   const handleSilentUpdate = async () => {
     if (!editingItem) return;
     if (!editingItem.title.trim() || !editingItem.message.trim()) {
@@ -121,8 +120,7 @@ export default function NotificationLogs({ onBack }: NotificationLogsProps) {
     try {
       const originalLog = logs.find((l) => l.id === editingItem.id);
 
-      // নির্দিষ্ট রো আপডেট করা
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('notifications')
         .update({
           title: editingItem.title.trim(),
@@ -130,12 +128,10 @@ export default function NotificationLogs({ onBack }: NotificationLogsProps) {
           type: editingItem.type,
           link: editingItem.link ? editingItem.link.trim() : null
         })
-        .eq('id', editingItem.id)
-        .select();
+        .eq('id', editingItem.id);
 
       if (error) throw error;
 
-      // যদি একই সময়ে পাঠানো অন্য কোনো ডুপ্লিকেট রো থাকে তবে সেগুলোতেও আপডেট ব্যাচ অ্যাপ্লাই করবে
       if (originalLog) {
         await supabase
           .from('notifications')
@@ -408,7 +404,7 @@ export default function NotificationLogs({ onBack }: NotificationLogsProps) {
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '9px', color: mutedText, fontWeight: '700', marginBottom: '4px' }}>MESSAGE</label>
+                <label style={{ display: 'block', fontSize: '9px', color mutedText, fontWeight: '700', marginBottom: '4px' }}>MESSAGE</label>
                 <textarea
                   value={editingItem.message}
                   onChange={(e) => setEditingItem({ ...editingItem, message: e.target.value })}
