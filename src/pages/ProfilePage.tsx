@@ -48,6 +48,9 @@ export default function ProfilePage() {
   const [, setSession] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
+  // নতুন স্টেট: আনরিড নোটিফিকেশনের সংখ্যা রাখার জন্য
+  const [unreadCount, setUnreadCount] = useState(0);
+
   const [newName, setNewName] = useState('');
   const [newEmail, setNewEmail] = useState('');
   const [currentPassword, setCurrentPassword] = useState('');
@@ -81,6 +84,46 @@ export default function ProfilePage() {
   useEffect(() => { 
     fetchUserData(); 
   }, []);
+
+  // ইউজার আইডি পাওয়ার পর আনরিড নোটিফিকেশন কাউন্ট ফেচ করার জন্য রিয়েলটাইম ও ফেচ ফাংশন
+  useEffect(() => {
+    if (!profile?.id) return;
+
+    const fetchUnreadCount = async () => {
+      const { data, error } = await supabase
+        .from('notification_recipients')
+        .select('id, is_read')
+        .eq('user_id', profile.id)
+        .eq('is_read', false);
+
+      if (!error && data) {
+        setUnreadCount(data.length);
+      }
+    };
+
+    fetchUnreadCount();
+
+    // রিয়েলটাইম লিসেনার যাতে নতুন নোটিফিকেশন আসলে সাথে সাথে কাউন্ট আপডেট হয়
+    const channel = supabase
+      .channel(`profile_unread_${profile.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'notification_recipients',
+          filter: `user_id=eq.${profile.id}`
+        },
+        () => {
+          fetchUnreadCount();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [profile?.id]);
 
   const showToast = (message: string, color: string = '#fff') => {
     setToast({ message, color });
@@ -532,6 +575,7 @@ export default function ProfilePage() {
               onOpenProfileDetails={() => setIsDetailsSheetOpen(true)}
               onOpenNotifications={() => changeView('notifications')}
               onOpenCommunication={() => changeView('communication')}
+              unreadCount={unreadCount} {/* এখানে আনরিড কাউন্ট পাস করে দেওয়া হলো */}
             />
 
             {portalMode === 'ambassador' && isAmbassador ? (
