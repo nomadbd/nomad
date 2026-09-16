@@ -52,7 +52,6 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [debugLog, setDebugLog] = useState<string>('লোডিং শুরু হচ্ছে...');
 
   const getRelativeTime = (dateString: string) => {
     if (!dateString) return 'Recently';
@@ -87,17 +86,13 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
 
   const fetchNotifications = async (isSilent = false) => {
     if (!isSilent) setLoading(true);
-    let logText = `১. User ID: "${userId}"\n`;
 
     try {
       if (!userId) {
-        logText += '❌ ERROR: userId পাওয়া যায়নি!';
-        setDebugLog(logText);
         setLoading(false);
         return;
       }
 
-      // notification_recipients থেকে created_at বাদ দিয়ে notifications থেকে আনা হচ্ছে
       const { data, error } = await supabase
         .from('notification_recipients')
         .select(`
@@ -116,14 +111,10 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
         .eq('user_id', userId);
 
       if (error) {
-        logText += `❌ Supabase Error: ${error.message}`;
-        setDebugLog(logText);
+        console.error('Fetch error:', error.message);
         setNotifications([]);
         return;
       }
-
-      logText += `✅ ডাটা সফলভাবে পাওয়া গেছে! সংখ্যা: ${data?.length || 0}`;
-      setDebugLog(logText);
 
       if (data) {
         const formatted: NotificationItem[] = data
@@ -147,9 +138,8 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
 
         setNotifications(formatted);
       }
-    } catch (err: any) {
-      logText += `❌ Catch Error: ${err?.message || err}`;
-      setDebugLog(logText);
+    } catch (err) {
+      console.error('Fetch error:', err);
     } finally {
       if (!isSilent) setLoading(false);
     }
@@ -257,7 +247,7 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
         justifyContent: 'space-between',
         zIndex: 50
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <button
             onClick={onBack}
             style={{
@@ -278,9 +268,40 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
             <BackIcon width={18} height={18} stroke="#FFFFFF" />
           </button>
 
-          <h2 style={{ fontSize: '18px', fontWeight: '600', margin: 0, letterSpacing: '0.2px', color: '#FFFFFF' }}>
-            Notifications
-          </h2>
+          {/* হেডার টাইটেল এবং রেড ডট/কাউন্ট ব্যাজ সংবলিত বেল আইকন */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
+              <NotificationIcon width={20} height={20} stroke="#FFFFFF" />
+              {unreadCount > 0 && (
+                <span
+                  style={{
+                    position: 'absolute',
+                    top: '-3px',
+                    right: '-4px',
+                    backgroundColor: '#EF4444',
+                    color: '#FFFFFF',
+                    fontSize: '9px',
+                    fontWeight: '700',
+                    borderRadius: '10px',
+                    minWidth: '15px',
+                    height: '15px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '0 3px',
+                    border: '1.5px solid #000000',
+                    lineHeight: 1
+                  }}
+                >
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
+            </div>
+
+            <h2 style={{ fontSize: '18px', fontWeight: '600', margin: 0, letterSpacing: '0.2px', color: '#FFFFFF' }}>
+              Notifications
+            </h2>
+          </div>
         </div>
 
         <button
@@ -309,23 +330,6 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
         padding: '16px 12px 32px 12px',
         WebkitOverflowScrolling: 'touch'
       }}>
-        {/* অন-স্ক্রিন ডিবাগ ইনফরমেশন বক্স */}
-        <div style={{
-          backgroundColor: '#0F1E0F',
-          border: '1px solid #22C55E',
-          borderRadius: '8px',
-          padding: '12px',
-          marginBottom: '16px',
-          fontSize: '11px',
-          fontFamily: 'monospace',
-          color: '#86EFAC',
-          whiteSpace: 'pre-wrap',
-          wordBreak: 'break-all'
-        }}>
-          <strong style={{ color: '#4ADE80', display: 'block', marginBottom: '4px' }}>[STATUS DEBUGGER]</strong>
-          {debugLog}
-        </div>
-
         {unreadCount > 0 && filter === 'all' && (
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '12px', paddingRight: '4px' }}>
             <button
