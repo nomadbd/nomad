@@ -1,500 +1,546 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/supabaseClient';
-import { HistoryIcon, SearchIcon, EditIcon, BackIcon } from '@/components/icons';
+import { 
+  HistoryIcon, 
+  PlusIcon, 
+  CloseIcon, 
+  CheckIcon 
+} from '@/components/icons';
+import NotificationLogs from './NotificationLogs';
 
-interface SentNotification {
+interface UserProfile {
   id: string;
-  user_id: string;
-  title: string;
-  message: string;
-  type: 'INFO' | 'PROMO' | 'SYSTEM' | 'ALERT';
-  link?: string | null;
-  target_audience: string;
-  is_read: boolean | string | number;
-  created_at: string;
-}
-
-interface NotificationLogsProps {
-  onBack: () => void;
+  email?: string;
+  name?: string;
+  role?: string;
 }
 
 type CategoryType = 'INFO' | 'PROMO' | 'SYSTEM' | 'ALERT' | null;
 
-export default function NotificationLogs({ onBack }: NotificationLogsProps) {
-  const [logs, setLogs] = useState<SentNotification[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
-  const [editingItem, setEditingItem] = useState<SentNotification | null>(null);
-  const [updating, setUpdating] = useState(false);
+export default function AdminNotifications() {
+  const [view, setView] = useState<'create' | 'logs'>('create');
+
+  // Modal & User States
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [allUsers, setAllUsers] = useState<UserProfile[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   
-  // Custom Toast Message State (Native Alert বিকল্প)
-  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  // Filter States
+  const [searchQuery, setSearchQuery] = useState('');
+  const [roleFilter, setRoleFilter] = useState<string>('ALL');
 
-  const mutedText = '#888888';
+  // Form States
+  const [title, setTitle] = useState('');
+  const [message, setMessage] = useState('');
+  const [type, setType] = useState<CategoryType>(null);
+  const [link, setLink] = useState('');
 
-  const triggerToast = (message: string, type: 'success' | 'error') => {
-    setToast({ message, type });
-    setTimeout(() => {
-      setToast(null);
-    }, 3500);
-  };
+  // Button Status State
+  const [btnState, setBtnState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [btnErrorText, setBtnErrorText] = useState('');
 
-  const checkIsRead = (item: SentNotification): boolean => {
-    const val = item.is_read ?? (item as any).read ?? (item as any).isRead;
-    if (val === true || val === 1) return true;
-    if (typeof val === 'string') {
-      const lower = val.trim().toLowerCase();
-      return lower === 'true' || lower === 't' || lower === '1';
-    }
-    return false;
-  };
+  const mutedText = '#666666';
 
   useEffect(() => {
-    fetchLogs();
-
-    const channel = supabase
-      .channel('admin_notification_logs')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'notifications' },
-        (payload) => {
-          if (payload.eventType === 'INSERT') {
-            const newNotif = payload.new as SentNotification;
-            setLogs((prev) => [newNotif, ...prev]);
-          } else if (payload.eventType === 'UPDATE') {
-            const updatedNotif = payload.new as SentNotification;
-            setLogs((prev) =>
-              prev.map((item) => (item.id === updatedNotif.id ? updatedNotif : item))
-            );
-          } else if (payload.eventType === 'DELETE') {
-            const deletedId = payload.old.id;
-            setLogs((prev) => prev.filter((item) => item.id !== deletedId));
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    fetchUsers();
   }, []);
 
-  const fetchLogs = async () => {
-    setLoading(true);
+  const fetchUsers = async () => {
+    setLoadingUsers(true);
     try {
       const { data, error } = await supabase
-        .from('notifications')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(100);
+        .from('profiles')
+        .select('id, email, name, role');
 
       if (error) throw error;
-      if (data) setLogs(data as SentNotification[]);
+      if (data) setAllUsers(data);
     } catch (err: any) {
-      console.error('Error fetching logs:', err.message);
+      console.error('Error fetching users:', err.message);
     } finally {
-      setLoading(false);
+      setLoadingUsers(false);
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this log?')) return;
+  const filteredUsers = useMemo(() => {
+    return allUsers.filter((user) => {
+      const userRole = (user.role || '').toUpperCase();
+      if (roleFilter !== 'ALL' && userRole !== roleFilter) return false;
 
-    try {
-      const { error } = await supabase.from('notifications').delete().eq('id', id);
-      if (error) throw error;
-      setLogs((prev) => prev.filter((item) => item.id !== id));
-      triggerToast('Log deleted successfully', 'success');
-    } catch (err: any) {
-      triggerToast('Delete failed: ' + err.message, 'error');
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase();
+        const name = (user.name || '').toLowerCase();
+        const email = (user.email || '').toLowerCase();
+        const id = user.id.toLowerCase();
+        return name.includes(query) || email.includes(query) || id.includes(query);
+      }
+
+      return true;
+    });
+  }, [allUsers, roleFilter, searchQuery]);
+
+  // Check if all filtered users are currently selected
+  const isAllFilteredSelected = useMemo(() => {
+    if (filteredUsers.length === 0) return false;
+    return filteredUsers.every((u) => selectedUserIds.includes(u.id));
+  }, [filteredUsers, selectedUserIds]);
+
+  // Toggle Select All for currently filtered users
+  const toggleSelectAllFiltered = () => {
+    const filteredIds = filteredUsers.map((u) => u.id);
+    if (isAllFilteredSelected) {
+      setSelectedUserIds((prev) => prev.filter((id) => !filteredIds.includes(id)));
+    } else {
+      setSelectedUserIds((prev) => Array.from(new Set([...prev, ...filteredIds])));
     }
   };
 
-  const handleSilentUpdate = async () => {
-    if (!editingItem) return;
-    if (!editingItem.title.trim() || !editingItem.message.trim()) {
-      triggerToast('Title and Message are required.', 'error');
+  const toggleSelectUser = (id: string) => {
+    setSelectedUserIds((prev) =>
+      prev.includes(id) ? prev.filter((uId) => uId !== id) : [...prev, id]
+    );
+  };
+
+  const triggerError = (msg: string) => {
+    setBtnErrorText(msg);
+    setBtnState('error');
+    setTimeout(() => {
+      setBtnState('idle');
+      setBtnErrorText('');
+    }, 2500);
+  };
+
+  const handleSend = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (selectedUserIds.length === 0) {
+      triggerError('SELECT RECIPIENTS');
+      return;
+    }
+    if (!type) {
+      triggerError('SELECT A CATEGORY');
+      return;
+    }
+    if (!title.trim() || !message.trim()) {
+      triggerError('TITLE & MESSAGE REQUIRED');
       return;
     }
 
-    setUpdating(true);
-    try {
-      const { data, error } = await supabase
-        .from('notifications')
-        .update({
-          title: editingItem.title.trim(),
-          message: editingItem.message.trim(),
-          type: editingItem.type,
-          link: editingItem.link ? editingItem.link.trim() : null
-        })
-        .eq('id', editingItem.id)
-        .select();
+    setBtnState('loading');
 
+    try {
+      const isAllUsersSelected = allUsers.length > 0 && selectedUserIds.length === allUsers.length;
+
+      const notificationsToInsert = selectedUserIds.map((userId) => ({
+        user_id: userId,
+        title: title.trim(),
+        message: message.trim(),
+        type,
+        link: link.trim() || null,
+        target_audience: isAllUsersSelected ? 'ALL' : 'SPECIFIC',
+        is_read: false
+      }));
+
+      const { error } = await supabase.from('notifications').insert(notificationsToInsert);
       if (error) throw error;
 
-      if (!data || data.length === 0) {
-        throw new Error('Update blocked! Check Supabase RLS policies.');
-      }
+      setBtnState('success');
+      setTitle('');
+      setMessage('');
+      setLink('');
+      setType(null);
+      setSelectedUserIds([]);
 
-      const updatedRow = data[0] as SentNotification;
+      setTimeout(() => {
+        setBtnState('idle');
+      }, 2500);
 
-      setLogs((prev) =>
-        prev.map((item) => (item.id === updatedRow.id ? updatedRow : item))
-      );
-
-      triggerToast('Notification silently updated live!', 'success');
-      setEditingItem(null);
     } catch (err: any) {
-      triggerToast(err.message || 'Update failed', 'error');
-    } finally {
-      setUpdating(false);
+      triggerError(err.message ? err.message.toUpperCase() : 'FAILED TO DISPATCH');
     }
   };
 
-  const getRelativeTime = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-
-    if (seconds < 60) return 'Just now';
-    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
-    if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
-    if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`;
-    return date.toLocaleDateString();
+  const underlineInputStyle: React.CSSProperties = {
+    width: '100%',
+    background: 'transparent',
+    border: 'none',
+    borderBottom: '1px solid #1A1A1A',
+    padding: '12px 0',
+    color: '#FFFFFF',
+    fontSize: '13px',
+    lineHeight: '1.5',
+    fontFamily: 'inherit',
+    outline: 'none',
+    boxSizing: 'border-box',
+    borderRadius: 0,
+    transition: 'border-color 0.2s ease',
   };
 
-  const getCategoryColor = (cat: CategoryType) => {
-    switch (cat) {
-      case 'PROMO': return '#EAB308';
-      case 'ALERT': return '#EF4444';
-      case 'SYSTEM': return '#A855F7';
-      case 'INFO': return '#3B82F6';
-      default: return mutedText;
-    }
-  };
-
-  const filteredLogs = useMemo(() => {
-    return logs.filter((log) => {
-      const titleMatch = (log.title || '').toLowerCase().includes(searchQuery.toLowerCase());
-      const msgMatch = (log.message || '').toLowerCase().includes(searchQuery.toLowerCase());
-      const userMatch = (log.user_id || '').toLowerCase().includes(searchQuery.toLowerCase());
-
-      const matchesSearch = titleMatch || msgMatch || userMatch;
-      const matchesCategory = selectedCategory === 'ALL' || log.type === selectedCategory;
-
-      return matchesSearch && matchesCategory;
-    });
-  }, [logs, searchQuery, selectedCategory]);
+  if (view === 'logs') {
+    return <NotificationLogs onBack={() => setView('create')} />;
+  }
 
   return (
-    <div style={{ maxWidth: '640px', margin: '0 auto', color: '#FFF', fontFamily: 'system-ui, -apple-system, sans-serif', padding: '12px 8px', paddingBottom: '120px', position: 'relative' }}>
+    <div style={{ maxWidth: '540px', margin: '0 auto', color: '#FFF', fontFamily: 'system-ui, -apple-system, sans-serif', padding: '16px 12px', paddingBottom: '120px' }}>
 
-      {/* CUSTOM TOAST NOTIFICATION */}
-      {toast && (
-        <div style={{
-          position: 'fixed',
-          top: '20px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          zIndex: 10000,
-          background: toast.type === 'success' ? '#10B981' : '#EF4444',
-          color: '#FFF',
-          padding: '10px 18px',
-          borderRadius: '20px',
-          fontSize: '12px',
-          fontWeight: '700',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          animation: 'fadeIn 0.2s ease-in-out'
-        }}>
-          {toast.type === 'success' ? '✓' : '✕'} {toast.message}
-        </div>
-      )}
+      <style>{`
+        input::placeholder, textarea::placeholder { color: ${mutedText} !important; opacity: 1 !important; }
+        textarea::-webkit-scrollbar, .sheet-scroll::-webkit-scrollbar { width: 2px; }
+        textarea::-webkit-scrollbar-thumb, .sheet-scroll::-webkit-scrollbar-thumb { background: #222222; }
+      `}</style>
 
-      {/* Header with Back Navigation */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', borderBottom: '1px solid #1A1A1A', paddingBottom: '12px' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '28px' }}>
+        <span style={{ fontSize: '11px', fontWeight: '700', letterSpacing: '2px', color: '#FFF' }}>DISPATCH</span>
+
         <button
           type="button"
-          onClick={onBack}
-          style={{ background: 'none', border: 'none', color: '#FFF', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', fontWeight: '700', padding: 0 }}
-        >
-          {BackIcon ? <BackIcon style={{ width: 16, height: 16 }} /> : '◄'} BACK TO DISPATCHER
-        </button>
-        <span style={{ fontSize: '10px', color: mutedText, fontWeight: '700', letterSpacing: '1px' }}>LOGS & ANALYTICS</span>
-      </div>
-
-      {/* Search Bar */}
-      <div style={{ position: 'relative', marginBottom: '16px' }}>
-        <input
-          type="text"
-          placeholder="Search logs by title, message or user ID..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onClick={() => setView('logs')}
           style={{
-            width: '100%',
-            background: '#111111',
-            border: '1px solid #222222',
-            borderRadius: '6px',
-            padding: '10px 12px',
-            color: '#FFF',
-            fontSize: '12px',
-            outline: 'none',
-            boxSizing: 'border-box'
+            background: 'transparent',
+            border: 'none',
+            color: mutedText,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            fontSize: '10px',
+            fontWeight: '600',
+            letterSpacing: '1px',
+            cursor: 'pointer',
+            padding: '2px 0',
+            transition: 'color 0.2s'
           }}
-        />
+          onMouseEnter={(e) => (e.currentTarget.style.color = '#FFF')}
+          onMouseLeave={(e) => (e.currentTarget.style.color = mutedText)}
+        >
+          <HistoryIcon style={{ width: 13, height: 13 }} />
+          <span>LOGS</span>
+        </button>
       </div>
 
-      {/* Category Chips */}
-      <div style={{ display: 'flex', gap: '6px', marginBottom: '20px', overflowX: 'auto', paddingBottom: '4px' }}>
-        {['ALL', 'INFO', 'PROMO', 'ALERT', 'SYSTEM'].map((cat) => {
-          const active = selectedCategory === cat;
-          return (
-            <button
-              key={cat}
-              type="button"
-              onClick={() => setSelectedCategory(cat)}
-              style={{
-                padding: '6px 14px',
-                fontSize: '10px',
-                fontWeight: '700',
-                borderRadius: '20px',
-                border: `1px solid ${active ? '#FFFFFF' : '#222222'}`,
-                background: active ? '#FFFFFF' : '#141414',
-                color: active ? '#000000' : mutedText,
-                cursor: 'pointer',
-                whiteSpace: 'nowrap'
-              }}
-            >
-              {cat}
-            </button>
-          );
-        })}
-      </div>
+      {/* Main Form */}
+      <form onSubmit={handleSend} style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
 
-      {/* Logs List */}
-      {loading ? (
-        <div style={{ textAlign: 'center', color: mutedText, fontSize: '12px', padding: '40px 0' }}>Loading logs...</div>
-      ) : filteredLogs.length === 0 ? (
-        <div style={{ textAlign: 'center', color: mutedText, fontSize: '12px', padding: '40px 0' }}>No logs matched your criteria</div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {filteredLogs.map((item) => {
-            const isSeen = checkIsRead(item);
-            return (
-              <div
-                key={item.id}
-                style={{
-                  background: '#0D0D0D',
-                  border: '1px solid #1A1A1A',
-                  borderRadius: '8px',
-                  padding: '14px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '10px'
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontSize: '9px', fontWeight: '800', color: getCategoryColor(item.type), letterSpacing: '0.5px' }}>
-                      {item.type}
-                    </span>
-                    <span style={{ fontSize: '9px', color: mutedText }}>• {getRelativeTime(item.created_at)}</span>
-                    <span style={{ fontSize: '9px', color: '#555555' }}>({new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})</span>
-                  </div>
+        {/* RECIPIENTS SECTION */}
+        <div>
+          <span style={{ display: 'block', fontSize: '9px', color: mutedText, fontWeight: '700', letterSpacing: '1.5px', marginBottom: '8px' }}>
+            RECIPIENTS
+          </span>
 
-                  <span style={{
-                    fontSize: '9px',
-                    fontWeight: '800',
-                    padding: '3px 8px',
-                    borderRadius: '4px',
-                    background: isSeen ? 'rgba(34, 197, 94, 0.15)' : 'rgba(255, 255, 255, 0.05)',
-                    color: isSeen ? '#4ADE80' : mutedText,
-                    border: `1px solid ${isSeen ? 'rgba(34, 197, 94, 0.3)' : '#222222'}`
-                  }}>
-                    {isSeen ? '✓ SEEN' : 'UNSEEN'}
-                  </span>
-                </div>
-
-                <div>
-                  <div style={{ fontSize: '13px', fontWeight: '700', color: '#FFF', marginBottom: '4px' }}>{item.title}</div>
-                  <div style={{ fontSize: '11px', color: mutedText, lineHeight: '1.5', whiteSpace: 'pre-wrap' }}>{item.message}</div>
-                  {item.link && <div style={{ fontSize: '10px', color: '#3B82F6', marginTop: '4px', wordBreak: 'break-all' }}>{item.link}</div>}
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '8px', borderTop: '1px solid #141414' }}>
-                  <span style={{ fontSize: '9px', color: '#666666' }}>
-                    TARGET: {item.target_audience === 'ALL' ? 'GLOBAL' : `USER (${item.user_id ? item.user_id.slice(0, 8) : 'SPECIFIC'}...)`}
-                  </span>
-                  <div style={{ display: 'flex', gap: '12px' }}>
-                    <button
-                      type="button"
-                      onClick={() => setEditingItem({ ...item })}
-                      style={{ background: 'none', border: 'none', color: '#3B82F6', fontSize: '10px', fontWeight: '700', cursor: 'pointer', padding: 0 }}
-                    >
-                      SILENT EDIT
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleDelete(item.id)}
-                      style={{ background: 'none', border: 'none', color: '#EF4444', fontSize: '10px', fontWeight: '700', cursor: 'pointer', padding: 0 }}
-                    >
-                      DELETE
-                    </button>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* MINIMAL POPUP MODAL (WITH KEYBOARD SCROLL SAFEGUARD) */}
-      {editingItem && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0,0,0,0.85)',
-          backdropFilter: 'blur(4px)',
-          zIndex: 999,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '16px'
-        }}>
           <div style={{
-            width: '100%',
-            maxWidth: '460px',
-            background: '#111111',
-            border: '1px solid #222222',
-            borderRadius: '10px',
-            padding: '20px',
-            boxSizing: 'border-box',
-            maxHeight: '85vh',
-            overflowY: 'auto'
+            background: '#050505',
+            border: '1px solid #141414',
+            borderRadius: '6px',
+            padding: '12px 14px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '8px'
           }}>
-            <div style={{ fontSize: '12px', fontWeight: '800', color: '#FFF', marginBottom: '2px', letterSpacing: '0.5px' }}>
-              SILENT EDIT NOTIFICATION
-            </div>
-            <div style={{ fontSize: '10px', color: mutedText, marginBottom: '16px' }}>
-              Updates database live without sending a new push alert.
-            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '11px', color: selectedUserIds.length > 0 ? '#FFF' : mutedText, fontWeight: '500' }}>
+                {selectedUserIds.length === 0 ? 'No recipients selected' : `${selectedUserIds.length} recipient(s)`}
+              </span>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '9px', color: mutedText, fontWeight: '700', marginBottom: '4px' }}>
-                  TITLE
-                </label>
-                <input
-                  type="text"
-                  value={editingItem.title}
-                  onChange={(e) => setEditingItem({ ...editingItem, title: e.target.value })}
-                  placeholder="Title"
-                  style={{
-                    width: '100%',
-                    background: '#000000',
-                    border: '1px solid #222222',
-                    padding: '10px',
-                    color: '#FFF',
-                    fontSize: '12px',
-                    outline: 'none',
-                    borderRadius: '6px',
-                    boxSizing: 'border-box'
-                  }}
-                />
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '9px', color: mutedText, fontWeight: '700', marginBottom: '4px' }}>
-                  MESSAGE
-                </label>
-                <textarea
-                  value={editingItem.message}
-                  onChange={(e) => setEditingItem({ ...editingItem, message: e.target.value })}
-                  placeholder="Message"
-                  rows={3}
-                  style={{
-                    width: '100%',
-                    background: '#000000',
-                    border: '1px solid #222222',
-                    padding: '10px',
-                    color: '#FFF',
-                    fontSize: '12px',
-                    outline: 'none',
-                    resize: 'vertical',
-                    borderRadius: '6px',
-                    boxSizing: 'border-box'
-                  }}
-                />
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '9px', color: mutedText, fontWeight: '700', marginBottom: '4px' }}>
-                  ACTION LINK (OPTIONAL)
-                </label>
-                <input
-                  type="url"
-                  value={editingItem.link || ''}
-                  onChange={(e) => setEditingItem({ ...editingItem, link: e.target.value })}
-                  placeholder="https://..."
-                  style={{
-                    width: '100%',
-                    background: '#000000',
-                    border: '1px solid #222222',
-                    padding: '10px',
-                    color: '#FFF',
-                    fontSize: '12px',
-                    outline: 'none',
-                    borderRadius: '6px',
-                    boxSizing: 'border-box'
-                  }}
-                />
-              </div>
-
-              <div style={{ display: 'flex', gap: '10px', marginTop: '6px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                {selectedUserIds.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedUserIds([])}
+                    style={{ background: 'none', border: 'none', color: mutedText, fontSize: '9px', fontWeight: '700', letterSpacing: '1px', cursor: 'pointer', padding: 0 }}
+                  >
+                    CLEAR
+                  </button>
+                )}
                 <button
                   type="button"
-                  onClick={handleSilentUpdate}
-                  disabled={updating}
+                  onClick={() => setIsModalOpen(true)}
+                  style={{ width: '24px', height: '24px', borderRadius: '50%', background: '#111111', border: '1px solid #222', color: '#FFF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                >
+                  <PlusIcon style={{ width: 11, height: 11 }} />
+                </button>
+              </div>
+            </div>
+
+            {/* Selected User Chips */}
+            {selectedUserIds.length > 0 && (
+              <div className="sheet-scroll" style={{ maxHeight: '90px', overflowY: 'auto', display: 'flex', flexWrap: 'wrap', gap: '6px', paddingTop: '4px' }}>
+                {selectedUserIds.map((id) => {
+                  const u = allUsers.find((x) => x.id === id);
+                  return (
+                    <div
+                      key={id}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        background: '#0F0F0F',
+                        border: '1px solid #222222',
+                        borderRadius: '12px',
+                        padding: '3px 8px',
+                        fontSize: '10px',
+                        color: '#DDD'
+                      }}
+                    >
+                      <span>{u?.name || u?.email || id}</span>
+                      <button
+                        type="button"
+                        onClick={() => toggleSelectUser(id)}
+                        style={{ background: 'none', border: 'none', color: '#666', cursor: 'pointer', padding: '0 1px', display: 'flex', alignItems: 'center' }}
+                      >
+                        <CloseIcon style={{ width: 9, height: 9 }} />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* CATEGORY SELECTOR */}
+        <div>
+          <span style={{ display: 'block', fontSize: '9px', color: mutedText, fontWeight: '700', letterSpacing: '1.5px', marginBottom: '8px' }}>
+            CATEGORY
+          </span>
+          <div style={{ display: 'flex', gap: '6px' }}>
+            {(['INFO', 'PROMO', 'ALERT', 'SYSTEM'] as const).map((cat) => {
+              const active = type === cat;
+              return (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => setType(cat)}
                   style={{
                     flex: 1,
-                    padding: '12px',
-                    background: '#FFFFFF',
-                    color: '#000000',
-                    border: 'none',
-                    fontWeight: '800',
-                    fontSize: '11px',
-                    cursor: updating ? 'not-allowed' : 'pointer',
-                    borderRadius: '6px',
-                    opacity: updating ? 0.7 : 1
-                  }}
-                >
-                  {updating ? 'SAVING...' : 'SAVE LIVE'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setEditingItem(null)}
-                  disabled={updating}
-                  style={{
-                    padding: '12px 18px',
-                    background: 'transparent',
-                    color: mutedText,
-                    border: '1px solid #333333',
-                    fontSize: '11px',
+                    padding: '8px 0',
+                    fontSize: '10px',
                     fontWeight: '700',
+                    letterSpacing: '1px',
+                    background: 'transparent',
+                    color: active ? '#FFFFFF' : mutedText,
+                    border: `1px solid ${active ? '#FFFFFF' : '#141414'}`,
+                    borderRadius: '4px',
                     cursor: 'pointer',
-                    borderRadius: '6px'
+                    transition: 'all 0.2s ease'
                   }}
                 >
-                  CANCEL
+                  {cat}
                 </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Title Input */}
+        <input
+          type="text"
+          placeholder="Notification title..."
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          style={underlineInputStyle}
+        />
+
+        {/* Message Input */}
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+            <span style={{ fontSize: '9px', color: mutedText, fontWeight: '700', letterSpacing: '1.5px' }}>MESSAGE</span>
+            <span style={{ fontSize: '9px', color: mutedText }}>{message.length} chars</span>
+          </div>
+          <textarea
+            rows={2}
+            placeholder="Message content..."
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            style={{ ...underlineInputStyle, resize: 'none', minHeight: '44px' }}
+          />
+        </div>
+
+        {/* Action Link */}
+        <input
+          type="url"
+          placeholder="Action link (optional)"
+          value={link}
+          onChange={(e) => setLink(e.target.value)}
+          style={underlineInputStyle}
+        />
+
+        {/* LIVE MOBILE PREVIEW CARD */}
+        <div>
+          <span style={{ display: 'block', fontSize: '9px', color: mutedText, fontWeight: '700', letterSpacing: '1.5px', marginBottom: '8px' }}>
+            PREVIEW
+          </span>
+          <div style={{
+            background: '#050505',
+            border: '1px solid #141414',
+            borderRadius: '6px',
+            padding: '12px 14px',
+            display: 'flex',
+            gap: '10px',
+            alignItems: 'flex-start'
+          }}>
+            <div style={{
+              width: '5px',
+              height: '5px',
+              borderRadius: '50%',
+              background: type ? '#FFFFFF' : '#333333',
+              marginTop: '5px'
+            }} />
+            <div style={{ flex: 1 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '11px', fontWeight: '600', color: '#FFF' }}>
+                  {title || 'Notification Title'}
+                </span>
+                <span style={{ fontSize: '9px', color: mutedText }}>Now</span>
               </div>
+              <p style={{ margin: '3px 0 0 0', fontSize: '11px', color: '#777', lineHeight: '1.4' }}>
+                {message || 'Notification content will appear here...'}
+              </p>
             </div>
+          </div>
+        </div>
+
+        {/* Action Button */}
+        <button
+          type="submit"
+          disabled={btnState !== 'idle'}
+          style={{
+            marginTop: '6px',
+            padding: '12px',
+            background: btnState === 'success' ? '#FFFFFF' : '#080808',
+            color: btnState === 'success' ? '#000000' : '#FFFFFF',
+            fontWeight: '700',
+            fontSize: '10px',
+            letterSpacing: '2px',
+            border: `1px solid ${
+              btnState === 'success' ? '#FFFFFF' : btnState === 'error' ? '#666666' : '#222222'
+            }`,
+            borderRadius: '4px',
+            cursor: btnState !== 'idle' ? 'default' : 'pointer',
+            opacity: btnState === 'loading' ? 0.6 : 1,
+            transition: 'all 0.25s ease'
+          }}
+          onMouseEnter={(e) => {
+            if (btnState === 'idle') e.currentTarget.style.borderColor = '#444444';
+          }}
+          onMouseLeave={(e) => {
+            if (btnState === 'idle') e.currentTarget.style.borderColor = '#222222';
+          }}
+        >
+          {btnState === 'loading' && 'SENDING...'}
+          {btnState === 'success' && 'SENT SUCCESSFULLY'}
+          {btnState === 'error' && (btnErrorText || 'FAILED')}
+          {btnState === 'idle' && `DISPATCH (${selectedUserIds.length})`}
+        </button>
+
+      </form>
+
+      {/* RECIPIENT SELECTOR MODAL */}
+      {isModalOpen && (
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          background: '#000000',
+          zIndex: 150,
+          display: 'flex',
+          flexDirection: 'column'
+        }}>
+          {/* Header */}
+          <div style={{ padding: '16px 20px', borderBottom: '1px solid #141414', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '10px', fontWeight: '700', letterSpacing: '1.5px' }}>RECIPIENTS</span>
+            <button
+              type="button"
+              onClick={() => setIsModalOpen(false)}
+              style={{ background: 'transparent', border: 'none', color: '#FFF', padding: '4px', cursor: 'pointer' }}
+            >
+              <CloseIcon style={{ width: 13, height: 13 }} />
+            </button>
+          </div>
+
+          {/* Search, Filter Chips & Select All Controls */}
+          <div style={{ padding: '14px 20px', borderBottom: '1px solid #111111', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <input
+              type="text"
+              placeholder="Search..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{ width: '100%', background: '#080808', border: '1px solid #1A1A1A', borderRadius: '4px', padding: '8px 12px', color: '#FFF', fontSize: '12px', outline: 'none' }}
+            />
+
+            <div style={{ display: 'flex', gap: '6px', overflowX: 'auto' }}>
+              {['ALL', 'SUPER_ADMIN', 'AMBASSADOR', 'CUSTOMER'].map((role) => {
+                const active = roleFilter === role;
+                return (
+                  <button
+                    key={role}
+                    type="button"
+                    onClick={() => setRoleFilter(role)}
+                    style={{
+                      padding: '4px 10px', fontSize: '9px', fontWeight: '700', borderRadius: '12px',
+                      background: 'transparent', color: active ? '#FFF' : mutedText,
+                      border: `1px solid ${active ? '#FFF' : '#1A1A1A'}`, cursor: 'pointer', whiteSpace: 'nowrap'
+                    }}
+                  >
+                    {role}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Select All Toggle Action Bar */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '2px' }}>
+              <span style={{ fontSize: '9px', color: mutedText, letterSpacing: '1px', fontWeight: '600' }}>
+                {filteredUsers.length} FOUND
+              </span>
+              <button
+                type="button"
+                onClick={toggleSelectAllFiltered}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: isAllFilteredSelected ? '#FFFFFF' : mutedText,
+                  fontSize: '9px',
+                  fontWeight: '700',
+                  letterSpacing: '1.5px',
+                  cursor: 'pointer',
+                  padding: '2px 0'
+                }}
+              >
+                {isAllFilteredSelected ? 'DESELECT ALL' : `SELECT ALL (${filteredUsers.length})`}
+              </button>
+            </div>
+          </div>
+
+          {/* User List */}
+          <div className="sheet-scroll" style={{ flex: 1, overflowY: 'auto', padding: '8px 20px' }}>
+            {filteredUsers.map((user) => {
+              const isSelected = selectedUserIds.includes(user.id);
+              return (
+                <div
+                  key={user.id}
+                  onClick={() => toggleSelectUser(user.id)}
+                  style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    padding: '10px 0', borderBottom: '1px solid #0F0F0F', cursor: 'pointer'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ width: '14px', height: '14px', borderRadius: '2px', border: `1px solid ${isSelected ? '#FFF' : '#222'}`, background: isSelected ? '#FFF' : 'transparent', color: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {isSelected && <CheckIcon style={{ width: 9, height: 9 }} />}
+                    </div>
+                    <div>
+                      <span style={{ fontSize: '12px', fontWeight: '500', color: isSelected ? '#FFF' : '#888', display: 'block' }}>{user.name || 'Unnamed User'}</span>
+                      <span style={{ fontSize: '10px', color: mutedText }}>{user.email || user.id}</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Sheet Footer */}
+          <div style={{ padding: '14px 20px', borderTop: '1px solid #141414', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '11px', color: mutedText }}>{selectedUserIds.length} selected</span>
+            <button type="button" onClick={() => setIsModalOpen(false)} style={{ padding: '8px 20px', background: '#FFF', color: '#000', fontWeight: '700', fontSize: '10px', letterSpacing: '1px', border: 'none', borderRadius: '2px', cursor: 'pointer' }}>DONE</button>
           </div>
         </div>
       )}
