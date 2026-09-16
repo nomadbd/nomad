@@ -58,6 +58,11 @@ export default function NotificationLogs({ onBack }: NotificationLogsProps) {
           if (payload.eventType === 'INSERT') {
             const newNotif = payload.new as SentNotification;
             setLogs((prev) => [newNotif, ...prev]);
+          } else if (payload.eventType === 'UPDATE') {
+            const updatedNotif = payload.new as SentNotification;
+            setLogs((prev) =>
+              prev.map((item) => (item.id === updatedNotif.id ? updatedNotif : item))
+            );
           } else if (payload.eventType === 'DELETE') {
             const deletedId = payload.old.id;
             setLogs((prev) => prev.filter((item) => item.id !== deletedId));
