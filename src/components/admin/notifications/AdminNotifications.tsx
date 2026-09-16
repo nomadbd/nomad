@@ -11,7 +11,6 @@ interface UserProfile {
 }
 
 type CategoryType = 'INFO' | 'PROMO' | 'SYSTEM' | 'ALERT' | null;
-type ChannelType = 'IN_APP' | 'PUSH' | 'EMAIL';
 
 const QUICK_TEMPLATES = [
   {
@@ -56,7 +55,6 @@ export default function AdminNotifications() {
   const [message, setMessage] = useState('');
   const [type, setType] = useState<CategoryType>(null);
   const [link, setLink] = useState('');
-  const [channels, setChannels] = useState<ChannelType[]>(['IN_APP', 'PUSH']);
   const [isScheduled, setIsScheduled] = useState(false);
   const [scheduledAt, setScheduledAt] = useState('');
 
@@ -104,30 +102,9 @@ export default function AdminNotifications() {
     });
   }, [allUsers, roleFilter, searchQuery]);
 
-  const isAllFilteredSelected = useMemo(() => {
-    if (filteredUsers.length === 0) return false;
-    return filteredUsers.every((u) => selectedUserIds.includes(u.id));
-  }, [filteredUsers, selectedUserIds]);
-
   const toggleSelectUser = (id: string) => {
     setSelectedUserIds((prev) =>
       prev.includes(id) ? prev.filter((uId) => uId !== id) : [...prev, id]
-    );
-  };
-
-  const toggleSelectFiltered = () => {
-    if (isAllFilteredSelected) {
-      const filteredIds = new Set(filteredUsers.map((u) => u.id));
-      setSelectedUserIds((prev) => prev.filter((id) => !filteredIds.has(id)));
-    } else {
-      const combined = new Set([...selectedUserIds, ...filteredUsers.map((u) => u.id)]);
-      setSelectedUserIds(Array.from(combined));
-    }
-  };
-
-  const toggleChannel = (ch: ChannelType) => {
-    setChannels((prev) =>
-      prev.includes(ch) ? prev.filter((c) => c !== ch) : [...prev, ch]
     );
   };
 
@@ -149,10 +126,6 @@ export default function AdminNotifications() {
       setStatusMsg({ type: 'error', text: 'Select a category' });
       return;
     }
-    if (channels.length === 0) {
-      setStatusMsg({ type: 'error', text: 'Select at least one delivery channel' });
-      return;
-    }
     if (!title.trim() || !message.trim()) {
       setStatusMsg({ type: 'error', text: 'Title and message required' });
       return;
@@ -172,7 +145,6 @@ export default function AdminNotifications() {
         link: link.trim() || null,
         target_audience: isAllUsersSelected ? 'ALL' : 'SPECIFIC',
         is_read: false,
-        channels: channels,
         scheduled_at: isScheduled && scheduledAt ? new Date(scheduledAt).toISOString() : null
       }));
 
@@ -294,7 +266,7 @@ export default function AdminNotifications() {
       {/* Main Form */}
       <form onSubmit={handleSend} style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
 
-        {/* RECIPIENTS SECTION WITH BADGES */}
+        {/* RECIPIENTS SECTION */}
         <div>
           <span style={{ display: 'block', fontSize: '9px', color: mutedText, fontWeight: '700', letterSpacing: '1.5px', marginBottom: '8px' }}>
             RECIPIENTS
@@ -407,74 +379,37 @@ export default function AdminNotifications() {
           </div>
         </div>
 
-        {/* CATEGORY & CHANNELS ROW */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-
-          {/* Category */}
-          <div>
-            <span style={{ display: 'block', fontSize: '9px', color: mutedText, fontWeight: '700', letterSpacing: '1.5px', marginBottom: '8px' }}>
-              CATEGORY
-            </span>
-            <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-              {(['INFO', 'PROMO', 'ALERT', 'SYSTEM'] as const).map((cat) => {
-                const active = type === cat;
-                const catColor = getCategoryColor(cat);
-                return (
-                  <button
-                    key={cat}
-                    type="button"
-                    onClick={() => setType(cat)}
-                    style={{
-                      flex: 1,
-                      padding: '6px 0',
-                      fontSize: '9px',
-                      fontWeight: '800',
-                      background: 'transparent',
-                      color: active ? catColor : mutedText,
-                      border: `1px solid ${active ? catColor : '#222'}`,
-                      borderRadius: '4px',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    {cat}
-                  </button>
-                );
-              })}
-            </div>
+        {/* CATEGORY SELECTOR */}
+        <div>
+          <span style={{ display: 'block', fontSize: '9px', color: mutedText, fontWeight: '700', letterSpacing: '1.5px', marginBottom: '8px' }}>
+            CATEGORY
+          </span>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            {(['INFO', 'PROMO', 'ALERT', 'SYSTEM'] as const).map((cat) => {
+              const active = type === cat;
+              const catColor = getCategoryColor(cat);
+              return (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => setType(cat)}
+                  style={{
+                    flex: 1,
+                    padding: '8px 0',
+                    fontSize: '10px',
+                    fontWeight: '800',
+                    background: 'transparent',
+                    color: active ? catColor : mutedText,
+                    border: `1px solid ${active ? catColor : '#222'}`,
+                    borderRadius: '4px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {cat}
+                </button>
+              );
+            })}
           </div>
-
-          {/* Delivery Channels */}
-          <div>
-            <span style={{ display: 'block', fontSize: '9px', color: mutedText, fontWeight: '700', letterSpacing: '1.5px', marginBottom: '8px' }}>
-              DELIVERY CHANNELS
-            </span>
-            <div style={{ display: 'flex', gap: '4px' }}>
-              {(['IN_APP', 'PUSH', 'EMAIL'] as const).map((ch) => {
-                const active = channels.includes(ch);
-                return (
-                  <button
-                    key={ch}
-                    type="button"
-                    onClick={() => toggleChannel(ch)}
-                    style={{
-                      flex: 1,
-                      padding: '6px 0',
-                      fontSize: '9px',
-                      fontWeight: '800',
-                      background: active ? '#222' : 'transparent',
-                      color: active ? '#FFF' : mutedText,
-                      border: `1px solid ${active ? '#555' : '#222'}`,
-                      borderRadius: '4px',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    {ch}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
         </div>
 
         {/* TIMING & SCHEDULING */}
