@@ -36,7 +36,7 @@ export default function AdminNotifications() {
   const [type, setType] = useState<CategoryType>(null);
   const [link, setLink] = useState('');
 
-  // Button Status State: 'idle' | 'loading' | 'success' | 'error'
+  // Button Status State
   const [btnState, setBtnState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [btnErrorText, setBtnErrorText] = useState('');
 
@@ -78,6 +78,22 @@ export default function AdminNotifications() {
       return true;
     });
   }, [allUsers, roleFilter, searchQuery]);
+
+  // Check if all filtered users are currently selected
+  const isAllFilteredSelected = useMemo(() => {
+    if (filteredUsers.length === 0) return false;
+    return filteredUsers.every((u) => selectedUserIds.includes(u.id));
+  }, [filteredUsers, selectedUserIds]);
+
+  // Toggle Select All for currently filtered users
+  const toggleSelectAllFiltered = () => {
+    const filteredIds = filteredUsers.map((u) => u.id);
+    if (isAllFilteredSelected) {
+      setSelectedUserIds((prev) => prev.filter((id) => !filteredIds.includes(id)));
+    } else {
+      setSelectedUserIds((prev) => Array.from(new Set([...prev, ...filteredIds])));
+    }
+  };
 
   const toggleSelectUser = (id: string) => {
     setSelectedUserIds((prev) =>
@@ -128,7 +144,6 @@ export default function AdminNotifications() {
       const { error } = await supabase.from('notifications').insert(notificationsToInsert);
       if (error) throw error;
 
-      // Success State on Button
       setBtnState('success');
       setTitle('');
       setMessage('');
@@ -136,7 +151,6 @@ export default function AdminNotifications() {
       setType(null);
       setSelectedUserIds([]);
 
-      // Reset button back to normal after 2.5s
       setTimeout(() => {
         setBtnState('idle');
       }, 2500);
@@ -385,7 +399,7 @@ export default function AdminNotifications() {
           </div>
         </div>
 
-        {/* Dynamic Action Button (Self-contained Status) */}
+        {/* Action Button */}
         <button
           type="submit"
           disabled={btnState !== 'idle'}
@@ -420,7 +434,7 @@ export default function AdminNotifications() {
 
       </form>
 
-      {/* FULL SCREEN RECIPIENT SELECTOR */}
+      {/* RECIPIENT SELECTOR MODAL */}
       {isModalOpen && (
         <div style={{
           position: 'fixed',
@@ -430,7 +444,7 @@ export default function AdminNotifications() {
           display: 'flex',
           flexDirection: 'column'
         }}>
-          {/* Sheet Header */}
+          {/* Header */}
           <div style={{ padding: '16px 20px', borderBottom: '1px solid #141414', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: '10px', fontWeight: '700', letterSpacing: '1.5px' }}>RECIPIENTS</span>
             <button
@@ -442,8 +456,8 @@ export default function AdminNotifications() {
             </button>
           </div>
 
-          {/* Search & Filters */}
-          <div style={{ padding: '14px 20px', borderBottom: '1px solid #111111', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          {/* Search, Filter Chips & Select All Controls */}
+          <div style={{ padding: '14px 20px', borderBottom: '1px solid #111111', display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <input
               type="text"
               placeholder="Search..."
@@ -470,6 +484,29 @@ export default function AdminNotifications() {
                   </button>
                 );
               })}
+            </div>
+
+            {/* Select All Toggle Action Bar */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '2px' }}>
+              <span style={{ fontSize: '9px', color: mutedText, letterSpacing: '1px', fontWeight: '600' }}>
+                {filteredUsers.length} FOUND
+              </span>
+              <button
+                type="button"
+                onClick={toggleSelectAllFiltered}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: isAllFilteredSelected ? '#FFFFFF' : mutedText,
+                  fontSize: '9px',
+                  fontWeight: '700',
+                  letterSpacing: '1.5px',
+                  cursor: 'pointer',
+                  padding: '2px 0'
+                }}
+              >
+                {isAllFilteredSelected ? 'DESELECT ALL' : `SELECT ALL (${filteredUsers.length})`}
+              </button>
             </div>
           </div>
 
