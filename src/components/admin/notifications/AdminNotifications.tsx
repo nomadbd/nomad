@@ -12,30 +12,6 @@ interface UserProfile {
 
 type CategoryType = 'INFO' | 'PROMO' | 'SYSTEM' | 'ALERT' | null;
 
-const QUICK_TEMPLATES = [
-  {
-    label: '🔧 Maintenance',
-    title: 'System Maintenance Scheduled',
-    message: 'Our platform will undergo scheduled maintenance tonight. Systems may be temporarily unavailable.',
-    type: 'SYSTEM' as CategoryType,
-    link: '/status'
-  },
-  {
-    label: '🎉 Promotion',
-    title: 'Exclusive Offer Unlocked!',
-    message: 'Check out your account dashboard now to claim your special privileges and benefits.',
-    type: 'PROMO' as CategoryType,
-    link: '/offers'
-  },
-  {
-    label: '⚠️ Security',
-    title: 'Security Notice',
-    message: 'Please review your account security settings to keep your profile fully protected.',
-    type: 'ALERT' as CategoryType,
-    link: '/settings'
-  }
-];
-
 export default function AdminNotifications() {
   const [view, setView] = useState<'create' | 'logs'>('create');
 
@@ -106,13 +82,6 @@ export default function AdminNotifications() {
     setSelectedUserIds((prev) =>
       prev.includes(id) ? prev.filter((uId) => uId !== id) : [...prev, id]
     );
-  };
-
-  const applyTemplate = (tpl: typeof QUICK_TEMPLATES[0]) => {
-    setTitle(tpl.title);
-    setMessage(tpl.message);
-    setType(tpl.type);
-    setLink(tpl.link);
   };
 
   const handleSend = async (e: React.FormEvent) => {
@@ -347,35 +316,6 @@ export default function AdminNotifications() {
                 Click + button to choose recipients
               </span>
             )}
-          </div>
-        </div>
-
-        {/* QUICK TEMPLATES */}
-        <div>
-          <span style={{ display: 'block', fontSize: '9px', color: mutedText, fontWeight: '700', letterSpacing: '1.5px', marginBottom: '8px' }}>
-            QUICK TEMPLATES
-          </span>
-          <div style={{ display: 'flex', gap: '8px', overflowX: 'auto' }}>
-            {QUICK_TEMPLATES.map((tpl, i) => (
-              <button
-                key={i}
-                type="button"
-                onClick={() => applyTemplate(tpl)}
-                style={{
-                  padding: '6px 12px',
-                  background: '#121212',
-                  border: '1px solid #242424',
-                  borderRadius: '14px',
-                  color: '#DDD',
-                  fontSize: '10px',
-                  fontWeight: '600',
-                  whiteSpace: 'nowrap',
-                  cursor: 'pointer'
-                }}
-              >
-                {tpl.label}
-              </button>
-            ))}
           </div>
         </div>
 
