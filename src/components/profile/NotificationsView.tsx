@@ -3,8 +3,8 @@ import { supabase } from '../../supabaseClient';
 import { BackIcon, NotificationIcon, CloseIcon, CheckIcon } from '../icons';
 
 interface NotificationItem {
-  id: string;
-  user_id: string;
+  recipient_id: string;
+  notification_id: string;
   title: string;
   message: string;
   type: 'INFO' | 'PROMO' | 'SYSTEM' | 'ALERT';
@@ -60,7 +60,7 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
 
     if (diffInSeconds < 60) return 'Just now';
     const diffInMinutes = Math.floor(diffInSeconds / 60);
-    if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+    if (diffInMinutes < 60) return `${Math.floor(diffInMinutes / 60)}m ago`;
     const diffInHours = Math.floor(diffInMinutes / 60);
     if (diffInHours < 24) return `${diffInHours}h ago`;
     const diffInDays = Math.floor(diffInHours / 24);
@@ -83,20 +83,47 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
     }
   };
 
-  // ডাটা ফেস করার ফাংশন (Silent параметр দিয়ে স্কেলিটন লোডার রোধ করা হয়েছে)
+  // ডাটাবেজের notification_recipients টেবিল থেকে ইউজারভিত্তিক ডাটা ফেচ
   const fetchNotifications = async (isSilent = false) => {
     if (!isSilent) setLoading(true);
 
     try {
-      // Specific User এবং GLOBAL উভয় নোটিফিকেশনই নিয়ে আসবে
       const { data, error } = await supabase
-        .from('notifications')
-        .select('*')
-        .or(`user_id.eq.${userId},target_audience.eq.ALL`)
+        .from('notification_recipients')
+        .select(`
+          id,
+          is_read,
+          created_at,
+          notification:notifications (
+            id,
+            title,
+            message,
+            type,
+            link,
+            target_audience
+          )
+        `)
+        .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
       if (!error && data) {
-        setNotifications(data as NotificationItem[]);
+        const formatted: NotificationItem[] = data
+          .filter((item) => item.notification)
+          .map((item) => {
+            const notif = item.notification as any;
+            return {
+              recipient_id: item.id,
+              notification_id: notif.id,
+              title: notif.title,
+              message: notif.message,
+              type: notif.type,
+              link: notif.link,
+              target_audience: notif.target_audience,
+              is_read: item.is_read,
+              created_at: item.created_at,
+            };
+          });
+        setNotifications(formatted);
       }
     } catch (err) {
       console.error('Fetch error:', err);
@@ -110,25 +137,19 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
 
     fetchNotifications(false);
 
-    // Global ও Individual উভয় পরিবর্তন লাইভ রিয়েলটাইমে ক্যাচ করবে
+    // notification_recipients টেবিলে নতুন নোটিফিকেশন এলেই লাইভ আপডেট পাবে
     const channel = supabase
-      .channel(`user_notifications_${userId}`)
+      .channel(`user_recipients_${userId}`)
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
-          table: 'notifications'
+          table: 'notification_recipients',
+          filter: `user_id=eq.${userId}`
         },
-        (payload) => {
-          if (payload.eventType === 'UPDATE') {
-            const updated = payload.new as NotificationItem;
-            setNotifications(prev =>
-              prev.map(item => (item.id === updated.id ? { ...item, ...updated } : item))
-            );
-          } else {
-            fetchNotifications(true);
-          }
+        () => {
+          fetchNotifications(true);
         }
       )
       .subscribe();
@@ -138,56 +159,57 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
     };
   }, [userId]);
 
-  const markAsRead = async (id: string, currentStatus: boolean) => {
+  const markAsRead = async (recipientId: string, currentStatus: boolean) => {
     if (currentStatus) return;
 
     // UI-তে তাৎক্ষণিক SEEN দেখাবে
-    setNotifications(prev =>
-      prev.map(item => (item.id === id ? { ...item, is_read: true } : item))
+    setNotifications((prev) =>
+      prev.map((item) => (item.recipient_id === recipientId ? { ...item, is_read: true } : item))
     );
 
-    // ডাটাবেজে is_read = true আপডেট পাঠাবে
+    // notification_recipients টেবিলে status আপডেট হবে
     const { error } = await supabase
-      .from('notifications')
+      .from('notification_recipients')
       .update({ is_read: true })
-      .eq('id', id);
+      .eq('id', recipientId);
 
     if (error) {
-      console.error('Failed to update DB is_read status:', error.message);
+      console.error('Failed to update recipient is_read status:', error.message);
     }
   };
 
   const markAllAsRead = async () => {
-    const unreadIds = notifications.filter(n => !n.is_read).map(n => n.id);
-    if (unreadIds.length === 0) return;
+    const unreadRecipientIds = notifications.filter((n) => !n.is_read).map((n) => n.recipient_id);
+    if (unreadRecipientIds.length === 0) return;
 
-    setNotifications(prev => prev.map(item => ({ ...item, is_read: true })));
+    setNotifications((prev) => prev.map((item) => ({ ...item, is_read: true })));
 
     await supabase
-      .from('notifications')
+      .from('notification_recipients')
       .update({ is_read: true })
-      .in('id', unreadIds);
+      .in('id', unreadRecipientIds);
   };
 
-  const deleteNotification = async (e: React.MouseEvent, id: string) => {
+  const deleteNotification = async (e: React.MouseEvent, recipientId: string) => {
     e.stopPropagation();
-    setNotifications(prev => prev.filter(item => item.id !== id));
-    if (expandedId === id) setExpandedId(null);
+    setNotifications((prev) => prev.filter((item) => item.recipient_id !== recipientId));
+    if (expandedId === recipientId) setExpandedId(null);
 
+    // শুধু এই গ্রাহকের ইনবক্স থেকেই রিমুভ হবে
     await supabase
-      .from('notifications')
+      .from('notification_recipients')
       .delete()
-      .eq('id', id);
+      .eq('id', recipientId);
   };
 
   const handleCardClick = (item: NotificationItem) => {
-    markAsRead(item.id, item.is_read);
-    setExpandedId(prev => (prev === item.id ? null : item.id));
+    markAsRead(item.recipient_id, item.is_read);
+    setExpandedId((prev) => (prev === item.recipient_id ? null : item.recipient_id));
   };
 
-  const unreadCount = notifications.filter(n => !n.is_read).length;
+  const unreadCount = notifications.filter((n) => !n.is_read).length;
 
-  const filteredNotifications = notifications.filter(item => {
+  const filteredNotifications = notifications.filter((item) => {
     if (filter === 'unread') return !item.is_read;
     return true;
   });
@@ -243,7 +265,7 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
         </div>
 
         <button
-          onClick={() => setFilter(prev => prev === 'unread' ? 'all' : 'unread')}
+          onClick={() => setFilter((prev) => (prev === 'unread' ? 'all' : 'unread'))}
           style={{
             padding: '6px 16px',
             borderRadius: '20px',
@@ -328,11 +350,11 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {filteredNotifications.map((item) => {
               const badge = getTypeBadge(item.type);
-              const isExpanded = expandedId === item.id;
+              const isExpanded = expandedId === item.recipient_id;
 
               return (
                 <div
-                  key={item.id}
+                  key={item.recipient_id}
                   onClick={() => handleCardClick(item)}
                   style={{
                     background: item.is_read ? '#09090B' : '#121212',
@@ -381,7 +403,7 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
                     </div>
 
                     <button
-                      onClick={(e) => deleteNotification(e, item.id)}
+                      onClick={(e) => deleteNotification(e, item.recipient_id)}
                       title="Delete"
                       style={{
                         background: 'transparent',
