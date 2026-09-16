@@ -128,31 +128,17 @@ export default function AdminNotifications() {
 
     try {
       const isAllUsersSelected = allUsers.length > 0 && selectedUserIds.length === allUsers.length;
-      let notificationsToInsert = [];
 
-      // গ্লোবাল পাঠালে ১টি মাত্র Row তৈরি হবে (যাতে ১ বার এডিটে পুরো ডাটাবেজ আপডেট হয়)
-      if (isAllUsersSelected) {
-        notificationsToInsert = [{
-          user_id: null,
-          title: title.trim(),
-          message: message.trim(),
-          type,
-          link: link.trim() || null,
-          target_audience: 'ALL',
-          is_read: false
-        }];
-      } else {
-        // নির্দিষ্ট ইউজার সিলেক্ট করলে তাদের জন্য ইনসার্ট হবে
-        notificationsToInsert = selectedUserIds.map((userId) => ({
-          user_id: userId,
-          title: title.trim(),
-          message: message.trim(),
-          type,
-          link: link.trim() || null,
-          target_audience: 'SPECIFIC',
-          is_read: false
-        }));
-      }
+      // user_id NULL না পাঠিয় নির্বাচিত ইউজারের valid ID পাঠানো হচ্ছে
+      const notificationsToInsert = selectedUserIds.map((userId) => ({
+        user_id: userId,
+        title: title.trim(),
+        message: message.trim(),
+        type,
+        link: link.trim() || null,
+        target_audience: isAllUsersSelected ? 'ALL' : 'SPECIFIC',
+        is_read: false
+      }));
 
       const { error } = await supabase.from('notifications').insert(notificationsToInsert);
       if (error) throw error;
