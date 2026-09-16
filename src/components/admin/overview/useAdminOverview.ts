@@ -1,11 +1,16 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from '../../../supabaseClient';
 import { ChartPoint, MetricType, GranularityType } from './adminOverview.types';
 import { formatDateToInput, formatDisplayDate } from './adminOverview.utils';
 
 export const useAdminOverview = (dateFormat: string = 'DD/MM/YYYY') => {
-  const [startDate, setStartDate] = useState<string>('');
-  const [endDate, setEndDate] = useState<string>('');
+  // ১. ইনিশিয়াল ডেট ৩-ডেইজ দিয়ে সেট করা হয়েছে যেন মাউন্টে জোড়া রেন্ডার/ফেচ না হয়
+  const initialNow = new Date();
+  const initialPast30 = new Date();
+  initialPast30.setDate(initialNow.getDate() - 30);
+
+  const [startDate, setStartDate] = useState<string>(formatDateToInput(initialPast30));
+  const [endDate, setEndDate] = useState<string>(formatDateToInput(initialNow));
   const [selectedPreset, setSelectedPreset] = useState<string>('30D');
 
   const [selectedMetric, setSelectedMetric] = useState<MetricType>('REVENUE');
@@ -31,7 +36,7 @@ export const useAdminOverview = (dateFormat: string = 'DD/MM/YYYY') => {
 
   const [rawOrdersData, setRawOrdersData] = useState<any[]>([]);
 
-  const handlePresetSelect = (preset: string) => {
+  const handlePresetSelect = useCallback((preset: string) => {
     setSelectedPreset(preset);
     const now = new Date();
 
@@ -53,8 +58,9 @@ export const useAdminOverview = (dateFormat: string = 'DD/MM/YYYY') => {
       setStartDate('');
       setEndDate('');
     }
-  };
+  }, []);
 
+  // Granularity নির্ণয় করা
   useEffect(() => {
     if (!startDate || !endDate) {
       setGranularity('MONTHLY');
@@ -63,6 +69,12 @@ export const useAdminOverview = (dateFormat: string = 'DD/MM/YYYY') => {
 
     const start = new Date(startDate);
     const end = new Date(endDate);
+    
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      setGranularity('DAILY');
+      return;
+    }
+
     const diffDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 3600 * 24));
 
     if (diffDays <= 35) setGranularity('DAILY');
@@ -71,14 +83,12 @@ export const useAdminOverview = (dateFormat: string = 'DD/MM/YYYY') => {
     else setGranularity('YEARLY');
   }, [startDate, endDate]);
 
-  useEffect(() => {
-    handlePresetSelect('30D');
-  }, []);
-
-  const fetchMetricsData = async () => {
+  // ডাটা ফেচিং ফাংশন (Race condition & Timezone Fix সহ)
+  const fetchMetricsData = useCallback(async (isSubscribed: { current: boolean }) => {
     try {
-      const p_start = startDate && startDate.trim() !== '' ? `${startDate}T00:00:00.000Z` : null;
-      const p_end = endDate && endDate.trim() !== '' ? `${endDate}T23:59:59.999Z` : null;
+      // Local Timezone Offset বজায় রেখে ISO ISO String তৈরি
+      const p_start = startDate && startDate.trim() !== '' ? new Date(`${startDate}T00:00:00`).toISOString() : null;
+      const p_end = endDate && endDate.trim() !== '' ? new Date(`${endDate}T23:59:59.999`).toISOString() : null;
 
       const ordersPromise = (async () => {
         const { data: rpcOrders, error: rpcErr } = await supabase.rpc('get_admin_overview_orders', {
@@ -92,8 +102,7 @@ export const useAdminOverview = (dateFormat: string = 'DD/MM/YYYY') => {
           let ordersQuery = supabase
             .from('orders')
             .select('status, total_amount, created_at')
-            .order('created_at', { ascending: false })
-            .limit(3000);
+            .order('created_at', { ascending: false });
 
           if (p_start) ordersQuery = ordersQuery.gte('created_at', p_start);
           if (p_end) ordersQuery = ordersQuery.lte('created_at', p_end);
@@ -105,11 +114,11 @@ export const useAdminOverview = (dateFormat: string = 'DD/MM/YYYY') => {
       const productCountPromise = supabase.from('products').select('*', { count: 'exact', head: true });
       const outOfStockPromise = supabase.from('products').select('*', { count: 'exact', head: true }).lte('stock_quantity', 0);
       const lowStockPromise = supabase.from('products').select('*', { count: 'exact', head: true }).gt('stock_quantity', 0).lte('stock_quantity', 5);
-      const allUsersPromise = supabase.from('profiles').select('*', { count: 'exact', head: true }).not('role', 'in', '(admin,manager)');
+      const allUsersPromise = supabase.from('profiles').select('*', { count: 'exact', head: true }).not('role', 'in', '("admin","manager")');
 
-      let newUsersQuery = supabase.from('profiles').select('*', { count: 'exact', head: true }).not('role', 'in', '(admin,manager)');
-      if (startDate) newUsersQuery = newUsersQuery.gte('created_at', `${startDate}T00:00:00.000Z`);
-      if (endDate) newUsersQuery = newUsersQuery.lte('created_at', `${endDate}T23:59:59.999Z`);
+      let newUsersQuery = supabase.from('profiles').select('*', { count: 'exact', head: true }).not('role', 'in', '("admin","manager")');
+      if (p_start) newUsersQuery = newUsersQuery.gte('created_at', p_start);
+      if (p_end) newUsersQuery = newUsersQuery.lte('created_at', p_end);
 
       const [
         orders,
@@ -127,6 +136,9 @@ export const useAdminOverview = (dateFormat: string = 'DD/MM/YYYY') => {
         newUsersQuery
       ]);
 
+      // যদি রেসপন্স আসার আগেই ডেট ফিল্টার চেঞ্জ হয় বা Unmount হয় তবে স্টেট আপডেট হবে না
+      if (!isSubscribed.current) return;
+
       let revenue = 0;
       let c_revenue = 0;
       let pending = 0;
@@ -139,18 +151,18 @@ export const useAdminOverview = (dateFormat: string = 'DD/MM/YYYY') => {
       orders.forEach((o: any) => {
         const st = (o.status || '').toLowerCase().trim();
 
-        if (st === 'pending') pending++;
-        else if (st.includes('proc')) processing++;
-        else if (st.includes('rec')) received++;
-        else if (st.includes('shipped')) shipped++;
-        else if (st.includes('delivered') || st.includes('completed')) delivered++;
-        else if (st.includes('cancel')) cancelled++;
-        else pending++;
-
-        if (!st.includes('cancel')) {
-          revenue += Number(o.total_amount || 0);
-        } else {
+        // ক্যানসেলড চেক সবার প্রথমে
+        if (st.includes('cancel')) {
+          cancelled++;
           c_revenue += Number(o.total_amount || 0);
+        } else {
+          revenue += Number(o.total_amount || 0);
+          if (st === 'pending') pending++;
+          else if (st.includes('proc')) processing++;
+          else if (st.includes('rec')) received++;
+          else if (st.includes('shipped')) shipped++;
+          else if (st.includes('delivered') || st.includes('completed')) delivered++;
+          else pending++;
         }
       });
 
@@ -174,10 +186,11 @@ export const useAdminOverview = (dateFormat: string = 'DD/MM/YYYY') => {
     } catch (err) {
       console.error('Error fetching analytics:', err);
     }
-  };
+  }, [startDate, endDate]);
 
   useEffect(() => {
-    fetchMetricsData();
+    const isSubscribed = { current: true };
+    fetchMetricsData(isSubscribed);
 
     let debounceTimer: NodeJS.Timeout;
 
@@ -186,17 +199,21 @@ export const useAdminOverview = (dateFormat: string = 'DD/MM/YYYY') => {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => {
         clearTimeout(debounceTimer);
         debounceTimer = setTimeout(() => {
-          fetchMetricsData();
+          if (isSubscribed.current) {
+            fetchMetricsData(isSubscribed);
+          }
         }, 1500);
       })
       .subscribe();
 
     return () => {
+      isSubscribed.current = false;
       clearTimeout(debounceTimer);
       supabase.removeChannel(ordersSubscription);
     };
-  }, [startDate, endDate]);
+  }, [fetchMetricsData]);
 
+  // 안전한 Chart Data হিসেব (Infinite Loop Protect)
   const chartData: ChartPoint[] = useMemo(() => {
     if (!rawOrdersData) return [];
 
@@ -212,9 +229,13 @@ export const useAdminOverview = (dateFormat: string = 'DD/MM/YYYY') => {
       }
     }
 
-    if (!startD) {
+    if (!startD || isNaN(startD.getTime())) {
       startD = new Date();
       startD.setDate(startD.getDate() - 30);
+    }
+
+    if (isNaN(endD.getTime())) {
+      endD = new Date();
     }
 
     const dateMap: { [key: string]: { revenue: number; orders: number } } = {};
@@ -224,6 +245,8 @@ export const useAdminOverview = (dateFormat: string = 'DD/MM/YYYY') => {
       if (st.includes('cancel') || !o.created_at) return;
 
       const d = new Date(o.created_at);
+      if (isNaN(d.getTime())) return;
+
       let key = '';
 
       if (granularity === 'DAILY') {
@@ -238,23 +261,31 @@ export const useAdminOverview = (dateFormat: string = 'DD/MM/YYYY') => {
         key = `${d.getFullYear()}`;
       }
 
-      if (!dateMap[key]) {
-        dateMap[key] = { revenue: 0, orders: 0 };
+      if (key) {
+        if (!dateMap[key]) {
+          dateMap[key] = { revenue: 0, orders: 0 };
+        }
+        dateMap[key].revenue += Number(o.total_amount || 0);
+        dateMap[key].orders += 1;
       }
-      dateMap[key].revenue += Number(o.total_amount || 0);
-      dateMap[key].orders += 1;
     });
 
     const resultKeys: string[] = [];
     const curr = new Date(startD);
+
     if (granularity === 'MONTHLY') {
       curr.setDate(1);
     } else if (granularity === 'YEARLY') {
       curr.setMonth(0, 1);
     }
 
-    while (curr <= endD) {
+    let safetyCounter = 0;
+    const maxIterations = 2000; // Safeguard against infinite loops
+
+    while (curr <= endD && safetyCounter < maxIterations) {
+      safetyCounter++;
       let key = '';
+
       if (granularity === 'DAILY') {
         key = formatDateToInput(curr);
         curr.setDate(curr.getDate() + 1);
@@ -269,6 +300,9 @@ export const useAdminOverview = (dateFormat: string = 'DD/MM/YYYY') => {
       } else if (granularity === 'YEARLY') {
         key = `${curr.getFullYear()}`;
         curr.setFullYear(curr.getFullYear() + 1);
+      } else {
+        // Fallback to prevent infinite loop if granularity is unknown
+        curr.setDate(curr.getDate() + 1);
       }
 
       if (key && !resultKeys.includes(key)) {
@@ -289,12 +323,12 @@ export const useAdminOverview = (dateFormat: string = 'DD/MM/YYYY') => {
     });
   }, [rawOrdersData, granularity, startDate, endDate, dateFormat]);
 
-  const calcPercent = (val: number) => {
+  const calcPercent = useCallback((val: number) => {
     if (!totalOrders || totalOrders <= 0 || typeof val !== 'number' || isNaN(val)) return 0;
     return Math.min(Math.max((val / totalOrders) * 100, 0), 100);
-  };
+  }, [totalOrders]);
 
-  const validOrderCount = totalOrders - cancelledOrders;
+  const validOrderCount = Math.max(0, totalOrders - cancelledOrders);
   const avgOrderValue = validOrderCount > 0 ? Math.round(totalRevenue / validOrderCount) : 0;
 
   return {
