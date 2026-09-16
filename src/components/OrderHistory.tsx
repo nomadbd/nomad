@@ -38,21 +38,21 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
   const [singleOrderToHide, setSingleOrderToHide] = useState<string | null>(null);
   const [isHiding, setIsHiding] = useState<boolean>(false);
 
-  
+
   const getUnifiedStatus = (rawStatus: string) => {
     if (!rawStatus) return 'PENDING';
     const s = rawStatus.trim().toLowerCase();
-    
+
     if (s === 'received') return 'RECEIVED';
     if (s === 'shipped') return 'SHIPPED';
     if (s === 'delivered' || s === 'completed' || s === 'delivered / completed') return 'DELIVERED';
     if (s === 'cancelled') return 'CANCELLED';
     if (s === 'processing') return 'PROCESSING';
-    
+
     return rawStatus.trim().toUpperCase();
   };
 
-  
+
   const getStepIndex = (rawStatus: string) => {
     if (!rawStatus) return 0;
     const s = rawStatus.toLowerCase().trim();
@@ -62,7 +62,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
     return 0; // pending or default
   };
 
-  
+
   const handleDownloadInvoice = (order: Order) => {
     const dateObj = new Date(order.created_at);
     const year = dateObj.getFullYear();
@@ -79,10 +79,10 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
     const vatAmount = order.vat_amount || 0;
     const grandTotal = order.total_amount;
 
-    
+
     const unifiedStatus = getUnifiedStatus(order.status);
     const isDelivered = unifiedStatus === 'DELIVERED';
-    
+
     const statusColor = isDelivered ? '#000000' : '#ff0000'; 
     const totalLabel = isDelivered ? 'TOTAL PAID' : 'AMOUNT DUE';
 
@@ -394,10 +394,10 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
         const activeStepIndex = getStepIndex(order.status);
         const unifiedStatusText = getUnifiedStatus(order.status);
 
-       
+
         const dynamicSteps = ['PENDING', 'RECEIVED', 'SHIPPED', 'DELIVERED'];
-        
-        
+
+
         if (activeStepIndex === 1) {
           dynamicSteps[1] = unifiedStatusText;
         }
@@ -477,7 +477,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
               </div>
             </div>
 
-            
+
             <div 
               className="premium-carousel"
               style={{ 
@@ -518,17 +518,27 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
                       border: '1px solid #1a1a1a'
                     }}
                   />
-                  <div style={{ flexGrow: 1 }}>
+                  <div style={{ flexGrow: 1, minWidth: 0 }}>
                     <h4 style={{ margin: 0, fontSize: '13px', fontWeight: '700', color: '#fff', letterSpacing: '0.5px', lineHeight: '1.4', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', textTransform: 'uppercase' }}>
                       {item.product_name}
                     </h4>
-                    <div style={{ marginTop: '8px', display: 'flex', gap: '10px', alignItems: 'center' }}>
-                      <span style={{ fontSize: '10px', color: '#888', fontFamily: 'monospace', fontWeight: 'bold' }}>
+                    
+                    {/* অক্ষুণ্ণ মিনিমালিস্ট লেআউট উইথ কোয়ান্টিটি (QTY) */}
+                    <div style={{ marginTop: '8px', display: 'flex', gap: '8px', alignItems: 'center', minWidth: 0 }}>
+                      <span style={{ fontSize: '10px', color: '#888', fontFamily: 'monospace', fontWeight: 'bold', whiteSpace: 'nowrap', flexShrink: 0 }}>
                         SIZE: <span style={{ color: '#fff' }}>{item.size}</span>
                       </span>
-                      <span style={{ width: '3px', height: '3px', backgroundColor: '#444', borderRadius: '50%' }}></span>
-                      <span style={{ fontSize: '10px', color: '#888', fontFamily: 'monospace', fontWeight: 'bold' }}>
+                      
+                      <span style={{ width: '3px', height: '3px', backgroundColor: '#444', borderRadius: '50%', flexShrink: 0 }}></span>
+                      
+                      <span style={{ fontSize: '10px', color: '#888', fontFamily: 'monospace', fontWeight: 'bold', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>
                         COLOR: <span style={{ color: '#fff' }}>{item.color}</span>
+                      </span>
+                      
+                      <span style={{ width: '3px', height: '3px', backgroundColor: '#444', borderRadius: '50%', flexShrink: 0 }}></span>
+                      
+                      <span style={{ fontSize: '10px', color: '#888', fontFamily: 'monospace', fontWeight: 'bold', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                        QTY: <span style={{ color: '#fff' }}>{item.quantity}</span>
                       </span>
                     </div>
                   </div>
@@ -551,7 +561,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
               </div>
             </div>
 
-            
+
             <div style={{ display: 'flex', justifyContent: 'space-between', position: 'relative', marginTop: '15px', borderTop: '1px solid rgba(255,255,255,0.04)', paddingTop: '20px', paddingRight: '25px' }}>
               {dynamicSteps.map((stepText, idx) => {
                 const isCompleted = idx <= activeStepIndex;
