@@ -1,6 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/supabaseClient';
-import { HistoryIcon } from '@/components/icons';
+import { 
+  HistoryIcon, 
+  ScheduleIcon, 
+  SendIcon, 
+  PlusIcon, 
+  CloseIcon, 
+  CheckIcon 
+} from '@/components/icons';
 import NotificationLogs from './NotificationLogs';
 
 interface UserProfile {
@@ -213,7 +220,7 @@ export default function AdminNotifications() {
             cursor: 'pointer'
           }}
         >
-          <HistoryIcon style={{ width: 14, height: 14, fill: '#FFF' }} />
+          <HistoryIcon style={{ width: 14, height: 14, fill: 'currentColor' }} />
           <span>LOGS</span>
         </button>
       </div>
@@ -268,9 +275,9 @@ export default function AdminNotifications() {
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(true)}
-                  style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#181818', border: '1px solid #333', color: '#FFF', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                  style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#181818', border: '1px solid #333', color: '#FFF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
                 >
-                  +
+                  <PlusIcon style={{ width: 14, height: 14, fill: 'currentColor' }} />
                 </button>
               </div>
             </div>
@@ -303,9 +310,9 @@ export default function AdminNotifications() {
                       <button
                         type="button"
                         onClick={() => toggleSelectUser(id)}
-                        style={{ background: 'none', border: 'none', color: '#888', fontSize: '12px', cursor: 'pointer', padding: '0 2px' }}
+                        style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', padding: '0 2px', display: 'flex', alignItems: 'center' }}
                       >
-                        ✕
+                        <CloseIcon style={{ width: 10, height: 10, fill: 'currentColor' }} />
                       </button>
                     </div>
                   );
@@ -361,9 +368,24 @@ export default function AdminNotifications() {
             <button
               type="button"
               onClick={() => setIsScheduled(!isScheduled)}
-              style={{ background: 'none', border: 'none', color: isScheduled ? '#A855F7' : mutedText, fontSize: '10px', fontWeight: '700', cursor: 'pointer' }}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: isScheduled ? '#A855F7' : '#EAB308',
+                fontSize: '10px',
+                fontWeight: '700',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
             >
-              {isScheduled ? '⏰ SCHEDULED' : '⚡ INSTANT SEND'}
+              {isScheduled ? (
+                <ScheduleIcon style={{ width: 14, height: 14 }} />
+              ) : (
+                <SendIcon style={{ width: 14, height: 14, fill: 'currentColor' }} />
+              )}
+              <span>{isScheduled ? 'SCHEDULED' : 'INSTANT SEND'}</span>
             </button>
           </div>
 
@@ -455,7 +477,7 @@ export default function AdminNotifications() {
           </div>
         </div>
 
-        {/* Submit Button */}
+        {/* Submit Button with SendIcon / ScheduleIcon */}
         <button
           type="submit"
           disabled={loading}
@@ -469,10 +491,19 @@ export default function AdminNotifications() {
             border: 'none',
             borderRadius: '2px',
             cursor: loading ? 'not-allowed' : 'pointer',
-            opacity: loading ? 0.5 : 1
+            opacity: loading ? 0.5 : 1,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px'
           }}
         >
-          {loading ? 'PROCESSING...' : `DISPATCH TO ${selectedUserIds.length} USER(S)`}
+          {isScheduled ? (
+            <ScheduleIcon style={{ width: 14, height: 14 }} />
+          ) : (
+            <SendIcon style={{ width: 14, height: 14, fill: '#000' }} />
+          )}
+          <span>{loading ? 'PROCESSING...' : `DISPATCH TO ${selectedUserIds.length} USER(S)`}</span>
         </button>
 
       </form>
@@ -495,7 +526,13 @@ export default function AdminNotifications() {
               <h3 style={{ margin: 0, fontSize: '14px', fontWeight: '800', letterSpacing: '1px' }}>SELECT RECIPIENTS</h3>
               <span style={{ fontSize: '10px', color: mutedText }}>Total {allUsers.length} users in database</span>
             </div>
-            <button type="button" onClick={() => setIsModalOpen(false)} style={{ background: '#1A1A1A', border: 'none', color: '#FFF', width: '32px', height: '32px', borderRadius: '50%', cursor: 'pointer' }}>✕</button>
+            <button
+              type="button"
+              onClick={() => setIsModalOpen(false)}
+              style={{ background: '#1A1A1A', border: 'none', color: '#FFF', width: '32px', height: '32px', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            >
+              <CloseIcon style={{ width: 14, height: 14, fill: 'currentColor' }} />
+            </button>
           </div>
 
           {/* Filters */}
@@ -545,8 +582,8 @@ export default function AdminNotifications() {
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{ width: '18px', height: '18px', borderRadius: '4px', border: `1px solid ${isSelected ? '#FFF' : '#444'}`, background: isSelected ? '#FFF' : 'transparent', color: '#000', fontSize: '11px', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      {isSelected && '✓'}
+                    <div style={{ width: '18px', height: '18px', borderRadius: '4px', border: `1px solid ${isSelected ? '#FFF' : '#444'}`, background: isSelected ? '#FFF' : 'transparent', color: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {isSelected && <CheckIcon style={{ width: 12, height: 12, fill: '#000' }} />}
                     </div>
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
