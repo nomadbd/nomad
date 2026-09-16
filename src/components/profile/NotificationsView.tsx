@@ -60,7 +60,7 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
 
     if (diffInSeconds < 60) return 'Just now';
     const diffInMinutes = Math.floor(diffInSeconds / 60);
-    if (diffInMinutes < 60) return `${Math.floor(diffInMinutes / 60)}m ago`;
+    if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
     const diffInHours = Math.floor(diffInMinutes / 60);
     if (diffInHours < 24) return `${diffInHours}h ago`;
     const diffInDays = Math.floor(diffInHours / 24);
@@ -83,18 +83,22 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
     }
   };
 
-  // ডাটাবেজের notification_recipients টেবিল থেকে ইউজারভিত্তিক ডাটা ফেচ
   const fetchNotifications = async (isSilent = false) => {
     if (!isSilent) setLoading(true);
 
     try {
+      if (!userId) {
+        setLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase
         .from('notification_recipients')
         .select(`
           id,
           is_read,
           created_at,
-          notification:notifications (
+          notifications!inner (
             id,
             title,
             message,
@@ -106,11 +110,17 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
-      if (!error && data) {
+      if (error) {
+        console.error('Fetch error:', error.message);
+        setNotifications([]);
+        return;
+      }
+
+      if (data) {
         const formatted: NotificationItem[] = data
-          .filter((item) => item.notification)
-          .map((item) => {
-            const notif = item.notification as any;
+          .map((item: any) => {
+            const notif = item.notifications || item.notification;
+            if (!notif) return null;
             return {
               recipient_id: item.id,
               notification_id: notif.id,
@@ -122,7 +132,9 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
               is_read: item.is_read,
               created_at: item.created_at,
             };
-          });
+          })
+          .filter((item): item is NotificationItem => item !== null);
+
         setNotifications(formatted);
       }
     } catch (err) {
@@ -137,7 +149,6 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
 
     fetchNotifications(false);
 
-    // notification_recipients টেবিলে নতুন নোটিফিকেশন এলেই লাইভ আপডেট পাবে
     const channel = supabase
       .channel(`user_recipients_${userId}`)
       .on(
@@ -162,12 +173,10 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
   const markAsRead = async (recipientId: string, currentStatus: boolean) => {
     if (currentStatus) return;
 
-    // UI-তে তাৎক্ষণিক SEEN দেখাবে
     setNotifications((prev) =>
       prev.map((item) => (item.recipient_id === recipientId ? { ...item, is_read: true } : item))
     );
 
-    // notification_recipients টেবিলে status আপডেট হবে
     const { error } = await supabase
       .from('notification_recipients')
       .update({ is_read: true })
@@ -195,7 +204,6 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
     setNotifications((prev) => prev.filter((item) => item.recipient_id !== recipientId));
     if (expandedId === recipientId) setExpandedId(null);
 
-    // শুধু এই গ্রাহকের ইনবক্স থেকেই রিমুভ হবে
     await supabase
       .from('notification_recipients')
       .delete()
