@@ -11,7 +11,8 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
   showFilter = false,
   dateFormat = 'DD/MM/YYYY'
 }) => {
-  const normalizedRole = userRole.toUpperCase().trim();
+  // Safe string operation even if null is passed
+  const normalizedRole = (userRole || '').toUpperCase().trim();
   const canViewSensitiveData = ['SUPER_ADMIN', 'ADMIN'].includes(normalizedRole);
 
   const {
@@ -55,7 +56,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
       overflowX: 'hidden'
     }}>
       <style>{`
-        * { box-sizing: border-box; }
+        /* Removed global '*' styling to prevent layout issues in other components */
 
         .date-filter-container {
           background-color: transparent;
