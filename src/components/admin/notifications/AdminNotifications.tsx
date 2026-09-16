@@ -36,8 +36,9 @@ export default function AdminNotifications() {
   const [type, setType] = useState<CategoryType>(null);
   const [link, setLink] = useState('');
 
-  const [loading, setLoading] = useState(false);
-  const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  // Button Status State: 'idle' | 'loading' | 'success' | 'error'
+  const [btnState, setBtnState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [btnErrorText, setBtnErrorText] = useState('');
 
   const mutedText = '#666666';
 
@@ -84,24 +85,32 @@ export default function AdminNotifications() {
     );
   };
 
+  const triggerError = (msg: string) => {
+    setBtnErrorText(msg);
+    setBtnState('error');
+    setTimeout(() => {
+      setBtnState('idle');
+      setBtnErrorText('');
+    }, 2500);
+  };
+
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (selectedUserIds.length === 0) {
-      setStatusMsg({ type: 'error', text: 'Select recipients' });
+      triggerError('SELECT RECIPIENTS');
       return;
     }
     if (!type) {
-      setStatusMsg({ type: 'error', text: 'Select a category' });
+      triggerError('SELECT A CATEGORY');
       return;
     }
     if (!title.trim() || !message.trim()) {
-      setStatusMsg({ type: 'error', text: 'Title and message required' });
+      triggerError('TITLE & MESSAGE REQUIRED');
       return;
     }
 
-    setLoading(true);
-    setStatusMsg(null);
+    setBtnState('loading');
 
     try {
       const isAllUsersSelected = allUsers.length > 0 && selectedUserIds.length === allUsers.length;
@@ -119,20 +128,21 @@ export default function AdminNotifications() {
       const { error } = await supabase.from('notifications').insert(notificationsToInsert);
       if (error) throw error;
 
-      setStatusMsg({
-        type: 'success',
-        text: 'Notification sent successfully'
-      });
-
+      // Success State on Button
+      setBtnState('success');
       setTitle('');
       setMessage('');
       setLink('');
       setType(null);
       setSelectedUserIds([]);
+
+      // Reset button back to normal after 2.5s
+      setTimeout(() => {
+        setBtnState('idle');
+      }, 2500);
+
     } catch (err: any) {
-      setStatusMsg({ type: 'error', text: err.message || 'Failed' });
-    } finally {
-      setLoading(false);
+      triggerError(err.message ? err.message.toUpperCase() : 'FAILED TO DISPATCH');
     }
   };
 
@@ -193,20 +203,6 @@ export default function AdminNotifications() {
           <span>LOGS</span>
         </button>
       </div>
-
-      {/* Status Banner */}
-      {statusMsg && (
-        <div style={{
-          padding: '8px 0',
-          marginBottom: '16px',
-          fontSize: '11px',
-          fontWeight: '500',
-          borderBottom: `1px solid ${statusMsg.type === 'success' ? '#333' : '#666'}`,
-          color: statusMsg.type === 'success' ? '#FFF' : '#AAA'
-        }}>
-          {statusMsg.text}
-        </div>
-      )}
 
       {/* Main Form */}
       <form onSubmit={handleSend} style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
@@ -389,32 +385,37 @@ export default function AdminNotifications() {
           </div>
         </div>
 
-        {/* Submit Button */}
+        {/* Dynamic Action Button (Self-contained Status) */}
         <button
           type="submit"
-          disabled={loading}
+          disabled={btnState !== 'idle'}
           style={{
             marginTop: '6px',
             padding: '12px',
-            background: '#080808',
-            color: '#FFFFFF',
+            background: btnState === 'success' ? '#FFFFFF' : '#080808',
+            color: btnState === 'success' ? '#000000' : '#FFFFFF',
             fontWeight: '700',
             fontSize: '10px',
             letterSpacing: '2px',
-            border: '1px solid #222222',
+            border: `1px solid ${
+              btnState === 'success' ? '#FFFFFF' : btnState === 'error' ? '#666666' : '#222222'
+            }`,
             borderRadius: '4px',
-            cursor: loading ? 'not-allowed' : 'pointer',
-            opacity: loading ? 0.5 : 1,
-            transition: 'all 0.2s ease'
+            cursor: btnState !== 'idle' ? 'default' : 'pointer',
+            opacity: btnState === 'loading' ? 0.6 : 1,
+            transition: 'all 0.25s ease'
           }}
           onMouseEnter={(e) => {
-            if (!loading) e.currentTarget.style.borderColor = '#444444';
+            if (btnState === 'idle') e.currentTarget.style.borderColor = '#444444';
           }}
           onMouseLeave={(e) => {
-            if (!loading) e.currentTarget.style.borderColor = '#222222';
+            if (btnState === 'idle') e.currentTarget.style.borderColor = '#222222';
           }}
         >
-          {loading ? 'SENDING...' : `DISPATCH (${selectedUserIds.length})`}
+          {btnState === 'loading' && 'SENDING...'}
+          {btnState === 'success' && 'SENT SUCCESSFULLY'}
+          {btnState === 'error' && (btnErrorText || 'FAILED')}
+          {btnState === 'idle' && `DISPATCH (${selectedUserIds.length})`}
         </button>
 
       </form>
