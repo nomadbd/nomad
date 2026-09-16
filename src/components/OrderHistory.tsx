@@ -523,23 +523,23 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
                       {item.product_name}
                     </h4>
                     
-                    {/* ফ্লেক্স-র‍্যাপ (flexWrap: wrap) ব্যবহারের ফলে মোবাইলে জায়গা না পেলে স্বয়ংক্রিয়ভাবে নিচে নেমে পুরো তথ্য দেখাবে কিন্তু কোনো কাটাকুটি হবে না */}
-                    <div style={{ marginTop: '8px', display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
-                      <span style={{ fontSize: '10px', color: '#888', fontFamily: 'monospace', fontWeight: 'bold' }}>
-                        SIZE: <span style={{ color: '#fff' }}>{item.size}</span>
-                      </span>
-                      
-                      <span style={{ width: '3px', height: '3px', backgroundColor: '#444', borderRadius: '50%' }}></span>
-                      
-                      <span style={{ fontSize: '10px', color: '#888', fontFamily: 'monospace', fontWeight: 'bold', textTransform: 'uppercase' }}>
+                    {/* ২-লাইনের ক্লিন স্ট্রাকচার (Line 1: SIZE & QTY | Line 2: COLOR) */}
+                    <div style={{ marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '10px', color: '#888', fontFamily: 'monospace', fontWeight: 'bold' }}>
+                          SIZE: <span style={{ color: '#fff' }}>{item.size}</span>
+                        </span>
+                        
+                        <span style={{ width: '3px', height: '3px', backgroundColor: '#444', borderRadius: '50%', flexShrink: 0 }}></span>
+                        
+                        <span style={{ fontSize: '10px', color: '#888', fontFamily: 'monospace', fontWeight: 'bold' }}>
+                          QTY: <span style={{ color: '#fff' }}>{item.quantity}</span>
+                        </span>
+                      </div>
+
+                      <div style={{ fontSize: '10px', color: '#888', fontFamily: 'monospace', fontWeight: 'bold', textTransform: 'uppercase' }}>
                         COLOR: <span style={{ color: '#fff' }}>{item.color}</span>
-                      </span>
-                      
-                      <span style={{ width: '3px', height: '3px', backgroundColor: '#444', borderRadius: '50%' }}></span>
-                      
-                      <span style={{ fontSize: '10px', color: '#888', fontFamily: 'monospace', fontWeight: 'bold' }}>
-                        QTY: <span style={{ color: '#fff' }}>{item.quantity}</span>
-                      </span>
+                      </div>
                     </div>
                   </div>
                 </div>
