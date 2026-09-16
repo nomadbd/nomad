@@ -2,7 +2,6 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/supabaseClient';
 import { 
   HistoryIcon, 
-  ScheduleIcon, 
   PlusIcon, 
   CloseIcon, 
   CheckIcon 
@@ -36,8 +35,6 @@ export default function AdminNotifications() {
   const [message, setMessage] = useState('');
   const [type, setType] = useState<CategoryType>(null);
   const [link, setLink] = useState('');
-  const [isScheduled, setIsScheduled] = useState(false);
-  const [scheduledAt, setScheduledAt] = useState('');
 
   const [loading, setLoading] = useState(false);
   const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -116,8 +113,7 @@ export default function AdminNotifications() {
         type,
         link: link.trim() || null,
         target_audience: isAllUsersSelected ? 'ALL' : 'SPECIFIC',
-        is_read: false,
-        scheduled_at: isScheduled && scheduledAt ? new Date(scheduledAt).toISOString() : null
+        is_read: false
       }));
 
       const { error } = await supabase.from('notifications').insert(notificationsToInsert);
@@ -125,7 +121,7 @@ export default function AdminNotifications() {
 
       setStatusMsg({
         type: 'success',
-        text: `Notification ${isScheduled ? 'scheduled' : 'sent'}`
+        text: 'Notification sent successfully'
       });
 
       setTitle('');
@@ -133,8 +129,6 @@ export default function AdminNotifications() {
       setLink('');
       setType(null);
       setSelectedUserIds([]);
-      setIsScheduled(false);
-      setScheduledAt('');
     } catch (err: any) {
       setStatusMsg({ type: 'error', text: err.message || 'Failed' });
     } finally {
@@ -146,7 +140,7 @@ export default function AdminNotifications() {
     width: '100%',
     background: 'transparent',
     border: 'none',
-    borderBottom: '1px solid #1C1C1C',
+    borderBottom: '1px solid #1A1A1A',
     padding: '12px 0',
     color: '#FFFFFF',
     fontSize: '13px',
@@ -163,35 +157,17 @@ export default function AdminNotifications() {
   }
 
   return (
-    <div style={{ maxWidth: '580px', margin: '0 auto', color: '#FFF', fontFamily: 'system-ui, -apple-system, sans-serif', padding: '16px 12px', paddingBottom: '120px' }}>
+    <div style={{ maxWidth: '540px', margin: '0 auto', color: '#FFF', fontFamily: 'system-ui, -apple-system, sans-serif', padding: '16px 12px', paddingBottom: '120px' }}>
 
       <style>{`
         input::placeholder, textarea::placeholder { color: ${mutedText} !important; opacity: 1 !important; }
-        textarea::-webkit-scrollbar, .sheet-scroll::-webkit-scrollbar { width: 3px; }
-        textarea::-webkit-scrollbar-thumb, .sheet-scroll::-webkit-scrollbar-thumb { background: #222222; border-radius: 2px; }
-        
-        .smooth-schedule-container {
-          max-height: 0;
-          opacity: 0;
-          overflow: hidden;
-          transition: max-height 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease, margin-top 0.35s ease;
-          margin-top: 0;
-        }
-        .smooth-schedule-container.open {
-          max-height: 50px;
-          opacity: 1;
-          margin-top: 10px;
-        }
-
-        input[type="datetime-local"]::-webkit-calendar-picker-indicator {
-          filter: invert(0.6);
-          cursor: pointer;
-        }
+        textarea::-webkit-scrollbar, .sheet-scroll::-webkit-scrollbar { width: 2px; }
+        textarea::-webkit-scrollbar-thumb, .sheet-scroll::-webkit-scrollbar-thumb { background: #222222; }
       `}</style>
 
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-        <span style={{ fontSize: '10px', fontWeight: '800', letterSpacing: '2px', color: '#FFF' }}>DISPATCHER PRO</span>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '28px' }}>
+        <span style={{ fontSize: '11px', fontWeight: '700', letterSpacing: '2px', color: '#FFF' }}>DISPATCH</span>
 
         <button
           type="button"
@@ -204,10 +180,10 @@ export default function AdminNotifications() {
             alignItems: 'center',
             gap: '6px',
             fontSize: '10px',
-            fontWeight: '700',
+            fontWeight: '600',
             letterSpacing: '1px',
             cursor: 'pointer',
-            padding: '4px 0',
+            padding: '2px 0',
             transition: 'color 0.2s'
           }}
           onMouseEnter={(e) => (e.currentTarget.style.color = '#FFF')}
@@ -242,8 +218,8 @@ export default function AdminNotifications() {
           </span>
 
           <div style={{
-            background: '#080808',
-            border: '1px solid #161616',
+            background: '#050505',
+            border: '1px solid #141414',
             borderRadius: '6px',
             padding: '12px 14px',
             display: 'flex',
@@ -268,16 +244,16 @@ export default function AdminNotifications() {
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(true)}
-                  style={{ width: '26px', height: '26px', borderRadius: '50%', background: '#121212', border: '1px solid #222', color: '#FFF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                  style={{ width: '24px', height: '24px', borderRadius: '50%', background: '#111111', border: '1px solid #222', color: '#FFF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
                 >
-                  <PlusIcon style={{ width: 12, height: 12 }} />
+                  <PlusIcon style={{ width: 11, height: 11 }} />
                 </button>
               </div>
             </div>
 
             {/* Selected User Chips */}
             {selectedUserIds.length > 0 && (
-              <div className="sheet-scroll" style={{ maxHeight: '100px', overflowY: 'auto', display: 'flex', flexWrap: 'wrap', gap: '6px', paddingTop: '4px' }}>
+              <div className="sheet-scroll" style={{ maxHeight: '90px', overflowY: 'auto', display: 'flex', flexWrap: 'wrap', gap: '6px', paddingTop: '4px' }}>
                 {selectedUserIds.map((id) => {
                   const u = allUsers.find((x) => x.id === id);
                   return (
@@ -287,7 +263,7 @@ export default function AdminNotifications() {
                         display: 'inline-flex',
                         alignItems: 'center',
                         gap: '6px',
-                        background: '#111111',
+                        background: '#0F0F0F',
                         border: '1px solid #222222',
                         borderRadius: '12px',
                         padding: '3px 8px',
@@ -330,9 +306,9 @@ export default function AdminNotifications() {
                     fontSize: '10px',
                     fontWeight: '700',
                     letterSpacing: '1px',
-                    background: active ? '#FFFFFF' : '#080808',
-                    color: active ? '#000000' : mutedText,
-                    border: `1px solid ${active ? '#FFFFFF' : '#161616'}`,
+                    background: 'transparent',
+                    color: active ? '#FFFFFF' : mutedText,
+                    border: `1px solid ${active ? '#FFFFFF' : '#141414'}`,
                     borderRadius: '4px',
                     cursor: 'pointer',
                     transition: 'all 0.2s ease'
@@ -342,58 +318,6 @@ export default function AdminNotifications() {
                 </button>
               );
             })}
-          </div>
-        </div>
-
-        {/* TIMING & SCHEDULING (SMOOTH SLIDE) */}
-        <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '9px', color: mutedText, fontWeight: '700', letterSpacing: '1.5px' }}>
-              TIMING
-            </span>
-
-            {/* Single Icon for both states */}
-            <button
-              type="button"
-              onClick={() => setIsScheduled(!isScheduled)}
-              title={isScheduled ? 'Scheduled Mode' : 'Instant Mode'}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                color: isScheduled ? '#FFFFFF' : '#444444',
-                padding: '4px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                transition: 'color 0.25s ease'
-              }}
-            >
-              <ScheduleIcon style={{ width: 15, height: 15 }} />
-              <span style={{ fontSize: '9px', fontWeight: '700', letterSpacing: '1px' }}>
-                {isScheduled ? 'SCHEDULED' : 'INSTANT'}
-              </span>
-            </button>
-          </div>
-
-          {/* Animated Schedule Container */}
-          <div className={`smooth-schedule-container ${isScheduled ? 'open' : ''}`}>
-            <input
-              type="datetime-local"
-              value={scheduledAt}
-              onChange={(e) => setScheduledAt(e.target.value)}
-              style={{
-                width: '100%',
-                background: '#080808',
-                border: '1px solid #222222',
-                borderRadius: '4px',
-                padding: '8px 12px',
-                color: '#FFF',
-                fontSize: '11px',
-                outline: 'none',
-                boxSizing: 'border-box'
-              }}
-            />
           </div>
         </div>
 
@@ -417,7 +341,7 @@ export default function AdminNotifications() {
             placeholder="Message content..."
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            style={{ ...underlineInputStyle, resize: 'none', minHeight: '48px' }}
+            style={{ ...underlineInputStyle, resize: 'none', minHeight: '44px' }}
           />
         </div>
 
@@ -436,29 +360,29 @@ export default function AdminNotifications() {
             PREVIEW
           </span>
           <div style={{
-            background: '#080808',
-            border: '1px solid #1A1A1A',
-            borderRadius: '8px',
+            background: '#050505',
+            border: '1px solid #141414',
+            borderRadius: '6px',
             padding: '12px 14px',
             display: 'flex',
             gap: '10px',
             alignItems: 'flex-start'
           }}>
             <div style={{
-              width: '6px',
-              height: '6px',
+              width: '5px',
+              height: '5px',
               borderRadius: '50%',
               background: type ? '#FFFFFF' : '#333333',
               marginTop: '5px'
             }} />
             <div style={{ flex: 1 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '12px', fontWeight: '600', color: '#FFF' }}>
+                <span style={{ fontSize: '11px', fontWeight: '600', color: '#FFF' }}>
                   {title || 'Notification Title'}
                 </span>
                 <span style={{ fontSize: '9px', color: mutedText }}>Now</span>
               </div>
-              <p style={{ margin: '3px 0 0 0', fontSize: '11px', color: '#888', lineHeight: '1.4' }}>
+              <p style={{ margin: '3px 0 0 0', fontSize: '11px', color: '#777', lineHeight: '1.4' }}>
                 {message || 'Notification content will appear here...'}
               </p>
             </div>
@@ -470,33 +394,27 @@ export default function AdminNotifications() {
           type="submit"
           disabled={loading}
           style={{
-            marginTop: '8px',
-            padding: '13px',
-            background: '#0F0F0F',
+            marginTop: '6px',
+            padding: '12px',
+            background: '#080808',
             color: '#FFFFFF',
             fontWeight: '700',
-            fontSize: '11px',
+            fontSize: '10px',
             letterSpacing: '2px',
-            border: '1px solid #262626',
+            border: '1px solid #222222',
             borderRadius: '4px',
             cursor: loading ? 'not-allowed' : 'pointer',
             opacity: loading ? 0.5 : 1,
             transition: 'all 0.2s ease'
           }}
           onMouseEnter={(e) => {
-            if (!loading) {
-              e.currentTarget.style.background = '#FFFFFF';
-              e.currentTarget.style.color = '#000000';
-            }
+            if (!loading) e.currentTarget.style.borderColor = '#444444';
           }}
           onMouseLeave={(e) => {
-            if (!loading) {
-              e.currentTarget.style.background = '#0F0F0F';
-              e.currentTarget.style.color = '#FFFFFF';
-            }
+            if (!loading) e.currentTarget.style.borderColor = '#222222';
           }}
         >
-          {loading ? 'PROCESSING...' : `DISPATCH TO ${selectedUserIds.length} USER(S)`}
+          {loading ? 'SENDING...' : `DISPATCH (${selectedUserIds.length})`}
         </button>
 
       </form>
@@ -506,20 +424,20 @@ export default function AdminNotifications() {
         <div style={{
           position: 'fixed',
           top: 0, left: 0, right: 0, bottom: 0,
-          background: '#050505',
+          background: '#000000',
           zIndex: 150,
           display: 'flex',
           flexDirection: 'column'
         }}>
           {/* Sheet Header */}
           <div style={{ padding: '16px 20px', borderBottom: '1px solid #141414', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '11px', fontWeight: '800', letterSpacing: '1.5px' }}>SELECT RECIPIENTS</span>
+            <span style={{ fontSize: '10px', fontWeight: '700', letterSpacing: '1.5px' }}>RECIPIENTS</span>
             <button
               type="button"
               onClick={() => setIsModalOpen(false)}
               style={{ background: 'transparent', border: 'none', color: '#FFF', padding: '4px', cursor: 'pointer' }}
             >
-              <CloseIcon style={{ width: 14, height: 14 }} />
+              <CloseIcon style={{ width: 13, height: 13 }} />
             </button>
           </div>
 
@@ -527,10 +445,10 @@ export default function AdminNotifications() {
           <div style={{ padding: '14px 20px', borderBottom: '1px solid #111111', display: 'flex', flexDirection: 'column', gap: '10px' }}>
             <input
               type="text"
-              placeholder="Search users..."
+              placeholder="Search..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              style={{ width: '100%', background: '#0A0A0A', border: '1px solid #1F1F1F', borderRadius: '4px', padding: '8px 12px', color: '#FFF', fontSize: '12px', outline: 'none' }}
+              style={{ width: '100%', background: '#080808', border: '1px solid #1A1A1A', borderRadius: '4px', padding: '8px 12px', color: '#FFF', fontSize: '12px', outline: 'none' }}
             />
 
             <div style={{ display: 'flex', gap: '6px', overflowX: 'auto' }}>
@@ -543,8 +461,8 @@ export default function AdminNotifications() {
                     onClick={() => setRoleFilter(role)}
                     style={{
                       padding: '4px 10px', fontSize: '9px', fontWeight: '700', borderRadius: '12px',
-                      background: active ? '#FFF' : 'transparent', color: active ? '#000' : mutedText,
-                      border: `1px solid ${active ? '#FFF' : '#1F1F1F'}`, cursor: 'pointer', whiteSpace: 'nowrap'
+                      background: 'transparent', color: active ? '#FFF' : mutedText,
+                      border: `1px solid ${active ? '#FFF' : '#1A1A1A'}`, cursor: 'pointer', whiteSpace: 'nowrap'
                     }}
                   >
                     {role}
@@ -564,15 +482,15 @@ export default function AdminNotifications() {
                   onClick={() => toggleSelectUser(user.id)}
                   style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    padding: '10px 0', borderBottom: '1px solid #111111', cursor: 'pointer'
+                    padding: '10px 0', borderBottom: '1px solid #0F0F0F', cursor: 'pointer'
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{ width: '14px', height: '14px', borderRadius: '2px', border: `1px solid ${isSelected ? '#FFF' : '#333'}`, background: isSelected ? '#FFF' : 'transparent', color: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      {isSelected && <CheckIcon style={{ width: 10, height: 10 }} />}
+                    <div style={{ width: '14px', height: '14px', borderRadius: '2px', border: `1px solid ${isSelected ? '#FFF' : '#222'}`, background: isSelected ? '#FFF' : 'transparent', color: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {isSelected && <CheckIcon style={{ width: 9, height: 9 }} />}
                     </div>
                     <div>
-                      <span style={{ fontSize: '12px', fontWeight: '500', color: isSelected ? '#FFF' : '#AAA', display: 'block' }}>{user.name || 'Unnamed User'}</span>
+                      <span style={{ fontSize: '12px', fontWeight: '500', color: isSelected ? '#FFF' : '#888', display: 'block' }}>{user.name || 'Unnamed User'}</span>
                       <span style={{ fontSize: '10px', color: mutedText }}>{user.email || user.id}</span>
                     </div>
                   </div>
