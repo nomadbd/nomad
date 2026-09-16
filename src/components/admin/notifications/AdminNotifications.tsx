@@ -3,7 +3,6 @@ import { supabase } from '@/supabaseClient';
 import { 
   HistoryIcon, 
   ScheduleIcon, 
-  SendIcon, 
   PlusIcon, 
   CloseIcon, 
   CheckIcon 
@@ -26,7 +25,6 @@ export default function AdminNotifications() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [allUsers, setAllUsers] = useState<UserProfile[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
-  const [fetchError, setFetchError] = useState<string | null>(null);
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   
   // Filter States
@@ -44,7 +42,7 @@ export default function AdminNotifications() {
   const [loading, setLoading] = useState(false);
   const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  const mutedText = '#888888';
+  const mutedText = '#666666';
 
   useEffect(() => {
     fetchUsers();
@@ -52,7 +50,6 @@ export default function AdminNotifications() {
 
   const fetchUsers = async () => {
     setLoadingUsers(true);
-    setFetchError(null);
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -62,7 +59,6 @@ export default function AdminNotifications() {
       if (data) setAllUsers(data);
     } catch (err: any) {
       console.error('Error fetching users:', err.message);
-      setFetchError(err.message || 'Failed to load users.');
     } finally {
       setLoadingUsers(false);
     }
@@ -95,7 +91,7 @@ export default function AdminNotifications() {
     e.preventDefault();
 
     if (selectedUserIds.length === 0) {
-      setStatusMsg({ type: 'error', text: 'Select at least one recipient' });
+      setStatusMsg({ type: 'error', text: 'Select recipients' });
       return;
     }
     if (!type) {
@@ -129,7 +125,7 @@ export default function AdminNotifications() {
 
       setStatusMsg({
         type: 'success',
-        text: `Notification ${isScheduled ? 'scheduled' : 'dispatched'} for ${selectedUserIds.length} user(s)`
+        text: `Notification ${isScheduled ? 'scheduled' : 'sent'}`
       });
 
       setTitle('');
@@ -140,34 +136,9 @@ export default function AdminNotifications() {
       setIsScheduled(false);
       setScheduledAt('');
     } catch (err: any) {
-      setStatusMsg({ type: 'error', text: err.message || 'Dispatch failed' });
+      setStatusMsg({ type: 'error', text: err.message || 'Failed' });
     } finally {
       setLoading(false);
-    }
-  };
-
-  const getCategoryColor = (cat: CategoryType) => {
-    switch (cat) {
-      case 'PROMO': return '#EAB308';
-      case 'ALERT': return '#EF4444';
-      case 'SYSTEM': return '#A855F7';
-      case 'INFO': return '#3B82F6';
-      default: return mutedText;
-    }
-  };
-
-  const getRoleBadgeStyle = (roleStr?: string) => {
-    const role = (roleStr || '').toUpperCase();
-    switch (role) {
-      case 'SUPER_ADMIN':
-      case 'ADMIN': 
-        return { bg: 'rgba(168, 85, 247, 0.2)', color: '#C084FC', border: 'rgba(168, 85, 247, 0.4)' };
-      case 'AMBASSADOR': 
-        return { bg: 'rgba(234, 179, 8, 0.2)', color: '#FACC15', border: 'rgba(234, 179, 8, 0.4)' };
-      case 'CUSTOMER': 
-        return { bg: 'rgba(59, 130, 246, 0.2)', color: '#60A5FA', border: 'rgba(59, 130, 246, 0.4)' };
-      default: 
-        return { bg: 'rgba(255, 255, 255, 0.1)', color: '#AAA', border: '#333' };
     }
   };
 
@@ -175,15 +146,16 @@ export default function AdminNotifications() {
     width: '100%',
     background: 'transparent',
     border: 'none',
-    borderBottom: '1px solid #222222',
-    padding: '10px 0',
+    borderBottom: '1px solid #1C1C1C',
+    padding: '12px 0',
     color: '#FFFFFF',
     fontSize: '13px',
-    lineHeight: '1.6',
+    lineHeight: '1.5',
     fontFamily: 'inherit',
     outline: 'none',
     boxSizing: 'border-box',
     borderRadius: 0,
+    transition: 'border-color 0.2s ease',
   };
 
   if (view === 'logs') {
@@ -191,36 +163,57 @@ export default function AdminNotifications() {
   }
 
   return (
-    <div style={{ maxWidth: '640px', margin: '0 auto', color: '#FFF', fontFamily: 'system-ui, -apple-system, sans-serif', padding: '12px 8px', paddingBottom: '120px' }}>
+    <div style={{ maxWidth: '580px', margin: '0 auto', color: '#FFF', fontFamily: 'system-ui, -apple-system, sans-serif', padding: '16px 12px', paddingBottom: '120px' }}>
 
       <style>{`
         input::placeholder, textarea::placeholder { color: ${mutedText} !important; opacity: 1 !important; }
-        textarea::-webkit-scrollbar, .sheet-scroll::-webkit-scrollbar { width: 4px; }
-        textarea::-webkit-scrollbar-thumb, .sheet-scroll::-webkit-scrollbar-thumb { background: #333333; border-radius: 2px; }
+        textarea::-webkit-scrollbar, .sheet-scroll::-webkit-scrollbar { width: 3px; }
+        textarea::-webkit-scrollbar-thumb, .sheet-scroll::-webkit-scrollbar-thumb { background: #222222; border-radius: 2px; }
+        
+        .smooth-schedule-container {
+          max-height: 0;
+          opacity: 0;
+          overflow: hidden;
+          transition: max-height 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease, margin-top 0.35s ease;
+          margin-top: 0;
+        }
+        .smooth-schedule-container.open {
+          max-height: 50px;
+          opacity: 1;
+          margin-top: 10px;
+        }
+
+        input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+          filter: invert(0.6);
+          cursor: pointer;
+        }
       `}</style>
 
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <span style={{ fontSize: '11px', fontWeight: '800', letterSpacing: '1.5px', color: '#FFF' }}>DISPATCHER PRO</span>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+        <span style={{ fontSize: '10px', fontWeight: '800', letterSpacing: '2px', color: '#FFF' }}>DISPATCHER PRO</span>
 
         <button
           type="button"
           onClick={() => setView('logs')}
           style={{
-            background: '#141414',
-            border: '1px solid #282828',
-            color: '#FFF',
-            padding: '6px 12px',
-            borderRadius: '20px',
+            background: 'transparent',
+            border: 'none',
+            color: mutedText,
             display: 'flex',
             alignItems: 'center',
             gap: '6px',
             fontSize: '10px',
             fontWeight: '700',
-            cursor: 'pointer'
+            letterSpacing: '1px',
+            cursor: 'pointer',
+            padding: '4px 0',
+            transition: 'color 0.2s'
           }}
+          onMouseEnter={(e) => (e.currentTarget.style.color = '#FFF')}
+          onMouseLeave={(e) => (e.currentTarget.style.color = mutedText)}
         >
-          <HistoryIcon style={{ width: 14, height: 14, fill: 'currentColor' }} />
+          <HistoryIcon style={{ width: 13, height: 13 }} />
           <span>LOGS</span>
         </button>
       </div>
@@ -228,12 +221,12 @@ export default function AdminNotifications() {
       {/* Status Banner */}
       {statusMsg && (
         <div style={{
-          padding: '10px 0',
+          padding: '8px 0',
           marginBottom: '16px',
           fontSize: '11px',
-          fontWeight: '600',
-          borderBottom: `1px solid ${statusMsg.type === 'success' ? '#22C55E' : '#EF4444'}`,
-          color: statusMsg.type === 'success' ? '#4ADE80' : '#F87171'
+          fontWeight: '500',
+          borderBottom: `1px solid ${statusMsg.type === 'success' ? '#333' : '#666'}`,
+          color: statusMsg.type === 'success' ? '#FFF' : '#AAA'
         }}>
           {statusMsg.text}
         </div>
@@ -249,45 +242,44 @@ export default function AdminNotifications() {
           </span>
 
           <div style={{
-            background: '#0B0B0B',
-            border: '1px solid #222222',
+            background: '#080808',
+            border: '1px solid #161616',
             borderRadius: '6px',
-            padding: '12px',
+            padding: '12px 14px',
             display: 'flex',
             flexDirection: 'column',
-            gap: '10px'
+            gap: '8px'
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '11px', color: selectedUserIds.length > 0 ? '#FFF' : mutedText, fontWeight: '600' }}>
-                {selectedUserIds.length === 0 ? 'No recipients selected' : `${selectedUserIds.length} user(s) selected`}
+              <span style={{ fontSize: '11px', color: selectedUserIds.length > 0 ? '#FFF' : mutedText, fontWeight: '500' }}>
+                {selectedUserIds.length === 0 ? 'No recipients selected' : `${selectedUserIds.length} recipient(s)`}
               </span>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 {selectedUserIds.length > 0 && (
                   <button
                     type="button"
                     onClick={() => setSelectedUserIds([])}
-                    style={{ background: 'none', border: 'none', color: '#EF4444', fontSize: '10px', fontWeight: '700', cursor: 'pointer', padding: 0 }}
+                    style={{ background: 'none', border: 'none', color: mutedText, fontSize: '9px', fontWeight: '700', letterSpacing: '1px', cursor: 'pointer', padding: 0 }}
                   >
-                    CLEAR ALL
+                    CLEAR
                   </button>
                 )}
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(true)}
-                  style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#181818', border: '1px solid #333', color: '#FFF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                  style={{ width: '26px', height: '26px', borderRadius: '50%', background: '#121212', border: '1px solid #222', color: '#FFF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
                 >
-                  <PlusIcon style={{ width: 14, height: 14, fill: 'currentColor' }} />
+                  <PlusIcon style={{ width: 12, height: 12 }} />
                 </button>
               </div>
             </div>
 
             {/* Selected User Chips */}
-            {selectedUserIds.length > 0 ? (
-              <div className="sheet-scroll" style={{ maxHeight: '130px', overflowY: 'auto', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+            {selectedUserIds.length > 0 && (
+              <div className="sheet-scroll" style={{ maxHeight: '100px', overflowY: 'auto', display: 'flex', flexWrap: 'wrap', gap: '6px', paddingTop: '4px' }}>
                 {selectedUserIds.map((id) => {
                   const u = allUsers.find((x) => x.id === id);
-                  const badge = getRoleBadgeStyle(u?.role);
                   return (
                     <div
                       key={id}
@@ -295,33 +287,26 @@ export default function AdminNotifications() {
                         display: 'inline-flex',
                         alignItems: 'center',
                         gap: '6px',
-                        background: '#161616',
-                        border: '1px solid #282828',
-                        borderRadius: '16px',
-                        padding: '4px 10px',
-                        fontSize: '11px',
-                        color: '#FFF'
+                        background: '#111111',
+                        border: '1px solid #222222',
+                        borderRadius: '12px',
+                        padding: '3px 8px',
+                        fontSize: '10px',
+                        color: '#DDD'
                       }}
                     >
                       <span>{u?.name || u?.email || id}</span>
-                      <span style={{ fontSize: '8px', fontWeight: '800', background: badge.bg, color: badge.color, padding: '1px 5px', borderRadius: '4px', border: `1px solid ${badge.border}` }}>
-                        {(u?.role || 'USER').toUpperCase()}
-                      </span>
                       <button
                         type="button"
                         onClick={() => toggleSelectUser(id)}
-                        style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', padding: '0 2px', display: 'flex', alignItems: 'center' }}
+                        style={{ background: 'none', border: 'none', color: '#666', cursor: 'pointer', padding: '0 1px', display: 'flex', alignItems: 'center' }}
                       >
-                        <CloseIcon style={{ width: 10, height: 10, fill: 'currentColor' }} />
+                        <CloseIcon style={{ width: 9, height: 9 }} />
                       </button>
                     </div>
                   );
                 })}
               </div>
-            ) : (
-              <span style={{ fontSize: '11px', color: mutedText, fontStyle: 'italic' }}>
-                Click + button to choose recipients
-              </span>
             )}
           </div>
         </div>
@@ -331,10 +316,9 @@ export default function AdminNotifications() {
           <span style={{ display: 'block', fontSize: '9px', color: mutedText, fontWeight: '700', letterSpacing: '1.5px', marginBottom: '8px' }}>
             CATEGORY
           </span>
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div style={{ display: 'flex', gap: '6px' }}>
             {(['INFO', 'PROMO', 'ALERT', 'SYSTEM'] as const).map((cat) => {
               const active = type === cat;
-              const catColor = getCategoryColor(cat);
               return (
                 <button
                   key={cat}
@@ -344,12 +328,14 @@ export default function AdminNotifications() {
                     flex: 1,
                     padding: '8px 0',
                     fontSize: '10px',
-                    fontWeight: '800',
-                    background: 'transparent',
-                    color: active ? catColor : mutedText,
-                    border: `1px solid ${active ? catColor : '#222'}`,
+                    fontWeight: '700',
+                    letterSpacing: '1px',
+                    background: active ? '#FFFFFF' : '#080808',
+                    color: active ? '#000000' : mutedText,
+                    border: `1px solid ${active ? '#FFFFFF' : '#161616'}`,
                     borderRadius: '4px',
-                    cursor: 'pointer'
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
                   }}
                 >
                   {cat}
@@ -359,53 +345,56 @@ export default function AdminNotifications() {
           </div>
         </div>
 
-        {/* TIMING & SCHEDULING */}
+        {/* TIMING & SCHEDULING (SMOOTH SLIDE) */}
         <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: '9px', color: mutedText, fontWeight: '700', letterSpacing: '1.5px' }}>
-              DISPATCH TIMING
+              TIMING
             </span>
+
+            {/* Single Icon for both states */}
             <button
               type="button"
               onClick={() => setIsScheduled(!isScheduled)}
+              title={isScheduled ? 'Scheduled Mode' : 'Instant Mode'}
               style={{
-                background: 'none',
+                background: 'transparent',
                 border: 'none',
-                color: isScheduled ? '#A855F7' : '#EAB308',
-                fontSize: '10px',
-                fontWeight: '700',
+                color: isScheduled ? '#FFFFFF' : '#444444',
+                padding: '4px',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '6px'
+                gap: '6px',
+                transition: 'color 0.25s ease'
               }}
             >
-              {isScheduled ? (
-                <ScheduleIcon style={{ width: 14, height: 14 }} />
-              ) : (
-                <SendIcon style={{ width: 14, height: 14, fill: 'currentColor' }} />
-              )}
-              <span>{isScheduled ? 'SCHEDULED' : 'INSTANT SEND'}</span>
+              <ScheduleIcon style={{ width: 15, height: 15 }} />
+              <span style={{ fontSize: '9px', fontWeight: '700', letterSpacing: '1px' }}>
+                {isScheduled ? 'SCHEDULED' : 'INSTANT'}
+              </span>
             </button>
           </div>
 
-          {isScheduled && (
+          {/* Animated Schedule Container */}
+          <div className={`smooth-schedule-container ${isScheduled ? 'open' : ''}`}>
             <input
               type="datetime-local"
               value={scheduledAt}
               onChange={(e) => setScheduledAt(e.target.value)}
               style={{
                 width: '100%',
-                background: '#121212',
-                border: '1px solid #2A2A2A',
+                background: '#080808',
+                border: '1px solid #222222',
                 borderRadius: '4px',
                 padding: '8px 12px',
                 color: '#FFF',
                 fontSize: '11px',
-                outline: 'none'
+                outline: 'none',
+                boxSizing: 'border-box'
               }}
             />
-          )}
+          </div>
         </div>
 
         {/* Title Input */}
@@ -421,14 +410,14 @@ export default function AdminNotifications() {
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
             <span style={{ fontSize: '9px', color: mutedText, fontWeight: '700', letterSpacing: '1.5px' }}>MESSAGE</span>
-            <span style={{ fontSize: '10px', color: message.length > 180 ? '#EAB308' : mutedText }}>{message.length} chars</span>
+            <span style={{ fontSize: '9px', color: mutedText }}>{message.length} chars</span>
           </div>
           <textarea
             rows={2}
             placeholder="Message content..."
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            style={{ ...underlineInputStyle, resize: 'none', minHeight: '50px' }}
+            style={{ ...underlineInputStyle, resize: 'none', minHeight: '48px' }}
           />
         </div>
 
@@ -444,66 +433,70 @@ export default function AdminNotifications() {
         {/* LIVE MOBILE PREVIEW CARD */}
         <div>
           <span style={{ display: 'block', fontSize: '9px', color: mutedText, fontWeight: '700', letterSpacing: '1.5px', marginBottom: '8px' }}>
-            LIVE PREVIEW (NOTIFICATION TOAST)
+            PREVIEW
           </span>
           <div style={{
-            background: '#121212',
-            border: `1px solid ${type ? getCategoryColor(type) : '#2B2B2B'}`,
-            borderRadius: '12px',
+            background: '#080808',
+            border: '1px solid #1A1A1A',
+            borderRadius: '8px',
             padding: '12px 14px',
             display: 'flex',
-            gap: '12px',
-            alignItems: 'flex-start',
-            boxShadow: '0 8px 20px rgba(0,0,0,0.6)'
+            gap: '10px',
+            alignItems: 'flex-start'
           }}>
             <div style={{
-              width: '8px',
-              height: '8px',
+              width: '6px',
+              height: '6px',
               borderRadius: '50%',
-              background: getCategoryColor(type),
+              background: type ? '#FFFFFF' : '#333333',
               marginTop: '5px'
             }} />
             <div style={{ flex: 1 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '12px', fontWeight: '700', color: '#FFF' }}>
+                <span style={{ fontSize: '12px', fontWeight: '600', color: '#FFF' }}>
                   {title || 'Notification Title'}
                 </span>
-                <span style={{ fontSize: '9px', color: mutedText }}>Just Now</span>
+                <span style={{ fontSize: '9px', color: mutedText }}>Now</span>
               </div>
-              <p style={{ margin: '4px 0 0 0', fontSize: '11px', color: '#CCC', lineHeight: '1.4' }}>
+              <p style={{ margin: '3px 0 0 0', fontSize: '11px', color: '#888', lineHeight: '1.4' }}>
                 {message || 'Notification content will appear here...'}
               </p>
             </div>
           </div>
         </div>
 
-        {/* Submit Button with SendIcon / ScheduleIcon */}
+        {/* Submit Button */}
         <button
           type="submit"
           disabled={loading}
           style={{
-            padding: '14px',
-            background: '#FFFFFF',
-            color: '#000000',
-            fontWeight: '800',
+            marginTop: '8px',
+            padding: '13px',
+            background: '#0F0F0F',
+            color: '#FFFFFF',
+            fontWeight: '700',
             fontSize: '11px',
             letterSpacing: '2px',
-            border: 'none',
-            borderRadius: '2px',
+            border: '1px solid #262626',
+            borderRadius: '4px',
             cursor: loading ? 'not-allowed' : 'pointer',
             opacity: loading ? 0.5 : 1,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '8px'
+            transition: 'all 0.2s ease'
+          }}
+          onMouseEnter={(e) => {
+            if (!loading) {
+              e.currentTarget.style.background = '#FFFFFF';
+              e.currentTarget.style.color = '#000000';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!loading) {
+              e.currentTarget.style.background = '#0F0F0F';
+              e.currentTarget.style.color = '#FFFFFF';
+            }
           }}
         >
-          {isScheduled ? (
-            <ScheduleIcon style={{ width: 14, height: 14 }} />
-          ) : (
-            <SendIcon style={{ width: 14, height: 14, fill: '#000' }} />
-          )}
-          <span>{loading ? 'PROCESSING...' : `DISPATCH TO ${selectedUserIds.length} USER(S)`}</span>
+          {loading ? 'PROCESSING...' : `DISPATCH TO ${selectedUserIds.length} USER(S)`}
         </button>
 
       </form>
@@ -512,40 +505,35 @@ export default function AdminNotifications() {
       {isModalOpen && (
         <div style={{
           position: 'fixed',
-          top: '20px', left: 0, right: 0, bottom: 0,
-          background: '#070707',
+          top: 0, left: 0, right: 0, bottom: 0,
+          background: '#050505',
           zIndex: 150,
           display: 'flex',
-          flexDirection: 'column',
-          borderTopLeftRadius: '20px', borderTopRightRadius: '20px',
-          border: '1px solid #222'
+          flexDirection: 'column'
         }}>
           {/* Sheet Header */}
-          <div style={{ padding: '16px 20px', borderBottom: '1px solid #1A1A1A', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <h3 style={{ margin: 0, fontSize: '14px', fontWeight: '800', letterSpacing: '1px' }}>SELECT RECIPIENTS</h3>
-              <span style={{ fontSize: '10px', color: mutedText }}>Total {allUsers.length} users in database</span>
-            </div>
+          <div style={{ padding: '16px 20px', borderBottom: '1px solid #141414', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '11px', fontWeight: '800', letterSpacing: '1.5px' }}>SELECT RECIPIENTS</span>
             <button
               type="button"
               onClick={() => setIsModalOpen(false)}
-              style={{ background: '#1A1A1A', border: 'none', color: '#FFF', width: '32px', height: '32px', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              style={{ background: 'transparent', border: 'none', color: '#FFF', padding: '4px', cursor: 'pointer' }}
             >
-              <CloseIcon style={{ width: 14, height: 14, fill: 'currentColor' }} />
+              <CloseIcon style={{ width: 14, height: 14 }} />
             </button>
           </div>
 
-          {/* Filters */}
-          <div style={{ padding: '16px 20px', borderBottom: '1px solid #141414', display: 'flex', flexDirection: 'column', gap: '12px', background: '#0B0B0B' }}>
+          {/* Search & Filters */}
+          <div style={{ padding: '14px 20px', borderBottom: '1px solid #111111', display: 'flex', flexDirection: 'column', gap: '10px' }}>
             <input
               type="text"
-              placeholder="Search by name, email, or ID..."
+              placeholder="Search users..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              style={{ width: '100%', background: '#121212', border: '1px solid #222', borderRadius: '6px', padding: '10px 14px', color: '#FFF', fontSize: '12px', outline: 'none' }}
+              style={{ width: '100%', background: '#0A0A0A', border: '1px solid #1F1F1F', borderRadius: '4px', padding: '8px 12px', color: '#FFF', fontSize: '12px', outline: 'none' }}
             />
 
-            <div style={{ display: 'flex', gap: '8px', overflowX: 'auto' }}>
+            <div style={{ display: 'flex', gap: '6px', overflowX: 'auto' }}>
               {['ALL', 'SUPER_ADMIN', 'AMBASSADOR', 'CUSTOMER'].map((role) => {
                 const active = roleFilter === role;
                 return (
@@ -554,9 +542,9 @@ export default function AdminNotifications() {
                     type="button"
                     onClick={() => setRoleFilter(role)}
                     style={{
-                      padding: '6px 14px', fontSize: '10px', fontWeight: '700', borderRadius: '16px',
-                      background: active ? '#FFF' : '#141414', color: active ? '#000' : mutedText,
-                      border: `1px solid ${active ? '#FFF' : '#222'}`, cursor: 'pointer', whiteSpace: 'nowrap'
+                      padding: '4px 10px', fontSize: '9px', fontWeight: '700', borderRadius: '12px',
+                      background: active ? '#FFF' : 'transparent', color: active ? '#000' : mutedText,
+                      border: `1px solid ${active ? '#FFF' : '#1F1F1F'}`, cursor: 'pointer', whiteSpace: 'nowrap'
                     }}
                   >
                     {role}
@@ -567,32 +555,25 @@ export default function AdminNotifications() {
           </div>
 
           {/* User List */}
-          <div className="sheet-scroll" style={{ flex: 1, overflowY: 'auto', padding: '10px 20px' }}>
+          <div className="sheet-scroll" style={{ flex: 1, overflowY: 'auto', padding: '8px 20px' }}>
             {filteredUsers.map((user) => {
               const isSelected = selectedUserIds.includes(user.id);
-              const badgeStyle = getRoleBadgeStyle(user.role);
               return (
                 <div
                   key={user.id}
                   onClick={() => toggleSelectUser(user.id)}
                   style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    padding: '12px 10px', borderBottom: '1px solid #141414', cursor: 'pointer',
-                    background: isSelected ? 'rgba(255,255,255,0.04)' : 'transparent', borderRadius: '6px', marginBottom: '4px'
+                    padding: '10px 0', borderBottom: '1px solid #111111', cursor: 'pointer'
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{ width: '18px', height: '18px', borderRadius: '4px', border: `1px solid ${isSelected ? '#FFF' : '#444'}`, background: isSelected ? '#FFF' : 'transparent', color: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      {isSelected && <CheckIcon style={{ width: 12, height: 12, fill: '#000' }} />}
+                    <div style={{ width: '14px', height: '14px', borderRadius: '2px', border: `1px solid ${isSelected ? '#FFF' : '#333'}`, background: isSelected ? '#FFF' : 'transparent', color: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {isSelected && <CheckIcon style={{ width: 10, height: 10 }} />}
                     </div>
                     <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ fontSize: '13px', fontWeight: '600', color: '#FFF' }}>{user.name || 'Unnamed User'}</span>
-                        <span style={{ fontSize: '8px', fontWeight: '800', padding: '2px 6px', borderRadius: '4px', background: badgeStyle.bg, color: badgeStyle.color, border: `1px solid ${badgeStyle.border}` }}>
-                          {(user.role || 'USER').toUpperCase()}
-                        </span>
-                      </div>
-                      <span style={{ fontSize: '11px', color: mutedText, display: 'block', marginTop: '3px' }}>{user.email || user.id}</span>
+                      <span style={{ fontSize: '12px', fontWeight: '500', color: isSelected ? '#FFF' : '#AAA', display: 'block' }}>{user.name || 'Unnamed User'}</span>
+                      <span style={{ fontSize: '10px', color: mutedText }}>{user.email || user.id}</span>
                     </div>
                   </div>
                 </div>
@@ -601,9 +582,9 @@ export default function AdminNotifications() {
           </div>
 
           {/* Sheet Footer */}
-          <div style={{ padding: '16px 20px', borderTop: '1px solid #1A1A1A', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#0B0B0B' }}>
-            <span style={{ fontSize: '12px', color: '#FFF', fontWeight: '700' }}>Selected: {selectedUserIds.length} users</span>
-            <button type="button" onClick={() => setIsModalOpen(false)} style={{ padding: '10px 24px', background: '#FFF', color: '#000', fontWeight: '800', fontSize: '11px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>DONE / APPLY</button>
+          <div style={{ padding: '14px 20px', borderTop: '1px solid #141414', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '11px', color: mutedText }}>{selectedUserIds.length} selected</span>
+            <button type="button" onClick={() => setIsModalOpen(false)} style={{ padding: '8px 20px', background: '#FFF', color: '#000', fontWeight: '700', fontSize: '10px', letterSpacing: '1px', border: 'none', borderRadius: '2px', cursor: 'pointer' }}>DONE</button>
           </div>
         </div>
       )}
