@@ -1,17 +1,22 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/supabaseClient';
-import { SearchIcon, BackIcon } from '@/components/icons';
+import { BackIcon } from '@/components/icons';
+
+interface Recipient {
+  id: string;
+  user_id: string;
+  is_read: boolean;
+}
 
 interface SentNotification {
   id: string;
-  user_id: string;
   title: string;
   message: string;
   type: 'INFO' | 'PROMO' | 'SYSTEM' | 'ALERT';
   link?: string | null;
   target_audience: string;
-  is_read: boolean | string | number;
   created_at: string;
+  notification_recipients?: Recipient[];
 }
 
 interface NotificationLogsProps {
@@ -36,38 +41,21 @@ export default function NotificationLogs({ onBack }: NotificationLogsProps) {
     }, 3500);
   };
 
-  const checkIsRead = (item: SentNotification): boolean => {
-    const val = item.is_read ?? (item as any).read ?? (item as any).isRead;
-    if (val === true || val === 1) return true;
-    if (typeof val === 'string') {
-      const lower = val.trim().toLowerCase();
-      return lower === 'true' || lower === 't' || lower === '1';
-    }
-    return false;
-  };
-
   useEffect(() => {
     fetchLogs();
 
+    // notifications এবং notification_recipients উভয় টেবিলের পরিবর্তনের জন্য রিয়েল-টাইম লিসেনার
     const channel = supabase
       .channel('admin_notification_logs')
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'notifications' },
-        (payload) => {
-          if (payload.eventType === 'INSERT') {
-            const newNotif = payload.new as SentNotification;
-            setLogs((prev) => [newNotif, ...prev]);
-          } else if (payload.eventType === 'UPDATE') {
-            const updatedNotif = payload.new as SentNotification;
-            setLogs((prev) =>
-              prev.map((item) => (item.id === updatedNotif.id ? updatedNotif : item))
-            );
-          } else if (payload.eventType === 'DELETE') {
-            const deletedId = payload.old.id;
-            setLogs((prev) => prev.filter((item) => item.id !== deletedId));
-          }
-        }
+        () => fetchLogs()
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'notification_recipients' },
+        () => fetchLogs()
       )
       .subscribe();
 
@@ -79,9 +67,17 @@ export default function NotificationLogs({ onBack }: NotificationLogsProps) {
   const fetchLogs = async () => {
     setLoading(true);
     try {
+      // notifications এর সাথে notification_recipients ডাটা রিলেশনালি ফেচ
       const { data, error } = await supabase
         .from('notifications')
-        .select('*')
+        .select(`
+          *,
+          notification_recipients (
+            id,
+            user_id,
+            is_read
+          )
+        `)
         .order('created_at', { ascending: false })
         .limit(100);
 
@@ -129,13 +125,52 @@ export default function NotificationLogs({ onBack }: NotificationLogsProps) {
     }
   };
 
+  // Seen Status & Counter Generator
+  const getSeenStatusBadge = (recipients: Recipient[] = []) => {
+    const total = recipients.length;
+    const seen = recipients.filter((r) => r.is_read).length;
+
+    if (total === 0) {
+      return {
+        text: 'UNSEEN',
+        bg: 'rgba(255, 255, 255, 0.05)',
+        color: mutedText,
+        border: '#222222'
+      };
+    }
+
+    if (seen === 0) {
+      return {
+        text: `UNSEEN (0/${total})`,
+        bg: 'rgba(239, 68, 68, 0.1)',
+        color: '#EF4444',
+        border: 'rgba(239, 68, 68, 0.3)'
+      };
+    }
+
+    if (seen === total) {
+      return {
+        text: `ALL SEEN (${seen}/${total})`,
+        bg: 'rgba(34, 197, 94, 0.15)',
+        color: '#4ADE80',
+        border: 'rgba(34, 197, 94, 0.3)'
+      };
+    }
+
+    return {
+      text: `SEEN (${seen}/${total})`,
+      bg: 'rgba(234, 179, 8, 0.15)',
+      color: '#EAB308',
+      border: 'rgba(234, 179, 8, 0.3)'
+    };
+  };
+
   const filteredLogs = useMemo(() => {
     return logs.filter((log) => {
       const titleMatch = (log.title || '').toLowerCase().includes(searchQuery.toLowerCase());
       const msgMatch = (log.message || '').toLowerCase().includes(searchQuery.toLowerCase());
-      const userMatch = (log.user_id || '').toLowerCase().includes(searchQuery.toLowerCase());
 
-      const matchesSearch = titleMatch || msgMatch || userMatch;
+      const matchesSearch = titleMatch || msgMatch;
       const matchesCategory = selectedCategory === 'ALL' || log.type === selectedCategory;
 
       return matchesSearch && matchesCategory;
@@ -235,7 +270,9 @@ export default function NotificationLogs({ onBack }: NotificationLogsProps) {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {filteredLogs.map((item) => {
-            const isSeen = checkIsRead(item);
+            const badge = getSeenStatusBadge(item.notification_recipients);
+            const totalRecipients = item.notification_recipients?.length || 0;
+
             return (
               <div
                 key={item.id}
@@ -262,11 +299,11 @@ export default function NotificationLogs({ onBack }: NotificationLogsProps) {
                     fontWeight: '800',
                     padding: '3px 8px',
                     borderRadius: '4px',
-                    background: isSeen ? 'rgba(34, 197, 94, 0.15)' : 'rgba(255, 255, 255, 0.05)',
-                    color: isSeen ? '#4ADE80' : mutedText,
-                    border: `1px solid ${isSeen ? 'rgba(34, 197, 94, 0.3)' : '#222222'}`
+                    background: badge.bg,
+                    color: badge.color,
+                    border: `1px solid ${badge.border}`
                   }}>
-                    {isSeen ? '✓ SEEN' : 'UNSEEN'}
+                    {badge.text}
                   </span>
                 </div>
 
@@ -278,7 +315,7 @@ export default function NotificationLogs({ onBack }: NotificationLogsProps) {
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '8px', borderTop: '1px solid #141414' }}>
                   <span style={{ fontSize: '9px', color: '#666666' }}>
-                    TARGET: {item.target_audience === 'ALL' ? 'GLOBAL' : `USER (${item.user_id ? item.user_id.slice(0, 8) : 'SPECIFIC'}...)`}
+                    TARGET: {item.target_audience === 'ALL' ? 'GLOBAL' : `SPECIFIC (${totalRecipients} USERS)`}
                   </span>
                   <button
                     type="button"
