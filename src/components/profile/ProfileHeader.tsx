@@ -12,9 +12,9 @@ interface ProfileHeaderProps {
   onOpenMessages?: () => void;
   onOpenNotifications?: () => void;
   onOpenCommunication?: () => void;
-  onOpenProfileDetails?: () => void; // বটম শিটের জন্য কলব্যাক
-  unreadCount?: number;              // আনরিড নটিফিকেশনের সংখ্যা পাঠানোর জন্য
-  hasUnread?: boolean;               // আনরিড স্ট্যাটাস (সংখ্যা না থাকলে ডট দেখাবে)
+  onOpenProfileDetails?: () => void;
+  unreadCount?: number;
+  hasUnread?: boolean;
 }
 
 export default function ProfileHeader({
@@ -50,7 +50,7 @@ export default function ProfileHeader({
     }
   };
 
-  // আনরিড ব্যাজ দেখানোর সিদ্ধান্ত
+  // আনরিড নটিফিকেশন থাকলে ব্যাজ প্রদর্শন করবে
   const showBadge = unreadCount > 0 || hasUnread;
 
   return (
@@ -70,7 +70,7 @@ export default function ProfileHeader({
         flex: 1, 
         minWidth: 0 
       }}>
-        {/* ১. প্রোফাইল ছবি/অ্যাভাটার (ক্লিক করলে মোড সুইচ হবে) */}
+        {/* ১. প্রোফাইল ছবি/অ্যাভাটার (শুধুমাত্র Ambassador Active থাকলেই ছবি দেখাবে) */}
         <div 
           onClick={isAmbassador ? togglePortalMode : undefined}
           title={isAmbassador ? "Click to switch profile mode" : "Profile Picture"}
@@ -93,14 +93,14 @@ export default function ProfileHeader({
             transition: 'all 0.2s ease',
             overflow: 'hidden'
           }}>
-          {avatarUrl ? (
+          {avatarUrl && isAmbassadorActive ? (
             <img src={avatarUrl} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           ) : (
             getInitials(name, profile?.email)
           )}
         </div>
 
-        {/* ২. নাম এবং সাবটাইটেল (ক্লিক করলে বটম শিট খুলবে) */}
+        {/* ২. নাম এবং সাবটাইটেল */}
         <div 
           onClick={onOpenProfileDetails}
           title="Click to view full details"
@@ -129,7 +129,6 @@ export default function ProfileHeader({
             {name}
           </h2>
 
-          {/* অ্যাম্বাসেডর এক্টিভ থাকলে ব্যাজ দেখাবে, কাস্টমার হলে ইমেইল দেখাবে */}
           {isAmbassadorActive ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginTop: '3px' }}>
               <span style={{
@@ -165,7 +164,6 @@ export default function ProfileHeader({
 
       {/* ডানপাশ: আইকন বাটনসমূহ */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
-        {/* মূল নোটিফিকেশন/মেসেজ আইকন বাটন */}
         <button
           onClick={handleIconClick}
           style={{ 
@@ -190,12 +188,12 @@ export default function ProfileHeader({
             <NotificationIcon width={17} height={17} stroke="#FFFFFF" />
           )}
 
-          {/* মূল আইকনে আনরিড কাউন্ট / ব্যাজ */}
+          {/* লাল ব্যাজ এবং কাউন্ট সংখ্যা */}
           {showBadge && (
             <span style={{
               position: 'absolute',
-              top: '-2px',
-              right: '-2px',
+              top: '-3px',
+              right: '-3px',
               backgroundColor: '#EF4444',
               color: '#FFFFFF',
               fontSize: '9px',
@@ -215,7 +213,6 @@ export default function ProfileHeader({
           )}
         </button>
 
-        {/* সেটিং আইকন বাটন */}
         <button
           onClick={() => onChangeView('settings')}
           style={{ 
