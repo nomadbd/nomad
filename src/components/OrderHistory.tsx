@@ -366,6 +366,46 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
         .premium-carousel::-webkit-scrollbar {
           display: none !important;
         }
+
+        .order-item-attrs {
+          margin-top: 8px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          flex-wrap: wrap;
+        }
+
+        .attr-text {
+          font-size: 10px;
+          color: #888;
+          font-family: monospace;
+          font-weight: bold;
+          text-transform: uppercase;
+          white-space: nowrap;
+        }
+
+        .attr-val {
+          color: #fff;
+        }
+
+        .attr-dot {
+          width: 3px;
+          height: 3px;
+          background-color: #444;
+          border-radius: 50%;
+          flex-shrink: 0;
+        }
+
+        /* Responsive Mobile Layout (< 640px) */
+        @media (max-width: 640px) {
+          .attr-color {
+            flex-basis: 100%;
+            margin-top: 2px;
+          }
+          .dot-desktop-only {
+            display: none;
+          }
+        }
       `}</style>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '12px' }}>
@@ -523,23 +563,23 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
                       {item.product_name}
                     </h4>
                     
-                    {/* ২-লাইনের ক্লিন স্ট্রাকচার (Line 1: SIZE & QTY | Line 2: COLOR) */}
-                    <div style={{ marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ fontSize: '10px', color: '#888', fontFamily: 'monospace', fontWeight: 'bold' }}>
-                          SIZE: <span style={{ color: '#fff' }}>{item.size}</span>
-                        </span>
-                        
-                        <span style={{ width: '3px', height: '3px', backgroundColor: '#444', borderRadius: '50%', flexShrink: 0 }}></span>
-                        
-                        <span style={{ fontSize: '10px', color: '#888', fontFamily: 'monospace', fontWeight: 'bold' }}>
-                          QTY: <span style={{ color: '#fff' }}>{item.quantity}</span>
-                        </span>
-                      </div>
+                    {/* Responsive Attributes Container */}
+                    <div className="order-item-attrs">
+                      <span className="attr-text">
+                        SIZE: <span className="attr-val">{item.size}</span>
+                      </span>
+                      
+                      <span className="attr-dot"></span>
+                      
+                      <span className="attr-text">
+                        QTY: <span className="attr-val">{item.quantity}</span>
+                      </span>
 
-                      <div style={{ fontSize: '10px', color: '#888', fontFamily: 'monospace', fontWeight: 'bold', textTransform: 'uppercase' }}>
-                        COLOR: <span style={{ color: '#fff' }}>{item.color}</span>
-                      </div>
+                      <span className="attr-dot dot-desktop-only"></span>
+
+                      <span className="attr-text attr-color">
+                        COLOR: <span className="attr-val">{item.color}</span>
+                      </span>
                     </div>
                   </div>
                 </div>
