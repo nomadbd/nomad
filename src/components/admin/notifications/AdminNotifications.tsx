@@ -25,7 +25,7 @@ export default function AdminNotifications() {
   const [allUsers, setAllUsers] = useState<UserProfile[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
-  
+
   // Filter States
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('ALL');
@@ -79,13 +79,11 @@ export default function AdminNotifications() {
     });
   }, [allUsers, roleFilter, searchQuery]);
 
-  // Check if all filtered users are currently selected
   const isAllFilteredSelected = useMemo(() => {
     if (filteredUsers.length === 0) return false;
     return filteredUsers.every((u) => selectedUserIds.includes(u.id));
   }, [filteredUsers, selectedUserIds]);
 
-  // Toggle Select All for currently filtered users
   const toggleSelectAllFiltered = () => {
     const filteredIds = filteredUsers.map((u) => u.id);
     if (isAllFilteredSelected) {
@@ -130,16 +128,31 @@ export default function AdminNotifications() {
 
     try {
       const isAllUsersSelected = allUsers.length > 0 && selectedUserIds.length === allUsers.length;
+      let notificationsToInsert = [];
 
-      const notificationsToInsert = selectedUserIds.map((userId) => ({
-        user_id: userId,
-        title: title.trim(),
-        message: message.trim(),
-        type,
-        link: link.trim() || null,
-        target_audience: isAllUsersSelected ? 'ALL' : 'SPECIFIC',
-        is_read: false
-      }));
+      // গ্লোবাল পাঠালে ১টি মাত্র Row তৈরি হবে (যাতে ১ বার এডিটে পুরো ডাটাবেজ আপডেট হয়)
+      if (isAllUsersSelected) {
+        notificationsToInsert = [{
+          user_id: null,
+          title: title.trim(),
+          message: message.trim(),
+          type,
+          link: link.trim() || null,
+          target_audience: 'ALL',
+          is_read: false
+        }];
+      } else {
+        // নির্দিষ্ট ইউজার সিলেক্ট করলে তাদের জন্য ইনসার্ট হবে
+        notificationsToInsert = selectedUserIds.map((userId) => ({
+          user_id: userId,
+          title: title.trim(),
+          message: message.trim(),
+          type,
+          link: link.trim() || null,
+          target_audience: 'SPECIFIC',
+          is_read: false
+        }));
+      }
 
       const { error } = await supabase.from('notifications').insert(notificationsToInsert);
       if (error) throw error;
@@ -261,7 +274,6 @@ export default function AdminNotifications() {
               </div>
             </div>
 
-            {/* Selected User Chips */}
             {selectedUserIds.length > 0 && (
               <div className="sheet-scroll" style={{ maxHeight: '90px', overflowY: 'auto', display: 'flex', flexWrap: 'wrap', gap: '6px', paddingTop: '4px' }}>
                 {selectedUserIds.map((id) => {
@@ -419,12 +431,6 @@ export default function AdminNotifications() {
             opacity: btnState === 'loading' ? 0.6 : 1,
             transition: 'all 0.25s ease'
           }}
-          onMouseEnter={(e) => {
-            if (btnState === 'idle') e.currentTarget.style.borderColor = '#444444';
-          }}
-          onMouseLeave={(e) => {
-            if (btnState === 'idle') e.currentTarget.style.borderColor = '#222222';
-          }}
         >
           {btnState === 'loading' && 'SENDING...'}
           {btnState === 'success' && 'SENT SUCCESSFULLY'}
@@ -444,7 +450,6 @@ export default function AdminNotifications() {
           display: 'flex',
           flexDirection: 'column'
         }}>
-          {/* Header */}
           <div style={{ padding: '16px 20px', borderBottom: '1px solid #141414', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: '10px', fontWeight: '700', letterSpacing: '1.5px' }}>RECIPIENTS</span>
             <button
@@ -456,7 +461,6 @@ export default function AdminNotifications() {
             </button>
           </div>
 
-          {/* Search, Filter Chips & Select All Controls */}
           <div style={{ padding: '14px 20px', borderBottom: '1px solid #111111', display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <input
               type="text"
@@ -486,7 +490,6 @@ export default function AdminNotifications() {
               })}
             </div>
 
-            {/* Select All Toggle Action Bar */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '2px' }}>
               <span style={{ fontSize: '9px', color: mutedText, letterSpacing: '1px', fontWeight: '600' }}>
                 {filteredUsers.length} FOUND
@@ -510,7 +513,6 @@ export default function AdminNotifications() {
             </div>
           </div>
 
-          {/* User List */}
           <div className="sheet-scroll" style={{ flex: 1, overflowY: 'auto', padding: '8px 20px' }}>
             {filteredUsers.map((user) => {
               const isSelected = selectedUserIds.includes(user.id);
@@ -537,7 +539,6 @@ export default function AdminNotifications() {
             })}
           </div>
 
-          {/* Sheet Footer */}
           <div style={{ padding: '14px 20px', borderTop: '1px solid #141414', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: '11px', color: mutedText }}>{selectedUserIds.length} selected</span>
             <button type="button" onClick={() => setIsModalOpen(false)} style={{ padding: '8px 20px', background: '#FFF', color: '#000', fontWeight: '700', fontSize: '10px', letterSpacing: '1px', border: 'none', borderRadius: '2px', cursor: 'pointer' }}>DONE</button>
