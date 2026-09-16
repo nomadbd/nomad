@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/supabaseClient';
-import { HistoryIcon, SearchIcon, EditIcon, BackIcon } from '@/components/icons';
+import { SearchIcon, BackIcon } from '@/components/icons';
 
 interface SentNotification {
   id: string;
@@ -25,8 +25,6 @@ export default function NotificationLogs({ onBack }: NotificationLogsProps) {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
-  const [editingItem, setEditingItem] = useState<SentNotification | null>(null);
-  const [updating, setUpdating] = useState(false);
 
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const mutedText = '#888888';
@@ -60,11 +58,6 @@ export default function NotificationLogs({ onBack }: NotificationLogsProps) {
           if (payload.eventType === 'INSERT') {
             const newNotif = payload.new as SentNotification;
             setLogs((prev) => [newNotif, ...prev]);
-          } else if (payload.eventType === 'UPDATE') {
-            const updatedNotif = payload.new as SentNotification;
-            setLogs((prev) =>
-              prev.map((item) => (item.id === updatedNotif.id ? updatedNotif : item))
-            );
           } else if (payload.eventType === 'DELETE') {
             const deletedId = payload.old.id;
             setLogs((prev) => prev.filter((item) => item.id !== deletedId));
@@ -106,64 +99,6 @@ export default function NotificationLogs({ onBack }: NotificationLogsProps) {
       triggerToast('Log deleted successfully', 'success');
     } catch (err: any) {
       triggerToast('Delete failed: ' + err.message, 'error');
-    }
-  };
-
-  const handleSilentUpdate = async () => {
-    if (!editingItem) return;
-    if (!editingItem.title.trim() || !editingItem.message.trim()) {
-      triggerToast('Title and Message are required.', 'error');
-      return;
-    }
-
-    setUpdating(true);
-    try {
-      const originalLog = logs.find((l) => l.id === editingItem.id);
-
-      const { error } = await supabase
-        .from('notifications')
-        .update({
-          title: editingItem.title.trim(),
-          message: editingItem.message.trim(),
-          type: editingItem.type,
-          link: editingItem.link ? editingItem.link.trim() : null
-        })
-        .eq('id', editingItem.id);
-
-      if (error) throw error;
-
-      if (originalLog) {
-        await supabase
-          .from('notifications')
-          .update({
-            title: editingItem.title.trim(),
-            message: editingItem.message.trim(),
-            type: editingItem.type,
-            link: editingItem.link ? editingItem.link.trim() : null
-          })
-          .eq('created_at', originalLog.created_at);
-      }
-
-      setLogs((prev) =>
-        prev.map((item) => 
-          item.id === editingItem.id || (originalLog && item.created_at === originalLog.created_at)
-            ? { 
-                ...item, 
-                title: editingItem.title.trim(), 
-                message: editingItem.message.trim(),
-                type: editingItem.type,
-                link: editingItem.link ? editingItem.link.trim() : null 
-              } 
-            : item
-        )
-      );
-
-      triggerToast('Notification silently updated live!', 'success');
-      setEditingItem(null);
-    } catch (err: any) {
-      triggerToast(err.message || 'Update failed', 'error');
-    } finally {
-      setUpdating(false);
     }
   };
 
@@ -260,7 +195,7 @@ export default function NotificationLogs({ onBack }: NotificationLogsProps) {
         />
       </div>
 
-      {/* Category Chips */}
+      {/* Category Filter Chips */}
       <div style={{ display: 'flex', gap: '6px', marginBottom: '20px', overflowX: 'auto', paddingBottom: '4px' }}>
         {['ALL', 'INFO', 'PROMO', 'ALERT', 'SYSTEM'].map((cat) => {
           const active = selectedCategory === cat;
@@ -340,99 +275,17 @@ export default function NotificationLogs({ onBack }: NotificationLogsProps) {
                   <span style={{ fontSize: '9px', color: '#666666' }}>
                     TARGET: {item.target_audience === 'ALL' ? 'GLOBAL' : `USER (${item.user_id ? item.user_id.slice(0, 8) : 'SPECIFIC'}...)`}
                   </span>
-                  <div style={{ display: 'flex', gap: '12px' }}>
-                    <button
-                      type="button"
-                      onClick={() => setEditingItem({ ...item })}
-                      style={{ background: 'none', border: 'none', color: '#3B82F6', fontSize: '10px', fontWeight: '700', cursor: 'pointer', padding: 0 }}
-                    >
-                      SILENT EDIT
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleDelete(item.id)}
-                      style={{ background: 'none', border: 'none', color: '#EF4444', fontSize: '10px', fontWeight: '700', cursor: 'pointer', padding: 0 }}
-                    >
-                      DELETE
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(item.id)}
+                    style={{ background: 'none', border: 'none', color: '#EF4444', fontSize: '10px', fontWeight: '700', cursor: 'pointer', padding: 0 }}
+                  >
+                    DELETE
+                  </button>
                 </div>
               </div>
             );
           })}
-        </div>
-      )}
-
-      {/* MODAL */}
-      {editingItem && (
-        <div style={{
-          position: 'fixed',
-          top: 0, left: 0, right: 0, bottom: 0,
-          background: 'rgba(0,0,0,0.85)',
-          backdropFilter: 'blur(4px)',
-          zIndex: 999,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '16px'
-        }}>
-          <div style={{
-            width: '100%',
-            maxWidth: '460px',
-            background: '#111111',
-            border: '1px solid #222222',
-            borderRadius: '10px',
-            padding: '20px',
-            boxSizing: 'border-box'
-          }}>
-            <div style={{ fontSize: '12px', fontWeight: '800', color: '#FFF', marginBottom: '2px' }}>
-              SILENT EDIT NOTIFICATION
-            </div>
-            <div style={{ fontSize: '10px', color: mutedText, marginBottom: '16px' }}>
-              Updates database live without sending a new push alert.
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '9px', color: mutedText, fontWeight: '700', marginBottom: '4px' }}>TITLE</label>
-                <input
-                  type="text"
-                  value={editingItem.title}
-                  onChange={(e) => setEditingItem({ ...editingItem, title: e.target.value })}
-                  style={{ width: '100%', background: '#000000', border: '1px solid #222222', padding: '10px', color: '#FFF', fontSize: '12px', outline: 'none', borderRadius: '6px' }}
-                />
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '9px', color mutedText, fontWeight: '700', marginBottom: '4px' }}>MESSAGE</label>
-                <textarea
-                  value={editingItem.message}
-                  onChange={(e) => setEditingItem({ ...editingItem, message: e.target.value })}
-                  rows={3}
-                  style={{ width: '100%', background: '#000000', border: '1px solid #222222', padding: '10px', color: '#FFF', fontSize: '12px', outline: 'none', borderRadius: '6px' }}
-                />
-              </div>
-
-              <div style={{ display: 'flex', gap: '10px', marginTop: '6px' }}>
-                <button
-                  type="button"
-                  onClick={handleSilentUpdate}
-                  disabled={updating}
-                  style={{ flex: 1, padding: '12px', background: '#FFFFFF', color: '#000000', border: 'none', fontWeight: '800', fontSize: '11px', borderRadius: '6px', cursor: 'pointer' }}
-                >
-                  {updating ? 'SAVING...' : 'SAVE LIVE'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setEditingItem(null)}
-                  disabled={updating}
-                  style={{ padding: '12px 18px', background: 'transparent', color: mutedText, border: '1px solid #333333', fontSize: '11px', fontWeight: '700', borderRadius: '6px', cursor: 'pointer' }}
-                >
-                  CANCEL
-                </button>
-              </div>
-            </div>
-          </div>
         </div>
       )}
 
