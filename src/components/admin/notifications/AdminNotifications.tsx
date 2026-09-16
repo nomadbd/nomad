@@ -99,7 +99,8 @@ export default function NotificationLogs({ onBack }: NotificationLogsProps) {
 
     setUpdating(true);
     try {
-      const { error } = await supabase
+      // .select() যুক্ত করার ফলে RLS Policy বা Update ব্যর্থ হলে সরাসরি ধরা পড়বে
+      const { data, error } = await supabase
         .from('notifications')
         .update({
           title: editingItem.title.trim(),
@@ -107,16 +108,25 @@ export default function NotificationLogs({ onBack }: NotificationLogsProps) {
           type: editingItem.type,
           link: editingItem.link ? editingItem.link.trim() : null
         })
-        .eq('id', editingItem.id);
+        .eq('id', editingItem.id)
+        .select();
 
       if (error) throw error;
 
+      if (!data || data.length === 0) {
+        throw new Error('Database Update Restricted! Supabase-এ notifications টেবিলের RLS (Row Level Security) - UPDATE Policy অন করা আছে কিনা পরীক্ষা করুন।');
+      }
+
+      const updatedRow = data[0] as SentNotification;
+
       setLogs((prev) =>
-        prev.map((item) => (item.id === editingItem.id ? editingItem : item))
+        prev.map((item) => (item.id === updatedRow.id ? updatedRow : item))
       );
+
+      alert('Successfully saved to database!');
       setEditingItem(null);
     } catch (err: any) {
-      alert('Silent update failed: ' + err.message);
+      alert('Update Failed: ' + err.message);
     } finally {
       setUpdating(false);
     }
@@ -157,6 +167,169 @@ export default function NotificationLogs({ onBack }: NotificationLogsProps) {
     });
   }, [logs, searchQuery, selectedCategory]);
 
+  /* ========================================================
+     EDIT PAGE VIEW (কীবোর্ড সেফটি ও স্ক্রোলযোগ্য পেজ)
+  ======================================================== */
+  if (editingItem) {
+    return (
+      <div style={{ maxWidth: '640px', margin: '0 auto', color: '#FFF', fontFamily: 'system-ui, -apple-system, sans-serif', padding: '16px 12px', paddingBottom: '320px' }}>
+        
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', borderBottom: '1px solid #1A1A1A', paddingBottom: '12px' }}>
+          <button
+            type="button"
+            onClick={() => setEditingItem(null)}
+            style={{ background: 'none', border: 'none', color: '#FFF', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', fontWeight: '700', padding: 0 }}
+          >
+            {BackIcon ? <BackIcon style={{ width: 16, height: 16 }} /> : '◄'} CANCEL & BACK
+          </button>
+          <span style={{ fontSize: '10px', color: mutedText, fontWeight: '700', letterSpacing: '1px' }}>SILENT EDIT PAGE</span>
+        </div>
+
+        {/* Top Save Bar */}
+        <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+          <button
+            type="button"
+            onClick={handleSilentUpdate}
+            disabled={updating}
+            style={{
+              flex: 1,
+              padding: '14px',
+              background: '#FFFFFF',
+              color: '#000000',
+              border: 'none',
+              fontWeight: '800',
+              fontSize: '12px',
+              cursor: updating ? 'not-allowed' : 'pointer',
+              borderRadius: '6px',
+              opacity: updating ? 0.7 : 1
+            }}
+          >
+            {updating ? 'SAVING TO DATABASE...' : 'SAVE LIVE TO DATABASE'}
+          </button>
+        </div>
+
+        {/* Form Inputs */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', background: '#0D0D0D', border: '1px solid #1A1A1A', borderRadius: '8px', padding: '16px' }}>
+          <div>
+            <label style={{ display: 'block', fontSize: '10px', color: mutedText, fontWeight: '700', marginBottom: '6px', letterSpacing: '0.5px' }}>
+              NOTIFICATION TITLE
+            </label>
+            <input
+              type="text"
+              value={editingItem.title}
+              onChange={(e) => setEditingItem({ ...editingItem, title: e.target.value })}
+              placeholder="Title"
+              style={{
+                width: '100%',
+                background: '#000000',
+                border: '1px solid #262626',
+                padding: '12px',
+                color: '#FFF',
+                fontSize: '13px',
+                outline: 'none',
+                borderRadius: '6px',
+                boxSizing: 'border-box'
+              }}
+            />
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontSize: '10px', color: mutedText, fontWeight: '700', marginBottom: '6px', letterSpacing: '0.5px' }}>
+              NOTIFICATION MESSAGE
+            </label>
+            <textarea
+              value={editingItem.message}
+              onChange={(e) => setEditingItem({ ...editingItem, message: e.target.value })}
+              placeholder="Message"
+              rows={5}
+              style={{
+                width: '100%',
+                background: '#000000',
+                border: '1px solid #262626',
+                padding: '12px',
+                color: '#FFF',
+                fontSize: '13px',
+                outline: 'none',
+                resize: 'vertical',
+                borderRadius: '6px',
+                boxSizing: 'border-box',
+                lineHeight: '1.5'
+              }}
+            />
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontSize: '10px', color: mutedText, fontWeight: '700', marginBottom: '6px', letterSpacing: '0.5px' }}>
+              ACTION LINK (OPTIONAL)
+            </label>
+            <input
+              type="url"
+              value={editingItem.link || ''}
+              onChange={(e) => setEditingItem({ ...editingItem, link: e.target.value })}
+              placeholder="https://..."
+              style={{
+                width: '100%',
+                background: '#000000',
+                border: '1px solid #262626',
+                padding: '12px',
+                color: '#FFF',
+                fontSize: '13px',
+                outline: 'none',
+                borderRadius: '6px',
+                boxSizing: 'border-box'
+              }}
+            />
+          </div>
+
+          {/* Bottom Save Bar */}
+          <div style={{ display: 'flex', gap: '10px', marginTop: '12px' }}>
+            <button
+              type="button"
+              onClick={handleSilentUpdate}
+              disabled={updating}
+              style={{
+                flex: 1,
+                padding: '14px',
+                background: '#FFFFFF',
+                color: '#000000',
+                border: 'none',
+                fontWeight: '800',
+                fontSize: '12px',
+                cursor: updating ? 'not-allowed' : 'pointer',
+                borderRadius: '6px',
+                opacity: updating ? 0.7 : 1
+              }}
+            >
+              {updating ? 'SAVING...' : 'SAVE LIVE TO DATABASE'}
+            </button>
+            <button
+              type="button"
+              onClick={() => setEditingItem(null)}
+              disabled={updating}
+              style={{
+                padding: '14px 20px',
+                background: 'transparent',
+                color: mutedText,
+                border: '1px solid #333333',
+                fontSize: '12px',
+                fontWeight: '700',
+                cursor: 'pointer',
+                borderRadius: '6px'
+              }}
+            >
+              CANCEL
+            </button>
+          </div>
+        </div>
+
+      </div>
+    );
+  }
+
+  /* ========================================================
+     MAIN LOGS LIST VIEW
+  ======================================================== */
   return (
     <div style={{ maxWidth: '640px', margin: '0 auto', color: '#FFF', fontFamily: 'system-ui, -apple-system, sans-serif', padding: '12px 8px', paddingBottom: '120px' }}>
 
@@ -292,182 +465,6 @@ export default function NotificationLogs({ onBack }: NotificationLogsProps) {
               </div>
             </div>
           ))}
-        </div>
-      )}
-
-      {/* SILENT EDIT BOTTOM SHEET */}
-      {editingItem && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0,0,0,0.75)',
-          backdropFilter: 'blur(6px)',
-          zIndex: 1000,
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'flex-end',
-          alignItems: 'center'
-        }}>
-          {/* Background Overlay Click to Close */}
-          <div 
-            onClick={() => setEditingItem(null)} 
-            style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1 }} 
-          />
-
-          {/* Bottom Sheet Container */}
-          <div style={{
-            position: 'relative',
-            zIndex: 2,
-            width: '100%',
-            maxWidth: '540px',
-            background: '#121212',
-            borderTopLeftRadius: '16px',
-            borderTopRightRadius: '16px',
-            border: '1px solid #262626',
-            borderBottom: 'none',
-            padding: '16px 20px 24px 20px',
-            boxSizing: 'border-box',
-            maxHeight: '85vh',
-            overflowY: 'auto',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '14px',
-            boxShadow: '0 -10px 25px rgba(0,0,0,0.5)'
-          }}>
-            {/* Sheet Handle Indicator */}
-            <div style={{
-              width: '36px',
-              height: '4px',
-              background: '#333333',
-              borderRadius: '2px',
-              alignSelf: 'center',
-              marginBottom: '4px'
-            }} />
-
-            <div>
-              <div style={{ fontSize: '12px', fontWeight: '800', color: '#FFF', letterSpacing: '0.5px' }}>
-                SILENT EDIT NOTIFICATION
-              </div>
-              <div style={{ fontSize: '10px', color: mutedText, marginTop: '2px' }}>
-                Updates database live without triggering a new push notification alert.
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '9px', color: mutedText, fontWeight: '700', marginBottom: '4px', letterSpacing: '0.5px' }}>
-                  TITLE
-                </label>
-                <input
-                  type="text"
-                  value={editingItem.title}
-                  onChange={(e) => setEditingItem({ ...editingItem, title: e.target.value })}
-                  placeholder="Title"
-                  style={{
-                    width: '100%',
-                    background: '#000000',
-                    border: '1px solid #262626',
-                    padding: '10px 12px',
-                    color: '#FFF',
-                    fontSize: '12px',
-                    outline: 'none',
-                    borderRadius: '6px',
-                    boxSizing: 'border-box'
-                  }}
-                />
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '9px', color: mutedText, fontWeight: '700', marginBottom: '4px', letterSpacing: '0.5px' }}>
-                  MESSAGE
-                </label>
-                <textarea
-                  value={editingItem.message}
-                  onChange={(e) => setEditingItem({ ...editingItem, message: e.target.value })}
-                  placeholder="Message"
-                  rows={3}
-                  style={{
-                    width: '100%',
-                    background: '#000000',
-                    border: '1px solid #262626',
-                    padding: '10px 12px',
-                    color: '#FFF',
-                    fontSize: '12px',
-                    outline: 'none',
-                    resize: 'vertical',
-                    borderRadius: '6px',
-                    boxSizing: 'border-box'
-                  }}
-                />
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '9px', color: mutedText, fontWeight: '700', marginBottom: '4px', letterSpacing: '0.5px' }}>
-                  ACTION LINK (OPTIONAL)
-                </label>
-                <input
-                  type="url"
-                  value={editingItem.link || ''}
-                  onChange={(e) => setEditingItem({ ...editingItem, link: e.target.value })}
-                  placeholder="Action Link"
-                  style={{
-                    width: '100%',
-                    background: '#000000',
-                    border: '1px solid #262626',
-                    padding: '10px 12px',
-                    color: '#FFF',
-                    fontSize: '12px',
-                    outline: 'none',
-                    borderRadius: '6px',
-                    boxSizing: 'border-box'
-                  }}
-                />
-              </div>
-
-              {/* Action Buttons Area */}
-              <div style={{ display: 'flex', gap: '10px', marginTop: '8px', paddingTop: '8px' }}>
-                <button
-                  type="button"
-                  onClick={handleSilentUpdate}
-                  disabled={updating}
-                  style={{
-                    flex: 1,
-                    padding: '12px',
-                    background: '#FFFFFF',
-                    color: '#000000',
-                    border: 'none',
-                    fontWeight: '800',
-                    fontSize: '11px',
-                    cursor: updating ? 'not-allowed' : 'pointer',
-                    borderRadius: '6px',
-                    opacity: updating ? 0.7 : 1
-                  }}
-                >
-                  {updating ? 'SAVING...' : 'SAVE LIVE'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setEditingItem(null)}
-                  disabled={updating}
-                  style={{
-                    padding: '12px 20px',
-                    background: 'transparent',
-                    color: mutedText,
-                    border: '1px solid #333333',
-                    fontSize: '11px',
-                    fontWeight: '700',
-                    cursor: 'pointer',
-                    borderRadius: '6px'
-                  }}
-                >
-                  CANCEL
-                </button>
-              </div>
-            </div>
-          </div>
         </div>
       )}
 
