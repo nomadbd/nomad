@@ -48,7 +48,6 @@ export default function ProfilePage() {
   const [, setSession] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  // নতুন স্টেট: আনরিড নোটিফিকেশনের সংখ্যা রাখার জন্য
   const [unreadCount, setUnreadCount] = useState(0);
 
   const [newName, setNewName] = useState('');
@@ -85,7 +84,6 @@ export default function ProfilePage() {
     fetchUserData(); 
   }, []);
 
-  // ইউজার আইডি পাওয়ার পর আনরিড নোটিফিকেশন কাউন্ট ফেচ করার জন্য রিয়েলটাইম ও ফেচ ফাংশন
   useEffect(() => {
     if (!profile?.id) return;
 
@@ -103,7 +101,6 @@ export default function ProfilePage() {
 
     fetchUnreadCount();
 
-    // রিয়েলটাইম লিসেনার যাতে নতুন নোটিফিকেশন আসলে সাথে সাথে কাউন্ট আপডেট হয়
     const channel = supabase
       .channel(`profile_unread_${profile.id}`)
       .on(
@@ -575,7 +572,7 @@ export default function ProfilePage() {
               onOpenProfileDetails={() => setIsDetailsSheetOpen(true)}
               onOpenNotifications={() => changeView('notifications')}
               onOpenCommunication={() => changeView('communication')}
-              unreadCount={unreadCount} {/* এখানে আনরিড কাউন্ট পাস করে দেওয়া হলো */}
+              unreadCount={unreadCount}
             />
 
             {portalMode === 'ambassador' && isAmbassador ? (
