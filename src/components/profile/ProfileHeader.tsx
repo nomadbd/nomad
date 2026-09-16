@@ -13,7 +13,8 @@ interface ProfileHeaderProps {
   onOpenNotifications?: () => void;
   onOpenCommunication?: () => void;
   onOpenProfileDetails?: () => void; // বটম শিটের জন্য কলব্যাক
-  hasUnread?: boolean;
+  unreadCount?: number;              // আনরিড নটিফিকেশনের সংখ্যা পাঠানোর জন্য
+  hasUnread?: boolean;               // আনরিড স্ট্যাটাস (সংখ্যা না থাকলে ডট দেখাবে)
 }
 
 export default function ProfileHeader({
@@ -28,6 +29,7 @@ export default function ProfileHeader({
   onOpenNotifications,
   onOpenCommunication,
   onOpenProfileDetails,
+  unreadCount = 0,
   hasUnread = false
 }: ProfileHeaderProps) {
   const name = profile?.name || "PROFILE";
@@ -47,6 +49,9 @@ export default function ProfileHeader({
       }
     }
   };
+
+  // আনরিড ব্যাজ দেখানোর সিদ্ধান্ত
+  const showBadge = unreadCount > 0 || hasUnread;
 
   return (
     <div style={{ 
@@ -88,7 +93,7 @@ export default function ProfileHeader({
             transition: 'all 0.2s ease',
             overflow: 'hidden'
           }}>
-          {avatarUrl && isAmbassadorActive ? (
+          {avatarUrl ? (
             <img src={avatarUrl} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           ) : (
             getInitials(name, profile?.email)
@@ -160,6 +165,7 @@ export default function ProfileHeader({
 
       {/* ডানপাশ: আইকন বাটনসমূহ */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+        {/* মূল নোটিফিকেশন/মেসেজ আইকন বাটন */}
         <button
           onClick={handleIconClick}
           style={{ 
@@ -184,19 +190,32 @@ export default function ProfileHeader({
             <NotificationIcon width={17} height={17} stroke="#FFFFFF" />
           )}
 
-          {hasUnread && (
+          {/* মূল আইকনে আনরিড কাউন্ট / ব্যাজ */}
+          {showBadge && (
             <span style={{
               position: 'absolute',
-              top: '7px',
-              right: '7px',
-              width: '6px',
-              height: '6px',
+              top: '-2px',
+              right: '-2px',
               backgroundColor: '#EF4444',
-              borderRadius: '50%'
-            }} />
+              color: '#FFFFFF',
+              fontSize: '9px',
+              fontWeight: 'bold',
+              borderRadius: '10px',
+              minWidth: '15px',
+              height: '15px',
+              padding: '0 3px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              border: '1.5px solid #000000',
+              lineHeight: 1
+            }}>
+              {unreadCount > 0 ? (unreadCount > 99 ? '99+' : unreadCount) : ''}
+            </span>
           )}
         </button>
 
+        {/* সেটিং আইকন বাটন */}
         <button
           onClick={() => onChangeView('settings')}
           style={{ 
