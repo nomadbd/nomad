@@ -23,6 +23,31 @@
   position: relative;
 }
 
+/* ফুল-উইডথ টপ হেডার স্টাইল (সাইডবার ও মেইন কন্টেন্টের উপরে) */
+.nomadHeader {
+  position: sticky;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  height: 60px;
+  padding: 0 24px;
+  background-color: rgba(3, 3, 3, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid #1a1a1a;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  flex-shrink: 0;
+}
+
+.headerHidden {
+  transform: translateY(-100%);
+}
+
 .nomadBrandLink {
   text-decoration: none;
   color: inherit;
@@ -107,13 +132,19 @@
   max-width: 100% !important;
 }
 
+/* মোবাইল ভিউ (Max-width: 767px) */
 @media screen and (max-width: 767px) {
+  .nomadHeader {
+    padding: 0 16px;
+    position: fixed;
+  }
+
   .nomadLayout {
     display: flex !important;
     flex-direction: column !important;
     width: 100% !important;
     max-width: 100% !important;
-    min-height: 100dvh;
+    min-height: calc(100dvh - 60px);
     overflow-x: hidden !important;
   }
 
@@ -121,41 +152,26 @@
     width: 100% !important;
     max-width: 100% !important;
     position: fixed !important;
-    top: 0;
+    top: 60px;
     left: 0;
     right: 0;
-    bottom: auto;
-    z-index: 1000;
+    bottom: 0;
+    z-index: 999;
     background-color: rgba(6, 6, 6, 0.98);
     backdrop-filter: blur(12px);
-    border-bottom: 1px solid #141414;
-    padding: 14px 16px;
+    -webkit-backdrop-filter: blur(12px);
+    padding: 16px;
     box-sizing: border-box;
-    transform: translateY(0);
-    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    overflow-x: hidden !important;
-    overflow-y: visible;
-    display: flex !important;
+    display: none !important;
     flex-direction: column !important;
+    justify-content: space-between !important;
+    overflow-y: auto;
     -webkit-overflow-scrolling: touch;
   }
 
-  .headerHidden {
-    transform: translateY(-100%);
-  }
-
   .menuOpen {
-    bottom: 0;
+    display: flex !important;
     padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
-    overflow-y: auto;
-  }
-
-  .nomadSidebar > div:first-child {
-    flex: 1 1 auto;
-    overflow-y: auto;
-    overflow-x: hidden !important;
-    min-height: 0;
-    max-width: 100%;
   }
 
   .nomadMenuToggle {
@@ -163,36 +179,20 @@
   }
 
   .nomadNav {
-    display: none !important;
+    display: flex !important;
     flex-direction: column;
     gap: 8px;
-    margin-top: 18px;
-    padding-top: 16px;
-    border-top: 1px solid #141414;
-    max-width: 100%;
-  }
-
-  .menuOpen .nomadNav {
-    display: flex !important;
+    margin-top: 10px;
+    width: 100%;
   }
 
   .userFooterBlock {
-    display: none !important;
-    margin-top: auto !important;
-    padding-top: 12px;
-    padding-bottom: calc(32px + env(safe-area-inset-bottom, 16px)) !important;
-    border-top: 1px solid #141414;
-    flex-shrink: 0;
-    background-color: rgba(6, 6, 6, 0.98);
-    position: sticky;
-    bottom: 0;
-    z-index: 2;
-    width: 100%;
-    max-width: 100%;
-  }
-
-  .menuOpen .userFooterBlock {
     display: block !important;
+    margin-top: auto !important;
+    padding-top: 16px;
+    padding-bottom: calc(24px + env(safe-area-inset-bottom, 16px)) !important;
+    border-top: 1px solid #141414;
+    width: 100%;
   }
 
   .nomadMain {
@@ -204,10 +204,16 @@
   }
 }
 
+/* ডেক্সটপ ভিউ (Min-width: 768px) */
 @media screen and (min-width: 768px) {
+  .nomadHeader {
+    padding: 0 28px;
+    height: 60px;
+  }
+
   .nomadLayout {
     display: flex !important;
-    min-height: 100dvh;
+    min-height: calc(100dvh - 60px);
     width: 100%;
     max-width: 100%;
     overflow-x: hidden !important;
@@ -217,10 +223,10 @@
     width: 220px !important;
     min-width: 220px !important;
     max-width: 220px !important;
-    height: 100dvh !important;
-    max-height: 100dvh !important;
+    height: calc(100dvh - 60px) !important;
+    max-height: calc(100dvh - 60px) !important;
     position: fixed !important;
-    top: 0;
+    top: 60px;
     left: 0;
     bottom: 0;
     z-index: 100;
@@ -242,7 +248,7 @@
     display: flex !important;
     flex-direction: column;
     gap: 8px;
-    margin-top: 25px;
+    margin-top: 15px;
     overflow-y: auto;
     flex: 1 1 auto;
   }
@@ -264,7 +270,7 @@
     flex: 1 1 auto !important;
     max-width: none !important;
     padding: 24px 28px !important;
-    min-height: 100dvh;
+    min-height: calc(100dvh - 60px);
     overflow-x: hidden !important;
     box-sizing: border-box;
   }
@@ -308,27 +314,6 @@
   flex: 1 1 auto;
 }
 
-.nomadHeader {
-  flex-shrink: 0;
-}
-
-.nomadSidebar.menuOpen {
-  display: flex;
-  flex-direction: column;
-}
-
-.menuOpen .nomadNav {
-  display: flex;
-  flex-direction: column;
-  overflow-x: hidden;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  -webkit-overflow-scrolling: touch;
-  touch-action: pan-y;
-  max-height: calc(100dvh - 140px);
-  min-height: 0;
-}
-
 .menuLocked .nomadMain {
   pointer-events: none;
 }
@@ -345,10 +330,4 @@
   border: 0;
   padding: 0;
   background: transparent;
-}
-
-.nomadSidebar {
-  position: sticky;
-  top: 0;
-  z-index: 50;
 }
