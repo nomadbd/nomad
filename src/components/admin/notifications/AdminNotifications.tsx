@@ -129,19 +129,35 @@ export default function AdminNotifications() {
     try {
       const isAllUsersSelected = allUsers.length > 0 && selectedUserIds.length === allUsers.length;
 
-      // user_id NULL না পাঠিয় নির্বাচিত ইউজারের valid ID পাঠানো হচ্ছে
-      const notificationsToInsert = selectedUserIds.map((userId) => ({
+      // ১.notifications টেবিলে মূল নোটিফিকেশন সেভ
+      const { data: notification, error: notifError } = await supabase
+        .from('notifications')
+        .insert([
+          {
+            title: title.trim(),
+            message: message.trim(),
+            type,
+            link: link.trim() || null,
+            target_audience: isAllUsersSelected ? 'ALL' : 'SPECIFIC'
+          }
+        ])
+        .select()
+        .single();
+
+      if (notifError) throw notifError;
+
+      // ২. নির্বাচিত গ্রাহকদের জন্য notification_recipients টেবিলে রো তৈরি
+      const recipientData = selectedUserIds.map((userId) => ({
+        notification_id: notification.id,
         user_id: userId,
-        title: title.trim(),
-        message: message.trim(),
-        type,
-        link: link.trim() || null,
-        target_audience: isAllUsersSelected ? 'ALL' : 'SPECIFIC',
         is_read: false
       }));
 
-      const { error } = await supabase.from('notifications').insert(notificationsToInsert);
-      if (error) throw error;
+      const { error: recipientError } = await supabase
+        .from('notification_recipients')
+        .insert(recipientData);
+
+      if (recipientError) throw recipientError;
 
       setBtnState('success');
       setTitle('');
@@ -297,7 +313,7 @@ export default function AdminNotifications() {
 
         {/* CATEGORY SELECTOR */}
         <div>
-          <span style={{ display: 'block', fontSize: '9px', color: mutedText, fontWeight: '700', letterSpacing: '1.5px', marginBottom: '8px' }}>
+          <span style={{ display: 'block', fontSize: '9px', color mutedText, fontWeight: '700', letterSpacing: '1.5px', marginBottom: '8px' }}>
             CATEGORY
           </span>
           <div style={{ display: 'flex', gap: '6px' }}>
