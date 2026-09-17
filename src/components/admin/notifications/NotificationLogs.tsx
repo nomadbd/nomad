@@ -73,51 +73,73 @@ export default function NotificationLogs({ onBack }: NotificationLogsProps) {
   const fetchLogs = async () => {
     setLoading(true);
     try {
-      // safe query: created_by রিলেশনশিপে এরর হলেও যেন নোটিফিকেশন ডাটা ফেচ আটকে না যায়
-      const { data, error } = await supabase
+      // ১. notifications ডাটা ফেচ
+      const { data: notifsData, error: notifsError } = await supabase
         .from('notifications')
-        .select(`
-          *,
-          notification_recipients (
-            id,
-            user_id,
-            is_read
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false })
         .limit(100);
 
-      if (error) throw error;
+      if (notifsError) throw notifsError;
 
-      if (data) {
-        // created_by আইডি থাকলে সেগুলোর জন্য প্রোফাইল ডাটা আলাদা ফেচ করা
-        const createdByIds = Array.from(
-          new Set(data.map((item) => item.created_by).filter(Boolean))
-        );
-
-        let profilesMap: Record<string, SenderInfo> = {};
-
-        if (createdByIds.length > 0) {
-          const { data: profilesData } = await supabase
-            .from('profiles')
-            .select('id, name, email')
-            .in('id', createdByIds);
-
-          if (profilesData) {
-            profilesMap = profilesData.reduce((acc, profile) => {
-              acc[profile.id] = { name: profile.name, email: profile.email };
-              return acc;
-            }, {} as Record<string, SenderInfo>);
-          }
-        }
-
-        const formattedLogs = data.map((item) => ({
-          ...item,
-          sender: item.created_by ? profilesMap[item.created_by] || null : null
-        }));
-
-        setLogs(formattedLogs as SentNotification[]);
+      if (!notifsData || notifsData.length === 0) {
+        setLogs([]);
+        setLoading(false);
+        return;
       }
+
+      const notificationIds = notifsData.map((n) => n.id);
+
+      // ২. notification_recipients আলাদা ফেচ (Foreign Key সমস্যা এড়াতে)
+      const { data: recipientsData, error: recipError } = await supabase
+        .from('notification_recipients')
+        .select('id, notification_id, user_id, is_read')
+        .in('notification_id', notificationIds);
+
+      if (recipError) console.error('Error fetching recipients:', recipError.message);
+
+      // ৩. সেন্ডারের প্রোফাইল ডাটা আলাদা ফেচ
+      const createdByIds = Array.from(
+        new Set(notifsData.map((item) => item.created_by).filter(Boolean))
+      );
+
+      let profilesMap: Record<string, SenderInfo> = {};
+
+      if (createdByIds.length > 0) {
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('id, name, email')
+          .in('id', createdByIds);
+
+        if (profilesData) {
+          profilesMap = profilesData.reduce((acc, profile) => {
+            acc[profile.id] = { name: profile.name, email: profile.email };
+            return acc;
+          }, {} as Record<string, SenderInfo>);
+        }
+      }
+
+      // ৪. প্রাপকদের নোটিফিকেশন অনুযায়ী গ্রুপ করা
+      const recipientsGrouped: Record<string, Recipient[]> = {};
+      (recipientsData || []).forEach((r) => {
+        if (!recipientsGrouped[r.notification_id]) {
+          recipientsGrouped[r.notification_id] = [];
+        }
+        recipientsGrouped[r.notification_id].push({
+          id: r.id,
+          user_id: r.user_id,
+          is_read: r.is_read
+        });
+      });
+
+      // ৫. ফাইনাল লগ ফরম্যাটিং
+      const formattedLogs = notifsData.map((item) => ({
+        ...item,
+        sender: item.created_by ? profilesMap[item.created_by] || null : null,
+        notification_recipients: recipientsGrouped[item.id] || []
+      }));
+
+      setLogs(formattedLogs as SentNotification[]);
     } catch (err: any) {
       console.error('Error fetching logs:', err.message);
     } finally {
