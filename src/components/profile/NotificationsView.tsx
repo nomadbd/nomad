@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 import { supabase } from '../../supabaseClient';
 import { BackIcon, NotificationIcon, CloseIcon, CheckIcon } from '../icons';
 
@@ -55,12 +55,18 @@ function NotificationSkeleton() {
 
 export default function NotificationsView({ 
   userId, 
-  onBack 
+  onBack,
+  targetAudience
 }: NotificationsViewProps) {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
   const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  // targetAudience পাস না করা থাকলে ডিফল্ট সাধারণ ইউজারের জন্য ('USER', 'ALL') ফিল্টার হবে
+  const activeAudiences = targetAudience && targetAudience.length > 0 
+    ? targetAudience 
+    : ['USER', 'ALL'];
 
   const getRelativeTime = (dateString: string) => {
     if (!dateString) return 'Recently';
@@ -121,11 +127,12 @@ export default function NotificationsView({
 
       const notifIds = recipients.map((r) => r.notification_id);
 
-      // ২. ওই আইডিগুলোর মূল নোটিফিকেশন ডাটা আনা
+      // ২. ওই আইডিগুলোর মূল নোটিফিকেশন ডাটা আনা (অনুমোদিত টার্গেট অডিয়েন্স ফিল্টার করে)
       const { data: notifsData, error: notifError } = await supabase
         .from('notifications')
         .select('*')
-        .in('id', notifIds);
+        .in('id', notifIds)
+        .in('target_audience', activeAudiences);
 
       if (notifError) {
         console.error('Fetch notification error:', notifError.message);
@@ -189,7 +196,7 @@ export default function NotificationsView({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [userId]);
+  }, [userId, JSON.stringify(activeAudiences)]);
 
   const markAsRead = async (recipientId: string, currentStatus: boolean) => {
     if (currentStatus) return;
