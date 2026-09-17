@@ -20,12 +20,18 @@ interface NotificationsViewProps {
   targetAudience?: string[];
 }
 
-// ডিফল্ট অ্যারে কম্পোনেন্টের বাইরে ডিফাইন করা হয়েছে যেন প্রতি রেন্ডারে নতুন রেফারেন্স তৈরি না হয়
-const DEFAULT_TARGET_AUDIENCE = ['general', 'all'];
+// অ্যাডমিন প্যানেলের UPPERCASE ফরম্যাটের সাথে মেলানোর জন্য আপডেট করা হয়েছে
+const DEFAULT_TARGET_AUDIENCE = ['GENERAL', 'ALL', 'CUSTOMER'];
 
 function NotificationSkeleton() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+      <style>{`
+        @keyframes pulseSkeleton {
+          0%, 100% { opacity: 0.3; }
+          50% { opacity: 0.7; }
+        }
+      `}</style>
       {[1, 2, 3].map((item) => (
         <div
           key={item}
@@ -34,8 +40,7 @@ function NotificationSkeleton() {
             border: '1px solid #27272A',
             borderRadius: '12px',
             padding: '16px',
-            opacity: 0.35,
-            animation: 'pulse 1.5s infinite ease-in-out'
+            animation: 'pulseSkeleton 1.5s infinite ease-in-out'
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
@@ -61,8 +66,12 @@ export default function NotificationsView({
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  // অ্যারের মান তুলনা করার জন্য একটি স্ট্রিং কী তৈরি করা হলো
-  const audienceKey = useMemo(() => targetAudience.join(','), [targetAudience]);
+  // সব Audience ফিল্টারকেUppercase করে নেওয়া হচ্ছে যাতে ডাটাবেজের সাথে হুবহু মিলে
+  const normalizedAudience = useMemo(() => {
+    return targetAudience.map((item) => item.toUpperCase());
+  }, [targetAudience]);
+
+  const audienceKey = useMemo(() => normalizedAudience.join(','), [normalizedAudience]);
 
   const getRelativeTime = (dateString: string) => {
     if (!dateString) return 'Recently';
@@ -120,7 +129,7 @@ export default function NotificationsView({
           )
         `)
         .eq('user_id', userId)
-        .in('notifications.target_audience', targetAudience);
+        .in('notifications.target_audience', normalizedAudience);
 
       if (error) {
         console.error('Fetch error:', error.message);
@@ -131,7 +140,7 @@ export default function NotificationsView({
       if (data) {
         const formatted: NotificationItem[] = data
           .map((item: any) => {
-            const notif = item.notifications || item.notification;
+            const notif = item.notifications;
             if (!notif) return null;
             return {
               recipient_id: item.id,
@@ -181,7 +190,7 @@ export default function NotificationsView({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [userId, audienceKey]); // সরাসরি অ্যারির বদলে Stable String Key ব্যবহার করা হয়েছে
+  }, [userId, audienceKey]);
 
   const markAsRead = async (recipientId: string, currentStatus: boolean) => {
     if (currentStatus) return;
@@ -246,7 +255,7 @@ export default function NotificationsView({
       color: '#FFF',
       overflow: 'hidden'
     }}>
-      {/* ১. ফিক্সড হেডার */}
+      {/* Header */}
       <div style={{ 
         flexShrink: 0,
         backgroundColor: 'rgba(9, 9, 11, 0.95)',
@@ -304,7 +313,7 @@ export default function NotificationsView({
         </button>
       </div>
 
-      {/* ২. স্ক্রলযোগ্য নোটিফিকেশন তালিকা */}
+      {/* Notifications List */}
       <div style={{ 
         flex: 1, 
         overflowY: 'auto', 
