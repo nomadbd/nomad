@@ -127,23 +127,29 @@ export default function AdminNotifications() {
     setBtnState('loading');
 
     try {
-      // ১. বর্তমান লগইন করা অ্যাডমিন/কর্তৃপক্ষের আইডি গ্রহণ
+      // ১. বর্তমান লগইন করা অ্যাডমিন আইডি গ্রহণ
       const { data: { user: currentUser }, error: authError } = await supabase.auth.getUser();
       if (authError || !currentUser) {
         throw new Error('AUTHENTICATION FAILED');
       }
 
-      // ২. Target Audience এর মান নির্ধারণ
-      let targetAudience = 'specific';
-      if (allUsers.length > 0 && selectedUserIds.length === allUsers.length) {
-        targetAudience = 'all';
-      } else if (roleFilter === 'AMBASSADOR' && selectedUserIds.length === filteredUsers.length && filteredUsers.length > 0) {
-        targetAudience = 'ambassador';
-      } else if (roleFilter === 'CUSTOMER' && selectedUserIds.length === filteredUsers.length && filteredUsers.length > 0) {
-        targetAudience = 'general';
+      // ২. Target Audience এর মান নির্ধারণ (UPPERCASE স্ট্যান্ডার্ড)
+      let targetAudience = 'SPECIFIC';
+      const totalUsers = allUsers.length;
+      const totalAmbassadors = allUsers.filter(u => (u.role || '').toUpperCase() === 'AMBASSADOR').length;
+      const totalCustomers = allUsers.filter(u => (u.role || '').toUpperCase() === 'CUSTOMER').length;
+
+      if (totalUsers > 0 && selectedUserIds.length === totalUsers) {
+        targetAudience = 'ALL';
+      } else if (roleFilter === 'AMBASSADOR' && selectedUserIds.length === totalAmbassadors && totalAmbassadors > 0) {
+        targetAudience = 'AMBASSADOR';
+      } else if (roleFilter === 'CUSTOMER' && selectedUserIds.length === totalCustomers && totalCustomers > 0) {
+        targetAudience = 'CUSTOMER';
+      } else {
+        targetAudience = 'SPECIFIC';
       }
 
-      // ৩. notifications টেবিলে নোটিফিকেশন সেভ (created_by তে অ্যাডমিনের আইডি রাখা)
+      // ৩. notifications টেবিলে নোটিফিকেশন সেভ
       const { data: notification, error: notifError } = await supabase
         .from('notifications')
         .insert([
