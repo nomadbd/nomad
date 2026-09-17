@@ -55,15 +55,16 @@ export default function CommunicationView({ userId, onBack }: CommunicationViewP
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  // আনরিড নোটিফিকেশন কাউন্ট ফেচ করা
+  // অ্যাম্বাসেডর ও অল টার্গেটের আনরিড নোটিফিকেশন কাউন্ট ফেচ করা
   const fetchUnreadNotifCount = async () => {
     if (!userId) return;
     try {
       const { count, error } = await supabase
         .from('notification_recipients')
-        .select('*', { count: 'exact', head: true })
+        .select('id, notifications!inner(target_audience)', { count: 'exact', head: true })
         .eq('user_id', userId)
-        .eq('is_read', false);
+        .eq('is_read', false)
+        .in('notifications.target_audience', ['ambassador', 'all']);
 
       if (!error && count !== null) {
         setUnreadNotifCount(count);
@@ -229,6 +230,7 @@ export default function CommunicationView({ userId, onBack }: CommunicationViewP
     return (
       <NotificationsView
         userId={userId}
+        targetAudience={['ambassador', 'all']}
         onBack={() => {
           setShowNotifications(false);
           fetchUnreadNotifCount();
@@ -287,7 +289,7 @@ export default function CommunicationView({ userId, onBack }: CommunicationViewP
           </h2>
         </div>
 
-        {/* নোটিফিকেশন আইকন বাটন (Ambassador Support ব্যাজের পরিবর্তে) */}
+        {/* নোটিফিকেশন আইকন বাটন */}
         <button
           onClick={() => setShowNotifications(true)}
           style={{
