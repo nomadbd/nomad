@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/supabaseClient';
-import { BackIcon } from '@/components/icons';
+import { BackIcon, CheckIcon, CloseIcon } from '@/components/icons';
 
 interface Recipient {
   id: string;
   user_id: string;
   is_read: boolean;
+  name?: string;
+  email?: string;
 }
 
 interface SenderInfo {
@@ -37,6 +39,7 @@ export default function NotificationLogs({ onBack }: NotificationLogsProps) {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const mutedText = '#888888';
@@ -90,7 +93,7 @@ export default function NotificationLogs({ onBack }: NotificationLogsProps) {
 
       const notificationIds = notifsData.map((n) => n.id);
 
-      // ২. notification_recipients আলাদা ফেচ (Foreign Key সমস্যা এড়াতে)
+      // ২. notification_recipients ফেচ
       const { data: recipientsData, error: recipError } = await supabase
         .from('notification_recipients')
         .select('id, notification_id, user_id, is_read')
@@ -98,18 +101,18 @@ export default function NotificationLogs({ onBack }: NotificationLogsProps) {
 
       if (recipError) console.error('Error fetching recipients:', recipError.message);
 
-      // ৩. সেন্ডারের প্রোফাইল ডাটা আলাদা ফেচ
-      const createdByIds = Array.from(
-        new Set(notifsData.map((item) => item.created_by).filter(Boolean))
-      );
+      // ৩. সেন্ডার ও প্রাপকদের প্রোফাইল ডাটা একযোগে ফেচ
+      const createdByIds = notifsData.map((item) => item.created_by).filter(Boolean);
+      const recipientUserIds = (recipientsData || []).map((r) => r.user_id).filter(Boolean);
+      const allUserIds = Array.from(new Set([...createdByIds, ...recipientUserIds]));
 
       let profilesMap: Record<string, SenderInfo> = {};
 
-      if (createdByIds.length > 0) {
+      if (allUserIds.length > 0) {
         const { data: profilesData } = await supabase
           .from('profiles')
           .select('id, name, email')
-          .in('id', createdByIds);
+          .in('id', allUserIds);
 
         if (profilesData) {
           profilesMap = profilesData.reduce((acc, profile) => {
@@ -119,16 +122,19 @@ export default function NotificationLogs({ onBack }: NotificationLogsProps) {
         }
       }
 
-      // ৪. প্রাপকদের নোটিফিকেশন অনুযায়ী গ্রুপ করা
+      // ৪. প্রাপকদের নোটিফিকেশন আইডি অনুযায়ী গ্রুপ করা ও নাম যুক্ত করা
       const recipientsGrouped: Record<string, Recipient[]> = {};
       (recipientsData || []).forEach((r) => {
         if (!recipientsGrouped[r.notification_id]) {
           recipientsGrouped[r.notification_id] = [];
         }
+        const userProf = profilesMap[r.user_id];
         recipientsGrouped[r.notification_id].push({
           id: r.id,
           user_id: r.user_id,
-          is_read: r.is_read
+          is_read: r.is_read,
+          name: userProf?.name,
+          email: userProf?.email
         });
       });
 
@@ -158,6 +164,17 @@ export default function NotificationLogs({ onBack }: NotificationLogsProps) {
     } catch (err: any) {
       triggerToast('Delete failed: ' + err.message, 'error');
     }
+  };
+
+  const getExactDateTime = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
   const getRelativeTime = (dateString: string) => {
@@ -192,6 +209,8 @@ export default function NotificationLogs({ onBack }: NotificationLogsProps) {
       case 'GENERAL':
       case 'CUSTOMER':
         return 'CUSTOMERS';
+      case 'INTERNAL':
+        return 'INTERNAL STAFF & ADMINS';
       default:
         return `SPECIFIC (${recipientCount} RECIPIENT${recipientCount === 1 ? '' : 'S'})`;
     }
@@ -238,11 +257,15 @@ export default function NotificationLogs({ onBack }: NotificationLogsProps) {
 
   const filteredLogs = useMemo(() => {
     return logs.filter((log) => {
-      const titleMatch = (log.title || '').toLowerCase().includes(searchQuery.toLowerCase());
-      const msgMatch = (log.message || '').toLowerCase().includes(searchQuery.toLowerCase());
-      const senderMatch = (log.sender?.name || log.sender?.email || '').toLowerCase().includes(searchQuery.toLowerCase());
+      const query = searchQuery.toLowerCase();
+      const titleMatch = (log.title || '').toLowerCase().includes(query);
+      const msgMatch = (log.message || '').toLowerCase().includes(query);
+      const senderMatch = (log.sender?.name || log.sender?.email || '').toLowerCase().includes(query);
+      const recipientMatch = log.notification_recipients?.some(
+        (r) => (r.name || '').toLowerCase().includes(query) || (r.email || '').toLowerCase().includes(query)
+      );
 
-      const matchesSearch = titleMatch || msgMatch || senderMatch;
+      const matchesSearch = titleMatch || msgMatch || senderMatch || recipientMatch;
       const matchesCategory = selectedCategory === 'ALL' || log.type === selectedCategory;
 
       return matchesSearch && matchesCategory;
@@ -290,7 +313,7 @@ export default function NotificationLogs({ onBack }: NotificationLogsProps) {
       <div style={{ position: 'relative', marginBottom: '16px' }}>
         <input
           type="text"
-          placeholder="Search logs by title, message or sender..."
+          placeholder="Search logs by title, message, sender or recipient..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           style={{
@@ -345,6 +368,7 @@ export default function NotificationLogs({ onBack }: NotificationLogsProps) {
             const badge = getSeenStatusBadge(item.notification_recipients);
             const totalRecipients = item.notification_recipients?.length || 0;
             const senderName = item.sender?.name || item.sender?.email || 'System Admin';
+            const isExpanded = expandedId === item.id;
 
             return (
               <div
@@ -359,12 +383,15 @@ export default function NotificationLogs({ onBack }: NotificationLogsProps) {
                   gap: '10px'
                 }}
               >
+                {/* Header Meta */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span style={{ fontSize: '9px', fontWeight: '800', color: getCategoryColor(item.type), letterSpacing: '0.5px' }}>
                       {item.type}
                     </span>
-                    <span style={{ fontSize: '9px', color: mutedText }}>• {getRelativeTime(item.created_at)}</span>
+                    <span style={{ fontSize: '9px', color: mutedText }}>
+                      • {getRelativeTime(item.created_at)} ({getExactDateTime(item.created_at)})
+                    </span>
                   </div>
 
                   <span style={{
@@ -380,6 +407,7 @@ export default function NotificationLogs({ onBack }: NotificationLogsProps) {
                   </span>
                 </div>
 
+                {/* Content */}
                 <div>
                   <div style={{ fontSize: '13px', fontWeight: '700', color: '#FFF', marginBottom: '4px' }}>{item.title}</div>
                   <div style={{ fontSize: '11px', color: mutedText, lineHeight: '1.5', whiteSpace: 'pre-wrap' }}>{item.message}</div>
@@ -395,7 +423,7 @@ export default function NotificationLogs({ onBack }: NotificationLogsProps) {
                   )}
                 </div>
 
-                {/* Footer Section with Sender Info & Target */}
+                {/* Footer Section */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '8px', borderTop: '1px solid #141414' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                     <span style={{ fontSize: '9px', color: '#AAA', fontWeight: '600' }}>
@@ -406,14 +434,86 @@ export default function NotificationLogs({ onBack }: NotificationLogsProps) {
                     </span>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => handleDelete(item.id)}
-                    style={{ background: 'none', border: 'none', color: '#EF4444', fontSize: '10px', fontWeight: '700', cursor: 'pointer', padding: 0 }}
-                  >
-                    DELETE
-                  </button>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    {totalRecipients > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setExpandedId(isExpanded ? null : item.id)}
+                        style={{ background: 'none', border: 'none', color: '#FFF', fontSize: '10px', fontWeight: '700', cursor: 'pointer', padding: 0 }}
+                      >
+                        {isExpanded ? 'HIDE RECIPIENTS' : 'VIEW RECIPIENTS'}
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(item.id)}
+                      style={{ background: 'none', border: 'none', color: '#EF4444', fontSize: '10px', fontWeight: '700', cursor: 'pointer', padding: 0 }}
+                    >
+                      DELETE
+                    </button>
+                  </div>
                 </div>
+
+                {/* Expandable Recipient Details List */}
+                {isExpanded && item.notification_recipients && (
+                  <div style={{
+                    marginTop: '8px',
+                    paddingTop: '10px',
+                    borderTop: '1px dashed #222222',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '6px',
+                    maxHeight: '160px',
+                    overflowY: 'auto'
+                  }}>
+                    <span style={{ fontSize: '9px', color: mutedText, fontWeight: '700', letterSpacing: '1px', marginBottom: '2px' }}>
+                      RECIPIENT STATUS LIST ({item.notification_recipients.length})
+                    </span>
+                    {item.notification_recipients.map((rec) => (
+                      <div
+                        key={rec.id}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justify: 'space-between',
+                          background: '#050505',
+                          padding: '6px 10px',
+                          borderRadius: '4px',
+                          border: '1px solid #111111'
+                        }}
+                      >
+                        <div>
+                          <span style={{ fontSize: '11px', color: '#DDD', fontWeight: '500', display: 'block' }}>
+                            {rec.name || 'Unknown User'}
+                          </span>
+                          <span style={{ fontSize: '9px', color: mutedText }}>
+                            {rec.email || rec.user_id}
+                          </span>
+                        </div>
+
+                        <span style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          fontSize: '9px',
+                          fontWeight: '700',
+                          color: rec.is_read ? '#4ADE80' : '#EF4444'
+                        }}>
+                          {rec.is_read ? (
+                            <>
+                              <CheckIcon style={{ width: 10, height: 10 }} /> SEEN
+                            </>
+                          ) : (
+                            <>
+                              <CloseIcon style={{ width: 8, height: 8 }} /> UNSEEN
+                            </>
+                          )}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
               </div>
             );
           })}
