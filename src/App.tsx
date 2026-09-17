@@ -16,14 +16,13 @@ import AuthOverlay from './components/auth/AuthOverlay';
 import AuthForm from './components/auth/AuthForm';
 
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
-const AmbassadorJoin = lazy(() => import('./components/ambassador/AmbassadorJoin'));
+const AmbassadorJoin = lazy(() => import('./components/ambassador/join/AmbassadorJoin'));
 const AmbassadorPortal = lazy(() => import('./components/ambassador/AmbassadorPortal'));
 
 const AppContent = ({ session, setIsSearchOpen, setIsAuthOpen }: any) => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // শুধু অ্যাডমিন রাউটে প্রবেশ করলে অটোমেটিক ব্যাকগ্রাউন্ড নোটিফিকেশন সাবস্ক্রিপশন ট্রাইগার হবে
   useEffect(() => {
     if (!session) return;
 
