@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { supabase } from '../../supabaseClient';
 import { BackIcon, NotificationIcon } from '../icons';
 import NotificationsView from './NotificationsView';
@@ -19,6 +19,12 @@ interface CommunicationMessage {
 function MessagesSkeleton() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      <style>{`
+        @keyframes pulseSkeleton {
+          0%, 100% { opacity: 0.3; }
+          50% { opacity: 0.7; }
+        }
+      `}</style>
       {[1, 2, 3].map((item) => (
         <div
           key={item}
@@ -27,10 +33,9 @@ function MessagesSkeleton() {
             border: '1px solid #27272A',
             borderRadius: '12px',
             padding: '14px 16px',
-            opacity: 0.35,
             width: item % 2 === 0 ? '75%' : '60%',
             alignSelf: item % 2 === 0 ? 'flex-end' : 'flex-start',
-            animation: 'pulse 1.5s infinite ease-in-out'
+            animation: 'pulseSkeleton 1.5s infinite ease-in-out'
           }}
         >
           <div style={{ height: '14px', background: '#333', borderRadius: '4px', marginBottom: '8px' }}></div>
@@ -55,7 +60,12 @@ export default function CommunicationView({ userId, onBack }: CommunicationViewP
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  // অ্যাম্বাসেডর ও অল টার্গেটের আনরিড নোটিফিকেশন কাউন্ট ফেচ করা
+  // কর্তৃপক্ষের পাঠানো মেসেজের আনরিড সংখ্যা হিসাব
+  const unreadMessageCount = useMemo(() => {
+    return messages.filter((m) => m.sender !== 'ambassador' && !m.is_read).length;
+  }, [messages]);
+
+  // অ্যাম্বাসেডর ও অল টার্গেটের আনরিড নোটিফিকেশন কাউন্ট ফেচ (Uppercase Sync)
   const fetchUnreadNotifCount = async () => {
     if (!userId) return;
     try {
@@ -64,7 +74,7 @@ export default function CommunicationView({ userId, onBack }: CommunicationViewP
         .select('id, notifications!inner(target_audience)', { count: 'exact', head: true })
         .eq('user_id', userId)
         .eq('is_read', false)
-        .in('notifications.target_audience', ['ambassador', 'all']);
+        .in('notifications.target_audience', ['AMBASSADOR', 'ALL']);
 
       if (!error && count !== null) {
         setUnreadNotifCount(count);
@@ -87,6 +97,10 @@ export default function CommunicationView({ userId, onBack }: CommunicationViewP
         .from('communication')
         .update({ is_read: true })
         .in('id', unreadIds);
+
+      setMessages((prev) =>
+        prev.map((m) => (unreadIds.includes(m.id) ? { ...m, is_read: true } : m))
+      );
     } catch (err) {
       console.error('Failed to mark messages as read:', err);
     }
@@ -107,7 +121,9 @@ export default function CommunicationView({ userId, onBack }: CommunicationViewP
 
       const fetchedMessages = data || [];
       setMessages(fetchedMessages);
-      markUnreadAsRead(fetchedMessages);
+      
+      // স্ক্রিনে মেসেজ লোড হওয়ার পর রিড মার্ক করা
+      setTimeout(() => markUnreadAsRead(fetchedMessages), 1000);
     } catch (err) {
       console.error('Error fetching communication messages:', err);
     } finally {
@@ -122,8 +138,8 @@ export default function CommunicationView({ userId, onBack }: CommunicationViewP
     fetchMessages();
     fetchUnreadNotifCount();
 
-    // Supabase Realtime Channel (Chat Messages)
-    const channel = supabase
+    // Chat Communication Channel
+    const chatChannel = supabase
       .channel(`user_communication_${userId}`)
       .on(
         'postgres_changes',
@@ -140,20 +156,40 @@ export default function CommunicationView({ userId, onBack }: CommunicationViewP
             return [...prev, newMsg];
           });
 
-          // নতুন আসা কর্তৃপক্ষের মেসেজ সঙ্গে সঙ্গে Mark Read করা
+          // কর্তৃপক্ষের মেসেজ এলে ১ সেকেন্ড পর অটো Mark Read করা
           if (newMsg.sender !== 'ambassador') {
-            supabase
-              .from('communication')
-              .update({ is_read: true })
-              .eq('id', newMsg.id)
-              .then();
+            setTimeout(() => {
+              supabase
+                .from('communication')
+                .update({ is_read: true })
+                .eq('id', newMsg.id)
+                .then();
+            }, 1200);
           }
         }
       )
       .subscribe();
 
+    // Notification Listener Channel (নতুন নোটিফিকেশন আসলে রিয়েলটাইমে লাল ডট দেখাবে)
+    const notifChannel = supabase
+      .channel(`user_notif_count_${userId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'notification_recipients',
+          filter: `user_id=eq.${userId}`
+        },
+        () => {
+          fetchUnreadNotifCount();
+        }
+      )
+      .subscribe();
+
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(chatChannel);
+      supabase.removeChannel(notifChannel);
     };
   }, [userId]);
 
@@ -230,7 +266,7 @@ export default function CommunicationView({ userId, onBack }: CommunicationViewP
     return (
       <NotificationsView
         userId={userId}
-        targetAudience={['ambassador', 'all']}
+        targetAudience={['AMBASSADOR', 'ALL']}
         onBack={() => {
           setShowNotifications(false);
           fetchUnreadNotifCount();
@@ -284,12 +320,29 @@ export default function CommunicationView({ userId, onBack }: CommunicationViewP
             <BackIcon width={18} height={18} stroke="#FFFFFF" />
           </button>
 
-          <h2 style={{ fontSize: '18px', fontWeight: '600', margin: 0, letterSpacing: '0.2px', color: '#FFFFFF' }}>
-            Messages
-          </h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <h2 style={{ fontSize: '18px', fontWeight: '600', margin: 0, letterSpacing: '0.2px', color: '#FFFFFF' }}>
+              Messages
+            </h2>
+            {/* অপঠিত মেসেজ থাকলে সংখ্যা ব্যাজ */}
+            {unreadMessageCount > 0 && (
+              <span style={{
+                backgroundColor: '#3B82F6',
+                color: '#FFFFFF',
+                fontSize: '11px',
+                fontWeight: '700',
+                padding: '2px 7px',
+                borderRadius: '10px',
+                minWidth: '18px',
+                textAlign: 'center'
+              }}>
+                {unreadMessageCount}
+              </span>
+            )}
+          </div>
         </div>
 
-        {/* নোটিফিকেশন আইকন বাটন */}
+        {/* নোটিফিকেশন আইকন বাটন (নতুন নোটিফিকেশন থাকলে শুধু লাল ডট দেখাবে) */}
         <button
           onClick={() => setShowNotifications(true)}
           style={{
@@ -312,13 +365,13 @@ export default function CommunicationView({ userId, onBack }: CommunicationViewP
           {unreadNotifCount > 0 && (
             <span style={{
               position: 'absolute',
-              top: '2px',
-              right: '2px',
+              top: '6px',
+              right: '6px',
               width: '8px',
               height: '8px',
-              backgroundColor: '#3B82F6',
+              backgroundColor: '#EF4444',
               borderRadius: '50%',
-              border: '2px solid #000000'
+              border: '1.5px solid #000000'
             }} />
           )}
         </button>
