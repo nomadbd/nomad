@@ -24,7 +24,7 @@ export const useAdminMessages = (
     const fetchCurrentAdmin = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user?.email) {
-        setAdminEmail(user.email);
+        setAdminEmail(user.email.trim().toLowerCase());
       }
     };
     fetchCurrentAdmin();
@@ -76,7 +76,7 @@ export const useAdminMessages = (
 
       const [commsRes, profilesRes, ambRes] = await Promise.all([
         supabase.from('communications').select('*').order('created_at', { ascending: true }),
-        supabase.from('profiles').select('email, name, full_name, role, avatar_url, created_at'),
+        supabase.from('profiles').select('email, name, role, avatar_url, created_at'),
         supabase.from('ambassador').select('email, recipient_identifier, phone, invite_sent_at'),
       ]);
 
@@ -86,8 +86,8 @@ export const useAdminMessages = (
       if (profilesRes.data) {
         profilesRes.data.forEach((p: any) => {
           if (p.email) {
-            profileMap[p.email.toLowerCase()] = {
-              name: p.full_name || p.name || '',
+            profileMap[p.email.trim().toLowerCase()] = {
+              name: p.name || '',
               role: (p.role || 'CUSTOMER').toUpperCase(),
               avatarUrl: p.avatar_url || '',
               createdAt: p.created_at || '',
@@ -99,13 +99,17 @@ export const useAdminMessages = (
       const ambassadorMap: Record<string, { identifier: string; phone?: string; inviteSentAt?: string }> = {};
       if (ambRes.data) {
         ambRes.data.forEach((a: any) => {
-          if (a.email) {
-            ambassadorMap[a.email.toLowerCase()] = {
-              identifier: a.recipient_identifier || '',
-              phone: a.phone || '',
-              inviteSentAt: a.invite_sent_at || '',
-            };
-          }
+          const emailKey = a.email ? a.email.trim().toLowerCase() : null;
+          const identifierKey = a.recipient_identifier ? a.recipient_identifier.trim().toLowerCase() : null;
+
+          const ambDataObj = {
+            identifier: a.recipient_identifier || a.email || '',
+            phone: a.phone || '',
+            inviteSentAt: a.invite_sent_at || '',
+          };
+
+          if (emailKey) ambassadorMap[emailKey] = ambDataObj;
+          if (identifierKey) ambassadorMap[identifierKey] = ambDataObj;
         });
       }
 
@@ -115,7 +119,7 @@ export const useAdminMessages = (
         commsRes.data.forEach((item: any) => {
           const isSenderAdmin = (item.sender_role || '').toLowerCase() === 'admin';
           const rawEmail = isSenderAdmin ? item.recipient_email : item.sender_email;
-          const userEmail = (rawEmail || '').toLowerCase();
+          const userEmail = (rawEmail || '').trim().toLowerCase();
           const threadId = item.channel_id || userEmail || 'general';
 
           const rawCreatedAt = item.created_at || new Date().toISOString();
@@ -131,10 +135,13 @@ export const useAdminMessages = (
           const profileData = profileMap[userEmail];
           const ambData = ambassadorMap[userEmail];
 
-          if (profileData && profileData.name) {
-            displayName = profileData.name;
+          // Priority 1: Profiles Table (অ্যাকাউন্ট তৈরি করা ইউজারদের আসল রোল)
+          if (profileData) {
+            displayName = profileData.name || displayName;
             userRole = profileData.role;
-          } else if (ambData) {
+          } 
+          // Priority 2: Ambassador Table (যাদের এখনও profiles এ অ্যাকাউন্ট হয়নি)
+          else if (ambData) {
             displayName = ambData.identifier || displayName;
             userRole = 'INVITED AMBASSADOR';
             userPhone = ambData.phone || '';
@@ -212,7 +219,7 @@ export const useAdminMessages = (
     const currentRoleFilter = (roleFilter || 'ALL').toLowerCase();
     const matchesRole = roleFilter === 'ALL' || threadRole.includes(currentRoleFilter);
     const query = searchQuery.trim().toLowerCase();
-    
+
     const userName = (t.userName || '').toLowerCase();
     const userEmail = (t.userEmail || '').toLowerCase();
     const lastMsg = (t.lastMessage || '').toLowerCase();
