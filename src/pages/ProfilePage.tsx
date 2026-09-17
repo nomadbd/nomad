@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { uploadToCloudinary, deleteFromCloudinary } from '../cloudinary';
@@ -48,7 +48,9 @@ export default function ProfilePage() {
   const [, setSession] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  const [unreadCount, setUnreadCount] = useState(0);
+  // আনরিড স্টেট
+  const [unreadNotifCount, setUnreadNotifCount] = useState<number>(0);
+  const [unreadMessagesCount, setUnreadMessagesCount] = useState<number>(0);
 
   const [newName, setNewName] = useState('');
   const [newEmail, setNewEmail] = useState('');
@@ -75,6 +77,9 @@ export default function ProfilePage() {
   const [cropModalOpen, setCropModalOpen] = useState(false);
   const [selectedImageSrc, setSelectedImageSrc] = useState<string | null>(null);
 
+  const isAmbassador = String(profile?.role).toUpperCase().trim() === 'AMBASSADOR';
+  const isAmbassadorActive = isAmbassador && portalMode === 'ambassador';
+
   const changeView = (newView: 'profile' | 'settings' | 'notifications' | 'communication') => {
     setView(newView);
     localStorage.setItem('currentView', newView);
@@ -84,25 +89,61 @@ export default function ProfilePage() {
     fetchUserData(); 
   }, []);
 
-  useEffect(() => {
+  // অপঠিত নোটিফিকেশন ও মেসেজ কাউন্ট ফেচিং
+  const fetchUnreadCounts = useCallback(async () => {
     if (!profile?.id) return;
 
-    const fetchUnreadCount = async () => {
-      const { data, error } = await supabase
+    // ১. অপঠিত নোটিফিকেশন ফেচিং (বর্তমান মোড অনুযায়ী টার্গেট ফিল্টারিং)
+    try {
+      const { data: recipients } = await supabase
         .from('notification_recipients')
-        .select('id, is_read')
+        .select('notification_id')
         .eq('user_id', profile.id)
         .eq('is_read', false);
 
-      if (!error && data) {
-        setUnreadCount(data.length);
+      if (recipients && recipients.length > 0) {
+        const notifIds = recipients.map(r => r.notification_id);
+        const targetAudiences = isAmbassadorActive 
+          ? ['AMBASSADOR', 'ALL'] 
+          : ['CUSTOMER', 'ALL'];
+
+        const { count } = await supabase
+          .from('notifications')
+          .select('id', { count: 'exact', head: true })
+          .in('id', notifIds)
+          .in('target_audience', targetAudiences);
+
+        setUnreadNotifCount(count || 0);
+      } else {
+        setUnreadNotifCount(0);
       }
-    };
+    } catch (err) {
+      console.error('Error fetching unread notification count:', err);
+    }
 
-    fetchUnreadCount();
+    // ২. অপঠিত মেসেজ ফেচিং (কর্তৃপক্ষের পাঠানো)
+    try {
+      const { count } = await supabase
+        .from('communication')
+        .select('id', { count: 'exact', head: true })
+        .or(`user_id.eq.${profile.id},ambassador_id.eq.${profile.id}`)
+        .eq('is_read', false)
+        .neq('sender', 'ambassador');
 
-    const channel = supabase
-      .channel(`profile_unread_${profile.id}`)
+      setUnreadMessagesCount(count || 0);
+    } catch (err) {
+      console.error('Error fetching unread messages count:', err);
+    }
+  }, [profile?.id, isAmbassadorActive]);
+
+  useEffect(() => {
+    if (!profile?.id) return;
+
+    fetchUnreadCounts();
+
+    // নোটিফিকেশন রিয়েলটাইম চ্যানেল
+    const notifChannel = supabase
+      .channel(`profile_notif_${profile.id}`)
       .on(
         'postgres_changes',
         {
@@ -111,16 +152,30 @@ export default function ProfilePage() {
           table: 'notification_recipients',
           filter: `user_id=eq.${profile.id}`
         },
-        () => {
-          fetchUnreadCount();
-        }
+        () => fetchUnreadCounts()
+      )
+      .subscribe();
+
+    // মেসেজ চ্যাট রিয়েলটাইম চ্যানেল
+    const chatChannel = supabase
+      .channel(`profile_chat_${profile.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'communication',
+          filter: `user_id=eq.${profile.id}`
+        },
+        () => fetchUnreadCounts()
       )
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(notifChannel);
+      supabase.removeChannel(chatChannel);
     };
-  }, [profile?.id]);
+  }, [profile?.id, fetchUnreadCounts]);
 
   const showToast = (message: string, color: string = '#fff') => {
     setToast({ message, color });
@@ -356,9 +411,7 @@ export default function ProfilePage() {
         otherChanges = true;
       }
 
-      const isAmb = String(profile?.role).toUpperCase().trim() === 'AMBASSADOR';
-
-      if (isAmb && profile?.id) {
+      if (isAmbassador && profile?.id) {
         const updatesToAmb: any = {};
 
         if (newDisplayName.trim()) {
@@ -434,9 +487,6 @@ export default function ProfilePage() {
       showToast("Update Error: " + error.message, "#ff4444");
     }
   };
-
-  const isAmbassador = String(profile?.role).toUpperCase().trim() === 'AMBASSADOR';
-  const isAmbassadorActive = isAmbassador && portalMode === 'ambassador';
 
   const togglePortalMode = () => {
     if (isAmbassador) {
@@ -519,12 +569,19 @@ export default function ProfilePage() {
         {view === 'notifications' ? (
           <NotificationsView 
             userId={profile?.id} 
-            onBack={() => changeView('profile')} 
+            targetAudience={isAmbassadorActive ? ['AMBASSADOR', 'ALL'] : ['CUSTOMER', 'ALL']}
+            onBack={() => {
+              changeView('profile');
+              fetchUnreadCounts();
+            }} 
           />
         ) : view === 'communication' ? (
           <CommunicationView 
             userId={profile?.id} 
-            onBack={() => changeView('profile')} 
+            onBack={() => {
+              changeView('profile');
+              fetchUnreadCounts();
+            }} 
           />
         ) : view === 'settings' ? (
           <ProfileSettings 
@@ -572,7 +629,9 @@ export default function ProfilePage() {
               onOpenProfileDetails={() => setIsDetailsSheetOpen(true)}
               onOpenNotifications={() => changeView('notifications')}
               onOpenCommunication={() => changeView('communication')}
-              unreadCount={unreadCount}
+              unreadMessagesCount={unreadMessagesCount}
+              unreadNotifCount={unreadNotifCount}
+              hasUnreadNotif={unreadNotifCount > 0}
             />
 
             {portalMode === 'ambassador' && isAmbassador ? (
