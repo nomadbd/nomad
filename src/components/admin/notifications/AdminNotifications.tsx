@@ -139,7 +139,6 @@ export default function AdminNotifications() {
         throw new Error('AUTHENTICATION FAILED');
       }
 
-      // Target Audience এর সঠিক মান নির্ধারণ
       let targetAudience = 'SPECIFIC';
       const totalUsers = allUsers.length;
       const totalAmbassadors = allUsers.filter(u => (u.role || '').toUpperCase() === 'AMBASSADOR').length;
@@ -158,7 +157,6 @@ export default function AdminNotifications() {
         targetAudience = 'SPECIFIC';
       }
 
-      // ১. notifications টেবিলে নোটিফিকেশন ইনসার্ট
       const { data: notification, error: notifError } = await supabase
         .from('notifications')
         .insert([
@@ -176,7 +174,6 @@ export default function AdminNotifications() {
 
       if (notifError) throw notifError;
 
-      // ২. notification_recipients টেবিলে প্রাপকদের আইডি ইনসার্ট
       const recipientData = selectedUserIds.map((userId) => ({
         notification_id: notification.id,
         user_id: userId,
@@ -343,7 +340,7 @@ export default function AdminNotifications() {
 
         {/* CATEGORY SELECTOR */}
         <div>
-          <span style={{ display: 'block', fontSize: '9px', color mutedText, fontWeight: '700', letterSpacing: '1.5px', marginBottom: '8px' }}>
+          <span style={{ display: 'block', fontSize: '9px', color: mutedText, fontWeight: '700', letterSpacing: '1.5px', marginBottom: '8px' }}>
             CATEGORY
           </span>
           <div style={{ display: 'flex', gap: '6px' }}>
