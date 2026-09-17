@@ -23,7 +23,7 @@ export default function AdminNotifications() {
   // Modal & User States
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [allUsers, setAllUsers] = useState<UserProfile[]>([]);
-  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [, setLoadingUsers] = useState(false);
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
 
   // Filter States
@@ -65,7 +65,14 @@ export default function AdminNotifications() {
   const filteredUsers = useMemo(() => {
     return allUsers.filter((user) => {
       const userRole = (user.role || '').toUpperCase();
-      if (roleFilter !== 'ALL' && userRole !== roleFilter) return false;
+
+      if (roleFilter !== 'ALL') {
+        if (roleFilter === 'INTERNAL') {
+          if (!['SUPER_ADMIN', 'ADMIN', 'STAFF'].includes(userRole)) return false;
+        } else if (userRole !== roleFilter) {
+          return false;
+        }
+      }
 
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase();
@@ -127,17 +134,17 @@ export default function AdminNotifications() {
     setBtnState('loading');
 
     try {
-      // ১. বর্তমান লগইন করা অ্যাডমিন আইডি গ্রহণ
       const { data: { user: currentUser }, error: authError } = await supabase.auth.getUser();
       if (authError || !currentUser) {
         throw new Error('AUTHENTICATION FAILED');
       }
 
-      // ২. Target Audience এর মান নির্ধারণ (UPPERCASE স্ট্যান্ডার্ড)
+      // Target Audience এর সঠিক মান নির্ধারণ
       let targetAudience = 'SPECIFIC';
       const totalUsers = allUsers.length;
       const totalAmbassadors = allUsers.filter(u => (u.role || '').toUpperCase() === 'AMBASSADOR').length;
       const totalCustomers = allUsers.filter(u => (u.role || '').toUpperCase() === 'CUSTOMER').length;
+      const totalInternal = allUsers.filter(u => ['SUPER_ADMIN', 'ADMIN', 'STAFF'].includes((u.role || '').toUpperCase())).length;
 
       if (totalUsers > 0 && selectedUserIds.length === totalUsers) {
         targetAudience = 'ALL';
@@ -145,11 +152,13 @@ export default function AdminNotifications() {
         targetAudience = 'AMBASSADOR';
       } else if (roleFilter === 'CUSTOMER' && selectedUserIds.length === totalCustomers && totalCustomers > 0) {
         targetAudience = 'CUSTOMER';
+      } else if (roleFilter === 'INTERNAL' && selectedUserIds.length === totalInternal && totalInternal > 0) {
+        targetAudience = 'INTERNAL';
       } else {
         targetAudience = 'SPECIFIC';
       }
 
-      // ৩. notifications টেবিলে নোটিফিকেশন সেভ
+      // ১. notifications টেবিলে নোটিফিকেশন ইনসার্ট
       const { data: notification, error: notifError } = await supabase
         .from('notifications')
         .insert([
@@ -167,7 +176,7 @@ export default function AdminNotifications() {
 
       if (notifError) throw notifError;
 
-      // ৪. নির্বাচন করা সব ইউজারের জন্য notification_recipients টেবিলে ইনসার্ট
+      // ২. notification_recipients টেবিলে প্রাপকদের আইডি ইনসার্ট
       const recipientData = selectedUserIds.map((userId) => ({
         notification_id: notification.id,
         user_id: userId,
@@ -334,7 +343,7 @@ export default function AdminNotifications() {
 
         {/* CATEGORY SELECTOR */}
         <div>
-          <span style={{ display: 'block', fontSize: '9px', color: mutedText, fontWeight: '700', letterSpacing: '1.5px', marginBottom: '8px' }}>
+          <span style={{ display: 'block', fontSize: '9px', color mutedText, fontWeight: '700', letterSpacing: '1.5px', marginBottom: '8px' }}>
             CATEGORY
           </span>
           <div style={{ display: 'flex', gap: '6px' }}>
@@ -494,7 +503,7 @@ export default function AdminNotifications() {
             />
 
             <div style={{ display: 'flex', gap: '6px', overflowX: 'auto' }}>
-              {['ALL', 'SUPER_ADMIN', 'AMBASSADOR', 'CUSTOMER'].map((role) => {
+              {['ALL', 'CUSTOMER', 'AMBASSADOR', 'INTERNAL'].map((role) => {
                 const active = roleFilter === role;
                 return (
                   <button
