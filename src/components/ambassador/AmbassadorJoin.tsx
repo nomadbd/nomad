@@ -31,10 +31,11 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
   const [isCheckingEmail, setIsCheckingEmail] = useState(false);
   const [accountFound, setAccountFound] = useState<boolean | null>(null);
 
-  // Main Page Mount Animation State
   const [isPageMounted, setIsPageMounted] = useState(false);
 
-  // Concierge Modal, Animation & Support Chat States
+  const [isJoinSheetOpen, setIsJoinSheetOpen] = useState(false);
+  const [isJoinSheetAnimating, setIsJoinSheetAnimating] = useState(false);
+
   const [isConciergeOpen, setIsConciergeOpen] = useState(false);
   const [isModalAnimating, setIsModalAnimating] = useState(false);
   const [supportMsg, setSupportMsg] = useState('');
@@ -42,12 +43,10 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
   const [isSendingSupport, setIsSendingSupport] = useState(false);
   const [messages, setMessages] = useState<any[]>([]);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
-  
-  //  Unread Message Badge State & Modal Open Ref Tracking
+
   const [hasUnread, setHasUnread] = useState(false);
   const isConciergeOpenRef = useRef(isConciergeOpen);
 
-  // Dynamic Viewport Style state to lock modal height & offset on mobile keyboard focus
   const [viewportStyle, setViewportStyle] = useState<React.CSSProperties>({});
 
   const chatContainerRef = useRef<HTMLDivElement>(null);
@@ -67,20 +66,17 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
   const commissionRate = inviteData?.commission_rate ?? 15;
   const discountPercent = inviteData?.discount_percent ?? 10;
 
-  // Keep Ref synced for realtime scope
   useEffect(() => {
     isConciergeOpenRef.current = isConciergeOpen;
     if (isConciergeOpen) {
-      setHasUnread(false); // Modal খোলা হলে ব্যাজ রিমুভ (Seen) হবে
+      setHasUnread(false);
     }
   }, [isConciergeOpen]);
 
-  // Trigger main page entrance animation on mount
   useEffect(() => {
     setIsPageMounted(true);
   }, []);
 
-  // Helper function to scroll chat directly to bottom without jump animation
   const scrollToBottom = (smooth = false) => {
     requestAnimationFrame(() => {
       if (chatContainerRef.current) {
@@ -92,9 +88,9 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
     });
   };
 
-  // Lock Body and Handle Visual Viewport Mapping for Mobile Keyboard
   useEffect(() => {
-    if (!isConciergeOpen) return;
+    const isModalActive = isConciergeOpen || isJoinSheetOpen;
+    if (!isModalActive) return;
 
     const scrollY = window.scrollY;
     document.body.style.position = 'fixed';
@@ -108,7 +104,9 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
           height: `${window.visualViewport.height}px`,
           top: `${window.visualViewport.offsetTop}px`,
         });
-        scrollToBottom(false);
+        if (isConciergeOpen) {
+          scrollToBottom(false);
+        }
       }
     };
 
@@ -131,9 +129,22 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
         window.visualViewport.removeEventListener('scroll', updateViewport);
       }
     };
-  }, [isConciergeOpen]);
+  }, [isConciergeOpen, isJoinSheetOpen]);
 
-  // Handle Smooth Open/Close Slide Animation
+  const handleOpenJoinSheet = () => {
+    setIsJoinSheetOpen(true);
+    setTimeout(() => {
+      setIsJoinSheetAnimating(true);
+    }, 20);
+  };
+
+  const handleCloseJoinSheet = () => {
+    setIsJoinSheetAnimating(false);
+    setTimeout(() => {
+      setIsJoinSheetOpen(false);
+    }, 350);
+  };
+
   const handleOpenConcierge = () => {
     setHasUnread(false);
     setIsConciergeOpen(true);
@@ -207,7 +218,6 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
     return () => clearTimeout(timer);
   }, [email, defaultEmail]);
 
-  // Fetch Support History
   const fetchMessages = async () => {
     const activeEmail = (email.trim() || defaultEmail || customSupportEmail.trim()).toLowerCase();
     const channelId = inviteData?.token || activeEmail || 'general_inquiry';
@@ -225,7 +235,6 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
       if (!error && data) {
         setMessages(data);
 
-        // 🌟 চেক করা হচ্ছে অ্যাডমিন থেকে শেষ মেসেজ আনরিড অবস্থায় এসেছে কিনা
         const lastMsg = data[data.length - 1];
         if (
           lastMsg &&
@@ -246,7 +255,6 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
     fetchMessages();
   }, [email, defaultEmail, customSupportEmail]);
 
-  // ব্যাকগ্রাউন্ড থেকে ট্যাবে ফিরে আসলে অটো ফেচ
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
@@ -263,7 +271,6 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
     };
   }, [email, defaultEmail, customSupportEmail]);
 
-  // সুপাবেজ রিয়েলটাইম লিসেনার
   useEffect(() => {
     const activeEmail = (email.trim() || defaultEmail || customSupportEmail.trim()).toLowerCase();
     const token = inviteData?.token || '';
@@ -297,13 +304,11 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
             });
 
             const isAdmin = newMsg.sender_role === 'admin' || newMsg.sender_role === 'support';
-            
-            // 🌟 অ্যাডমিন মেসেজ পাঠালে এবং মডাল বন্ধ থাকলে আনরিড ব্যাজ দেখাবে
+
             if (isAdmin && !isConciergeOpenRef.current) {
               setHasUnread(true);
             }
 
-            // 🌟 স্ক্রল কোনো প্রকার অ্যানিমেশন ছাড়া দ্রুত একদম নিচে পাঠাবে
             if (isConciergeOpenRef.current) {
               scrollToBottom(false);
             }
@@ -475,8 +480,8 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
               ✓ RENEWAL REQUEST SENT
             </div>
           ) : (
-            <form onSubmit={handleReissueRequest} style={{ marginTop: '30px' }}>
-              <div style={{ position: 'relative', marginBottom: '24px' }}>
+            <form onSubmit={handleReissueRequest} style={{ marginTop: '30px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <div style={{ position: 'relative', marginBottom: '24px', width: '100%' }}>
                 <textarea
                   style={underlineInputStyle}
                   placeholder="Reason for renewal request..."
@@ -485,7 +490,7 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
                   required
                 />
               </div>
-              <button type="submit" disabled={submitting} style={submitButtonStyle}>
+              <button type="submit" disabled={submitting} style={pillButtonStyle}>
                 {submitting ? 'SENDING...' : 'REQUEST RENEWAL'}
               </button>
             </form>
@@ -497,7 +502,6 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
 
   return (
     <div style={containerStyle}>
-      {/* Animated Main Page Wrapper */}
       <div 
         style={{
           ...mainWrapperStyle,
@@ -506,8 +510,6 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
           transition: 'transform 0.7s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.7s ease'
         }}
       >
-
-        {/* Header Section */}
         <div>
           <h1 style={titleStyle}>
             WELCOME,
@@ -520,7 +522,6 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
           </p>
         </div>
 
-        {/* Benefits Section */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           <div style={cardStyle}>
             <span style={numberStyle}>01</span>
@@ -545,90 +546,18 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
           </div>
         </div>
 
-        {/* Signup / Login Form Area */}
-        <div style={{ width: '100%' }}>
-          <div style={{ display: 'flex', borderBottom: '1px solid rgba(255, 255, 255, 0.15)', marginBottom: '16px' }}>
-            <button 
-              type="button" 
-              style={{ ...tabButtonStyle, borderBottomColor: mode === 'signup' ? '#ffffff' : 'transparent', color: mode === 'signup' ? '#ffffff' : '#666666' }} 
-              onClick={() => setMode('signup')}
-            >
-              SIGN UP
-            </button>
-            <button 
-              type="button" 
-              style={{ ...tabButtonStyle, borderBottomColor: mode === 'login' ? '#ffffff' : 'transparent', color: mode === 'login' ? '#ffffff' : '#666666' }} 
-              onClick={() => setMode('login')}
-            >
-              LOG IN
-            </button>
-          </div>
-
-          <div style={{ minHeight: '18px', fontSize: '10px', letterSpacing: '1.5px', fontWeight: 500, textAlign: 'center', marginBottom: '12px' }}>
-            {isCheckingEmail && <span style={{ color: '#60a5fa' }}>VERIFYING ACCOUNT...</span>}
-            {!isCheckingEmail && accountFound === true && <span style={{ color: '#4ade80' }}>✓ EXISTING ACCOUNT DETECTED</span>}
-            {errorMessage && <span style={{ color: '#f87171' }}>{errorMessage}</span>}
-          </div>
-
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div style={{ 
-              maxHeight: mode === 'signup' ? '60px' : '0px', 
-              opacity: mode === 'signup' ? 1 : 0, 
-              overflow: 'hidden', 
-              transition: 'max-height 0.3s ease, opacity 0.25s ease' 
-            }}>
-              <input 
-                type="text" 
-                name="ambassador_name_field"
-                autoComplete="off"
-                style={underlineInputStyle}
-                value={fullName} 
-                onChange={(e) => setFullName(e.target.value)} 
-                placeholder={defaultTitleName || "Full Name"}
-              />
-            </div>
-
-            <div>
-              <input 
-                type="text" 
-                inputMode="email"
-                name="ambassador_user_id"
-                autoComplete="off"
-                style={underlineInputStyle}
-                value={email} 
-                onChange={(e) => setEmail(e.target.value)} 
-                placeholder={defaultEmail || "Email Address"}
-              />
-            </div>
-
-            <div>
-              <input 
-                type="password" 
-                name="ambassador_password_field"
-                autoComplete="new-password"
-                style={underlineInputStyle}
-                value={password} 
-                onChange={(e) => setPassword(e.target.value)} 
-                placeholder={mode === 'signup' ? 'Create Password' : 'Password'}
-                required 
-                minLength={6} 
-              />
-            </div>
-
-            <button type="submit" disabled={submitting || isCheckingEmail} style={submitButtonStyle}>
-              {submitting 
-                ? 'PROCESSING...' 
-                : mode === 'signup' 
-                  ? 'JOIN CIRCLE' 
-                  : 'ENTER PORTAL'}
-            </button>
-          </form>
+        <div style={{ width: '100%', display: 'flex', justifyContent: 'center', marginTop: '10px' }}>
+          <button 
+            type="button" 
+            onClick={handleOpenJoinSheet}
+            style={pillButtonStyle}
+          >
+            JOIN CIRCLE
+          </button>
         </div>
 
-        {/* Footer Section */}
         <div style={footerStyle}>
           <div style={footerLinksContainerStyle}>
-            {/* 🌟 Unread Red Badge Indicator Added Here */}
             <button 
               type="button" 
               onClick={handleOpenConcierge} 
@@ -663,15 +592,128 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
             © 2026 NOMAD. ALL RIGHTS RESERVED.
           </p>
         </div>
-
       </div>
 
-      {/* Animated Concierge Support Modal */}
+      {isJoinSheetOpen && (
+        <div 
+          style={{
+            ...modalBackdropStyle,
+            opacity: isJoinSheetAnimating ? 1 : 0,
+            transition: 'opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
+          }}
+          onClick={handleCloseJoinSheet}
+        >
+          <div 
+            style={{
+              ...bottomSheetBoxStyle,
+              height: viewportStyle.height ? `calc(${viewportStyle.height} - 40px)` : 'auto',
+              maxHeight: '90vh',
+              transform: isJoinSheetAnimating ? 'translateY(0)' : 'translateY(100%)',
+              transition: 'transform 0.35s cubic-bezier(0.16, 1, 0.3, 1)'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={modalHeaderStyle}>
+              <div>
+                <span style={{ fontSize: '8px', letterSpacing: '2.5px', color: '#666666', fontWeight: 600, display: 'block' }}>MEMBERSHIP ACCESS</span>
+                <h3 style={{ fontSize: '13px', letterSpacing: '3px', fontWeight: 300, color: '#ffffff', margin: 0 }}>NOMAD CIRCLE</h3>
+              </div>
+              <button 
+                type="button" 
+                onClick={handleCloseJoinSheet} 
+                style={{ background: 'none', border: 'none', color: '#ffffff', cursor: 'pointer', padding: '6px' }}
+              >
+                <CloseIcon />
+              </button>
+            </div>
+
+            <div style={{ padding: '20px 24px 28px 24px', overflowY: 'auto' }}>
+              <div style={{ display: 'flex', borderBottom: '1px solid rgba(255, 255, 255, 0.15)', marginBottom: '16px' }}>
+                <button 
+                  type="button" 
+                  style={{ ...tabButtonStyle, borderBottomColor: mode === 'signup' ? '#ffffff' : 'transparent', color: mode === 'signup' ? '#ffffff' : '#666666' }} 
+                  onClick={() => setMode('signup')}
+                >
+                  SIGN UP
+                </button>
+                <button 
+                  type="button" 
+                  style={{ ...tabButtonStyle, borderBottomColor: mode === 'login' ? '#ffffff' : 'transparent', color: mode === 'login' ? '#ffffff' : '#666666' }} 
+                  onClick={() => setMode('login')}
+                >
+                  LOG IN
+                </button>
+              </div>
+
+              <div style={{ minHeight: '18px', fontSize: '10px', letterSpacing: '1.5px', fontWeight: 500, textAlign: 'center', marginBottom: '12px' }}>
+                {isCheckingEmail && <span style={{ color: '#60a5fa' }}>VERIFYING ACCOUNT...</span>}
+                {!isCheckingEmail && accountFound === true && <span style={{ color: '#4ade80' }}>✓ EXISTING ACCOUNT DETECTED</span>}
+                {errorMessage && <span style={{ color: '#f87171' }}>{errorMessage}</span>}
+              </div>
+
+              <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'center' }}>
+                <div style={{ 
+                  width: '100%',
+                  maxHeight: mode === 'signup' ? '60px' : '0px', 
+                  opacity: mode === 'signup' ? 1 : 0, 
+                  overflow: 'hidden', 
+                  transition: 'max-height 0.3s ease, opacity 0.25s ease' 
+                }}>
+                  <input 
+                    type="text" 
+                    name="ambassador_name_field"
+                    autoComplete="off"
+                    style={underlineInputStyle}
+                    value={fullName} 
+                    onChange={(e) => setFullName(e.target.value)} 
+                    placeholder={defaultTitleName || "Full Name"}
+                  />
+                </div>
+
+                <div style={{ width: '100%' }}>
+                  <input 
+                    type="text" 
+                    inputMode="email"
+                    name="ambassador_user_id"
+                    autoComplete="off"
+                    style={underlineInputStyle}
+                    value={email} 
+                    onChange={(e) => setEmail(e.target.value)} 
+                    placeholder={defaultEmail || "Email Address"}
+                  />
+                </div>
+
+                <div style={{ width: '100%' }}>
+                  <input 
+                    type="password" 
+                    name="ambassador_password_field"
+                    autoComplete="new-password"
+                    style={underlineInputStyle}
+                    value={password} 
+                    onChange={(e) => setPassword(e.target.value)} 
+                    placeholder={mode === 'signup' ? 'Create Password' : 'Password'}
+                    required 
+                    minLength={6} 
+                  />
+                </div>
+
+                <button type="submit" disabled={submitting || isCheckingEmail} style={{ ...pillButtonStyle, width: '100%', marginTop: '10px' }}>
+                  {submitting 
+                    ? 'PROCESSING...' 
+                    : mode === 'signup' 
+                      ? 'CONFIRM & JOIN' 
+                      : 'ENTER PORTAL'}
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
       {isConciergeOpen && (
         <div 
           style={{
             ...modalBackdropStyle,
-            ...viewportStyle,
             opacity: isModalAnimating ? 1 : 0,
             transition: 'opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
           }}
@@ -679,14 +721,15 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
         >
           <div 
             style={{
-              ...modalBoxStyle,
+              ...bottomSheetBoxStyle,
+              height: viewportStyle.height ? viewportStyle.height : '100%',
+              maxHeight: '100vh',
+              borderRadius: viewportStyle.height ? '16px 16px 0 0' : '0',
               transform: isModalAnimating ? 'translateY(0)' : 'translateY(100%)',
               transition: 'transform 0.35s cubic-bezier(0.16, 1, 0.3, 1)'
             }}
             onClick={(e) => e.stopPropagation()}
           >
-
-            {/* Always Visible Sticky Header */}
             <div style={modalHeaderStyle}>
               <div>
                 <span style={{ fontSize: '8px', letterSpacing: '2.5px', color: '#666666', fontWeight: 600, display: 'block' }}>PRIVATE DESK</span>
@@ -715,7 +758,6 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
               </div>
             )}
 
-            {/* Scrollable Messages Container */}
             <div 
               ref={chatContainerRef}
               style={{ flex: 1, overflowY: 'auto', padding: '12px 16px', display: 'flex', flexDirection: 'column' }}
@@ -761,7 +803,6 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
               )}
             </div>
 
-            {/* Fixed Bottom Input Area */}
             <div style={{ padding: '0 16px 16px 16px', flexShrink: 0 }}>
               <form onSubmit={handleSendSupportMessage} style={chatInputFormStyle}>
                 <textarea
@@ -802,16 +843,13 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
                 </button>
               </form>
             </div>
-
           </div>
         </div>
       )}
-
     </div>
   );
 }
 
-// Styles Definition
 const containerStyle: React.CSSProperties = {
   minHeight: '100vh',
   backgroundColor: '#000000',
@@ -910,19 +948,22 @@ const underlineInputStyle: React.CSSProperties = {
   boxSizing: 'border-box'
 };
 
-const submitButtonStyle: React.CSSProperties = {
-  width: '100%',
-  padding: '16px',
+const pillButtonStyle: React.CSSProperties = {
+  padding: '12px 32px',
   backgroundColor: '#ffffff',
   color: '#000000',
   border: 'none',
-  borderRadius: '1px',
+  borderRadius: '9999px',
   fontWeight: 600,
   cursor: 'pointer',
-  fontSize: '11px',
-  letterSpacing: '3px',
-  marginTop: '6px',
-  outline: 'none'
+  fontSize: '10px',
+  letterSpacing: '2.5px',
+  outline: 'none',
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  transition: 'transform 0.15s ease, opacity 0.15s ease',
+  boxShadow: '0 4px 15px rgba(255, 255, 255, 0.1)'
 };
 
 const footerStyle: React.CSSProperties = {
@@ -965,7 +1006,7 @@ const modalBackdropStyle: React.CSSProperties = {
   left: 0,
   right: 0,
   top: 0,
-  height: '100vh',
+  bottom: 0,
   backgroundColor: 'rgba(0, 0, 0, 0.88)',
   backdropFilter: 'blur(10px)',
   zIndex: 100,
@@ -975,12 +1016,12 @@ const modalBackdropStyle: React.CSSProperties = {
   overflow: 'hidden'
 };
 
-const modalBoxStyle: React.CSSProperties = {
+const bottomSheetBoxStyle: React.CSSProperties = {
   width: '100%',
   maxWidth: '430px',
-  height: '100%',
   backgroundColor: '#0a0a0a',
   borderTop: '1px solid rgba(255, 255, 255, 0.15)',
+  borderRadius: '20px 20px 0 0',
   display: 'flex',
   flexDirection: 'column',
   boxSizing: 'border-box',
@@ -991,7 +1032,7 @@ const modalHeaderStyle: React.CSSProperties = {
   display: 'flex',
   justifyContent: 'space-between',
   alignItems: 'center',
-  padding: '16px 16px 12px 16px',
+  padding: '16px 20px 12px 20px',
   borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
   position: 'sticky',
   top: 0,
