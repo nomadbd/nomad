@@ -20,9 +20,6 @@ interface NotificationsViewProps {
   targetAudience?: string[];
 }
 
-// অ্যাডমিন প্যানেলের UPPERCASE ফরম্যাটের সাথে মেলানোর জন্য আপডেট করা হয়েছে
-const DEFAULT_TARGET_AUDIENCE = ['GENERAL', 'ALL', 'CUSTOMER'];
-
 function NotificationSkeleton() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -58,20 +55,12 @@ function NotificationSkeleton() {
 
 export default function NotificationsView({ 
   userId, 
-  onBack, 
-  targetAudience = DEFAULT_TARGET_AUDIENCE 
+  onBack 
 }: NotificationsViewProps) {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
   const [expandedId, setExpandedId] = useState<string | null>(null);
-
-  // সব Audience ফিল্টারকেUppercase করে নেওয়া হচ্ছে যাতে ডাটাবেজের সাথে হুবহু মিলে
-  const normalizedAudience = useMemo(() => {
-    return targetAudience.map((item) => item.toUpperCase());
-  }, [targetAudience]);
-
-  const audienceKey = useMemo(() => normalizedAudience.join(','), [normalizedAudience]);
 
   const getRelativeTime = (dateString: string) => {
     if (!dateString) return 'Recently';
@@ -113,52 +102,62 @@ export default function NotificationsView({
         return;
       }
 
-      const { data, error } = await supabase
+      // ১. ইউজার আইডি দিয়ে সরাসরি recipient ডাটা ফেচ
+      const { data: recipients, error: recipError } = await supabase
         .from('notification_recipients')
-        .select(`
-          id,
-          is_read,
-          notifications!inner (
-            id,
-            title,
-            message,
-            type,
-            link,
-            target_audience,
-            created_at
-          )
-        `)
-        .eq('user_id', userId)
-        .in('notifications.target_audience', normalizedAudience);
+        .select('id, notification_id, is_read')
+        .eq('user_id', userId);
 
-      if (error) {
-        console.error('Fetch error:', error.message);
+      if (recipError) {
+        console.error('Fetch recipient error:', recipError.message);
         setNotifications([]);
         return;
       }
 
-      if (data) {
-        const formatted: NotificationItem[] = data
-          .map((item: any) => {
-            const notif = item.notifications;
-            if (!notif) return null;
-            return {
-              recipient_id: item.id,
-              notification_id: notif.id,
-              title: notif.title,
-              message: notif.message,
-              type: notif.type,
-              link: notif.link,
-              target_audience: notif.target_audience,
-              is_read: item.is_read,
-              created_at: notif.created_at || new Date().toISOString(),
-            };
-          })
-          .filter((item): item is NotificationItem => item !== null)
-          .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-
-        setNotifications(formatted);
+      if (!recipients || recipients.length === 0) {
+        setNotifications([]);
+        return;
       }
+
+      const notifIds = recipients.map((r) => r.notification_id);
+
+      // ২. ওই আইডিগুলোর মূল নোটিফিকেশন ডাটা আনা
+      const { data: notifsData, error: notifError } = await supabase
+        .from('notifications')
+        .select('*')
+        .in('id', notifIds);
+
+      if (notifError) {
+        console.error('Fetch notification error:', notifError.message);
+        return;
+      }
+
+      // ৩. ডাটা মার্জ করা
+      const recipMap = recipients.reduce((acc, item) => {
+        acc[item.notification_id] = { is_read: item.is_read, recipient_id: item.id };
+        return acc;
+      }, {} as Record<string, { is_read: boolean; recipient_id: string }>);
+
+      const formatted: NotificationItem[] = (notifsData || [])
+        .map((notif) => {
+          const userRecip = recipMap[notif.id];
+          if (!userRecip) return null;
+          return {
+            recipient_id: userRecip.recipient_id,
+            notification_id: notif.id,
+            title: notif.title,
+            message: notif.message,
+            type: notif.type,
+            link: notif.link,
+            target_audience: notif.target_audience,
+            is_read: userRecip.is_read,
+            created_at: notif.created_at || new Date().toISOString(),
+          };
+        })
+        .filter((item): item is NotificationItem => item !== null)
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+      setNotifications(formatted);
     } catch (err) {
       console.error('Fetch error:', err);
     } finally {
@@ -190,7 +189,7 @@ export default function NotificationsView({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [userId, audienceKey]);
+  }, [userId]);
 
   const markAsRead = async (recipientId: string, currentStatus: boolean) => {
     if (currentStatus) return;
