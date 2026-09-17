@@ -93,46 +93,47 @@ export default function ProfilePage() {
   const fetchUnreadCounts = useCallback(async () => {
     if (!profile?.id) return;
 
-    // ১. অপঠিত নোটিফিকেশন ফেচিং (SPECIFIC টার্গেটসহ)
-    try {
-      const { data: recipients } = await supabase
-        .from('notification_recipients')
-        .select('notification_id')
-        .eq('user_id', profile.id)
-        .eq('is_read', false);
+    // ১. অপঠিত নোটিফিকেশন ফেচিং (কেবল কাস্টমার মোডে প্রয়োজন)
+    if (!isAmbassadorActive) {
+      try {
+        const { data: recipients } = await supabase
+          .from('notification_recipients')
+          .select('notification_id')
+          .eq('user_id', profile.id)
+          .eq('is_read', false);
 
-      if (recipients && recipients.length > 0) {
-        const notifIds = recipients.map(r => r.notification_id);
-        const targetAudiences = isAmbassadorActive 
-          ? ['AMBASSADOR', 'ALL', 'SPECIFIC'] 
-          : ['CUSTOMER', 'ALL', 'SPECIFIC'];
+        if (recipients && recipients.length > 0) {
+          const notifIds = recipients.map(r => r.notification_id);
 
-        const { count } = await supabase
-          .from('notifications')
-          .select('id', { count: 'exact', head: true })
-          .in('id', notifIds)
-          .in('target_audience', targetAudiences);
+          const { count } = await supabase
+            .from('notifications')
+            .select('id', { count: 'exact', head: true })
+            .in('id', notifIds)
+            .in('target_audience', ['CUSTOMER', 'ALL', 'SPECIFIC']);
 
-        setUnreadNotifCount(count || 0);
-      } else {
-        setUnreadNotifCount(0);
+          setUnreadNotifCount(count || 0);
+        } else {
+          setUnreadNotifCount(0);
+        }
+      } catch (err) {
+        console.error('Error fetching unread notification count:', err);
       }
-    } catch (err) {
-      console.error('Error fetching unread notification count:', err);
     }
 
-    // ২. অপঠিত মেসেজ ফেচিং (কর্তৃপক্ষের পাঠানো)
-    try {
-      const { count } = await supabase
-        .from('communication')
-        .select('id', { count: 'exact', head: true })
-        .or(`user_id.eq.${profile.id},ambassador_id.eq.${profile.id}`)
-        .eq('is_read', false)
-        .neq('sender', 'ambassador');
+    // ২. অপঠিত মেসেজ ফেচিং (অ্যাম্বাসেডর মোডের জন্য)
+    if (isAmbassadorActive) {
+      try {
+        const { count } = await supabase
+          .from('communication')
+          .select('id', { count: 'exact', head: true })
+          .or(`user_id.eq.${profile.id},ambassador_id.eq.${profile.id}`)
+          .eq('is_read', false)
+          .neq('sender', 'ambassador');
 
-      setUnreadMessagesCount(count || 0);
-    } catch (err) {
-      console.error('Error fetching unread messages count:', err);
+        setUnreadMessagesCount(count || 0);
+      } catch (err) {
+        console.error('Error fetching unread messages count:', err);
+      }
     }
   }, [profile?.id, isAmbassadorActive]);
 
@@ -569,7 +570,7 @@ export default function ProfilePage() {
         {view === 'notifications' ? (
           <NotificationsView 
             userId={profile?.id} 
-            targetAudience={isAmbassadorActive ? ['AMBASSADOR', 'ALL', 'SPECIFIC'] : ['CUSTOMER', 'ALL', 'SPECIFIC']}
+            targetAudience={['CUSTOMER', 'ALL', 'SPECIFIC']}
             onBack={() => {
               changeView('profile');
               fetchUnreadCounts();
