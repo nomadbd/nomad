@@ -204,10 +204,10 @@ export default function ProfileHeader({
             <NotificationIcon width={17} height={17} stroke="#FFFFFF" />
           )}
 
-          {/* অ্যাম্বাসেডর মোড */}
+          {/* ব্যাজ ইন্ডিকেটর */}
           {isAmbassadorActive ? (
-            /* ১.১ মেসেজ থাকলে সংখ্যা দেখাবে */
-            msgCount > 0 ? (
+            /* অ্যাম্বাসেডর মোড: কেবল অপঠিত মেসেজের সংখ্যা দেখাবে */
+            msgCount > 0 && (
               <span style={{
                 position: 'absolute',
                 top: '-3px',
@@ -228,21 +228,9 @@ export default function ProfileHeader({
               }}>
                 {msgCount > 99 ? '99+' : msgCount}
               </span>
-            ) : isNotifUnread ? (
-              /* ১.২ মেসেজ ০ কিন্তু অপঠিত নোটিফিকেশন থাকলে কেবল লাল ডট দেখাবে */
-              <span style={{
-                position: 'absolute',
-                top: '2px',
-                right: '2px',
-                width: '8px',
-                height: '8px',
-                backgroundColor: '#EF4444',
-                borderRadius: '50%',
-                border: '1.5px solid #000000'
-              }} />
-            ) : null
+            )
           ) : (
-            /* সাধারণ ইউজার মোড */
+            /* সাধারণ ইউজার মোড: নোটিফিকেশন সংখ্যা বা লাল ডট দেখাবে */
             notifCount > 0 ? (
               <span style={{
                 position: 'absolute',
