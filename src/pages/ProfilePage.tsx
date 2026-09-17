@@ -93,7 +93,7 @@ export default function ProfilePage() {
   const fetchUnreadCounts = useCallback(async () => {
     if (!profile?.id) return;
 
-    // ১. অপঠিত নোটিফিকেশন ফেচিং (বর্তমান মোড অনুযায়ী টার্গেট ফিল্টারিং)
+    // ১. অপঠিত নোটিফিকেশন ফেচিং (SPECIFIC টার্গেটসহ)
     try {
       const { data: recipients } = await supabase
         .from('notification_recipients')
@@ -104,8 +104,8 @@ export default function ProfilePage() {
       if (recipients && recipients.length > 0) {
         const notifIds = recipients.map(r => r.notification_id);
         const targetAudiences = isAmbassadorActive 
-          ? ['AMBASSADOR', 'ALL'] 
-          : ['CUSTOMER', 'ALL'];
+          ? ['AMBASSADOR', 'ALL', 'SPECIFIC'] 
+          : ['CUSTOMER', 'ALL', 'SPECIFIC'];
 
         const { count } = await supabase
           .from('notifications')
@@ -569,7 +569,7 @@ export default function ProfilePage() {
         {view === 'notifications' ? (
           <NotificationsView 
             userId={profile?.id} 
-            targetAudience={isAmbassadorActive ? ['AMBASSADOR', 'ALL'] : ['CUSTOMER', 'ALL']}
+            targetAudience={isAmbassadorActive ? ['AMBASSADOR', 'ALL', 'SPECIFIC'] : ['CUSTOMER', 'ALL', 'SPECIFIC']}
             onBack={() => {
               changeView('profile');
               fetchUnreadCounts();
