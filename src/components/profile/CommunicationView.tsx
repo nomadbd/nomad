@@ -69,14 +69,28 @@ export default function CommunicationView({ userId, onBack }: CommunicationViewP
   const fetchUnreadNotifCount = async () => {
     if (!userId) return;
     try {
-      const { count, error } = await supabase
+      // ১. ইউজারের আনরিড রেসিপিয়েন্ট রেকর্ডস আনা
+      const { data: recipients, error: recipError } = await supabase
         .from('notification_recipients')
-        .select('id, notifications!inner(target_audience)', { count: 'exact', head: true })
+        .select('notification_id')
         .eq('user_id', userId)
-        .eq('is_read', false)
-        .in('notifications.target_audience', ['AMBASSADOR', 'ALL']);
+        .eq('is_read', false);
 
-      if (!error && count !== null) {
+      if (recipError || !recipients || recipients.length === 0) {
+        setUnreadNotifCount(0);
+        return;
+      }
+
+      const notifIds = recipients.map((r) => r.notification_id);
+
+      // ২. অ্যাম্বাসেডর ('AMBASSADOR') এবং সবার ('ALL') নোটিফিকেশন ফিল্টার করে কাউন্ট করা
+      const { count, error: notifError } = await supabase
+        .from('notifications')
+        .select('id', { count: 'exact', head: true })
+        .in('id', notifIds)
+        .in('target_audience', ['AMBASSADOR', 'ALL']);
+
+      if (!notifError && count !== null) {
         setUnreadNotifCount(count);
       }
     } catch (err) {
