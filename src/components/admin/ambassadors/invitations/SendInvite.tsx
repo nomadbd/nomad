@@ -186,69 +186,99 @@ const SendInvite: React.FC<SendInviteProps> = ({ isOpen = true, onClose, onInvit
             left: 0;
             right: 0;
             bottom: 0;
-            background-color: rgba(3, 3, 3, 0.88);
-            backdrop-filter: blur(10px);
+            background-color: rgba(0, 0, 0, 0.82);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
             z-index: 1200;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 20px;
+            animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+          }
+
+          @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
           }
 
           .invite-wrapper {
             width: 100%;
-            max-width: 380px;
-            background: #050505;
-            border: 1px solid #1a1a1a;
-            padding: 32px 28px;
-            font-family: monospace, sans-serif;
+            max-width: 390px;
+            background: linear-gradient(180deg, #09090b 0%, #030303 100%);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            padding: 34px 28px;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Mono", monospace, sans-serif;
             color: #ffffff;
             position: relative;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.9);
+            box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.95), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+            animation: scaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+          }
+
+          @keyframes scaleUp {
+            from { opacity: 0; transform: scale(0.96) translateY(8px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
           }
 
           .close-modal-btn {
             position: absolute;
-            top: 18px;
-            right: 18px;
-            background: transparent;
-            border: none;
+            top: 22px;
+            right: 22px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 50%;
             color: #888888;
             cursor: pointer;
-            padding: 4px;
+            width: 30px;
+            height: 30px;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: color 0.2s ease, transform 0.2s ease;
+            transition: all 0.2s ease;
           }
 
           .close-modal-btn:hover {
             color: #ffffff;
-            transform: scale(1.1);
+            background: rgba(255, 255, 255, 0.15);
+            transform: scale(1.05);
           }
 
           .invite-header {
-            margin-bottom: 28px;
+            margin-bottom: 26px;
+            text-align: left;
           }
 
           .invite-title {
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 700;
-            letter-spacing: 3px;
+            letter-spacing: 3.5px;
             text-transform: uppercase;
-            color: #ffffff;
+            color: rgba(255, 255, 255, 0.9);
             margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+          }
+
+          .invite-title::before {
+            content: '';
+            display: inline-block;
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: #ffffff;
           }
 
           .form-group-container {
             display: flex;
             flex-direction: column;
-            gap: 22px;
+            gap: 20px;
           }
 
           .two-col-row {
             display: flex;
-            gap: 16px;
+            gap: 14px;
             width: 100%;
           }
 
@@ -256,9 +286,9 @@ const SendInvite: React.FC<SendInviteProps> = ({ isOpen = true, onClose, onInvit
             width: 100%;
             background: transparent !important;
             border: none !important;
-            border-bottom: 1px solid #ffffff !important;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.15) !important;
             border-radius: 0 !important;
-            padding: 8px 0 !important;
+            padding: 10px 0 !important;
             color: #ffffff !important;
             font-family: inherit !important;
             font-size: 12px !important;
@@ -266,97 +296,116 @@ const SendInvite: React.FC<SendInviteProps> = ({ isOpen = true, onClose, onInvit
             box-shadow: none !important;
             box-sizing: border-box;
             letter-spacing: 0.5px;
+            transition: border-color 0.25s ease;
           }
 
           .minimal-input::placeholder {
-            color: #888888 !important;
+            color: rgba(255, 255, 255, 0.35) !important;
             opacity: 1 !important;
+            font-weight: 400;
+          }
+
+          .minimal-input:focus {
+            border-bottom-color: #ffffff !important;
           }
 
           .input-action-row {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
             width: 100%;
           }
 
+          /* ডিম্বাকার (Pill-shaped) স্মল অ্যাকশন বাটন */
           .send-icon-btn {
-            background: transparent;
+            background: rgba(255, 255, 255, 0.08);
             color: #ffffff;
-            border: none;
-            padding: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 9999px; /* Oval / Pill Shape */
+            padding: 0 14px;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: color 0.2s ease, transform 0.1s ease, opacity 0.2s ease;
-            height: 33px;
-            min-width: 33px;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            height: 32px;
+            min-width: 44px;
+            font-size: 11px;
+            font-weight: 600;
           }
 
-          .send-icon-btn:hover {
-            opacity: 0.9;
-            color: #25D366;
+          .send-icon-btn:hover:not(:disabled) {
+            background: #ffffff;
+            color: #000000;
+            border-color: #ffffff;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(255, 255, 255, 0.15);
           }
 
-          .send-icon-btn:active {
-            transform: scale(0.92);
+          .send-icon-btn:active:not(:disabled) {
+            transform: translateY(0) scale(0.96);
           }
 
           .send-icon-btn:disabled {
-            opacity: 0.3;
+            opacity: 0.25;
             cursor: not-allowed;
           }
 
           .error-box {
             font-size: 9px;
-            color: #ef4444;
-            background: rgba(239, 68, 68, 0.08);
-            border: 1px solid rgba(239, 68, 68, 0.2);
-            padding: 8px 10px;
-            margin-bottom: 18px;
-            letter-spacing: 1px;
+            color: #f87171;
+            background: rgba(248, 113, 113, 0.08);
+            border: 1px solid rgba(248, 113, 113, 0.2);
+            border-radius: 10px;
+            padding: 10px 12px;
+            margin-bottom: 16px;
+            letter-spacing: 0.8px;
             text-transform: uppercase;
           }
 
           .conflict-box {
             font-size: 9px;
-            color: #f59e0b;
-            background: rgba(245, 158, 11, 0.08);
-            border: 1px solid rgba(245, 158, 11, 0.25);
-            padding: 10px;
-            margin-bottom: 18px;
-            letter-spacing: 0.8px;
+            color: #fbbf24;
+            background: rgba(251, 191, 36, 0.08);
+            border: 1px solid rgba(251, 191, 36, 0.22);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 16px;
+            letter-spacing: 0.6px;
             display: flex;
             flex-direction: column;
             gap: 10px;
           }
 
+          /* ডিম্বাকার (Pill-shaped) ফোর্স সেন্ড বাটন */
           .force-send-btn {
-            background: #f59e0b;
+            background: #fbbf24;
             color: #000000;
             border: none;
-            padding: 6px 10px;
+            border-radius: 9999px; /* Oval / Pill shape */
+            padding: 6px 14px;
             font-size: 9px;
             font-weight: 700;
-            letter-spacing: 1px;
+            letter-spacing: 0.8px;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: space-between;
             gap: 8px;
             align-self: flex-end;
-            transition: opacity 0.2s ease;
+            transition: all 0.2s ease;
           }
 
           .force-send-btn:hover {
-            opacity: 0.88;
+            opacity: 0.9;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(251, 191, 36, 0.25);
           }
         `}</style>
 
         {onClose && (
           <button type="button" className="close-modal-btn" onClick={onClose} title="Close">
-            <CloseIcon size={16} color="currentColor" />
+            <CloseIcon size={14} color="currentColor" />
           </button>
         )}
 
@@ -378,7 +427,7 @@ const SendInvite: React.FC<SendInviteProps> = ({ isOpen = true, onClose, onInvit
               }}
             >
               <span>OVERWRITE & SEND ANYWAY</span>
-              <SendIcon size={12} color="#000000" />
+              <SendIcon size={11} color="#000000" />
             </button>
           </div>
         )}
@@ -449,7 +498,7 @@ const SendInvite: React.FC<SendInviteProps> = ({ isOpen = true, onClose, onInvit
               title="Send via Email"
               disabled={loadingAction === 'email'}
             >
-              {loadingAction === 'email' ? '...' : <SendIcon size={16} color="currentColor" />}
+              {loadingAction === 'email' ? '...' : <SendIcon size={14} color="currentColor" />}
             </button>
           </form>
 
@@ -468,7 +517,7 @@ const SendInvite: React.FC<SendInviteProps> = ({ isOpen = true, onClose, onInvit
               title="Send via WhatsApp"
               disabled={loadingAction === 'whatsapp'}
             >
-              {loadingAction === 'whatsapp' ? '...' : <SendIcon size={16} color="currentColor" />}
+              {loadingAction === 'whatsapp' ? '...' : <SendIcon size={14} color="currentColor" />}
             </button>
           </form>
         </div>
