@@ -63,10 +63,10 @@ export default function NotificationsView({
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  // targetAudience পাস না করা থাকলে ডিফল্ট সাধারণ ইউজারের জন্য ('USER', 'ALL') ফিল্টার হবে
+  // টার্গেট অডিয়েন্স ফিল্টার আপডেট (DATABASE UPPERCASE STANDARD)
   const activeAudiences = targetAudience && targetAudience.length > 0 
-    ? targetAudience 
-    : ['USER', 'ALL'];
+    ? targetAudience.map(a => a.toUpperCase())
+    : ['CUSTOMER', 'ALL', 'SPECIFIC', 'AMBASSADOR'];
 
   const getRelativeTime = (dateString: string) => {
     if (!dateString) return 'Recently';
@@ -127,7 +127,7 @@ export default function NotificationsView({
 
       const notifIds = recipients.map((r) => r.notification_id);
 
-      // ২. ওই আইডিগুলোর মূল নোটিফিকেশন ডাটা আনা (অনুমোদিত টার্গেট অডিয়েন্স ফিল্টার করে)
+      // ২. মূল নোটিফিকেশন ডাটা ফেচ (অনুমোদিত টার্গেট অডিয়েন্স ফিল্টার করে)
       const { data: notifsData, error: notifError } = await supabase
         .from('notifications')
         .select('*')
