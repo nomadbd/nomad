@@ -15,6 +15,9 @@ interface ProfileHeaderProps {
   onOpenProfileDetails?: () => void;
   unreadCount?: number;
   hasUnread?: boolean;
+  unreadMessagesCount?: number; // আলাদা অপঠিত মেসেজ সংখ্যা
+  unreadNotifCount?: number;    // আলাদা অপঠিত নোটিফিকেশন সংখ্যা
+  hasUnreadNotif?: boolean;     // নোটিফিকেশনের লাল ডটের জন্য
 }
 
 export default function ProfileHeader({
@@ -30,7 +33,10 @@ export default function ProfileHeader({
   onOpenCommunication,
   onOpenProfileDetails,
   unreadCount = 0,
-  hasUnread = false
+  hasUnread = false,
+  unreadMessagesCount,
+  unreadNotifCount,
+  hasUnreadNotif
 }: ProfileHeaderProps) {
   const name = profile?.name || "PROFILE";
 
@@ -50,8 +56,10 @@ export default function ProfileHeader({
     }
   };
 
-  // আনরিড নটিফিকেশন থাকলে ব্যাজ প্রদর্শন করবে
-  const showBadge = unreadCount > 0 || hasUnread;
+  // কাউন্ট ও ইন্ডিকেটর হিসাব
+  const msgCount = unreadMessagesCount ?? (isAmbassadorActive ? unreadCount : 0);
+  const notifCount = unreadNotifCount ?? (!isAmbassadorActive ? unreadCount : 0);
+  const isNotifUnread = hasUnreadNotif ?? (notifCount > 0 || hasUnread);
 
   return (
     <div style={{ 
@@ -70,7 +78,7 @@ export default function ProfileHeader({
         flex: 1, 
         minWidth: 0 
       }}>
-        {/* ১. প্রোফাইল ছবি/অ্যাভাটার (শুধুমাত্র Ambassador Active থাকলেই ছবি দেখাবে) */}
+        {/* ১. প্রোফাইল ছবি/অ্যাভাটার */}
         <div 
           onClick={isAmbassador ? togglePortalMode : undefined}
           title={isAmbassador ? "Click to switch profile mode" : "Profile Picture"}
@@ -188,28 +196,78 @@ export default function ProfileHeader({
             <NotificationIcon width={17} height={17} stroke="#FFFFFF" />
           )}
 
-          {/* লাল ব্যাজ এবং কাউন্ট সংখ্যা */}
-          {showBadge && (
-            <span style={{
-              position: 'absolute',
-              top: '-3px',
-              right: '-3px',
-              backgroundColor: '#EF4444',
-              color: '#FFFFFF',
-              fontSize: '9px',
-              fontWeight: 'bold',
-              borderRadius: '10px',
-              minWidth: '15px',
-              height: '15px',
-              padding: '0 3px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              border: '1.5px solid #000000',
-              lineHeight: 1
-            }}>
-              {unreadCount > 0 ? (unreadCount > 99 ? '99+' : unreadCount) : ''}
-            </span>
+          {/* ১. অ্যাম্বাসেডর মোডে ইন্ডিকেটর */}
+          {isAmbassadorActive ? (
+            /* ১.১ মেসেজ থাকলে সংখ্যা ব্যাজ */
+            msgCount > 0 ? (
+              <span style={{
+                position: 'absolute',
+                top: '-3px',
+                right: '-3px',
+                backgroundColor: '#EF4444',
+                color: '#FFFFFF',
+                fontSize: '9px',
+                fontWeight: 'bold',
+                borderRadius: '10px',
+                minWidth: '15px',
+                height: '15px',
+                padding: '0 3px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                border: '1.5px solid #000000',
+                lineHeight: 1
+              }}>
+                {msgCount > 99 ? '99+' : msgCount}
+              </span>
+            ) : isNotifUnread ? (
+              /* ১.২ মেসেজ নেই কিন্তু নোটিফিকেশন থাকলে শুধু লাল ডট */
+              <span style={{
+                position: 'absolute',
+                top: '2px',
+                right: '2px',
+                width: '8px',
+                height: '8px',
+                backgroundColor: '#EF4444',
+                borderRadius: '50%',
+                border: '1.5px solid #000000'
+              }} />
+            ) : null
+          ) : (
+            /* ২. সাধারণ প্রোফাইল মোডে সংখ্যা ব্যাজ */
+            notifCount > 0 ? (
+              <span style={{
+                position: 'absolute',
+                top: '-3px',
+                right: '-3px',
+                backgroundColor: '#EF4444',
+                color: '#FFFFFF',
+                fontSize: '9px',
+                fontWeight: 'bold',
+                borderRadius: '10px',
+                minWidth: '15px',
+                height: '15px',
+                padding: '0 3px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                border: '1.5px solid #000000',
+                lineHeight: 1
+              }}>
+                {notifCount > 99 ? '99+' : notifCount}
+              </span>
+            ) : isNotifUnread ? (
+              <span style={{
+                position: 'absolute',
+                top: '2px',
+                right: '2px',
+                width: '8px',
+                height: '8px',
+                backgroundColor: '#EF4444',
+                borderRadius: '50%',
+                border: '1.5px solid #000000'
+              }} />
+            ) : null
           )}
         </button>
 
