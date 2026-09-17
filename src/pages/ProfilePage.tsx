@@ -48,7 +48,6 @@ export default function ProfilePage() {
   const [, setSession] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  // আনরিড স্টেট
   const [unreadNotifCount, setUnreadNotifCount] = useState<number>(0);
   const [unreadMessagesCount, setUnreadMessagesCount] = useState<number>(0);
 
@@ -89,11 +88,9 @@ export default function ProfilePage() {
     fetchUserData(); 
   }, []);
 
-  // অপঠিত নোটিফিকেশন ও মেসেজ কাউন্ট ফেচিং
   const fetchUnreadCounts = useCallback(async () => {
     if (!profile?.id) return;
 
-    // ১. অপঠিত নোটিফিকেশন ফেচিং (কেবল কাস্টমার মোডে প্রয়োজন)
     if (!isAmbassadorActive) {
       try {
         const { data: recipients } = await supabase
@@ -120,15 +117,14 @@ export default function ProfilePage() {
       }
     }
 
-    // ২. অপঠিত মেসেজ ফেচিং (অ্যাম্বাসেডর মোডের জন্য)
     if (isAmbassadorActive) {
       try {
         const { count } = await supabase
-          .from('communication')
+          .from('communications')
           .select('id', { count: 'exact', head: true })
-          .or(`user_id.eq.${profile.id},ambassador_id.eq.${profile.id}`)
+          .eq('channel_id', profile.id)
           .eq('is_read', false)
-          .neq('sender', 'ambassador');
+          .neq('sender_role', 'ambassador');
 
         setUnreadMessagesCount(count || 0);
       } catch (err) {
@@ -142,7 +138,6 @@ export default function ProfilePage() {
 
     fetchUnreadCounts();
 
-    // নোটিফিকেশন রিয়েলটাইম চ্যানেল
     const notifChannel = supabase
       .channel(`profile_notif_${profile.id}`)
       .on(
@@ -157,7 +152,6 @@ export default function ProfilePage() {
       )
       .subscribe();
 
-    // মেসেজ চ্যাট রিয়েলটাইম চ্যানেল
     const chatChannel = supabase
       .channel(`profile_chat_${profile.id}`)
       .on(
@@ -165,8 +159,8 @@ export default function ProfilePage() {
         {
           event: '*',
           schema: 'public',
-          table: 'communication',
-          filter: `user_id=eq.${profile.id}`
+          table: 'communications',
+          filter: `channel_id=eq.${profile.id}`
         },
         () => fetchUnreadCounts()
       )
@@ -578,7 +572,8 @@ export default function ProfilePage() {
           />
         ) : view === 'communication' ? (
           <CommunicationView 
-            userId={profile?.id} 
+            userId={profile?.id}
+            userEmail={profile?.email} 
             onBack={() => {
               changeView('profile');
               fetchUnreadCounts();
