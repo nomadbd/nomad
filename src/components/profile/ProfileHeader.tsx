@@ -15,8 +15,8 @@ interface ProfileHeaderProps {
   onOpenProfileDetails?: () => void;
   unreadCount?: number;
   hasUnread?: boolean;
-  unreadMessagesCount?: number; // আলাদা অপঠিত মেসেজ সংখ্যা
-  unreadNotifCount?: number;    // আলাদা অপঠিত নোটিফিকেশন সংখ্যা
+  unreadMessagesCount?: number; // অপঠিত মেসেজ সংখ্যা
+  unreadNotifCount?: number;    // অপঠিত নোটিফিকেশন সংখ্যা
   hasUnreadNotif?: boolean;     // নোটিফিকেশনের লাল ডটের জন্য
 }
 
@@ -56,10 +56,18 @@ export default function ProfileHeader({
     }
   };
 
-  // কাউন্ট ও ইন্ডিকেটর হিসাব
-  const msgCount = unreadMessagesCount ?? (isAmbassadorActive ? unreadCount : 0);
-  const notifCount = unreadNotifCount ?? (!isAmbassadorActive ? unreadCount : 0);
-  const isNotifUnread = hasUnreadNotif ?? (notifCount > 0 || hasUnread);
+  // অপঠিত মেসেজ এবং নোটিফিকেশন লজিক ফিল্টারিং
+  const msgCount = unreadMessagesCount !== undefined 
+    ? unreadMessagesCount 
+    : (isAmbassadorActive ? unreadCount : 0);
+
+  const notifCount = unreadNotifCount !== undefined 
+    ? unreadNotifCount 
+    : (!isAmbassadorActive ? unreadCount : 0);
+
+  const isNotifUnread = hasUnreadNotif !== undefined 
+    ? hasUnreadNotif 
+    : (notifCount > 0 || hasUnread);
 
   return (
     <div style={{ 
@@ -196,9 +204,9 @@ export default function ProfileHeader({
             <NotificationIcon width={17} height={17} stroke="#FFFFFF" />
           )}
 
-          {/* ১. অ্যাম্বাসেডর মোডে ইন্ডিকেটর */}
+          {/* অ্যাম্বাসেডর মোড */}
           {isAmbassadorActive ? (
-            /* ১.১ মেসেজ থাকলে সংখ্যা ব্যাজ */
+            /* ১.১ মেসেজ থাকলে সংখ্যা দেখাবে */
             msgCount > 0 ? (
               <span style={{
                 position: 'absolute',
@@ -221,7 +229,7 @@ export default function ProfileHeader({
                 {msgCount > 99 ? '99+' : msgCount}
               </span>
             ) : isNotifUnread ? (
-              /* ১.২ মেসেজ নেই কিন্তু নোটিফিকেশন থাকলে শুধু লাল ডট */
+              /* ১.২ মেসেজ ০ কিন্তু অপঠিত নোটিফিকেশন থাকলে কেবল লাল ডট দেখাবে */
               <span style={{
                 position: 'absolute',
                 top: '2px',
@@ -234,7 +242,7 @@ export default function ProfileHeader({
               }} />
             ) : null
           ) : (
-            /* ২. সাধারণ প্রোফাইল মোডে সংখ্যা ব্যাজ */
+            /* সাধারণ ইউজার মোড */
             notifCount > 0 ? (
               <span style={{
                 position: 'absolute',
