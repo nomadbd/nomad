@@ -127,9 +127,23 @@ export default function AdminNotifications() {
     setBtnState('loading');
 
     try {
-      const isAllUsersSelected = allUsers.length > 0 && selectedUserIds.length === allUsers.length;
+      // ১. বর্তমান লগইন করা অ্যাডমিন/কর্তৃপক্ষের আইডি গ্রহণ
+      const { data: { user: currentUser }, error: authError } = await supabase.auth.getUser();
+      if (authError || !currentUser) {
+        throw new Error('AUTHENTICATION FAILED');
+      }
 
-      // ১. notifications টেবিলে মূল নোটিফিকেশন সেভ
+      // ২. Target Audience এর মান নির্ধারণ
+      let targetAudience = 'specific';
+      if (allUsers.length > 0 && selectedUserIds.length === allUsers.length) {
+        targetAudience = 'all';
+      } else if (roleFilter === 'AMBASSADOR' && selectedUserIds.length === filteredUsers.length && filteredUsers.length > 0) {
+        targetAudience = 'ambassador';
+      } else if (roleFilter === 'CUSTOMER' && selectedUserIds.length === filteredUsers.length && filteredUsers.length > 0) {
+        targetAudience = 'general';
+      }
+
+      // ৩. notifications টেবিলে নোটিফিকেশন সেভ (created_by তে অ্যাডমিনের আইডি রাখা)
       const { data: notification, error: notifError } = await supabase
         .from('notifications')
         .insert([
@@ -138,7 +152,8 @@ export default function AdminNotifications() {
             message: message.trim(),
             type,
             link: link.trim() || null,
-            target_audience: isAllUsersSelected ? 'ALL' : 'SPECIFIC'
+            target_audience: targetAudience,
+            created_by: currentUser.id
           }
         ])
         .select()
@@ -146,7 +161,7 @@ export default function AdminNotifications() {
 
       if (notifError) throw notifError;
 
-      // ২. নির্বাচিত গ্রাহকদের জন্য notification_recipients টেবিলে রো তৈরি
+      // ৪. নির্বাচন করা সব ইউজারের জন্য notification_recipients টেবিলে ইনসার্ট
       const recipientData = selectedUserIds.map((userId) => ({
         notification_id: notification.id,
         user_id: userId,
