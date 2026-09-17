@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '@/supabaseClient';
-import AmbassadorJoin from './AmbassadorJoin';
+import AmbassadorJoin from './join/AmbassadorJoin';
 import AmbassadorWorkspace from './AmbassadorWorkspace';
 
 export default function AmbassadorPortal() {
@@ -17,11 +17,9 @@ export default function AmbassadorPortal() {
         return;
       }
 
-      // ১. বর্তমান লগইন ইউজার সেশন চেক
       const { data: { user } } = await supabase.auth.getUser();
       setCurrentUser(user);
 
-      // ২. স্ল্যাগ বা টোকেন দিয়ে ডাটাবেজে সার্চ
       const cleanSlug = slug.trim().toLowerCase();
       const { data, error } = await supabase
         .from('ambassador')
@@ -48,7 +46,6 @@ export default function AmbassadorPortal() {
     );
   }
 
-  // ডাটাবেজে না পাওয়া গেলে
   if (!ambassadorData) {
     return (
       <div style={statusContainerStyle}>
@@ -62,7 +59,6 @@ export default function AmbassadorPortal() {
     );
   }
 
-  // ৩. রেজিস্ট্রেশন সম্পন্ন না হয়ে থাকলে -> মেয়াদ ও অনবোর্ডিং চেক
   if (!ambassadorData.is_registered) {
     const isExpired = ambassadorData.expires_at && new Date(ambassadorData.expires_at) < new Date();
 
@@ -82,7 +78,6 @@ export default function AmbassadorPortal() {
     return <AmbassadorJoin initialInviteData={ambassadorData} />;
   }
 
-  // ৪. রেজিস্ট্রেশন সম্পূর্ণ থাকলে -> কাস্টমার স্টোরফ্রন্ট / ওনার ড্যাশবোর্ড
   const isOwner = currentUser?.id === ambassadorData.user_id;
 
   return (
