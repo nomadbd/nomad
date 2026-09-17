@@ -17,6 +17,7 @@ interface NotificationItem {
 interface NotificationsViewProps {
   userId: string;
   onBack: () => void;
+  targetAudience?: string[];
 }
 
 function NotificationSkeleton() {
@@ -47,7 +48,11 @@ function NotificationSkeleton() {
   );
 }
 
-export default function NotificationsView({ userId, onBack }: NotificationsViewProps) {
+export default function NotificationsView({ 
+  userId, 
+  onBack, 
+  targetAudience = ['general', 'all'] 
+}: NotificationsViewProps) {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
@@ -93,6 +98,7 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
         return;
       }
 
+      // targetAudience ফিল্টার যুক্ত করে কোয়েরি
       const { data, error } = await supabase
         .from('notification_recipients')
         .select(`
@@ -108,7 +114,8 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
             created_at
           )
         `)
-        .eq('user_id', userId);
+        .eq('user_id', userId)
+        .in('notifications.target_audience', targetAudience);
 
       if (error) {
         console.error('Fetch error:', error.message);
@@ -169,7 +176,7 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [userId]);
+  }, [userId, targetAudience]);
 
   const markAsRead = async (recipientId: string, currentStatus: boolean) => {
     if (currentStatus) return;
@@ -234,7 +241,7 @@ export default function NotificationsView({ userId, onBack }: NotificationsViewP
       color: '#FFF',
       overflow: 'hidden'
     }}>
-      {/* ১. ফিক্সড হেডার (ভেতরের বেল আইকন বাদ দেওয়া হয়েছে) */}
+      {/* ১. ফিক্সড হেডার */}
       <div style={{ 
         flexShrink: 0,
         backgroundColor: 'rgba(9, 9, 11, 0.95)',
