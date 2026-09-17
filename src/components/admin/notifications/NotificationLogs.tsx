@@ -8,6 +8,11 @@ interface Recipient {
   is_read: boolean;
 }
 
+interface SenderInfo {
+  name?: string;
+  email?: string;
+}
+
 interface SentNotification {
   id: string;
   title: string;
@@ -15,6 +20,8 @@ interface SentNotification {
   type: 'INFO' | 'PROMO' | 'SYSTEM' | 'ALERT';
   link?: string | null;
   target_audience: string;
+  created_by?: string;
+  sender?: SenderInfo | null;
   created_at: string;
   notification_recipients?: Recipient[];
 }
@@ -44,7 +51,6 @@ export default function NotificationLogs({ onBack }: NotificationLogsProps) {
   useEffect(() => {
     fetchLogs();
 
-    // notifications এবং notification_recipients উভয় টেবিলের পরিবর্তনের জন্য রিয়েল-টাইম লিসেনার
     const channel = supabase
       .channel('admin_notification_logs')
       .on(
@@ -67,11 +73,15 @@ export default function NotificationLogs({ onBack }: NotificationLogsProps) {
   const fetchLogs = async () => {
     setLoading(true);
     try {
-      // notifications এর সাথে notification_recipients ডাটা রিলেশনালি ফেচ
+      // created_by কলামের মাধ্যমে profiles টেবিল থেকে প্রেরক অ্যাডমিনের নাম ও ইমেইল ফেচ
       const { data, error } = await supabase
         .from('notifications')
         .select(`
           *,
+          sender:profiles!created_by (
+            name,
+            email
+          ),
           notification_recipients (
             id,
             user_id,
@@ -125,14 +135,28 @@ export default function NotificationLogs({ onBack }: NotificationLogsProps) {
     }
   };
 
-  // Seen Status & Counter Generator
+  const getTargetAudienceLabel = (aud: string, recipientCount: number) => {
+    const upper = (aud || '').toUpperCase();
+    switch (upper) {
+      case 'ALL':
+        return 'GLOBAL (ALL USERS)';
+      case 'AMBASSADOR':
+        return 'AMBASSADORS';
+      case 'GENERAL':
+      case 'CUSTOMER':
+        return 'CUSTOMERS';
+      default:
+        return `SPECIFIC (${recipientCount} RECIPIENT${recipientCount === 1 ? '' : 'S'})`;
+    }
+  };
+
   const getSeenStatusBadge = (recipients: Recipient[] = []) => {
     const total = recipients.length;
     const seen = recipients.filter((r) => r.is_read).length;
 
     if (total === 0) {
       return {
-        text: 'UNSEEN',
+        text: 'NO RECIPIENTS',
         bg: 'rgba(255, 255, 255, 0.05)',
         color: mutedText,
         border: '#222222'
@@ -169,8 +193,9 @@ export default function NotificationLogs({ onBack }: NotificationLogsProps) {
     return logs.filter((log) => {
       const titleMatch = (log.title || '').toLowerCase().includes(searchQuery.toLowerCase());
       const msgMatch = (log.message || '').toLowerCase().includes(searchQuery.toLowerCase());
+      const senderMatch = (log.sender?.name || log.sender?.email || '').toLowerCase().includes(searchQuery.toLowerCase());
 
-      const matchesSearch = titleMatch || msgMatch;
+      const matchesSearch = titleMatch || msgMatch || senderMatch;
       const matchesCategory = selectedCategory === 'ALL' || log.type === selectedCategory;
 
       return matchesSearch && matchesCategory;
@@ -218,7 +243,7 @@ export default function NotificationLogs({ onBack }: NotificationLogsProps) {
       <div style={{ position: 'relative', marginBottom: '16px' }}>
         <input
           type="text"
-          placeholder="Search logs..."
+          placeholder="Search logs by title, message or sender..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           style={{
@@ -272,6 +297,7 @@ export default function NotificationLogs({ onBack }: NotificationLogsProps) {
           {filteredLogs.map((item) => {
             const badge = getSeenStatusBadge(item.notification_recipients);
             const totalRecipients = item.notification_recipients?.length || 0;
+            const senderName = item.sender?.name || item.sender?.email || 'System Admin';
 
             return (
               <div
@@ -310,13 +336,29 @@ export default function NotificationLogs({ onBack }: NotificationLogsProps) {
                 <div>
                   <div style={{ fontSize: '13px', fontWeight: '700', color: '#FFF', marginBottom: '4px' }}>{item.title}</div>
                   <div style={{ fontSize: '11px', color: mutedText, lineHeight: '1.5', whiteSpace: 'pre-wrap' }}>{item.message}</div>
-                  {item.link && <div style={{ fontSize: '10px', color: '#3B82F6', marginTop: '4px', wordBreak: 'break-all' }}>{item.link}</div>}
+                  {item.link && (
+                    <a
+                      href={item.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ display: 'inline-block', fontSize: '10px', color: '#3B82F6', marginTop: '4px', wordBreak: 'break-all', textDecoration: 'none' }}
+                    >
+                      {item.link}
+                    </a>
+                  )}
                 </div>
 
+                {/* Footer Section with Sender Info & Target */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '8px', borderTop: '1px solid #141414' }}>
-                  <span style={{ fontSize: '9px', color: '#666666' }}>
-                    TARGET: {item.target_audience === 'ALL' ? 'GLOBAL' : `SPECIFIC (${totalRecipients} USERS)`}
-                  </span>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    <span style={{ fontSize: '9px', color: '#AAA', fontWeight: '600' }}>
+                      SENT BY: <span style={{ color: '#FFF' }}>{senderName}</span>
+                    </span>
+                    <span style={{ fontSize: '9px', color: '#666666' }}>
+                      TARGET: {getTargetAudienceLabel(item.target_audience, totalRecipients)}
+                    </span>
+                  </div>
+
                   <button
                     type="button"
                     onClick={() => handleDelete(item.id)}
