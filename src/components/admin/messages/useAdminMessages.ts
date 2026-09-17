@@ -14,22 +14,30 @@ export const useAdminMessages = (
   const [loading, setLoading] = useState<boolean>(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
+  const [adminEmail, setAdminEmail] = useState<string>('');
 
   useEffect(() => {
     setInternalActiveThreadId(propActiveThreadId);
   }, [propActiveThreadId]);
 
+  useEffect(() => {
+    const fetchCurrentAdmin = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.email) {
+        setAdminEmail(user.email);
+      }
+    };
+    fetchCurrentAdmin();
+  }, []);
+
   const activeThreadId =
     propActiveThreadId !== undefined && propActiveThreadId !== null ? propActiveThreadId : internalActiveThreadId;
 
-  // Mark Messages as Read in Database & Local State
   const markThreadAsRead = async (thread: Thread) => {
-    // 1. Optimistically update local state
     setThreads((prevThreads) =>
       prevThreads.map((t) => (t.id === thread.id ? { ...t, unreadCount: 0 } : t))
     );
 
-    // 2. Update database (Check both channel_id and userEmail to handle NULL channel_id rows)
     try {
       const { error } = await supabase
         .from('communications')
@@ -61,7 +69,6 @@ export const useAdminMessages = (
   const openDrawer = () => setIsDrawerOpen(true);
   const closeDrawer = () => setIsDrawerOpen(false);
 
-  // Fetch data: supports silent background updates for Realtime listeners
   const fetchCommunicationsAndUsers = async (isBackground = false) => {
     try {
       if (!isBackground) setLoading(true);
@@ -168,7 +175,6 @@ export const useAdminMessages = (
           threadMap[threadId].lastMessageTime = rawCreatedAt;
         });
 
-        // 🌟 REALTIME SORTING: Auto-sort threads so active/newest threads float to the top
         const updatedThreads = Object.values(threadMap).sort((a, b) => {
           const timeA = new Date(a.lastMessageTime).getTime();
           const timeB = new Date(b.lastMessageTime).getTime();
@@ -186,10 +192,8 @@ export const useAdminMessages = (
   };
 
   useEffect(() => {
-    // Initial fetch (shows loading UI)
     fetchCommunicationsAndUsers(false);
 
-    // Realtime listener (silent background fetch, no loading UI flickering)
     const channel = supabase
       .channel('public:communications')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'communications' }, () => {
@@ -231,7 +235,6 @@ export const useAdminMessages = (
       timestamp: nowTime,
     };
 
-    // Optimistically update & float active thread to top immediately
     setThreads((prevThreads) => {
       const updated = prevThreads.map((t) => {
         if (t.id === activeThread.id) {
@@ -256,7 +259,7 @@ export const useAdminMessages = (
     try {
       const { error } = await supabase.from('communications').insert([
         {
-          sender_email: 'admin@nomadbd.com',
+          sender_email: adminEmail || 'admin@nomadbd.com',
           sender_role: 'admin',
           recipient_email: activeThread.userEmail || null,
           message: messageText,
