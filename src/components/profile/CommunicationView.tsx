@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { supabase } from '../../supabaseClient';
-import { BackIcon, NotificationIcon } from '../icons';
-import NotificationsView from './NotificationsView';
+import { BackIcon } from '../icons';
 
 interface CommunicationViewProps {
   userId: string;
@@ -51,8 +50,6 @@ export default function CommunicationView({ userId, onBack }: CommunicationViewP
   const [loading, setLoading] = useState<boolean>(true);
   const [inputText, setInputText] = useState<string>('');
   const [sending, setSending] = useState<boolean>(false);
-  const [showNotifications, setShowNotifications] = useState<boolean>(false);
-  const [unreadNotifCount, setUnreadNotifCount] = useState<number>(0);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   // অটো স্ক্রল নিচে নামানোর জন্য
@@ -64,39 +61,6 @@ export default function CommunicationView({ userId, onBack }: CommunicationViewP
   const unreadMessageCount = useMemo(() => {
     return messages.filter((m) => m.sender !== 'ambassador' && !m.is_read).length;
   }, [messages]);
-
-  // অ্যাম্বাসেডর ও ALL টার্গেটের আনরিড নোটিফিকেশন কাউন্ট ফেচ
-  const fetchUnreadNotifCount = async () => {
-    if (!userId) return;
-    try {
-      // ১. ইউজারের আনরিড রেসিপিয়েন্ট রেকর্ডস আনা
-      const { data: recipients, error: recipError } = await supabase
-        .from('notification_recipients')
-        .select('notification_id')
-        .eq('user_id', userId)
-        .eq('is_read', false);
-
-      if (recipError || !recipients || recipients.length === 0) {
-        setUnreadNotifCount(0);
-        return;
-      }
-
-      const notifIds = recipients.map((r) => r.notification_id);
-
-      // ২. অ্যাম্বাসেডর ('AMBASSADOR') এবং সবার ('ALL') নোটিফিকেশন ফিল্টার করে কাউন্ট করা
-      const { count, error: notifError } = await supabase
-        .from('notifications')
-        .select('id', { count: 'exact', head: true })
-        .in('id', notifIds)
-        .in('target_audience', ['AMBASSADOR', 'ALL']);
-
-      if (!notifError && count !== null) {
-        setUnreadNotifCount(count);
-      }
-    } catch (err) {
-      console.error('Error fetching notification count:', err);
-    }
-  };
 
   // কর্তৃপক্ষের পাঠানো মেসেজগুলো Mark as Read করা
   const markUnreadAsRead = async (msgList: CommunicationMessage[]) => {
@@ -150,7 +114,6 @@ export default function CommunicationView({ userId, onBack }: CommunicationViewP
     if (!userId) return;
 
     fetchMessages();
-    fetchUnreadNotifCount();
 
     // Chat Communication Channel
     const chatChannel = supabase
@@ -184,26 +147,8 @@ export default function CommunicationView({ userId, onBack }: CommunicationViewP
       )
       .subscribe();
 
-    // Notification Listener Channel
-    const notifChannel = supabase
-      .channel(`user_notif_count_${userId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'notification_recipients',
-          filter: `user_id=eq.${userId}`
-        },
-        () => {
-          fetchUnreadNotifCount();
-        }
-      )
-      .subscribe();
-
     return () => {
       supabase.removeChannel(chatChannel);
-      supabase.removeChannel(notifChannel);
     };
   }, [userId]);
 
@@ -275,20 +220,6 @@ export default function CommunicationView({ userId, onBack }: CommunicationViewP
 
   let lastRenderedDate: string | null = null;
 
-  // নোটিফিকেশন ভিউ টগল হলে
-  if (showNotifications) {
-    return (
-      <NotificationsView
-        userId={userId}
-        targetAudience={['AMBASSADOR', 'ALL']}
-        onBack={() => {
-          setShowNotifications(false);
-          fetchUnreadNotifCount();
-        }}
-      />
-    );
-  }
-
   return (
     <div style={{ 
       maxWidth: '600px', 
@@ -355,46 +286,6 @@ export default function CommunicationView({ userId, onBack }: CommunicationViewP
             )}
           </div>
         </div>
-
-        {/* হেডার নোটিফিকেশন আইকন এবং আনরিড কাউন্ট ব্যাজ */}
-        <button
-          onClick={() => setShowNotifications(true)}
-          style={{
-            position: 'relative',
-            background: '#121212',
-            border: '1px solid #27272A',
-            color: '#FFF',
-            width: '38px',
-            height: '38px',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-            outline: 'none'
-          }}
-          title="Notifications"
-        >
-          <NotificationIcon width={18} height={18} stroke="#FFFFFF" />
-          {unreadNotifCount > 0 && (
-            <span style={{
-              position: 'absolute',
-              top: '-2px',
-              right: '-2px',
-              backgroundColor: '#EF4444',
-              color: '#FFFFFF',
-              fontSize: '10px',
-              fontWeight: '700',
-              padding: '1px 5px',
-              borderRadius: '10px',
-              minWidth: '16px',
-              textAlign: 'center',
-              border: '1.5px solid #000000'
-            }}>
-              {unreadNotifCount > 99 ? '99+' : unreadNotifCount}
-            </span>
-          )}
-        </button>
       </div>
 
       {/* ২. চ্যাট ফিড সেকশন */}
