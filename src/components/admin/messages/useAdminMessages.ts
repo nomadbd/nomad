@@ -114,7 +114,8 @@ export const useAdminMessages = (
 
         commsRes.data.forEach((item: any) => {
           const isSenderAdmin = (item.sender_role || '').toLowerCase() === 'admin';
-          const userEmail = (isSenderAdmin ? item.recipient_email : item.sender_email || '').toLowerCase();
+          const rawEmail = isSenderAdmin ? item.recipient_email : item.sender_email;
+          const userEmail = (rawEmail || '').toLowerCase();
           const threadId = item.channel_id || userEmail || 'general';
 
           const rawCreatedAt = item.created_at || new Date().toISOString();
@@ -207,13 +208,21 @@ export const useAdminMessages = (
   }, []);
 
   const filteredThreads = threads.filter((t) => {
-    const matchesRole = roleFilter === 'ALL' || t.role.toLowerCase().includes(roleFilter.toLowerCase());
+    const threadRole = (t.role || '').toLowerCase();
+    const currentRoleFilter = (roleFilter || 'ALL').toLowerCase();
+    const matchesRole = roleFilter === 'ALL' || threadRole.includes(currentRoleFilter);
     const query = searchQuery.trim().toLowerCase();
+    
+    const userName = (t.userName || '').toLowerCase();
+    const userEmail = (t.userEmail || '').toLowerCase();
+    const lastMsg = (t.lastMessage || '').toLowerCase();
+
     const matchesSearch =
       !query ||
-      t.userName.toLowerCase().includes(query) ||
-      t.userEmail.toLowerCase().includes(query) ||
-      t.lastMessage.toLowerCase().includes(query);
+      userName.includes(query) ||
+      userEmail.includes(query) ||
+      lastMsg.includes(query);
+
     return matchesRole && matchesSearch;
   });
 
@@ -263,7 +272,7 @@ export const useAdminMessages = (
           sender_role: 'admin',
           recipient_email: activeThread.userEmail || null,
           message: messageText,
-          channel_type: activeThread.role.toLowerCase(),
+          channel_type: (activeThread.role || '').toLowerCase(),
           channel_id: activeThread.id,
           is_read: true,
         },
