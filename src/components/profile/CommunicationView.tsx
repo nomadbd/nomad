@@ -65,15 +65,16 @@ export default function CommunicationView({ userId, onBack }: CommunicationViewP
     return messages.filter((m) => m.sender !== 'ambassador' && !m.is_read).length;
   }, [messages]);
 
-  // আনরিড নোটিফিকেশন কাউন্ট ফেচ
+  // অ্যাম্বাসেডর ও ALL টার্গেটের আনরিড নোটিফিকেশন কাউন্ট ফেচ
   const fetchUnreadNotifCount = async () => {
     if (!userId) return;
     try {
       const { count, error } = await supabase
         .from('notification_recipients')
-        .select('id', { count: 'exact', head: true })
+        .select('id, notifications!inner(target_audience)', { count: 'exact', head: true })
         .eq('user_id', userId)
-        .eq('is_read', false);
+        .eq('is_read', false)
+        .in('notifications.target_audience', ['AMBASSADOR', 'ALL']);
 
       if (!error && count !== null) {
         setUnreadNotifCount(count);
@@ -169,7 +170,7 @@ export default function CommunicationView({ userId, onBack }: CommunicationViewP
       )
       .subscribe();
 
-    // Notification Listener Channel (নতুন নোটিফিকেশন আসলে রিয়েলটাইমে আপডেট হবে)
+    // Notification Listener Channel
     const notifChannel = supabase
       .channel(`user_notif_count_${userId}`)
       .on(
@@ -265,6 +266,7 @@ export default function CommunicationView({ userId, onBack }: CommunicationViewP
     return (
       <NotificationsView
         userId={userId}
+        targetAudience={['AMBASSADOR', 'ALL']}
         onBack={() => {
           setShowNotifications(false);
           fetchUnreadNotifCount();
@@ -340,7 +342,7 @@ export default function CommunicationView({ userId, onBack }: CommunicationViewP
           </div>
         </div>
 
-        {/* নোটিফিকেশন আইকন বাটন এবং নোটিফিকেশন ব্যাজ */}
+        {/* হেডার নোটিফিকেশন আইকন এবং আনরিড কাউন্ট ব্যাজ */}
         <button
           onClick={() => setShowNotifications(true)}
           style={{
