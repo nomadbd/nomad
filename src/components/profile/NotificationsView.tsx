@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { supabase } from '../../supabaseClient';
 import { BackIcon, NotificationIcon, CloseIcon, CheckIcon } from '../icons';
 
@@ -19,6 +19,9 @@ interface NotificationsViewProps {
   onBack: () => void;
   targetAudience?: string[];
 }
+
+// ডিফল্ট অ্যারে কম্পোনেন্টের বাইরে ডিফাইন করা হয়েছে যেন প্রতি রেন্ডারে নতুন রেফারেন্স তৈরি না হয়
+const DEFAULT_TARGET_AUDIENCE = ['general', 'all'];
 
 function NotificationSkeleton() {
   return (
@@ -51,12 +54,15 @@ function NotificationSkeleton() {
 export default function NotificationsView({ 
   userId, 
   onBack, 
-  targetAudience = ['general', 'all'] 
+  targetAudience = DEFAULT_TARGET_AUDIENCE 
 }: NotificationsViewProps) {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
   const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  // অ্যারের মান তুলনা করার জন্য একটি স্ট্রিং কী তৈরি করা হলো
+  const audienceKey = useMemo(() => targetAudience.join(','), [targetAudience]);
 
   const getRelativeTime = (dateString: string) => {
     if (!dateString) return 'Recently';
@@ -98,7 +104,6 @@ export default function NotificationsView({
         return;
       }
 
-      // targetAudience ফিল্টার যুক্ত করে কোয়েরি
       const { data, error } = await supabase
         .from('notification_recipients')
         .select(`
@@ -176,7 +181,7 @@ export default function NotificationsView({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [userId, targetAudience]);
+  }, [userId, audienceKey]); // সরাসরি অ্যারির বদলে Stable String Key ব্যবহার করা হয়েছে
 
   const markAsRead = async (recipientId: string, currentStatus: boolean) => {
     if (currentStatus) return;
