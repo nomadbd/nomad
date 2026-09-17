@@ -616,7 +616,7 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
             <div style={modalHeaderStyle}>
               <div>
                 <span style={{ fontSize: '8px', letterSpacing: '2.5px', color: '#666666', fontWeight: 600, display: 'block' }}>MEMBERSHIP ACCESS</span>
-                <h3 style={{ fontSize: '13px', letterSpacing: '3px', fontWeight: 300, color: '#ffffff', margin: 0 }}>NOMAD CIRCLE</h3>
+                <h3 style={{ fontSize: '13px', letterSpacing: '3px', fontWeight: 300, color: '#ffffff', margin: 0 }}>AMBASSADOR CIRCLE</h3>
               </div>
               <button 
                 type="button" 
