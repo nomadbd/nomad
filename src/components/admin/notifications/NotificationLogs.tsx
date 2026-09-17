@@ -73,15 +73,11 @@ export default function NotificationLogs({ onBack }: NotificationLogsProps) {
   const fetchLogs = async () => {
     setLoading(true);
     try {
-      // created_by কলামের মাধ্যমে profiles টেবিল থেকে প্রেরক অ্যাডমিনের নাম ও ইমেইল ফেচ
+      // safe query: created_by রিলেশনশিপে এরর হলেও যেন নোটিফিকেশন ডাটা ফেচ আটকে না যায়
       const { data, error } = await supabase
         .from('notifications')
         .select(`
           *,
-          sender:profiles!created_by (
-            name,
-            email
-          ),
           notification_recipients (
             id,
             user_id,
@@ -92,7 +88,36 @@ export default function NotificationLogs({ onBack }: NotificationLogsProps) {
         .limit(100);
 
       if (error) throw error;
-      if (data) setLogs(data as SentNotification[]);
+
+      if (data) {
+        // created_by আইডি থাকলে সেগুলোর জন্য প্রোফাইল ডাটা আলাদা ফেচ করা
+        const createdByIds = Array.from(
+          new Set(data.map((item) => item.created_by).filter(Boolean))
+        );
+
+        let profilesMap: Record<string, SenderInfo> = {};
+
+        if (createdByIds.length > 0) {
+          const { data: profilesData } = await supabase
+            .from('profiles')
+            .select('id, name, email')
+            .in('id', createdByIds);
+
+          if (profilesData) {
+            profilesMap = profilesData.reduce((acc, profile) => {
+              acc[profile.id] = { name: profile.name, email: profile.email };
+              return acc;
+            }, {} as Record<string, SenderInfo>);
+          }
+        }
+
+        const formattedLogs = data.map((item) => ({
+          ...item,
+          sender: item.created_by ? profilesMap[item.created_by] || null : null
+        }));
+
+        setLogs(formattedLogs as SentNotification[]);
+      }
     } catch (err: any) {
       console.error('Error fetching logs:', err.message);
     } finally {
