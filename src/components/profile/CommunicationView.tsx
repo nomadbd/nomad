@@ -4,15 +4,20 @@ import { BackIcon } from '../icons';
 
 interface CommunicationViewProps {
   userId: string;
+  userEmail?: string;
   onBack: () => void;
 }
 
 interface CommunicationMessage {
   id: string;
-  sender: 'authority' | 'ambassador' | string;
+  channel_type: string;
+  channel_id: string;
+  sender_email?: string;
+  sender_role: string;
+  recipient_email?: string;
   message: string;
-  created_at: string;
   is_read?: boolean;
+  created_at: string;
 }
 
 function MessagesSkeleton() {
@@ -45,34 +50,31 @@ function MessagesSkeleton() {
   );
 }
 
-export default function CommunicationView({ userId, onBack }: CommunicationViewProps) {
+export default function CommunicationView({ userId, userEmail, onBack }: CommunicationViewProps) {
   const [messages, setMessages] = useState<CommunicationMessage[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [inputText, setInputText] = useState<string>('');
   const [sending, setSending] = useState<boolean>(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
-  // অটো স্ক্রল নিচে নামানোর জন্য
   const scrollToBottom = () => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  // কর্তৃপক্ষের পাঠানো মেসেজের আনরিড সংখ্যা হিসাব
   const unreadMessageCount = useMemo(() => {
-    return messages.filter((m) => m.sender !== 'ambassador' && !m.is_read).length;
+    return messages.filter((m) => m.sender_role !== 'ambassador' && !m.is_read).length;
   }, [messages]);
 
-  // কর্তৃপক্ষের পাঠানো মেসেজগুলো Mark as Read করা
   const markUnreadAsRead = async (msgList: CommunicationMessage[]) => {
     const unreadIds = msgList
-      .filter((m) => m.sender !== 'ambassador' && !m.is_read)
+      .filter((m) => m.sender_role !== 'ambassador' && !m.is_read)
       .map((m) => m.id);
 
     if (unreadIds.length === 0) return;
 
     try {
       await supabase
-        .from('communication')
+        .from('communications')
         .update({ is_read: true })
         .in('id', unreadIds);
 
@@ -84,15 +86,14 @@ export default function CommunicationView({ userId, onBack }: CommunicationViewP
     }
   };
 
-  // ১. প্রাথমিক ফেচিং
   const fetchMessages = async () => {
     if (!userId) return;
 
     try {
       const { data, error } = await supabase
-        .from('communication')
+        .from('communications')
         .select('*')
-        .or(`user_id.eq.${userId},ambassador_id.eq.${userId}`)
+        .or(`channel_id.eq.${userId}${userEmail ? `,sender_email.eq.${userEmail},recipient_email.eq.${userEmail}` : ''}`)
         .order('created_at', { ascending: true });
 
       if (error) throw error;
@@ -100,7 +101,6 @@ export default function CommunicationView({ userId, onBack }: CommunicationViewP
       const fetchedMessages = data || [];
       setMessages(fetchedMessages);
 
-      // স্ক্রিনে মেসেজ লোড হওয়ার পর রিড মার্ক করা
       setTimeout(() => markUnreadAsRead(fetchedMessages), 1000);
     } catch (err) {
       console.error('Error fetching communication messages:', err);
@@ -109,13 +109,11 @@ export default function CommunicationView({ userId, onBack }: CommunicationViewP
     }
   };
 
-  // ২. রিয়েলটাইম সাবস্ক্রিপশন ও ডেটা ফেচ
   useEffect(() => {
     if (!userId) return;
 
     fetchMessages();
 
-    // Chat Communication Channel
     const chatChannel = supabase
       .channel(`user_communication_${userId}`)
       .on(
@@ -123,8 +121,8 @@ export default function CommunicationView({ userId, onBack }: CommunicationViewP
         {
           event: 'INSERT',
           schema: 'public',
-          table: 'communication',
-          filter: `user_id=eq.${userId}`
+          table: 'communications',
+          filter: `channel_id=eq.${userId}`
         },
         (payload) => {
           const newMsg = payload.new as CommunicationMessage;
@@ -133,11 +131,10 @@ export default function CommunicationView({ userId, onBack }: CommunicationViewP
             return [...prev, newMsg];
           });
 
-          // কর্তৃপক্ষের মেসেজ এলে ১ সেকেন্ড পর অটো Mark Read করা
-          if (newMsg.sender !== 'ambassador') {
+          if (newMsg.sender_role !== 'ambassador') {
             setTimeout(() => {
               supabase
-                .from('communication')
+                .from('communications')
                 .update({ is_read: true })
                 .eq('id', newMsg.id)
                 .then();
@@ -152,12 +149,10 @@ export default function CommunicationView({ userId, onBack }: CommunicationViewP
     };
   }, [userId]);
 
-  // নতুন মেসেজ এলে স্ক্রল ডাউন
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
-  // ৩. মেসেজ পাঠানো
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputText.trim() || sending) return;
@@ -168,15 +163,17 @@ export default function CommunicationView({ userId, onBack }: CommunicationViewP
 
     try {
       const payload = {
-        user_id: userId,
-        ambassador_id: userId,
-        sender: 'ambassador',
+        channel_type: 'ambassador',
+        channel_id: userId,
+        sender_email: userEmail || '',
+        sender_role: 'ambassador',
+        recipient_email: '',
         message: messageText,
         is_read: false
       };
 
       const { data, error } = await supabase
-        .from('communication')
+        .from('communications')
         .insert([payload])
         .select()
         .single();
@@ -197,7 +194,6 @@ export default function CommunicationView({ userId, onBack }: CommunicationViewP
     }
   };
 
-  // টাইমিং ও ডেট ফরম্যাটিং
   const formatTime = (dateString: string) => {
     if (!dateString) return '';
     return new Date(dateString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -231,7 +227,6 @@ export default function CommunicationView({ userId, onBack }: CommunicationViewP
       color: '#FFFFFF',
       overflow: 'hidden'
     }}>
-      {/* ১. ফিক্সড হেডার */}
       <div style={{ 
         flexShrink: 0,
         backgroundColor: 'rgba(9, 9, 11, 0.95)',
@@ -269,7 +264,6 @@ export default function CommunicationView({ userId, onBack }: CommunicationViewP
             <h2 style={{ fontSize: '18px', fontWeight: '600', margin: 0, letterSpacing: '0.2px', color: '#FFFFFF' }}>
               Messages
             </h2>
-            {/* অপঠিত মেসেজের সংখ্যা ব্যাজ */}
             {unreadMessageCount > 0 && (
               <span style={{
                 backgroundColor: '#3B82F6',
@@ -288,7 +282,6 @@ export default function CommunicationView({ userId, onBack }: CommunicationViewP
         </div>
       </div>
 
-      {/* ২. চ্যাট ফিড সেকশন */}
       <div style={{ 
         flex: 1, 
         overflowY: 'auto', 
@@ -336,7 +329,7 @@ export default function CommunicationView({ userId, onBack }: CommunicationViewP
           </div>
         ) : (
           messages.map((item) => {
-            const isAmbassador = item.sender === 'ambassador';
+            const isAmbassador = item.sender_role === 'ambassador';
             const currentDateLabel = getDateLabel(item.created_at);
             let showDateDivider = false;
 
@@ -347,7 +340,6 @@ export default function CommunicationView({ userId, onBack }: CommunicationViewP
 
             return (
               <React.Fragment key={item.id}>
-                {/* ডেট ডিভাইডার Header */}
                 {showDateDivider && (
                   <div style={{ display: 'flex', justifyContent: 'center', margin: '8px 0' }}>
                     <span style={{
@@ -364,7 +356,6 @@ export default function CommunicationView({ userId, onBack }: CommunicationViewP
                   </div>
                 )}
 
-                {/* মেসেজ বাবল */}
                 <div
                   style={{
                     display: 'flex',
@@ -417,7 +408,6 @@ export default function CommunicationView({ userId, onBack }: CommunicationViewP
         <div ref={chatEndRef} />
       </div>
 
-      {/* ৩. ফিক্সড ইনপুট বার */}
       <form
         onSubmit={handleSendMessage}
         style={{
