@@ -47,6 +47,30 @@ export default function CommunicationView({ userId, onBack }: CommunicationViewP
   const [sending, setSending] = useState<boolean>(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
+  // অটো স্ক্রল নিচে নামানোর জন্য
+  const scrollToBottom = () => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  // কর্তৃপক্ষের পাঠানো মেসেজগুলো Mark as Read করা
+  const markUnreadAsRead = async (msgList: CommunicationMessage[]) => {
+    const unreadIds = msgList
+      .filter((m) => m.sender !== 'ambassador' && !m.is_read)
+      .map((m) => m.id);
+
+    if (unreadIds.length === 0) return;
+
+    try {
+      await supabase
+        .from('communication')
+        .update({ is_read: true })
+        .in('id', unreadIds);
+    } catch (err) {
+      console.error('Failed to mark messages as read:', err);
+    }
+  };
+
+  // ১. প্রাথমিক ফেচিং
   const fetchMessages = async () => {
     if (!userId) return;
 
@@ -58,7 +82,10 @@ export default function CommunicationView({ userId, onBack }: CommunicationViewP
         .order('created_at', { ascending: true });
 
       if (error) throw error;
-      setMessages(data || []);
+
+      const fetchedMessages = data || [];
+      setMessages(fetchedMessages);
+      markUnreadAsRead(fetchedMessages);
     } catch (err) {
       console.error('Error fetching communication messages:', err);
     } finally {
@@ -66,14 +93,53 @@ export default function CommunicationView({ userId, onBack }: CommunicationViewP
     }
   };
 
+  // ২. রিয়েলটাইম সাবস্ক্রিপশন ও ডেটা ফেচ
   useEffect(() => {
+    if (!userId) return;
+
     fetchMessages();
+
+    // Supabase Realtime Channel
+    const channel = supabase
+      .channel(`user_communication_${userId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'communication',
+          filter: `user_id=eq.${userId}`
+        },
+        (payload) => {
+          const newMsg = payload.new as CommunicationMessage;
+          setMessages((prev) => {
+            if (prev.some((m) => m.id === newMsg.id)) return prev;
+            return [...prev, newMsg];
+          });
+
+          // নতুন আসা কর্তৃপক্ষের মেসেজ সঙ্গে সঙ্গে Mark Read করা
+          if (newMsg.sender !== 'ambassador') {
+            supabase
+              .from('communication')
+              .update({ is_read: true })
+              .eq('id', newMsg.id)
+              .then();
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [userId]);
 
+  // নতুন মেসেজ এলে স্ক্রল ডাউন
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    scrollToBottom();
   }, [messages]);
 
+  // ৩. মেসেজ পাঠানো
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputText.trim() || sending) return;
@@ -100,20 +166,41 @@ export default function CommunicationView({ userId, onBack }: CommunicationViewP
       if (error) throw error;
 
       if (data) {
-        setMessages((prev) => [...prev, data]);
+        setMessages((prev) => {
+          if (prev.some((m) => m.id === data.id)) return prev;
+          return [...prev, data];
+        });
       }
     } catch (err) {
       console.error('Error sending message:', err);
-      setInputText(messageText);
+      setInputText(messageText); // বার্তা পাঠাতে ব্যর্থ হলে ইনপুট ফিল্ডে ফিরিয়ে আনা
     } finally {
       setSending(false);
     }
   };
 
+  // টাইমিং ও ডেট ফরম্যাটিং
   const formatTime = (dateString: string) => {
     if (!dateString) return '';
     return new Date(dateString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
+
+  const getDateLabel = (dateInput?: string) => {
+    if (!dateInput) return null;
+    const date = new Date(dateInput);
+    if (isNaN(date.getTime())) return null;
+
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfYesterday = new Date(startOfToday);
+    startOfYesterday.setDate(startOfYesterday.getDate() - 1);
+
+    if (date >= startOfToday) return 'Today';
+    if (date >= startOfYesterday) return 'Yesterday';
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
+
+  let lastRenderedDate: string | null = null;
 
   return (
     <div style={{ 
@@ -126,7 +213,7 @@ export default function CommunicationView({ userId, onBack }: CommunicationViewP
       color: '#FFFFFF',
       overflow: 'hidden'
     }}>
-      {/* ১. ফিক্সড প্রিমিয়াম হেডার (NotificationsView-এর অনুরুপ) */}
+      {/* ১. হেডার */}
       <div style={{ 
         flexShrink: 0,
         backgroundColor: 'rgba(9, 9, 11, 0.95)',
@@ -228,60 +315,87 @@ export default function CommunicationView({ userId, onBack }: CommunicationViewP
         ) : (
           messages.map((item) => {
             const isAmbassador = item.sender === 'ambassador';
+            const currentDateLabel = getDateLabel(item.created_at);
+            let showDateDivider = false;
+
+            if (currentDateLabel && currentDateLabel !== lastRenderedDate) {
+              showDateDivider = true;
+              lastRenderedDate = currentDateLabel;
+            }
+
             return (
-              <div
-                key={item.id}
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: isAmbassador ? 'flex-end' : 'flex-start',
-                  width: '100%'
-                }}
-              >
-                <span style={{
-                  fontSize: '10px',
-                  color: '#52525B',
-                  marginBottom: '4px',
-                  fontWeight: '500',
-                  paddingLeft: isAmbassador ? '0' : '4px',
-                  paddingRight: isAmbassador ? '4px' : '0'
-                }}>
-                  {isAmbassador ? 'You' : 'Nomad Authority'}
-                </span>
+              <React.Fragment key={item.id}>
+                {/* ডেট ডিভাইডার Header */}
+                {showDateDivider && (
+                  <div style={{ display: 'flex', justifyContent: 'center', margin: '8px 0' }}>
+                    <span style={{
+                      fontSize: '10px',
+                      color: '#71717A',
+                      backgroundColor: '#121212',
+                      border: '1px solid #27272A',
+                      padding: '3px 10px',
+                      borderRadius: '12px',
+                      fontWeight: '500'
+                    }}>
+                      {currentDateLabel}
+                    </span>
+                  </div>
+                )}
 
-                <div style={{
-                  maxWidth: '82%',
-                  padding: '12px 16px',
-                  borderRadius: isAmbassador ? '16px 16px 2px 16px' : '16px 16px 16px 2px',
-                  backgroundColor: isAmbassador ? '#121212' : '#09090B',
-                  border: '1px solid',
-                  borderColor: isAmbassador ? 'rgba(255, 255, 255, 0.2)' : '#27272A',
-                  color: isAmbassador ? '#FFFFFF' : '#E4E4E7',
-                  fontSize: '13px',
-                  lineHeight: '1.5',
-                  wordBreak: 'break-word',
-                  whiteSpace: 'pre-line'
-                }}>
-                  {item.message}
+                {/* মেসেজ বাবল */}
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: isAmbassador ? 'flex-end' : 'flex-start',
+                    width: '100%'
+                  }}
+                >
+                  <span style={{
+                    fontSize: '10px',
+                    color: '#52525B',
+                    marginBottom: '4px',
+                    fontWeight: '500',
+                    paddingLeft: isAmbassador ? '0' : '4px',
+                    paddingRight: isAmbassador ? '4px' : '0'
+                  }}>
+                    {isAmbassador ? 'You' : 'Nomad Authority'}
+                  </span>
+
+                  <div style={{
+                    maxWidth: '82%',
+                    padding: '12px 16px',
+                    borderRadius: isAmbassador ? '16px 16px 2px 16px' : '16px 16px 16px 2px',
+                    backgroundColor: isAmbassador ? '#121212' : '#09090B',
+                    border: '1px solid',
+                    borderColor: isAmbassador ? 'rgba(255, 255, 255, 0.2)' : '#27272A',
+                    color: isAmbassador ? '#FFFFFF' : '#E4E4E7',
+                    fontSize: '13px',
+                    lineHeight: '1.5',
+                    wordBreak: 'break-word',
+                    whiteSpace: 'pre-line'
+                  }}>
+                    {item.message}
+                  </div>
+
+                  <span style={{
+                    fontSize: '9px',
+                    color: '#71717A',
+                    marginTop: '4px',
+                    paddingLeft: isAmbassador ? '0' : '4px',
+                    paddingRight: isAmbassador ? '4px' : '0'
+                  }}>
+                    {formatTime(item.created_at)}
+                  </span>
                 </div>
-
-                <span style={{
-                  fontSize: '9px',
-                  color: '#71717A',
-                  marginTop: '4px',
-                  paddingLeft: isAmbassador ? '0' : '4px',
-                  paddingRight: isAmbassador ? '4px' : '0'
-                }}>
-                  {formatTime(item.created_at)}
-                </span>
-              </div>
+              </React.Fragment>
             );
           })
         )}
         <div ref={chatEndRef} />
       </div>
 
-      {/* ৩. ফিক্সড বটম ইনপুট বার */}
+      {/* ৩. ফিক্সড ইনপুট বার */}
       <form
         onSubmit={handleSendMessage}
         style={{
