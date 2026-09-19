@@ -167,7 +167,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
     }
   };
 
-  // UPDATED: Header Title and Subtitle Logic (Email Priority over Phone)
+  // Header Title and Subtitle Logic (Email Priority over Phone)
   const isEmailSameAsName =
     !activeThread?.userName ||
     activeThread.userName.toLowerCase().trim() === activeThread.userEmail?.toLowerCase().trim();
@@ -498,7 +498,11 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
             <form onSubmit={(e) => handleSendMessage(e, textareaRef)} style={styles.chatInputFormStyle}>
               <textarea
                 ref={textareaRef}
-                style={styles.textareaInputStyle}
+                style={{
+                  ...styles.textareaInputStyle,
+                  maxHeight: '120px',
+                  overflowY: 'auto',
+                }}
                 rows={1}
                 placeholder="Type your response..."
                 value={inputText}
@@ -506,13 +510,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
                 onChange={(e) => {
                   setInputText(e.target.value);
                   e.target.style.height = 'auto';
-                  e.target.style.height = `${Math.min(e.target.scrollHeight, 80)}px`;
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSendMessage(e, textareaRef);
-                  }
+                  e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
                 }}
                 required
               />
@@ -583,9 +581,8 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
               </div>
             </div>
 
-            {/* UPDATED: QUICK ACTIONS (CONDITIONAL RENDERING) */}
+            {/* QUICK ACTIONS (CONDITIONAL RENDERING) */}
             <div style={{ display: 'flex', justifyContent: 'center', gap: '24px', margin: '20px 0' }}>
-              {/* ইমেইল থাকলে তবেই ইমেইল বাটন দেখাবে */}
               {activeThread.userEmail && (
                 <a
                   href={`mailto:${activeThread.userEmail}`}
@@ -600,7 +597,6 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
                 </a>
               )}
 
-              {/* ফোন নম্বর থাকলেই কেবল কল এবং ওয়াটসঅ্যাপ বাটন দেখাবে */}
               {activeThread.userPhone && (
                 <>
                   <a
