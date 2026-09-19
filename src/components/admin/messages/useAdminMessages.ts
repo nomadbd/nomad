@@ -39,10 +39,11 @@ export const useAdminMessages = (
     );
 
     try {
+      // ইমেইল না থাকলেও channel_id (token) দিয়ে Read স্ট্যাটাস আপডেট হবে
       const { error } = await supabase
         .from('communications')
         .update({ is_read: true })
-        .or(`channel_id.eq.${thread.id},sender_email.eq.${thread.userEmail}`)
+        .eq('channel_id', thread.id)
         .eq('is_read', false);
 
       if (error) {
@@ -96,17 +97,18 @@ export const useAdminMessages = (
         });
       }
 
-      const ambassadorMap: Record<string, { displayName: string; identifier: string; phone?: string; inviteSentAt?: string }> = {};
+      const ambassadorMap: Record<string, { displayName: string; identifier: string; phone?: string; inviteSentAt?: string; email?: string; token?: string }> = {};
       if (ambRes.data) {
         ambRes.data.forEach((a: any) => {
           const ambDataObj = {
             displayName: a.display_name || '',
-            identifier: a.recipient_identifier || a.email || a.assigned_slug || '',
+            identifier: a.recipient_identifier || a.email || a.assigned_slug || a.token || '',
             phone: a.phone || '',
             inviteSentAt: a.invite_sent_at || '',
+            email: a.email ? a.email.trim().toLowerCase() : '',
+            token: a.token || a.assigned_slug || '',
           };
 
-          // ইমেইল, আইডেন্টিফায়ার, স্লগ, টোকেন বা ফোন—যেকোনোটি দিয়ে ডাটা ম্যাপ করা হচ্ছে
           const possibleKeys = [a.email, a.recipient_identifier, a.assigned_slug, a.token, a.phone];
           possibleKeys.forEach((key) => {
             if (key && typeof key === 'string') {
@@ -122,39 +124,27 @@ export const useAdminMessages = (
 
         commsRes.data.forEach((item: any) => {
           const isSenderAdmin = (item.sender_role || '').toLowerCase() === 'admin';
-          const rawEmail = isSenderAdmin ? item.recipient_email : item.sender_email;
-          const userEmail = (rawEmail || '').trim().toLowerCase();
-          const channelId = (item.channel_id || '').trim().toLowerCase();
+          
+          let rawEmail = isSenderAdmin ? item.recipient_email : item.sender_email;
+          if (rawEmail === 'EMPTY') rawEmail = '';
 
-          const threadId = item.channel_id || userEmail || 'general';
+          const channelId = (item.channel_id || '').trim().toLowerCase();
+          
+          const profileData = rawEmail ? profileMap[rawEmail.trim().toLowerCase()] : null;
+          const ambData = (channelId ? ambassadorMap[channelId] : null) || (rawEmail ? ambassadorMap[rawEmail.trim().toLowerCase()] : null);
+
+          // Unique Thread ID নির্ধারণ: channel_id (token/slug) অগ্রাধিকার পাবে, না থাকলে Email
+          const threadId = channelId || (rawEmail ? rawEmail.trim().toLowerCase() : 'general');
+          const userEmail = rawEmail || ambData?.email || '';
           const rawCreatedAt = item.created_at || new Date().toISOString();
 
           const formattedTime = item.created_at
             ? new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
             : '';
 
-          // ১. ইউজার প্রোফাইল চেক
-          const profileData = userEmail ? profileMap[userEmail] : null;
-
-          // ২. অ্যাম্বাসেডর টেবিলে ইমেইল বা channel_id (স্লগ/টোকেন) দিয়ে চেক
-          const ambData = (userEmail ? ambassadorMap[userEmail] : null) || (channelId ? ambassadorMap[channelId] : null);
-
-          let displayName = userEmail || channelId || 'Guest';
-          let userRole = 'GUEST';
-          let userPhone = '';
-
-          if (profileData) {
-            displayName = profileData.name || displayName;
-            userRole = profileData.role;
-          } else if (ambData) {
-            displayName = ambData.displayName || ambData.identifier || displayName;
-            userRole = 'INVITED AMBASSADOR';
-            userPhone = ambData.phone || '';
-          }
-
-          if (ambData && ambData.phone) {
-            userPhone = ambData.phone;
-          }
+          let displayName = ambData?.displayName || profileData?.name || userEmail || ambData?.phone || channelId || 'Guest';
+          let userRole = profileData ? profileData.role : (ambData ? 'INVITED AMBASSADOR' : 'GUEST');
+          let userPhone = ambData?.phone || '';
 
           if (!threadMap[threadId]) {
             threadMap[threadId] = {
@@ -227,12 +217,14 @@ export const useAdminMessages = (
 
     const userName = (t.userName || '').toLowerCase();
     const userEmail = (t.userEmail || '').toLowerCase();
+    const userPhone = (t.userPhone || '').toLowerCase();
     const lastMsg = (t.lastMessage || '').toLowerCase();
 
     const matchesSearch =
       !query ||
       userName.includes(query) ||
       userEmail.includes(query) ||
+      userPhone.includes(query) ||
       lastMsg.includes(query);
 
     return matchesRole && matchesSearch;
@@ -278,6 +270,7 @@ export const useAdminMessages = (
     }
 
     try {
+      // এডমিন থেকে পাঠানো মেসেজে channel_id বাধ্যতামূলকভাবে activeThread.id (token/slug) হবে
       const { error } = await supabase.from('communications').insert([
         {
           sender_email: adminEmail || 'admin@nomadbd.com',
@@ -285,7 +278,7 @@ export const useAdminMessages = (
           recipient_email: activeThread.userEmail || null,
           message: messageText,
           channel_type: (activeThread.role || '').toLowerCase(),
-          channel_id: activeThread.id,
+          channel_id: activeThread.id, // <--- Token/Slug Here!
           is_read: true,
         },
       ]);
