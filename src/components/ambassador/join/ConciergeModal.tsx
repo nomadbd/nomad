@@ -43,6 +43,8 @@ export const ConciergeModal: React.FC<ConciergeModalProps> = ({
     <div 
       style={{
         ...modalBackdropStyle,
+        top: viewportStyle.top ? viewportStyle.top : 0,
+        height: viewportStyle.height ? viewportStyle.height : '100vh',
         opacity: isModalAnimating ? 1 : 0,
         transition: 'opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
       }}
@@ -51,9 +53,7 @@ export const ConciergeModal: React.FC<ConciergeModalProps> = ({
       <div 
         style={{
           ...bottomSheetBoxStyle,
-          height: viewportStyle.height ? viewportStyle.height : '100%',
-          maxHeight: '100vh',
-          borderRadius: viewportStyle.height ? '16px 16px 0 0' : '0',
+          height: '100%',
           transform: isModalAnimating ? 'translateY(0)' : 'translateY(100%)',
           transition: 'transform 0.35s cubic-bezier(0.16, 1, 0.3, 1)'
         }}
@@ -129,8 +129,8 @@ export const ConciergeModal: React.FC<ConciergeModalProps> = ({
               rows={1}
               placeholder="Type your message..."
               value={supportMsg}
-              onFocus={() => setTimeout(() => scrollToBottom(false), 150)}
-              onClick={() => setTimeout(() => scrollToBottom(false), 150)}
+              onFocus={() => setTimeout(() => scrollToBottom(false), 100)}
+              onClick={() => setTimeout(() => scrollToBottom(false), 100)}
               onChange={(e) => {
                 setSupportMsg(e.target.value);
                 e.target.style.height = 'auto';
@@ -170,8 +170,6 @@ const modalBackdropStyle: React.CSSProperties = {
   position: 'fixed',
   left: 0,
   right: 0,
-  top: 0,
-  bottom: 0,
   backgroundColor: 'rgba(0, 0, 0, 0.88)',
   backdropFilter: 'blur(10px)',
   zIndex: 100,
@@ -186,7 +184,7 @@ const bottomSheetBoxStyle: React.CSSProperties = {
   maxWidth: '430px',
   backgroundColor: '#0a0a0a',
   borderTop: '1px solid rgba(255, 255, 255, 0.15)',
-  borderRadius: '20px 20px 0 0',
+  borderRadius: '16px 16px 0 0',
   display: 'flex',
   flexDirection: 'column',
   boxSizing: 'border-box',
