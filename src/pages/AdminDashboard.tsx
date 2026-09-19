@@ -9,6 +9,7 @@ import {
   AdminStaff,
   AdminCustomers,
   AdminLogistics,
+  StaffProfile,
   AdminMessages,
   AdminNotifications
 } from '../components/admin';
