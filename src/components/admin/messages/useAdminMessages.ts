@@ -77,7 +77,7 @@ export const useAdminMessages = (
       const [commsRes, profilesRes, ambRes] = await Promise.all([
         supabase.from('communications').select('*').order('created_at', { ascending: true }),
         supabase.from('profiles').select('email, name, role, avatar_url, created_at'),
-        supabase.from('ambassador').select('email, recipient_identifier, phone, invite_sent_at'),
+        supabase.from('ambassador').select('email, recipient_identifier, phone, assigned_slug, token, display_name, invite_sent_at'),
       ]);
 
       if (commsRes.error) throw commsRes.error;
@@ -96,20 +96,24 @@ export const useAdminMessages = (
         });
       }
 
-      const ambassadorMap: Record<string, { identifier: string; phone?: string; inviteSentAt?: string }> = {};
+      const ambassadorMap: Record<string, { displayName: string; identifier: string; phone?: string; inviteSentAt?: string }> = {};
       if (ambRes.data) {
         ambRes.data.forEach((a: any) => {
-          const emailKey = a.email ? a.email.trim().toLowerCase() : null;
-          const identifierKey = a.recipient_identifier ? a.recipient_identifier.trim().toLowerCase() : null;
-
           const ambDataObj = {
-            identifier: a.recipient_identifier || a.email || '',
+            displayName: a.display_name || '',
+            identifier: a.recipient_identifier || a.email || a.assigned_slug || '',
             phone: a.phone || '',
             inviteSentAt: a.invite_sent_at || '',
           };
 
-          if (emailKey) ambassadorMap[emailKey] = ambDataObj;
-          if (identifierKey) ambassadorMap[identifierKey] = ambDataObj;
+          // ইমেইল, আইডেন্টিফায়ার, স্লগ, টোকেন বা ফোন—যেকোনোটি দিয়ে ডাটা ম্যাপ করা হচ্ছে
+          const possibleKeys = [a.email, a.recipient_identifier, a.assigned_slug, a.token, a.phone];
+          possibleKeys.forEach((key) => {
+            if (key && typeof key === 'string') {
+              const cleanKey = key.trim().toLowerCase();
+              if (cleanKey) ambassadorMap[cleanKey] = ambDataObj;
+            }
+          });
         });
       }
 
@@ -120,29 +124,30 @@ export const useAdminMessages = (
           const isSenderAdmin = (item.sender_role || '').toLowerCase() === 'admin';
           const rawEmail = isSenderAdmin ? item.recipient_email : item.sender_email;
           const userEmail = (rawEmail || '').trim().toLowerCase();
-          const threadId = item.channel_id || userEmail || 'general';
+          const channelId = (item.channel_id || '').trim().toLowerCase();
 
+          const threadId = item.channel_id || userEmail || 'general';
           const rawCreatedAt = item.created_at || new Date().toISOString();
 
           const formattedTime = item.created_at
             ? new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
             : '';
 
-          let displayName = userEmail;
+          // ১. ইউজার প্রোফাইল চেক
+          const profileData = userEmail ? profileMap[userEmail] : null;
+
+          // ২. অ্যাম্বাসেডর টেবিলে ইমেইল বা channel_id (স্লগ/টোকেন) দিয়ে চেক
+          const ambData = (userEmail ? ambassadorMap[userEmail] : null) || (channelId ? ambassadorMap[channelId] : null);
+
+          let displayName = userEmail || channelId || 'Guest';
           let userRole = 'GUEST';
           let userPhone = '';
 
-          const profileData = profileMap[userEmail];
-          const ambData = ambassadorMap[userEmail];
-
-          // Priority 1: Profiles Table (অ্যাকাউন্ট তৈরি করা ইউজারদের আসল রোল)
           if (profileData) {
             displayName = profileData.name || displayName;
             userRole = profileData.role;
-          } 
-          // Priority 2: Ambassador Table (যাদের এখনও profiles এ অ্যাকাউন্ট হয়নি)
-          else if (ambData) {
-            displayName = ambData.identifier || displayName;
+          } else if (ambData) {
+            displayName = ambData.displayName || ambData.identifier || displayName;
             userRole = 'INVITED AMBASSADOR';
             userPhone = ambData.phone || '';
           }
