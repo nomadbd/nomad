@@ -39,7 +39,6 @@ export const useAdminMessages = (
     );
 
     try {
-      // ইমেইল না থাকলেও channel_id (token) দিয়ে Read স্ট্যাটাস আপডেট হবে
       const { error } = await supabase
         .from('communications')
         .update({ is_read: true })
@@ -124,18 +123,20 @@ export const useAdminMessages = (
 
         commsRes.data.forEach((item: any) => {
           const isSenderAdmin = (item.sender_role || '').toLowerCase() === 'admin';
-          
+
           let rawEmail = isSenderAdmin ? item.recipient_email : item.sender_email;
           if (rawEmail === 'EMPTY') rawEmail = '';
 
           const channelId = (item.channel_id || '').trim().toLowerCase();
-          
-          const profileData = rawEmail ? profileMap[rawEmail.trim().toLowerCase()] : null;
-          const ambData = (channelId ? ambassadorMap[channelId] : null) || (rawEmail ? ambassadorMap[rawEmail.trim().toLowerCase()] : null);
 
-          // Unique Thread ID নির্ধারণ: channel_id (token/slug) অগ্রাধিকার পাবে, না থাকলে Email
-          const threadId = channelId || (rawEmail ? rawEmail.trim().toLowerCase() : 'general');
-          const userEmail = rawEmail || ambData?.email || '';
+          const ambData = (channelId ? ambassadorMap[channelId] : null) || (rawEmail ? ambassadorMap[rawEmail.trim().toLowerCase()] : null);
+          
+          // Effective Email: মেসেজে ইমেইল না থাকলেও আম্বাসেডর টেবিলের ইমেইল দিয়ে Profiles টেবিল থেকে Avatar ফেচ করা
+          const effectiveEmail = (rawEmail || ambData?.email || '').trim().toLowerCase();
+          const profileData = effectiveEmail ? profileMap[effectiveEmail] : null;
+
+          const threadId = channelId || (effectiveEmail ? effectiveEmail : 'general');
+          const userEmail = effectiveEmail;
           const rawCreatedAt = item.created_at || new Date().toISOString();
 
           const formattedTime = item.created_at
@@ -164,6 +165,10 @@ export const useAdminMessages = (
           } else {
             if (item.is_read === false && !isSenderAdmin) {
               threadMap[threadId].unreadCount += 1;
+            }
+            // যদি আগে avatarUrl ফাকা থেকে থাকে কিন্তু পরে পাওয়া যায়:
+            if (!threadMap[threadId].avatarUrl && profileData?.avatarUrl) {
+              threadMap[threadId].avatarUrl = profileData.avatarUrl;
             }
           }
 
@@ -270,7 +275,6 @@ export const useAdminMessages = (
     }
 
     try {
-      // এডমিন থেকে পাঠানো মেসেজে channel_id বাধ্যতামূলকভাবে activeThread.id (token/slug) হবে
       const { error } = await supabase.from('communications').insert([
         {
           sender_email: adminEmail || 'admin@nomadbd.com',
@@ -278,7 +282,7 @@ export const useAdminMessages = (
           recipient_email: activeThread.userEmail || null,
           message: messageText,
           channel_type: (activeThread.role || '').toLowerCase(),
-          channel_id: activeThread.id, // <--- Token/Slug Here!
+          channel_id: activeThread.id,
           is_read: true,
         },
       ]);
