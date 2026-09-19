@@ -222,19 +222,26 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
     return () => clearTimeout(timer);
   }, [email, defaultEmail]);
 
+  // ১. ফিক্সড ফেচ ফাংশন: টোকেন থাকলে টোকেন দিয়ে একদম নিখুঁত ফিল্টার
   const fetchMessages = async () => {
     const activeEmail = (email.trim() || defaultEmail || customSupportEmail.trim()).toLowerCase();
-    const channelId = inviteData?.token || activeEmail || 'general_inquiry';
+    const token = inviteData?.token;
 
-    if (!channelId && !activeEmail) return;
+    if (!token && !activeEmail) return;
 
     setIsLoadingMessages(true);
     try {
-      const { data, error } = await supabase
-        .from('communications')
-        .select('*')
-        .or(`channel_id.eq.${channelId},sender_email.eq.${activeEmail},recipient_email.eq.${activeEmail}`)
-        .order('created_at', { ascending: true });
+      let query = supabase.from('communications').select('*');
+
+      if (token) {
+        // টোকেন বা স্লগই চ্যাট রুমের ইউনিক আইডি
+        query = query.eq('channel_id', token);
+      } else if (activeEmail) {
+        // শুধুমাত্র ইমেইল ভ্যালিড থাকলে ইমেইল ফিল্টার চলবে
+        query = query.or(`channel_id.eq.${activeEmail},sender_email.eq.${activeEmail},recipient_email.eq.${activeEmail}`);
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: true });
 
       if (!error && data) {
         setMessages(data);
@@ -257,7 +264,7 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
 
   useEffect(() => {
     fetchMessages();
-  }, [email, defaultEmail, customSupportEmail]);
+  }, [email, defaultEmail, customSupportEmail, inviteData]);
 
   useEffect(() => {
     const handleVisibilityChange = () => {
@@ -273,16 +280,19 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('focus', fetchMessages);
     };
-  }, [email, defaultEmail, customSupportEmail]);
+  }, [email, defaultEmail, customSupportEmail, inviteData]);
 
+  // ২. ফিক্সড রিয়েলটাইম লিসেনার
   useEffect(() => {
     const activeEmail = (email.trim() || defaultEmail || customSupportEmail.trim()).toLowerCase();
     const token = inviteData?.token || '';
 
     if (!token && !activeEmail) return;
 
+    const channelKey = token || activeEmail;
+
     const channel = supabase
-      .channel(`concierge_realtime:${token || activeEmail}`)
+      .channel(`concierge_realtime:${channelKey}`)
       .on(
         'postgres_changes',
         {
@@ -296,9 +306,9 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
           const msgRecipient = (newMsg.recipient_email || '').toLowerCase();
           const msgChannel = newMsg.channel_id || '';
 
-          const isTargetMsg =
-            (token && msgChannel === token) ||
-            (activeEmail && (msgChannel === activeEmail || msgSender === activeEmail || msgRecipient === activeEmail));
+          const isTargetMsg = token
+            ? msgChannel === token
+            : (activeEmail && (msgChannel === activeEmail || msgSender === activeEmail || msgRecipient === activeEmail));
 
           if (isTargetMsg) {
             setMessages((prev) => {
@@ -414,6 +424,7 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
     }
   };
 
+  // ৩. ফিক্সড সাপোর্ট মেসেজ সেন্ড ফাংশন
   const handleSendSupportMessage = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!supportMsg.trim() || isSendingSupport) return;
@@ -421,12 +432,13 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
     setIsSendingSupport(true);
     const activeEmail = (email.trim() || defaultEmail || customSupportEmail.trim()).toLowerCase();
     const currentText = supportMsg.trim();
+    const targetChannelId = inviteData?.token || activeEmail || 'general_inquiry';
 
     try {
       const newMessagePayload = {
         channel_type: 'ambassador',
-        channel_id: inviteData?.token || activeEmail || 'general_inquiry',
-        sender_email: activeEmail,
+        channel_id: targetChannelId,
+        sender_email: activeEmail || null, // ইমেইল না থাকলে ফাঁকা স্ট্রিং বা 'EMPTY' এর বদলে null সেভ হবে
         sender_role: 'ambassador',
         message: currentText,
       };
