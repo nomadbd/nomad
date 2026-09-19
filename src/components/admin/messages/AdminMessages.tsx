@@ -1,12 +1,22 @@
 import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
-import { SendIcon, BackIcon, CloseIcon, EmailIcon, CallIcon, MessageIcon } from '@/components/icons';
+import { SendIcon, BackIcon, CloseIcon, EmailIcon, CallIcon, MessageIcon, SearchIcon } from '@/components/icons';
 import { AdminMessagesProps } from './types';
 import { useAdminMessages } from './useAdminMessages';
 import * as styles from './AdminMessages.styles';
 
-export const AdminMessages: React.FC<AdminMessagesProps> = ({
+// AdminDashboard থেকে পাঠানো অতিরিক্ত প্রপস টাইপ
+interface ExtendedAdminMessagesProps extends AdminMessagesProps {
+  isAddOpen?: boolean;
+  onCloseAdd?: () => void;
+  isSearchOpen?: boolean;
+}
+
+export const AdminMessages: React.FC<ExtendedAdminMessagesProps> = ({
   searchQuery = '',
   isFilterOpen = false,
+  isSearchOpen = false,
+  isAddOpen = false,
+  onCloseAdd,
   activeThreadId: propActiveThreadId = null,
   onSelectThread,
   onNavigateToTab,
@@ -30,6 +40,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
   } = useAdminMessages(searchQuery, propActiveThreadId, onSelectThread);
 
   const [viewportHeight, setViewportHeight] = useState<number | null>(null);
+  const [newChatSearch, setNewChatSearch] = useState<string>('');
 
   // TRACK READ THREADS LOCALLY SO BADGE CLEARS IMMEDIATELY ON CLICK
   const [readThreadIds, setReadThreadIds] = useState<Record<string, boolean>>({});
@@ -65,7 +76,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
     }
   };
 
-  // Helper for Chat Date Separator Header (Fail-proof parsing)
+  // Helper for Chat Date Separator Header
   const getDateLabel = (dateInput?: string | number | Date) => {
     if (!dateInput) return 'Today';
 
@@ -93,6 +104,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
   const handleThreadClick = (thread: any) => {
     setReadThreadIds((prev) => ({ ...prev, [thread.id]: true }));
     handleSelectThread(thread);
+    if (onCloseAdd) onCloseAdd();
   };
 
   // Mobile Visual Viewport & Keyboard Handler
@@ -188,6 +200,18 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
     ? (activeThread?.userEmail ? activeThread?.userPhone || '' : '')
     : (activeThread?.userEmail || activeThread?.userPhone || '');
 
+  // New Chat Dialog এর জন্য কন্টাক্ট ফিল্টার করা
+  const newChatUsers = filteredThreads.filter((t) => {
+    if (!newChatSearch.trim()) return true;
+    const q = newChatSearch.toLowerCase().trim();
+    return (
+      t.userName?.toLowerCase().includes(q) ||
+      t.userEmail?.toLowerCase().includes(q) ||
+      t.userPhone?.toLowerCase().includes(q) ||
+      t.role?.toLowerCase().includes(q)
+    );
+  });
+
   if (loading && filteredThreads.length === 0) {
     return (
       <div style={styles.statusContainerStyle}>
@@ -208,7 +232,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
   let lastRenderedDate: string | null = null;
 
   return (
-    <div style={{ ...styles.containerStyle, padding: 0 }}>
+    <div style={{ ...styles.containerStyle, padding: 0, position: 'relative' }}>
       {/* FILTER BAR */}
       {isFilterOpen && !activeThreadId && (
         <div style={styles.headerFilterBarStyle}>
@@ -242,7 +266,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
           ) : (
             filteredThreads.map((thread) => {
               const displayName = thread.userName && thread.userName.trim() ? thread.userName : thread.userEmail;
-              const initialLetter = displayName.charAt(0).toUpperCase();
+              const initialLetter = displayName ? displayName.charAt(0).toUpperCase() : 'U';
 
               // Calculate real unread status locally
               const isRead = readThreadIds[thread.id];
@@ -578,6 +602,113 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
                 <SendIcon />
               </button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* NEW CHAT MODAL (TRIGGERED BY HEADER PLUS ICON) */}
+      {isAddOpen && (
+        <div style={styles.drawerOverlayStyle} onClick={onCloseAdd}>
+          <div 
+            style={{ ...styles.drawerContainerStyle, maxHeight: '80vh', overflowY: 'auto' }} 
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={styles.drawerHeaderStyle}>
+              <span style={styles.drawerTitleStyle}>START NEW CONVERSATION</span>
+              <button onClick={onCloseAdd} style={styles.drawerCloseBtnStyle} aria-label="Close">
+                <CloseIcon />
+              </button>
+            </div>
+
+            {/* SEARCH CONTACTS INPUT */}
+            <div style={{ padding: '12px 0' }}>
+              <input
+                type="text"
+                placeholder="SEARCH USER, EMAIL OR PHONE..."
+                value={newChatSearch}
+                onChange={(e) => setNewChatSearch(e.target.value)}
+                style={{
+                  width: '100%',
+                  backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  color: '#ffffff',
+                  padding: '8px 12px',
+                  borderRadius: '4px',
+                  fontSize: '12px',
+                  fontFamily: 'monospace',
+                  outline: 'none',
+                  boxSizing: 'border-box'
+                }}
+              />
+            </div>
+
+            {/* CONTACT LIST */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
+              {newChatUsers.length === 0 ? (
+                <p style={{ color: '#aaaaaa', fontSize: '11px', textAlign: 'center', padding: '16px 0' }}>
+                  NO USERS FOUND
+                </p>
+              ) : (
+                newChatUsers.map((user) => {
+                  const name = user.userName || user.userEmail || 'User';
+                  return (
+                    <div
+                      key={user.id}
+                      onClick={() => handleThreadClick(user)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        padding: '10px',
+                        borderRadius: '6px',
+                        backgroundColor: 'rgba(255, 255, 255, 0.04)',
+                        cursor: 'pointer',
+                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                        transition: 'background-color 0.15s ease'
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)')}
+                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.04)')}
+                    >
+                      <div
+                        style={{
+                          width: '32px',
+                          height: '32px',
+                          borderRadius: '50%',
+                          backgroundColor: 'rgba(255, 255, 255, 0.12)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '12px',
+                          fontWeight: 'bold',
+                          color: '#ffffff',
+                          flexShrink: 0,
+                          overflow: 'hidden'
+                        }}
+                      >
+                        {user.avatarUrl ? (
+                          <img src={user.avatarUrl} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        ) : (
+                          name.charAt(0).toUpperCase()
+                        )}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ color: '#ffffff', fontSize: '12px', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {name}
+                        </div>
+                        {user.userEmail && (
+                          <div style={{ color: '#888888', fontSize: '10px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {user.userEmail}
+                          </div>
+                        )}
+                      </div>
+                      <span style={{ fontSize: '8px', padding: '2px 6px', borderRadius: '4px', backgroundColor: 'rgba(255, 255, 255, 0.1)', color: '#cccccc', textTransform: 'uppercase' }}>
+                        {user.role}
+                      </span>
+                    </div>
+                  );
+                })
+              )}
+            </div>
           </div>
         </div>
       )}
