@@ -22,7 +22,7 @@ interface ConciergeModalProps {
   scrollToBottom: (smooth?: boolean) => void;
 }
 
-// তারিখ 'TODAY', 'YESTERDAY' নাকি অন্য তারিখ তা ফরম্যাট করার হেলপার ফাংশন
+// তারিখ 'TODAY', 'YESTERDAY' অথবা '12 SEP 2026' ফরম্যাট করার হেলপার
 const getDateLabel = (dateString?: string) => {
   if (!dateString) return null;
   
@@ -40,6 +40,19 @@ const getDateLabel = (dateString?: string) => {
   if (isSameDay(msgDate, yesterday)) return 'YESTERDAY';
 
   return msgDate.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }).toUpperCase();
+};
+
+// সময় (যেমন: 11:50 AM) ফরম্যাট করার হেলপার
+const formatTime = (dateString?: string) => {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return '';
+  
+  return date.toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true
+  }).toUpperCase();
 };
 
 export const ConciergeModal: React.FC<ConciergeModalProps> = ({
@@ -114,15 +127,14 @@ export const ConciergeModal: React.FC<ConciergeModalProps> = ({
               {messages.map((msg, index) => {
                 const isAdmin = msg.sender_role === 'admin' || msg.sender_role === 'support';
                 
-                // তারিখ বিভাজন হিসাব করা (created_at অথবা timestamp অনুযায়ী)
                 const msgTimestamp = (msg as any).created_at || (msg as any).timestamp;
                 const currentDateLabel = getDateLabel(msgTimestamp);
+                const timeLabel = formatTime(msgTimestamp);
                 
                 const prevMsg = messages[index - 1];
                 const prevTimestamp = prevMsg ? ((prevMsg as any).created_at || (prevMsg as any).timestamp) : null;
                 const prevDateLabel = getDateLabel(prevTimestamp);
 
-                // আগের মেসেজের তারিখ আর এই মেসেজের তারিখ ভিন্ন হলে ডিভাইডার দেখাবে
                 const showDateDivider = currentDateLabel && currentDateLabel !== prevDateLabel;
 
                 return (
@@ -134,8 +146,9 @@ export const ConciergeModal: React.FC<ConciergeModalProps> = ({
                     )}
 
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: isAdmin ? 'flex-start' : 'flex-end' }}>
+                      {/* SENDER LABEL & TIME */}
                       <span style={{ fontSize: '8px', color: '#666666', letterSpacing: '1px', marginBottom: '3px' }}>
-                        {isAdmin ? 'NOMAD DESK' : 'YOU'}
+                        {isAdmin ? 'NOMAD DESK' : 'YOU'}{timeLabel ? ` • ${timeLabel}` : ''}
                       </span>
                       <div style={{
                         maxWidth: '85%',
