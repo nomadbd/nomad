@@ -130,8 +130,7 @@ export const useAdminMessages = (
           const channelId = (item.channel_id || '').trim().toLowerCase();
 
           const ambData = (channelId ? ambassadorMap[channelId] : null) || (rawEmail ? ambassadorMap[rawEmail.trim().toLowerCase()] : null);
-          
-          // Effective Email: মেসেজে ইমেইল না থাকলেও আম্বাসেডর টেবিলের ইমেইল দিয়ে Profiles টেবিল থেকে Avatar ফেচ করা
+
           const effectiveEmail = (rawEmail || ambData?.email || '').trim().toLowerCase();
           const profileData = effectiveEmail ? profileMap[effectiveEmail] : null;
 
@@ -166,7 +165,6 @@ export const useAdminMessages = (
             if (item.is_read === false && !isSenderAdmin) {
               threadMap[threadId].unreadCount += 1;
             }
-            // যদি আগে avatarUrl ফাকা থেকে থাকে কিন্তু পরে পাওয়া যায়:
             if (!threadMap[threadId].avatarUrl && profileData?.avatarUrl) {
               threadMap[threadId].avatarUrl = profileData.avatarUrl;
             }
@@ -215,11 +213,19 @@ export const useAdminMessages = (
   }, []);
 
   const filteredThreads = threads.filter((t) => {
-    const threadRole = (t.role || '').toLowerCase();
-    const currentRoleFilter = (roleFilter || 'ALL').toLowerCase();
-    const matchesRole = roleFilter === 'ALL' || threadRole.includes(currentRoleFilter);
-    const query = searchQuery.trim().toLowerCase();
+    const threadRole = (t.role || '').toUpperCase();
+    const filterRole = (roleFilter || 'ALL').toUpperCase();
 
+    let matchesRole = false;
+    if (filterRole === 'ALL') {
+      matchesRole = true;
+    } else if (filterRole === 'INVITED') {
+      matchesRole = threadRole.includes('INVITED');
+    } else {
+      matchesRole = threadRole === filterRole;
+    }
+
+    const query = searchQuery.trim().toLowerCase();
     const userName = (t.userName || '').toLowerCase();
     const userEmail = (t.userEmail || '').toLowerCase();
     const userPhone = (t.userPhone || '').toLowerCase();
