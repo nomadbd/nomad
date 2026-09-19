@@ -22,19 +22,70 @@ export const NewChatModal: React.FC<NewChatModalProps> = ({
   if (!isAddOpen) return null;
 
   return (
-    <div style={styles.drawerOverlayStyle} onClick={onCloseAdd}>
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 9999,
+        backgroundColor: '#0a0a0a',
+        display: 'flex',
+        flexDirection: 'column',
+        width: '100vw',
+        height: '100dvh',
+        overflow: 'hidden',
+      }}
+    >
+      {/* প্রিমিয়াম স্টিকি হেডার */}
       <div
-        style={{ ...styles.drawerContainerStyle, maxHeight: '80vh', overflowY: 'auto' }}
-        onClick={(e) => e.stopPropagation()}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '16px 20px',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+          backgroundColor: '#0a0a0a',
+          flexShrink: 0,
+        }}
       >
-        <div style={styles.drawerHeaderStyle}>
-          <span style={styles.drawerTitleStyle}>START NEW CONVERSATION</span>
-          <button onClick={onCloseAdd} style={styles.drawerCloseBtnStyle} aria-label="Close">
-            <CloseIcon />
-          </button>
-        </div>
+        <span
+          style={{
+            fontSize: '13px',
+            fontWeight: 600,
+            letterSpacing: '1px',
+            color: '#ffffff',
+            textTransform: 'uppercase',
+            fontFamily: 'monospace',
+          }}
+        >
+          START NEW CONVERSATION
+        </span>
+        <button
+          onClick={onCloseAdd}
+          style={{
+            background: 'none',
+            border: 'none',
+            color: '#aaaaaa',
+            cursor: 'pointer',
+            padding: '4px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+          aria-label="Close"
+        >
+          <CloseIcon />
+        </button>
+      </div>
 
-        <div style={{ padding: '12px 0' }}>
+      {/* সার্চ ইনপুট সেকশন */}
+      <div
+        style={{
+          padding: '16px 20px 12px 20px',
+          backgroundColor: '#0a0a0a',
+          flexShrink: 0,
+        }}
+      >
+        <div style={{ position: 'relative', width: '100%' }}>
           <input
             type="text"
             placeholder="SEARCH USER, EMAIL OR PHONE..."
@@ -42,85 +93,153 @@ export const NewChatModal: React.FC<NewChatModalProps> = ({
             onChange={(e) => setNewChatSearch(e.target.value)}
             style={{
               width: '100%',
-              backgroundColor: 'rgba(255, 255, 255, 0.08)',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
+              backgroundColor: 'rgba(255, 255, 255, 0.05)',
+              border: '1px solid rgba(255, 255, 255, 0.12)',
               color: '#ffffff',
-              padding: '8px 12px',
-              borderRadius: '4px',
+              padding: '12px 16px',
+              borderRadius: '8px',
               fontSize: '12px',
               fontFamily: 'monospace',
               outline: 'none',
               boxSizing: 'border-box',
+              letterSpacing: '0.5px',
             }}
           />
         </div>
+      </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
-          {newChatUsers.length === 0 ? (
-            <p style={{ color: '#aaaaaa', fontSize: '11px', textAlign: 'center', padding: '16px 0' }}>
-              NO USERS FOUND
-            </p>
-          ) : (
-            newChatUsers.map((user) => {
-              const name = user.userName || user.userEmail || 'User';
-              return (
+      {/* ইউজার লিস্ট সেকশন (ফুল স্ক্রিন স্ক্রোলযোগ্য) */}
+      <div
+        style={{
+          flex: 1,
+          overflowY: 'auto',
+          padding: '8px 20px 20px 20px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '10px',
+        }}
+      >
+        {newChatUsers.length === 0 ? (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              height: '50vh',
+              color: '#666666',
+              fontSize: '12px',
+              fontFamily: 'monospace',
+              letterSpacing: '1px',
+            }}
+          >
+            NO USERS FOUND
+          </div>
+        ) : (
+          newChatUsers.map((user) => {
+            const name = user.userName || user.userEmail || 'User';
+            return (
+              <div
+                key={user.id}
+                onClick={() => handleThreadClick(user)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '14px',
+                  padding: '12px 14px',
+                  borderRadius: '10px',
+                  backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                  cursor: 'pointer',
+                  border: '1px solid rgba(255, 255, 255, 0.06)',
+                  transition: 'all 0.15s ease',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.08)';
+                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.03)';
+                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.06)';
+                }}
+              >
+                {/* প্রোফাইল অ্যাভাটার */}
                 <div
-                  key={user.id}
-                  onClick={() => handleThreadClick(user)}
                   style={{
+                    width: '38px',
+                    height: '38px',
+                    borderRadius: '50%',
+                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '12px',
-                    padding: '10px',
-                    borderRadius: '6px',
-                    backgroundColor: 'rgba(255, 255, 255, 0.04)',
-                    cursor: 'pointer',
-                    border: '1px solid rgba(255, 255, 255, 0.08)',
-                    transition: 'background-color 0.15s ease',
+                    justifyContent: 'center',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    color: '#ffffff',
+                    flexShrink: 0,
+                    overflow: 'hidden',
                   }}
-                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)')}
-                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.04)')}
                 >
+                  {user.avatarUrl ? (
+                    <img
+                      src={user.avatarUrl}
+                      alt={name}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
+                  ) : (
+                    name.charAt(0).toUpperCase()
+                  )}
+                </div>
+
+                {/* ইউজার ইনফো */}
+                <div style={{ flex: 1, minWidth: 0 }}>
                   <div
                     style={{
-                      width: '32px',
-                      height: '32px',
-                      borderRadius: '50%',
-                      backgroundColor: 'rgba(255, 255, 255, 0.12)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '12px',
-                      fontWeight: 'bold',
                       color: '#ffffff',
-                      flexShrink: 0,
+                      fontSize: '13px',
+                      fontWeight: 500,
                       overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
                     }}
                   >
-                    {user.avatarUrl ? (
-                      <img src={user.avatarUrl} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    ) : (
-                      name.charAt(0).toUpperCase()
-                    )}
+                    {name}
                   </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ color: '#ffffff', fontSize: '12px', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {name}
+                  {user.userEmail && (
+                    <div
+                      style={{
+                        color: '#777777',
+                        fontSize: '11px',
+                        marginTop: '2px',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {user.userEmail}
                     </div>
-                    {user.userEmail && (
-                      <div style={{ color: '#888888', fontSize: '10px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {user.userEmail}
-                      </div>
-                    )}
-                  </div>
-                  <span style={{ fontSize: '8px', padding: '2px 6px', borderRadius: '4px', backgroundColor: 'rgba(255, 255, 255, 0.1)', color: '#cccccc', textTransform: 'uppercase' }}>
+                  )}
+                </div>
+
+                {/* রোল ব্যাজ */}
+                {user.role && (
+                  <span
+                    style={{
+                      fontSize: '9px',
+                      padding: '3px 8px',
+                      borderRadius: '4px',
+                      backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                      color: '#aaaaaa',
+                      textTransform: 'uppercase',
+                      fontWeight: 500,
+                      letterSpacing: '0.5px',
+                    }}
+                  >
                     {user.role}
                   </span>
-                </div>
-              );
-            })
-          )}
-        </div>
+                )}
+              </div>
+            );
+          })
+        )}
       </div>
     </div>
   );
