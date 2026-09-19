@@ -414,13 +414,28 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
               {activeThread?.messages.map((msg) => {
                 const isAdmin = msg.sender === 'ADMIN';
 
-                // Date separator logic fixed using individual message timestamp/createdAt
-                const currentDateLabel = getDateLabel(msg.createdAt || msg.timestamp);
+                // Raw date string/field from individual message
+                const rawDate = msg.createdAt || (msg as any).created_at || (msg as any).date || msg.timestamp;
+
+                // Date separator label logic (Today, Yesterday, Date)
+                const currentDateLabel = getDateLabel(rawDate) || getDateLabel(activeThread?.lastMessageTime);
                 let showDateDivider = false;
                 if (currentDateLabel && currentDateLabel !== lastRenderedDate) {
                   showDateDivider = true;
                   lastRenderedDate = currentDateLabel;
                 }
+
+                // Format bubble time string safely (e.g. "10:30 AM")
+                const displayTime = (() => {
+                  if (typeof msg.timestamp === 'string' && (msg.timestamp.includes('AM') || msg.timestamp.includes('PM') || msg.timestamp.includes(':'))) {
+                    return msg.timestamp;
+                  }
+                  const parsed = new Date(rawDate);
+                  if (!isNaN(parsed.getTime())) {
+                    return parsed.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+                  }
+                  return msg.timestamp || '';
+                })();
 
                 return (
                   <React.Fragment key={msg.id}>
@@ -484,7 +499,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
                           fontWeight: 400,
                         }}
                       >
-                        {msg.timestamp}
+                        {displayTime}
                       </span>
                     </div>
                   </React.Fragment>
