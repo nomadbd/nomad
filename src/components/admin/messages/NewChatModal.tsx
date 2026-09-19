@@ -77,7 +77,7 @@ export const NewChatModal: React.FC<NewChatModalProps> = ({
         </button>
       </div>
 
-      {/* সার্চ ইনপুট সেকশন */}
+      {/* প্রিমিয়াম ডিম্বাকার (Pill-shaped) সার্চ ইনপুট সেকশন */}
       <div
         style={{
           padding: '16px 20px 12px 20px',
@@ -93,16 +93,18 @@ export const NewChatModal: React.FC<NewChatModalProps> = ({
             onChange={(e) => setNewChatSearch(e.target.value)}
             style={{
               width: '100%',
-              backgroundColor: 'rgba(255, 255, 255, 0.05)',
-              border: '1px solid rgba(255, 255, 255, 0.12)',
+              backgroundColor: 'rgba(255, 255, 255, 0.06)',
+              border: '1px solid rgba(255, 255, 255, 0.15)',
               color: '#ffffff',
-              padding: '12px 16px',
-              borderRadius: '8px',
+              padding: '12px 20px',
+              borderRadius: '50px', // ডিম্বাকার বা পিল শেপ করার জন্য
               fontSize: '12px',
               fontFamily: 'monospace',
               outline: 'none',
               boxSizing: 'border-box',
               letterSpacing: '0.5px',
+              boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.2)',
+              transition: 'all 0.2s ease',
             }}
           />
         </div>
