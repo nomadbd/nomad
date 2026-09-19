@@ -65,11 +65,21 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
     }
   };
 
-  // Helper for Chat Date Separator Header
+  // Helper for Chat Date Separator Header (Fail-proof parsing)
   const getDateLabel = (dateInput?: string | number | Date) => {
-    if (!dateInput) return null;
+    if (!dateInput) return 'Today';
+
+    // 12-hour time format (e.g., "02:03 AM") directly falling back to Today
+    if (typeof dateInput === 'string' && /^(0?[1-9]|1[0-2]):[0-5][0-9]\s?(AM|PM)$/i.test(dateInput.trim())) {
+      return 'Today';
+    }
+
     const date = new Date(dateInput);
-    if (isNaN(date.getTime())) return null;
+
+    // If parsing fails, fall back to Today so the label never vanishes
+    if (isNaN(date.getTime())) {
+      return 'Today';
+    }
 
     const now = new Date();
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -414,18 +424,18 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
               {activeThread?.messages.map((msg) => {
                 const isAdmin = msg.sender === 'ADMIN';
 
-                // Raw date string/field from individual message
-                const rawDate = msg.createdAt || (msg as any).created_at || (msg as any).date || msg.timestamp;
+                // Safely determine date value from available properties or fallback to thread time
+                const rawDate = msg.createdAt || (msg as any).created_at || (msg as any).date || activeThread?.lastMessageTime || msg.timestamp;
 
-                // Date separator label logic (Today, Yesterday, Date)
-                const currentDateLabel = getDateLabel(rawDate) || getDateLabel(activeThread?.lastMessageTime);
+                // Date separator label logic
+                const currentDateLabel = getDateLabel(rawDate);
                 let showDateDivider = false;
                 if (currentDateLabel && currentDateLabel !== lastRenderedDate) {
                   showDateDivider = true;
                   lastRenderedDate = currentDateLabel;
                 }
 
-                // Format bubble time string safely (e.g. "10:30 AM")
+                // Format time string safely (e.g. "10:48 AM")
                 const displayTime = (() => {
                   if (typeof msg.timestamp === 'string' && (msg.timestamp.includes('AM') || msg.timestamp.includes('PM') || msg.timestamp.includes(':'))) {
                     return msg.timestamp;
