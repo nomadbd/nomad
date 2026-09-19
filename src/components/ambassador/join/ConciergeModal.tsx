@@ -27,10 +27,6 @@ export const ConciergeModal: React.FC<ConciergeModalProps> = ({
   isModalAnimating,
   viewportStyle,
   handleCloseConcierge,
-  email,
-  defaultEmail,
-  customSupportEmail,
-  setCustomSupportEmail,
   chatContainerRef,
   textareaRef,
   isLoadingMessages,
@@ -63,6 +59,7 @@ export const ConciergeModal: React.FC<ConciergeModalProps> = ({
         }}
         onClick={(e) => e.stopPropagation()}
       >
+        {/* FIXED APP HEADER */}
         <div style={modalHeaderStyle}>
           <div>
             <span style={{ fontSize: '8px', letterSpacing: '2.5px', color: '#666666', fontWeight: 600, display: 'block' }}>PRIVATE DESK</span>
@@ -77,9 +74,10 @@ export const ConciergeModal: React.FC<ConciergeModalProps> = ({
           </button>
         </div>
 
+        {/* SCROLLABLE CHAT FEED */}
         <div 
           ref={chatContainerRef}
-          style={{ flex: 1, overflowY: 'auto', padding: '12px 16px', display: 'flex', flexDirection: 'column' }}
+          style={chatScrollAreaStyle}
         >
           {isLoadingMessages ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: 'auto' }}>
@@ -122,6 +120,7 @@ export const ConciergeModal: React.FC<ConciergeModalProps> = ({
           )}
         </div>
 
+        {/* INPUT FOOTER */}
         <div style={{ padding: '0 16px 16px 16px', flexShrink: 0 }}>
           <form onSubmit={handleSendSupportMessage} style={chatInputFormStyle}>
             <textarea
@@ -200,11 +199,21 @@ const modalHeaderStyle: React.CSSProperties = {
   alignItems: 'center',
   padding: '16px 20px 12px 20px',
   borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-  position: 'sticky',
-  top: 0,
   backgroundColor: '#0a0a0a',
   zIndex: 20,
-  flexShrink: 0
+  flexShrink: 0,
+  width: '100%',
+  boxSizing: 'border-box'
+};
+
+const chatScrollAreaStyle: React.CSSProperties = {
+  flex: 1,
+  minHeight: 0,
+  overflowY: 'auto',
+  WebkitOverflowScrolling: 'touch',
+  padding: '12px 16px',
+  display: 'flex',
+  flexDirection: 'column'
 };
 
 const chatInputFormStyle: React.CSSProperties = {
