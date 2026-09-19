@@ -1,14 +1,15 @@
 import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
-import { AdminMessagesProps } from './types';
-import { useAdminMessages } from './useAdminMessages';
+import {
+  AdminMessagesProps,
+  useAdminMessages,
+  MessageSidebar,
+  ChatHeader,
+  MessageList,
+  ChatInput,
+  NewChatModal,
+  UserDetailDrawer,
+} from './index';
 import * as styles from './AdminMessages.styles';
-
-import { MessageSidebar } from './MessageSidebar';
-import { ChatHeader } from './ChatHeader';
-import { MessageList } from './MessageList';
-import { ChatInput } from './ChatInput';
-import { NewChatModal } from './NewChatModal';
-import { UserDetailDrawer } from './UserDetailDrawer';
 
 interface ExtendedAdminMessagesProps extends AdminMessagesProps {
   isAddOpen?: boolean;
