@@ -414,8 +414,8 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
               {activeThread?.messages.map((msg) => {
                 const isAdmin = msg.sender === 'ADMIN';
 
-                // Date separator logic
-                const currentDateLabel = getDateLabel(activeThread.lastMessageTime);
+                // Date separator logic fixed using individual message timestamp/createdAt
+                const currentDateLabel = getDateLabel(msg.createdAt || msg.timestamp);
                 let showDateDivider = false;
                 if (currentDateLabel && currentDateLabel !== lastRenderedDate) {
                   showDateDivider = true;
