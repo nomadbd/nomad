@@ -69,14 +69,12 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
   const getDateLabel = (dateInput?: string | number | Date) => {
     if (!dateInput) return 'Today';
 
-    // 12-hour time format (e.g., "02:03 AM") directly falling back to Today
     if (typeof dateInput === 'string' && /^(0?[1-9]|1[0-2]):[0-5][0-9]\s?(AM|PM)$/i.test(dateInput.trim())) {
       return 'Today';
     }
 
     const date = new Date(dateInput);
 
-    // If parsing fails, fall back to Today so the label never vanishes
     if (isNaN(date.getTime())) {
       return 'Today';
     }
@@ -177,7 +175,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
     }
   };
 
-  // Header Title and Subtitle Logic (Email Priority over Phone)
+  // Header Title and Subtitle Logic
   const isEmailSameAsName =
     !activeThread?.userName ||
     activeThread.userName.toLowerCase().trim() === activeThread.userEmail?.toLowerCase().trim();
@@ -270,7 +268,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
                   onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.04)')}
                   onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                 >
-                  {/* AVATAR */}
+                  {/* AVATAR WITH IMAGE OR FALLBACK */}
                   <div
                     style={{
                       width: '40px',
@@ -286,9 +284,18 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
                       justifyContent: 'center',
                       flexShrink: 0,
                       marginTop: '2px',
+                      overflow: 'hidden'
                     }}
                   >
-                    {initialLetter}
+                    {thread.avatarUrl ? (
+                      <img
+                        src={thread.avatarUrl}
+                        alt={displayName}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      />
+                    ) : (
+                      initialLetter
+                    )}
                   </div>
 
                   {/* CARD CONTENT */}
@@ -406,8 +413,20 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
               <BackIcon />
             </button>
 
-            <div style={styles.headerAvatarStyle} onClick={openDrawer}>
-              {headerTitle ? headerTitle.charAt(0).toUpperCase() : 'U'}
+            {/* CHAT HEADER AVATAR WITH IMAGE OR FALLBACK */}
+            <div 
+              style={{ ...styles.headerAvatarStyle, overflow: 'hidden', padding: 0 }} 
+              onClick={openDrawer}
+            >
+              {activeThread?.avatarUrl ? (
+                <img
+                  src={activeThread.avatarUrl}
+                  alt={headerTitle || ''}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              ) : (
+                headerTitle ? headerTitle.charAt(0).toUpperCase() : 'U'
+              )}
             </div>
 
             <div style={styles.headerInfoStyle} onClick={openDrawer}>
@@ -424,10 +443,8 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
               {activeThread?.messages.map((msg) => {
                 const isAdmin = msg.sender === 'ADMIN';
 
-                // Safely determine date value from available properties or fallback to thread time
                 const rawDate = msg.createdAt || (msg as any).created_at || (msg as any).date || activeThread?.lastMessageTime || msg.timestamp;
 
-                // Date separator label logic
                 const currentDateLabel = getDateLabel(rawDate);
                 let showDateDivider = false;
                 if (currentDateLabel && currentDateLabel !== lastRenderedDate) {
@@ -435,7 +452,6 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
                   lastRenderedDate = currentDateLabel;
                 }
 
-                // Format time string safely (e.g. "10:48 AM")
                 const displayTime = (() => {
                   if (typeof msg.timestamp === 'string' && (msg.timestamp.includes('AM') || msg.timestamp.includes('PM') || msg.timestamp.includes(':'))) {
                     return msg.timestamp;
@@ -578,8 +594,17 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
             </div>
 
             <div style={styles.profileHeroStyle}>
-              <div style={styles.drawerAvatarStyle}>
-                {headerTitle ? headerTitle.charAt(0).toUpperCase() : 'U'}
+              {/* DRAWER AVATAR WITH IMAGE OR FALLBACK */}
+              <div style={{ ...styles.drawerAvatarStyle, overflow: 'hidden', padding: 0 }}>
+                {activeThread.avatarUrl ? (
+                  <img
+                    src={activeThread.avatarUrl}
+                    alt={headerTitle || ''}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                ) : (
+                  headerTitle ? headerTitle.charAt(0).toUpperCase() : 'U'
+                )}
               </div>
               <div style={styles.drawerHeroTextStyle}>
                 <span style={styles.drawerNameStyle}>{headerTitle}</span>
@@ -606,7 +631,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
               </div>
             </div>
 
-            {/* QUICK ACTIONS (CONDITIONAL RENDERING) */}
+            {/* QUICK ACTIONS */}
             <div style={{ display: 'flex', justifyContent: 'center', gap: '24px', margin: '20px 0' }}>
               {activeThread.userEmail && (
                 <a
