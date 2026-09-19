@@ -28,16 +28,30 @@ export const MessageSidebar: React.FC<MessageSidebarProps> = ({
           <span style={{ fontSize: '8px', color: '#aaaaaa', fontWeight: 600, letterSpacing: '2.5px' }}>
             FILTER BY ROLE
           </span>
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            {['ALL', 'AMBASSADOR', 'INVITED', 'CUSTOMER', 'STAFF'].map((role) => (
+          <div
+            style={{
+              display: 'flex',
+              gap: '8px',
+              overflowX: 'auto',
+              whiteSpace: 'nowrap',
+              paddingBottom: '4px',
+              WebkitOverflowScrolling: 'touch',
+              scrollbarWidth: 'none',
+            }}
+          >
+            {['ALL', 'AMBASSADOR', 'INVITED', 'STAFF'].map((role) => (
               <button
                 key={role}
                 onClick={() => setRoleFilter(role)}
                 style={{
                   ...styles.filterChipStyle,
-                  backgroundColor: roleFilter === role ? '#ffffff' : 'rgba(255, 255, 255, 0.08)',
-                  color: roleFilter === role ? '#000000' : '#bbbbbb',
-                  borderColor: roleFilter === role ? '#ffffff' : 'rgba(255, 255, 255, 0.15)',
+                  flexShrink: 0,
+                  backgroundColor: roleFilter === role ? 'rgba(255, 255, 255, 0.12)' : 'rgba(255, 255, 255, 0.04)',
+                  color: roleFilter === role ? '#ffffff' : '#888888',
+                  border: '1px solid',
+                  borderColor: roleFilter === role ? '#ffffff' : 'rgba(255, 255, 255, 0.1)',
+                  fontWeight: roleFilter === role ? 600 : 400,
+                  transition: 'all 0.15s ease',
                 }}
               >
                 {role}
