@@ -9,7 +9,6 @@ import {
   AdminStaff,
   AdminCustomers,
   AdminLogistics,
-  StaffProfile,
   AdminMessages,
   AdminNotifications
 } from '../components/admin';
@@ -215,27 +214,62 @@ const AdminDashboard: React.FC = () => {
       {/* মূল হেডার */}
       {!isChatOpen && (
         <header className={`${styles.nomadHeader} ${!isHeaderVisible ? styles.headerHidden : ''}`}>
-          {/* সার্চ অপশন খোলা থাকলে ইনপুট বক্স দেখাবে */}
+          {/* প্রিমিয়াম হালকা ডিম্বাকার (Pill-Shaped) সার্চ ইনপুট */}
           {isSearchOpen ? (
-            <div style={{ display: 'flex', alignItems: 'center', width: '100%', gap: '8px' }}>
-              <input
-                type="text"
-                placeholder="SEARCH..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                autoFocus
+            <div style={{ display: 'flex', alignItems: 'center', width: '100%', gap: '10px' }}>
+              <div
                 style={{
+                  position: 'relative',
+                  display: 'flex',
+                  alignItems: 'center',
                   width: '100%',
-                  backgroundColor: 'rgba(255, 255, 255, 0.08)',
-                  border: '1px solid rgba(255, 255, 255, 0.2)',
-                  color: '#ffffff',
-                  padding: '6px 12px',
-                  borderRadius: '4px',
-                  fontSize: '12px',
-                  fontFamily: 'monospace',
-                  outline: 'none',
+                  backgroundColor: '#0a0a0a',
+                  border: '1px solid #2d2d2d',
+                  borderRadius: '25px',
+                  padding: '2px 14px',
+                  boxShadow: '0 4px 15px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05)',
+                  transition: 'all 0.2s ease-in-out',
                 }}
-              />
+              >
+                <div style={{ display: 'flex', alignItems: 'center', opacity: 0.5, marginRight: '8px' }}>
+                  <SearchIcon width={14} height={14} />
+                </div>
+                <input
+                  type="text"
+                  placeholder="SEARCH..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  autoFocus
+                  style={{
+                    width: '100%',
+                    backgroundColor: 'transparent',
+                    border: 'none',
+                    color: '#ffffff',
+                    padding: '7px 0',
+                    fontSize: '11px',
+                    fontFamily: 'monospace, sans-serif',
+                    letterSpacing: '1px',
+                    outline: 'none',
+                  }}
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#777',
+                      cursor: 'pointer',
+                      fontSize: '11px',
+                      padding: '0 4px',
+                      display: 'flex',
+                      alignItems: 'center',
+                    }}
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
               <button
                 className={styles.nomadActionBtn}
                 onClick={() => {
@@ -244,8 +278,17 @@ const AdminDashboard: React.FC = () => {
                 }}
                 title="Close Search"
                 aria-label="Close Search"
+                style={{
+                  borderRadius: '50%',
+                  width: '32px',
+                  height: '32px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0
+                }}
               >
-                <CloseIcon width={16} height={16} />
+                <CloseIcon width={14} height={14} />
               </button>
             </div>
           ) : (
@@ -257,7 +300,6 @@ const AdminDashboard: React.FC = () => {
               </a>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                {/* মেসেজ, প্রোডাক্টস এবং অ্যাম্বাসেডর ট্যাবে প্লাস (+) আইকন সক্রিয় থাকবে */}
                 {(activeTab === 'products' || activeTab === 'ambassadors' || activeTab === 'messages') && (
                   <button
                     className={`${styles.nomadActionBtn} ${isAddOpen ? styles.nomadActionBtnActive : ''}`}
