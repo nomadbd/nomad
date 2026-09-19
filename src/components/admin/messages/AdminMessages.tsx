@@ -167,14 +167,18 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
     }
   };
 
+  // UPDATED: Header Title and Subtitle Logic (Email Priority over Phone)
   const isEmailSameAsName =
     !activeThread?.userName ||
-    activeThread.userName.toLowerCase().trim() === activeThread.userEmail.toLowerCase().trim();
+    activeThread.userName.toLowerCase().trim() === activeThread.userEmail?.toLowerCase().trim();
 
-  const headerTitle = isEmailSameAsName ? activeThread?.userEmail : activeThread?.userName;
+  const headerTitle = isEmailSameAsName
+    ? (activeThread?.userEmail || activeThread?.userPhone || activeThread?.userName)
+    : activeThread?.userName;
+
   const headerSubtitle = isEmailSameAsName
-    ? activeThread?.userPhone || ''
-    : `${activeThread?.userEmail}${activeThread?.userPhone ? ` • ${activeThread.userPhone}` : ''}`;
+    ? (activeThread?.userEmail ? activeThread?.userPhone || '' : '')
+    : (activeThread?.userEmail || activeThread?.userPhone || '');
 
   if (loading && filteredThreads.length === 0) {
     return (
@@ -299,7 +303,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
                       </span>
                       <span
                         style={{
-                          color: '#aaaaaa', // BRIGHTENED GREY
+                          color: '#aaaaaa',
                           fontSize: '11px',
                           whiteSpace: 'nowrap',
                           flexShrink: 0,
@@ -320,7 +324,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
                           padding: '2px 6px',
                           borderRadius: '4px',
                           backgroundColor: 'rgba(255, 255, 255, 0.08)',
-                          color: '#bbbbbb', // BRIGHTENED GREY
+                          color: '#bbbbbb',
                           whiteSpace: 'nowrap',
                           textTransform: 'uppercase',
                         }}
@@ -355,7 +359,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
                     {/* LINE 3: MESSAGE PREVIEW */}
                     <p
                       style={{
-                        color: '#cccccc', // BRIGHTENED GREY
+                        color: '#cccccc',
                         fontSize: '12px',
                         fontWeight: 300,
                         margin: 0,
@@ -471,11 +475,10 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
                       >
                         {msg.text}
                       </div>
-                      {/* BRIGHTENED TIMESTAMP UNDER BUBBLE */}
                       <span
                         style={{
                           fontSize: '10.5px',
-                          color: '#aaaaaa', // BRIGHTENED GREY FOR VISIBILITY
+                          color: '#aaaaaa',
                           marginTop: '3px',
                           padding: '0 2px',
                           fontWeight: 400,
@@ -540,7 +543,7 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
         </div>
       )}
 
-      {/* QUICK ACTION DRAWER */}
+      {/* QUICK ACTION DRAWER / BOTTOM SHEET */}
       {isDrawerOpen && activeThread && (
         <div style={styles.drawerOverlayStyle} onClick={closeDrawer}>
           <div style={styles.drawerContainerStyle} onClick={(e) => e.stopPropagation()}>
@@ -557,7 +560,9 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
               </div>
               <div style={styles.drawerHeroTextStyle}>
                 <span style={styles.drawerNameStyle}>{headerTitle}</span>
-                <span style={{ fontSize: '11px', color: '#aaaaaa' }}>{activeThread.userEmail}</span>
+                {activeThread.userEmail && (
+                  <span style={{ fontSize: '11px', color: '#aaaaaa' }}>{activeThread.userEmail}</span>
+                )}
 
                 <span
                   style={{
@@ -578,53 +583,65 @@ export const AdminMessages: React.FC<AdminMessagesProps> = ({
               </div>
             </div>
 
-            {/* QUICK ACTIONS */}
-            <div style={{ display: 'flex', justifyContent: 'space-around', margin: '20px 0' }}>
-              <a
-                href={`mailto:${activeThread.userEmail}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', textDecoration: 'none' }}
-              >
-                <div style={{ width: '46px', height: '46px', borderRadius: '50%', backgroundColor: 'rgba(255, 255, 255, 0.08)', border: '1px solid rgba(255, 255, 255, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff' }}>
-                  <EmailIcon />
-                </div>
-                <span style={{ fontSize: '9px', fontWeight: 600, color: '#aaaaaa', letterSpacing: '0.8px' }}>EMAIL</span>
-              </a>
+            {/* UPDATED: QUICK ACTIONS (CONDITIONAL RENDERING) */}
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '24px', margin: '20px 0' }}>
+              {/* ইমেইল থাকলে তবেই ইমেইল বাটন দেখাবে */}
+              {activeThread.userEmail && (
+                <a
+                  href={`mailto:${activeThread.userEmail}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', textDecoration: 'none' }}
+                >
+                  <div style={{ width: '46px', height: '46px', borderRadius: '50%', backgroundColor: 'rgba(255, 255, 255, 0.08)', border: '1px solid rgba(255, 255, 255, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff' }}>
+                    <EmailIcon />
+                  </div>
+                  <span style={{ fontSize: '9px', fontWeight: 600, color: '#aaaaaa', letterSpacing: '0.8px' }}>EMAIL</span>
+                </a>
+              )}
 
-              <a
-                href={activeThread.userPhone ? `tel:${activeThread.userPhone}` : '#'}
-                style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', textDecoration: 'none', opacity: activeThread.userPhone ? 1 : 0.3, pointerEvents: activeThread.userPhone ? 'auto' : 'none' }}
-              >
-                <div style={{ width: '46px', height: '46px', borderRadius: '50%', backgroundColor: 'rgba(255, 255, 255, 0.08)', border: '1px solid rgba(255, 255, 255, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff' }}>
-                  <CallIcon />
-                </div>
-                <span style={{ fontSize: '9px', fontWeight: 600, color: '#aaaaaa', letterSpacing: '0.8px' }}>CALL</span>
-              </a>
+              {/* ফোন নম্বর থাকলেই কেবল কল এবং ওয়াটসঅ্যাপ বাটন দেখাবে */}
+              {activeThread.userPhone && (
+                <>
+                  <a
+                    href={`tel:${activeThread.userPhone}`}
+                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', textDecoration: 'none' }}
+                  >
+                    <div style={{ width: '46px', height: '46px', borderRadius: '50%', backgroundColor: 'rgba(255, 255, 255, 0.08)', border: '1px solid rgba(255, 255, 255, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff' }}>
+                      <CallIcon />
+                    </div>
+                    <span style={{ fontSize: '9px', fontWeight: 600, color: '#aaaaaa', letterSpacing: '0.8px' }}>CALL</span>
+                  </a>
 
-              <a
-                href={activeThread.userPhone ? `https://wa.me/${activeThread.userPhone.replace(/[^0-9]/g, '')}` : '#'}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', textDecoration: 'none', opacity: activeThread.userPhone ? 1 : 0.3, pointerEvents: activeThread.userPhone ? 'auto' : 'none' }}
-              >
-                <div style={{ width: '46px', height: '46px', borderRadius: '50%', backgroundColor: 'rgba(255, 255, 255, 0.08)', border: '1px solid rgba(255, 255, 255, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff' }}>
-                  <MessageIcon />
-                </div>
-                <span style={{ fontSize: '9px', fontWeight: 600, color: '#aaaaaa', letterSpacing: '0.8px' }}>WHATSAPP</span>
-              </a>
+                  <a
+                    href={`https://wa.me/${activeThread.userPhone.replace(/[^0-9]/g, '')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', textDecoration: 'none' }}
+                  >
+                    <div style={{ width: '46px', height: '46px', borderRadius: '50%', backgroundColor: 'rgba(255, 255, 255, 0.08)', border: '1px solid rgba(255, 255, 255, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff' }}>
+                      <MessageIcon />
+                    </div>
+                    <span style={{ fontSize: '9px', fontWeight: 600, color: '#aaaaaa', letterSpacing: '0.8px' }}>WHATSAPP</span>
+                  </a>
+                </>
+              )}
             </div>
 
             {/* DETAILS LIST */}
             <div style={styles.infoListStyle}>
-              <div style={styles.infoRowStyle}>
-                <span style={styles.infoLabelStyle}>Email Address</span>
-                <span style={{ ...styles.infoValueStyle, color: '#ffffff' }}>{activeThread.userEmail}</span>
-              </div>
-              <div style={styles.infoRowStyle}>
-                <span style={styles.infoLabelStyle}>Phone Number</span>
-                <span style={{ ...styles.infoValueStyle, color: '#ffffff' }}>{activeThread.userPhone || 'N/A'}</span>
-              </div>
+              {activeThread.userEmail && (
+                <div style={styles.infoRowStyle}>
+                  <span style={styles.infoLabelStyle}>Email Address</span>
+                  <span style={{ ...styles.infoValueStyle, color: '#ffffff' }}>{activeThread.userEmail}</span>
+                </div>
+              )}
+              {activeThread.userPhone && (
+                <div style={styles.infoRowStyle}>
+                  <span style={styles.infoLabelStyle}>Phone Number</span>
+                  <span style={{ ...styles.infoValueStyle, color: '#ffffff' }}>{activeThread.userPhone}</span>
+                </div>
+              )}
               <div style={styles.infoRowStyle}>
                 <span style={styles.infoLabelStyle}>Account Role</span>
                 <span style={{ ...styles.infoValueStyle, color: '#ffffff' }}>{activeThread.role}</span>
