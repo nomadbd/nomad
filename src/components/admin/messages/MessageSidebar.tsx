@@ -25,7 +25,7 @@ export const MessageSidebar: React.FC<MessageSidebarProps> = ({
       {/* FILTER BAR */}
       {isFilterOpen && (
         <div style={styles.headerFilterBarStyle}>
-          <span style={{ fontSize: '8px', color: '#aaaaaa', fontWeight: 600, letterSpacing: '2.5px' }}>
+          <span style={{ fontSize: '8px', color: '#888888', fontWeight: 600, letterSpacing: '2.5px', marginBottom: '8px', display: 'block' }}>
             FILTER BY ROLE
           </span>
           <div
@@ -34,29 +34,37 @@ export const MessageSidebar: React.FC<MessageSidebarProps> = ({
               gap: '8px',
               overflowX: 'auto',
               whiteSpace: 'nowrap',
-              paddingBottom: '4px',
+              paddingBottom: '6px',
               WebkitOverflowScrolling: 'touch',
               scrollbarWidth: 'none',
             }}
           >
-            {['ALL', 'AMBASSADOR', 'INVITED', 'STAFF'].map((role) => (
-              <button
-                key={role}
-                onClick={() => setRoleFilter(role)}
-                style={{
-                  ...styles.filterChipStyle,
-                  flexShrink: 0,
-                  backgroundColor: roleFilter === role ? 'rgba(255, 255, 255, 0.12)' : 'rgba(255, 255, 255, 0.04)',
-                  color: roleFilter === role ? '#ffffff' : '#888888',
-                  border: '1px solid',
-                  borderColor: roleFilter === role ? '#ffffff' : 'rgba(255, 255, 255, 0.1)',
-                  fontWeight: roleFilter === role ? 600 : 400,
-                  transition: 'all 0.15s ease',
-                }}
-              >
-                {role}
-              </button>
-            ))}
+            {['ALL', 'AMBASSADOR', 'STAFF', 'INVITED'].map((role) => {
+              const isActive = roleFilter === role;
+              return (
+                <button
+                  key={role}
+                  onClick={() => setRoleFilter(role)}
+                  style={{
+                    ...styles.filterChipStyle,
+                    flexShrink: 0,
+                    padding: '6px 14px',
+                    borderRadius: '20px',
+                    backgroundColor: isActive ? 'rgba(255, 255, 255, 0.12)' : 'rgba(255, 255, 255, 0.02)',
+                    color: isActive ? '#ffffff' : '#777777',
+                    border: '1px solid',
+                    borderColor: isActive ? 'rgba(255, 255, 255, 0.25)' : 'rgba(255, 255, 255, 0.06)',
+                    fontSize: '10px',
+                    fontWeight: isActive ? 600 : 400,
+                    letterSpacing: '0.5px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                  }}
+                >
+                  {role}
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
