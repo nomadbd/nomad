@@ -18,7 +18,7 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
   isFilterOpen: propFilterOpen,
   onToggleSearch,
   onToggleFilter,
-  searchQuery,
+  searchQuery = '',
   onSearchChange
 }) => {
   const [internalSearchTerm, setInternalSearchTerm] = useState<string>('');
@@ -224,31 +224,6 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({
           {toast.type === 'success' ? '✓' : '⚠'} {toast.message}
         </div>
       )}
-
-      <div className={`filter-expand-wrapper ${searchOpen ? 'open' : ''}`}>
-        <div className="filter-expand-content animate-fade-in">
-          <input
-            type="text"
-            placeholder="SEARCH BY ID, NAME, PHONE, EMAIL, ITEM OR TRACKING..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            style={{
-              width: '100%',
-              backgroundColor: '#000',
-              border: '1px solid #333',
-              padding: '11px 16px',
-              color: '#fff',
-              fontSize: '11px',
-              fontFamily: 'monospace',
-              letterSpacing: '1px',
-              outline: 'none',
-              boxSizing: 'border-box',
-              borderRadius: '25px',
-              transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
-            }}
-          />
-        </div>
-      </div>
 
       <div className={`filter-expand-wrapper ${isFilterVisible ? 'open' : ''}`}>
         <OrderFiltersBar
