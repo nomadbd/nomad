@@ -22,6 +22,26 @@ interface ConciergeModalProps {
   scrollToBottom: (smooth?: boolean) => void;
 }
 
+// তারিখ 'TODAY', 'YESTERDAY' নাকি অন্য তারিখ তা ফরম্যাট করার হেলপার ফাংশন
+const getDateLabel = (dateString?: string) => {
+  if (!dateString) return null;
+  
+  const msgDate = new Date(dateString);
+  const today = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(today.getDate() - 1);
+
+  const isSameDay = (d1: Date, d2: Date) =>
+    d1.getFullYear() === d2.getFullYear() &&
+    d1.getMonth() === d2.getMonth() &&
+    d1.getDate() === d2.getDate();
+
+  if (isSameDay(msgDate, today)) return 'TODAY';
+  if (isSameDay(msgDate, yesterday)) return 'YESTERDAY';
+
+  return msgDate.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }).toUpperCase();
+};
+
 export const ConciergeModal: React.FC<ConciergeModalProps> = ({
   isConciergeOpen,
   isModalAnimating,
@@ -93,27 +113,47 @@ export const ConciergeModal: React.FC<ConciergeModalProps> = ({
             <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {messages.map((msg, index) => {
                 const isAdmin = msg.sender_role === 'admin' || msg.sender_role === 'support';
+                
+                // তারিখ বিভাজন হিসাব করা (created_at অথবা timestamp অনুযায়ী)
+                const msgTimestamp = (msg as any).created_at || (msg as any).timestamp;
+                const currentDateLabel = getDateLabel(msgTimestamp);
+                
+                const prevMsg = messages[index - 1];
+                const prevTimestamp = prevMsg ? ((prevMsg as any).created_at || (prevMsg as any).timestamp) : null;
+                const prevDateLabel = getDateLabel(prevTimestamp);
+
+                // আগের মেসেজের তারিখ আর এই মেসেজের তারিখ ভিন্ন হলে ডিভাইডার দেখাবে
+                const showDateDivider = currentDateLabel && currentDateLabel !== prevDateLabel;
+
                 return (
-                  <div key={msg.id || index} style={{ display: 'flex', flexDirection: 'column', alignItems: isAdmin ? 'flex-start' : 'flex-end' }}>
-                    <span style={{ fontSize: '8px', color: '#666666', letterSpacing: '1px', marginBottom: '3px' }}>
-                      {isAdmin ? 'NOMAD DESK' : 'YOU'}
-                    </span>
-                    <div style={{
-                      maxWidth: '85%',
-                      padding: '10px 14px',
-                      fontSize: '12px',
-                      lineHeight: '1.5',
-                      fontWeight: 300,
-                      backgroundColor: isAdmin ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.12)',
-                      color: '#ffffff',
-                      borderRadius: isAdmin ? '14px 14px 14px 2px' : '14px 14px 2px 14px',
-                      border: isAdmin ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid rgba(255, 255, 255, 0.18)',
-                      wordBreak: 'break-word',
-                      whiteSpace: 'pre-wrap'
-                    }}>
-                      {msg.message}
+                  <React.Fragment key={msg.id || index}>
+                    {showDateDivider && (
+                      <div style={dateDividerWrapperStyle}>
+                        <span style={dateDividerTextStyle}>{currentDateLabel}</span>
+                      </div>
+                    )}
+
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: isAdmin ? 'flex-start' : 'flex-end' }}>
+                      <span style={{ fontSize: '8px', color: '#666666', letterSpacing: '1px', marginBottom: '3px' }}>
+                        {isAdmin ? 'NOMAD DESK' : 'YOU'}
+                      </span>
+                      <div style={{
+                        maxWidth: '85%',
+                        padding: '10px 14px',
+                        fontSize: '12px',
+                        lineHeight: '1.5',
+                        fontWeight: 300,
+                        backgroundColor: isAdmin ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.12)',
+                        color: '#ffffff',
+                        borderRadius: isAdmin ? '14px 14px 14px 2px' : '14px 14px 2px 14px',
+                        border: isAdmin ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid rgba(255, 255, 255, 0.18)',
+                        wordBreak: 'break-word',
+                        whiteSpace: 'pre-wrap'
+                      }}>
+                        {msg.message}
+                      </div>
                     </div>
-                  </div>
+                  </React.Fragment>
                 );
               })}
             </div>
@@ -224,4 +264,21 @@ const chatInputFormStyle: React.CSSProperties = {
   gap: '8px',
   width: '100%',
   boxSizing: 'border-box'
+};
+
+const dateDividerWrapperStyle: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  margin: '16px 0 8px 0'
+};
+
+const dateDividerTextStyle: React.CSSProperties = {
+  fontSize: '9px',
+  letterSpacing: '1.5px',
+  color: 'rgba(255, 255, 255, 0.4)',
+  backgroundColor: 'rgba(255, 255, 255, 0.05)',
+  padding: '3px 10px',
+  borderRadius: '12px',
+  fontWeight: 400
 };
