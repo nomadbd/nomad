@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+Import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { supabase } from '@/supabaseClient';
 import { uploadToCloudinary, deleteFromCloudinary } from '@/cloudinary';
@@ -48,7 +48,6 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
   const [editMediaFiles, setEditMediaFiles] = useState<File[]>([]);
   const [editMediaPreviews, setEditMediaPreviews] = useState<{ url: string; type: 'image' | 'video' }[]>([]);
 
-  const [searchTerm, setSearchTerm] = useState<string>('');
   const [stockFilter, setStockFilter] = useState<'all' | 'in_stock' | 'sold_out' | 'hidden'>('all');
   const [dateSort, setDateSort] = useState<'newest' | 'oldest'>('newest');
   const [priceSort, setPriceSort] = useState<'none' | 'price_low' | 'price_high'>('none');
@@ -522,7 +521,7 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
     }
   };
 
-  const activeSearch = searchQuery || searchTerm;
+  const activeSearch = searchQuery;
 
   let filteredProducts = products.filter(p => {
     const isHiddenProduct = p.status === 'archived' || p.status === 'hidden';
@@ -803,55 +802,66 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
         document.body
       )}
 
-      <div className={`filter-expand-wrapper ${isFilterOpen || isSearchOpen ? 'open' : ''}`}>
-        <div className="filter-expand-content">
-          <div style={{ display: 'flex', flexDirection: 'column', marginBottom: '20px', marginTop: '10px', backgroundColor: '#080808', padding: '16px', border: '1px solid #1a1a1a', borderRadius: '8px' }}>
-            <div className={`search-filter-sub-wrapper ${isSearchOpen ? 'open' : ''}`}>
-              <div className="search-filter-sub-inner">
-                <div style={{ paddingBottom: isFilterOpen ? '16px' : '0px', transition: 'padding 0.35s ease' }}>
-                  <input
-                    type="text"
-                    value={searchQuery || searchTerm}
-                    onChange={(e) => {
-                      if (onSearchChange) {
-                        onSearchChange(e.target.value);
-                      }
-                      setSearchTerm(e.target.value);
-                    }}
-                    placeholder="SEARCH PRODUCTS..."
-                    className="smooth-transition animate-fade-in"
-                    style={{ width: '100%', backgroundColor: '#000', border: '1px solid #333', borderRadius: '25px', padding: '8px 16px', color: '#fff', fontSize: '11px', fontFamily: 'monospace', boxSizing: 'border-box', outline: 'none' }}
-                  />
+      {isFilterOpen && (
+        <div className="filter-expand-wrapper open">
+          <div className="filter-expand-content">
+            <div style={{ display: 'flex', flexDirection: 'column', marginBottom: '20px', marginTop: '10px', backgroundColor: '#080808', padding: '16px', border: '1px solid #1a1a1a', borderRadius: '8px' }}>
+              <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%' }}>
+                <div>
+                  <div style={{ fontSize: '10px', color: '#777', fontFamily: 'monospace', letterSpacing: '1px', marginBottom: '8px' }}>STOCK STATUS</div>
+                  <div style={{ display: 'flex', gap: '14px', overflowX: 'auto', whiteSpace: 'nowrap', flexWrap: 'nowrap', scrollbarWidth: 'none' }}>
+                    {[
+                      { label: 'ALL', value: 'all' },
+                      { label: 'IN STOCK', value: 'in_stock' },
+                      { label: 'SOLD OUT', value: 'sold_out' },
+                      { label: 'HIDDEN', value: 'hidden' }
+                    ].map((item) => (
+                      <button
+                        key={item.value}
+                        type="button"
+                        onClick={() => setStockFilter(item.value as any)}
+                        className="smooth-transition"
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          padding: '0',
+                          color: stockFilter === item.value ? '#fff' : '#666',
+                          fontSize: '11px',
+                          fontFamily: 'monospace',
+                          cursor: 'pointer',
+                          fontWeight: stockFilter === item.value ? '700' : 'normal',
+                          textDecoration: 'none',
+                          flexShrink: 0
+                        }}
+                      >
+                        {item.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            </div>
 
-            <div className={`search-filter-sub-wrapper ${isFilterOpen ? 'open' : ''}`}>
-              <div className="search-filter-sub-inner">
-                <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%' }}>
-                  <div>
-                    <div style={{ fontSize: '10px', color: '#777', fontFamily: 'monospace', letterSpacing: '1px', marginBottom: '8px' }}>STOCK STATUS</div>
-                    <div style={{ display: 'flex', gap: '14px', overflowX: 'auto', whiteSpace: 'nowrap', flexWrap: 'nowrap', scrollbarWidth: 'none' }}>
+                <div>
+                  <div style={{ fontSize: '10px', color: '#777', fontFamily: 'monospace', letterSpacing: '1px', marginBottom: '8px' }}>SORT</div>
+                  <div style={{ display: 'flex', gap: '16px', alignItems: 'center', overflowX: 'auto', whiteSpace: 'nowrap', flexWrap: 'nowrap', scrollbarWidth: 'none' }}>
+                    <div style={{ display: 'flex', gap: '14px', flexShrink: 0 }}>
                       {[
-                        { label: 'ALL', value: 'all' },
-                        { label: 'IN STOCK', value: 'in_stock' },
-                        { label: 'SOLD OUT', value: 'sold_out' },
-                        { label: 'HIDDEN', value: 'hidden' }
+                        { label: 'NEWEST FIRST', value: 'newest' },
+                        { label: 'OLDEST FIRST', value: 'oldest' }
                       ].map((item) => (
                         <button
                           key={item.value}
                           type="button"
-                          onClick={() => setStockFilter(item.value as any)}
+                          onClick={() => setDateSort(item.value as any)}
                           className="smooth-transition"
                           style={{
                             background: 'none',
                             border: 'none',
                             padding: '0',
-                            color: stockFilter === item.value ? '#fff' : '#666',
+                            color: dateSort === item.value ? '#fff' : '#666',
                             fontSize: '11px',
                             fontFamily: 'monospace',
                             cursor: 'pointer',
-                            fontWeight: stockFilter === item.value ? '700' : 'normal',
+                            fontWeight: dateSort === item.value ? '700' : 'normal',
                             textDecoration: 'none',
                             flexShrink: 0
                           }}
@@ -860,107 +870,74 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
                         </button>
                       ))}
                     </div>
-                  </div>
-
-                  <div>
-                    <div style={{ fontSize: '10px', color: '#777', fontFamily: 'monospace', letterSpacing: '1px', marginBottom: '8px' }}>SORT</div>
-                    <div style={{ display: 'flex', gap: '16px', alignItems: 'center', overflowX: 'auto', whiteSpace: 'nowrap', flexWrap: 'nowrap', scrollbarWidth: 'none' }}>
-                      <div style={{ display: 'flex', gap: '14px', flexShrink: 0 }}>
-                        {[
-                          { label: 'NEWEST FIRST', value: 'newest' },
-                          { label: 'OLDEST FIRST', value: 'oldest' }
-                        ].map((item) => (
-                          <button
-                            key={item.value}
-                            type="button"
-                            onClick={() => setDateSort(item.value as any)}
-                            className="smooth-transition"
-                            style={{
-                              background: 'none',
-                              border: 'none',
-                              padding: '0',
-                              color: dateSort === item.value ? '#fff' : '#666',
-                              fontSize: '11px',
-                              fontFamily: 'monospace',
-                              cursor: 'pointer',
-                              fontWeight: dateSort === item.value ? '700' : 'normal',
-                              textDecoration: 'none',
-                              flexShrink: 0
-                            }}
-                          >
-                            {item.label}
-                          </button>
-                        ))}
-                      </div>
-                      <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0 }}>
-                        <input
-                          type="date"
-                          value={startDate}
-                          onChange={(e) => setStartDate(e.target.value)}
-                          className="smooth-transition"
-                          style={{ backgroundColor: '#000', border: '1px solid #333', color: '#aaa', fontSize: '10px', fontFamily: 'monospace', padding: '4px 6px', borderRadius: '4px', outline: 'none' }}
-                        />
-                        <span style={{ color: '#555', fontSize: '10px' }}>-</span>
-                        <input
-                          type="date"
-                          value={endDate}
-                          onChange={(e) => setEndDate(e.target.value)}
-                          className="smooth-transition"
-                          style={{ backgroundColor: '#000', border: '1px solid #333', color: '#aaa', fontSize: '10px', fontFamily: 'monospace', padding: '4px 6px', borderRadius: '4px', outline: 'none' }}
-                        />
-                      </div>
+                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0 }}>
+                      <input
+                        type="date"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                        className="smooth-transition"
+                        style={{ backgroundColor: '#000', border: '1px solid #333', color: '#aaa', fontSize: '10px', fontFamily: 'monospace', padding: '4px 6px', borderRadius: '4px', outline: 'none' }}
+                      />
+                      <span style={{ color: '#555', fontSize: '10px' }}>-</span>
+                      <input
+                        type="date"
+                        value={endDate}
+                        onChange={(e) => setEndDate(e.target.value)}
+                        className="smooth-transition"
+                        style={{ backgroundColor: '#000', border: '1px solid #333', color: '#aaa', fontSize: '10px', fontFamily: 'monospace', padding: '4px 6px', borderRadius: '4px', outline: 'none' }}
+                      />
                     </div>
                   </div>
+                </div>
 
-                  <div>
-                    <div style={{ fontSize: '10px', color: '#777', fontFamily: 'monospace', letterSpacing: '1px', marginBottom: '8px' }}>PRICE</div>
-                    <div style={{ display: 'flex', gap: '16px', alignItems: 'center', overflowX: 'auto', whiteSpace: 'nowrap', flexWrap: 'nowrap', scrollbarWidth: 'none' }}>
-                      <div style={{ display: 'flex', gap: '14px', flexShrink: 0 }}>
-                        {[
-                          { label: 'HIGH TO LOW', value: 'price_high' },
-                          { label: 'LOW TO HIGH', value: 'price_low' }
-                        ].map((item) => (
-                          <button
-                            key={item.value}
-                            type="button"
-                            onClick={() => setPriceSort(priceSort === item.value ? 'none' : item.value as any)}
-                            className="smooth-transition"
-                            style={{
-                              background: 'none',
-                              border: 'none',
-                              padding: '0',
-                              color: priceSort === item.value ? '#fff' : '#666',
-                              fontSize: '11px',
-                              fontFamily: 'monospace',
-                              cursor: 'pointer',
-                              fontWeight: priceSort === item.value ? '700' : 'normal',
-                              textDecoration: 'none',
-                              flexShrink: 0
-                            }}
-                          >
-                            {item.label}
-                          </button>
-                        ))}
-                      </div>
-                      <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0 }}>
-                        <input
-                          type="number"
-                          placeholder="MIN"
-                          value={minPrice}
-                          onChange={(e) => setMinPrice(e.target.value)}
+                <div>
+                  <div style={{ fontSize: '10px', color: '#777', fontFamily: 'monospace', letterSpacing: '1px', marginBottom: '8px' }}>PRICE</div>
+                  <div style={{ display: 'flex', gap: '16px', alignItems: 'center', overflowX: 'auto', whiteSpace: 'nowrap', flexWrap: 'nowrap', scrollbarWidth: 'none' }}>
+                    <div style={{ display: 'flex', gap: '14px', flexShrink: 0 }}>
+                      {[
+                        { label: 'HIGH TO LOW', value: 'price_high' },
+                        { label: 'LOW TO HIGH', value: 'price_low' }
+                      ].map((item) => (
+                        <button
+                          key={item.value}
+                          type="button"
+                          onClick={() => setPriceSort(priceSort === item.value ? 'none' : item.value as any)}
                           className="smooth-transition"
-                          style={{ width: '60px', backgroundColor: '#000', border: '1px solid #333', color: '#fff', fontSize: '10px', fontFamily: 'monospace', padding: '4px 6px', borderRadius: '4px', outline: 'none' }}
-                        />
-                        <span style={{ color: '#555', fontSize: '10px' }}>-</span>
-                        <input
-                          type="number"
-                          placeholder="MAX"
-                          value={maxPrice}
-                          onChange={(e) => setMaxPrice(e.target.value)}
-                          className="smooth-transition"
-                          style={{ width: '60px', backgroundColor: '#000', border: '1px solid #333', color: '#fff', fontSize: '10px', fontFamily: 'monospace', padding: '4px 6px', borderRadius: '4px', outline: 'none' }}
-                        />
-                      </div>
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            padding: '0',
+                            color: priceSort === item.value ? '#fff' : '#666',
+                            fontSize: '11px',
+                            fontFamily: 'monospace',
+                            cursor: 'pointer',
+                            fontWeight: priceSort === item.value ? '700' : 'normal',
+                            textDecoration: 'none',
+                            flexShrink: 0
+                          }}
+                        >
+                          {item.label}
+                        </button>
+                      ))}
+                    </div>
+                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0 }}>
+                      <input
+                        type="number"
+                        placeholder="MIN"
+                        value={minPrice}
+                        onChange={(e) => setMinPrice(e.target.value)}
+                        className="smooth-transition"
+                        style={{ width: '60px', backgroundColor: '#000', border: '1px solid #333', color: '#fff', fontSize: '10px', fontFamily: 'monospace', padding: '4px 6px', borderRadius: '4px', outline: 'none' }}
+                      />
+                      <span style={{ color: '#555', fontSize: '10px' }}>-</span>
+                      <input
+                        type="number"
+                        placeholder="MAX"
+                        value={maxPrice}
+                        onChange={(e) => setMaxPrice(e.target.value)}
+                        className="smooth-transition"
+                        style={{ width: '60px', backgroundColor: '#000', border: '1px solid #333', color: '#fff', fontSize: '10px', fontFamily: 'monospace', padding: '4px 6px', borderRadius: '4px', outline: 'none' }}
+                      />
                     </div>
                   </div>
                 </div>
@@ -968,7 +945,7 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       {loading ? (
         <div style={{ textAlign: 'center', padding: '60px 0', color: '#666', fontSize: '11px' }}>LOADING PRODUCTS...</div>
@@ -1072,21 +1049,6 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
         .filter-expand-wrapper.open .filter-expand-content {
           opacity: 1;
           transform: translateY(0);
-        }
-        .search-filter-sub-wrapper {
-          display: grid;
-          grid-template-rows: 0fr;
-          opacity: 0;
-          transition: grid-template-rows 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease;
-          overflow: hidden;
-        }
-        .search-filter-sub-wrapper.open {
-          grid-template-rows: 1fr;
-          opacity: 1;
-        }
-        .search-filter-sub-inner {
-          min-height: 0;
-          overflow: hidden;
         }
         .showroom-row-container::-webkit-scrollbar {
           display: none;
