@@ -8,7 +8,7 @@ import {
   JoinSheet,
   ConciergeModal,
   JoinFooter
-} from './'; // join ফোল্ডারের ভেতরে থাকায় ইম্পোর্ট পাথ './' করা হয়েছে
+} from './'; 
 
 const toTitleCase = (str: string) => {
   if (!str) return '';
