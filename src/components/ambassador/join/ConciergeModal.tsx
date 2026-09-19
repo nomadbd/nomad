@@ -77,20 +77,6 @@ export const ConciergeModal: React.FC<ConciergeModalProps> = ({
           </button>
         </div>
 
-        {!(email || defaultEmail) && (
-          <div style={{ padding: '8px 16px', flexShrink: 0 }}>
-            <input
-              type="text"
-              inputMode="email"
-              style={underlineInputStyle}
-              placeholder="Your Return Email Address"
-              value={customSupportEmail}
-              onChange={(e) => setCustomSupportEmail(e.target.value)}
-              required
-            />
-          </div>
-        )}
-
         <div 
           ref={chatContainerRef}
           style={{ flex: 1, overflowY: 'auto', padding: '12px 16px', display: 'flex', flexDirection: 'column' }}
@@ -219,20 +205,6 @@ const modalHeaderStyle: React.CSSProperties = {
   backgroundColor: '#0a0a0a',
   zIndex: 20,
   flexShrink: 0
-};
-
-const underlineInputStyle: React.CSSProperties = {
-  width: '100%',
-  padding: '12px 0',
-  backgroundColor: 'transparent',
-  border: 'none',
-  borderBottom: '1px solid rgba(255, 255, 255, 0.2)',
-  color: '#ffffff',
-  fontSize: '13px',
-  fontWeight: 300,
-  letterSpacing: '0.5px',
-  outline: 'none',
-  boxSizing: 'border-box'
 };
 
 const chatInputFormStyle: React.CSSProperties = {
