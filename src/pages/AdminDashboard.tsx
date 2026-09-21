@@ -13,7 +13,7 @@ import {
   AdminMessages,
   AdminNotifications
 } from '../components/admin';
-import SendInvite from '../components/admin/ambassadors/invitations/SendInvite';
+import { SendInvite, AmbassadorList } from '../components/admin/ambassadors';
 import { PlusIcon, SearchIcon, FilterIcon, MenuIcon, CloseIcon } from '../components/icons';
 
 type TabType = 'overview' | 'orders' | 'products' | 'logistics' | 'messages' | 'notifications' | 'ambassadors' | 'staff' | 'customers';
@@ -548,11 +548,14 @@ const AdminDashboard: React.FC = () => {
             <AdminNotifications key="notifications" />
           )}
           {activeTab === 'ambassadors' && (
-            <SendInvite
-              key="ambassadors"
-              isOpen={isAddOpen}
-              onClose={() => setIsAddOpen(false)}
-            />
+            <>
+              <AmbassadorList key="ambassadors-list" />
+              <SendInvite
+                key="ambassadors-invite"
+                isOpen={isAddOpen}
+                onClose={() => setIsAddOpen(false)}
+              />
+            </>
           )}
           {activeTab === 'staff' && (
             <AdminStaff
