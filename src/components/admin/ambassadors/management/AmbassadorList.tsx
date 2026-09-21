@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { supabase } from '@/supabaseClient';
+import { supabase } from '@/lib/supabaseClient';
 
 interface AmbassadorProfile {
   id: string;
@@ -18,7 +18,6 @@ export default function AmbassadorList() {
   const fetchAmbassadors = async () => {
     setLoading(true);
     try {
-      // profiles এবং ambassador টেবিল জয়েন করে ডাটা ফেচ করা
       const { data, error } = await supabase
         .from('profiles')
         .select(`
@@ -59,7 +58,7 @@ export default function AmbassadorList() {
     fetchAmbassadors();
   }, []);
 
-  // ২. অ্যাম্বাসেডর ব্লক / ডিএক্টিভেট করার হ্যান্ডলার
+  // ২. অ্যাম্বাসেডর ব্লক / ডিএক্টিভেট হ্যান্ডলার
   const handleBlockAmbassador = async (userId: string, currentSlug: string) => {
     const confirmBlock = window.confirm(
       `Are you sure you want to block this ambassador?\nStore link (${currentSlug}) will be deactivated and released.`
@@ -69,7 +68,6 @@ export default function AmbassadorList() {
     setActionLoading(userId);
 
     try {
-      // Supabase RPC ফাংশন কল
       const { error } = await supabase.rpc('deactivate_ambassador', {
         target_user_id: userId,
       });
@@ -77,10 +75,34 @@ export default function AmbassadorList() {
       if (error) throw error;
 
       alert('Ambassador blocked successfully!');
-      // ডাটা রিফ্রেশ করা
       fetchAmbassadors();
     } catch (err: any) {
       alert('Failed to block ambassador: ' + err.message);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  // ৩. অ্যাম্বাসেডর আনব্লক / এক্টিভেট হ্যান্ডলার
+  const handleActivateAmbassador = async (userId: string) => {
+    const confirmActivate = window.confirm(
+      'Are you sure you want to unblock and activate this ambassador?'
+    );
+    if (!confirmActivate) return;
+
+    setActionLoading(userId);
+
+    try {
+      const { error } = await supabase.rpc('activate_ambassador', {
+        target_user_id: userId,
+      });
+
+      if (error) throw error;
+
+      alert('Ambassador activated successfully!');
+      fetchAmbassadors();
+    } catch (err: any) {
+      alert('Failed to activate ambassador: ' + err.message);
     } finally {
       setActionLoading(null);
     }
@@ -130,7 +152,13 @@ export default function AmbassadorList() {
                       {actionLoading === amb.id ? 'Processing...' : 'Block Ambassador'}
                     </button>
                   ) : (
-                    <span style={disabledTextStyle}>Access Terminated</span>
+                    <button
+                      onClick={() => handleActivateAmbassador(amb.id)}
+                      disabled={actionLoading === amb.id}
+                      style={activateButtonStyle}
+                    >
+                      {actionLoading === amb.id ? 'Processing...' : 'Activate / Unblock'}
+                    </button>
                   )}
                 </div>
               </div>
@@ -142,7 +170,7 @@ export default function AmbassadorList() {
   );
 }
 
-// ---------------- STYLES (Matching Nomad Dark Theme) ----------------
+// ---------------- STYLES ----------------
 
 const containerStyle: React.CSSProperties = {
   padding: '20px 16px',
@@ -263,10 +291,16 @@ const blockButtonStyle: React.CSSProperties = {
   transition: 'all 0.2s ease',
 };
 
-const disabledTextStyle: React.CSSProperties = {
+const activateButtonStyle: React.CSSProperties = {
+  backgroundColor: 'rgba(34, 197, 94, 0.12)',
+  color: '#22c55e',
+  border: '1px solid rgba(34, 197, 94, 0.3)',
+  padding: '8px 14px',
+  borderRadius: '10px',
   fontSize: '12px',
-  color: '#6e6e73',
-  fontStyle: 'italic',
+  fontWeight: 600,
+  cursor: 'pointer',
+  transition: 'all 0.2s ease',
 };
 
 const loadingStyle: React.CSSProperties = {
