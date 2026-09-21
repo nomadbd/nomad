@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabaseClient'; // আপনার সুপাবেস ক্লায়েন্ট পাথ
+import { supabase } from '@/supabaseClient';
 
 interface AmbassadorProfile {
   id: string;
