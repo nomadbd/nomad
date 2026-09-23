@@ -549,7 +549,11 @@ const AdminDashboard: React.FC = () => {
           )}
           {activeTab === 'ambassadors' && (
             <>
-              <AmbassadorList key="ambassadors-list" />
+              <AmbassadorList
+                key="ambassadors-list"
+                searchQuery={searchQuery}
+                isFilterOpen={isFilterOpen}
+              />
               <SendInvite
                 key="ambassadors-invite"
                 isOpen={isAddOpen}
