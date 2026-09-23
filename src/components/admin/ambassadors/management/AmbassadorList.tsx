@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { supabase } from '@/supabaseClient';
+import { supabase } from '@/lib/supabaseClient';
 
 interface AmbassadorProfile {
   id: string;
@@ -9,12 +9,20 @@ interface AmbassadorProfile {
   assigned_slug: string;
 }
 
-export default function AmbassadorList() {
+interface AmbassadorListProps {
+  searchQuery?: string;
+  isFilterOpen?: boolean;
+}
+
+export default function AmbassadorList({ searchQuery = '', isFilterOpen = false }: AmbassadorListProps) {
   const [ambassadors, setAmbassadors] = useState<AmbassadorProfile[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-  // ১. সকল অ্যাম্বাসেডর ফেচ করা
+  // ফিল্টার ও সর্ট স্টেট
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'BLOCKED'>('ALL');
+  const [sortBy, setSortBy] = useState<'NEWEST' | 'OLDEST' | 'NAME'>('NEWEST');
+
   const fetchAmbassadors = async () => {
     setLoading(true);
     try {
@@ -58,7 +66,6 @@ export default function AmbassadorList() {
     fetchAmbassadors();
   }, []);
 
-  // ২. অ্যাম্বাসেডর ব্লক / ডিএক্টিভেট হ্যান্ডলার
   const handleBlockAmbassador = async (userId: string, currentSlug: string) => {
     const confirmBlock = window.confirm(
       `Are you sure you want to block this ambassador?\nStore link (${currentSlug}) will be deactivated and released.`
@@ -66,14 +73,9 @@ export default function AmbassadorList() {
     if (!confirmBlock) return;
 
     setActionLoading(userId);
-
     try {
-      const { error } = await supabase.rpc('deactivate_ambassador', {
-        target_user_id: userId,
-      });
-
+      const { error } = await supabase.rpc('deactivate_ambassador', { target_user_id: userId });
       if (error) throw error;
-
       alert('Ambassador blocked successfully!');
       fetchAmbassadors();
     } catch (err: any) {
@@ -83,22 +85,14 @@ export default function AmbassadorList() {
     }
   };
 
-  // ৩. অ্যাম্বাসেডর আনব্লক / এক্টিভেট হ্যান্ডলার
   const handleActivateAmbassador = async (userId: string) => {
-    const confirmActivate = window.confirm(
-      'Are you sure you want to unblock and activate this ambassador?'
-    );
+    const confirmActivate = window.confirm('Are you sure you want to unblock and activate this ambassador?');
     if (!confirmActivate) return;
 
     setActionLoading(userId);
-
     try {
-      const { error } = await supabase.rpc('activate_ambassador', {
-        target_user_id: userId,
-      });
-
+      const { error } = await supabase.rpc('activate_ambassador', { target_user_id: userId });
       if (error) throw error;
-
       alert('Ambassador activated successfully!');
       fetchAmbassadors();
     } catch (err: any) {
@@ -108,22 +102,77 @@ export default function AmbassadorList() {
     }
   };
 
+  // Search, Status, and Sort Logic
+  const filteredAmbassadors = ambassadors
+    .filter((amb) => {
+      // 1. Status Filter
+      if (statusFilter === 'ACTIVE' && amb.status !== 'ACTIVE') return false;
+      if (statusFilter === 'BLOCKED' && amb.status !== 'BLOCKED') return false;
+
+      // 2. Search Query (Name, Email, or Slug)
+      if (searchQuery.trim() !== '') {
+        const query = searchQuery.toLowerCase();
+        const matchesName = amb.name.toLowerCase().includes(query);
+        const matchesEmail = amb.email.toLowerCase().includes(query);
+        const matchesSlug = amb.assigned_slug.toLowerCase().includes(query);
+        return matchesName || matchesEmail || matchesSlug;
+      }
+
+      return true;
+    })
+    .sort((a, b) => {
+      if (sortBy === 'NAME') {
+        return a.name.localeCompare(b.name);
+      }
+      return 0; // default order from API
+    });
+
   if (loading) {
     return <div style={loadingStyle}>Loading ambassador list...</div>;
   }
 
   return (
     <div style={containerStyle}>
+      {/* ফিল্টার আইকন প্রেস করলে এই প্যানেলটি শো করবে */}
+      {isFilterOpen && (
+        <div style={filterPanelStyle}>
+          <div style={filterGroupStyle}>
+            <label style={filterLabelStyle}>STATUS:</label>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as any)}
+              style={selectInputStyle}
+            >
+              <option value="ALL">ALL STATUS</option>
+              <option value="ACTIVE">ACTIVE ONLY</option>
+              <option value="BLOCKED">BLOCKED ONLY</option>
+            </select>
+          </div>
+
+          <div style={filterGroupStyle}>
+            <label style={filterLabelStyle}>SORT BY:</label>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as any)}
+              style={selectInputStyle}
+            >
+              <option value="NEWEST">NEWEST FIRST</option>
+              <option value="NAME">NAME (A - Z)</option>
+            </select>
+          </div>
+        </div>
+      )}
+
       <div style={headerSectionStyle}>
         <h2 style={titleStyle}>Manage Ambassadors</h2>
-        <span style={countBadgeStyle}>{ambassadors.length} Total</span>
+        <span style={countBadgeStyle}>{filteredAmbassadors.length} Total</span>
       </div>
 
-      {ambassadors.length === 0 ? (
-        <div style={emptyStyle}>No ambassadors found.</div>
+      {filteredAmbassadors.length === 0 ? (
+        <div style={emptyStyle}>No ambassadors found matching criteria.</div>
       ) : (
         <div style={listGridStyle}>
-          {ambassadors.map((amb) => {
+          {filteredAmbassadors.map((amb) => {
             const isBlocked = amb.status === 'BLOCKED';
 
             return (
@@ -177,6 +226,42 @@ const containerStyle: React.CSSProperties = {
   color: '#ffffff',
   maxWidth: '800px',
   margin: '0 auto',
+};
+
+const filterPanelStyle: React.CSSProperties = {
+  backgroundColor: '#0a0a0a',
+  border: '1px solid #222222',
+  borderRadius: '12px',
+  padding: '12px 16px',
+  marginBottom: '20px',
+  display: 'flex',
+  gap: '16px',
+  flexWrap: 'wrap',
+  alignItems: 'center',
+};
+
+const filterGroupStyle: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '8px',
+};
+
+const filterLabelStyle: React.CSSProperties = {
+  fontSize: '10px',
+  color: '#888888',
+  fontWeight: 700,
+  letterSpacing: '1px',
+};
+
+const selectInputStyle: React.CSSProperties = {
+  backgroundColor: '#121212',
+  color: '#ffffff',
+  border: '1px solid #333333',
+  borderRadius: '6px',
+  padding: '6px 10px',
+  fontSize: '11px',
+  outline: 'none',
+  fontFamily: 'monospace, sans-serif',
 };
 
 const headerSectionStyle: React.CSSProperties = {
