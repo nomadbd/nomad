@@ -7,6 +7,8 @@ interface AmbassadorProfile {
   email: string;
   status: string;
   assigned_slug: string;
+  created_at?: string;
+  total_sales?: number;
 }
 
 interface AmbassadorListProps {
@@ -19,9 +21,15 @@ export default function AmbassadorList({ searchQuery = '', isFilterOpen = false 
   const [loading, setLoading] = useState<boolean>(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-  // ফিল্টার ও সর্ট স্টেট
+  // Filter & Sort States
+  const [sortOrder, setSortOrder] = useState<'NEWEST' | 'OLDEST'>('NEWEST');
+  const [startDate, setStartDate] = useState<string>('');
+  const [endDate, setEndDate] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'BLOCKED'>('ALL');
-  const [sortBy, setSortBy] = useState<'NEWEST' | 'OLDEST' | 'NAME'>('NEWEST');
+  
+  // Sales Filters (৩য় লাইনের জন্য)
+  const [salesSort, setSalesSort] = useState<'NONE' | 'HIGHEST' | 'LOWEST'>('NONE');
+  const [noSalesOnly, setNoSalesOnly] = useState<boolean>(false);
 
   const fetchAmbassadors = async () => {
     setLoading(true);
@@ -33,12 +41,14 @@ export default function AmbassadorList({ searchQuery = '', isFilterOpen = false 
           name,
           email,
           status,
+          created_at,
           ambassador (
-            assigned_slug
+            assigned_slug,
+            total_sales
           )
         `)
         .eq('role', 'AMBASSADOR')
-        .order('id', { ascending: false });
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
 
@@ -51,6 +61,8 @@ export default function AmbassadorList({ searchQuery = '', isFilterOpen = false 
             email: item.email || 'No Email',
             status: item.status || 'ACTIVE',
             assigned_slug: ambData?.assigned_slug || 'N/A',
+            created_at: item.created_at || '',
+            total_sales: ambData?.total_sales || item.total_sales || 0,
           };
         });
         setAmbassadors(formattedData);
@@ -102,29 +114,60 @@ export default function AmbassadorList({ searchQuery = '', isFilterOpen = false 
     }
   };
 
-  // Search, Status, and Sort Logic
+  const resetAllFilters = () => {
+    setSortOrder('NEWEST');
+    setStartDate('');
+    setEndDate('');
+    setStatusFilter('ALL');
+    setSalesSort('NONE');
+    setNoSalesOnly(false);
+  };
+
+  // Filter & Sort Logic
   const filteredAmbassadors = ambassadors
     .filter((amb) => {
-      // 1. Status Filter
+      // 1. Status Filter (ACTIVE / BLOCKED / ALL)
       if (statusFilter === 'ACTIVE' && amb.status !== 'ACTIVE') return false;
       if (statusFilter === 'BLOCKED' && amb.status !== 'BLOCKED') return false;
 
-      // 2. Search Query (Name, Email, or Slug)
+      // 2. Zero Sales Filter
+      if (noSalesOnly && (amb.total_sales || 0) > 0) return false;
+
+      // 3. Date Filtering (Start & End)
+      if (amb.created_at) {
+        const ambDateStr = amb.created_at.split('T')[0];
+        if (startDate && ambDateStr < startDate) return false;
+        if (endDate && ambDateStr > endDate) return false;
+      }
+
+      // 4. Search Query
       if (searchQuery.trim() !== '') {
         const query = searchQuery.toLowerCase();
         const matchesName = amb.name.toLowerCase().includes(query);
         const matchesEmail = amb.email.toLowerCase().includes(query);
         const matchesSlug = amb.assigned_slug.toLowerCase().includes(query);
-        return matchesName || matchesEmail || matchesSlug;
+        if (!matchesName && !matchesEmail && !matchesSlug) return false;
       }
 
       return true;
     })
     .sort((a, b) => {
-      if (sortBy === 'NAME') {
-        return a.name.localeCompare(b.name);
+      // Sales Sorting takes precedence if active
+      if (salesSort === 'HIGHEST') {
+        return (b.total_sales || 0) - (a.total_sales || 0);
       }
-      return 0; // default order from API
+      if (salesSort === 'LOWEST') {
+        return (a.total_sales || 0) - (b.total_sales || 0);
+      }
+
+      // Date Sorting
+      const dateA = new Date(a.created_at || 0).getTime();
+      const dateB = new Date(b.created_at || 0).getTime();
+
+      if (sortOrder === 'NEWEST') return dateB - dateA;
+      if (sortOrder === 'OLDEST') return dateA - dateB;
+
+      return 0;
     });
 
   if (loading) {
@@ -133,41 +176,117 @@ export default function AmbassadorList({ searchQuery = '', isFilterOpen = false 
 
   return (
     <div style={containerStyle}>
-      {/* ফিল্টার আইকন প্রেস করলে এই প্যানেলটি শো করবে */}
+      {/* ফিল্টার প্যানেল (৩টি স্কলিং লাইন) */}
       {isFilterOpen && (
-        <div style={filterPanelStyle}>
-          <div style={filterGroupStyle}>
-            <label style={filterLabelStyle}>STATUS:</label>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as any)}
-              style={selectInputStyle}
+        <div style={filterPanelContainerStyle}>
+          
+          {/* লাইন ১: সর্ট সুইচ এবং ডেট ইনপুট (FROM & TO) */}
+          <div style={scrollRowStyle}>
+            <button
+              onClick={() => {
+                setSortOrder((prev) => (prev === 'NEWEST' ? 'OLDEST' : 'NEWEST'));
+              }}
+              style={pillButtonStyle(sortOrder === 'NEWEST')}
             >
-              <option value="ALL">ALL STATUS</option>
-              <option value="ACTIVE">ACTIVE ONLY</option>
-              <option value="BLOCKED">BLOCKED ONLY</option>
-            </select>
+              {sortOrder === 'NEWEST' ? '⚡ NEWEST FIRST' : '⏳ OLDEST FIRST'}
+            </button>
+
+            <div style={dateGroupStyle}>
+              <span style={dateLabelStyle}>FROM:</span>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                style={dateInputStyle}
+              />
+            </div>
+
+            <div style={dateGroupStyle}>
+              <span style={dateLabelStyle}>TO:</span>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                style={dateInputStyle}
+              />
+            </div>
+
+            {(startDate || endDate) && (
+              <button onClick={() => { setStartDate(''); setEndDate(''); }} style={clearDateBtnStyle}>
+                CLEAR DATES
+              </button>
+            )}
           </div>
 
-          <div style={filterGroupStyle}>
-            <label style={filterLabelStyle}>SORT BY:</label>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
-              style={selectInputStyle}
+          {/* লাইন ২: স্ট্যাটাস ফিল্টার (ALL, ACTIVE, BLOCKED) */}
+          <div style={scrollRowStyle}>
+            <button
+              onClick={() => setStatusFilter('ALL')}
+              style={pillButtonStyle(statusFilter === 'ALL')}
             >
-              <option value="NEWEST">NEWEST FIRST</option>
-              <option value="NAME">NAME (A - Z)</option>
-            </select>
+              ALL STATUS
+            </button>
+            <button
+              onClick={() => setStatusFilter('ACTIVE')}
+              style={pillButtonStyle(statusFilter === 'ACTIVE')}
+            >
+              🟢 ACTIVE ONLY
+            </button>
+            <button
+              onClick={() => setStatusFilter('BLOCKED')}
+              style={pillButtonStyle(statusFilter === 'BLOCKED')}
+            >
+              🔴 BLOCKED ONLY
+            </button>
           </div>
+
+          {/* লাইন ৩: সেলস সম্পর্কিত ফিল্টার (কে বেশি/কম বিক্রি করেছে) */}
+          <div style={scrollRowStyle}>
+            <button
+              onClick={() => {
+                setSalesSort(salesSort === 'HIGHEST' ? 'NONE' : 'HIGHEST');
+                setNoSalesOnly(false);
+              }}
+              style={pillButtonStyle(salesSort === 'HIGHEST')}
+            >
+              💰 HIGHEST SALES
+            </button>
+
+            <button
+              onClick={() => {
+                setSalesSort(salesSort === 'LOWEST' ? 'NONE' : 'LOWEST');
+                setNoSalesOnly(false);
+              }}
+              style={pillButtonStyle(salesSort === 'LOWEST')}
+            >
+              📉 LOWEST SALES
+            </button>
+
+            <button
+              onClick={() => {
+                setNoSalesOnly(!noSalesOnly);
+                setSalesSort('NONE');
+              }}
+              style={pillButtonStyle(noSalesOnly)}
+            >
+              🚫 NO SALES (0 SALES)
+            </button>
+
+            <button onClick={resetAllFilters} style={resetButtonStyle}>
+              🔄 RESET FILTERS
+            </button>
+          </div>
+
         </div>
       )}
 
+      {/* হেডার পার্ট */}
       <div style={headerSectionStyle}>
         <h2 style={titleStyle}>Manage Ambassadors</h2>
         <span style={countBadgeStyle}>{filteredAmbassadors.length} Total</span>
       </div>
 
+      {/* অ্যাম্বাসেডর তালিকা */}
       {filteredAmbassadors.length === 0 ? (
         <div style={emptyStyle}>No ambassadors found matching criteria.</div>
       ) : (
@@ -182,6 +301,9 @@ export default function AmbassadorList({ searchQuery = '', isFilterOpen = false 
                     <h4 style={nameStyle}>{amb.name}</h4>
                     <span style={statusBadgeStyle(isBlocked)}>
                       {isBlocked ? 'BLOCKED' : 'ACTIVE'}
+                    </span>
+                    <span style={salesBadgeStyle}>
+                      Sales: {amb.total_sales || 0}
                     </span>
                   </div>
                   <p style={emailStyle}>{amb.email}</p>
@@ -228,40 +350,93 @@ const containerStyle: React.CSSProperties = {
   margin: '0 auto',
 };
 
-const filterPanelStyle: React.CSSProperties = {
+const filterPanelContainerStyle: React.CSSProperties = {
   backgroundColor: '#0a0a0a',
-  border: '1px solid #222222',
-  borderRadius: '12px',
-  padding: '12px 16px',
+  border: '1px solid rgba(255, 255, 255, 0.1)',
+  borderRadius: '16px',
+  padding: '12px 14px',
   marginBottom: '20px',
   display: 'flex',
-  gap: '16px',
-  flexWrap: 'wrap',
-  alignItems: 'center',
+  flexDirection: 'column',
+  gap: '10px',
+  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
 };
 
-const filterGroupStyle: React.CSSProperties = {
+const scrollRowStyle: React.CSSProperties = {
   display: 'flex',
   alignItems: 'center',
   gap: '8px',
+  overflowX: 'auto',
+  whiteSpace: 'nowrap',
+  paddingBottom: '4px',
+  scrollbarWidth: 'none',
+  msOverflowStyle: 'none',
 };
 
-const filterLabelStyle: React.CSSProperties = {
-  fontSize: '10px',
-  color: '#888888',
-  fontWeight: 700,
-  letterSpacing: '1px',
-};
-
-const selectInputStyle: React.CSSProperties = {
-  backgroundColor: '#121212',
-  color: '#ffffff',
-  border: '1px solid #333333',
-  borderRadius: '6px',
-  padding: '6px 10px',
+const pillButtonStyle = (isActive: boolean): React.CSSProperties => ({
+  backgroundColor: isActive ? '#ffffff' : '#141414',
+  color: isActive ? '#000000' : '#888888',
+  border: isActive ? '1px solid #ffffff' : '1px solid #282828',
+  borderRadius: '20px',
+  padding: '6px 14px',
   fontSize: '11px',
-  outline: 'none',
+  fontWeight: 600,
+  cursor: 'pointer',
+  whiteSpace: 'nowrap',
+  flexShrink: 0,
+  transition: 'all 0.2s ease',
   fontFamily: 'monospace, sans-serif',
+});
+
+const resetButtonStyle: React.CSSProperties = {
+  backgroundColor: 'rgba(239, 68, 68, 0.12)',
+  color: '#ef4444',
+  border: '1px solid rgba(239, 68, 68, 0.3)',
+  borderRadius: '20px',
+  padding: '6px 14px',
+  fontSize: '11px',
+  fontWeight: 600,
+  cursor: 'pointer',
+  whiteSpace: 'nowrap',
+  flexShrink: 0,
+  fontFamily: 'monospace, sans-serif',
+};
+
+const dateGroupStyle: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '6px',
+  backgroundColor: '#141414',
+  border: '1px solid #282828',
+  borderRadius: '20px',
+  padding: '2px 10px',
+  flexShrink: 0,
+};
+
+const dateLabelStyle: React.CSSProperties = {
+  fontSize: '9px',
+  color: '#666666',
+  fontWeight: 700,
+};
+
+const dateInputStyle: React.CSSProperties = {
+  backgroundColor: 'transparent',
+  color: '#ffffff',
+  border: 'none',
+  outline: 'none',
+  fontSize: '11px',
+  fontFamily: 'monospace, sans-serif',
+  cursor: 'pointer',
+};
+
+const clearDateBtnStyle: React.CSSProperties = {
+  background: 'none',
+  border: 'none',
+  color: '#888888',
+  fontSize: '10px',
+  cursor: 'pointer',
+  textDecoration: 'underline',
+  flexShrink: 0,
 };
 
 const headerSectionStyle: React.CSSProperties = {
@@ -315,6 +490,7 @@ const nameRowStyle: React.CSSProperties = {
   display: 'flex',
   alignItems: 'center',
   gap: '10px',
+  flexWrap: 'wrap',
 };
 
 const nameStyle: React.CSSProperties = {
@@ -358,6 +534,17 @@ const statusBadgeStyle = (isBlocked: boolean): React.CSSProperties => ({
   color: isBlocked ? '#ef4444' : '#22c55e',
   border: `1px solid ${isBlocked ? 'rgba(239, 68, 68, 0.3)' : 'rgba(34, 197, 94, 0.3)'}`,
 });
+
+const salesBadgeStyle: React.CSSProperties = {
+  fontSize: '9px',
+  fontWeight: 700,
+  padding: '2px 8px',
+  borderRadius: '6px',
+  letterSpacing: '0.05em',
+  backgroundColor: 'rgba(41, 151, 255, 0.15)',
+  color: '#2997ff',
+  border: '1px solid rgba(41, 151, 255, 0.3)',
+};
 
 const actionGroupStyle: React.CSSProperties = {
   display: 'flex',
