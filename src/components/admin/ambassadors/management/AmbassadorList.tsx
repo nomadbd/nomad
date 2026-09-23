@@ -19,9 +19,10 @@ interface AmbassadorListProps {
 export default function AmbassadorList({ searchQuery = '', isFilterOpen = false }: AmbassadorListProps) {
   const [ambassadors, setAmbassadors] = useState<AmbassadorProfile[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-  // Filter States (ডিফল্ট অবস্থায় কোনো ফিল্টার একটিভ থাকবে না)
+  // Filter States (ডিফল্ট অবস্থায় কোনো ফিল্টার সক্রিয় থাকবে না)
   const [sortOrder, setSortOrder] = useState<'NONE' | 'NEWEST' | 'OLDEST'>('NONE');
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
@@ -31,7 +32,9 @@ export default function AmbassadorList({ searchQuery = '', isFilterOpen = false 
 
   const fetchAmbassadors = async () => {
     setLoading(true);
+    setErrorMessage(null);
     try {
+      // .ilike ব্যবহার করা হয়েছে যাতে 'ambassador' বা 'AMBASSADOR' যেকোনো কেসে ম্যাচ করে
       const { data, error } = await supabase
         .from('profiles')
         .select(`
@@ -45,10 +48,47 @@ export default function AmbassadorList({ searchQuery = '', isFilterOpen = false 
             total_sales
           )
         `)
-        .eq('role', 'AMBASSADOR')
+        .ilike('role', 'ambassador')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        // যদি ambassador টেবিলে total_sales কলাম না থাকে, তবে ব্যাকআপ ক্যোয়ারি চলবে
+        console.warn('Primary query failed, running fallback query...', error.message);
+        
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('profiles')
+          .select(`
+            id,
+            name,
+            email,
+            status,
+            created_at,
+            ambassador (
+              assigned_slug
+            )
+          `)
+          .ilike('role', 'ambassador')
+          .order('created_at', { ascending: false });
+
+        if (fallbackError) throw fallbackError;
+
+        if (fallbackData) {
+          const formattedData: AmbassadorProfile[] = fallbackData.map((item: any) => {
+            const ambData = Array.isArray(item.ambassador) ? item.ambassador[0] : item.ambassador;
+            return {
+              id: item.id,
+              name: item.name || 'Unnamed Ambassador',
+              email: item.email || 'No Email',
+              status: item.status || 'ACTIVE',
+              assigned_slug: ambData?.assigned_slug || 'N/A',
+              created_at: item.created_at || '',
+              total_sales: 0,
+            };
+          });
+          setAmbassadors(formattedData);
+          return;
+        }
+      }
 
       if (data) {
         const formattedData: AmbassadorProfile[] = data.map((item: any) => {
@@ -60,13 +100,14 @@ export default function AmbassadorList({ searchQuery = '', isFilterOpen = false 
             status: item.status || 'ACTIVE',
             assigned_slug: ambData?.assigned_slug || 'N/A',
             created_at: item.created_at || '',
-            total_sales: ambData?.total_sales || item.total_sales || 0,
+            total_sales: ambData?.total_sales || 0,
           };
         });
         setAmbassadors(formattedData);
       }
     } catch (err: any) {
       console.error('Error fetching ambassadors:', err.message);
+      setErrorMessage(err.message || 'Failed to fetch ambassadors.');
     } finally {
       setLoading(false);
     }
@@ -133,8 +174,8 @@ export default function AmbassadorList({ searchQuery = '', isFilterOpen = false 
   const filteredAmbassadors = ambassadors
     .filter((amb) => {
       // 1. Status Filter
-      if (statusFilter === 'ACTIVE' && amb.status !== 'ACTIVE') return false;
-      if (statusFilter === 'BLOCKED' && amb.status !== 'BLOCKED') return false;
+      if (statusFilter === 'ACTIVE' && amb.status?.toUpperCase() !== 'ACTIVE') return false;
+      if (statusFilter === 'BLOCKED' && amb.status?.toUpperCase() !== 'BLOCKED') return false;
 
       // 2. Zero Sales Filter
       if (noSalesOnly && (amb.total_sales || 0) > 0) return false;
@@ -147,18 +188,18 @@ export default function AmbassadorList({ searchQuery = '', isFilterOpen = false 
       }
 
       // 4. Search Query
-      if (searchQuery.trim() !== '') {
-        const query = searchQuery.toLowerCase();
-        const matchesName = amb.name.toLowerCase().includes(query);
-        const matchesEmail = amb.email.toLowerCase().includes(query);
-        const matchesSlug = amb.assigned_slug.toLowerCase().includes(query);
+      if (searchQuery && searchQuery.trim() !== '') {
+        const query = searchQuery.trim().toLowerCase();
+        const matchesName = amb.name?.toLowerCase().includes(query);
+        const matchesEmail = amb.email?.toLowerCase().includes(query);
+        const matchesSlug = amb.assigned_slug?.toLowerCase().includes(query);
         if (!matchesName && !matchesEmail && !matchesSlug) return false;
       }
 
       return true;
     })
     .sort((a, b) => {
-      // Sales Sort takes priority if explicitly clicked
+      // Sales Sort
       if (salesSort === 'HIGHEST') {
         return (b.total_sales || 0) - (a.total_sales || 0);
       }
@@ -173,8 +214,7 @@ export default function AmbassadorList({ searchQuery = '', isFilterOpen = false 
       if (sortOrder === 'OLDEST') return dateA - dateB;
       if (sortOrder === 'NEWEST') return dateB - dateA;
 
-      // Default sorting (Newest first)
-      return dateB - dateA;
+      return dateB - dateA; // Default sorting
     });
 
   if (loading) {
@@ -183,11 +223,10 @@ export default function AmbassadorList({ searchQuery = '', isFilterOpen = false 
 
   return (
     <div style={containerStyle}>
-      {/* মুক্ত ফিল্টার প্যানেল (কোনো কন্টেইনার ব্যাকগ্রাউন্ড বা বর্ডার ছাড়াই) */}
+      {/* ফিল্টার প্যানেল (মুক্ত পেজে ৩টি সারি) */}
       {isFilterOpen && (
         <div style={freeFilterPanelStyle}>
-          
-          {/* লাইন ১: সর্ট বাটন ও কাস্টম ডেট 필্টার */}
+          {/* লাইন ১: সর্ট ও ডেট */}
           <div style={scrollRowStyle}>
             <button
               onClick={() => setSortOrder(sortOrder === 'NEWEST' ? 'NONE' : 'NEWEST')}
@@ -246,7 +285,7 @@ export default function AmbassadorList({ searchQuery = '', isFilterOpen = false 
             </button>
           </div>
 
-          {/* লাইন ৩: সেলস সম্পর্কিত ফিল্টার (কে বেশি/কম বিক্রি করেছে) */}
+          {/* লাইন ৩: সেলস সম্পর্কিত ফিল্টার */}
           <div style={scrollRowStyle}>
             <button
               onClick={() => {
@@ -284,7 +323,6 @@ export default function AmbassadorList({ searchQuery = '', isFilterOpen = false 
               </button>
             )}
           </div>
-
         </div>
       )}
 
@@ -294,13 +332,20 @@ export default function AmbassadorList({ searchQuery = '', isFilterOpen = false 
         <span style={countBadgeStyle}>{filteredAmbassadors.length} Total</span>
       </div>
 
+      {/* Error Message থাকলে তা দেখাবে */}
+      {errorMessage && (
+        <div style={errorContainerStyle}>
+          ⚠️ Database Error: {errorMessage}
+        </div>
+      )}
+
       {/* অ্যাম্বাসেডর তালিকা */}
-      {filteredAmbassadors.length === 0 ? (
+      {!errorMessage && filteredAmbassadors.length === 0 ? (
         <div style={emptyStyle}>No ambassadors found matching criteria.</div>
       ) : (
         <div style={listGridStyle}>
           {filteredAmbassadors.map((amb) => {
-            const isBlocked = amb.status === 'BLOCKED';
+            const isBlocked = amb.status?.toUpperCase() === 'BLOCKED';
 
             return (
               <div key={amb.id} style={cardStyle}>
@@ -358,7 +403,6 @@ const containerStyle: React.CSSProperties = {
   margin: '0 auto',
 };
 
-// কন্টেইনার ছাড়া মুক্ত পেজ ফিল্টার স্টাইল
 const freeFilterPanelStyle: React.CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
@@ -592,4 +636,14 @@ const emptyStyle: React.CSSProperties = {
   textAlign: 'center',
   color: '#6e6e73',
   fontSize: '13px',
+};
+
+const errorContainerStyle: React.CSSProperties = {
+  backgroundColor: 'rgba(239, 68, 68, 0.15)',
+  color: '#ef4444',
+  border: '1px solid rgba(239, 68, 68, 0.3)',
+  padding: '12px 16px',
+  borderRadius: '12px',
+  fontSize: '13px',
+  marginBottom: '16px',
 };
