@@ -21,13 +21,11 @@ export default function AmbassadorList({ searchQuery = '', isFilterOpen = false 
   const [loading, setLoading] = useState<boolean>(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-  // Filter & Sort States
-  const [sortOrder, setSortOrder] = useState<'NEWEST' | 'OLDEST'>('NEWEST');
+  // Filter States (ডিফল্ট অবস্থায় কোনো ফিল্টার একটিভ থাকবে না)
+  const [sortOrder, setSortOrder] = useState<'NONE' | 'NEWEST' | 'OLDEST'>('NONE');
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'BLOCKED'>('ALL');
-  
-  // Sales Filters (৩য় লাইনের জন্য)
   const [salesSort, setSalesSort] = useState<'NONE' | 'HIGHEST' | 'LOWEST'>('NONE');
   const [noSalesOnly, setNoSalesOnly] = useState<boolean>(false);
 
@@ -115,7 +113,7 @@ export default function AmbassadorList({ searchQuery = '', isFilterOpen = false 
   };
 
   const resetAllFilters = () => {
-    setSortOrder('NEWEST');
+    setSortOrder('NONE');
     setStartDate('');
     setEndDate('');
     setStatusFilter('ALL');
@@ -123,10 +121,18 @@ export default function AmbassadorList({ searchQuery = '', isFilterOpen = false 
     setNoSalesOnly(false);
   };
 
+  const isAnyFilterActive =
+    sortOrder !== 'NONE' ||
+    startDate !== '' ||
+    endDate !== '' ||
+    statusFilter !== 'ALL' ||
+    salesSort !== 'NONE' ||
+    noSalesOnly;
+
   // Filter & Sort Logic
   const filteredAmbassadors = ambassadors
     .filter((amb) => {
-      // 1. Status Filter (ACTIVE / BLOCKED / ALL)
+      // 1. Status Filter
       if (statusFilter === 'ACTIVE' && amb.status !== 'ACTIVE') return false;
       if (statusFilter === 'BLOCKED' && amb.status !== 'BLOCKED') return false;
 
@@ -152,7 +158,7 @@ export default function AmbassadorList({ searchQuery = '', isFilterOpen = false 
       return true;
     })
     .sort((a, b) => {
-      // Sales Sorting takes precedence if active
+      // Sales Sort takes priority if explicitly clicked
       if (salesSort === 'HIGHEST') {
         return (b.total_sales || 0) - (a.total_sales || 0);
       }
@@ -160,14 +166,15 @@ export default function AmbassadorList({ searchQuery = '', isFilterOpen = false 
         return (a.total_sales || 0) - (b.total_sales || 0);
       }
 
-      // Date Sorting
+      // Date Sort
       const dateA = new Date(a.created_at || 0).getTime();
       const dateB = new Date(b.created_at || 0).getTime();
 
-      if (sortOrder === 'NEWEST') return dateB - dateA;
       if (sortOrder === 'OLDEST') return dateA - dateB;
+      if (sortOrder === 'NEWEST') return dateB - dateA;
 
-      return 0;
+      // Default sorting (Newest first)
+      return dateB - dateA;
     });
 
   if (loading) {
@@ -176,19 +183,24 @@ export default function AmbassadorList({ searchQuery = '', isFilterOpen = false 
 
   return (
     <div style={containerStyle}>
-      {/* ফিল্টার প্যানেল (৩টি স্কলিং লাইন) */}
+      {/* মুক্ত ফিল্টার প্যানেল (কোনো কন্টেইনার ব্যাকগ্রাউন্ড বা বর্ডার ছাড়াই) */}
       {isFilterOpen && (
-        <div style={filterPanelContainerStyle}>
+        <div style={freeFilterPanelStyle}>
           
-          {/* লাইন ১: সর্ট সুইচ এবং ডেট ইনপুট (FROM & TO) */}
+          {/* লাইন ১: সর্ট বাটন ও কাস্টম ডেট 필্টার */}
           <div style={scrollRowStyle}>
             <button
-              onClick={() => {
-                setSortOrder((prev) => (prev === 'NEWEST' ? 'OLDEST' : 'NEWEST'));
-              }}
+              onClick={() => setSortOrder(sortOrder === 'NEWEST' ? 'NONE' : 'NEWEST')}
               style={pillButtonStyle(sortOrder === 'NEWEST')}
             >
-              {sortOrder === 'NEWEST' ? '⚡ NEWEST FIRST' : '⏳ OLDEST FIRST'}
+              ⚡ NEWEST FIRST
+            </button>
+
+            <button
+              onClick={() => setSortOrder(sortOrder === 'OLDEST' ? 'NONE' : 'OLDEST')}
+              style={pillButtonStyle(sortOrder === 'OLDEST')}
+            >
+              ⏳ OLDEST FIRST
             </button>
 
             <div style={dateGroupStyle}>
@@ -218,22 +230,16 @@ export default function AmbassadorList({ searchQuery = '', isFilterOpen = false 
             )}
           </div>
 
-          {/* লাইন ২: স্ট্যাটাস ফিল্টার (ALL, ACTIVE, BLOCKED) */}
+          {/* লাইন ২: স্ট্যাটাস ফিল্টার */}
           <div style={scrollRowStyle}>
             <button
-              onClick={() => setStatusFilter('ALL')}
-              style={pillButtonStyle(statusFilter === 'ALL')}
-            >
-              ALL STATUS
-            </button>
-            <button
-              onClick={() => setStatusFilter('ACTIVE')}
+              onClick={() => setStatusFilter(statusFilter === 'ACTIVE' ? 'ALL' : 'ACTIVE')}
               style={pillButtonStyle(statusFilter === 'ACTIVE')}
             >
               🟢 ACTIVE ONLY
             </button>
             <button
-              onClick={() => setStatusFilter('BLOCKED')}
+              onClick={() => setStatusFilter(statusFilter === 'BLOCKED' ? 'ALL' : 'BLOCKED')}
               style={pillButtonStyle(statusFilter === 'BLOCKED')}
             >
               🔴 BLOCKED ONLY
@@ -272,9 +278,11 @@ export default function AmbassadorList({ searchQuery = '', isFilterOpen = false 
               🚫 NO SALES (0 SALES)
             </button>
 
-            <button onClick={resetAllFilters} style={resetButtonStyle}>
-              🔄 RESET FILTERS
-            </button>
+            {isAnyFilterActive && (
+              <button onClick={resetAllFilters} style={resetButtonStyle}>
+                🔄 RESET FILTERS
+              </button>
+            )}
           </div>
 
         </div>
@@ -350,16 +358,13 @@ const containerStyle: React.CSSProperties = {
   margin: '0 auto',
 };
 
-const filterPanelContainerStyle: React.CSSProperties = {
-  backgroundColor: '#0a0a0a',
-  border: '1px solid rgba(255, 255, 255, 0.1)',
-  borderRadius: '16px',
-  padding: '12px 14px',
-  marginBottom: '20px',
+// কন্টেইনার ছাড়া মুক্ত পেজ ফিল্টার স্টাইল
+const freeFilterPanelStyle: React.CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
   gap: '10px',
-  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
+  marginBottom: '20px',
+  padding: '0 4px',
 };
 
 const scrollRowStyle: React.CSSProperties = {
