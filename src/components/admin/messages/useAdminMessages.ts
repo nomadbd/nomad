@@ -265,6 +265,13 @@ export const useAdminMessages = (
 
         if (matchedThread) {
           handleSelectThread(matchedThread);
+
+          // চ্যাট সিলেক্ট হওয়ার সাথে সাথেই URL থেকে প্যারামিটারগুলো রিমুভ করা হচ্ছে
+          // যাতে ব্যাকে ক্লিক করলে একই চ্যাটে আবার রি-ডাইরেক্ট না হয়
+          const newUrl = new URL(window.location.href);
+          newUrl.searchParams.delete('userId');
+          newUrl.searchParams.delete('search');
+          window.history.replaceState({}, '', newUrl.toString());
         }
       }
     }
