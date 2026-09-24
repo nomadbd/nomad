@@ -16,7 +16,7 @@ interface AmbassadorListProps {
   isFilterOpen?: boolean;
 }
 
-// ---------------- SKELETON LOADER COMPONENT ----------------
+// ---------------- SKELETON LOADER COMPONENT (PREVENTS FLICKER) ----------------
 const AmbassadorSkeleton = () => (
   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
     {[1, 2, 3, 4].map((i) => (
@@ -118,10 +118,14 @@ export default function AmbassadorList({
     fetchAmbassadors();
   }, []);
 
+  // রিলোড ছাড়া মেসেজ ট্যাবে নেভিগেট করার ফাংশন
   const handleOpenMessages = (e: React.MouseEvent, searchTarget: string) => {
     e.preventDefault();
-    // from=ambassadors দেওয়া হয়েছে যেন সঠিকভাবে চিনে ফেরত আসতে পারে
-    window.location.href = `/admin?tab=messages&search=${encodeURIComponent(searchTarget)}&from=ambassadors`;
+    const targetUrl = `/admin?tab=messages&search=${encodeURIComponent(searchTarget)}&from=ambassadors`;
+    
+    // SPA-style smooth navigation without page reload
+    window.history.pushState({}, '', targetUrl);
+    window.dispatchEvent(new PopStateEvent('popstate'));
   };
 
   const handleBlockAmbassador = async (userId: string, currentSlug: string) => {
@@ -158,6 +162,7 @@ export default function AmbassadorList({
     }
   };
 
+  // Filter & Sort Logic
   const filteredAmbassadors = ambassadors
     .filter((amb) => {
       if (statusFilter === 'ACTIVE' && amb.status?.toUpperCase() !== 'ACTIVE') return false;
@@ -462,6 +467,7 @@ export default function AmbassadorList({
                 >
                   {/* LEFT DETAILS CONTAINER */}
                   <div style={{ flex: '1 1 0%', minWidth: 0 }}>
+                    {/* NAME LINK */}
                     <a
                       href={messageUrl}
                       onClick={(e) => handleOpenMessages(e, amb.email || amb.name)}
@@ -484,6 +490,7 @@ export default function AmbassadorList({
                       {amb.name}
                     </a>
 
+                    {/* EMAIL LINK */}
                     <a
                       href={messageUrl}
                       onClick={(e) => handleOpenMessages(e, amb.email || amb.name)}
@@ -507,6 +514,7 @@ export default function AmbassadorList({
                       {amb.email}
                     </a>
 
+                    {/* TOTAL SALES */}
                     <div
                       style={{
                         fontSize: '11px',
