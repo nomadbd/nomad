@@ -23,8 +23,11 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
       const isFromAmbassador = params.get('from') === 'ambassadors' || params.get('from') === 'ambassador';
 
       if (isFromAmbassador) {
-        // সঠিক ট্যাব key (ambassadors) দিয়ে সরাসরি নেভিগেট করা
-        window.location.href = '/admin?tab=ambassadors';
+        // পেজ রিফ্রেশ না করে স্মুথলি ইউআরএল আপডেট ও পপ-স্টেট ট্রিগার করা
+        const targetUrl = '/admin?tab=ambassadors';
+        window.history.pushState({}, '', targetUrl);
+        window.dispatchEvent(new PopStateEvent('popstate'));
+        onBack();
         return;
       }
     }
