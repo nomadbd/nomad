@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { supabase } from '@/supabaseClient';
 
 interface AmbassadorProfile {
@@ -15,6 +16,43 @@ interface AmbassadorListProps {
   searchQuery?: string;
   isFilterOpen?: boolean;
 }
+
+// ---------------- SKELETON LOADER COMPONENT ----------------
+const AmbassadorSkeleton = () => (
+  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+    {[1, 2, 3, 4].map((i) => (
+      <div
+        key={i}
+        style={{
+          backgroundColor: '#050505',
+          border: '1px solid #1a1a1a',
+          padding: '16px',
+          borderRadius: '2px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '12px',
+          animation: 'pulse 1.5s infinite ease-in-out',
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '60%' }}>
+            <div style={{ height: '14px', width: '140px', backgroundColor: '#1a1a1a', borderRadius: '2px' }} />
+            <div style={{ height: '10px', width: '180px', backgroundColor: '#111111', borderRadius: '2px' }} />
+          </div>
+          <div style={{ height: '24px', width: '70px', backgroundColor: '#1a1a1a', borderRadius: '2px' }} />
+        </div>
+        <div style={{ height: '10px', width: '100%', backgroundColor: '#111111', borderRadius: '2px' }} />
+      </div>
+    ))}
+    <style>{`
+      @keyframes pulse {
+        0% { opacity: 0.6; }
+        50% { opacity: 0.2; }
+        100% { opacity: 0.6; }
+      }
+    `}</style>
+  </div>
+);
 
 export default function AmbassadorList({
   searchQuery = '',
@@ -382,9 +420,7 @@ export default function AmbassadorList({
 
       {/* ---------------- CONTENT SECTION ---------------- */}
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '40px', color: '#666', fontSize: '11px', fontFamily: 'monospace' }}>
-          LOADING AMBASSADORS...
-        </div>
+        <AmbassadorSkeleton />
       ) : errorMessage ? (
         <div style={{ backgroundColor: '#110505', border: '1px solid #441111', color: '#ff6b6b', padding: '12px', borderRadius: '2px', fontSize: '11px', fontFamily: 'monospace' }}>
           ERROR: {errorMessage}
@@ -398,9 +434,9 @@ export default function AmbassadorList({
           {filteredAmbassadors.map((amb) => {
             const isBlocked = amb.status?.toUpperCase() === 'BLOCKED' || amb.status?.toUpperCase() === 'DEACTIVATED';
             const fullLink = amb.assigned_slug ? `${baseUrl}/${amb.assigned_slug}` : 'N/A';
-            
-            // Correct relative URL targeting Admin Messages tab with search query
-            const messageUrl = `/admin?tab=messages&search=${encodeURIComponent(amb.email || amb.name)}`;
+
+            // from=ambassador যুক্ত করা হয়েছে যেন ব্যাক চাপলে ফেরত আসা যায়
+            const messageUrl = `/admin?tab=messages&search=${encodeURIComponent(amb.email || amb.name)}&from=ambassador`;
 
             return (
               <div
@@ -425,8 +461,8 @@ export default function AmbassadorList({
                 >
                   {/* LEFT DETAILS CONTAINER */}
                   <div style={{ flex: '1 1 0%', minWidth: 0 }}>
-                    {/* NAME (CLICKABLE LINK TO MESSAGES TAB) */}
-                    <a
+                    {/* NAME (SMOOTH NEXT LINK TO MESSAGES TAB) */}
+                    <Link
                       href={messageUrl}
                       title={`Open messages for ${amb.name}`}
                       style={{
@@ -445,10 +481,10 @@ export default function AmbassadorList({
                       onMouseLeave={(e) => (e.currentTarget.style.color = '#fff')}
                     >
                       {amb.name}
-                    </a>
+                    </Link>
 
-                    {/* EMAIL (CLICKABLE LINK TO MESSAGES TAB) */}
-                    <a
+                    {/* EMAIL (SMOOTH NEXT LINK TO MESSAGES TAB) */}
+                    <Link
                       href={messageUrl}
                       title={`Open messages for ${amb.email}`}
                       style={{
@@ -468,7 +504,7 @@ export default function AmbassadorList({
                       onMouseLeave={(e) => (e.currentTarget.style.color = '#888')}
                     >
                       {amb.email}
-                    </a>
+                    </Link>
 
                     {/* TOTAL SALES */}
                     <div
