@@ -16,25 +16,25 @@ interface AmbassadorListProps {
   isFilterOpen?: boolean;
 }
 
-export default function AmbassadorList({ searchQuery = '', isFilterOpen = false }: AmbassadorListProps) {
+export default function AmbassadorList({
+  searchQuery = '',
+  isFilterOpen = true,
+}: AmbassadorListProps) {
   const [ambassadors, setAmbassadors] = useState<AmbassadorProfile[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-  // Filter States (ডিফল্ট অবস্থায় কোনো ফিল্টার সক্রিয় থাকবে না)
-  const [sortOrder, setSortOrder] = useState<'NONE' | 'NEWEST' | 'OLDEST'>('NONE');
-  const [startDate, setStartDate] = useState<string>('');
-  const [endDate, setEndDate] = useState<string>('');
+  // Filter States
+  const [sortOrder, setSortOrder] = useState<'NEWEST' | 'OLDEST'>('NEWEST');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'BLOCKED'>('ALL');
-  const [salesSort, setSalesSort] = useState<'NONE' | 'HIGHEST' | 'LOWEST'>('NONE');
-  const [noSalesOnly, setNoSalesOnly] = useState<boolean>(false);
+  const [salesFilter, setSalesFilter] = useState<'ALL' | 'HIGHEST' | 'LOWEST' | 'NO_SALES'>('ALL');
 
   const fetchAmbassadors = async () => {
     setLoading(true);
     setErrorMessage(null);
     try {
-      // .ilike ব্যবহার করা হয়েছে যাতে 'ambassador' বা 'AMBASSADOR' যেকোনো কেসে ম্যাচ করে
+      // Supabase Query
       const { data, error } = await supabase
         .from('profiles')
         .select(`
@@ -44,51 +44,13 @@ export default function AmbassadorList({ searchQuery = '', isFilterOpen = false 
           status,
           created_at,
           ambassador (
-            assigned_slug,
-            total_sales
+            assigned_slug
           )
         `)
         .ilike('role', 'ambassador')
         .order('created_at', { ascending: false });
 
-      if (error) {
-        // যদি ambassador টেবিলে total_sales কলাম না থাকে, তবে ব্যাকআপ ক্যোয়ারি চলবে
-        console.warn('Primary query failed, running fallback query...', error.message);
-        
-        const { data: fallbackData, error: fallbackError } = await supabase
-          .from('profiles')
-          .select(`
-            id,
-            name,
-            email,
-            status,
-            created_at,
-            ambassador (
-              assigned_slug
-            )
-          `)
-          .ilike('role', 'ambassador')
-          .order('created_at', { ascending: false });
-
-        if (fallbackError) throw fallbackError;
-
-        if (fallbackData) {
-          const formattedData: AmbassadorProfile[] = fallbackData.map((item: any) => {
-            const ambData = Array.isArray(item.ambassador) ? item.ambassador[0] : item.ambassador;
-            return {
-              id: item.id,
-              name: item.name || 'Unnamed Ambassador',
-              email: item.email || 'No Email',
-              status: item.status || 'ACTIVE',
-              assigned_slug: ambData?.assigned_slug || 'N/A',
-              created_at: item.created_at || '',
-              total_sales: 0,
-            };
-          });
-          setAmbassadors(formattedData);
-          return;
-        }
-      }
+      if (error) throw error;
 
       if (data) {
         const formattedData: AmbassadorProfile[] = data.map((item: any) => {
@@ -119,7 +81,7 @@ export default function AmbassadorList({ searchQuery = '', isFilterOpen = false 
 
   const handleBlockAmbassador = async (userId: string, currentSlug: string) => {
     const confirmBlock = window.confirm(
-      `Are you sure you want to block this ambassador?\nStore link (${currentSlug}) will be deactivated and released.`
+      `Are you sure you want to block this ambassador?\nStore link (${currentSlug}) will be deactivated.`
     );
     if (!confirmBlock) return;
 
@@ -153,23 +115,6 @@ export default function AmbassadorList({ searchQuery = '', isFilterOpen = false 
     }
   };
 
-  const resetAllFilters = () => {
-    setSortOrder('NONE');
-    setStartDate('');
-    setEndDate('');
-    setStatusFilter('ALL');
-    setSalesSort('NONE');
-    setNoSalesOnly(false);
-  };
-
-  const isAnyFilterActive =
-    sortOrder !== 'NONE' ||
-    startDate !== '' ||
-    endDate !== '' ||
-    statusFilter !== 'ALL' ||
-    salesSort !== 'NONE' ||
-    noSalesOnly;
-
   // Filter & Sort Logic
   const filteredAmbassadors = ambassadors
     .filter((amb) => {
@@ -177,17 +122,10 @@ export default function AmbassadorList({ searchQuery = '', isFilterOpen = false 
       if (statusFilter === 'ACTIVE' && amb.status?.toUpperCase() !== 'ACTIVE') return false;
       if (statusFilter === 'BLOCKED' && amb.status?.toUpperCase() !== 'BLOCKED') return false;
 
-      // 2. Zero Sales Filter
-      if (noSalesOnly && (amb.total_sales || 0) > 0) return false;
+      // 2. Sales Filter
+      if (salesFilter === 'NO_SALES' && (amb.total_sales || 0) > 0) return false;
 
-      // 3. Date Filtering (Start & End)
-      if (amb.created_at) {
-        const ambDateStr = amb.created_at.split('T')[0];
-        if (startDate && ambDateStr < startDate) return false;
-        if (endDate && ambDateStr > endDate) return false;
-      }
-
-      // 4. Search Query
+      // 3. Search Query
       if (searchQuery && searchQuery.trim() !== '') {
         const query = searchQuery.trim().toLowerCase();
         const matchesName = amb.name?.toLowerCase().includes(query);
@@ -200,10 +138,10 @@ export default function AmbassadorList({ searchQuery = '', isFilterOpen = false 
     })
     .sort((a, b) => {
       // Sales Sort
-      if (salesSort === 'HIGHEST') {
+      if (salesFilter === 'HIGHEST') {
         return (b.total_sales || 0) - (a.total_sales || 0);
       }
-      if (salesSort === 'LOWEST') {
+      if (salesFilter === 'LOWEST') {
         return (a.total_sales || 0) - (b.total_sales || 0);
       }
 
@@ -212,178 +150,371 @@ export default function AmbassadorList({ searchQuery = '', isFilterOpen = false 
       const dateB = new Date(b.created_at || 0).getTime();
 
       if (sortOrder === 'OLDEST') return dateA - dateB;
-      if (sortOrder === 'NEWEST') return dateB - dateA;
-
-      return dateB - dateA; // Default sorting
+      return dateB - dateA; // Default NEWEST
     });
 
-  if (loading) {
-    return <div style={loadingStyle}>Loading ambassador list...</div>;
-  }
+  const dateSortOptions = ['NEWEST', 'OLDEST'];
+  const statusOptions = ['ALL', 'ACTIVE', 'BLOCKED'];
+  const salesOptions = [
+    { label: 'ALL', value: 'ALL' },
+    { label: 'HIGHEST SALES', value: 'HIGHEST' },
+    { label: 'LOWEST SALES', value: 'LOWEST' },
+    { label: 'NO SALES (0)', value: 'NO_SALES' },
+  ];
 
   return (
-    <div style={containerStyle}>
-      {/* ফিল্টার প্যানেল (মুক্ত পেজে ৩টি সারি) */}
+    <div style={{ width: '100%', color: '#ffffff', fontFamily: 'sans-serif' }}>
+      {/* ---------------- FILTER SECTION (Exact OrderFiltersBar Design) ---------------- */}
       {isFilterOpen && (
-        <div style={freeFilterPanelStyle}>
-          {/* লাইন ১: সর্ট ও ডেট */}
-          <div style={scrollRowStyle}>
-            <button
-              onClick={() => setSortOrder(sortOrder === 'NEWEST' ? 'NONE' : 'NEWEST')}
-              style={pillButtonStyle(sortOrder === 'NEWEST')}
-            >
-              ⚡ NEWEST FIRST
-            </button>
-
-            <button
-              onClick={() => setSortOrder(sortOrder === 'OLDEST' ? 'NONE' : 'OLDEST')}
-              style={pillButtonStyle(sortOrder === 'OLDEST')}
-            >
-              ⏳ OLDEST FIRST
-            </button>
-
-            <div style={dateGroupStyle}>
-              <span style={dateLabelStyle}>FROM:</span>
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                style={dateInputStyle}
-              />
+        <div className="filter-expand-content animate-fade-in" style={{ marginBottom: '16px' }}>
+          <div
+            style={{
+              backgroundColor: '#050505',
+              border: '1px solid #222',
+              padding: '16px',
+              borderRadius: '2px',
+              width: '100%',
+              boxSizing: 'border-box',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '14px',
+            }}
+          >
+            {/* SORT BY JOIN DATE */}
+            <div>
+              <label
+                style={{
+                  display: 'block',
+                  fontSize: '9px',
+                  color: '#666',
+                  marginBottom: '6px',
+                  letterSpacing: '1px',
+                  textTransform: 'uppercase',
+                }}
+              >
+                SORT BY JOIN DATE
+              </label>
+              <div
+                style={{
+                  display: 'flex',
+                  gap: '12px',
+                  overflowX: 'auto',
+                  scrollbarWidth: 'none',
+                  paddingBottom: '2px',
+                  width: '100%',
+                }}
+              >
+                {dateSortOptions.map((opt) => {
+                  const isActive = sortOrder === opt;
+                  return (
+                    <button
+                      type="button"
+                      key={opt}
+                      onClick={() => setSortOrder(opt as 'NEWEST' | 'OLDEST')}
+                      style={{
+                        backgroundColor: 'transparent',
+                        color: isActive ? '#ffffff' : '#666666',
+                        border: 'none',
+                        padding: '4px 0px',
+                        fontSize: '10px',
+                        fontFamily: 'monospace',
+                        letterSpacing: '1px',
+                        fontWeight: isActive ? 'bold' : 'normal',
+                        cursor: 'pointer',
+                        textTransform: 'uppercase',
+                        whiteSpace: 'nowrap',
+                        flexShrink: 0,
+                        transition: 'color 0.2s ease',
+                      }}
+                    >
+                      {opt}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
-            <div style={dateGroupStyle}>
-              <span style={dateLabelStyle}>TO:</span>
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                style={dateInputStyle}
-              />
+            {/* AMBASSADOR STATUS */}
+            <div>
+              <label
+                style={{
+                  display: 'block',
+                  fontSize: '9px',
+                  color: '#666',
+                  marginBottom: '6px',
+                  letterSpacing: '1px',
+                  textTransform: 'uppercase',
+                }}
+              >
+                AMBASSADOR STATUS
+              </label>
+              <div
+                style={{
+                  display: 'flex',
+                  gap: '12px',
+                  overflowX: 'auto',
+                  scrollbarWidth: 'none',
+                  paddingBottom: '2px',
+                  width: '100%',
+                }}
+              >
+                {statusOptions.map((status) => {
+                  const isActive = statusFilter === status;
+                  return (
+                    <button
+                      type="button"
+                      key={status}
+                      onClick={() => setStatusFilter(status as 'ALL' | 'ACTIVE' | 'BLOCKED')}
+                      style={{
+                        backgroundColor: 'transparent',
+                        color: isActive ? '#ffffff' : '#666666',
+                        border: 'none',
+                        padding: '4px 0px',
+                        fontSize: '10px',
+                        fontFamily: 'monospace',
+                        letterSpacing: '1px',
+                        fontWeight: isActive ? 'bold' : 'normal',
+                        cursor: 'pointer',
+                        textTransform: 'uppercase',
+                        whiteSpace: 'nowrap',
+                        flexShrink: 0,
+                        transition: 'color 0.2s ease',
+                      }}
+                    >
+                      {status}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
-            {(startDate || endDate) && (
-              <button onClick={() => { setStartDate(''); setEndDate(''); }} style={clearDateBtnStyle}>
-                CLEAR DATES
-              </button>
-            )}
-          </div>
-
-          {/* লাইন ২: স্ট্যাটাস ফিল্টার */}
-          <div style={scrollRowStyle}>
-            <button
-              onClick={() => setStatusFilter(statusFilter === 'ACTIVE' ? 'ALL' : 'ACTIVE')}
-              style={pillButtonStyle(statusFilter === 'ACTIVE')}
-            >
-              🟢 ACTIVE ONLY
-            </button>
-            <button
-              onClick={() => setStatusFilter(statusFilter === 'BLOCKED' ? 'ALL' : 'BLOCKED')}
-              style={pillButtonStyle(statusFilter === 'BLOCKED')}
-            >
-              🔴 BLOCKED ONLY
-            </button>
-          </div>
-
-          {/* লাইন ৩: সেলস সম্পর্কিত ফিল্টার */}
-          <div style={scrollRowStyle}>
-            <button
-              onClick={() => {
-                setSalesSort(salesSort === 'HIGHEST' ? 'NONE' : 'HIGHEST');
-                setNoSalesOnly(false);
-              }}
-              style={pillButtonStyle(salesSort === 'HIGHEST')}
-            >
-              💰 HIGHEST SALES
-            </button>
-
-            <button
-              onClick={() => {
-                setSalesSort(salesSort === 'LOWEST' ? 'NONE' : 'LOWEST');
-                setNoSalesOnly(false);
-              }}
-              style={pillButtonStyle(salesSort === 'LOWEST')}
-            >
-              📉 LOWEST SALES
-            </button>
-
-            <button
-              onClick={() => {
-                setNoSalesOnly(!noSalesOnly);
-                setSalesSort('NONE');
-              }}
-              style={pillButtonStyle(noSalesOnly)}
-            >
-              🚫 NO SALES (0 SALES)
-            </button>
-
-            {isAnyFilterActive && (
-              <button onClick={resetAllFilters} style={resetButtonStyle}>
-                🔄 RESET FILTERS
-              </button>
-            )}
+            {/* SALES FILTER */}
+            <div>
+              <label
+                style={{
+                  display: 'block',
+                  fontSize: '9px',
+                  color: '#666',
+                  marginBottom: '6px',
+                  letterSpacing: '1px',
+                  textTransform: 'uppercase',
+                }}
+              >
+                SALES FILTER
+              </label>
+              <div
+                style={{
+                  display: 'flex',
+                  gap: '12px',
+                  overflowX: 'auto',
+                  scrollbarWidth: 'none',
+                  paddingBottom: '2px',
+                  width: '100%',
+                }}
+              >
+                {salesOptions.map((opt) => {
+                  const isActive = salesFilter === opt.value;
+                  return (
+                    <button
+                      type="button"
+                      key={opt.value}
+                      onClick={() =>
+                        setSalesFilter(opt.value as 'ALL' | 'HIGHEST' | 'LOWEST' | 'NO_SALES')
+                      }
+                      style={{
+                        backgroundColor: 'transparent',
+                        color: isActive ? '#ffffff' : '#666666',
+                        border: 'none',
+                        padding: '4px 0px',
+                        fontSize: '10px',
+                        fontFamily: 'monospace',
+                        letterSpacing: '1px',
+                        fontWeight: isActive ? 'bold' : 'normal',
+                        cursor: 'pointer',
+                        textTransform: 'uppercase',
+                        whiteSpace: 'nowrap',
+                        flexShrink: 0,
+                        transition: 'color 0.2s ease',
+                      }}
+                    >
+                      {opt.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         </div>
       )}
 
-      {/* হেডার পার্ট */}
-      <div style={headerSectionStyle}>
-        <h2 style={titleStyle}>Manage Ambassadors</h2>
-        <span style={countBadgeStyle}>{filteredAmbassadors.length} Total</span>
+      {/* ---------------- HEADER BAR ---------------- */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: '14px',
+          padding: '0 2px',
+        }}
+      >
+        <h2
+          style={{
+            fontSize: '14px',
+            fontWeight: 'bold',
+            letterSpacing: '1px',
+            textTransform: 'uppercase',
+            margin: 0,
+            fontFamily: 'monospace',
+          }}
+        >
+          Manage Ambassadors
+        </h2>
+        <span
+          style={{
+            fontSize: '10px',
+            fontFamily: 'monospace',
+            backgroundColor: '#111',
+            border: '1px solid #222',
+            padding: '3px 8px',
+            borderRadius: '2px',
+            color: '#888',
+          }}
+        >
+          {filteredAmbassadors.length} TOTAL
+        </span>
       </div>
 
-      {/* Error Message থাকলে তা দেখাবে */}
-      {errorMessage && (
-        <div style={errorContainerStyle}>
-          ⚠️ Database Error: {errorMessage}
+      {/* ---------------- CONTENT SECTION ---------------- */}
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '40px', color: '#666', fontSize: '11px', fontFamily: 'monospace' }}>
+          LOADING AMBASSADORS...
         </div>
-      )}
-
-      {/* অ্যাম্বাসেডর তালিকা */}
-      {!errorMessage && filteredAmbassadors.length === 0 ? (
-        <div style={emptyStyle}>No ambassadors found matching criteria.</div>
+      ) : errorMessage ? (
+        <div style={{ backgroundColor: '#110505', border: '1px solid #441111', color: '#ff6b6b', padding: '12px', borderRadius: '2px', fontSize: '11px', fontFamily: 'monospace' }}>
+          ERROR: {errorMessage}
+        </div>
+      ) : filteredAmbassadors.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '40px', color: '#555', fontSize: '11px', fontFamily: 'monospace', backgroundColor: '#050505', border: '1px solid #222', borderRadius: '2px' }}>
+          NO AMBASSADORS FOUND MATCHING CRITERIA.
+        </div>
       ) : (
-        <div style={listGridStyle}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           {filteredAmbassadors.map((amb) => {
             const isBlocked = amb.status?.toUpperCase() === 'BLOCKED';
 
             return (
-              <div key={amb.id} style={cardStyle}>
-                <div style={infoGroupStyle}>
-                  <div style={nameRowStyle}>
-                    <h4 style={nameStyle}>{amb.name}</h4>
-                    <span style={statusBadgeStyle(isBlocked)}>
-                      {isBlocked ? 'BLOCKED' : 'ACTIVE'}
-                    </span>
-                    <span style={salesBadgeStyle}>
-                      Sales: {amb.total_sales || 0}
-                    </span>
+              <div
+                key={amb.id}
+                style={{
+                  backgroundColor: '#050505',
+                  border: '1px solid #222',
+                  padding: '14px 16px',
+                  borderRadius: '2px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '10px',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px' }}>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#fff' }}>
+                        {amb.name}
+                      </span>
+                      <span
+                        style={{
+                          fontSize: '9px',
+                          fontFamily: 'monospace',
+                          padding: '2px 6px',
+                          borderRadius: '2px',
+                          backgroundColor: isBlocked ? '#220808' : '#082210',
+                          color: isBlocked ? '#ff4d4d' : '#4dff88',
+                          border: `1px solid ${isBlocked ? '#551111' : '#115522'}`,
+                          letterSpacing: '1px',
+                        }}
+                      >
+                        {isBlocked ? 'BLOCKED' : 'ACTIVE'}
+                      </span>
+                      <span
+                        style={{
+                          fontSize: '9px',
+                          fontFamily: 'monospace',
+                          padding: '2px 6px',
+                          borderRadius: '2px',
+                          backgroundColor: '#0a192f',
+                          color: '#64ffda',
+                          border: '1px solid #113355',
+                          letterSpacing: '1px',
+                        }}
+                      >
+                        SALES: {amb.total_sales || 0}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: '11px', color: '#666', marginTop: '4px', fontFamily: 'monospace' }}>
+                      {amb.email}
+                    </div>
                   </div>
-                  <p style={emailStyle}>{amb.email}</p>
-                  <div style={slugRowStyle}>
-                    <span style={slugLabelStyle}>Link:</span>
-                    <span style={slugValueStyle}>/{amb.assigned_slug}</span>
+
+                  {/* ACTION BUTTON */}
+                  <div>
+                    {!isBlocked ? (
+                      <button
+                        type="button"
+                        onClick={() => handleBlockAmbassador(amb.id, amb.assigned_slug)}
+                        disabled={actionLoading === amb.id}
+                        style={{
+                          backgroundColor: '#000',
+                          color: '#ff4d4d',
+                          border: '1px solid #441111',
+                          padding: '6px 12px',
+                          fontSize: '10px',
+                          fontFamily: 'monospace',
+                          fontWeight: 'bold',
+                          cursor: 'pointer',
+                          borderRadius: '2px',
+                          letterSpacing: '1px',
+                        }}
+                      >
+                        {actionLoading === amb.id ? 'PROCESSING...' : 'BLOCK'}
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => handleActivateAmbassador(amb.id)}
+                        disabled={actionLoading === amb.id}
+                        style={{
+                          backgroundColor: '#000',
+                          color: '#4dff88',
+                          border: '1px solid #114422',
+                          padding: '6px 12px',
+                          fontSize: '10px',
+                          fontFamily: 'monospace',
+                          fontWeight: 'bold',
+                          cursor: 'pointer',
+                          borderRadius: '2px',
+                          letterSpacing: '1px',
+                        }}
+                      >
+                        {actionLoading === amb.id ? 'PROCESSING...' : 'ACTIVATE'}
+                      </button>
+                    )}
                   </div>
                 </div>
 
-                <div style={actionGroupStyle}>
-                  {!isBlocked ? (
-                    <button
-                      onClick={() => handleBlockAmbassador(amb.id, amb.assigned_slug)}
-                      disabled={actionLoading === amb.id}
-                      style={blockButtonStyle}
-                    >
-                      {actionLoading === amb.id ? 'Processing...' : 'Block Ambassador'}
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => handleActivateAmbassador(amb.id)}
-                      disabled={actionLoading === amb.id}
-                      style={activateButtonStyle}
-                    >
-                      {actionLoading === amb.id ? 'Processing...' : 'Activate / Unblock'}
-                    </button>
-                  )}
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    fontSize: '10px',
+                    fontFamily: 'monospace',
+                    color: '#555',
+                    borderTop: '1px solid #111',
+                    paddingTop: '8px',
+                  }}
+                >
+                  <span>LINK:</span>
+                  <span style={{ color: '#2997ff' }}>/{amb.assigned_slug}</span>
                 </div>
               </div>
             );
@@ -393,257 +524,3 @@ export default function AmbassadorList({ searchQuery = '', isFilterOpen = false 
     </div>
   );
 }
-
-// ---------------- STYLES ----------------
-
-const containerStyle: React.CSSProperties = {
-  padding: '20px 16px',
-  color: '#ffffff',
-  maxWidth: '800px',
-  margin: '0 auto',
-};
-
-const freeFilterPanelStyle: React.CSSProperties = {
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '10px',
-  marginBottom: '20px',
-  padding: '0 4px',
-};
-
-const scrollRowStyle: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: '8px',
-  overflowX: 'auto',
-  whiteSpace: 'nowrap',
-  paddingBottom: '4px',
-  scrollbarWidth: 'none',
-  msOverflowStyle: 'none',
-};
-
-const pillButtonStyle = (isActive: boolean): React.CSSProperties => ({
-  backgroundColor: isActive ? '#ffffff' : '#141414',
-  color: isActive ? '#000000' : '#888888',
-  border: isActive ? '1px solid #ffffff' : '1px solid #282828',
-  borderRadius: '20px',
-  padding: '6px 14px',
-  fontSize: '11px',
-  fontWeight: 600,
-  cursor: 'pointer',
-  whiteSpace: 'nowrap',
-  flexShrink: 0,
-  transition: 'all 0.2s ease',
-  fontFamily: 'monospace, sans-serif',
-});
-
-const resetButtonStyle: React.CSSProperties = {
-  backgroundColor: 'rgba(239, 68, 68, 0.12)',
-  color: '#ef4444',
-  border: '1px solid rgba(239, 68, 68, 0.3)',
-  borderRadius: '20px',
-  padding: '6px 14px',
-  fontSize: '11px',
-  fontWeight: 600,
-  cursor: 'pointer',
-  whiteSpace: 'nowrap',
-  flexShrink: 0,
-  fontFamily: 'monospace, sans-serif',
-};
-
-const dateGroupStyle: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: '6px',
-  backgroundColor: '#141414',
-  border: '1px solid #282828',
-  borderRadius: '20px',
-  padding: '2px 10px',
-  flexShrink: 0,
-};
-
-const dateLabelStyle: React.CSSProperties = {
-  fontSize: '9px',
-  color: '#666666',
-  fontWeight: 700,
-};
-
-const dateInputStyle: React.CSSProperties = {
-  backgroundColor: 'transparent',
-  color: '#ffffff',
-  border: 'none',
-  outline: 'none',
-  fontSize: '11px',
-  fontFamily: 'monospace, sans-serif',
-  cursor: 'pointer',
-};
-
-const clearDateBtnStyle: React.CSSProperties = {
-  background: 'none',
-  border: 'none',
-  color: '#888888',
-  fontSize: '10px',
-  cursor: 'pointer',
-  textDecoration: 'underline',
-  flexShrink: 0,
-};
-
-const headerSectionStyle: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  marginBottom: '20px',
-};
-
-const titleStyle: React.CSSProperties = {
-  fontSize: '18px',
-  fontWeight: 600,
-  margin: 0,
-  letterSpacing: '-0.02em',
-};
-
-const countBadgeStyle: React.CSSProperties = {
-  fontSize: '11px',
-  backgroundColor: 'rgba(255, 255, 255, 0.08)',
-  padding: '4px 10px',
-  borderRadius: '20px',
-  color: '#86868b',
-};
-
-const listGridStyle: React.CSSProperties = {
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '12px',
-};
-
-const cardStyle: React.CSSProperties = {
-  backgroundColor: 'rgba(18, 18, 18, 0.8)',
-  border: '1px solid rgba(255, 255, 255, 0.08)',
-  borderRadius: '16px',
-  padding: '16px 20px',
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  backdropFilter: 'blur(10px)',
-  flexWrap: 'wrap',
-  gap: '12px',
-};
-
-const infoGroupStyle: React.CSSProperties = {
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '4px',
-};
-
-const nameRowStyle: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: '10px',
-  flexWrap: 'wrap',
-};
-
-const nameStyle: React.CSSProperties = {
-  margin: 0,
-  fontSize: '15px',
-  fontWeight: 600,
-  color: '#ffffff',
-};
-
-const emailStyle: React.CSSProperties = {
-  margin: 0,
-  fontSize: '12px',
-  color: '#86868b',
-};
-
-const slugRowStyle: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: '6px',
-  marginTop: '4px',
-};
-
-const slugLabelStyle: React.CSSProperties = {
-  fontSize: '11px',
-  color: '#6e6e73',
-};
-
-const slugValueStyle: React.CSSProperties = {
-  fontSize: '12px',
-  color: '#2997ff',
-  fontWeight: 500,
-};
-
-const statusBadgeStyle = (isBlocked: boolean): React.CSSProperties => ({
-  fontSize: '9px',
-  fontWeight: 700,
-  padding: '2px 8px',
-  borderRadius: '6px',
-  letterSpacing: '0.05em',
-  backgroundColor: isBlocked ? 'rgba(239, 68, 68, 0.15)' : 'rgba(34, 197, 94, 0.15)',
-  color: isBlocked ? '#ef4444' : '#22c55e',
-  border: `1px solid ${isBlocked ? 'rgba(239, 68, 68, 0.3)' : 'rgba(34, 197, 94, 0.3)'}`,
-});
-
-const salesBadgeStyle: React.CSSProperties = {
-  fontSize: '9px',
-  fontWeight: 700,
-  padding: '2px 8px',
-  borderRadius: '6px',
-  letterSpacing: '0.05em',
-  backgroundColor: 'rgba(41, 151, 255, 0.15)',
-  color: '#2997ff',
-  border: '1px solid rgba(41, 151, 255, 0.3)',
-};
-
-const actionGroupStyle: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-};
-
-const blockButtonStyle: React.CSSProperties = {
-  backgroundColor: 'rgba(239, 68, 68, 0.12)',
-  color: '#ef4444',
-  border: '1px solid rgba(239, 68, 68, 0.3)',
-  padding: '8px 14px',
-  borderRadius: '10px',
-  fontSize: '12px',
-  fontWeight: 600,
-  cursor: 'pointer',
-  transition: 'all 0.2s ease',
-};
-
-const activateButtonStyle: React.CSSProperties = {
-  backgroundColor: 'rgba(34, 197, 94, 0.12)',
-  color: '#22c55e',
-  border: '1px solid rgba(34, 197, 94, 0.3)',
-  padding: '8px 14px',
-  borderRadius: '10px',
-  fontSize: '12px',
-  fontWeight: 600,
-  cursor: 'pointer',
-  transition: 'all 0.2s ease',
-};
-
-const loadingStyle: React.CSSProperties = {
-  padding: '40px',
-  textAlign: 'center',
-  color: '#86868b',
-  fontSize: '13px',
-};
-
-const emptyStyle: React.CSSProperties = {
-  padding: '40px',
-  textAlign: 'center',
-  color: '#6e6e73',
-  fontSize: '13px',
-};
-
-const errorContainerStyle: React.CSSProperties = {
-  backgroundColor: 'rgba(239, 68, 68, 0.15)',
-  color: '#ef4444',
-  border: '1px solid rgba(239, 68, 68, 0.3)',
-  padding: '12px 16px',
-  borderRadius: '12px',
-  fontSize: '13px',
-  marginBottom: '16px',
-};
