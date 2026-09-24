@@ -17,9 +17,33 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
   onBack,
   openDrawer,
 }) => {
+  // ব্যাক বাটনে ক্লিক করলে URL চেক করবে ইউজার Ambassador ট্যাব থেকে এসেছে কি না
+  const handleBackClick = () => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const isFromAmbassador = params.get('from') === 'ambassador';
+
+      if (isFromAmbassador) {
+        // Ambassador ট্যাবে স্মুথলি ফেরত নিয়ে যাওয়া
+        const newUrl = new URL(window.location.href);
+        newUrl.searchParams.set('tab', 'ambassador');
+        newUrl.searchParams.delete('from');
+        newUrl.searchParams.delete('userId');
+        newUrl.searchParams.delete('search');
+        
+        window.history.pushState({}, '', newUrl.toString());
+        window.dispatchEvent(new Event('popstate')); // Tab State আপডেট করার জন্য
+        onBack();
+        return;
+      }
+    }
+    // স্বাভাবিকভাবে মেসেজ লিস্টে ব্যাক করবে
+    onBack();
+  };
+
   return (
     <div style={styles.whatsappHeaderStyle}>
-      <button onClick={onBack} style={styles.backBtnStyle} aria-label="Back">
+      <button onClick={handleBackClick} style={styles.backBtnStyle} aria-label="Back">
         <BackIcon />
       </button>
 
