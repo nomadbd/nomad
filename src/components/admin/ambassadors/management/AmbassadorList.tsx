@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import Link from 'next/link';
 import { supabase } from '@/supabaseClient';
 
 interface AmbassadorProfile {
@@ -17,7 +16,7 @@ interface AmbassadorListProps {
   isFilterOpen?: boolean;
 }
 
-// ---------------- SKELETON LOADER COMPONENT ----------------
+// ---------------- SKELETON LOADER COMPONENT (NO LAYOUT FLICKER) ----------------
 const AmbassadorSkeleton = () => (
   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
     {[1, 2, 3, 4].map((i) => (
@@ -119,6 +118,16 @@ export default function AmbassadorList({
   useEffect(() => {
     fetchAmbassadors();
   }, []);
+
+  // পেজ রিফ্রেশ না করে স্মুথলি মেসেজ ট্যাবে নিয়ে যাওয়ার ফাংশন
+  const handleOpenMessages = (e: React.MouseEvent, searchTarget: string) => {
+    e.preventDefault();
+    const targetUrl = `/admin?tab=messages&search=${encodeURIComponent(searchTarget)}&from=ambassador`;
+    
+    // SPA style push state without reload
+    window.history.pushState({}, '', targetUrl);
+    window.dispatchEvent(new Event('popstate'));
+  };
 
   const handleBlockAmbassador = async (userId: string, currentSlug: string) => {
     const confirmBlock = window.confirm(
@@ -434,8 +443,6 @@ export default function AmbassadorList({
           {filteredAmbassadors.map((amb) => {
             const isBlocked = amb.status?.toUpperCase() === 'BLOCKED' || amb.status?.toUpperCase() === 'DEACTIVATED';
             const fullLink = amb.assigned_slug ? `${baseUrl}/${amb.assigned_slug}` : 'N/A';
-
-            // from=ambassador যুক্ত করা হয়েছে যেন ব্যাক চাপলে ফেরত আসা যায়
             const messageUrl = `/admin?tab=messages&search=${encodeURIComponent(amb.email || amb.name)}&from=ambassador`;
 
             return (
@@ -461,9 +468,10 @@ export default function AmbassadorList({
                 >
                   {/* LEFT DETAILS CONTAINER */}
                   <div style={{ flex: '1 1 0%', minWidth: 0 }}>
-                    {/* NAME (SMOOTH NEXT LINK TO MESSAGES TAB) */}
-                    <Link
+                    {/* NAME LINK */}
+                    <a
                       href={messageUrl}
+                      onClick={(e) => handleOpenMessages(e, amb.email || amb.name)}
                       title={`Open messages for ${amb.name}`}
                       style={{
                         fontSize: '14px',
@@ -481,11 +489,12 @@ export default function AmbassadorList({
                       onMouseLeave={(e) => (e.currentTarget.style.color = '#fff')}
                     >
                       {amb.name}
-                    </Link>
+                    </a>
 
-                    {/* EMAIL (SMOOTH NEXT LINK TO MESSAGES TAB) */}
-                    <Link
+                    {/* EMAIL LINK */}
+                    <a
                       href={messageUrl}
+                      onClick={(e) => handleOpenMessages(e, amb.email || amb.name)}
                       title={`Open messages for ${amb.email}`}
                       style={{
                         fontSize: '11px',
@@ -504,7 +513,7 @@ export default function AmbassadorList({
                       onMouseLeave={(e) => (e.currentTarget.style.color = '#888')}
                     >
                       {amb.email}
-                    </Link>
+                    </a>
 
                     {/* TOTAL SALES */}
                     <div
