@@ -241,6 +241,35 @@ export const useAdminMessages = (
     return matchesRole && matchesSearch;
   });
 
+  // -------------------------------------------------------------
+  // AUTO SELECT THREAD FROM URL PARAMS (?userId=... OR ?search=...)
+  // -------------------------------------------------------------
+  useEffect(() => {
+    if (threads.length > 0 && !activeThreadId && typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const targetUserId = params.get('userId');
+      const targetSearch = params.get('search')?.toLowerCase().trim();
+
+      if (targetUserId || targetSearch) {
+        const matchedThread = threads.find((thread) => {
+          if (targetUserId && (thread.id === targetUserId || thread.userEmail === targetUserId)) {
+            return true;
+          }
+          if (targetSearch) {
+            const emailMatch = thread.userEmail?.toLowerCase().trim() === targetSearch;
+            const nameMatch = thread.userName?.toLowerCase().trim() === targetSearch;
+            if (emailMatch || nameMatch) return true;
+          }
+          return false;
+        });
+
+        if (matchedThread) {
+          handleSelectThread(matchedThread);
+        }
+      }
+    }
+  }, [threads, activeThreadId]);
+
   const activeThread = threads.find((t) => t.id === activeThreadId) || null;
 
   const handleSendMessage = async (e?: React.FormEvent, textareaRef?: React.RefObject<HTMLTextAreaElement>) => {
