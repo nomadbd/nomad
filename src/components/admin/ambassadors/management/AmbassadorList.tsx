@@ -30,11 +30,13 @@ export default function AmbassadorList({
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'BLOCKED'>('ALL');
   const [salesFilter, setSalesFilter] = useState<'ALL' | 'HIGHEST' | 'LOWEST' | 'NO_SALES'>('ALL');
 
+  // Dynamic Base URL for full link preview
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://yourwebsite.com';
+
   const fetchAmbassadors = async () => {
     setLoading(true);
     setErrorMessage(null);
     try {
-      // Supabase Query
       const { data, error } = await supabase
         .from('profiles')
         .select(`
@@ -44,7 +46,8 @@ export default function AmbassadorList({
           status,
           created_at,
           ambassador (
-            assigned_slug
+            assigned_slug,
+            total_sales
           )
         `)
         .ilike('role', 'ambassador')
@@ -60,7 +63,7 @@ export default function AmbassadorList({
             name: item.name || 'Unnamed Ambassador',
             email: item.email || 'No Email',
             status: item.status || 'ACTIVE',
-            assigned_slug: ambData?.assigned_slug || 'N/A',
+            assigned_slug: ambData?.assigned_slug || '',
             created_at: item.created_at || '',
             total_sales: ambData?.total_sales || 0,
           };
@@ -81,7 +84,7 @@ export default function AmbassadorList({
 
   const handleBlockAmbassador = async (userId: string, currentSlug: string) => {
     const confirmBlock = window.confirm(
-      `Are you sure you want to block this ambassador?\nStore link (${currentSlug}) will be deactivated.`
+      `Are you sure you want to deactivate this ambassador?\nStore link (${currentSlug}) will be deactivated.`
     );
     if (!confirmBlock) return;
 
@@ -89,24 +92,22 @@ export default function AmbassadorList({
     try {
       const { error } = await supabase.rpc('deactivate_ambassador', { target_user_id: userId });
       if (error) throw error;
-      alert('Ambassador blocked successfully!');
       fetchAmbassadors();
     } catch (err: any) {
-      alert('Failed to block ambassador: ' + err.message);
+      alert('Failed to deactivate ambassador: ' + err.message);
     } finally {
       setActionLoading(null);
     }
   };
 
   const handleActivateAmbassador = async (userId: string) => {
-    const confirmActivate = window.confirm('Are you sure you want to unblock and activate this ambassador?');
+    const confirmActivate = window.confirm('Are you sure you want to activate this ambassador?');
     if (!confirmActivate) return;
 
     setActionLoading(userId);
     try {
       const { error } = await supabase.rpc('activate_ambassador', { target_user_id: userId });
       if (error) throw error;
-      alert('Ambassador activated successfully!');
       fetchAmbassadors();
     } catch (err: any) {
       alert('Failed to activate ambassador: ' + err.message);
@@ -118,14 +119,11 @@ export default function AmbassadorList({
   // Filter & Sort Logic
   const filteredAmbassadors = ambassadors
     .filter((amb) => {
-      // 1. Status Filter
       if (statusFilter === 'ACTIVE' && amb.status?.toUpperCase() !== 'ACTIVE') return false;
-      if (statusFilter === 'BLOCKED' && amb.status?.toUpperCase() !== 'BLOCKED') return false;
+      if (statusFilter === 'BLOCKED' && amb.status?.toUpperCase() !== 'BLOCKED' && amb.status?.toUpperCase() !== 'DEACTIVATED') return false;
 
-      // 2. Sales Filter
       if (salesFilter === 'NO_SALES' && (amb.total_sales || 0) > 0) return false;
 
-      // 3. Search Query
       if (searchQuery && searchQuery.trim() !== '') {
         const query = searchQuery.trim().toLowerCase();
         const matchesName = amb.name?.toLowerCase().includes(query);
@@ -137,7 +135,6 @@ export default function AmbassadorList({
       return true;
     })
     .sort((a, b) => {
-      // Sales Sort
       if (salesFilter === 'HIGHEST') {
         return (b.total_sales || 0) - (a.total_sales || 0);
       }
@@ -145,12 +142,11 @@ export default function AmbassadorList({
         return (a.total_sales || 0) - (b.total_sales || 0);
       }
 
-      // Date Sort
       const dateA = new Date(a.created_at || 0).getTime();
       const dateB = new Date(b.created_at || 0).getTime();
 
       if (sortOrder === 'OLDEST') return dateA - dateB;
-      return dateB - dateA; // Default NEWEST
+      return dateB - dateA;
     });
 
   const dateSortOptions = ['NEWEST', 'OLDEST'];
@@ -164,7 +160,7 @@ export default function AmbassadorList({
 
   return (
     <div style={{ width: '100%', color: '#ffffff', fontFamily: 'sans-serif' }}>
-      {/* ---------------- FILTER SECTION (Exact OrderFiltersBar Design) ---------------- */}
+      {/* ---------------- FILTER SECTION ---------------- */}
       {isFilterOpen && (
         <div className="filter-expand-content animate-fade-in" style={{ marginBottom: '16px' }}>
           <div
@@ -400,7 +396,8 @@ export default function AmbassadorList({
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           {filteredAmbassadors.map((amb) => {
-            const isBlocked = amb.status?.toUpperCase() === 'BLOCKED';
+            const isBlocked = amb.status?.toUpperCase() === 'BLOCKED' || amb.status?.toUpperCase() === 'DEACTIVATED';
+            const fullLink = amb.assigned_slug ? `${baseUrl}/${amb.assigned_slug}` : 'N/A';
 
             return (
               <div
@@ -415,92 +412,75 @@ export default function AmbassadorList({
                   gap: '10px',
                 }}
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
                   <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                      <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#fff' }}>
-                        {amb.name}
-                      </span>
-                      <span
-                        style={{
-                          fontSize: '9px',
-                          fontFamily: 'monospace',
-                          padding: '2px 6px',
-                          borderRadius: '2px',
-                          backgroundColor: isBlocked ? '#220808' : '#082210',
-                          color: isBlocked ? '#ff4d4d' : '#4dff88',
-                          border: `1px solid ${isBlocked ? '#551111' : '#115522'}`,
-                          letterSpacing: '1px',
-                        }}
-                      >
-                        {isBlocked ? 'BLOCKED' : 'ACTIVE'}
-                      </span>
-                      <span
-                        style={{
-                          fontSize: '9px',
-                          fontFamily: 'monospace',
-                          padding: '2px 6px',
-                          borderRadius: '2px',
-                          backgroundColor: '#0a192f',
-                          color: '#64ffda',
-                          border: '1px solid #113355',
-                          letterSpacing: '1px',
-                        }}
-                      >
-                        SALES: {amb.total_sales || 0}
-                      </span>
+                    {/* NAME */}
+                    <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#fff' }}>
+                      {amb.name}
                     </div>
-                    <div style={{ fontSize: '11px', color: '#666', marginTop: '4px', fontFamily: 'monospace' }}>
+
+                    {/* EMAIL */}
+                    <div style={{ fontSize: '11px', color: '#888', marginTop: '2px', fontFamily: 'monospace' }}>
                       {amb.email}
+                    </div>
+
+                    {/* TOTAL SALES */}
+                    <div style={{ fontSize: '11px', color: '#aaa', marginTop: '6px', fontFamily: 'monospace' }}>
+                      TOTAL SALES: <span style={{ color: '#64ffda', fontWeight: 'bold' }}>{amb.total_sales || 0}</span>
                     </div>
                   </div>
 
-                  {/* ACTION BUTTON */}
+                  {/* SINGLE ACTIVE / DEACTIVATED TOGGLE BUTTON */}
                   <div>
                     {!isBlocked ? (
                       <button
                         type="button"
                         onClick={() => handleBlockAmbassador(amb.id, amb.assigned_slug)}
                         disabled={actionLoading === amb.id}
+                        title="Click to deactivate"
                         style={{
-                          backgroundColor: '#000',
-                          color: '#ff4d4d',
-                          border: '1px solid #441111',
-                          padding: '6px 12px',
+                          backgroundColor: '#082210',
+                          color: '#4dff88',
+                          border: '1px solid #115522',
+                          padding: '6px 14px',
                           fontSize: '10px',
                           fontFamily: 'monospace',
                           fontWeight: 'bold',
                           cursor: 'pointer',
                           borderRadius: '2px',
                           letterSpacing: '1px',
+                          transition: 'all 0.2s ease',
                         }}
                       >
-                        {actionLoading === amb.id ? 'PROCESSING...' : 'BLOCK'}
+                        {actionLoading === amb.id ? 'PROCESSING...' : 'ACTIVE'}
                       </button>
                     ) : (
                       <button
                         type="button"
                         onClick={() => handleActivateAmbassador(amb.id)}
                         disabled={actionLoading === amb.id}
+                        title="Click to activate"
                         style={{
-                          backgroundColor: '#000',
-                          color: '#4dff88',
-                          border: '1px solid #114422',
-                          padding: '6px 12px',
+                          backgroundColor: '#220808',
+                          color: '#ff4d4d',
+                          border: '1px solid #551111',
+                          padding: '6px 14px',
                           fontSize: '10px',
                           fontFamily: 'monospace',
                           fontWeight: 'bold',
                           cursor: 'pointer',
                           borderRadius: '2px',
                           letterSpacing: '1px',
+                          transition: 'all 0.2s ease',
                         }}
                       >
-                        {actionLoading === amb.id ? 'PROCESSING...' : 'ACTIVATE'}
+                        {actionLoading === amb.id ? 'PROCESSING...' : 'DEACTIVATED'}
                       </button>
                     )}
                   </div>
                 </div>
 
+                {/* FULL LINK DISPLAY */}
                 <div
                   style={{
                     display: 'flex',
@@ -511,10 +491,22 @@ export default function AmbassadorList({
                     color: '#555',
                     borderTop: '1px solid #111',
                     paddingTop: '8px',
+                    wordBreak: 'break-all',
                   }}
                 >
                   <span>LINK:</span>
-                  <span style={{ color: '#2997ff' }}>/{amb.assigned_slug}</span>
+                  {amb.assigned_slug ? (
+                    <a
+                      href={fullLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ color: '#2997ff', textDecoration: 'none' }}
+                    >
+                      {fullLink}
+                    </a>
+                  ) : (
+                    <span style={{ color: '#666' }}>N/A</span>
+                  )}
                 </div>
               </div>
             );
