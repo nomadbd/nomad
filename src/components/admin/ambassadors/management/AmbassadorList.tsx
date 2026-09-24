@@ -30,8 +30,8 @@ export default function AmbassadorList({
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'BLOCKED'>('ALL');
   const [salesFilter, setSalesFilter] = useState<'ALL' | 'HIGHEST' | 'LOWEST' | 'NO_SALES'>('ALL');
 
-  // Dynamic Base URL
-  const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://yourwebsite.com';
+  // Dynamic Base URL for storefront link preview
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
 
   const fetchAmbassadors = async () => {
     setLoading(true);
@@ -398,7 +398,9 @@ export default function AmbassadorList({
           {filteredAmbassadors.map((amb) => {
             const isBlocked = amb.status?.toUpperCase() === 'BLOCKED' || amb.status?.toUpperCase() === 'DEACTIVATED';
             const fullLink = amb.assigned_slug ? `${baseUrl}/${amb.assigned_slug}` : 'N/A';
-            const messageUrl = `/messages?recipient=${amb.id}`;
+            
+            // Correct relative URL targeting Admin Messages tab with search query
+            const messageUrl = `/admin?tab=messages&search=${encodeURIComponent(amb.email || amb.name)}`;
 
             return (
               <div
@@ -423,10 +425,10 @@ export default function AmbassadorList({
                 >
                   {/* LEFT DETAILS CONTAINER */}
                   <div style={{ flex: '1 1 0%', minWidth: 0 }}>
-                    {/* NAME (CLICKABLE LINK TO MESSAGES) */}
+                    {/* NAME (CLICKABLE LINK TO MESSAGES TAB) */}
                     <a
                       href={messageUrl}
-                      title={`Send message to ${amb.name}`}
+                      title={`Open messages for ${amb.name}`}
                       style={{
                         fontSize: '14px',
                         fontWeight: 'bold',
@@ -445,10 +447,10 @@ export default function AmbassadorList({
                       {amb.name}
                     </a>
 
-                    {/* EMAIL (CLICKABLE LINK TO MESSAGES) */}
+                    {/* EMAIL (CLICKABLE LINK TO MESSAGES TAB) */}
                     <a
                       href={messageUrl}
-                      title={`Send message to ${amb.email}`}
+                      title={`Open messages for ${amb.email}`}
                       style={{
                         fontSize: '11px',
                         color: '#888',
@@ -534,7 +536,7 @@ export default function AmbassadorList({
                   </div>
                 </div>
 
-                {/* FULL LINK DISPLAY */}
+                {/* FULL STOREFRONT LINK DISPLAY */}
                 <div
                   style={{
                     display: 'flex',
