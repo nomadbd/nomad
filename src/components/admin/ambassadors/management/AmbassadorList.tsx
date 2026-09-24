@@ -5,8 +5,7 @@ interface AmbassadorProfile {
   id: string;
   name: string;
   email: string;
-  phone?: string;
-  status: 'ACTIVE' | 'BLOCKED' | string;
+  status: string;
   assigned_slug: string;
   created_at?: string;
   total_sales?: number;
@@ -26,34 +25,26 @@ export default function AmbassadorList({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-  // Edit Slug State
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [newSlugInput, setNewSlugInput] = useState<string>('');
-
-  // Copy Feedback State
-  const [copiedId, setCopiedId] = useState<string | null>(null);
-
   // Filter States
   const [sortOrder, setSortOrder] = useState<'NEWEST' | 'OLDEST'>('NEWEST');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'BLOCKED'>('ALL');
+  const [salesFilter, setSalesFilter] = useState<'ALL' | 'HIGHEST' | 'LOWEST' | 'NO_SALES'>('ALL');
 
   const fetchAmbassadors = async () => {
     setLoading(true);
     setErrorMessage(null);
     try {
-      // Safe Supabase Query without missing columns
+      // Supabase Query
       const { data, error } = await supabase
         .from('profiles')
         .select(`
           id,
           name,
           email,
-          phone,
           status,
           created_at,
           ambassador (
-            assigned_slug,
-            total_sales
+            assigned_slug
           )
         `)
         .ilike('role', 'ambassador')
@@ -68,8 +59,7 @@ export default function AmbassadorList({
             id: item.id,
             name: item.name || 'Unnamed Ambassador',
             email: item.email || 'No Email',
-            phone: item.phone || '',
-            status: (item.status || 'ACTIVE').toUpperCase(),
+            status: item.status || 'ACTIVE',
             assigned_slug: ambData?.assigned_slug || 'N/A',
             created_at: item.created_at || '',
             total_sales: ambData?.total_sales || 0,
@@ -89,159 +79,268 @@ export default function AmbassadorList({
     fetchAmbassadors();
   }, []);
 
-  // --- ACTIONS ---
+  const handleBlockAmbassador = async (userId: string, currentSlug: string) => {
+    const confirmBlock = window.confirm(
+      `Are you sure you want to block this ambassador?\nStore link (${currentSlug}) will be deactivated.`
+    );
+    if (!confirmBlock) return;
 
-  // 1. Block / Activate Toggle
-  const handleToggleStatus = async (amb: AmbassadorProfile) => {
-    const isCurrentlyBlocked = amb.status === 'BLOCKED';
-    const actionText = isCurrentlyBlocked ? 'activate' : 'block';
-
-    if (!window.confirm(`Are you sure you want to ${actionText} ${amb.name}?`)) return;
-
-    setActionLoading(amb.id);
-    try {
-      const rpcName = isCurrentlyBlocked ? 'activate_ambassador' : 'deactivate_ambassador';
-      const { error } = await supabase.rpc(rpcName, { target_user_id: amb.id });
-
-      if (error) {
-        // Fallback update if RPC does not exist
-        await supabase
-          .from('profiles')
-          .update({ status: isCurrentlyBlocked ? 'ACTIVE' : 'BLOCKED' })
-          .eq('id', amb.id);
-      }
-
-      fetchAmbassadors();
-    } catch (err: any) {
-      alert(`Action failed: ${err.message}`);
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
-  // 2. Edit Link / Slug
-  const handleSaveSlug = async (userId: string) => {
-    if (!newSlugInput.trim()) return;
     setActionLoading(userId);
     try {
-      const formattedSlug = newSlugInput.trim().toLowerCase().replace(/\s+/g, '-');
-      const { error } = await supabase
-        .from('ambassador')
-        .update({ assigned_slug: formattedSlug })
-        .eq('user_id', userId);
-
+      const { error } = await supabase.rpc('deactivate_ambassador', { target_user_id: userId });
       if (error) throw error;
-
-      setEditingId(null);
+      alert('Ambassador blocked successfully!');
       fetchAmbassadors();
     } catch (err: any) {
-      alert('Failed to update slug: ' + err.message);
+      alert('Failed to block ambassador: ' + err.message);
     } finally {
       setActionLoading(null);
     }
   };
 
-  // 3. Copy Referral Link
-  const handleCopyLink = (slug: string, id: string) => {
-    const fullUrl = `${window.location.origin}/a/${slug}`;
-    navigator.clipboard.writeText(fullUrl);
-    setCopiedId(id);
-    setTimeout(() => setCopiedId(null), 2000);
+  const handleActivateAmbassador = async (userId: string) => {
+    const confirmActivate = window.confirm('Are you sure you want to unblock and activate this ambassador?');
+    if (!confirmActivate) return;
+
+    setActionLoading(userId);
+    try {
+      const { error } = await supabase.rpc('activate_ambassador', { target_user_id: userId });
+      if (error) throw error;
+      alert('Ambassador activated successfully!');
+      fetchAmbassadors();
+    } catch (err: any) {
+      alert('Failed to activate ambassador: ' + err.message);
+    } finally {
+      setActionLoading(null);
+    }
   };
 
   // Filter & Sort Logic
   const filteredAmbassadors = ambassadors
     .filter((amb) => {
-      if (statusFilter === 'ACTIVE' && amb.status !== 'ACTIVE') return false;
-      if (statusFilter === 'BLOCKED' && amb.status !== 'BLOCKED') return false;
+      // 1. Status Filter
+      if (statusFilter === 'ACTIVE' && amb.status?.toUpperCase() !== 'ACTIVE') return false;
+      if (statusFilter === 'BLOCKED' && amb.status?.toUpperCase() !== 'BLOCKED') return false;
 
+      // 2. Sales Filter
+      if (salesFilter === 'NO_SALES' && (amb.total_sales || 0) > 0) return false;
+
+      // 3. Search Query
       if (searchQuery && searchQuery.trim() !== '') {
-        const q = searchQuery.trim().toLowerCase();
-        const matchesName = amb.name.toLowerCase().includes(q);
-        const matchesEmail = amb.email.toLowerCase().includes(q);
-        const matchesSlug = amb.assigned_slug.toLowerCase().includes(q);
+        const query = searchQuery.trim().toLowerCase();
+        const matchesName = amb.name?.toLowerCase().includes(query);
+        const matchesEmail = amb.email?.toLowerCase().includes(query);
+        const matchesSlug = amb.assigned_slug?.toLowerCase().includes(query);
         if (!matchesName && !matchesEmail && !matchesSlug) return false;
       }
+
       return true;
     })
     .sort((a, b) => {
+      // Sales Sort
+      if (salesFilter === 'HIGHEST') {
+        return (b.total_sales || 0) - (a.total_sales || 0);
+      }
+      if (salesFilter === 'LOWEST') {
+        return (a.total_sales || 0) - (b.total_sales || 0);
+      }
+
+      // Date Sort
       const dateA = new Date(a.created_at || 0).getTime();
       const dateB = new Date(b.created_at || 0).getTime();
-      return sortOrder === 'OLDEST' ? dateA - dateB : dateB - dateA;
+
+      if (sortOrder === 'OLDEST') return dateA - dateB;
+      return dateB - dateA; // Default NEWEST
     });
 
+  const dateSortOptions = ['NEWEST', 'OLDEST'];
+  const statusOptions = ['ALL', 'ACTIVE', 'BLOCKED'];
+  const salesOptions = [
+    { label: 'ALL', value: 'ALL' },
+    { label: 'HIGHEST SALES', value: 'HIGHEST' },
+    { label: 'LOWEST SALES', value: 'LOWEST' },
+    { label: 'NO SALES (0)', value: 'NO_SALES' },
+  ];
+
   return (
-    <div style={{ width: '100%', color: '#ffffff', fontFamily: 'monospace' }}>
-      
-      {/* ---------------- FILTER EXPANDABLE PANEL ---------------- */}
+    <div style={{ width: '100%', color: '#ffffff', fontFamily: 'sans-serif' }}>
+      {/* ---------------- FILTER SECTION (Exact OrderFiltersBar Design) ---------------- */}
       {isFilterOpen && (
-        <div style={{ marginBottom: '16px' }}>
+        <div className="filter-expand-content animate-fade-in" style={{ marginBottom: '16px' }}>
           <div
             style={{
               backgroundColor: '#050505',
               border: '1px solid #222',
               padding: '16px',
               borderRadius: '2px',
+              width: '100%',
+              boxSizing: 'border-box',
               display: 'flex',
               flexDirection: 'column',
               gap: '14px',
             }}
           >
-            {/* JOIN DATE SORT */}
+            {/* SORT BY JOIN DATE */}
             <div>
-              <label style={{ display: 'block', fontSize: '9px', color: '#666', marginBottom: '6px', letterSpacing: '1px', textTransform: 'uppercase' }}>
+              <label
+                style={{
+                  display: 'block',
+                  fontSize: '9px',
+                  color: '#666',
+                  marginBottom: '6px',
+                  letterSpacing: '1px',
+                  textTransform: 'uppercase',
+                }}
+              >
                 SORT BY JOIN DATE
               </label>
-              <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', scrollbarWidth: 'none' }}>
-                {['NEWEST', 'OLDEST'].map((opt) => (
-                  <button
-                    type="button"
-                    key={opt}
-                    onClick={() => setSortOrder(opt as any)}
-                    style={{
-                      backgroundColor: 'transparent',
-                      color: sortOrder === opt ? '#ffffff' : '#666666',
-                      border: 'none',
-                      padding: '4px 0px',
-                      fontSize: '10px',
-                      fontWeight: sortOrder === opt ? 'bold' : 'normal',
-                      cursor: 'pointer',
-                      letterSpacing: '1px',
-                      textTransform: 'uppercase',
-                    }}
-                  >
-                    {opt}
-                  </button>
-                ))}
+              <div
+                style={{
+                  display: 'flex',
+                  gap: '12px',
+                  overflowX: 'auto',
+                  scrollbarWidth: 'none',
+                  paddingBottom: '2px',
+                  width: '100%',
+                }}
+              >
+                {dateSortOptions.map((opt) => {
+                  const isActive = sortOrder === opt;
+                  return (
+                    <button
+                      type="button"
+                      key={opt}
+                      onClick={() => setSortOrder(opt as 'NEWEST' | 'OLDEST')}
+                      style={{
+                        backgroundColor: 'transparent',
+                        color: isActive ? '#ffffff' : '#666666',
+                        border: 'none',
+                        padding: '4px 0px',
+                        fontSize: '10px',
+                        fontFamily: 'monospace',
+                        letterSpacing: '1px',
+                        fontWeight: isActive ? 'bold' : 'normal',
+                        cursor: 'pointer',
+                        textTransform: 'uppercase',
+                        whiteSpace: 'nowrap',
+                        flexShrink: 0,
+                        transition: 'color 0.2s ease',
+                      }}
+                    >
+                      {opt}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
             {/* AMBASSADOR STATUS */}
             <div>
-              <label style={{ display: 'block', fontSize: '9px', color: '#666', marginBottom: '6px', letterSpacing: '1px', textTransform: 'uppercase' }}>
+              <label
+                style={{
+                  display: 'block',
+                  fontSize: '9px',
+                  color: '#666',
+                  marginBottom: '6px',
+                  letterSpacing: '1px',
+                  textTransform: 'uppercase',
+                }}
+              >
                 AMBASSADOR STATUS
               </label>
-              <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', scrollbarWidth: 'none' }}>
-                {['ALL', 'ACTIVE', 'BLOCKED'].map((st) => (
-                  <button
-                    type="button"
-                    key={st}
-                    onClick={() => setStatusFilter(st as any)}
-                    style={{
-                      backgroundColor: 'transparent',
-                      color: statusFilter === st ? '#ffffff' : '#666666',
-                      border: 'none',
-                      padding: '4px 0px',
-                      fontSize: '10px',
-                      fontWeight: statusFilter === st ? 'bold' : 'normal',
-                      cursor: 'pointer',
-                      letterSpacing: '1px',
-                      textTransform: 'uppercase',
-                    }}
-                  >
-                    {st}
-                  </button>
-                ))}
+              <div
+                style={{
+                  display: 'flex',
+                  gap: '12px',
+                  overflowX: 'auto',
+                  scrollbarWidth: 'none',
+                  paddingBottom: '2px',
+                  width: '100%',
+                }}
+              >
+                {statusOptions.map((status) => {
+                  const isActive = statusFilter === status;
+                  return (
+                    <button
+                      type="button"
+                      key={status}
+                      onClick={() => setStatusFilter(status as 'ALL' | 'ACTIVE' | 'BLOCKED')}
+                      style={{
+                        backgroundColor: 'transparent',
+                        color: isActive ? '#ffffff' : '#666666',
+                        border: 'none',
+                        padding: '4px 0px',
+                        fontSize: '10px',
+                        fontFamily: 'monospace',
+                        letterSpacing: '1px',
+                        fontWeight: isActive ? 'bold' : 'normal',
+                        cursor: 'pointer',
+                        textTransform: 'uppercase',
+                        whiteSpace: 'nowrap',
+                        flexShrink: 0,
+                        transition: 'color 0.2s ease',
+                      }}
+                    >
+                      {status}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* SALES FILTER */}
+            <div>
+              <label
+                style={{
+                  display: 'block',
+                  fontSize: '9px',
+                  color: '#666',
+                  marginBottom: '6px',
+                  letterSpacing: '1px',
+                  textTransform: 'uppercase',
+                }}
+              >
+                SALES FILTER
+              </label>
+              <div
+                style={{
+                  display: 'flex',
+                  gap: '12px',
+                  overflowX: 'auto',
+                  scrollbarWidth: 'none',
+                  paddingBottom: '2px',
+                  width: '100%',
+                }}
+              >
+                {salesOptions.map((opt) => {
+                  const isActive = salesFilter === opt.value;
+                  return (
+                    <button
+                      type="button"
+                      key={opt.value}
+                      onClick={() =>
+                        setSalesFilter(opt.value as 'ALL' | 'HIGHEST' | 'LOWEST' | 'NO_SALES')
+                      }
+                      style={{
+                        backgroundColor: 'transparent',
+                        color: isActive ? '#ffffff' : '#666666',
+                        border: 'none',
+                        padding: '4px 0px',
+                        fontSize: '10px',
+                        fontFamily: 'monospace',
+                        letterSpacing: '1px',
+                        fontWeight: isActive ? 'bold' : 'normal',
+                        cursor: 'pointer',
+                        textTransform: 'uppercase',
+                        whiteSpace: 'nowrap',
+                        flexShrink: 0,
+                        transition: 'color 0.2s ease',
+                      }}
+                    >
+                      {opt.label}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -249,48 +348,73 @@ export default function AmbassadorList({
       )}
 
       {/* ---------------- HEADER BAR ---------------- */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', padding: '0 2px' }}>
-        <h2 style={{ fontSize: '13px', fontWeight: 'bold', letterSpacing: '1px', textTransform: 'uppercase', margin: 0 }}>
-          MANAGE AMBASSADORS
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: '14px',
+          padding: '0 2px',
+        }}
+      >
+        <h2
+          style={{
+            fontSize: '14px',
+            fontWeight: 'bold',
+            letterSpacing: '1px',
+            textTransform: 'uppercase',
+            margin: 0,
+            fontFamily: 'monospace',
+          }}
+        >
+          Manage Ambassadors
         </h2>
-        <span style={{ fontSize: '10px', backgroundColor: '#111', border: '1px solid #222', padding: '3px 8px', borderRadius: '2px', color: '#888' }}>
+        <span
+          style={{
+            fontSize: '10px',
+            fontFamily: 'monospace',
+            backgroundColor: '#111',
+            border: '1px solid #222',
+            padding: '3px 8px',
+            borderRadius: '2px',
+            color: '#888',
+          }}
+        >
           {filteredAmbassadors.length} TOTAL
         </span>
       </div>
 
-      {/* ---------------- AMBASSADOR LIST CARDS ---------------- */}
+      {/* ---------------- CONTENT SECTION ---------------- */}
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '40px', color: '#666', fontSize: '11px' }}>
+        <div style={{ textAlign: 'center', padding: '40px', color: '#666', fontSize: '11px', fontFamily: 'monospace' }}>
           LOADING AMBASSADORS...
         </div>
       ) : errorMessage ? (
-        <div style={{ backgroundColor: '#110505', border: '1px solid #441111', color: '#ff4d4d', padding: '12px', borderRadius: '2px', fontSize: '11px' }}>
+        <div style={{ backgroundColor: '#110505', border: '1px solid #441111', color: '#ff6b6b', padding: '12px', borderRadius: '2px', fontSize: '11px', fontFamily: 'monospace' }}>
           ERROR: {errorMessage}
         </div>
       ) : filteredAmbassadors.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '40px', color: '#555', backgroundColor: '#050505', border: '1px solid #222', borderRadius: '2px', fontSize: '11px' }}>
+        <div style={{ textAlign: 'center', padding: '40px', color: '#555', fontSize: '11px', fontFamily: 'monospace', backgroundColor: '#050505', border: '1px solid #222', borderRadius: '2px' }}>
           NO AMBASSADORS FOUND MATCHING CRITERIA.
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           {filteredAmbassadors.map((amb) => {
-            const isBlocked = amb.status === 'BLOCKED';
-            const isEditing = editingId === amb.id;
+            const isBlocked = amb.status?.toUpperCase() === 'BLOCKED';
 
             return (
               <div
                 key={amb.id}
                 style={{
                   backgroundColor: '#050505',
-                  border: `1px solid ${isBlocked ? '#331111' : '#222'}`,
+                  border: '1px solid #222',
                   padding: '14px 16px',
                   borderRadius: '2px',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: '12px',
+                  gap: '10px',
                 }}
               >
-                {/* NAME, STATUS & SALES TAG */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px' }}>
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
@@ -299,7 +423,8 @@ export default function AmbassadorList({
                       </span>
                       <span
                         style={{
-                          fontSize: '8px',
+                          fontSize: '9px',
+                          fontFamily: 'monospace',
                           padding: '2px 6px',
                           borderRadius: '2px',
                           backgroundColor: isBlocked ? '#220808' : '#082210',
@@ -308,11 +433,12 @@ export default function AmbassadorList({
                           letterSpacing: '1px',
                         }}
                       >
-                        {amb.status}
+                        {isBlocked ? 'BLOCKED' : 'ACTIVE'}
                       </span>
                       <span
                         style={{
-                          fontSize: '8px',
+                          fontSize: '9px',
+                          fontFamily: 'monospace',
                           padding: '2px 6px',
                           borderRadius: '2px',
                           backgroundColor: '#0a192f',
@@ -324,145 +450,72 @@ export default function AmbassadorList({
                         SALES: {amb.total_sales || 0}
                       </span>
                     </div>
-                    <div style={{ fontSize: '11px', color: '#666', marginTop: '4px' }}>
+                    <div style={{ fontSize: '11px', color: '#666', marginTop: '4px', fontFamily: 'monospace' }}>
                       {amb.email}
                     </div>
                   </div>
 
-                  {/* BLOCK / ACTIVATE BUTTON */}
+                  {/* ACTION BUTTON */}
                   <div>
-                    <button
-                      type="button"
-                      onClick={() => handleToggleStatus(amb)}
-                      disabled={actionLoading === amb.id}
-                      style={{
-                        backgroundColor: '#000',
-                        color: isBlocked ? '#4dff88' : '#ff4d4d',
-                        border: `1px solid ${isBlocked ? '#114422' : '#441111'}`,
-                        padding: '6px 12px',
-                        fontSize: '9px',
-                        fontWeight: 'bold',
-                        cursor: 'pointer',
-                        borderRadius: '2px',
-                        letterSpacing: '1px',
-                      }}
-                    >
-                      {actionLoading === amb.id ? '...' : isBlocked ? 'ACTIVATE' : 'BLOCK'}
-                    </button>
+                    {!isBlocked ? (
+                      <button
+                        type="button"
+                        onClick={() => handleBlockAmbassador(amb.id, amb.assigned_slug)}
+                        disabled={actionLoading === amb.id}
+                        style={{
+                          backgroundColor: '#000',
+                          color: '#ff4d4d',
+                          border: '1px solid #441111',
+                          padding: '6px 12px',
+                          fontSize: '10px',
+                          fontFamily: 'monospace',
+                          fontWeight: 'bold',
+                          cursor: 'pointer',
+                          borderRadius: '2px',
+                          letterSpacing: '1px',
+                        }}
+                      >
+                        {actionLoading === amb.id ? 'PROCESSING...' : 'BLOCK'}
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => handleActivateAmbassador(amb.id)}
+                        disabled={actionLoading === amb.id}
+                        style={{
+                          backgroundColor: '#000',
+                          color: '#4dff88',
+                          border: '1px solid #114422',
+                          padding: '6px 12px',
+                          fontSize: '10px',
+                          fontFamily: 'monospace',
+                          fontWeight: 'bold',
+                          cursor: 'pointer',
+                          borderRadius: '2px',
+                          letterSpacing: '1px',
+                        }}
+                      >
+                        {actionLoading === amb.id ? 'PROCESSING...' : 'ACTIVATE'}
+                      </button>
+                    )}
                   </div>
                 </div>
 
-                {/* REFERRAL LINK & EDITING SECTION */}
                 <div
                   style={{
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'space-between',
-                    flexWrap: 'wrap',
-                    gap: '8px',
+                    gap: '6px',
+                    fontSize: '10px',
+                    fontFamily: 'monospace',
+                    color: '#555',
                     borderTop: '1px solid #111',
-                    paddingTop: '10px',
+                    paddingTop: '8px',
                   }}
                 >
-                  <div style={{ fontSize: '10px', color: '#555', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span>LINK:</span>
-                    {isEditing ? (
-                      <div style={{ display: 'flex', gap: '4px' }}>
-                        <input
-                          type="text"
-                          value={newSlugInput}
-                          onChange={(e) => setNewSlugInput(e.target.value)}
-                          style={{
-                            backgroundColor: '#000',
-                            color: '#fff',
-                            border: '1px solid #444',
-                            padding: '2px 6px',
-                            fontSize: '10px',
-                            width: '100px',
-                            borderRadius: '2px',
-                          }}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => handleSaveSlug(amb.id)}
-                          style={{
-                            backgroundColor: '#fff',
-                            color: '#000',
-                            border: 'none',
-                            padding: '2px 6px',
-                            fontSize: '9px',
-                            fontWeight: 'bold',
-                            cursor: 'pointer',
-                            borderRadius: '2px',
-                          }}
-                        >
-                          SAVE
-                        </button>
-                      </div>
-                    ) : (
-                      <span style={{ color: '#2997ff', fontWeight: 'bold' }}>/{amb.assigned_slug}</span>
-                    )}
-                  </div>
-
-                  {/* ACTION BUTTONS (COPY, EDIT SLUG) */}
-                  <div style={{ display: 'flex', gap: '6px' }}>
-                    <button
-                      type="button"
-                      onClick={() => handleCopyLink(amb.assigned_slug, amb.id)}
-                      style={{
-                        backgroundColor: '#111',
-                        color: copiedId === amb.id ? '#4dff88' : '#888',
-                        border: '1px solid #222',
-                        padding: '4px 8px',
-                        fontSize: '9px',
-                        cursor: 'pointer',
-                        borderRadius: '2px',
-                      }}
-                    >
-                      {copiedId === amb.id ? 'COPIED!' : 'COPY LINK'}
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setEditingId(amb.id);
-                        setNewSlugInput(amb.assigned_slug);
-                      }}
-                      style={{
-                        backgroundColor: '#111',
-                        color: '#888',
-                        border: '1px solid #222',
-                        padding: '4px 8px',
-                        fontSize: '9px',
-                        cursor: 'pointer',
-                        borderRadius: '2px',
-                      }}
-                    >
-                      EDIT SLUG
-                    </button>
-                  </div>
+                  <span>LINK:</span>
+                  <span style={{ color: '#2997ff' }}>/{amb.assigned_slug}</span>
                 </div>
-
-                {/* QUICK CONTACT (EMAIL / WHATSAPP) */}
-                <div style={{ display: 'flex', gap: '12px', borderTop: '1px solid #111', paddingTop: '8px' }}>
-                  <a
-                    href={`mailto:${amb.email}`}
-                    style={{ fontSize: '9px', color: '#666', textDecoration: 'none', borderBottom: '1px solid #333' }}
-                  >
-                    ✉ EMAIL AMBASSADOR
-                  </a>
-                  {amb.phone && (
-                    <a
-                      href={`https://wa.me/${amb.phone.replace(/[^0-9]/g, '')}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      style={{ fontSize: '9px', color: '#25D366', textDecoration: 'none', borderBottom: '1px solid #115522' }}
-                    >
-                      💬 WHATSAPP
-                    </a>
-                  )}
-                </div>
-
               </div>
             );
           })}
