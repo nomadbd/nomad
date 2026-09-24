@@ -16,7 +16,7 @@ interface AmbassadorListProps {
   isFilterOpen?: boolean;
 }
 
-// ---------------- SKELETON LOADER COMPONENT (NO LAYOUT FLICKER) ----------------
+// ---------------- SKELETON LOADER COMPONENT ----------------
 const AmbassadorSkeleton = () => (
   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
     {[1, 2, 3, 4].map((i) => (
@@ -67,7 +67,6 @@ export default function AmbassadorList({
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'BLOCKED'>('ALL');
   const [salesFilter, setSalesFilter] = useState<'ALL' | 'HIGHEST' | 'LOWEST' | 'NO_SALES'>('ALL');
 
-  // Dynamic Base URL for storefront link preview
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
 
   const fetchAmbassadors = async () => {
@@ -119,14 +118,10 @@ export default function AmbassadorList({
     fetchAmbassadors();
   }, []);
 
-  // পেজ রিফ্রেশ না করে স্মুথলি মেসেজ ট্যাবে নিয়ে যাওয়ার ফাংশন
   const handleOpenMessages = (e: React.MouseEvent, searchTarget: string) => {
     e.preventDefault();
-    const targetUrl = `/admin?tab=messages&search=${encodeURIComponent(searchTarget)}&from=ambassador`;
-    
-    // SPA style push state without reload
-    window.history.pushState({}, '', targetUrl);
-    window.dispatchEvent(new Event('popstate'));
+    // from=ambassadors দেওয়া হয়েছে যেন সঠিকভাবে চিনে ফেরত আসতে পারে
+    window.location.href = `/admin?tab=messages&search=${encodeURIComponent(searchTarget)}&from=ambassadors`;
   };
 
   const handleBlockAmbassador = async (userId: string, currentSlug: string) => {
@@ -163,7 +158,6 @@ export default function AmbassadorList({
     }
   };
 
-  // Filter & Sort Logic
   const filteredAmbassadors = ambassadors
     .filter((amb) => {
       if (statusFilter === 'ACTIVE' && amb.status?.toUpperCase() !== 'ACTIVE') return false;
@@ -443,7 +437,7 @@ export default function AmbassadorList({
           {filteredAmbassadors.map((amb) => {
             const isBlocked = amb.status?.toUpperCase() === 'BLOCKED' || amb.status?.toUpperCase() === 'DEACTIVATED';
             const fullLink = amb.assigned_slug ? `${baseUrl}/${amb.assigned_slug}` : 'N/A';
-            const messageUrl = `/admin?tab=messages&search=${encodeURIComponent(amb.email || amb.name)}&from=ambassador`;
+            const messageUrl = `/admin?tab=messages&search=${encodeURIComponent(amb.email || amb.name)}&from=ambassadors`;
 
             return (
               <div
@@ -468,7 +462,6 @@ export default function AmbassadorList({
                 >
                   {/* LEFT DETAILS CONTAINER */}
                   <div style={{ flex: '1 1 0%', minWidth: 0 }}>
-                    {/* NAME LINK */}
                     <a
                       href={messageUrl}
                       onClick={(e) => handleOpenMessages(e, amb.email || amb.name)}
@@ -491,7 +484,6 @@ export default function AmbassadorList({
                       {amb.name}
                     </a>
 
-                    {/* EMAIL LINK */}
                     <a
                       href={messageUrl}
                       onClick={(e) => handleOpenMessages(e, amb.email || amb.name)}
@@ -515,7 +507,6 @@ export default function AmbassadorList({
                       {amb.email}
                     </a>
 
-                    {/* TOTAL SALES */}
                     <div
                       style={{
                         fontSize: '11px',
