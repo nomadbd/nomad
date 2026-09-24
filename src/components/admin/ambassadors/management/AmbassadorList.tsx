@@ -30,7 +30,7 @@ export default function AmbassadorList({
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'BLOCKED'>('ALL');
   const [salesFilter, setSalesFilter] = useState<'ALL' | 'HIGHEST' | 'LOWEST' | 'NO_SALES'>('ALL');
 
-  // Dynamic Base URL for full link preview
+  // Dynamic Base URL
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://yourwebsite.com';
 
   const fetchAmbassadors = async () => {
@@ -398,6 +398,7 @@ export default function AmbassadorList({
           {filteredAmbassadors.map((amb) => {
             const isBlocked = amb.status?.toUpperCase() === 'BLOCKED' || amb.status?.toUpperCase() === 'DEACTIVATED';
             const fullLink = amb.assigned_slug ? `${baseUrl}/${amb.assigned_slug}` : 'N/A';
+            const messageUrl = `/messages?recipient=${amb.id}`;
 
             return (
               <div
@@ -412,26 +413,79 @@ export default function AmbassadorList({
                   gap: '10px',
                 }}
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
-                  <div>
-                    {/* NAME */}
-                    <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#fff' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    justify: 'space-between',
+                    alignItems: 'flex-start',
+                    gap: '12px',
+                  }}
+                >
+                  {/* LEFT DETAILS CONTAINER */}
+                  <div style={{ flex: '1 1 0%', minWidth: 0 }}>
+                    {/* NAME (CLICKABLE LINK TO MESSAGES) */}
+                    <a
+                      href={messageUrl}
+                      title={`Send message to ${amb.name}`}
+                      style={{
+                        fontSize: '14px',
+                        fontWeight: 'bold',
+                        color: '#fff',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        display: 'block',
+                        textDecoration: 'none',
+                        cursor: 'pointer',
+                        transition: 'color 0.2s ease',
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.color = '#2997ff')}
+                      onMouseLeave={(e) => (e.currentTarget.style.color = '#fff')}
+                    >
                       {amb.name}
-                    </div>
+                    </a>
 
-                    {/* EMAIL */}
-                    <div style={{ fontSize: '11px', color: '#888', marginTop: '2px', fontFamily: 'monospace' }}>
+                    {/* EMAIL (CLICKABLE LINK TO MESSAGES) */}
+                    <a
+                      href={messageUrl}
+                      title={`Send message to ${amb.email}`}
+                      style={{
+                        fontSize: '11px',
+                        color: '#888',
+                        marginTop: '2px',
+                        fontFamily: 'monospace',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        display: 'block',
+                        textDecoration: 'none',
+                        cursor: 'pointer',
+                        transition: 'color 0.2s ease',
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.color = '#2997ff')}
+                      onMouseLeave={(e) => (e.currentTarget.style.color = '#888')}
+                    >
                       {amb.email}
-                    </div>
+                    </a>
 
                     {/* TOTAL SALES */}
-                    <div style={{ fontSize: '11px', color: '#aaa', marginTop: '6px', fontFamily: 'monospace' }}>
-                      TOTAL SALES: <span style={{ color: '#64ffda', fontWeight: 'bold' }}>{amb.total_sales || 0}</span>
+                    <div
+                      style={{
+                        fontSize: '11px',
+                        color: '#aaa',
+                        marginTop: '6px',
+                        fontFamily: 'monospace',
+                      }}
+                    >
+                      TOTAL SALES:{' '}
+                      <span style={{ color: '#64ffda', fontWeight: 'bold' }}>
+                        {amb.total_sales || 0}
+                      </span>
                     </div>
                   </div>
 
-                  {/* SINGLE ACTIVE / DEACTIVATED TOGGLE BUTTON */}
-                  <div>
+                  {/* RIGHT ACTION BUTTON */}
+                  <div style={{ flexShrink: 0 }}>
                     {!isBlocked ? (
                       <button
                         type="button"
