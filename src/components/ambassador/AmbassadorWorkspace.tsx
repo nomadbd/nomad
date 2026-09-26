@@ -33,47 +33,68 @@ export default function AmbassadorWorkspace({
   const [loadingProducts, setLoadingProducts] = useState<boolean>(true);
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
-  // প্রোডাক্ট লোড করার লজিক (প্রোডাক্ট আইডি নির্দিষ্ট করে জয়েন করা হয়েছে)
+  // ২-ধাপের নিরাপদ প্রোডাক্ট লোড লজিক (Supabase Join Conflict ছাড়াই কাজ করবে)
   const fetchProducts = async () => {
-    if (!ambassadorData?.id) return;
+    const ambId = ambassadorData?.id || ambassadorData?.user_id || profile?.id;
+    if (!ambId) {
+      setLoadingProducts(false);
+      return;
+    }
+
     setLoadingProducts(true);
     try {
-      const { data, error } = await supabase
+      // ধাপ ১: অ্যাম্বাসেডরের এসাইন করা প্রডাক্ট আইডি ও ভিজিবিলিটি আনা
+      let { data: assignData, error: assignError } = await supabase
         .from('ambassador_products')
-        .select(`
-          product_id,
-          is_visible,
-          products!product_id (
-            id,
-            title,
-            price,
-            image_url,
-            category
-          )
-        `)
-        .eq('ambassador_id', ambassadorData.id);
+        .select('product_id, is_visible')
+        .eq('ambassador_id', ambId);
 
-      if (error) throw error;
-
-      if (data) {
-        const formatted: AssignedProduct[] = data
-          .map((item: any) => {
-            const prod = Array.isArray(item.products) ? item.products[0] : item.products;
-            if (!prod) return null;
-
-            return {
-              id: prod.id,
-              title: prod.title,
-              price: prod.price,
-              image_url: prod.image_url,
-              category: prod.category,
-              is_visible: item.is_visible ?? true,
-            };
-          })
-          .filter((item): item is AssignedProduct => item !== null);
-
-        setAssignedProducts(formatted);
+      // যদি ambassador_id ম্যাচ না করে, তবে বিকল্প ID দিয়ে চেষ্টা করা
+      if ((!assignData || assignData.length === 0) && ambassadorData?.user_id && ambassadorData?.user_id !== ambId) {
+        const { data: altAssignData } = await supabase
+          .from('ambassador_products')
+          .select('product_id, is_visible')
+          .eq('ambassador_id', ambassadorData.user_id);
+        
+        if (altAssignData && altAssignData.length > 0) {
+          assignData = altAssignData;
+        }
       }
+
+      if (assignError) throw assignError;
+
+      if (!assignData || assignData.length === 0) {
+        setAssignedProducts([]);
+        return;
+      }
+
+      // ধাপ ২: আইডিগুলোর প্রডাক্ট ডিটেইলস নিয়ে আসা
+      const productIds = assignData.map((item: any) => item.product_id);
+      const { data: prodData, error: prodError } = await supabase
+        .from('products')
+        .select('id, title, price, image_url, category')
+        .in('id', productIds);
+
+      if (prodError) throw prodError;
+
+      // ধাপ ৩: উভয় ডাটা মার্জ করে স্টেট আপডেট করা
+      const formatted: AssignedProduct[] = assignData
+        .map((item: any) => {
+          const prod = prodData?.find((p: any) => p.id === item.product_id);
+          if (!prod) return null;
+
+          return {
+            id: prod.id,
+            title: prod.title,
+            price: prod.price,
+            image_url: prod.image_url,
+            category: prod.category,
+            is_visible: item.is_visible ?? true,
+          };
+        })
+        .filter((item): item is AssignedProduct => item !== null);
+
+      setAssignedProducts(formatted);
     } catch (err: any) {
       console.error('Error loading products:', err.message);
     } finally {
@@ -83,17 +104,20 @@ export default function AmbassadorWorkspace({
 
   useEffect(() => {
     fetchProducts();
-  }, [ambassadorData?.id]);
+  }, [ambassadorData?.id, ambassadorData?.user_id]);
 
-  // স্টোরফ্রন্টে প্রদর্শন অন/অফ করার লজিক
+  // প্রডাক্টের Visibility টগল করার লজিক
   const handleToggleVisibility = async (productId: string, currentStatus: boolean) => {
+    const ambId = ambassadorData?.id || ambassadorData?.user_id;
+    if (!ambId) return;
+
     setTogglingId(productId);
     try {
       const newStatus = !currentStatus;
       const { error } = await supabase
         .from('ambassador_products')
         .update({ is_visible: newStatus })
-        .eq('ambassador_id', ambassadorData.id)
+        .eq('ambassador_id', ambId)
         .eq('product_id', productId);
 
       if (error) throw error;
@@ -110,7 +134,7 @@ export default function AmbassadorWorkspace({
     }
   };
 
-  // ১. কাস্টমারদের জন্য পাবলিক ভিউ
+  // ১. পাবলিক স্টোরফ্রন্ট ভিউ (কাস্টমারদের জন্য)
   if (!isOwner) {
     const publicProducts = assignedProducts.filter((p) => p.is_visible);
 
@@ -199,7 +223,7 @@ export default function AmbassadorWorkspace({
     );
   }
 
-  // ২. অ্যাম্বাসেডর ড্যাশবোর্ড
+  // ২. অ্যাম্বাসেডর ড্যাশবোর্ড ভিউ
   return (
     <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '40px 20px', color: '#ffffff', fontFamily: 'monospace, sans-serif' }}>
       <header style={{ borderBottom: '1px solid #1a1a1a', paddingBottom: '20px', marginBottom: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
