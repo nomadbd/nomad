@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/supabaseClient';
 import AmbassadorSkeleton from './AmbassadorSkeleton';
+import ProductManager from './ProductManager';
 
 interface AmbassadorProfile {
   id: string;
@@ -30,6 +31,9 @@ export default function AmbassadorList({
   const [sortOrder, setSortOrder] = useState<'NEWEST' | 'OLDEST'>('NEWEST');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'BLOCKED'>('ALL');
   const [salesFilter, setSalesFilter] = useState<'ALL' | 'HIGHEST' | 'LOWEST' | 'NO_SALES'>('ALL');
+
+  // Product Manager Modal State
+  const [selectedAmbassador, setSelectedAmbassador] = useState<AmbassadorProfile | null>(null);
 
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
 
@@ -492,8 +496,31 @@ export default function AmbassadorList({
                     </div>
                   </div>
 
-                  {/* RIGHT ACTION BUTTON */}
-                  <div style={{ flexShrink: 0 }}>
+                  {/* RIGHT ACTION BUTTONS */}
+                  <div style={{ flexShrink: 0, display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    {/* OPEN PRODUCT MANAGER BUTTON */}
+                    <button
+                      type="button"
+                      onClick={() => setSelectedAmbassador(amb)}
+                      title="Manage assigned products"
+                      style={{
+                        backgroundColor: '#111122',
+                        color: '#2997ff',
+                        border: '1px solid #1a3a5c',
+                        padding: '6px 10px',
+                        fontSize: '10px',
+                        fontFamily: 'monospace',
+                        fontWeight: 'bold',
+                        cursor: 'pointer',
+                        borderRadius: '2px',
+                        letterSpacing: '1px',
+                        transition: 'all 0.2s ease',
+                      }}
+                    >
+                      + PRODUCTS
+                    </button>
+
+                    {/* STATUS BUTTON */}
                     {!isBlocked ? (
                       <button
                         type="button"
@@ -574,6 +601,16 @@ export default function AmbassadorList({
             );
           })}
         </div>
+      )}
+
+      {/* RENDER PRODUCT MANAGER WHEN AN AMBASSADOR IS SELECTED */}
+      {selectedAmbassador && (
+        <ProductManager
+          ambassadorId={selectedAmbassador.id}
+          ambassadorName={selectedAmbassador.name}
+          ambassadorSlug={selectedAmbassador.assigned_slug}
+          onClose={() => setSelectedAmbassador(null)}
+        />
       )}
     </div>
   );
