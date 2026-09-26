@@ -10,12 +10,14 @@ interface AmbassadorWorkspaceProps {
   isOwner?: boolean;
 }
 
-interface Product {
+interface AssignedProduct {
+  assignment_id?: string;
   id: string;
   title: string;
   price: number;
   image_url?: string;
   category?: string;
+  is_visible: boolean;
 }
 
 export default function AmbassadorWorkspace({
@@ -27,52 +29,87 @@ export default function AmbassadorWorkspace({
   const name = ambassadorData?.display_name || profile?.user_metadata?.full_name || 'AMBASSADOR';
   const commissionRate = ambassadorData?.commission_rate || 0;
 
-  // পাবলিক ভিউয়ের জন্য প্রোডাক্ট স্টেট
-  const [products, setProducts] = useState<Product[]>([]);
+  const [assignedProducts, setAssignedProducts] = useState<AssignedProduct[]>([]);
   const [loadingProducts, setLoadingProducts] = useState<boolean>(true);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
-  // কাস্টমার বা সাধারণ ভিজিটরদের জন্য প্রোডাক্ট ফেচ করার লজিক
-  useEffect(() => {
-    if (!isOwner && ambassadorData?.id) {
-      const fetchAssignedProducts = async () => {
-        setLoadingProducts(true);
-        try {
-          const { data, error } = await supabase
-            .from('ambassador_products')
-            .select(`
-              product_id,
-              products (
-                id,
-                title,
-                price,
-                image_url,
-                category
-              )
-            `)
-            .eq('ambassador_id', ambassadorData.id);
+  // প্রোডাক্ট লোড করা
+  const fetchProducts = async () => {
+    if (!ambassadorData?.id) return;
+    setLoadingProducts(true);
+    try {
+      const { data, error } = await supabase
+        .from('ambassador_products')
+        .select(`
+          product_id,
+          is_visible,
+          products (
+            id,
+            title,
+            price,
+            image_url,
+            category
+          )
+        `)
+        .eq('ambassador_id', ambassadorData.id);
 
-          if (error) throw error;
+      if (error) throw error;
 
-          if (data) {
-            const formattedProducts: Product[] = data
-              .map((item: any) => item.products)
-              .filter((p: any) => p !== null);
+      if (data) {
+        const formatted: AssignedProduct[] = data
+          .filter((item: any) => item.products !== null)
+          .map((item: any) => ({
+            id: item.products.id,
+            title: item.products.title,
+            price: item.products.price,
+            image_url: item.products.image_url,
+            category: item.products.category,
+            is_visible: item.is_visible ?? true, // ডিফল্ট true
+          }));
 
-            setProducts(formattedProducts);
-          }
-        } catch (err: any) {
-          console.error('Error loading assigned products:', err.message);
-        } finally {
-          setLoadingProducts(false);
-        }
-      };
-
-      fetchAssignedProducts();
+        setAssignedProducts(formatted);
+      }
+    } catch (err: any) {
+      console.error('Error loading products:', err.message);
+    } finally {
+      setLoadingProducts(false);
     }
-  }, [isOwner, ambassadorData?.id]);
+  };
 
-  // ১. সাধারণ ভিজিটর/কাস্টমারদের জন্য পাবলিক স্টোরফ্রন্ট ভিউ
+  useEffect(() => {
+    fetchProducts();
+  }, [ambassadorData?.id]);
+
+  // অ্যাম্বাসেডর প্রোডাক্ট পাবলিক পেজে দেখাবে কি না (Toggle Visibility)
+  const handleToggleVisibility = async (productId: string, currentStatus: boolean) => {
+    setTogglingId(productId);
+    try {
+      const newStatus = !currentStatus;
+      const { error } = await supabase
+        .from('ambassador_products')
+        .update({ is_visible: newStatus })
+        .eq('ambassador_id', ambassadorData.id)
+        .eq('product_id', productId);
+
+      if (error) throw error;
+
+      // লোকাল স্টেট আপডেট
+      setAssignedProducts((prev) =>
+        prev.map((prod) =>
+          prod.id === productId ? { ...prod, is_visible: newStatus } : prod
+        )
+      );
+    } catch (err: any) {
+      alert('Failed to update product visibility: ' + err.message);
+    } finally {
+      setTogglingId(null);
+    }
+  };
+
+  // ১. সাধারণ ভিজিটর/কাস্টমারদের জন্য পাবলিক স্টোরফ্রন্ট ভিউ (শুধু is_visible = true প্রোডাক্ট দেখাবে)
   if (!isOwner) {
+    const publicProducts = assignedProducts.filter((p) => p.is_visible);
+
     return (
       <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '40px 20px', color: '#ffffff', fontFamily: 'monospace, sans-serif' }}>
         <header style={{ borderBottom: '1px solid #1a1a1a', paddingBottom: '24px', marginBottom: '32px', textAlign: 'center' }}>
@@ -87,20 +124,19 @@ export default function AmbassadorWorkspace({
           </p>
         </header>
 
-        {/* সাধারণ প্রোডাক্ট লিস্টের সেকশন (ডাইনামিক) */}
         {loadingProducts ? (
           <div style={{ textAlign: 'center', padding: '40px', color: '#666', fontSize: '12px' }}>
             LOADING COLLECTION...
           </div>
-        ) : products.length === 0 ? (
+        ) : publicProducts.length === 0 ? (
           <div style={{ padding: '40px 0', textAlign: 'center', border: '1px dashed #222222', backgroundColor: '#050505' }}>
             <p style={{ color: '#888888', fontSize: '12px', letterSpacing: '1px' }}>
-              NO PRODUCTS ASSIGNED TO THIS STORE YET.
+              NO PRODUCTS CURATED FOR THIS COLLECTION YET.
             </p>
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '20px' }}>
-            {products.map((product) => (
+            {publicProducts.map((product) => (
               <div
                 key={product.id}
                 style={{
@@ -113,22 +149,20 @@ export default function AmbassadorWorkspace({
                   textAlign: 'left',
                 }}
               >
-                {/* প্রোডাক্ট ছবি */}
                 <div style={{ width: '100%', height: '220px', backgroundColor: '#111', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
                   {product.image_url ? (
                     <img src={product.image_url} alt={product.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   ) : (
-                    <span style={{ color: '#444', fontSize: '10px' }}>NO IMAGE AVAILABLE</span>
+                    <span style={{ color: '#444', fontSize: '10px' }}>NO IMAGE</span>
                   )}
                 </div>
 
-                {/* প্রোডাক্ট ডিটেইলস */}
                 <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
-                  <h3 style={{ fontSize: '13px', margin: 0, color: '#fff', fontWeight: 'bold', letterSpacing: '0.5px' }}>
+                  <h3 style={{ fontSize: '13px', margin: 0, color: '#fff', fontWeight: 'bold' }}>
                     {product.title}
                   </h3>
                   {product.category && (
-                    <span style={{ fontSize: '9px', color: '#666', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                    <span style={{ fontSize: '9px', color: '#666', textTransform: 'uppercase' }}>
                       {product.category}
                     </span>
                   )}
@@ -147,7 +181,6 @@ export default function AmbassadorWorkspace({
                         fontWeight: 'bold',
                         cursor: 'pointer',
                         borderRadius: '2px',
-                        letterSpacing: '0.5px'
                       }}
                     >
                       ADD TO CART
@@ -162,7 +195,7 @@ export default function AmbassadorWorkspace({
     );
   }
 
-  // ২. অ্যাম্বাসেডর নিজের ড্যাশবোর্ড (ব্যালেন্স, অ্যানালিটিক্স, প্রাইভেট ভিউ)
+  // ২. অ্যাম্বাসেডর নিজের ড্যাশবোর্ড (বিপণন কেন্দ্র + প্রোডাক্ট ম্যানেজমেন্ট)
   return (
     <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '40px 20px', color: '#ffffff', fontFamily: 'monospace, sans-serif' }}>
       <header style={{ borderBottom: '1px solid #1a1a1a', paddingBottom: '20px', marginBottom: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -177,6 +210,7 @@ export default function AmbassadorWorkspace({
         </div>
       </header>
 
+      {/* STATS */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '32px' }}>
         <div style={{ backgroundColor: '#050505', border: '1px solid #1a1a1a', padding: '20px' }}>
           <span style={{ color: '#888888', fontSize: '10px', letterSpacing: '1px' }}>UNPAID BALANCE</span>
@@ -194,6 +228,83 @@ export default function AmbassadorWorkspace({
       </div>
 
       <StoreLinkBanner slug={ambassadorState?.slug || ambassadorData?.assigned_slug} />
+
+      {/* AMBASSADOR PRODUCT SELECTION SECTION */}
+      <section style={{ marginTop: '40px', backgroundColor: '#050505', border: '1px solid #1a1a1a', padding: '24px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <div>
+            <h2 style={{ fontSize: '14px', margin: 0, textTransform: 'uppercase', letterSpacing: '1px' }}>
+              STOREFRONT PRODUCTS
+            </h2>
+            <p style={{ fontSize: '10px', color: '#888', margin: '4px 0 0 0' }}>
+              Select which assigned products to display on your public showcase.
+            </p>
+          </div>
+          <span style={{ fontSize: '10px', color: '#666', border: '1px solid #222', padding: '4px 8px' }}>
+            {assignedProducts.filter(p => p.is_visible).length} / {assignedProducts.length} VISIBLE
+          </span>
+        </div>
+
+        {loadingProducts ? (
+          <div style={{ fontSize: '11px', color: '#666' }}>LOADING ASSIGNED PRODUCTS...</div>
+        ) : assignedProducts.length === 0 ? (
+          <div style={{ fontSize: '11px', color: '#666', padding: '20px 0', textAlign: 'center', border: '1px dashed #222' }}>
+            NO PRODUCTS ASSIGNED BY ADMIN YET.
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {assignedProducts.map((product) => (
+              <div
+                key={product.id}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '12px 16px',
+                  backgroundColor: '#0a0a0a',
+                  border: '1px solid #1a1a1a',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  {product.image_url ? (
+                    <img src={product.image_url} alt="" style={{ width: '40px', height: '40px', objectFit: 'cover' }} />
+                  ) : (
+                    <div style={{ width: '40px', height: '40px', backgroundColor: '#1a1a1a' }} />
+                  )}
+                  <div>
+                    <div style={{ fontSize: '12px', fontWeight: 'bold' }}>{product.title}</div>
+                    <div style={{ fontSize: '10px', color: '#888' }}>৳{product.price}</div>
+                  </div>
+                </div>
+
+                {/* VISIBILITY TOGGLE BUTTON */}
+                <button
+                  type="button"
+                  onClick={() => handleToggleVisibility(product.id, product.is_visible)}
+                  disabled={togglingId === product.id}
+                  style={{
+                    backgroundColor: product.is_visible ? '#082210' : '#111111',
+                    color: product.is_visible ? '#4dff88' : '#666666',
+                    border: `1px solid ${product.is_visible ? '#115522' : '#333333'}`,
+                    padding: '6px 12px',
+                    fontSize: '10px',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    letterSpacing: '1px',
+                  }}
+                >
+                  {togglingId === product.id
+                    ? 'UPDATING...'
+                    : product.is_visible
+                    ? 'SHOWING ON STORE'
+                    : 'HIDDEN FROM STORE'}
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
       <div style={{ marginTop: '32px' }}>
         <AnalyticsChart totalEarned={ambassadorState?.totalEarned} />
       </div>
