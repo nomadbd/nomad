@@ -33,7 +33,7 @@ export default function AmbassadorWorkspace({
   const [loadingProducts, setLoadingProducts] = useState<boolean>(true);
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
-  // প্রোডাক্ট লোড করা
+  // প্রোডাক্ট লোড করার লজিক (Foreign Key জয়েন সেফলি হ্যান্ডেল করা)
   const fetchProducts = async () => {
     if (!ambassadorData?.id) return;
     setLoadingProducts(true);
@@ -57,15 +57,21 @@ export default function AmbassadorWorkspace({
 
       if (data) {
         const formatted: AssignedProduct[] = data
-          .filter((item: any) => item.products !== null)
-          .map((item: any) => ({
-            id: item.products.id,
-            title: item.products.title,
-            price: item.products.price,
-            image_url: item.products.image_url,
-            category: item.products.category,
-            is_visible: item.is_visible ?? true, // ডিফল্ট true
-          }));
+          .map((item: any) => {
+            // Supabase জয়েন অবজেক্ট বা অ্যারে দুটোই নিরাপদে হ্যান্ডেল করা
+            const prod = Array.isArray(item.products) ? item.products[0] : item.products;
+            if (!prod) return null;
+
+            return {
+              id: prod.id,
+              title: prod.title,
+              price: prod.price,
+              image_url: prod.image_url,
+              category: prod.category,
+              is_visible: item.is_visible ?? true,
+            };
+          })
+          .filter((item): item is AssignedProduct => item !== null);
 
         setAssignedProducts(formatted);
       }
@@ -80,7 +86,7 @@ export default function AmbassadorWorkspace({
     fetchProducts();
   }, [ambassadorData?.id]);
 
-  // অ্যাম্বাসেডর প্রোডাক্ট পাবলিক পেজে দেখাবে কি না (Toggle Visibility)
+  // অ্যাম্বাসেডর প্রোডাক্ট পাবলিশ/হাইড করবে (Toggle Visibility)
   const handleToggleVisibility = async (productId: string, currentStatus: boolean) => {
     setTogglingId(productId);
     try {
@@ -93,7 +99,6 @@ export default function AmbassadorWorkspace({
 
       if (error) throw error;
 
-      // লোকাল স্টেট আপডেট
       setAssignedProducts((prev) =>
         prev.map((prod) =>
           prod.id === productId ? { ...prod, is_visible: newStatus } : prod
@@ -106,7 +111,7 @@ export default function AmbassadorWorkspace({
     }
   };
 
-  // ১. সাধারণ ভিজিটর/কাস্টমারদের জন্য পাবলিক স্টোরফ্রন্ট ভিউ (শুধু is_visible = true প্রোডাক্ট দেখাবে)
+  // ১. সাধারণ কাস্টমারদের জন্য পাবলিক স্টোরফ্রন্ট ভিউ (শুধু visible প্রোডাক্ট দেখাবে)
   if (!isOwner) {
     const publicProducts = assignedProducts.filter((p) => p.is_visible);
 
@@ -195,7 +200,7 @@ export default function AmbassadorWorkspace({
     );
   }
 
-  // ২. অ্যাম্বাসেডর নিজের ড্যাশবোর্ড (বিপণন কেন্দ্র + প্রোডাক্ট ম্যানেজমেন্ট)
+  // ২. অ্যাম্বাসেডর ড্যাশবোর্ড (পাবলিক স্টোর ম্যানেজমেন্ট)
   return (
     <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '40px 20px', color: '#ffffff', fontFamily: 'monospace, sans-serif' }}>
       <header style={{ borderBottom: '1px solid #1a1a1a', paddingBottom: '20px', marginBottom: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -277,7 +282,6 @@ export default function AmbassadorWorkspace({
                   </div>
                 </div>
 
-                {/* VISIBILITY TOGGLE BUTTON */}
                 <button
                   type="button"
                   onClick={() => handleToggleVisibility(product.id, product.is_visible)}
