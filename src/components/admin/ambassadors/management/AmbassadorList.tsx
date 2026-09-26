@@ -4,7 +4,8 @@ import AmbassadorSkeleton from './AmbassadorSkeleton';
 import ProductManager from './ProductManager';
 
 interface AmbassadorProfile {
-  id: string;
+  id: string; // Profiles ID
+  ambassador_id: string; // Ambassador table ID (Foreign key match)
   name: string;
   email: string;
   status: string;
@@ -50,6 +51,7 @@ export default function AmbassadorList({
           status,
           created_at,
           ambassador (
+            id,
             assigned_slug,
             total_sales
           )
@@ -64,6 +66,7 @@ export default function AmbassadorList({
           const ambData = Array.isArray(item.ambassador) ? item.ambassador[0] : item.ambassador;
           return {
             id: item.id,
+            ambassador_id: ambData?.id || item.id, // ambassador টেবিলের মূল ID
             name: item.name || 'Unnamed Ambassador',
             email: item.email || 'No Email',
             status: item.status || 'ACTIVE',
@@ -603,10 +606,10 @@ export default function AmbassadorList({
         </div>
       )}
 
-      {/* RENDER PRODUCT MANAGER WHEN AN AMBASSADOR IS SELECTED */}
+      {/* RENDER PRODUCT MANAGER WITH CORRECT AMBASSADOR_ID */}
       {selectedAmbassador && (
         <ProductManager
-          ambassadorId={selectedAmbassador.id}
+          ambassadorId={selectedAmbassador.ambassador_id}
           ambassadorName={selectedAmbassador.name}
           ambassadorSlug={selectedAmbassador.assigned_slug}
           onClose={() => setSelectedAmbassador(null)}
