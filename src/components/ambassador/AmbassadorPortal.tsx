@@ -59,6 +59,7 @@ export default function AmbassadorPortal() {
     );
   }
 
+  // ১. অ্যাকাউন্ট তৈরি না থাকলে ইনভাইট পেজ দেখাবে
   if (!ambassadorData.is_registered) {
     const isExpired = ambassadorData.expires_at && new Date(ambassadorData.expires_at) < new Date();
 
@@ -78,7 +79,10 @@ export default function AmbassadorPortal() {
     return <AmbassadorJoin initialInviteData={ambassadorData} />;
   }
 
-  const isOwner = currentUser?.id === ambassadorData.user_id;
+  // 🔒 ২. লজিক ফিক্স:
+  // /:slug লিংকে যেই প্রবেশ করুক না কেন (অ্যাম্বাসেডর নিজে, এডমিন বা কাস্টমার)
+  // সবসময় পাবলিক পেজই দেখাবে। তাই isOwner সবসময় false থাকবে।
+  const isOwner = false;
 
   return (
     <AmbassadorWorkspace
