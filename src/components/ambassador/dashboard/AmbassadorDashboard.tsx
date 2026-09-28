@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/supabaseClient';
+import StoreLink from './StoreLink'; // StoreLink কম্পোনেন্ট ইম্পোর্ট করা হলো
 
 interface AmbassadorDashboardProps {
   ambassadorData: any;
@@ -182,8 +183,14 @@ export default function AmbassadorDashboard({
           )}
         </div>
       ) : (
-        <div>
-          {/* STOREFRONT PRODUCTS SECTION */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          {/* ১. স্টোর লিংক সেকশন (হেডারের ঠিক নিচে) */}
+          <StoreLink 
+            profile={profile} 
+            isAmbassadorActive={true} 
+          />
+
+          {/* ২. STOREFRONT PRODUCTS SECTION */}
           <section style={{ backgroundColor: '#050505', border: '1px solid #1a1a1a', padding: '24px', borderRadius: '8px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <div>
