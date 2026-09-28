@@ -46,17 +46,17 @@ export default function ProfileHeader({
   const hasAnimatedRef = useRef(false);
 
   useEffect(() => {
-    // যদি ইতিমধ্যেই অ্যানিমেশন একবার হয়ে গিয়ে থাকে (প্রোফাইল স্যুইচ করলে) তবে আর রন হবে না
+    // যদি ইতিমধ্যেই অ্যানিমেশন একবার হয়ে গিয়ে থাকে (প্রোফাইল স্যুইচ করলে) তবে আর রান হবে না
     if (hasAnimatedRef.current) {
       setShowGreeting(false);
       return;
     }
 
-    // প্রথমবার ২.৫ সেকেন্ডের জন্য WELCOME! দেখাবে, তারপর স্মুথলি বদলে নাম আসবে
+    // প্রথমবার ২.৫ সেকেন্ডের জন্য WELCOME! দেখাবে, তারপর স্মুথলি বদলে নাম ও ইমেইল আসবে
     const timer = setTimeout(() => {
       setFade(false); // ফেইড আউট
       setTimeout(() => {
-        setShowGreeting(false); // নাম পরিবর্তন
+        setShowGreeting(false); // নাম ও ইমেইল পরিবর্তন
         setFade(true); // ফেইড ইন
         hasAnimatedRef.current = true; // অ্যানিমেশন কমপ্লিট হিসেবে চিহ্নিত করা
       }, 300);
@@ -207,15 +207,20 @@ export default function ProfileHeader({
             </div>
           ) : (
             <span style={{ 
-              fontSize: '11px', 
+              fontSize: showGreeting ? '10px' : '11px', 
               color: '#71717A', 
               marginTop: '2px',
+              letterSpacing: showGreeting ? '0.6px' : 'normal',
+              textTransform: showGreeting ? 'uppercase' : 'none',
+              fontWeight: showGreeting ? '500' : 'normal',
               whiteSpace: 'nowrap',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
-              width: '100%'
+              width: '100%',
+              opacity: fade ? 1 : 0,
+              transition: 'opacity 0.3s ease-in-out'
             }}>
-              {profile?.email || ''}
+              {showGreeting ? 'MEMBER' : (profile?.email || '')}
             </span>
           )}
         </div>
