@@ -32,6 +32,22 @@ export default function SlugEditor({
       return;
     }
 
+    if (cleanSlug.length < 3) {
+      setLocalError('Slug must be at least 3 characters long.');
+      return;
+    }
+
+    if (cleanSlug.length > 20) {
+      setLocalError('Slug cannot exceed 20 characters.');
+      return;
+    }
+
+    const validSlugRegex = /^[a-z0-9-]+$/;
+    if (!validSlugRegex.test(cleanSlug)) {
+      setLocalError('Slug can only contain letters, numbers, and hyphens.');
+      return;
+    }
+
     if (isReservedSlug(cleanSlug)) {
       setLocalError('This name is reserved by system. Please choose another.');
       return;
@@ -62,7 +78,7 @@ export default function SlugEditor({
               style={inputStyle}
             />
           </div>
-          
+
           <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
             <button
               onClick={() => setIsEditingSlug(false)}
@@ -99,7 +115,7 @@ export default function SlugEditor({
       )}
 
       {(localError || slugMsg.text) && (
-        <div style={messageBannerStyle(localError || slugMsg.type === 'error')}>
+        <div style={messageBannerStyle(Boolean(localError || slugMsg.type === 'error'))}>
           {localError || slugMsg.text}
         </div>
       )}
