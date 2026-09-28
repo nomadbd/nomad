@@ -26,10 +26,8 @@ export default function StoreLink({
     }
   }, []);
 
-  // শুধুই আসল assigned_slug রিড করার ক্লিন লজিক
   const rawSlug = assignedSlug || ambassadorData?.assigned_slug || profile?.assigned_slug || '';
   const slug = typeof rawSlug === 'string' ? rawSlug.trim().replace(/^\/+|\/+$/g, '') : '';
-
   const storeUrl = origin && slug ? `${origin.replace(/\/+$/, '')}/${slug}` : '';
 
   const handleShare = async () => {
@@ -38,13 +36,13 @@ export default function StoreLink({
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'Ambassador Store',
-          text: 'Check out my store link!',
+          title: 'Curated Storefront',
+          text: 'Check out my curated collection!',
           url: storeUrl,
         });
         return;
       } catch {
-        // মোবাইল শেয়ার ক্যানসেল করলে ফেইল না করে এড়িয়ে যাবে
+        // Native share cancelled
       }
     }
 
@@ -53,101 +51,108 @@ export default function StoreLink({
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // ক্লিপবোর্ড ফেলব্যাক
+      // Clipboard fallback
     }
   };
 
   return (
     <div style={{
-      backgroundColor: '#121212',
+      backgroundColor: '#0A0A0C',
       border: '1px solid #1F1F22',
       borderRadius: '12px',
-      padding: '12px 16px',
+      padding: '16px',
       display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      gap: '12px',
+      flexDirection: 'column',
+      gap: '10px',
       width: '100%',
       boxSizing: 'border-box'
     }}>
+      {/* প্রিমিয়াম লেবেল */}
       <div style={{
         display: 'flex',
-        flexDirection: 'column',
-        gap: '4px',
-        flex: 1,
-        minWidth: 0
+        alignItems: 'center',
+        justifyContent: 'space-between'
       }}>
         <span style={{
           fontSize: '11px',
-          color: '#A1A1AA',
-          fontWeight: '500',
+          color: '#888888',
+          fontWeight: '600',
           textTransform: 'uppercase',
-          letterSpacing: '0.5px'
+          letterSpacing: '1.5px'
         }}>
-          Ambassador Store Link
+          PUBLIC STOREFRONT URL
         </span>
+      </div>
 
+      {/* লিংক ইনপুট ও শেয়ার আইকন বাটন */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '10px',
+        width: '100%'
+      }}>
+        {/* লিংক বক্স (বেশি বড় হলে ... অটোমেটিক যুক্ত হবে) */}
         <div style={{
-          backgroundColor: '#09090B',
-          border: '1px solid #27272A',
+          flex: 1,
+          backgroundColor: '#000000',
+          border: '1px solid #222225',
           borderRadius: '8px',
-          padding: '8px 12px',
+          padding: '10px 14px',
           fontSize: '12px',
-          color: storeUrl ? '#E4E4E7' : '#71717A',
+          color: storeUrl ? '#E4E4E7' : '#52525B',
           whiteSpace: 'nowrap',
           overflow: 'hidden',
           textOverflow: 'ellipsis',
-          userSelect: 'all',
-          fontFamily: 'monospace'
+          fontFamily: 'monospace',
+          minWidth: 0
         }}>
-          {loading ? 'Loading link...' : (storeUrl || 'No store link assigned')}
+          {loading ? 'Generating link...' : (storeUrl || 'No storefront assigned')}
         </div>
-      </div>
 
-      <div style={{ position: 'relative', flexShrink: 0, alignSelf: 'flex-end' }}>
-        <button
-          onClick={handleShare}
-          disabled={!storeUrl}
-          title="Share or Copy Store Link"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '6px',
-            backgroundColor: storeUrl ? '#10B981' : '#27272A',
-            color: storeUrl ? '#FFFFFF' : '#52525B',
-            border: 'none',
-            borderRadius: '8px',
-            padding: '8px 14px',
-            fontSize: '12px',
-            fontWeight: '600',
-            cursor: storeUrl ? 'pointer' : 'not-allowed',
-            transition: 'all 0.2s ease',
-            outline: 'none',
-            height: '34px'
-          }}
-        >
-          <ShareIcon width={15} height={15} stroke={storeUrl ? "#FFFFFF" : "#52525B"} />
-          <span>{copied ? 'Copied!' : 'Share'}</span>
-        </button>
+        {/* শুধুমাত্র শেয়ার আইকন বাটন */}
+        <div style={{ position: 'relative', flexShrink: 0 }}>
+          <button
+            onClick={handleShare}
+            disabled={!storeUrl}
+            title={copied ? 'Copied to clipboard!' : 'Share / Copy URL'}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '38px',
+              height: '38px',
+              backgroundColor: storeUrl ? (copied ? '#059669' : '#10B981') : '#18181B',
+              color: storeUrl ? '#FFFFFF' : '#3F3F46',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: storeUrl ? 'pointer' : 'not-allowed',
+              transition: 'all 0.2s ease',
+              outline: 'none'
+            }}
+          >
+            <ShareIcon width={16} height={16} stroke={storeUrl ? "#FFFFFF" : "#3F3F46"} />
+          </button>
 
-        {copied && (
-          <div style={{
-            position: 'absolute',
-            top: '-30px',
-            right: '0',
-            backgroundColor: '#10B981',
-            color: '#FFFFFF',
-            fontSize: '10px',
-            fontWeight: '600',
-            padding: '3px 8px',
-            borderRadius: '4px',
-            whiteSpace: 'nowrap',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.4)'
-          }}>
-            Link Copied!
-          </div>
-        )}
+          {/* লিংক কপি হলে পপআপ নোটিফিকেশন */}
+          {copied && (
+            <div style={{
+              position: 'absolute',
+              bottom: '46px',
+              right: '0',
+              backgroundColor: '#10B981',
+              color: '#FFFFFF',
+              fontSize: '10px',
+              fontWeight: '600',
+              padding: '4px 8px',
+              borderRadius: '4px',
+              whiteSpace: 'nowrap',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+              letterSpacing: '0.5px'
+            }}>
+              COPIED!
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
