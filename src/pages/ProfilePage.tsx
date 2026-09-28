@@ -11,7 +11,7 @@ import ProfileDetailsSheet from '../components/profile/ProfileDetailsSheet';
 import NotificationsView from '../components/profile/NotificationsView';
 import CommunicationView from '../components/profile/CommunicationView';
 import ImageCropModal from '../components/ui/ImageCropModal';
-import AmbassadorWorkspace from '../components/ambassador/AmbassadorWorkspace';
+import AmbassadorDashboard from '../components/ambassador/dashboard/AmbassadorDashboard';
 import { useAmbassador } from '../hooks/useAmbassador';
 
 function AmbassadorDashboardSection({ ambassadorData, profile }: { ambassadorData: any; profile: any }) {
@@ -19,7 +19,7 @@ function AmbassadorDashboardSection({ ambassadorData, profile }: { ambassadorDat
 
   return (
     <div style={{ marginTop: '10px' }}>
-      <AmbassadorWorkspace 
+      <AmbassadorDashboard 
         ambassadorData={ambassadorData} 
         profile={profile} 
         isOwner={true}
