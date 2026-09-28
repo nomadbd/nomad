@@ -3,7 +3,10 @@ import { ShareIcon } from '../../icons';
 
 interface StoreLinkProps {
   assignedSlug?: string;
-  ambassadorData?: any;
+  ambassadorData?: {
+    assigned_slug?: string;
+    [key: string]: any;
+  };
   profile?: any;
   loading?: boolean;
 }
@@ -23,20 +26,11 @@ export default function StoreLink({
     }
   }, []);
 
-  // বিভিন্ন উৎস থেকে slug তুলে আনার সেফ লজিক
-  const rawSlug =
-    assignedSlug ||
-    ambassadorData?.assigned_slug ||
-    ambassadorData?.slug ||
-    ambassadorData?.token ||
-    profile?.assigned_slug ||
-    profile?.slug ||
-    '';
-
+  // শুধুই আসল assigned_slug রিড করার ক্লিন লজিক
+  const rawSlug = assignedSlug || ambassadorData?.assigned_slug || profile?.assigned_slug || '';
   const slug = typeof rawSlug === 'string' ? rawSlug.trim().replace(/^\/+|\/+$/g, '') : '';
-  const cleanOrigin = origin.replace(/\/+$/, '');
 
-  const storeUrl = cleanOrigin && slug ? `${cleanOrigin}/${slug}` : '';
+  const storeUrl = origin && slug ? `${origin.replace(/\/+$/, '')}/${slug}` : '';
 
   const handleShare = async () => {
     if (!storeUrl) return;
@@ -49,7 +43,8 @@ export default function StoreLink({
           url: storeUrl,
         });
         return;
-      } catch (error) {
+      } catch {
+        // মোবাইল শেয়ার ক্যানসেল করলে ফেইল না করে এড়িয়ে যাবে
       }
     }
 
@@ -57,7 +52,8 @@ export default function StoreLink({
       await navigator.clipboard.writeText(storeUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
+    } catch {
+      // ক্লিপবোর্ড ফেলব্যাক
     }
   };
 
