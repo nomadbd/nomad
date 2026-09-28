@@ -2,17 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { ShareIcon } from '../../icons';
 
 interface StoreLinkProps {
-  profile?: any;
-  ambassadorData?: any;
-  isAmbassadorActive?: boolean;
-  customLink?: string;
+  assignedSlug?: string; // ambassador টেবিল থেকে পাওয়া assigned_slug
+  loading?: boolean;
 }
 
 export default function StoreLink({
-  profile,
-  ambassadorData,
-  isAmbassadorActive = false,
-  customLink
+  assignedSlug,
+  loading = false
 }: StoreLinkProps) {
   const [copied, setCopied] = useState(false);
   const [origin, setOrigin] = useState('');
@@ -23,18 +19,11 @@ export default function StoreLink({
     }
   }, []);
 
-  const rawSlug = 
-    ambassadorData?.assigned_slug || 
-    ambassadorData?.token || 
-    ambassadorData?.slug || 
-    profile?.assigned_slug || 
-    profile?.slug || 
-    '';
+  const cleanSlug = assignedSlug?.trim().replace(/^\/+|\/+$/g, '') || '';
+  const cleanOrigin = origin.replace(/\/+$/, '');
 
-  const slug = typeof rawSlug === 'string' ? rawSlug.trim().replace(/^\/+|\/+$/g, '') : '';
-  const cleanOrigin = origin ? origin.replace(/\/+$/, '') : '';
-
-  const storeUrl = customLink || (cleanOrigin && slug ? `${cleanOrigin}/${slug}` : cleanOrigin);
+  // যদি slug থাকে তবেই পূর্ণাঙ্গ লিংক তৈরি হবে
+  const storeUrl = cleanOrigin && cleanSlug ? `${cleanOrigin}/${cleanSlug}` : '';
 
   const handleShare = async () => {
     if (!storeUrl) return;
@@ -42,7 +31,7 @@ export default function StoreLink({
     if (navigator.share) {
       try {
         await navigator.share({
-          title: isAmbassadorActive ? 'Ambassador Store' : 'My Store',
+          title: 'My Ambassador Store',
           text: 'Check out my store link!',
           url: storeUrl,
         });
@@ -86,7 +75,7 @@ export default function StoreLink({
           textTransform: 'uppercase',
           letterSpacing: '0.5px'
         }}>
-          {isAmbassadorActive ? 'Ambassador Store Link' : 'Store Link'}
+          Ambassador Store Link
         </span>
 
         <div style={{
@@ -95,40 +84,41 @@ export default function StoreLink({
           borderRadius: '8px',
           padding: '8px 12px',
           fontSize: '12px',
-          color: '#E4E4E7',
+          color: storeUrl ? '#E4E4E7' : '#71717A',
           whiteSpace: 'nowrap',
           overflow: 'hidden',
           textOverflow: 'ellipsis',
           userSelect: 'all',
           fontFamily: 'monospace'
         }}>
-          {storeUrl || 'Loading...'}
+          {loading ? 'Loading store link...' : (storeUrl || 'No store link assigned')}
         </div>
       </div>
 
       <div style={{ position: 'relative', flexShrink: 0, alignSelf: 'flex-end' }}>
         <button
           onClick={handleShare}
+          disabled={!storeUrl}
           title="Share or Copy Store Link"
           style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             gap: '6px',
-            backgroundColor: isAmbassadorActive ? '#10B981' : '#27272A',
-            color: '#FFFFFF',
+            backgroundColor: storeUrl ? '#10B981' : '#27272A',
+            color: storeUrl ? '#FFFFFF' : '#52525B',
             border: 'none',
             borderRadius: '8px',
             padding: '8px 14px',
             fontSize: '12px',
             fontWeight: '600',
-            cursor: 'pointer',
+            cursor: storeUrl ? 'pointer' : 'not-allowed',
             transition: 'all 0.2s ease',
             outline: 'none',
             height: '34px'
           }}
         >
-          <ShareIcon width={15} height={15} stroke="#FFFFFF" />
+          <ShareIcon width={15} height={15} stroke={storeUrl ? "#FFFFFF" : "#52525B"} />
           <span>{copied ? 'Copied!' : 'Share'}</span>
         </button>
 
