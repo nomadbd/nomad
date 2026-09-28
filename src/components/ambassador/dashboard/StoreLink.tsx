@@ -2,12 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { ShareIcon } from '../../icons';
 
 interface StoreLinkProps {
-  assignedSlug?: string; // ambassador টেবিল থেকে পাওয়া assigned_slug
+  assignedSlug?: string;
+  ambassadorData?: any;
+  profile?: any;
   loading?: boolean;
 }
 
 export default function StoreLink({
   assignedSlug,
+  ambassadorData,
+  profile,
   loading = false
 }: StoreLinkProps) {
   const [copied, setCopied] = useState(false);
@@ -19,11 +23,20 @@ export default function StoreLink({
     }
   }, []);
 
-  const cleanSlug = assignedSlug?.trim().replace(/^\/+|\/+$/g, '') || '';
+  // বিভিন্ন উৎস থেকে slug তুলে আনার সেফ লজিক
+  const rawSlug =
+    assignedSlug ||
+    ambassadorData?.assigned_slug ||
+    ambassadorData?.slug ||
+    ambassadorData?.token ||
+    profile?.assigned_slug ||
+    profile?.slug ||
+    '';
+
+  const slug = typeof rawSlug === 'string' ? rawSlug.trim().replace(/^\/+|\/+$/g, '') : '';
   const cleanOrigin = origin.replace(/\/+$/, '');
 
-  // যদি slug থাকে তবেই পূর্ণাঙ্গ লিংক তৈরি হবে
-  const storeUrl = cleanOrigin && cleanSlug ? `${cleanOrigin}/${cleanSlug}` : '';
+  const storeUrl = cleanOrigin && slug ? `${cleanOrigin}/${slug}` : '';
 
   const handleShare = async () => {
     if (!storeUrl) return;
@@ -31,7 +44,7 @@ export default function StoreLink({
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'My Ambassador Store',
+          title: 'Ambassador Store',
           text: 'Check out my store link!',
           url: storeUrl,
         });
@@ -91,7 +104,7 @@ export default function StoreLink({
           userSelect: 'all',
           fontFamily: 'monospace'
         }}>
-          {loading ? 'Loading store link...' : (storeUrl || 'No store link assigned')}
+          {loading ? 'Loading link...' : (storeUrl || 'No store link assigned')}
         </div>
       </div>
 
