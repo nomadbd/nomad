@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import AnalyticsChart from './AnalyticsChart';
+import AnalyticsChart from './stats/AnalyticsChart';
 import StoreLinkBanner from './StoreLinkBanner';
 import { supabase } from '@/supabaseClient';
 
@@ -33,7 +33,6 @@ export default function AmbassadorWorkspace({
   const [loadingProducts, setLoadingProducts] = useState<boolean>(true);
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
-  // লাইভ ডিবাগ লগের জন্য স্টেট
   const [debugLogs, setDebugLogs] = useState<string[]>([]);
 
   const logMessage = (msg: string) => {
@@ -41,7 +40,6 @@ export default function AmbassadorWorkspace({
     setDebugLogs((prev) => [...prev, msg]);
   };
 
-  // প্রোডাক্ট ও মিডিয়া লোড করার মূল ফাংশন
   const fetchProducts = async () => {
     setLoadingProducts(true);
     setDebugLogs([]);
@@ -63,7 +61,6 @@ export default function AmbassadorWorkspace({
         return;
       }
 
-      // ১. ambassador_products টেবিল থেকে অ্যাসাইন করা প্রোডাক্ট আইডি রিড করা
       logMessage('📡 Querying ambassador_products table...');
       const { data: assignData, error: assignError } = await supabase
         .from('ambassador_products')
@@ -82,7 +79,6 @@ export default function AmbassadorWorkspace({
       const productIds = assignData.map((item: any) => item.product_id);
       logMessage(`🔑 Found Product IDs: ${JSON.stringify(productIds)}`);
 
-      // ২. products টেবিল থেকে নাম, দাম ও ক্যাটাগরি রিড করা (name কলাম ব্যবহার করা হয়েছে)
       logMessage('📡 Querying products table...');
       const { data: prodData, error: prodError } = await supabase
         .from('products')
@@ -91,7 +87,6 @@ export default function AmbassadorWorkspace({
 
       if (prodError) throw prodError;
 
-      // ৩. product_media টেবিল থেকে ছবির media_url রিড করা
       logMessage('📡 Querying product_media table...');
       const { data: mediaData, error: mediaError } = await supabase
         .from('product_media')
@@ -103,19 +98,17 @@ export default function AmbassadorWorkspace({
         console.warn('Media fetch notice:', mediaError.message);
       }
 
-      // ৪. ডাটা একত্রে মার্জ (Merge) করা
       const formatted: AssignedProduct[] = assignData
         .map((item: any) => {
           const prod = prodData?.find((p: any) => p.id === item.product_id);
           if (!prod) return null;
 
-          // ঐ প্রোডাক্টের প্রথম মিডিয়াটি রিড করা
           const mediaObj = mediaData?.find((m: any) => m.product_id === prod.id);
           const imageUrl = mediaObj?.media_url || '';
 
           return {
             id: prod.id,
-            title: prod.name || 'Untitled Product', // Database 'name' -> Component 'title'
+            title: prod.name || 'Untitled Product',
             price: prod.price || 0,
             image_url: imageUrl,
             category: prod.category || '',
@@ -137,7 +130,6 @@ export default function AmbassadorWorkspace({
     fetchProducts();
   }, [ambassadorData, profile]);
 
-  // স্টোরে প্রোডাক্টের ভিজিবিলিটি টগল করার ফাংশন
   const handleToggleVisibility = async (productId: string, currentStatus: boolean) => {
     const targetIds = [
       ambassadorData?.id,
@@ -172,8 +164,7 @@ export default function AmbassadorWorkspace({
 
   return (
     <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '40px 20px', color: '#ffffff', fontFamily: 'sans-serif' }}>
-      
-      {/* 🛠️ LIVE DEBUG CONSOLE VIEW */}
+
       <div style={{ backgroundColor: '#090d16', border: '1px solid #1e293b', padding: '16px', borderRadius: '8px', marginBottom: '24px', fontFamily: 'monospace' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
           <span style={{ color: '#f59e0b', fontSize: '12px', fontWeight: 'bold', letterSpacing: '1px' }}>
@@ -205,7 +196,6 @@ export default function AmbassadorWorkspace({
         </div>
       </div>
 
-      {/* PUBLIC CUSTOMER VIEW */}
       {!isOwner ? (
         <div>
           <header style={{ borderBottom: '1px solid #1a1a1a', paddingBottom: '24px', marginBottom: '32px', textAlign: 'center' }}>
@@ -246,7 +236,6 @@ export default function AmbassadorWorkspace({
           )}
         </div>
       ) : (
-        /* AMBASSADOR DASHBOARD VIEW */
         <div>
           <header style={{ borderBottom: '1px solid #1a1a1a', paddingBottom: '20px', marginBottom: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
@@ -260,7 +249,6 @@ export default function AmbassadorWorkspace({
             </div>
           </header>
 
-          {/* STATS SECTION */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '32px' }}>
             <div style={{ backgroundColor: '#050505', border: '1px solid #1a1a1a', padding: '20px', borderRadius: '6px' }}>
               <span style={{ color: '#888888', fontSize: '10px', letterSpacing: '1px' }}>UNPAID BALANCE</span>
@@ -279,7 +267,6 @@ export default function AmbassadorWorkspace({
 
           <StoreLinkBanner slug={ambassadorState?.slug || ambassadorData?.assigned_slug} />
 
-          {/* STOREFRONT PRODUCTS CONTROL */}
           <section style={{ marginTop: '24px', backgroundColor: '#050505', border: '1px solid #1a1a1a', padding: '24px', borderRadius: '8px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <div>
