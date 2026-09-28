@@ -32,18 +32,8 @@ export default function AmbassadorDashboard({
   const [loadingProducts, setLoadingProducts] = useState<boolean>(true);
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
-  const [debugLogs, setDebugLogs] = useState<string[]>([]);
-
-  const logMessage = (msg: string) => {
-    console.log(msg);
-    setDebugLogs((prev) => [...prev, msg]);
-  };
-
   const fetchProducts = async () => {
     setLoadingProducts(true);
-    setDebugLogs([]);
-
-    logMessage('🚀 Starting product fetch operation...');
 
     try {
       const targetIds = [
@@ -52,15 +42,11 @@ export default function AmbassadorDashboard({
         profile?.id
       ].filter(Boolean);
 
-      logMessage(`🔍 Target Ambassador IDs: ${JSON.stringify(targetIds)}`);
-
       if (targetIds.length === 0) {
-        logMessage('⚠️ ERROR: No valid Ambassador ID found!');
         setLoadingProducts(false);
         return;
       }
 
-      logMessage('📡 Querying ambassador_products table...');
       const { data: assignData, error: assignError } = await supabase
         .from('ambassador_products')
         .select('product_id, is_visible, ambassador_id')
@@ -69,16 +55,13 @@ export default function AmbassadorDashboard({
       if (assignError) throw assignError;
 
       if (!assignData || assignData.length === 0) {
-        logMessage('⚠️ STOPPING: No assigned products found for this Ambassador.');
         setAssignedProducts([]);
         setLoadingProducts(false);
         return;
       }
 
       const productIds = assignData.map((item: any) => item.product_id);
-      logMessage(`🔑 Found Product IDs: ${JSON.stringify(productIds)}`);
 
-      logMessage('📡 Querying products table...');
       const { data: prodData, error: prodError } = await supabase
         .from('products')
         .select('id, name, price, category')
@@ -86,7 +69,6 @@ export default function AmbassadorDashboard({
 
       if (prodError) throw prodError;
 
-      logMessage('📡 Querying product_media table...');
       const { data: mediaData, error: mediaError } = await supabase
         .from('product_media')
         .select('product_id, media_url, sort_order')
@@ -116,10 +98,9 @@ export default function AmbassadorDashboard({
         })
         .filter((item): item is AssignedProduct => item !== null);
 
-      logMessage(`✅ SUCCESS: Successfully loaded ${formatted.length} products with images!`);
       setAssignedProducts(formatted);
     } catch (err: any) {
-      logMessage(`❌ CATCH ERROR: ${err.message || JSON.stringify(err)}`);
+      console.error('Error fetching products:', err);
     } finally {
       setLoadingProducts(false);
     }
@@ -163,38 +144,6 @@ export default function AmbassadorDashboard({
 
   return (
     <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '40px 20px', color: '#ffffff', fontFamily: 'sans-serif' }}>
-
-      <div style={{ backgroundColor: '#090d16', border: '1px solid #1e293b', padding: '16px', borderRadius: '8px', marginBottom: '24px', fontFamily: 'monospace' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-          <span style={{ color: '#f59e0b', fontSize: '12px', fontWeight: 'bold', letterSpacing: '1px' }}>
-            🛠️ LIVE DEBUG CONSOLE
-          </span>
-          <button 
-            onClick={fetchProducts} 
-            style={{ backgroundColor: '#1e293b', color: '#fff', border: '1px solid #334155', padding: '4px 10px', fontSize: '10px', borderRadius: '4px', cursor: 'pointer' }}
-          >
-            RE-RUN DIAGNOSTIC
-          </button>
-        </div>
-        <div style={{ maxHeight: '160px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '11px' }}>
-          {debugLogs.length === 0 ? (
-            <span style={{ color: '#64748b' }}>Running diagnostic check...</span>
-          ) : (
-            debugLogs.map((log, index) => (
-              <div 
-                key={index} 
-                style={{ 
-                  color: log.includes('❌') ? '#f87171' : log.includes('⚠️') ? '#fbbf24' : log.includes('✅') ? '#34d399' : '#94a3b8',
-                  wordBreak: 'break-all'
-                }}
-              >
-                {log}
-              </div>
-            ))
-          )}
-        </div>
-      </div>
-
       {!isOwner ? (
         <div>
           <header style={{ borderBottom: '1px solid #1a1a1a', paddingBottom: '24px', marginBottom: '32px', textAlign: 'center' }}>
