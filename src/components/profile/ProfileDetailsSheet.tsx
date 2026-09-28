@@ -23,7 +23,6 @@ export default function ProfileDetailsSheet({
 }: ProfileDetailsSheetProps) {
   const [customerStats, setCustomerStats] = useState({ totalOrders: 0, totalItems: 0, lastArea: 'N/A' });
   const [ambassadorStats, setAmbassadorStats] = useState({ totalSold: 0 });
-  const [copyText, setCopyText] = useState('Copy Link');
 
   // ১. ব্যাকগ্রাউন্ড স্ক্রল লক
   useEffect(() => {
@@ -105,15 +104,6 @@ export default function ProfileDetailsSheet({
     }
   };
 
-  // স্টোর লিংক কপি করার লজিক (site/slug ফরমেট)
-  const handleCopyLink = () => {
-    if (!ambassadorData?.assigned_slug) return;
-    const storeLink = `${window.location.origin}/${ambassadorData.assigned_slug}`;
-    navigator.clipboard.writeText(storeLink);
-    setCopyText('Copied!');
-    setTimeout(() => setCopyText('Copy Link'), 2000);
-  };
-
   if (!isOpen) return null;
 
   const isAmbassadorMode = portalMode === 'ambassador';
@@ -190,7 +180,6 @@ export default function ProfileDetailsSheet({
             overflow: 'hidden',
             flexShrink: 0
           }}>
-            {/* কাস্টমারের জন্য Initials এবং অ্যাম্বাসেডরের ক্ষেত্রে ছবি থাকলে ছবি দেখাবে */}
             {isAmbassadorMode && avatarUrl ? (
               <img src={avatarUrl} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             ) : (
@@ -239,33 +228,6 @@ export default function ProfileDetailsSheet({
                 <p style={{ margin: '3px 0 0 0', fontSize: '14px', color: '#DDDDDD', fontWeight: '500' }}>
                   {ambassadorStats.totalSold} {ambassadorStats.totalSold === 1 ? 'item' : 'items'}
                 </p>
-              </div>
-
-              <div>
-                <span style={{ fontSize: '11px', color: '#71717A', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                  Store URL
-                </span>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '4px' }}>
-                  <span style={{ fontSize: '13px', color: '#CCCCCC', fontFamily: 'monospace' }}>
-                    {ambassadorData?.assigned_slug ? `/${ambassadorData.assigned_slug}` : 'Not set'}
-                  </span>
-                  {ambassadorData?.assigned_slug && (
-                    <button
-                      onClick={handleCopyLink}
-                      style={{
-                        background: 'transparent',
-                        border: '1px solid #27272A',
-                        borderRadius: '6px',
-                        color: copyText === 'Copied!' ? '#FFFFFF' : '#A1A1AA',
-                        fontSize: '11px',
-                        padding: '4px 10px',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      {copyText}
-                    </button>
-                  )}
-                </div>
               </div>
             </>
           ) : (
