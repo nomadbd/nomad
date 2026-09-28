@@ -52,7 +52,7 @@ export default function ProfileHeader({
       return;
     }
 
-    // প্রথমবার ২.৫ সেকেন্ডের জন্য WELCOME! দেখাবে, তারপর স্মুথলি বদলে নাম ও ইমেইল আসবে
+    // প্রথমবার ২.৫ সেকেন্ডের জন্য WELCOME দেখাবে, তারপর স্মুথলি বদলে নাম ও ইমেইল আসবে
     const timer = setTimeout(() => {
       setFade(false); // ফেইড আউট
       setTimeout(() => {
@@ -118,7 +118,7 @@ export default function ProfileHeader({
         gap: '10px', 
         flex: 1, 
         minWidth: 0,
-        marginRight: '8px' // ডানপাশের আইকনগুলোর সাথে নিরাপদ দূরত্ব রাখতে
+        marginRight: '8px'
       }}>
         {/* ১. প্রোফাইল ছবি/অ্যাভাটার */}
         <div 
@@ -170,7 +170,7 @@ export default function ProfileHeader({
               fontSize: '15px', 
               fontWeight: '600', 
               color: '#FFFFFF', 
-              letterSpacing: '0.2px',
+              letterSpacing: showGreeting ? '0.8px' : '0.2px',
               whiteSpace: 'nowrap',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
@@ -180,7 +180,7 @@ export default function ProfileHeader({
               transition: 'opacity 0.3s ease-in-out'
             }}
           >
-            {showGreeting ? 'WELCOME!' : name}
+            {showGreeting ? 'WELCOME' : name}
           </h2>
 
           {isAmbassadorActive ? (
