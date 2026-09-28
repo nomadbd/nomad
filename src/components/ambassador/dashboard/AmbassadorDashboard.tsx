@@ -184,8 +184,9 @@ export default function AmbassadorDashboard({
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          {/* ১. স্টোর লিংক সেকশন (হেডারের ঠিক নিচে) */}
+          {/* ১. স্টোর লিংক সেকশন (ambassadorData যুক্ত করা হয়েছে) */}
           <StoreLink 
+            ambassadorData={ambassadorData}
             profile={profile} 
             isAmbassadorActive={true} 
           />
