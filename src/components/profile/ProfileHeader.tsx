@@ -150,7 +150,7 @@ export default function ProfileHeader({
           )}
         </div>
 
-        {/* ২. নাম এবং সাবটাইটেল (অ্যানিমেশন ও সামঞ্জস্যপূর্ণ কালারসহ) */}
+        {/* ২. নাম এবং সাবটাইটেল (সুরক্ষিত ওভারফ্লো ও অভিন্ন ফন্ট সাইজসহ) */}
         <div 
           onClick={onOpenProfileDetails}
           title="Click to view full details"
@@ -190,7 +190,9 @@ export default function ProfileHeader({
               gap: '5px', 
               marginTop: '2px',
               opacity: fade ? 1 : 0,
-              transition: 'opacity 0.3s ease-in-out'
+              transition: 'opacity 0.3s ease-in-out',
+              minWidth: 0,
+              overflow: 'hidden'
             }}>
               <span style={{
                 width: '5px',
@@ -207,23 +209,26 @@ export default function ProfileHeader({
                 textTransform: 'uppercase',
                 whiteSpace: 'nowrap',
                 overflow: 'hidden',
-                textOverflow: 'ellipsis'
+                textOverflow: 'ellipsis',
+                display: 'block',
+                maxWidth: '100%'
               }}>
                 AMBASSADOR
               </span>
             </div>
           ) : (
             <span style={{ 
-              fontSize: showGreeting ? '10px' : '11px', 
-              color: '#A1A1AA', // উজ্জ্বল ধূসর কালারে আপডেট করা হয়েছে
+              fontSize: '10px', // ফন্ট সাইজ ১০px (AMBASSADOR-এর সাথে পুরোপুরি সমান)
+              color: '#A1A1AA', 
               marginTop: '2px',
-              letterSpacing: showGreeting ? '0.6px' : 'normal',
+              letterSpacing: showGreeting ? '0.6px' : '0.2px',
               textTransform: showGreeting ? 'uppercase' : 'none',
-              fontWeight: showGreeting ? '500' : 'normal',
+              fontWeight: showGreeting ? '500' : '400',
               whiteSpace: 'nowrap',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
-              width: '100%',
+              display: 'block', // বড় ইমেইল নিরাপদে ট্রাঙ্কেট (Ellipsis) করার জন্য
+              maxWidth: '100%',
               opacity: fade ? 1 : 0,
               transition: 'opacity 0.3s ease-in-out'
             }}>
