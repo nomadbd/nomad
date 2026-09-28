@@ -15,9 +15,9 @@ interface ProfileHeaderProps {
   onOpenProfileDetails?: () => void;
   unreadCount?: number;
   hasUnread?: boolean;
-  unreadMessagesCount?: number; // অপঠিত মেসেজ সংখ্যা
-  unreadNotifCount?: number;    // অপঠিত নোটিফিকেশন সংখ্যা
-  hasUnreadNotif?: boolean;     // নোটিফিকেশনের লাল ডটের জন্য
+  unreadMessagesCount?: number;
+  unreadNotifCount?: number;
+  hasUnreadNotif?: boolean;
 }
 
 export default function ProfileHeader({
@@ -56,7 +56,6 @@ export default function ProfileHeader({
     }
   };
 
-  // অপঠিত মেসেজ এবং নোটিফিকেশন লজিক ফিল্টারিং
   const msgCount = unreadMessagesCount !== undefined 
     ? unreadMessagesCount 
     : (isAmbassadorActive ? unreadCount : 0);
@@ -71,20 +70,21 @@ export default function ProfileHeader({
 
   return (
     <div style={{ 
-      position: 'sticky',
+      position: 'fixed',
       top: 0,
-      zIndex: 50,
-      backgroundColor: 'rgba(0, 0, 0, 0.85)', // হালকা ট্রান্সপারেন্ট ডার্ক ব্যাকগ্রাউন্ড
-      backdropFilter: 'blur(12px)',           // প্রিমিয়াম ব্লার ইফেক্ট
+      left: 0,
+      right: 0,
+      zIndex: 999,
+      backgroundColor: 'rgba(0, 0, 0, 0.92)', // হালকা স্বচ্ছ ডার্ক ব্যাকগ্রাউন্ড
+      backdropFilter: 'blur(12px)',           // ব্লার ইফেক্ট
       WebkitBackdropFilter: 'blur(12px)',
-      paddingTop: '12px',
-      paddingBottom: '12px',
+      borderBottom: '1px solid #1F1F22',      // নিচে হালকা ডিসেন্ট বর্ডার
+      padding: '10px 16px',                    // কমপ্যাক্ট প্যাডিং
       display: 'flex', 
       justifyContent: 'space-between', 
       alignItems: 'center', 
-      marginBottom: '16px',
       width: '100%',
-      gap: '8px'
+      boxSizing: 'border-box'
     }}>
       {/* বামপাশ: অ্যাভাটার ও ইউজার ইনফো */}
       <div style={{ 
@@ -99,12 +99,12 @@ export default function ProfileHeader({
           onClick={isAmbassador ? togglePortalMode : undefined}
           title={isAmbassador ? "Click to switch profile mode" : "Profile Picture"}
           style={{ 
-            width: '42px', 
-            height: '42px', 
+            width: '40px', 
+            height: '40px', 
             borderRadius: '50%', 
             backgroundColor: '#121212', 
             border: isAmbassadorActive ? '1.5px solid #FFFFFF' : '1px solid #27272A', 
-            boxShadow: isAmbassadorActive ? '0 0 10px rgba(255, 255, 255, 0.2)' : 'none',
+            boxShadow: isAmbassadorActive ? '0 0 8px rgba(255, 255, 255, 0.2)' : 'none',
             display: 'flex', 
             alignItems: 'center', 
             justifyContent: 'center', 
@@ -154,7 +154,7 @@ export default function ProfileHeader({
           </h2>
 
           {isAmbassadorActive ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginTop: '3px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginTop: '2px' }}>
               <span style={{
                 width: '5px',
                 height: '5px',
@@ -212,7 +212,6 @@ export default function ProfileHeader({
             <NotificationIcon width={17} height={17} stroke="#FFFFFF" />
           )}
 
-          {/* ব্যাজ ইন্ডিকেটর */}
           {isAmbassadorActive ? (
             msgCount > 0 && (
               <span style={{
