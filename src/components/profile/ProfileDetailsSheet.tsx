@@ -183,13 +183,14 @@ export default function ProfileDetailsSheet({
             {isAmbassadorMode && avatarUrl ? (
               <img src={avatarUrl} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             ) : (
-              getInitials(isAmbassadorMode ? (ambassadorData?.display_name || profile?.name) : profile?.name, profile?.email)
+              getInitials(profile?.name, profile?.email)
             )}
           </div>
 
           <div style={{ overflow: 'hidden' }}>
+            {/* উভয় মোডেই মূল প্রোফাইল নাম দেখানো হবে */}
             <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '600', color: '#FFFFFF', wordBreak: 'break-word' }}>
-              {isAmbassadorMode ? (ambassadorData?.display_name || profile?.name) : (profile?.name || "User Profile")}
+              {profile?.name || "User Profile"}
             </h3>
             <span style={{ fontSize: '12px', color: '#71717A', display: 'block', marginTop: '2px' }}>
               {isAmbassadorMode ? 'Ambassador Partner' : 'Customer Account'}
