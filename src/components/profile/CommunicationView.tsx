@@ -55,11 +55,40 @@ export default function CommunicationView({ userId, userEmail, onBack }: Communi
   const [loading, setLoading] = useState<boolean>(true);
   const [inputText, setInputText] = useState<string>('');
   const [sending, setSending] = useState<boolean>(false);
+  const [viewportHeight, setViewportHeight] = useState<string>('100vh');
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
+
+  // ১. কিবোর্ড ওপেন হলে ভিজ্যুয়াল ভিউপোর্ট অ্যাডজাস্টমেন্ট এবং বডি স্ক্রল লক
+  useEffect(() => {
+    // মূল পেজের স্ক্রল বন্ধ রাখা
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const handleResize = () => {
+      if (window.visualViewport) {
+        setViewportHeight(`${window.visualViewport.height}px`);
+        window.scrollTo(0, 0); // ব্রাউজারকে জোর করে উপরে স্ক্রল করা থেকে আটকানো
+      }
+    };
+
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', handleResize);
+      window.visualViewport.addEventListener('scroll', handleResize);
+      handleResize();
+    }
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', handleResize);
+        window.visualViewport.removeEventListener('scroll', handleResize);
+      }
+    };
+  }, []);
 
   const unreadMessageCount = useMemo(() => {
     return messages.filter((m) => m.sender_role !== 'ambassador' && !m.is_read).length;
@@ -194,6 +223,13 @@ export default function CommunicationView({ userId, userEmail, onBack }: Communi
     }
   };
 
+  const handleInputFocus = () => {
+    setTimeout(() => {
+      window.scrollTo(0, 0);
+      scrollToBottom();
+    }, 100);
+  };
+
   const formatTime = (dateString: string) => {
     if (!dateString) return '';
     return new Date(dateString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -222,31 +258,29 @@ export default function CommunicationView({ userId, userEmail, onBack }: Communi
       top: 0,
       left: 0,
       right: 0,
-      bottom: 0,
+      height: viewportHeight, // কিবোর্ডের উপরের আসল দৃশ্যমান জায়গায় অটো ফিট হবে
+      width: '100vw',
       maxWidth: '600px', 
       margin: '0 auto', 
-      height: '100dvh', 
       display: 'flex', 
       flexDirection: 'column', 
       backgroundColor: '#000000', 
       color: '#FFFFFF',
       overflow: 'hidden',
-      zIndex: 9999
+      zIndex: 99999
     }}>
-      {/* ফিক্সড টপ হেডার (Messages) */}
+      {/* ১. হেডার (সবসময় স্ক্রিনের একদম উপরে স্থির থাকবে) */}
       <div style={{ 
-        position: 'sticky',
-        top: 0,
         flexShrink: 0,
-        backgroundColor: 'rgba(9, 9, 11, 0.95)',
+        backgroundColor: 'rgba(9, 9, 11, 0.98)',
         backdropFilter: 'blur(16px)',
         WebkitBackdropFilter: 'blur(16px)',
-        padding: '16px 14px',
+        padding: '14px 16px',
         borderBottom: '1px solid #18181B',
         display: 'flex', 
         alignItems: 'center', 
         justifyContent: 'space-between',
-        zIndex: 50
+        zIndex: 10
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
           <button
@@ -291,7 +325,7 @@ export default function CommunicationView({ userId, userEmail, onBack }: Communi
         </div>
       </div>
 
-      {/* স্ক্রলেবল মেসেজ বডি */}
+      {/* ২. চ্যাট কন্টেন্ট (মুক্তভাবে স্ক্রল হবে) */}
       <div style={{ 
         flex: 1, 
         overflowY: 'auto', 
@@ -418,14 +452,14 @@ export default function CommunicationView({ userId, userEmail, onBack }: Communi
         <div ref={chatEndRef} />
       </div>
 
-      {/* বটম ইনপুট ফর্ম */}
+      {/* ৩. ইনপুট ফর্ম (সবসময় কিবোর্ডের ঠিক উপরে ফিক্সড থাকবে) */}
       <form
         onSubmit={handleSendMessage}
         style={{
           flexShrink: 0,
-          padding: '12px 14px 20px 14px',
+          padding: '12px 14px',
           borderTop: '1px solid #18181B',
-          backgroundColor: 'rgba(9, 9, 11, 0.95)',
+          backgroundColor: 'rgba(9, 9, 11, 0.98)',
           backdropFilter: 'blur(16px)',
           WebkitBackdropFilter: 'blur(16px)',
           display: 'flex',
@@ -437,6 +471,7 @@ export default function CommunicationView({ userId, userEmail, onBack }: Communi
           type="text"
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
+          onFocus={handleInputFocus}
           placeholder="Message Authority..."
           style={{
             flex: 1,
