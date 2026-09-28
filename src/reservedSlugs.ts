@@ -1,5 +1,4 @@
 export const RESERVED_SLUGS = [
-  // Authentication & User Accounts
   'admin',
   'administrator',
   'auth',
@@ -18,8 +17,6 @@ export const RESERVED_SLUGS = [
   'reset-password',
   'verify',
   'verification',
-
-  // System, API & Internal
   'api',
   'root',
   'system',
@@ -37,8 +34,6 @@ export const RESERVED_SLUGS = [
   'staging',
   'null',
   'undefined',
-
-  // E-commerce & Store Routes
   'shop',
   'store',
   'cart',
@@ -53,8 +48,6 @@ export const RESERVED_SLUGS = [
   'invoices',
   'pricing',
   'plans',
-
-  // Static Assets, Public & Files
   'static',
   'assets',
   'public',
@@ -72,8 +65,6 @@ export const RESERVED_SLUGS = [
   'webmail',
   'rss',
   'feed',
-
-  // Pages & Legal
   'about',
   'contact',
   'terms',
@@ -88,5 +79,6 @@ export const RESERVED_SLUGS = [
 
 export const isReservedSlug = (slug: string): boolean => {
   if (!slug) return false;
-  return RESERVED_SLUGS.includes(slug.trim().toLowerCase());
+  const cleanSlug = slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '');
+  return RESERVED_SLUGS.includes(cleanSlug);
 };
