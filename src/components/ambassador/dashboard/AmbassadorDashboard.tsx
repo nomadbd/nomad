@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/supabaseClient';
-import StoreLink from './StoreLink'; // StoreLink কম্পোনেন্ট ইম্পোর্ট করা হলো
+import StoreLink from './StoreLink';
 
 interface AmbassadorDashboardProps {
   ambassadorData: any;
@@ -142,9 +142,17 @@ export default function AmbassadorDashboard({
   };
 
   return (
-    <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '20px 16px', color: '#ffffff', fontFamily: "'Inter', sans-serif" }}>
+    <div style={{ 
+      width: '100%', 
+      maxWidth: '1000px', 
+      margin: '0 auto', 
+      padding: '16px 0', 
+      boxSizing: 'border-box', 
+      color: '#ffffff', 
+      fontFamily: "'Inter', sans-serif" 
+    }}>
       {!isOwner ? (
-        <div>
+        <div style={{ width: '100%', boxSizing: 'border-box' }}>
           <header style={{ borderBottom: '1px solid #1a1a1a', paddingBottom: '24px', marginBottom: '32px', textAlign: 'center' }}>
             <span style={{ fontSize: '10px', color: '#888888', letterSpacing: '3px', textTransform: 'uppercase' }}>
               CURATED BY AMBASSADOR
@@ -165,7 +173,7 @@ export default function AmbassadorDashboard({
               </p>
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '16px', width: '100%' }}>
               {assignedProducts.filter((p) => p.is_visible).map((product) => (
                 <div key={product.id} style={{ backgroundColor: '#050505', border: '1px solid #1a1a1a', padding: '16px', borderRadius: '6px' }}>
                   <div style={{ width: '100%', height: '200px', backgroundColor: '#111', marginBottom: '12px', overflow: 'hidden', borderRadius: '4px' }}>
@@ -183,8 +191,8 @@ export default function AmbassadorDashboard({
           )}
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          {/* ১. স্টোর লিংক সেকশন (ambassadorData যুক্ত করা হয়েছে) */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%', boxSizing: 'border-box' }}>
+          {/* ১. স্টোর লিংক সেকশন */}
           <StoreLink 
             ambassadorData={ambassadorData}
             profile={profile} 
@@ -192,8 +200,15 @@ export default function AmbassadorDashboard({
           />
 
           {/* ২. STOREFRONT PRODUCTS SECTION */}
-          <section style={{ backgroundColor: '#050505', border: '1px solid #1a1a1a', padding: '24px', borderRadius: '8px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <section style={{ 
+            backgroundColor: '#050505', 
+            border: '1px solid #1a1a1a', 
+            padding: '16px', 
+            borderRadius: '8px', 
+            width: '100%', 
+            boxSizing: 'border-box' 
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
               <div>
                 <h2 style={{ fontSize: '14px', margin: 0, textTransform: 'uppercase', letterSpacing: '1px' }}>
                   STOREFRONT PRODUCTS
@@ -202,7 +217,7 @@ export default function AmbassadorDashboard({
                   Select which assigned products to display on your public showcase.
                 </p>
               </div>
-              <span style={{ fontSize: '10px', color: '#aaa', border: '1px solid #222', padding: '4px 8px', borderRadius: '4px', backgroundColor: '#0a0a0a' }}>
+              <span style={{ fontSize: '10px', color: '#aaa', border: '1px solid #222', padding: '4px 8px', borderRadius: '4px', backgroundColor: '#0a0a0a', flexShrink: 0 }}>
                 {assignedProducts.filter(p => p.is_visible).length} / {assignedProducts.length} VISIBLE
               </span>
             </div>
@@ -214,17 +229,27 @@ export default function AmbassadorDashboard({
                 NO PRODUCTS ASSIGNED BY ADMIN YET.
               </div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%' }}>
                 {assignedProducts.map((product) => (
-                  <div key={product.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', backgroundColor: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '6px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div key={product.id} style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'space-between', 
+                    padding: '12px', 
+                    backgroundColor: '#0a0a0a', 
+                    border: '1px solid #1a1a1a', 
+                    borderRadius: '6px',
+                    gap: '12px',
+                    boxSizing: 'border-box'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0, flex: 1 }}>
                       {product.image_url ? (
-                        <img src={product.image_url} alt="" style={{ width: '44px', height: '44px', objectFit: 'cover', borderRadius: '4px', backgroundColor: '#111' }} />
+                        <img src={product.image_url} alt="" style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px', backgroundColor: '#111', flexShrink: 0 }} />
                       ) : (
-                        <div style={{ width: '44px', height: '44px', backgroundColor: '#111', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '8px', color: '#555' }}>NO IMAGE</div>
+                        <div style={{ width: '40px', height: '40px', backgroundColor: '#111', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '8px', color: '#555', flexShrink: 0 }}>NO IMAGE</div>
                       )}
-                      <div>
-                        <div style={{ fontSize: '13px', fontWeight: 'bold', color: '#fff' }}>{product.title}</div>
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <div style={{ fontSize: '13px', fontWeight: 'bold', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{product.title}</div>
                         <div style={{ fontSize: '11px', color: '#888', marginTop: '2px' }}>৳{product.price} {product.category ? `• ${product.category}` : ''}</div>
                       </div>
                     </div>
@@ -237,12 +262,13 @@ export default function AmbassadorDashboard({
                         backgroundColor: product.is_visible ? '#082210' : '#111111',
                         color: product.is_visible ? '#4dff88' : '#666666',
                         border: `1px solid ${product.is_visible ? '#115522' : '#333333'}`,
-                        padding: '6px 14px',
+                        padding: '6px 12px',
                         fontSize: '10px',
                         fontWeight: 'bold',
                         borderRadius: '4px',
                         cursor: 'pointer',
-                        transition: 'all 0.2s ease'
+                        transition: 'all 0.2s ease',
+                        flexShrink: 0
                       }}
                     >
                       {togglingId === product.id ? 'UPDATING...' : product.is_visible ? 'SHOWING ON STORE' : 'HIDDEN FROM STORE'}
