@@ -57,93 +57,85 @@ export default function StoreLink({
 
   return (
     <div style={{
-      backgroundColor: '#0A0A0C',
-      border: '1px solid #1F1F22',
-      borderRadius: '12px',
-      padding: '16px',
+      backgroundColor: '#050505',
+      border: '1px solid #1a1a1a',
+      borderRadius: '8px',
+      padding: '20px',
       display: 'flex',
       flexDirection: 'column',
-      gap: '10px',
+      gap: '12px',
       width: '100%',
       boxSizing: 'border-box'
     }}>
-      {/* প্রিমিয়াম লেবেল */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between'
+      {/* প্রিমিয়াম টাইটেল / হেডার */}
+      <span style={{
+        fontSize: '10px',
+        color: '#888888',
+        fontWeight: '600',
+        textTransform: 'uppercase',
+        letterSpacing: '2px'
       }}>
-        <span style={{
-          fontSize: '11px',
-          color: '#888888',
-          fontWeight: '600',
-          textTransform: 'uppercase',
-          letterSpacing: '1.5px'
-        }}>
-          PUBLIC STOREFRONT URL
-        </span>
-      </div>
+        PUBLIC STOREFRONT URL
+      </span>
 
-      {/* লিংক ইনপুট ও শেয়ার আইকন বাটন */}
+      {/* লিংক ও মিনিমাল শেয়ার আইকন সেকশন */}
       <div style={{
         display: 'flex',
         alignItems: 'center',
-        gap: '10px',
+        justifyContent: 'space-between',
+        gap: '16px',
         width: '100%'
       }}>
-        {/* লিংক বক্স (বেশি বড় হলে ... অটোমেটিক যুক্ত হবে) */}
+        {/* কোনো ইনার ব্যাকগ্রাউন্ড/বক্স ছাড়া একদম মুক্ত টেক্সট লিংক */}
         <div style={{
-          flex: 1,
-          backgroundColor: '#000000',
-          border: '1px solid #222225',
-          borderRadius: '8px',
-          padding: '10px 14px',
-          fontSize: '12px',
-          color: storeUrl ? '#E4E4E7' : '#52525B',
+          fontSize: '13px',
+          color: storeUrl ? '#FFFFFF' : '#666666',
           whiteSpace: 'nowrap',
           overflow: 'hidden',
           textOverflow: 'ellipsis',
           fontFamily: 'monospace',
+          flex: 1,
           minWidth: 0
         }}>
-          {loading ? 'Generating link...' : (storeUrl || 'No storefront assigned')}
+          {loading ? 'Loading URL...' : (storeUrl || 'No storefront assigned')}
         </div>
 
-        {/* শুধুমাত্র শেয়ার আইকন বাটন */}
+        {/* মিনিমাল ডার্ক শেয়ার বাটন (সবুজ বাটন তুলে দেওয়া হয়েছে) */}
         <div style={{ position: 'relative', flexShrink: 0 }}>
           <button
             onClick={handleShare}
             disabled={!storeUrl}
-            title={copied ? 'Copied to clipboard!' : 'Share / Copy URL'}
+            title={copied ? 'Copied!' : 'Share / Copy URL'}
             style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              width: '38px',
-              height: '38px',
-              backgroundColor: storeUrl ? (copied ? '#059669' : '#10B981') : '#18181B',
-              color: storeUrl ? '#FFFFFF' : '#3F3F46',
-              border: 'none',
-              borderRadius: '8px',
+              width: '36px',
+              height: '36px',
+              backgroundColor: '#111111',
+              border: '1px solid #222222',
+              borderRadius: '6px',
+              color: storeUrl ? '#FFFFFF' : '#444444',
               cursor: storeUrl ? 'pointer' : 'not-allowed',
               transition: 'all 0.2s ease',
               outline: 'none'
             }}
           >
-            <ShareIcon width={16} height={16} stroke={storeUrl ? "#FFFFFF" : "#3F3F46"} />
+            <ShareIcon width={15} height={15} stroke={storeUrl ? "#FFFFFF" : "#444444"} />
           </button>
 
-          {/* লিংক কপি হলে পপআপ নোটিফিকেশন */}
+          {/* লিংক কপি হলে অতি সূক্ষ্ম টোস্ট নোটিফিকেশন */}
           {copied && (
             <div style={{
               position: 'absolute',
-              bottom: '46px',
+              bottom: '44px',
               right: '0',
-              backgroundColor: '#10B981',
+              backgroundColor: '#111111',
+              border: '1px solid #333333',
               color: '#FFFFFF',
               fontSize: '10px',
               fontWeight: '600',
-              padding: '4px 8px',
+              padding: '3px 8px',
               borderRadius: '4px',
               whiteSpace: 'nowrap',
               boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
