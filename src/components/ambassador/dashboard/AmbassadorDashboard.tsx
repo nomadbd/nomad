@@ -25,8 +25,6 @@ export default function AmbassadorDashboard({
   isOwner = true
 }: AmbassadorDashboardProps) {
   const name = ambassadorData?.display_name || profile?.user_metadata?.full_name || 'AMBASSADOR';
-  const commissionRate = ambassadorData?.commission_rate || 0;
-  const storeSlug = ambassadorData?.assigned_slug || profile?.name?.toLowerCase().replace(/\s+/g, '') || '';
 
   const [assignedProducts, setAssignedProducts] = useState<AssignedProduct[]>([]);
   const [loadingProducts, setLoadingProducts] = useState<boolean>(true);
@@ -185,71 +183,8 @@ export default function AmbassadorDashboard({
         </div>
       ) : (
         <div>
-          {/* STEP 1: REFINED HEADER SECTION */}
-          <header style={{ 
-            borderBottom: '1px solid #1c1c1c', 
-            paddingBottom: '20px', 
-            marginBottom: '28px', 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: 'flex-start',
-            flexWrap: 'wrap',
-            gap: '12px'
-          }}>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
-                <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#34d399' }} />
-                <span style={{ fontSize: '10px', color: '#888888', letterSpacing: '2px', textTransform: 'uppercase', fontWeight: 600 }}>
-                  NOMAD PORTAL
-                </span>
-              </div>
-              <h1 style={{ fontSize: '22px', margin: 0, letterSpacing: '0.5px', textTransform: 'uppercase', fontWeight: 800 }}>
-                WELCOME, {name}
-              </h1>
-              {storeSlug && (
-                <div style={{ fontSize: '11px', color: '#666666', marginTop: '4px', letterSpacing: '0.5px' }}>
-                  nomadbd.com/{storeSlug}
-                </div>
-              )}
-            </div>
-
-            <div style={{ 
-              backgroundColor: '#0a0a0a',
-              border: '1px solid #222222', 
-              padding: '8px 14px', 
-              borderRadius: '6px',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'flex-end'
-            }}>
-              <span style={{ fontSize: '9px', color: '#888888', letterSpacing: '1px', textTransform: 'uppercase' }}>
-                MY COMMISSION
-              </span>
-              <span style={{ fontSize: '16px', fontWeight: 800, color: '#34d399', marginTop: '2px' }}>
-                {commissionRate}%
-              </span>
-            </div>
-          </header>
-
-          {/* BALANCE CARDS */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '32px' }}>
-            <div style={{ backgroundColor: '#050505', border: '1px solid #1a1a1a', padding: '20px', borderRadius: '6px' }}>
-              <span style={{ color: '#888888', fontSize: '10px', letterSpacing: '1px' }}>UNPAID BALANCE</span>
-              <div style={{ fontSize: '24px', fontWeight: 'bold', marginTop: '8px' }}>
-                ৳{ambassadorState?.unpaidBalance || 0}
-              </div>
-            </div>
-
-            <div style={{ backgroundColor: '#050505', border: '1px solid #1a1a1a', padding: '20px', borderRadius: '6px' }}>
-              <span style={{ color: '#888888', fontSize: '10px', letterSpacing: '1px' }}>TOTAL EARNED</span>
-              <div style={{ fontSize: '24px', fontWeight: 'bold', marginTop: '8px' }}>
-                ৳{ambassadorState?.totalEarned || 0}
-              </div>
-            </div>
-          </div>
-
           {/* STOREFRONT PRODUCTS SECTION */}
-          <section style={{ marginTop: '24px', backgroundColor: '#050505', border: '1px solid #1a1a1a', padding: '24px', borderRadius: '8px' }}>
+          <section style={{ backgroundColor: '#050505', border: '1px solid #1a1a1a', padding: '24px', borderRadius: '8px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <div>
                 <h2 style={{ fontSize: '14px', margin: 0, textTransform: 'uppercase', letterSpacing: '1px' }}>
