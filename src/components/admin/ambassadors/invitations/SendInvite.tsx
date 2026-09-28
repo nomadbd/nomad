@@ -62,7 +62,6 @@ const SendInvite: React.FC<SendInviteProps> = ({ isOpen = true, onClose, onInvit
     }
 
     const primaryIdentifier = trimmedEmail || trimmedPhone;
-    const targetIdentifier = actionType === 'email' ? trimmedEmail : trimmedPhone;
 
     if (!forceSend) {
       const { data: existingRecord } = await supabase
@@ -108,8 +107,11 @@ const SendInvite: React.FC<SendInviteProps> = ({ isOpen = true, onClose, onInvit
 
     if (error) throw error;
 
-    const inviteUrl = `https://nomadbd.vercel.app/${token}`;
+    const currentOrigin = typeof window !== 'undefined' ? window.location.origin : 'https://nomadbd.vercel.app';
+    const inviteUrl = `${currentOrigin}/${token}`;
     const message = `NOMAD\nAMBASSADOR INVITATION\n\nDear ${name},\n\nWe would be honored to invite you to join the NOMAD Ambassador Circle.\n\nTo review the details and decide if you would like to accept, please access your private link:\n${inviteUrl}\n\nNote: This link will remain active for ${days} days.\n\nWarm regards,\nNOMAD`;
+
+    const targetIdentifier = actionType === 'email' ? trimmedEmail : trimmedPhone;
 
     return { name, token, message, targetIdentifier };
   };
