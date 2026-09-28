@@ -150,7 +150,7 @@ export default function ProfileHeader({
           )}
         </div>
 
-        {/* ২. নাম এবং সাবটাইটেল (অ্যানিমেশনসহ) */}
+        {/* ২. নাম এবং সাবটাইটেল (অ্যানিমেশন ও সামঞ্জস্যপূর্ণ কালারসহ) */}
         <div 
           onClick={onOpenProfileDetails}
           title="Click to view full details"
@@ -184,7 +184,14 @@ export default function ProfileHeader({
           </h2>
 
           {isAmbassadorActive ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginTop: '2px' }}>
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '5px', 
+              marginTop: '2px',
+              opacity: fade ? 1 : 0,
+              transition: 'opacity 0.3s ease-in-out'
+            }}>
               <span style={{
                 width: '5px',
                 height: '5px',
@@ -208,7 +215,7 @@ export default function ProfileHeader({
           ) : (
             <span style={{ 
               fontSize: showGreeting ? '10px' : '11px', 
-              color: '#71717A', 
+              color: '#A1A1AA', // উজ্জ্বল ধূসর কালারে আপডেট করা হয়েছে
               marginTop: '2px',
               letterSpacing: showGreeting ? '0.6px' : 'normal',
               textTransform: showGreeting ? 'uppercase' : 'none',
