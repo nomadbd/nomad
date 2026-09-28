@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useMemo } from 'react';
+import React, { useEffect, useState, useRef, useMemo, useLayoutEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 import { BackIcon } from '../icons';
 
@@ -29,7 +29,7 @@ function MessagesSkeleton() {
           50% { opacity: 0.7; }
         }
       `}</style>
-      {[1, 2, 3].map((item) => (
+      {[1, 2, 3, 4].map((item) => (
         <div
           key={item}
           style={{
@@ -56,22 +56,28 @@ export default function CommunicationView({ userId, userEmail, onBack }: Communi
   const [inputText, setInputText] = useState<string>('');
   const [sending, setSending] = useState<boolean>(false);
   const [viewportHeight, setViewportHeight] = useState<string>('100vh');
+  
+  const chatContainerRef = useRef<HTMLDivElement>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
-  const scrollToBottom = () => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  // কোনো স্ক্রলিং অ্যানিমেশন ছাড়া তাত্ক্ষণিকভাবে একদম নিচে পজিশন করানোর ফাংশন
+  const jumpToBottom = () => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    } else {
+      chatEndRef.current?.scrollIntoView({ behavior: 'auto' });
+    }
   };
 
-  // ১. কিবোর্ড ওপেন হলে ভিজ্যুয়াল ভিউপোর্ট অ্যাডজাস্টমেন্ট এবং বডি স্ক্রল লক
+  // ১. কিবোর্ড ও ভিজ্যুয়াল ভিউপোর্ট সামঞ্জস্যকরণ
   useEffect(() => {
-    // মূল পেজের স্ক্রল বন্ধ রাখা
     const originalOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
 
     const handleResize = () => {
       if (window.visualViewport) {
         setViewportHeight(`${window.visualViewport.height}px`);
-        window.scrollTo(0, 0); // ব্রাউজারকে জোর করে উপরে স্ক্রল করা থেকে আটকানো
+        window.scrollTo(0, 0);
       }
     };
 
@@ -178,9 +184,12 @@ export default function CommunicationView({ userId, userEmail, onBack }: Communi
     };
   }, [userId]);
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+  // মেসেজ লোড হওয়া বা মেসেজ পরিবর্তন হওয়ার সাথে সাথে (স্ক্রিন রেন্ডারের আগেই) নিচে আটকে রাখবে
+  useLayoutEffect(() => {
+    if (!loading) {
+      jumpToBottom();
+    }
+  }, [messages, loading]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -226,7 +235,7 @@ export default function CommunicationView({ userId, userEmail, onBack }: Communi
   const handleInputFocus = () => {
     setTimeout(() => {
       window.scrollTo(0, 0);
-      scrollToBottom();
+      jumpToBottom();
     }, 100);
   };
 
@@ -258,7 +267,7 @@ export default function CommunicationView({ userId, userEmail, onBack }: Communi
       top: 0,
       left: 0,
       right: 0,
-      height: viewportHeight, // কিবোর্ডের উপরের আসল দৃশ্যমান জায়গায় অটো ফিট হবে
+      height: viewportHeight,
       width: '100vw',
       maxWidth: '600px', 
       margin: '0 auto', 
@@ -269,7 +278,7 @@ export default function CommunicationView({ userId, userEmail, onBack }: Communi
       overflow: 'hidden',
       zIndex: 99999
     }}>
-      {/* ১. হেডার (সবসময় স্ক্রিনের একদম উপরে স্থির থাকবে) */}
+      {/* ১. ফিক্সড হেডার */}
       <div style={{ 
         flexShrink: 0,
         backgroundColor: 'rgba(9, 9, 11, 0.98)',
@@ -325,16 +334,19 @@ export default function CommunicationView({ userId, userEmail, onBack }: Communi
         </div>
       </div>
 
-      {/* ২. চ্যাট কন্টেন্ট (মুক্তভাবে স্ক্রল হবে) */}
-      <div style={{ 
-        flex: 1, 
-        overflowY: 'auto', 
-        padding: '16px 12px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '12px',
-        WebkitOverflowScrolling: 'touch'
-      }}>
+      {/* ২. চ্যাট কন্টেইনার (স্কেলেটন এবং সরাসরি সর্বশেষ মেসেজ) */}
+      <div 
+        ref={chatContainerRef}
+        style={{ 
+          flex: 1, 
+          overflowY: 'auto', 
+          padding: '16px 12px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '12px',
+          WebkitOverflowScrolling: 'touch'
+        }}
+      >
         {loading ? (
           <MessagesSkeleton />
         ) : messages.length === 0 ? (
@@ -452,7 +464,7 @@ export default function CommunicationView({ userId, userEmail, onBack }: Communi
         <div ref={chatEndRef} />
       </div>
 
-      {/* ৩. ইনপুট ফর্ম (সবসময় কিবোর্ডের ঠিক উপরে ফিক্সড থাকবে) */}
+      {/* ৩. ফিক্সড ইনপুট ফর্ম */}
       <form
         onSubmit={handleSendMessage}
         style={{
