@@ -71,10 +71,18 @@ export default function ProfileHeader({
 
   return (
     <div style={{ 
+      position: 'sticky',
+      top: 0,
+      zIndex: 50,
+      backgroundColor: 'rgba(0, 0, 0, 0.85)', // হালকা ট্রান্সপারেন্ট ডার্ক ব্যাকগ্রাউন্ড
+      backdropFilter: 'blur(12px)',           // প্রিমিয়াম ব্লার ইফেক্ট
+      WebkitBackdropFilter: 'blur(12px)',
+      paddingTop: '12px',
+      paddingBottom: '12px',
       display: 'flex', 
       justifyContent: 'space-between', 
       alignItems: 'center', 
-      marginBottom: '24px',
+      marginBottom: '16px',
       width: '100%',
       gap: '8px'
     }}>
@@ -206,7 +214,6 @@ export default function ProfileHeader({
 
           {/* ব্যাজ ইন্ডিকেটর */}
           {isAmbassadorActive ? (
-            /* অ্যাম্বাসেডর মোড: কেবল অপঠিত মেসেজের সংখ্যা দেখাবে */
             msgCount > 0 && (
               <span style={{
                 position: 'absolute',
@@ -230,7 +237,6 @@ export default function ProfileHeader({
               </span>
             )
           ) : (
-            /* সাধারণ ইউজার মোড: নোটিফিকেশন সংখ্যা বা লাল ডট দেখাবে */
             notifCount > 0 ? (
               <span style={{
                 position: 'absolute',
