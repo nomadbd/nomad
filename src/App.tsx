@@ -17,7 +17,7 @@ import AuthForm from './components/auth/AuthForm';
 
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 const AmbassadorJoin = lazy(() => import('./components/ambassador/join/AmbassadorJoin'));
-const AmbassadorPortal = lazy(() => import('./components/ambassador/AmbassadorPortal'));
+const AmbassadorPortal = lazy(() => import('./components/ambassador/portal/AmbassadorPortal'));
 
 const AppContent = ({ session, setIsSearchOpen, setIsAuthOpen }: any) => {
   const location = useLocation();
