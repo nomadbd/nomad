@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { isReservedSlug } from '@/reservedSlugs';
 
 interface SlugEditorProps {
@@ -21,11 +21,18 @@ export default function SlugEditor({
   slugMsg
 }: SlugEditorProps) {
   const [localError, setLocalError] = useState('');
-  const storeUrl = `${window.location.origin}/${slug}`;
+  // এডিট করার জন্য লোকাল টেম্পোরারি স্টেট (যাতে ভুল ইনপুট সাথে সাথে ডাটাবেজে না যায়)
+  const [tempSlug, setTempSlug] = useState(slug);
+
+  useEffect(() => {
+    setTempSlug(slug);
+  }, [slug, isEditingSlug]);
+
+  const storeUrl = typeof window !== 'undefined' ? `${window.location.origin}/${slug}` : `/${slug}`;
 
   const onSave = () => {
     setLocalError('');
-    const cleanSlug = slug.trim().toLowerCase();
+    const cleanSlug = tempSlug.trim().toLowerCase();
 
     if (!cleanSlug) {
       setLocalError('Slug name cannot be empty.');
@@ -53,6 +60,8 @@ export default function SlugEditor({
       return;
     }
 
+    // সব ফিল্টার পাস করার পরই কেবল মূল স্টেট ও ডাটাবেজে সেভ হবে
+    setSlug(cleanSlug);
     handleSaveSlug();
   };
 
@@ -66,12 +75,14 @@ export default function SlugEditor({
       {isEditingSlug ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <div style={inputGroupStyle}>
-            <span style={domainPrefixStyle}>{window.location.origin}/</span>
+            <span style={domainPrefixStyle}>
+              {typeof window !== 'undefined' ? window.location.origin : ''}/
+            </span>
             <input
               type="text"
-              value={slug}
+              value={tempSlug}
               onChange={(e) => {
-                setSlug(e.target.value);
+                setTempSlug(e.target.value);
                 setLocalError('');
               }}
               placeholder="your-custom-slug"
@@ -81,7 +92,11 @@ export default function SlugEditor({
 
           <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
             <button
-              onClick={() => setIsEditingSlug(false)}
+              onClick={() => {
+                setTempSlug(slug);
+                setIsEditingSlug(false);
+                setLocalError('');
+              }}
               style={cancelButtonStyle}
             >
               Cancel
