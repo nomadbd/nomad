@@ -28,7 +28,12 @@ export default function StoreLink({
 
   const rawSlug = assignedSlug || ambassadorData?.assigned_slug || profile?.assigned_slug || '';
   const slug = typeof rawSlug === 'string' ? rawSlug.trim().replace(/^\/+|\/+$/g, '') : '';
+  
+  // আসল পূর্ণাঙ্গ ইউআরএল (শেয়ারের জন্য)
   const storeUrl = origin && slug ? `${origin.replace(/\/+$/, '')}/${slug}` : '';
+  
+  // মূল ডোমেইন (https:// ছাড়া)
+  const displayDomain = origin.replace(/^https?:\/\//, '').replace(/\/+$/, '');
 
   const handleShare = async () => {
     if (!storeUrl) return;
@@ -60,17 +65,17 @@ export default function StoreLink({
       backgroundColor: '#050505',
       border: '1px solid #1a1a1a',
       borderRadius: '8px',
-      padding: '20px',
+      padding: '16px',
       display: 'flex',
       flexDirection: 'column',
       gap: '12px',
       width: '100%',
       boxSizing: 'border-box'
     }}>
-      {/* প্রিমিয়াম টাইটেল / হেডার */}
+      {/* হেডার টাইটেল */}
       <span style={{
         fontSize: '10px',
-        color: '#888888',
+        color: '#71717A',
         fontWeight: '600',
         textTransform: 'uppercase',
         letterSpacing: '2px'
@@ -78,7 +83,7 @@ export default function StoreLink({
         PUBLIC STOREFRONT URL
       </span>
 
-      {/* লিংক ও মিনিমাল শেয়ার আইকন সেকশন */}
+      {/* ২-লাইনের ইউআরএল এবং শেয়ার বাটন */}
       <div style={{
         display: 'flex',
         alignItems: 'center',
@@ -86,21 +91,46 @@ export default function StoreLink({
         gap: '16px',
         width: '100%'
       }}>
-        {/* কোনো ইনার ব্যাকগ্রাউন্ড/বক্স ছাড়া একদম মুক্ত টেক্সট লিংক */}
+        {/* ২-লাইনের স্ট্যাকড টেক্সট সেকশন */}
         <div style={{
-          fontSize: '13px',
-          color: storeUrl ? '#FFFFFF' : '#666666',
-          whiteSpace: 'nowrap',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          fontFamily: 'monospace',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '2px',
           flex: 1,
           minWidth: 0
         }}>
-          {loading ? 'Loading URL...' : (storeUrl || 'No storefront assigned')}
+          {loading ? (
+            <span style={{ fontSize: '12px', color: '#52525B' }}>Loading URL...</span>
+          ) : !slug ? (
+            <span style={{ fontSize: '12px', color: '#52525B' }}>No storefront assigned</span>
+          ) : (
+            <>
+              {/* ১ম লাইন: ডোমেইন (Muted) */}
+              <span style={{
+                fontSize: '11px',
+                color: '#71717A',
+                fontFamily: 'monospace',
+                lineHeight: '1.2'
+              }}>
+                {displayDomain} /
+              </span>
+
+              {/* ২য় লাইন: বড় স্লাগ (Highlight & Wrap support) */}
+              <span style={{
+                fontSize: '14px',
+                fontWeight: '700',
+                color: '#FFFFFF',
+                fontFamily: 'monospace',
+                wordBreak: 'break-all',
+                lineHeight: '1.3'
+              }}>
+                {slug}
+              </span>
+            </>
+          )}
         </div>
 
-        {/* মিনিমাল ডার্ক শেয়ার বাটন (সবুজ বাটন তুলে দেওয়া হয়েছে) */}
+        {/* ডানের ডার্ক শেয়ার বাটন */}
         <div style={{ position: 'relative', flexShrink: 0 }}>
           <button
             onClick={handleShare}
@@ -110,8 +140,8 @@ export default function StoreLink({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              width: '36px',
-              height: '36px',
+              width: '38px',
+              height: '38px',
               backgroundColor: '#111111',
               border: '1px solid #222222',
               borderRadius: '6px',
@@ -124,18 +154,17 @@ export default function StoreLink({
             <ShareIcon width={15} height={15} stroke={storeUrl ? "#FFFFFF" : "#444444"} />
           </button>
 
-          {/* লিংক কপি হলে অতি সূক্ষ্ম টোস্ট নোটিফিকেশন */}
           {copied && (
             <div style={{
               position: 'absolute',
-              bottom: '44px',
+              bottom: '46px',
               right: '0',
               backgroundColor: '#111111',
               border: '1px solid #333333',
               color: '#FFFFFF',
               fontSize: '10px',
               fontWeight: '600',
-              padding: '3px 8px',
+              padding: '4px 8px',
               borderRadius: '4px',
               whiteSpace: 'nowrap',
               boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
