@@ -46,19 +46,17 @@ export default function ProfileHeader({
   const hasAnimatedRef = useRef(false);
 
   useEffect(() => {
-    // যদি ইতিমধ্যেই অ্যানিমেশন একবার হয়ে গিয়ে থাকে (প্রোফাইল স্যুইচ করলে) তবে আর রান হবে না
     if (hasAnimatedRef.current) {
       setShowGreeting(false);
       return;
     }
 
-    // প্রথমবার ২.৫ সেকেন্ডের জন্য WELCOME দেখাবে, তারপর স্মুথলি বদলে নাম ও ইমেইল আসবে
     const timer = setTimeout(() => {
       setFade(false); // ফেইড আউট
       setTimeout(() => {
-        setShowGreeting(false); // নাম ও ইমেইল পরিবর্তন
+        setShowGreeting(false); // নাম ও ইমেইল/ডট আপডেট
         setFade(true); // ফেইড ইন
-        hasAnimatedRef.current = true; // অ্যানিমেশন কমপ্লিট হিসেবে চিহ্নিত করা
+        hasAnimatedRef.current = true;
       }, 300);
     }, 2500);
 
@@ -150,7 +148,7 @@ export default function ProfileHeader({
           )}
         </div>
 
-        {/* ২. নাম এবং সাবটাইটেল (সুরক্ষিত ওভারফ্লো ও অভিন্ন ফন্ট সাইজসহ) */}
+        {/* ২. নাম এবং সাবটাইটেল (পারফেক্ট অ্যানিমেশন ও কন্ডিশনাল ডটসহ) */}
         <div 
           onClick={onOpenProfileDetails}
           title="Click to view full details"
@@ -194,13 +192,16 @@ export default function ProfileHeader({
               minWidth: 0,
               overflow: 'hidden'
             }}>
-              <span style={{
-                width: '5px',
-                height: '5px',
-                borderRadius: '50%',
-                backgroundColor: '#10B981',
-                flexShrink: 0
-              }} />
+              {/* WELCOME শেষ হয়ে ইউজার নাম আসার পর সবুজ ডটটি সক্রিয় হবে */}
+              {!showGreeting && (
+                <span style={{
+                  width: '5px',
+                  height: '5px',
+                  borderRadius: '50%',
+                  backgroundColor: '#10B981',
+                  flexShrink: 0
+                }} />
+              )}
               <span style={{ 
                 fontSize: '10px', 
                 color: '#A1A1AA', 
@@ -218,7 +219,7 @@ export default function ProfileHeader({
             </div>
           ) : (
             <span style={{ 
-              fontSize: '10px', // ফন্ট সাইজ ১০px (AMBASSADOR-এর সাথে পুরোপুরি সমান)
+              fontSize: '10px', 
               color: '#A1A1AA', 
               marginTop: '2px',
               letterSpacing: showGreeting ? '0.6px' : '0.2px',
@@ -227,7 +228,7 @@ export default function ProfileHeader({
               whiteSpace: 'nowrap',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
-              display: 'block', // বড় ইমেইল নিরাপদে ট্রাঙ্কেট (Ellipsis) করার জন্য
+              display: 'block',
               maxWidth: '100%',
               opacity: fade ? 1 : 0,
               transition: 'opacity 0.3s ease-in-out'
