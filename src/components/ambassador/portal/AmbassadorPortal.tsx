@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '@/supabaseClient';
-import AmbassadorJoin from './join/AmbassadorJoin';
-import AmbassadorWorkspace from './AmbassadorWorkspace';
+import AmbassadorJoin from '../join/AmbassadorJoin';
+import AmbassadorDashboard from '../dashboard/AmbassadorDashboard';
 
 export default function AmbassadorPortal() {
   const { slug } = useParams<{ slug: string }>();
@@ -81,7 +81,7 @@ export default function AmbassadorPortal() {
   const isOwner = false;
 
   return (
-    <AmbassadorWorkspace
+    <AmbassadorDashboard
       ambassadorData={ambassadorData}
       profile={currentUser}
       isOwner={isOwner}
