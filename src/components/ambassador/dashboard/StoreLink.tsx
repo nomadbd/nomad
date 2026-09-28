@@ -28,11 +28,7 @@ export default function StoreLink({
 
   const rawSlug = assignedSlug || ambassadorData?.assigned_slug || profile?.assigned_slug || '';
   const slug = typeof rawSlug === 'string' ? rawSlug.trim().replace(/^\/+|\/+$/g, '') : '';
-  
-  // আসল পূর্ণাঙ্গ ইউআরএল (শেয়ারের জন্য)
   const storeUrl = origin && slug ? `${origin.replace(/\/+$/, '')}/${slug}` : '';
-  
-  // মূল ডোমেইন (https:// ছাড়া)
   const displayDomain = origin.replace(/^https?:\/\//, '').replace(/\/+$/, '');
 
   const handleShare = async () => {
@@ -46,134 +42,81 @@ export default function StoreLink({
           url: storeUrl,
         });
         return;
-      } catch {
-        // Native share cancelled
-      }
+      } catch {}
     }
 
     try {
       await navigator.clipboard.writeText(storeUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // Clipboard fallback
-    }
+    } catch {}
   };
 
   return (
     <div style={{
-      backgroundColor: '#050505',
-      border: '1px solid #1a1a1a',
-      borderRadius: '8px',
-      padding: '16px',
+      padding: '16px 0',
+      borderBottom: '1px solid #1a1a1a', // আলাদা বোতলজাত কার্ডের বদলে ক্লিন ডিভাইডার
       display: 'flex',
       flexDirection: 'column',
-      gap: '12px',
+      gap: '8px',
       width: '100%',
       boxSizing: 'border-box'
     }}>
-      {/* হেডার টাইটেল */}
-      <span style={{
-        fontSize: '10px',
-        color: '#71717A',
-        fontWeight: '600',
-        textTransform: 'uppercase',
-        letterSpacing: '2px'
-      }}>
-        PUBLIC STOREFRONT URL
-      </span>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span style={{
+          fontSize: '10px',
+          color: '#71717A',
+          fontWeight: '600',
+          textTransform: 'uppercase',
+          letterSpacing: '1.5px'
+        }}>
+          YOUR STOREFRONT LINK
+        </span>
+      </div>
 
-      {/* ২-লাইনের ইউআরএল এবং শেয়ার বাটন */}
       <div style={{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        gap: '16px',
+        gap: '12px',
         width: '100%'
       }}>
-        {/* ২-লাইনের স্ট্যাকড টেক্সট সেকশন */}
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '2px',
-          flex: 1,
-          minWidth: 0
-        }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1, minWidth: 0 }}>
           {loading ? (
             <span style={{ fontSize: '12px', color: '#52525B' }}>Loading URL...</span>
           ) : !slug ? (
             <span style={{ fontSize: '12px', color: '#52525B' }}>No storefront assigned</span>
           ) : (
             <>
-              {/* ১ম লাইন: ডোমেইন (Muted) */}
-              <span style={{
-                fontSize: '11px',
-                color: '#71717A',
-                fontFamily: 'monospace',
-                lineHeight: '1.2'
-              }}>
+              <span style={{ fontSize: '11px', color: '#71717A', fontFamily: 'monospace' }}>
                 {displayDomain} /
               </span>
-
-              {/* ২য় লাইন: বড় স্লাগ (Highlight & Wrap support) */}
-              <span style={{
-                fontSize: '14px',
-                fontWeight: '700',
-                color: '#FFFFFF',
-                fontFamily: 'monospace',
-                wordBreak: 'break-all',
-                lineHeight: '1.3'
-              }}>
+              <span style={{ fontSize: '15px', fontWeight: '700', color: '#FFFFFF', fontFamily: 'monospace', wordBreak: 'break-all' }}>
                 {slug}
               </span>
             </>
           )}
         </div>
 
-        {/* ডানের ডার্ক শেয়ার বাটন */}
-        <div style={{ position: 'relative', flexShrink: 0 }}>
-          <button
-            onClick={handleShare}
-            disabled={!storeUrl}
-            title={copied ? 'Copied!' : 'Share / Copy URL'}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: '38px',
-              height: '38px',
-              backgroundColor: '#111111',
-              border: '1px solid #222222',
-              borderRadius: '6px',
-              color: storeUrl ? '#FFFFFF' : '#444444',
-              cursor: storeUrl ? 'pointer' : 'not-allowed',
-              transition: 'all 0.2s ease',
-              outline: 'none'
-            }}
-          >
-            <ShareIcon width={15} height={15} stroke={storeUrl ? "#FFFFFF" : "#444444"} />
-          </button>
-
-          {copied && (
-            <div style={{
-              position: 'absolute',
-              bottom: '46px',
-              right: '0',
-              backgroundColor: '#111111',
-              border: '1px solid #333333',
-              color: '#FFFFFF',
-              fontSize: '10px',
-              fontWeight: '600',
-              padding: '4px 8px',
-              borderRadius: '4px',
-              whiteSpace: 'nowrap',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
-              letterSpacing: '0.5px'
-            }}>
-              COPIED!
-            </div>
-          )}
-        </div>
+        <button
+          onClick={handleShare}
+          disabled={!storeUrl}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '36px',
+            height: '36px',
+            backgroundColor: '#111111',
+            border: '1px solid #222222',
+            borderRadius: '8px',
+            color: '#FFFFFF',
+            cursor: storeUrl ? 'pointer' : 'not-allowed',
+            flexShrink: 0
+          }}
+        >
+          <ShareIcon width={15} height={15} stroke={storeUrl ? "#FFFFFF" : "#444444"} />
+        </button>
       </div>
     </div>
   );
