@@ -75,11 +75,11 @@ export default function ProfileHeader({
       left: 0,
       right: 0,
       zIndex: 999,
-      backgroundColor: 'rgba(0, 0, 0, 0.92)',
-      backdropFilter: 'blur(12px)',
+      backgroundColor: 'rgba(0, 0, 0, 0.92)', // হালকা স্বচ্ছ ডার্ক ব্যাকগ্রাউন্ড
+      backdropFilter: 'blur(12px)',           // ব্লার ইফেক্ট
       WebkitBackdropFilter: 'blur(12px)',
-      borderBottom: '1px solid #1F1F22',
-      padding: '10px 16px',
+      borderBottom: '1px solid #1F1F22',      // নিচে হালকা ডিসেন্ট বর্ডার
+      padding: '10px 16px',                    // কমপ্যাক্ট প্যাডিং
       display: 'flex', 
       justifyContent: 'space-between', 
       alignItems: 'center', 
@@ -92,8 +92,7 @@ export default function ProfileHeader({
         alignItems: 'center', 
         gap: '10px', 
         flex: 1, 
-        minWidth: 0,
-        marginRight: '8px' // ডানপাশের আইকনগুলোর সাথে নিরাপদ দূরত্ব রাখতে
+        minWidth: 0 
       }}>
         {/* ১. প্রোফাইল ছবি/অ্যাভাটার */}
         <div 
@@ -135,7 +134,6 @@ export default function ProfileHeader({
             justifyContent: 'center',
             flex: 1, 
             minWidth: 0,
-            overflow: 'hidden',
             cursor: 'pointer',
             userSelect: 'none'
           }}>
@@ -149,8 +147,7 @@ export default function ProfileHeader({
               whiteSpace: 'nowrap',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
-              lineHeight: '1.2',
-              width: '100%'
+              lineHeight: '1.2'
             }}
           >
             {name}
@@ -162,18 +159,14 @@ export default function ProfileHeader({
                 width: '5px',
                 height: '5px',
                 borderRadius: '50%',
-                backgroundColor: '#10B981',
-                flexShrink: 0
+                backgroundColor: '#10B981'
               }} />
               <span style={{ 
                 fontSize: '10px', 
                 color: '#A1A1AA', 
                 fontWeight: '500',
                 letterSpacing: '0.6px',
-                textTransform: 'uppercase',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis'
+                textTransform: 'uppercase'
               }}>
                 AMBASSADOR
               </span>
@@ -185,8 +178,7 @@ export default function ProfileHeader({
               marginTop: '2px',
               whiteSpace: 'nowrap',
               overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              width: '100%'
+              textOverflow: 'ellipsis'
             }}>
               {profile?.email || ''}
             </span>
