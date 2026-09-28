@@ -218,16 +218,25 @@ export default function CommunicationView({ userId, userEmail, onBack }: Communi
 
   return (
     <div style={{ 
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
       maxWidth: '600px', 
       margin: '0 auto', 
-      height: '100vh', 
+      height: '100dvh', 
       display: 'flex', 
       flexDirection: 'column', 
       backgroundColor: '#000000', 
       color: '#FFFFFF',
-      overflow: 'hidden'
+      overflow: 'hidden',
+      zIndex: 9999
     }}>
+      {/* ফিক্সড টপ হেডার (Messages) */}
       <div style={{ 
+        position: 'sticky',
+        top: 0,
         flexShrink: 0,
         backgroundColor: 'rgba(9, 9, 11, 0.95)',
         backdropFilter: 'blur(16px)',
@@ -282,6 +291,7 @@ export default function CommunicationView({ userId, userEmail, onBack }: Communi
         </div>
       </div>
 
+      {/* স্ক্রলেবল মেসেজ বডি */}
       <div style={{ 
         flex: 1, 
         overflowY: 'auto', 
@@ -408,6 +418,7 @@ export default function CommunicationView({ userId, userEmail, onBack }: Communi
         <div ref={chatEndRef} />
       </div>
 
+      {/* বটম ইনপুট ফর্ম */}
       <form
         onSubmit={handleSendMessage}
         style={{
