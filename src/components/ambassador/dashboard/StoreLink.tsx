@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ShareIcon } from '../../icons';
 
 interface StoreLinkProps {
@@ -15,11 +15,16 @@ export default function StoreLink({
   customLink
 }: StoreLinkProps) {
   const [copied, setCopied] = useState(false);
+  const [origin, setOrigin] = useState('');
 
-  const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
-  const identifier = ambassadorData?.referral_code || ambassadorData?.slug || profile?.username || profile?.id || 'ref';
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setOrigin(window.location.origin);
+    }
+  }, []);
 
-  const storeUrl = customLink || `${baseUrl}/store/${identifier}`;
+  const slug = ambassadorData?.assigned_slug || profile?.assigned_slug || '';
+  const storeUrl = customLink || (origin && slug ? `${origin}/${slug}` : origin);
 
   const handleShare = async () => {
     if (navigator.share) {
