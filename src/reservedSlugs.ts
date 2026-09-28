@@ -78,7 +78,14 @@ export const RESERVED_SLUGS = [
 ];
 
 export const isReservedSlug = (slug: string): boolean => {
-  if (!slug) return false;
+  if (!slug) return true;
+
+  // ইংরেজি বর্ণ, সংখ্যা এবং হাইফেন ছাড়া অন্য সব ক্যারেক্টার ফিল্টার করা হচ্ছে
   const cleanSlug = slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '');
+
+  // যদি শুধু স্পেশাল ক্যারেক্টার ($#+&) দেওয়া হয়, তবে cleanSlug খালি ("") হয়ে যাবে।
+  // কোনো বৈধ ক্যারেক্টার না থাকলে এটিকে অকার্যকর/সংরক্ষিত ধরে ব্লক (true) করা হবে।
+  if (!cleanSlug) return true;
+
   return RESERVED_SLUGS.includes(cleanSlug);
 };
