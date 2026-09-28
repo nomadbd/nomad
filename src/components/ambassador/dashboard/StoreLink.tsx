@@ -1,27 +1,27 @@
 import React, { useState } from 'react';
-import { ShareIcon } from '../../icons'; // src/components/icons থেকে সঠিকভাবে ইম্পোর্ট করা হলো
+import { ShareIcon } from '../../icons';
 
 interface StoreLinkProps {
-  profile: any;
+  profile?: any;
+  ambassadorData?: any;
   isAmbassadorActive?: boolean;
   customLink?: string;
 }
 
 export default function StoreLink({
   profile,
+  ambassadorData,
   isAmbassadorActive = false,
   customLink
 }: StoreLinkProps) {
   const [copied, setCopied] = useState(false);
 
-  // ডায়নামিক স্টোর/রেফারেল লিংক
-  const storeUrl = customLink || 
-    (isAmbassadorActive 
-      ? `https://yourdomain.com/store/${profile?.referralCode || profile?.id || 'ref'}`
-      : `https://yourdomain.com/store/${profile?.id || 'user'}`);
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+  const identifier = ambassadorData?.referral_code || ambassadorData?.slug || profile?.username || profile?.id || 'ref';
+
+  const storeUrl = customLink || `${baseUrl}/store/${identifier}`;
 
   const handleShare = async () => {
-    // ১. মোবাইল বা সাপোর্টেড ব্রাউজারে Native Share Dialog
     if (navigator.share) {
       try {
         await navigator.share({
@@ -31,17 +31,14 @@ export default function StoreLink({
         });
         return;
       } catch (error) {
-        console.log('Share canceled or fallback to copy clipboard');
       }
     }
 
-    // ২. ফলব্যাক: ক্লিপবোর্ড কপি
     try {
       await navigator.clipboard.writeText(storeUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
-      console.error('Failed to copy link: ', err);
     }
   };
 
@@ -58,7 +55,6 @@ export default function StoreLink({
       width: '100%',
       boxSizing: 'border-box'
     }}>
-      {/* বামপাশে: লিংক লেবেল এবং টেক্সট বক্স */}
       <div style={{
         display: 'flex',
         flexDirection: 'column',
@@ -93,7 +89,6 @@ export default function StoreLink({
         </div>
       </div>
 
-      {/* ডানপাশে: শেয়ার বাটন */}
       <div style={{ position: 'relative', flexShrink: 0, alignSelf: 'flex-end' }}>
         <button
           onClick={handleShare}
@@ -120,7 +115,6 @@ export default function StoreLink({
           <span>{copied ? 'Copied!' : 'Share'}</span>
         </button>
 
-        {/* কপির পপআপ ফিডব্যাক */}
         {copied && (
           <div style={{
             position: 'absolute',
