@@ -1,5 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MessageIcon, NotificationIcon, SettingsIcon } from '../icons';
+
+const animatedProfiles = new Set<string>();
 
 interface ProfileHeaderProps {
   profile: any;
@@ -39,29 +41,33 @@ export default function ProfileHeader({
   hasUnreadNotif
 }: ProfileHeaderProps) {
   const name = profile?.name || "PROFILE";
+  const profileKey = profile?.id || profile?.email || "default_user";
 
-  // অ্যানিমেশন এবং মোড সুইচ ট্র্যাকিং স্টেট
-  const [showGreeting, setShowGreeting] = useState(true);
+  // চেক করা হচ্ছে এই প্রোফাইলে ইতোমধ্যে WELCOME অ্যানিমেশন চলেছে কিনা
+  const hasAlreadyAnimated = animatedProfiles.has(profileKey);
+
+  // যদি আগে অ্যানিমেশন হয়ে থাকে, তবে প্রাথমিক স্টেটেই showGreeting = false হবে (কোনো ফ্ল্যাশ হবে না)
+  const [showGreeting, setShowGreeting] = useState(!hasAlreadyAnimated);
   const [fade, setFade] = useState(true);
-  const hasAnimatedRef = useRef(false);
 
   useEffect(() => {
-    if (hasAnimatedRef.current) {
-      setShowGreeting(false);
+    // যদি এই সেশনে ইতোমধ্যে অ্যানিমেশন হয়ে গিয়ে থাকে তবে রিটার্ন করবে
+    if (hasAlreadyAnimated) {
       return;
     }
 
+    // প্রথমবার ২.৫ সেকেন্ডের জন্য WELCOME দেখাবে, তারপর স্মুথলি নাম ও ইমেইল আসবে
     const timer = setTimeout(() => {
       setFade(false); // ফেইড আউট
       setTimeout(() => {
-        setShowGreeting(false); // নাম ও ইমেইল/ডট আপডেট
+        setShowGreeting(false); // নাম ও ইমেইল প্রদর্শিত হবে
         setFade(true); // ফেইড ইন
-        hasAnimatedRef.current = true;
+        animatedProfiles.add(profileKey); // ট্র্যাকিং সেটে যুক্ত করা হলো
       }, 300);
     }, 2500);
 
     return () => clearTimeout(timer);
-  }, [profile?.id]);
+  }, [profileKey, hasAlreadyAnimated]);
 
   const handleIconClick = () => {
     if (isAmbassadorActive) {
@@ -148,7 +154,7 @@ export default function ProfileHeader({
           )}
         </div>
 
-        {/* ২. নাম এবং সাবটাইটেল (পারফেক্ট অ্যানিমেশন ও কন্ডিশনাল ডটসহ) */}
+        {/* ২. নাম এবং সাবটাইটেল */}
         <div 
           onClick={onOpenProfileDetails}
           title="Click to view full details"
@@ -192,7 +198,6 @@ export default function ProfileHeader({
               minWidth: 0,
               overflow: 'hidden'
             }}>
-              {/* WELCOME শেষ হয়ে ইউজার নাম আসার পর সবুজ ডটটি সক্রিয় হবে */}
               {!showGreeting && (
                 <span style={{
                   width: '5px',
