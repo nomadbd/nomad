@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { MessageIcon, NotificationIcon, SettingsIcon } from '../icons';
 
 interface ProfileHeaderProps {
@@ -39,6 +39,31 @@ export default function ProfileHeader({
   hasUnreadNotif
 }: ProfileHeaderProps) {
   const name = profile?.name || "PROFILE";
+
+  // অ্যানিমেশন এবং মোড সুইচ ট্র্যাকিং স্টেট
+  const [showGreeting, setShowGreeting] = useState(true);
+  const [fade, setFade] = useState(true);
+  const hasAnimatedRef = useRef(false);
+
+  useEffect(() => {
+    // যদি ইতিমধ্যেই অ্যানিমেশন একবার হয়ে গিয়ে থাকে (প্রোফাইল স্যুইচ করলে) তবে আর রন হবে না
+    if (hasAnimatedRef.current) {
+      setShowGreeting(false);
+      return;
+    }
+
+    // প্রথমবার ২.৫ সেকেন্ডের জন্য WELCOME! দেখাবে, তারপর স্মুথলি বদলে নাম আসবে
+    const timer = setTimeout(() => {
+      setFade(false); // ফেইড আউট
+      setTimeout(() => {
+        setShowGreeting(false); // নাম পরিবর্তন
+        setFade(true); // ফেইড ইন
+        hasAnimatedRef.current = true; // অ্যানিমেশন কমপ্লিট হিসেবে চিহ্নিত করা
+      }, 300);
+    }, 2500);
+
+    return () => clearTimeout(timer);
+  }, [profile?.id]);
 
   const handleIconClick = () => {
     if (isAmbassadorActive) {
@@ -125,7 +150,7 @@ export default function ProfileHeader({
           )}
         </div>
 
-        {/* ২. নাম এবং সাবটাইটেল */}
+        {/* ২. নাম এবং সাবটাইটেল (অ্যানিমেশনসহ) */}
         <div 
           onClick={onOpenProfileDetails}
           title="Click to view full details"
@@ -150,10 +175,12 @@ export default function ProfileHeader({
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               lineHeight: '1.2',
-              width: '100%'
+              width: '100%',
+              opacity: fade ? 1 : 0,
+              transition: 'opacity 0.3s ease-in-out'
             }}
           >
-            {name}
+            {showGreeting ? 'WELCOME!' : name}
           </h2>
 
           {isAmbassadorActive ? (
