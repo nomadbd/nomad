@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import AnalyticsChart from '../stats/AnalyticsChart';
 import { supabase } from '@/supabaseClient';
 
 interface AmbassadorDashboardProps {
@@ -273,10 +272,6 @@ export default function AmbassadorDashboard({
               </div>
             )}
           </section>
-
-          <div style={{ marginTop: '32px' }}>
-            <AnalyticsChart totalEarned={ambassadorState?.totalEarned} />
-          </div>
         </div>
       )}
     </div>
