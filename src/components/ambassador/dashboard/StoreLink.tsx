@@ -23,10 +23,22 @@ export default function StoreLink({
     }
   }, []);
 
-  const slug = ambassadorData?.assigned_slug || profile?.assigned_slug || '';
-  const storeUrl = customLink || (origin && slug ? `${origin}/${slug}` : origin);
+  const rawSlug = 
+    ambassadorData?.assigned_slug || 
+    ambassadorData?.token || 
+    ambassadorData?.slug || 
+    profile?.assigned_slug || 
+    profile?.slug || 
+    '';
+
+  const slug = typeof rawSlug === 'string' ? rawSlug.trim().replace(/^\/+|\/+$/g, '') : '';
+  const cleanOrigin = origin ? origin.replace(/\/+$/, '') : '';
+
+  const storeUrl = customLink || (cleanOrigin && slug ? `${cleanOrigin}/${slug}` : cleanOrigin);
 
   const handleShare = async () => {
+    if (!storeUrl) return;
+
     if (navigator.share) {
       try {
         await navigator.share({
@@ -90,7 +102,7 @@ export default function StoreLink({
           userSelect: 'all',
           fontFamily: 'monospace'
         }}>
-          {storeUrl}
+          {storeUrl || 'Loading...'}
         </div>
       </div>
 
