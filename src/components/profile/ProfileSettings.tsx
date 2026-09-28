@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, RefObject } from 'react';
 import { isUserSubscribed, subscribeUserToPush, unsubscribeUserFromPush } from '@/utils/pushManager';
+import { isReservedSlug } from '@/reservedSlugs'; // <--- ইম্পোর্ট করা হলো
 
 interface ProfileSettingsProps {
   profile: any;
@@ -144,12 +145,19 @@ export default function ProfileSettings({
     return details.includes(':') ? details.split(':')[1].trim() : details;
   };
 
+  // ===== Slug Validation Rules =====
+  const isSlugValid = !newSlug || (
+    newSlug.length >= 3 && 
+    newSlug.length <= 20 && 
+    !isReservedSlug(newSlug)
+  );
+
   // ===== Header SAVE-এ পাসওয়ার্ড আর গণনা হবে না =====
   const isDirty = Boolean(
     (newName && newName !== profile?.name) ||
     (newEmail && newEmail !== profile?.email) ||
     (newDisplayName && newDisplayName !== currentDisplayName) ||
-    (newSlug && newSlug !== currentSlug) ||
+    (newSlug && newSlug !== currentSlug && isSlugValid) || // <--- কেবল ভ্যালিড স্লাগ হলেই সেভ হবে
     (newPayoutNumber && newPayoutNumber !== cleanPayoutNumber(currentPayoutDetails))
   );
 
@@ -361,8 +369,23 @@ export default function ProfileSettings({
                   .replace(/[^a-z0-9-]/g, '');
                 setNewSlug(formattedSlug);
               }} 
-              style={inputStyle} 
+              style={{
+                ...inputStyle,
+                marginBottom: (newSlug && (!isSlugValid || isReservedSlug(newSlug))) ? '6px' : '16px'
+              }} 
             />
+
+            {/* ===== SLUG ERROR MESSAGES ===== */}
+            {newSlug && isReservedSlug(newSlug) && (
+              <p style={{ color: '#ff4d4d', fontSize: '11px', margin: '0 0 16px 0', letterSpacing: '0.5px' }}>
+                This name is reserved by system. Please choose another.
+              </p>
+            )}
+            {newSlug && !isReservedSlug(newSlug) && newSlug.length < 3 && (
+              <p style={{ color: '#ff4d4d', fontSize: '11px', margin: '0 0 16px 0', letterSpacing: '0.5px' }}>
+                Slug must be at least 3 characters long.
+              </p>
+            )}
 
             <p style={labelStyle}>DEFAULT PAYOUT METHOD</p>
             <div style={{
