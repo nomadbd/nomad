@@ -24,7 +24,7 @@ export default function ProfileDetailsSheet({
   const [customerStats, setCustomerStats] = useState({ totalOrders: 0, totalItems: 0, lastArea: 'N/A' });
   const [ambassadorStats, setAmbassadorStats] = useState({ totalSold: 0 });
 
-  // ১. ব্যাকগ্রাউন্ড স্ক্রল লক
+  // ১. ব্যাকগ্রাউন্ড স্ক্রল লক ও ডাটা কল
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -36,45 +36,77 @@ export default function ProfileDetailsSheet({
     return () => {
       document.body.style.overflow = 'unset';
     };
-  }, [isOpen, portalMode, profile?.id]);
+  }, [isOpen, portalMode, profile?.id, profile?.email]);
 
-  // ২. ডাটা ফেচিং
+  // ২. ডাটা ফেচিং (orders + order_items)
   const fetchSummaryData = async () => {
-    if (!profile?.id) return;
+    if (!profile?.id && !profile?.email) return;
 
     if (portalMode === 'customer') {
       try {
-        const { data: orders } = await supabase
+        // user_id অথবা customer_email দুইভাবেই ফিল্টার করা
+        let userFilter = `user_id.eq.${profile.id}`;
+        if (profile?.email) {
+          userFilter += `,customer_email.eq.${profile.email}`;
+        }
+
+        // orders এবং রিলেটেড order_items ডাটা একসাথে ফেচ করা
+        const { data: orders, error } = await supabase
           .from('orders')
-          .select('id, shipping_address, area, city, items')
-          .eq('user_id', profile.id)
+          .select(`
+            id,
+            status,
+            shipping_address,
+            created_at,
+            order_items (
+              quantity
+            )
+          `)
+          .or(userFilter)
           .order('created_at', { ascending: false });
 
+        if (error) throw error;
+
         if (orders && orders.length > 0) {
-          const totalOrders = orders.length;
-          let totalItems = 0;
+          const totalOrders = orders.length; // মোট অর্ডারের সংখ্যা (পেন্ডিং + অন্যান্য)
+          let deliveredItemsCount = 0;
 
           orders.forEach((ord: any) => {
-            if (Array.isArray(ord.items)) {
-              totalItems += ord.items.reduce((acc: number, item: any) => acc + (Number(item.quantity) || 1), 0);
-            } else if (ord.items) {
-              totalItems += 1;
+            const statusLower = ord.status?.toLowerCase() || '';
+            
+            // শুধুমাত্র সফলভাবে ডেলিভারি হওয়া প্রোডাক্ট গণনা (delivered বা completed)
+            if (statusLower === 'delivered' || statusLower === 'completed') {
+              if (Array.isArray(ord.order_items)) {
+                deliveredItemsCount += ord.order_items.reduce(
+                  (acc: number, item: any) => acc + (Number(item.quantity) || 1),
+                  0
+                );
+              }
             }
           });
 
+          // লাস্ট ডেলিভারি এরিয়া বের করা
           const lastOrder = orders[0];
           let areaStr = 'N/A';
-          if (lastOrder?.area) areaStr = lastOrder.area;
-          else if (lastOrder?.city) areaStr = lastOrder.city;
-          else if (typeof lastOrder?.shipping_address === 'object') {
-            areaStr = lastOrder.shipping_address?.area || lastOrder.shipping_address?.city || 'N/A';
+          if (lastOrder?.shipping_address) {
+            if (typeof lastOrder.shipping_address === 'object') {
+              areaStr =
+                lastOrder.shipping_address?.area ||
+                lastOrder.shipping_address?.city ||
+                lastOrder.shipping_address?.address ||
+                'N/A';
+            } else if (typeof lastOrder.shipping_address === 'string') {
+              areaStr = lastOrder.shipping_address;
+            }
           }
 
           setCustomerStats({
             totalOrders,
-            totalItems: totalItems || totalOrders,
+            totalItems: deliveredItemsCount,
             lastArea: areaStr
           });
+        } else {
+          setCustomerStats({ totalOrders: 0, totalItems: 0, lastArea: 'N/A' });
         }
       } catch (err) {
         console.error('Error fetching customer stats:', err);
@@ -82,18 +114,28 @@ export default function ProfileDetailsSheet({
     } else if (portalMode === 'ambassador') {
       try {
         const ambId = ambassadorData?.id || profile?.id;
-        const { data: ambOrders } = await supabase
+        
+        const { data: ambOrders, error } = await supabase
           .from('orders')
-          .select('id, items')
-          .or(`ambassador_id.eq.${ambId},referred_by.eq.${ambId}`);
+          .select(`
+            id,
+            status,
+            order_items (
+              quantity
+            )
+          `)
+          .eq('ambassador_id', ambId);
+
+        if (error) throw error;
 
         if (ambOrders) {
           let totalSold = 0;
           ambOrders.forEach((ord: any) => {
-            if (Array.isArray(ord.items)) {
-              totalSold += ord.items.reduce((acc: number, item: any) => acc + (Number(item.quantity) || 1), 0);
-            } else {
-              totalSold += 1;
+            if (Array.isArray(ord.order_items)) {
+              totalSold += ord.order_items.reduce(
+                (acc: number, item: any) => acc + (Number(item.quantity) || 1),
+                0
+              );
             }
           });
           setAmbassadorStats({ totalSold });
@@ -163,7 +205,7 @@ export default function ProfileDetailsSheet({
           margin: '0 auto'
         }} />
 
-        {/* হেডার */}
+        {/* হেডার (উভয় মোডেই মূল প্রোফাইল নাম দেখাবে) */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
           <div style={{
             width: '48px',
@@ -188,7 +230,6 @@ export default function ProfileDetailsSheet({
           </div>
 
           <div style={{ overflow: 'hidden' }}>
-            {/* উভয় মোডেই মূল প্রোফাইল নাম দেখানো হবে */}
             <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '600', color: '#FFFFFF', wordBreak: 'break-word' }}>
               {profile?.name || "User Profile"}
             </h3>
