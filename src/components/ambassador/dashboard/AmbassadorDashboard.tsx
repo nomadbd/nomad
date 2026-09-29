@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/supabaseClient';
 import StoreLink from './StoreLink';
-import EarningsCard from './EarningsCard'; // <--- EarningsCard ইম্পোর্ট করা হলো
+import EarningsCard from './EarningsCard';
 
 interface AmbassadorDashboardProps {
   ambassadorData: any;
@@ -27,6 +27,9 @@ export default function AmbassadorDashboard({
   isOwner = true
 }: AmbassadorDashboardProps) {
   const name = ambassadorData?.display_name || profile?.user_metadata?.full_name || 'AMBASSADOR';
+  
+  // আসল অ্যাম্বাসেডর আইডি
+  const ambassadorId = ambassadorData?.id || ambassadorData?.user_id || profile?.id;
 
   const [assignedProducts, setAssignedProducts] = useState<AssignedProduct[]>([]);
   const [loadingProducts, setLoadingProducts] = useState<boolean>(true);
@@ -143,7 +146,6 @@ export default function AmbassadorDashboard({
   };
 
   const handleWithdrawClick = () => {
-    // এখানে পরবর্তীতে উইথড্র প্রসেসিং ফ্লো যুক্ত করা যাবে
     alert('Withdrawal request initiated!');
   };
 
@@ -205,11 +207,12 @@ export default function AmbassadorDashboard({
             isAmbassadorActive={true} 
           />
 
-          {/* ২. আর্নিং ও ওয়ালেট সেকশন */}
+          {/* ২. আর্নিং ও ওয়ালেট সেকশন (রিয়েল ডাটা ইন্টিগ্রেশন) */}
           <EarningsCard 
-            availableBalance={ambassadorData?.available_balance ?? ambassadorState?.available_balance}
-            pendingBalance={ambassadorData?.pending_balance ?? ambassadorState?.pending_balance}
-            totalEarned={ambassadorData?.total_earned ?? ambassadorState?.total_earned}
+            ambassadorId={ambassadorId}
+            availableBalance={ambassadorData?.available_balance ?? ambassadorState?.available_balance ?? 0}
+            pendingBalance={ambassadorData?.pending_balance ?? ambassadorState?.pending_balance ?? 0}
+            totalEarned={ambassadorData?.total_earned ?? ambassadorState?.total_earned ?? 0}
             onWithdrawClick={handleWithdrawClick}
           />
 
