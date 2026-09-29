@@ -150,28 +150,38 @@ export default function AmbassadorDashboard({
   };
 
   return (
-    <div style={{ width: '100%', maxWidth: '1000px', margin: '0 auto', padding: '16px 0', color: '#ffffff', fontFamily: "'Inter', sans-serif" }}>
+    <div
+      style={{
+        width: '100%',
+        maxWidth: '100%',
+        margin: '0 auto',
+        padding: '12px 0',
+        color: '#ffffff',
+        fontFamily: "'Inter', sans-serif",
+        boxSizing: 'border-box'
+      }}
+    >
       {!isOwner ? (
-        <div style={{ width: '100%' }}>
-          <header style={{ borderBottom: '1px solid #1a1a1a', paddingBottom: '24px', marginBottom: '32px', textAlign: 'center' }}>
+        <div style={{ width: '100%', boxSizing: 'border-box' }}>
+          <header style={{ borderBottom: '1px solid #1a1a1a', paddingBottom: '24px', marginBottom: '24px', textAlign: 'center' }}>
             <span style={{ fontSize: '10px', color: '#888888', letterSpacing: '3px', textTransform: 'uppercase' }}>CURATED BY AMBASSADOR</span>
-            <h1 style={{ fontSize: '24px', margin: '8px 0 0 0', letterSpacing: '2px', textTransform: 'uppercase' }}>{name}'S NOMAD COLLECTION</h1>
+            <h1 style={{ fontSize: '22px', margin: '8px 0 0 0', letterSpacing: '2px', textTransform: 'uppercase' }}>{name}'S NOMAD COLLECTION</h1>
           </header>
 
           {loadingProducts ? (
             <div style={{ textAlign: 'center', padding: '40px', color: '#666', fontSize: '12px' }}>LOADING COLLECTION...</div>
           ) : assignedProducts.filter((p) => p.is_visible).length === 0 ? (
-            <div style={{ padding: '40px 0', textAlign: 'center', border: '1px dashed #222222', backgroundColor: '#050505' }}>
-              <p style={{ color: '#888888', fontSize: '12px' }}>NO PRODUCTS CURATED YET.</p>
+            <div style={{ padding: '40px 0', textAlign: 'center', border: '1px dashed #222222', backgroundColor: '#050505', borderRadius: '8px' }}>
+              <p style={{ color: '#888888', fontSize: '12px', margin: 0 }}>NO PRODUCTS CURATED YET.</p>
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '16px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '12px' }}>
               {assignedProducts.filter((p) => p.is_visible).map((product) => (
-                <div key={product.id} style={{ backgroundColor: '#050505', border: '1px solid #1a1a1a', padding: '16px', borderRadius: '6px' }}>
-                  <div style={{ width: '100%', height: '200px', backgroundColor: '#111', marginBottom: '12px', borderRadius: '4px', overflow: 'hidden' }}>
+                <div key={product.id} style={{ backgroundColor: '#050505', border: '1px solid #1a1a1a', padding: '12px', borderRadius: '8px', boxSizing: 'border-box' }}>
+                  <div style={{ width: '100%', height: '160px', backgroundColor: '#111', marginBottom: '10px', borderRadius: '6px', overflow: 'hidden' }}>
                     {product.image_url ? <img src={product.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : null}
                   </div>
-                  <h3 style={{ fontSize: '14px', margin: '0 0 6px 0', color: '#fff' }}>{product.title}</h3>
+                  <h3 style={{ fontSize: '13px', margin: '0 0 4px 0', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{product.title}</h3>
                   <p style={{ fontSize: '14px', fontWeight: 'bold', margin: 0, color: '#34d399' }}>৳{product.price}</p>
                 </div>
               ))}
@@ -179,11 +189,11 @@ export default function AmbassadorDashboard({
           )}
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%', boxSizing: 'border-box' }}>
           {/* ১. স্টোর লিংক সেকশন */}
           <StoreLink ambassadorData={ambassadorData} profile={profile} isAmbassadorActive={true} />
 
-          {/* ২. আর্নিং ও উইথড্রল সেকশন (payoutDetails স্বয়ংক্রিয় কানেকশনসহ) */}
+          {/* ২. আর্নিং ও উইথড্রল সেকশন */}
           <EarningsCard
             ambassadorId={ambassadorId}
             availableBalance={ambassadorData?.unpaid_balance ?? ambassadorData?.available_balance ?? ambassadorState?.available_balance ?? 0}
@@ -194,35 +204,58 @@ export default function AmbassadorDashboard({
           />
 
           {/* ৩. প্রোডাক্ট ম্যানেজমেন্ট সেকশন */}
-          <section style={{ backgroundColor: '#050505', border: '1px solid #1a1a1a', padding: '16px', borderRadius: '8px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <section
+            style={{
+              backgroundColor: '#050505',
+              border: '1px solid #1c1c1c',
+              padding: '16px',
+              borderRadius: '16px',
+              width: '100%',
+              boxSizing: 'border-box'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', gap: '10px' }}>
               <div>
-                <h2 style={{ fontSize: '14px', margin: 0, textTransform: 'uppercase', letterSpacing: '1px' }}>STOREFRONT PRODUCTS</h2>
+                <h2 style={{ fontSize: '13px', margin: 0, textTransform: 'uppercase', letterSpacing: '1px', fontWeight: '700' }}>STOREFRONT PRODUCTS</h2>
                 <p style={{ fontSize: '11px', color: '#888', margin: '4px 0 0 0' }}>Select which assigned products to display on your public showcase.</p>
               </div>
-              <span style={{ fontSize: '10px', color: '#aaa', border: '1px solid #222', padding: '4px 8px', borderRadius: '4px', backgroundColor: '#0a0a0a' }}>
+              <span style={{ flexShrink: 0, fontSize: '10px', color: '#aaa', border: '1px solid #222', padding: '4px 8px', borderRadius: '6px', backgroundColor: '#0a0a0a', fontWeight: '600' }}>
                 {assignedProducts.filter(p => p.is_visible).length} / {assignedProducts.length} VISIBLE
               </span>
             </div>
 
             {loadingProducts ? (
-              <div style={{ fontSize: '11px', color: '#666', padding: '12px 0' }}>LOADING ASSIGNED PRODUCTS...</div>
+              <div style={{ fontSize: '11px', color: '#666', padding: '16px 0', textAlign: 'center' }}>LOADING ASSIGNED PRODUCTS...</div>
             ) : assignedProducts.length === 0 ? (
-              <div style={{ fontSize: '11px', color: '#666', padding: '20px 0', textAlign: 'center', border: '1px dashed #222', borderRadius: '4px' }}>
+              <div style={{ fontSize: '11px', color: '#666', padding: '24px 0', textAlign: 'center', border: '1px dashed #222', borderRadius: '8px' }}>
                 NO PRODUCTS ASSIGNED BY ADMIN YET.
               </div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%', boxSizing: 'border-box' }}>
                 {assignedProducts.map((product) => (
-                  <div key={product.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px', backgroundColor: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '6px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div
+                    key={product.id}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justify: 'space-between',
+                      padding: '12px',
+                      backgroundColor: '#0a0a0a',
+                      border: '1px solid #1a1a1a',
+                      borderRadius: '10px',
+                      gap: '12px',
+                      width: '100%',
+                      boxSizing: 'border-box'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', overflow: 'hidden' }}>
                       {product.image_url ? (
-                        <img src={product.image_url} alt="" style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px' }} />
+                        <img src={product.image_url} alt="" style={{ width: '42px', height: '42px', objectFit: 'cover', borderRadius: '6px', flexShrink: 0 }} />
                       ) : (
-                        <div style={{ width: '40px', height: '40px', backgroundColor: '#111', borderRadius: '4px' }} />
+                        <div style={{ width: '42px', height: '42px', backgroundColor: '#111', borderRadius: '6px', flexShrink: 0 }} />
                       )}
-                      <div>
-                        <div style={{ fontSize: '13px', fontWeight: 'bold', color: '#fff' }}>{product.title}</div>
+                      <div style={{ overflow: 'hidden' }}>
+                        <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{product.title}</div>
                         <div style={{ fontSize: '11px', color: '#888', marginTop: '2px' }}>৳{product.price}</div>
                       </div>
                     </div>
@@ -232,14 +265,16 @@ export default function AmbassadorDashboard({
                       onClick={() => handleToggleVisibility(product.id, product.is_visible)}
                       disabled={togglingId === product.id}
                       style={{
+                        flexShrink: 0,
                         backgroundColor: product.is_visible ? '#082210' : '#111111',
                         color: product.is_visible ? '#4dff88' : '#666666',
                         border: `1px solid ${product.is_visible ? '#115522' : '#333333'}`,
                         padding: '6px 12px',
                         fontSize: '10px',
                         fontWeight: 'bold',
-                        borderRadius: '4px',
-                        cursor: 'pointer'
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease'
                       }}
                     >
                       {togglingId === product.id ? 'UPDATING...' : product.is_visible ? 'SHOWING ON STORE' : 'HIDDEN FROM STORE'}
