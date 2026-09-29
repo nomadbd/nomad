@@ -153,36 +153,10 @@ export default function EarningsCard({
         fontFamily: "'Inter', sans-serif"
       }}
     >
-      {/* স্মুথ অ্যানিমেশনের জন্য ইনলাইন সিএসএস স্টাইল */}
-      <style>{`
-        @keyframes sheetSlideUp {
-          from { transform: translateY(100%); }
-          to { transform: translateY(0); }
-        }
-        @keyframes sheetFadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        .sheet-overlay {
-          animation: sheetFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-        .sheet-content {
-          animation: sheetSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-        .sheet-scroll::-webkit-scrollbar {
-          width: 4px;
-        }
-        .sheet-scroll::-webkit-scrollbar-thumb {
-          background: #222222;
-          border-radius: 4px;
-        }
-      `}</style>
-
       {/* ১. হেডার রো (WALLET একদম বামে, HISTORY › একদম ডানে) */}
       <div
         style={{
           display: 'flex',
-          flexDirection: 'row',
           justifyContent: 'space-between',
           alignItems: 'center',
           width: '100%',
@@ -196,8 +170,7 @@ export default function EarningsCard({
             fontWeight: '700',
             color: '#888888',
             letterSpacing: '1.5px',
-            textTransform: 'uppercase',
-            display: 'inline-block'
+            textTransform: 'uppercase'
           }}
         >
           WALLET
@@ -213,9 +186,7 @@ export default function EarningsCard({
             fontWeight: '600',
             cursor: 'pointer',
             letterSpacing: '1px',
-            padding: 0,
-            display: 'inline-block',
-            marginLeft: 'auto'
+            padding: 0
           }}
         >
           HISTORY &rsaquo;
@@ -405,16 +376,14 @@ export default function EarningsCard({
         </div>
       )}
 
-      {/* PAYOUT HISTORY SMART & SMOOTH BOTTOM SHEET */}
+      {/* LAGG-FREE INSTANT BOTTOM SHEET */}
       {showHistoryBottomSheet && (
         <div
-          className="sheet-overlay"
           onClick={() => setShowHistoryBottomSheet(false)}
           style={{
             position: 'fixed',
             inset: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.75)',
-            backdropFilter: 'blur(6px)',
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
             zIndex: 9999,
             display: 'flex',
             alignItems: 'flex-end',
@@ -422,7 +391,6 @@ export default function EarningsCard({
           }}
         >
           <div
-            className="sheet-content"
             onClick={(e) => e.stopPropagation()}
             style={{
               backgroundColor: '#0a0a0a',
@@ -441,7 +409,7 @@ export default function EarningsCard({
               boxShadow: '0 -10px 30px rgba(0,0,0,0.8)'
             }}
           >
-            {/* Top Handle Bar for gesture hint */}
+            {/* Top Handle Bar */}
             <div
               onClick={() => setShowHistoryBottomSheet(false)}
               style={{
@@ -475,9 +443,8 @@ export default function EarningsCard({
               </button>
             </div>
 
-            {/* Scrollable List Container (Smooth Touch Scroll) */}
+            {/* Scrollable List Container */}
             <div
-              className="sheet-scroll"
               style={{
                 overflowY: 'auto',
                 WebkitOverflowScrolling: 'touch',
