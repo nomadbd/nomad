@@ -1,4 +1,4 @@
- import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { supabase } from '@/supabaseClient';
 import StoreLink from './StoreLink';
 import EarningsCard from './EarningsCard';
@@ -33,7 +33,7 @@ export default function AmbassadorDashboard({
   const [loadingProducts, setLoadingProducts] = useState<boolean>(true);
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
-  // Ambassador Data Refresh Function (উইথড্র করার পর ব্যালেন্স আপডেট করার জন্য)
+  // Ambassador Data Refresh Function (উইথড্র করার পর ব্যালেন্স ও ডাটা আপডেট করার জন্য)
   const refreshAmbassadorData = async () => {
     if (!ambassadorId) return;
     try {
@@ -183,12 +183,13 @@ export default function AmbassadorDashboard({
           {/* ১. স্টোর লিংক সেকশন */}
           <StoreLink ambassadorData={ambassadorData} profile={profile} isAmbassadorActive={true} />
 
-          {/* ২. আর্নিং ও উইথড্রল সেকশন (স্বয়ংক্রিয় রিফ্রেশসহ) */}
+          {/* ২. আর্নিং ও উইথড্রল সেকশন (payoutDetails স্বয়ংক্রিয় কানেকশনসহ) */}
           <EarningsCard
             ambassadorId={ambassadorId}
-            availableBalance={ambassadorData?.available_balance ?? ambassadorData?.unpaid_balance ?? ambassadorState?.available_balance ?? 0}
+            availableBalance={ambassadorData?.unpaid_balance ?? ambassadorData?.available_balance ?? ambassadorState?.available_balance ?? 0}
             pendingBalance={ambassadorData?.pending_balance ?? ambassadorState?.pending_balance ?? 0}
             totalEarned={ambassadorData?.total_earned ?? ambassadorState?.total_earned ?? 0}
+            payoutDetails={ambassadorData?.payout_details}
             onSuccessRefresh={refreshAmbassadorData}
           />
 
