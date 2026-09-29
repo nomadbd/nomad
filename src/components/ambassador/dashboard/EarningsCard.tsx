@@ -154,20 +154,34 @@ export default function EarningsCard({
     }
   }, [showHistoryBottomSheet]);
 
+  // Helper function for status color
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'PAID':
+      case 'APPROVED':
+        return '#34d399';
+      case 'REJECTED':
+        return '#f87171';
+      case 'PENDING':
+      default:
+        return '#fbbf24';
+    }
+  };
+
   return (
     <div
       style={{
         width: '100%',
         boxSizing: 'border-box',
-        backgroundColor: '#0a0a0a',
-        border: '1px solid #1f1f1f',
+        backgroundColor: '#050505',
+        border: '1px solid #1a1a1a',
         borderRadius: '16px',
         padding: '16px',
         color: '#ffffff',
-        fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+        fontFamily: "'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif"
       }}
     >
-      {/* Animation Styles */}
+      {/* CSS Animations */}
       <style>{`
         @keyframes iosSlideUp {
           from { transform: translate3d(0, 100%, 0); }
@@ -186,9 +200,9 @@ export default function EarningsCard({
           to { opacity: 0; }
         }
         @keyframes skeletonPulse {
-          0% { opacity: 0.15; }
-          50% { opacity: 0.35; }
-          100% { opacity: 0.15; }
+          0% { opacity: 0.25; }
+          50% { opacity: 0.6; }
+          100% { opacity: 0.25; }
         }
         .apple-sheet-enter {
           animation: iosSlideUp 0.32s cubic-bezier(0.32, 0.72, 0, 1) forwards;
@@ -206,56 +220,63 @@ export default function EarningsCard({
         }
         .skeleton-pulse {
           animation: skeletonPulse 1.4s infinite ease-in-out;
-          background-color: #222222;
+          background-color: #1e1e1e;
           border-radius: 6px;
         }
       `}</style>
 
-      {/* ১. হেডার - WALLET এবং HISTORY স্পেসিং ফিক্সড */}
+      {/* ১. হেডার (WALLET বামে, HISTORY ডানে - Absolute Positioning দিয়ে স্পেস ফিক্সড) */}
       <div
         style={{
-          display: 'flex',
-          justify: 'space-between',
-          alignItems: 'center',
+          position: 'relative',
           width: '100%',
+          height: '18px',
           marginBottom: '14px',
           boxSizing: 'border-box'
         }}
       >
         <span
           style={{
+            position: 'absolute',
+            left: 0,
+            top: 0,
             fontSize: '11px',
             fontWeight: '700',
-            color: '#71717a',
+            color: '#888888',
             letterSpacing: '1.5px',
             textTransform: 'uppercase'
           }}
         >
           WALLET
         </span>
+
         <button
           type="button"
           onClick={openBottomSheet}
           style={{
+            position: 'absolute',
+            right: 0,
+            top: 0,
             background: 'none',
             border: 'none',
-            color: '#a1a1aa',
+            color: '#888888',
             fontSize: '11px',
-            fontWeight: '600',
+            fontWeight: '700',
+            letterSpacing: '1.5px',
             cursor: 'pointer',
-            letterSpacing: '1px',
-            padding: 0
+            padding: 0,
+            textTransform: 'uppercase'
           }}
         >
           HISTORY &rsaquo;
         </button>
       </div>
 
-      {/* ২. Available Balance & Withdraw Button */}
+      {/* ২. Available Balance & Withdraw Button Box */}
       <div
         style={{
-          backgroundColor: '#121212',
-          border: '1px solid #1f1f1f',
+          backgroundColor: '#0a0a0a',
+          border: '1px solid #1a1a1a',
           borderRadius: '12px',
           padding: '14px',
           marginBottom: '10px',
@@ -263,7 +284,7 @@ export default function EarningsCard({
           boxSizing: 'border-box'
         }}
       >
-        <div style={{ fontSize: '10px', color: '#71717a', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: '500', marginBottom: '8px' }}>
+        <div style={{ fontSize: '10px', color: '#888888', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: '500', marginBottom: '8px' }}>
           AVAILABLE BALANCE
         </div>
 
@@ -286,8 +307,8 @@ export default function EarningsCard({
             disabled={availableBalance <= 0}
             style={{
               flexShrink: 0,
-              backgroundColor: availableBalance > 0 ? '#ffffff' : '#27272a',
-              color: availableBalance > 0 ? '#000000' : '#71717a',
+              backgroundColor: availableBalance > 0 ? '#ffffff' : '#1c1c1c',
+              color: availableBalance > 0 ? '#000000' : '#555555',
               border: 'none',
               padding: '6px 14px',
               borderRadius: '20px',
@@ -303,17 +324,17 @@ export default function EarningsCard({
         </div>
       </div>
 
-      {/* ৩. Pending & Total Earned (Monochrome Single Tone) */}
+      {/* ৩. Pending & Total Earned Box */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', width: '100%', boxSizing: 'border-box' }}>
-        <div style={{ backgroundColor: '#121212', border: '1px solid #1f1f1f', padding: '12px', borderRadius: '10px' }}>
-          <div style={{ fontSize: '10px', color: '#71717a', textTransform: 'uppercase', letterSpacing: '0.5px' }}>PENDING</div>
-          <div style={{ fontSize: '15px', fontWeight: 'bold', color: '#e4e4e7', marginTop: '4px' }}>
+        <div style={{ backgroundColor: '#0a0a0a', border: '1px solid #1a1a1a', padding: '12px', borderRadius: '10px' }}>
+          <div style={{ fontSize: '10px', color: '#888888', textTransform: 'uppercase', letterSpacing: '0.5px' }}>PENDING</div>
+          <div style={{ fontSize: '15px', fontWeight: 'bold', color: '#f59e0b', marginTop: '4px' }}>
             ৳{pendingBalance.toLocaleString()}
           </div>
         </div>
-        <div style={{ backgroundColor: '#121212', border: '1px solid #1f1f1f', padding: '12px', borderRadius: '10px' }}>
-          <div style={{ fontSize: '10px', color: '#71717a', textTransform: 'uppercase', letterSpacing: '0.5px' }}>TOTAL EARNED</div>
-          <div style={{ fontSize: '15px', fontWeight: 'bold', color: '#e4e4e7', marginTop: '4px' }}>
+        <div style={{ backgroundColor: '#0a0a0a', border: '1px solid #1a1a1a', padding: '12px', borderRadius: '10px' }}>
+          <div style={{ fontSize: '10px', color: '#888888', textTransform: 'uppercase', letterSpacing: '0.5px' }}>TOTAL EARNED</div>
+          <div style={{ fontSize: '15px', fontWeight: 'bold', color: '#34d399', marginTop: '4px' }}>
             ৳{totalEarned.toLocaleString()}
           </div>
         </div>
@@ -338,8 +359,8 @@ export default function EarningsCard({
         >
           <div
             style={{
-              backgroundColor: '#121212',
-              border: '1px solid #27272a',
+              backgroundColor: '#0a0a0a',
+              border: '1px solid #222222',
               borderRadius: '12px',
               width: '100%',
               maxWidth: '380px',
@@ -348,47 +369,47 @@ export default function EarningsCard({
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <h3 style={{ fontSize: '12px', margin: 0, color: '#ffffff', letterSpacing: '1px', textTransform: 'uppercase' }}>
+              <h3 style={{ fontSize: '13px', margin: 0, color: '#ffffff', letterSpacing: '1px' }}>
                 REQUEST WITHDRAWAL
               </h3>
               <button
                 onClick={() => setShowWithdrawModal(false)}
-                style={{ background: 'none', border: 'none', color: '#71717a', fontSize: '20px', cursor: 'pointer', lineHeight: '1' }}
+                style={{ background: 'none', border: 'none', color: '#888888', fontSize: '18px', cursor: 'pointer', lineHeight: '1', padding: 0 }}
               >
                 &times;
               </button>
             </div>
 
             {errorMsg && (
-              <div style={{ color: '#ffffff', fontSize: '11px', marginBottom: '12px', padding: '8px 10px', backgroundColor: '#27272a', borderRadius: '6px', border: '1px solid #3f3f46' }}>
+              <div style={{ color: '#ef4444', fontSize: '11px', marginBottom: '12px', padding: '8px 10px', backgroundColor: 'rgba(239, 68, 68, 0.1)', borderRadius: '6px' }}>
                 {errorMsg}
               </div>
             )}
 
             {!hasPayoutDetails ? (
               <div style={{ padding: '20px 10px', textAlign: 'center' }}>
-                <div style={{ fontSize: '12px', color: '#ffffff', fontWeight: 'bold', marginBottom: '8px' }}>
+                <div style={{ fontSize: '12px', color: '#f59e0b', fontWeight: 'bold', marginBottom: '8px' }}>
                   No Payout Details Found
                 </div>
-                <p style={{ fontSize: '11px', color: '#a1a1aa', margin: 0, lineHeight: '1.5' }}>
+                <p style={{ fontSize: '11px', color: '#aaaaaa', margin: 0, lineHeight: '1.5' }}>
                   Please set up your payment method and account number in Settings before requesting a withdrawal.
                 </p>
               </div>
             ) : (
               <form onSubmit={handleWithdrawSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                <div style={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: '8px', padding: '12px' }}>
+                <div style={{ backgroundColor: '#111111', border: '1px solid #222222', borderRadius: '8px', padding: '12px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                    <span style={{ fontSize: '10px', color: '#71717a' }}>METHOD</span>
+                    <span style={{ fontSize: '10px', color: '#888888' }}>METHOD</span>
                     <span style={{ fontSize: '11px', color: '#ffffff', fontWeight: 'bold' }}>{savedMethod}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ fontSize: '10px', color: '#71717a' }}>ACCOUNT NUMBER</span>
+                    <span style={{ fontSize: '10px', color: '#888888' }}>ACCOUNT NUMBER</span>
                     <span style={{ fontSize: '11px', color: '#ffffff', fontWeight: 'bold' }}>{savedAccount}</span>
                   </div>
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '10px', color: '#71717a', display: 'block', marginBottom: '6px' }}>
+                  <label style={{ fontSize: '10px', color: '#888888', display: 'block', marginBottom: '6px' }}>
                     AMOUNT (Max: ৳{availableBalance.toLocaleString()})
                   </label>
                   <input
@@ -398,8 +419,8 @@ export default function EarningsCard({
                     onChange={(e) => setAmount(e.target.value ? Number(e.target.value) : '')}
                     style={{
                       width: '100%',
-                      backgroundColor: '#18181b',
-                      border: '1px solid #27272a',
+                      backgroundColor: '#111111',
+                      border: '1px solid #222222',
                       color: '#ffffff',
                       padding: '10px 12px',
                       borderRadius: '6px',
@@ -434,7 +455,7 @@ export default function EarningsCard({
         </div>
       )}
 
-      {/* PAYOUT HISTORY BOTTOM SHEET (MONOCHROME & PREMIUM) */}
+      {/* PAYOUT HISTORY BOTTOM SHEET */}
       {showHistoryBottomSheet && (
         <div
           onClick={closeBottomSheet}
@@ -442,7 +463,7 @@ export default function EarningsCard({
           style={{
             position: 'fixed',
             inset: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            backgroundColor: 'rgba(0, 0, 0, 0.75)',
             zIndex: 9999,
             display: 'flex',
             alignItems: 'flex-end',
@@ -453,25 +474,25 @@ export default function EarningsCard({
             onClick={(e) => e.stopPropagation()}
             className={isAnimatingOut ? 'apple-sheet-exit' : 'apple-sheet-enter'}
             style={{
-              backgroundColor: '#0a0a0a',
-              borderTop: '1px solid #27272a',
-              borderLeft: '1px solid #27272a',
-              borderRight: '1px solid #27272a',
+              backgroundColor: '#0d0d0d',
+              borderTop: '1px solid #222222',
+              borderLeft: '1px solid #222222',
+              borderRight: '1px solid #222222',
               borderTopLeftRadius: '24px',
               borderTopRightRadius: '24px',
               width: '100%',
               maxWidth: '500px',
-              height: '72vh',
-              maxHeight: '620px',
+              height: '70vh',
+              maxHeight: '600px',
               display: 'flex',
               flexDirection: 'column',
               boxSizing: 'border-box',
-              padding: '12px 18px 20px 18px',
-              boxShadow: '0 -16px 48px rgba(0,0,0,0.95)',
+              padding: '12px 20px 20px 20px',
+              boxShadow: '0 -12px 40px rgba(0,0,0,0.9)',
               transform: 'translate3d(0, 0, 0)'
             }}
           >
-            {/* Drag Handle Bar */}
+            {/* Drag Bar Handle */}
             <div
               onClick={closeBottomSheet}
               style={{
@@ -484,40 +505,36 @@ export default function EarningsCard({
             >
               <div
                 style={{
-                  width: '38px',
-                  height: '4px',
-                  backgroundColor: '#27272a',
+                  width: '36px',
+                  height: '5px',
+                  backgroundColor: '#333333',
                   borderRadius: '10px'
                 }}
               />
             </div>
 
-            {/* Bottom Sheet Header */}
+            {/* Header - সার্কেল বিহীন র নরমাল ক্রস বাটন */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexShrink: 0 }}>
-              <h3 style={{ fontSize: '12px', margin: 0, color: '#ffffff', letterSpacing: '1px', fontWeight: '700', textTransform: 'uppercase' }}>
+              <h3 style={{ fontSize: '13px', margin: 0, color: '#ffffff', letterSpacing: '1.5px', fontWeight: '700' }}>
                 PAYOUT HISTORY
               </h3>
               <button
                 onClick={closeBottomSheet}
                 style={{
-                  background: '#18181b',
-                  border: '1px solid #27272a',
-                  color: '#a1a1aa',
-                  width: '26px',
-                  height: '26px',
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justify: 'center',
-                  fontSize: '15px',
-                  cursor: 'pointer'
+                  background: 'none',
+                  border: 'none',
+                  color: '#888888',
+                  fontSize: '20px',
+                  cursor: 'pointer',
+                  padding: '4px',
+                  lineHeight: '1'
                 }}
               >
                 &times;
               </button>
             </div>
 
-            {/* Scrollable History Cards Container */}
+            {/* Scrollable Container */}
             <div
               style={{
                 overflowY: 'auto',
@@ -535,30 +552,34 @@ export default function EarningsCard({
                     <div
                       key={n}
                       style={{
-                        backgroundColor: '#121212',
-                        padding: '14px',
+                        backgroundColor: '#111111',
+                        padding: '12px 14px',
                         borderRadius: '12px',
-                        border: '1px solid #1f1f1f',
+                        border: '1px solid #1a1a1a',
                         display: 'flex',
                         flexDirection: 'column',
-                        gap: '10px',
-                        height: '88px',
+                        gap: '8px',
+                        height: '84px',
                         boxSizing: 'border-box'
                       }}
                     >
                       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <div className="skeleton-pulse" style={{ height: '18px', width: '32%' }} />
-                        <div className="skeleton-pulse" style={{ height: '18px', width: '22%' }} />
+                        <div className="skeleton-pulse" style={{ height: '16px', width: '30%' }} />
+                        <div className="skeleton-pulse" style={{ height: '18px', width: '20%' }} />
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                         <div className="skeleton-pulse" style={{ height: '12px', width: '40%' }} />
-                        <div className="skeleton-pulse" style={{ height: '12px', width: '18%' }} />
+                        <div className="skeleton-pulse" style={{ height: '12px', width: '20%' }} />
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <div className="skeleton-pulse" style={{ height: '10px', width: '25%' }} />
+                        <div className="skeleton-pulse" style={{ height: '10px', width: '20%' }} />
                       </div>
                     </div>
                   ))}
                 </>
               ) : history.length === 0 ? (
-                <div style={{ fontSize: '12px', color: '#71717a', textAlign: 'center', padding: '60px 0' }}>
+                <div style={{ fontSize: '12px', color: '#666666', textAlign: 'center', padding: '60px 0' }}>
                   No payout history found.
                 </div>
               ) : (
@@ -579,65 +600,43 @@ export default function EarningsCard({
                     <div
                       key={item.id}
                       style={{
-                        backgroundColor: '#121212',
+                        backgroundColor: '#111111',
                         padding: '14px 16px',
                         borderRadius: '12px',
-                        border: '1px solid #1f1f1f',
+                        border: '1px solid #1a1a1a',
                         display: 'flex',
                         flexDirection: 'column',
-                        gap: '10px',
+                        gap: '8px',
                         flexShrink: 0
                       }}
                     >
-                      {/* ১. টাকা ও এক কালারের নিউট্রাল স্ট্যাটাস ব্যাজ */}
+                      {/* ১. টাকার পরিমাণ (বামে) এবং পিল ছাড়া কালার্ড টেক্সট স্ট্যাটাস (ডানে) */}
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ fontSize: '17px', fontWeight: '700', color: '#ffffff', letterSpacing: '-0.3px' }}>
+                        <span style={{ fontSize: '16px', fontWeight: '700', color: '#ffffff' }}>
                           ৳{item.amount.toLocaleString()}
                         </span>
-
                         <span
                           style={{
-                            fontSize: '9px',
-                            padding: '3px 8px',
-                            borderRadius: '4px',
+                            fontSize: '11px',
                             fontWeight: '700',
-                            letterSpacing: '0.6px',
-                            backgroundColor: '#18181b',
-                            color: '#a1a1aa',
-                            border: '1px solid #27272a',
-                            textTransform: 'uppercase'
+                            letterSpacing: '0.8px',
+                            color: getStatusColor(item.status)
                           }}
                         >
                           {item.status}
                         </span>
                       </div>
 
-                      {/* ২. একাউন্ট নম্বর এবং মেথড */}
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span
-                          style={{
-                            color: '#d4d4d8',
-                            fontFamily: "'SF Mono', SFMono-Regular, Consolas, monospace",
-                            fontSize: '12px',
-                            fontWeight: '500'
-                          }}
-                        >
+                      {/* ২. নাম্বার/কার্ড/মোবাইল (বামে) এবং মাধ্যম (ডানে) */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px' }}>
+                        <span style={{ color: '#cccccc', fontFamily: "'SF Mono', Consolas, monospace", fontSize: '11px' }}>
                           {item.account_number}
                         </span>
-
-                        <span
-                          style={{
-                            fontSize: '11px',
-                            fontWeight: '500',
-                            color: '#a1a1aa'
-                          }}
-                        >
-                          {item.payout_method}
-                        </span>
+                        <span style={{ color: '#aaaaaa', fontWeight: '500' }}>{item.payout_method}</span>
                       </div>
 
-                      {/* ৩. তারিখ ও সময় */}
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '10px', color: '#52525b' }}>
+                      {/* ৩. তারিখ (বামে) এবং সময় (ডানে) */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '10px', color: '#666666' }}>
                         <span>{formattedDate}</span>
                         <span>{formattedTime}</span>
                       </div>
