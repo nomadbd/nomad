@@ -153,11 +153,37 @@ export default function EarningsCard({
         fontFamily: "'Inter', sans-serif"
       }}
     >
-      {/* 1. Header Row (WALLET বামে, HISTORY ডানে) */}
+      {/* স্মুথ অ্যানিমেশনের জন্য ইনলাইন সিএসএস স্টাইল */}
+      <style>{`
+        @keyframes sheetSlideUp {
+          from { transform: translateY(100%); }
+          to { transform: translateY(0); }
+        }
+        @keyframes sheetFadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        .sheet-overlay {
+          animation: sheetFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        .sheet-content {
+          animation: sheetSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        .sheet-scroll::-webkit-scrollbar {
+          width: 4px;
+        }
+        .sheet-scroll::-webkit-scrollbar-thumb {
+          background: #222222;
+          border-radius: 4px;
+        }
+      `}</style>
+
+      {/* ১. হেডার রো (WALLET একদম বামে, HISTORY › একদম ডানে) */}
       <div
         style={{
           display: 'flex',
-          justify: 'space-between',
+          flexDirection: 'row',
+          justifyContent: 'space-between',
           alignItems: 'center',
           width: '100%',
           marginBottom: '14px',
@@ -170,7 +196,8 @@ export default function EarningsCard({
             fontWeight: '700',
             color: '#888888',
             letterSpacing: '1.5px',
-            textTransform: 'uppercase'
+            textTransform: 'uppercase',
+            display: 'inline-block'
           }}
         >
           WALLET
@@ -186,14 +213,16 @@ export default function EarningsCard({
             fontWeight: '600',
             cursor: 'pointer',
             letterSpacing: '1px',
-            padding: 0
+            padding: 0,
+            display: 'inline-block',
+            marginLeft: 'auto'
           }}
         >
           HISTORY &rsaquo;
         </button>
       </div>
 
-      {/* 2. Available Balance & Withdraw Button Box */}
+      {/* ২. Available Balance & Withdraw Button Box */}
       <div
         style={{
           backgroundColor: '#0a0a0a',
@@ -245,7 +274,7 @@ export default function EarningsCard({
         </div>
       </div>
 
-      {/* 3. Pending & Total Earned Box */}
+      {/* ৩. Pending & Total Earned Box */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', width: '100%', boxSizing: 'border-box' }}>
         <div style={{ backgroundColor: '#0a0a0a', border: '1px solid #1a1a1a', padding: '12px', borderRadius: '10px' }}>
           <div style={{ fontSize: '10px', color: '#888888', textTransform: 'uppercase', letterSpacing: '0.5px' }}>PENDING</div>
@@ -376,15 +405,16 @@ export default function EarningsCard({
         </div>
       )}
 
-      {/* PAYOUT HISTORY SCROLLABLE BOTTOM SHEET */}
+      {/* PAYOUT HISTORY SMART & SMOOTH BOTTOM SHEET */}
       {showHistoryBottomSheet && (
         <div
+          className="sheet-overlay"
           onClick={() => setShowHistoryBottomSheet(false)}
           style={{
             position: 'fixed',
             inset: 0,
             backgroundColor: 'rgba(0, 0, 0, 0.75)',
-            backdropFilter: 'blur(4px)',
+            backdropFilter: 'blur(6px)',
             zIndex: 9999,
             display: 'flex',
             alignItems: 'flex-end',
@@ -392,6 +422,7 @@ export default function EarningsCard({
           }}
         >
           <div
+            className="sheet-content"
             onClick={(e) => e.stopPropagation()}
             style={{
               backgroundColor: '#0a0a0a',
@@ -407,7 +438,7 @@ export default function EarningsCard({
               flexDirection: 'column',
               boxSizing: 'border-box',
               padding: '12px 20px 24px 20px',
-              boxShadow: '0 -10px 25px rgba(0,0,0,0.6)'
+              boxShadow: '0 -10px 30px rgba(0,0,0,0.8)'
             }}
           >
             {/* Top Handle Bar for gesture hint */}
@@ -417,13 +448,13 @@ export default function EarningsCard({
                 width: '100%',
                 display: 'flex',
                 justify: 'center',
-                padding: '4px 0 12px 0',
+                padding: '6px 0 14px 0',
                 cursor: 'pointer'
               }}
             >
               <div
                 style={{
-                  width: '36px',
+                  width: '38px',
                   height: '4px',
                   backgroundColor: '#333333',
                   borderRadius: '2px'
@@ -444,12 +475,14 @@ export default function EarningsCard({
               </button>
             </div>
 
-            {/* Scrollable List Container */}
+            {/* Scrollable List Container (Smooth Touch Scroll) */}
             <div
+              className="sheet-scroll"
               style={{
                 overflowY: 'auto',
+                WebkitOverflowScrolling: 'touch',
                 flex: 1,
-                paddingRight: '2px',
+                paddingRight: '4px',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '10px'
