@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { supabase } from '@/supabaseClient';
 
 export interface PayoutRecord {
   id: string;
@@ -10,31 +11,26 @@ export interface PayoutRecord {
 }
 
 interface EarningsCardProps {
+  ambassadorId?: string;
   availableBalance?: number;
   pendingBalance?: number;
   totalEarned?: number;
-  payoutHistory?: PayoutRecord[];
   onWithdrawClick?: () => void;
 }
 
-// নমুনা হিস্ট্রি ডাটা (যদি প্রপ্স থেকে না আসে)
-const defaultHistory: PayoutRecord[] = [
-  { id: '1', amount: 1500, date: '28 Sep 2026', method: 'bKash', accountNumber: '01712***890', status: 'PAID' },
-  { id: '2', amount: 800, date: '20 Sep 2026', method: 'Nagad', accountNumber: '01812***123', status: 'PAID' },
-  { id: '3', amount: 1000, date: '15 Sep 2026', method: 'bKash', accountNumber: '01712***890', status: 'PENDING' },
-];
-
 export default function EarningsCard({
-  availableBalance = 2500,
-  pendingBalance = 1200,
-  totalEarned = 15000,
-  payoutHistory = defaultHistory,
+  ambassadorId,
+  availableBalance = 0,
+  pendingBalance = 0,
+  totalEarned = 0,
   onWithdrawClick
 }: EarningsCardProps) {
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [payoutHistory, setPayoutHistory] = useState<PayoutRecord[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState<boolean>(false);
   const [keyboardOffset, setKeyboardOffset] = useState(0);
 
-  // ===== Viewport scroll/resize check for bottom sheet =====
+  // ===== Visual Viewport Effect =====
   useEffect(() => {
     const vv = window.visualViewport;
     if (!vv) return;
@@ -53,6 +49,51 @@ export default function EarningsCard({
     };
   }, []);
 
+  // ===== Real Supabase Fetch for Payout History =====
+  const fetchPayoutHistory = async () => {
+    if (!ambassadorId) return;
+
+    setLoadingHistory(true);
+    try {
+      const { data, error } = await supabase
+        .from('payout_requests') // আপনার টেবিল নাম payouts বা payout_requests অনুযায়ী মিলায় নিন
+        .select('*')
+        .eq('ambassador_id', ambassadorId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      if (data) {
+        const formatted: PayoutRecord[] = data.map((item: any) => ({
+          id: item.id,
+          amount: item.amount || 0,
+          date: item.created_at
+            ? new Date(item.created_at).toLocaleDateString('en-GB', {
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric',
+              })
+            : '',
+          method: item.method || item.payment_method || 'bKash',
+          accountNumber: item.account_number || item.account_no || 'N/A',
+          status: (item.status?.toUpperCase() as PayoutRecord['status']) || 'PENDING',
+        }));
+        setPayoutHistory(formatted);
+      }
+    } catch (err: any) {
+      console.error('Error fetching payout history:', err.message);
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
+
+  // হিস্ট্রি ওপেন হলে ডাটা ফেচ হবে
+  useEffect(() => {
+    if (isHistoryOpen && ambassadorId) {
+      fetchPayoutHistory();
+    }
+  }, [isHistoryOpen, ambassadorId]);
+
   const getStatusStyle = (status: PayoutRecord['status']) => {
     switch (status) {
       case 'PAID':
@@ -61,6 +102,8 @@ export default function EarningsCard({
         return { bg: '#2A2100', color: '#F1C40F', border: '#5C4800', label: 'PENDING' };
       case 'REJECTED':
         return { bg: '#2A0808', color: '#E74C3C', border: '#5C1414', label: 'REJECTED' };
+      default:
+        return { bg: '#2A2100', color: '#F1C40F', border: '#5C4800', label: 'PENDING' };
     }
   };
 
@@ -68,12 +111,13 @@ export default function EarningsCard({
     <>
       {/* ===== MAIN EARNINGS CARD ===== */}
       <div style={{
-        backgroundColor: '#111111',
-        border: '1px solid #222222',
-        borderRadius: '16px',
+        backgroundColor: '#050505',
+        border: '1px solid #1a1a1a',
+        borderRadius: '12px',
         padding: '20px',
-        marginBottom: '20px',
-        color: '#FFFFFF'
+        color: '#FFFFFF',
+        width: '100%',
+        boxSizing: 'border-box'
       }}>
         {/* Top Header Row */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
@@ -81,6 +125,7 @@ export default function EarningsCard({
             EARNINGS & WALLET
           </span>
           <button
+            type="button"
             onClick={() => setIsHistoryOpen(true)}
             style={{
               background: 'transparent',
@@ -106,7 +151,7 @@ export default function EarningsCard({
           justifyContent: 'space-between',
           alignItems: 'flex-end',
           paddingBottom: '20px',
-          borderBottom: '1px solid #1C1C1E',
+          borderBottom: '1px solid #1A1A1A',
           marginBottom: '16px'
         }}>
           <div>
@@ -119,11 +164,12 @@ export default function EarningsCard({
           </div>
 
           <button
+            type="button"
             onClick={onWithdrawClick}
             disabled={availableBalance <= 0}
             style={{
-              backgroundColor: availableBalance > 0 ? '#FFFFFF' : '#222222',
-              color: availableBalance > 0 ? '#000000' : '#666666',
+              backgroundColor: availableBalance > 0 ? '#FFFFFF' : '#1A1A1A',
+              color: availableBalance > 0 ? '#000000' : '#555555',
               border: 'none',
               borderRadius: '20px',
               padding: '10px 20px',
@@ -161,13 +207,12 @@ export default function EarningsCard({
       </div>
 
       {/* ===== PAYOUT HISTORY BOTTOM SHEET ===== */}
-      {/* Backdrop */}
       <div
         onClick={() => setIsHistoryOpen(false)}
         style={{
           position: 'fixed',
           inset: 0,
-          backgroundColor: 'rgba(0,0,0,0.7)',
+          backgroundColor: 'rgba(0,0,0,0.75)',
           zIndex: 1100,
           opacity: isHistoryOpen ? 1 : 0,
           pointerEvents: isHistoryOpen ? 'auto' : 'none',
@@ -175,7 +220,6 @@ export default function EarningsCard({
         }}
       />
 
-      {/* Sheet */}
       <div
         style={{
           position: 'fixed',
@@ -183,16 +227,16 @@ export default function EarningsCard({
           right: 0,
           bottom: keyboardOffset,
           zIndex: 1101,
-          backgroundColor: '#111111',
+          backgroundColor: '#0A0A0A',
           borderTopLeftRadius: '20px',
           borderTopRightRadius: '20px',
+          borderTop: '1px solid #222222',
           display: 'flex',
           flexDirection: 'column',
           maxHeight: '80vh',
           transform: isHistoryOpen ? 'translateY(0)' : 'translateY(110%)',
           transition: 'transform 0.35s cubic-bezier(0.32, 0.72, 0, 1), bottom 0.25s ease',
           willChange: 'transform, bottom',
-          boxShadow: '0 -10px 40px rgba(0,0,0,0.5)',
         }}
       >
         {/* Handle bar */}
@@ -211,13 +255,14 @@ export default function EarningsCard({
           justifyContent: 'space-between',
           alignItems: 'center',
           padding: '8px 20px 16px',
-          borderBottom: '1px solid #1C1C1E',
+          borderBottom: '1px solid #1A1A1A',
           flexShrink: 0,
         }}>
-          <h3 style={{ margin: 0, fontSize: '14px', fontWeight: '600', letterSpacing: '1.5px', color: '#FFFFFF' }}>
+          <h3 style={{ margin: 0, fontSize: '13px', fontWeight: '600', letterSpacing: '1.5px', color: '#FFFFFF' }}>
             PAYOUT HISTORY
           </h3>
           <button
+            type="button"
             onClick={() => setIsHistoryOpen(false)}
             style={{
               background: 'transparent',
@@ -235,10 +280,14 @@ export default function EarningsCard({
 
         {/* List Content */}
         <div style={{ padding: '16px 20px', overflowY: 'auto', flex: 1 }}>
-          {payoutHistory.length === 0 ? (
-            <p style={{ textAlign: 'center', color: '#666666', fontSize: '12px', padding: '30px 0' }}>
-              No payout requests yet.
-            </p>
+          {loadingHistory ? (
+            <div style={{ textAlign: 'center', color: '#666666', fontSize: '11px', padding: '30px 0' }}>
+              LOADING HISTORY...
+            </div>
+          ) : payoutHistory.length === 0 ? (
+            <div style={{ textAlign: 'center', color: '#666666', fontSize: '11px', padding: '30px 0' }}>
+              NO PAYOUT REQUESTS FOUND.
+            </div>
           ) : (
             payoutHistory.map((item) => {
               const statusStyle = getStatusStyle(item.status);
@@ -250,7 +299,7 @@ export default function EarningsCard({
                     justifyContent: 'space-between',
                     alignItems: 'center',
                     padding: '12px 0',
-                    borderBottom: '1px solid #1A1A1A'
+                    borderBottom: '1px solid #141414'
                   }}
                 >
                   <div>
@@ -258,7 +307,7 @@ export default function EarningsCard({
                       ৳{item.amount.toLocaleString()}
                     </p>
                     <p style={{ margin: 0, fontSize: '10px', color: '#777777' }}>
-                      {item.method} ({item.accountNumber}) • {item.date}
+                      {item.method} ({item.accountNumber}) {item.date ? `• ${item.date}` : ''}
                     </p>
                   </div>
 
