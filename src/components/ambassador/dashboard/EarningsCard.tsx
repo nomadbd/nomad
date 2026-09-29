@@ -153,14 +153,16 @@ export default function EarningsCard({
         fontFamily: "'Inter', sans-serif"
       }}
     >
-      {/* 1. Header Row */}
+      {/* 1. Header Row (WALLET বামে, HISTORY ডানে) */}
       <div
         style={{
           display: 'flex',
           justify: 'space-between',
           alignItems: 'center',
+          width: '100%',
           marginBottom: '12px',
-          padding: '0 2px'
+          padding: '0 2px',
+          boxSizing: 'border-box'
         }}
       >
         <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#888888', letterSpacing: '1.5px', textTransform: 'uppercase' }}>
@@ -190,27 +192,25 @@ export default function EarningsCard({
           backgroundColor: '#0a0a0a',
           border: '1px solid #1a1a1a',
           borderRadius: '10px',
-          padding: '14px 14px',
+          padding: '14px',
           marginBottom: '10px',
-          display: 'flex',
-          justify: 'space-between',
-          alignItems: 'center',
-          gap: '12px',
           width: '100%',
           boxSizing: 'border-box'
         }}
       >
-        {/* Left: Number anchored to the far left */}
-        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-          <span style={{ fontSize: '10px', color: '#888888', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: '500' }}>
-            AVAILABLE BALANCE
-          </span>
+        {/* Label */}
+        <div style={{ fontSize: '10px', color: '#888888', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: '500', marginBottom: '6px' }}>
+          AVAILABLE BALANCE
+        </div>
+
+        {/* Number & Compact Withdraw Button Row (একই সমান্তরালে) */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', width: '100%' }}>
           <span
             style={{
-              fontSize: '24px',
+              fontSize: '22px',
               fontWeight: 'bold',
               color: '#ffffff',
-              marginTop: '2px',
+              lineHeight: '1',
               whiteSpace: 'nowrap',
               overflow: 'hidden',
               textOverflow: 'ellipsis'
@@ -218,44 +218,42 @@ export default function EarningsCard({
           >
             ৳{availableBalance.toLocaleString()}
           </span>
-        </div>
 
-        {/* Right: Minimal Oval Withdraw Button anchored to the far right */}
-        <button
-          type="button"
-          onClick={() => setShowWithdrawModal(true)}
-          disabled={availableBalance <= 0}
-          style={{
-            flexShrink: 0,
-            marginLeft: 'auto',
-            backgroundColor: availableBalance > 0 ? '#ffffff' : '#1c1c1c',
-            color: availableBalance > 0 ? '#000000' : '#555555',
-            border: 'none',
-            padding: '8px 18px',
-            borderRadius: '20px',
-            fontSize: '11px',
-            fontWeight: 'bold',
-            letterSpacing: '0.8px',
-            cursor: availableBalance > 0 ? 'pointer' : 'not-allowed',
-            transition: 'all 0.2s ease',
-            whiteSpace: 'nowrap'
-          }}
-        >
-          WITHDRAW
-        </button>
+          <button
+            type="button"
+            onClick={() => setShowWithdrawModal(true)}
+            disabled={availableBalance <= 0}
+            style={{
+              flexShrink: 0,
+              backgroundColor: availableBalance > 0 ? '#ffffff' : '#1c1c1c',
+              color: availableBalance > 0 ? '#000000' : '#555555',
+              border: 'none',
+              padding: '6px 14px',
+              borderRadius: '16px',
+              fontSize: '10px',
+              fontWeight: 'bold',
+              letterSpacing: '0.5px',
+              cursor: availableBalance > 0 ? 'pointer' : 'not-allowed',
+              transition: 'all 0.2s ease',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            WITHDRAW
+          </button>
+        </div>
       </div>
 
       {/* 3. Pending & Total Earned */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', width: '100%', boxSizing: 'border-box' }}>
         <div style={{ backgroundColor: '#0a0a0a', border: '1px solid #1a1a1a', padding: '12px', borderRadius: '8px' }}>
           <div style={{ fontSize: '10px', color: '#888888', textTransform: 'uppercase', letterSpacing: '0.5px' }}>PENDING</div>
-          <div style={{ fontSize: '15px', fontWeight: 'bold', color: '#f59e0b', marginTop: '2px' }}>
+          <div style={{ fontSize: '15px', fontWeight: 'bold', color: '#f59e0b', marginTop: '4px' }}>
             ৳{pendingBalance.toLocaleString()}
           </div>
         </div>
         <div style={{ backgroundColor: '#0a0a0a', border: '1px solid #1a1a1a', padding: '12px', borderRadius: '8px' }}>
           <div style={{ fontSize: '10px', color: '#888888', textTransform: 'uppercase', letterSpacing: '0.5px' }}>TOTAL EARNED</div>
-          <div style={{ fontSize: '15px', fontWeight: 'bold', color: '#34d399', marginTop: '2px' }}>
+          <div style={{ fontSize: '15px', fontWeight: 'bold', color: '#34d399', marginTop: '4px' }}>
             ৳{totalEarned.toLocaleString()}
           </div>
         </div>
