@@ -28,7 +28,7 @@ export default function EarningsCard({
   onSuccessRefresh
 }: EarningsCardProps) {
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
-  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [showHistoryBottomSheet, setShowHistoryBottomSheet] = useState(false);
 
   const [amount, setAmount] = useState<number | ''>('');
   const [loading, setLoading] = useState<boolean>(false);
@@ -135,10 +135,10 @@ export default function EarningsCard({
   };
 
   useEffect(() => {
-    if (showHistoryModal) {
+    if (showHistoryBottomSheet) {
       fetchHistory();
     }
-  }, [showHistoryModal]);
+  }, [showHistoryBottomSheet]);
 
   return (
     <div
@@ -153,11 +153,11 @@ export default function EarningsCard({
         fontFamily: "'Inter', sans-serif"
       }}
     >
-      {/* ১. হেডার (WALLET একদম বামে, HISTORY › একদম ডানে) */}
+      {/* 1. Header Row (WALLET বামে, HISTORY ডানে) */}
       <div
         style={{
           display: 'flex',
-          justifyContent: 'space-between',
+          justify: 'space-between',
           alignItems: 'center',
           width: '100%',
           marginBottom: '14px',
@@ -177,7 +177,7 @@ export default function EarningsCard({
         </span>
         <button
           type="button"
-          onClick={() => setShowHistoryModal(true)}
+          onClick={() => setShowHistoryBottomSheet(true)}
           style={{
             background: 'none',
             border: 'none',
@@ -193,7 +193,7 @@ export default function EarningsCard({
         </button>
       </div>
 
-      {/* ২. Available Balance & Withdraw Button Card */}
+      {/* 2. Available Balance & Withdraw Button Box */}
       <div
         style={{
           backgroundColor: '#0a0a0a',
@@ -245,7 +245,7 @@ export default function EarningsCard({
         </div>
       </div>
 
-      {/* ৩. Pending & Total Earned Grid */}
+      {/* 3. Pending & Total Earned Box */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', width: '100%', boxSizing: 'border-box' }}>
         <div style={{ backgroundColor: '#0a0a0a', border: '1px solid #1a1a1a', padding: '12px', borderRadius: '10px' }}>
           <div style={{ fontSize: '10px', color: '#888888', textTransform: 'uppercase', letterSpacing: '0.5px' }}>PENDING</div>
@@ -376,61 +376,97 @@ export default function EarningsCard({
         </div>
       )}
 
-      {/* HISTORY MODAL */}
-      {showHistoryModal && (
+      {/* PAYOUT HISTORY SCROLLABLE BOTTOM SHEET */}
+      {showHistoryBottomSheet && (
         <div
+          onClick={() => setShowHistoryBottomSheet(false)}
           style={{
             position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.85)',
-            display: 'flex',
-            alignItems: 'center',
-            justify: 'center',
+            inset: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.75)',
+            backdropFilter: 'blur(4px)',
             zIndex: 9999,
-            padding: '16px'
+            display: 'flex',
+            alignItems: 'flex-end',
+            justify: 'center'
           }}
         >
           <div
+            onClick={(e) => e.stopPropagation()}
             style={{
               backgroundColor: '#0a0a0a',
-              border: '1px solid #222222',
-              borderRadius: '12px',
+              borderTop: '1px solid #222222',
+              borderLeft: '1px solid #222222',
+              borderRight: '1px solid #222222',
+              borderTopLeftRadius: '20px',
+              borderTopRightRadius: '20px',
               width: '100%',
-              maxWidth: '420px',
-              padding: '20px',
-              maxHeight: '80vh',
-              overflowY: 'auto',
-              boxSizing: 'border-box'
+              maxWidth: '500px',
+              maxHeight: '75vh',
+              display: 'flex',
+              flexDirection: 'column',
+              boxSizing: 'border-box',
+              padding: '12px 20px 24px 20px',
+              boxShadow: '0 -10px 25px rgba(0,0,0,0.6)'
             }}
           >
+            {/* Top Handle Bar for gesture hint */}
+            <div
+              onClick={() => setShowHistoryBottomSheet(false)}
+              style={{
+                width: '100%',
+                display: 'flex',
+                justify: 'center',
+                padding: '4px 0 12px 0',
+                cursor: 'pointer'
+              }}
+            >
+              <div
+                style={{
+                  width: '36px',
+                  height: '4px',
+                  backgroundColor: '#333333',
+                  borderRadius: '2px'
+                }}
+              />
+            </div>
+
+            {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <h3 style={{ fontSize: '13px', margin: 0, color: '#ffffff', letterSpacing: '1px' }}>
+              <h3 style={{ fontSize: '13px', margin: 0, color: '#ffffff', letterSpacing: '1px', fontWeight: 'bold' }}>
                 PAYOUT HISTORY
               </h3>
               <button
-                onClick={() => setShowHistoryModal(false)}
+                onClick={() => setShowHistoryBottomSheet(false)}
                 style={{ background: 'none', border: 'none', color: '#888888', fontSize: '20px', cursor: 'pointer', lineHeight: '1' }}
               >
                 &times;
               </button>
             </div>
 
-            {loadingHistory ? (
-              <div style={{ fontSize: '11px', color: '#666666', textAlign: 'center', padding: '20px' }}>Loading history...</div>
-            ) : history.length === 0 ? (
-              <div style={{ fontSize: '11px', color: '#666666', textAlign: 'center', padding: '20px' }}>No payout history found.</div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {history.map((item) => (
+            {/* Scrollable List Container */}
+            <div
+              style={{
+                overflowY: 'auto',
+                flex: 1,
+                paddingRight: '2px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '10px'
+              }}
+            >
+              {loadingHistory ? (
+                <div style={{ fontSize: '11px', color: '#666666', textAlign: 'center', padding: '30px 0' }}>Loading history...</div>
+              ) : history.length === 0 ? (
+                <div style={{ fontSize: '11px', color: '#666666', textAlign: 'center', padding: '30px 0' }}>No payout history found.</div>
+              ) : (
+                history.map((item) => (
                   <div
                     key={item.id}
                     style={{
                       backgroundColor: '#111111',
-                      padding: '12px',
-                      borderRadius: '8px',
+                      padding: '12px 14px',
+                      borderRadius: '10px',
                       border: '1px solid #1a1a1a',
                       display: 'flex',
                       justify: 'space-between',
@@ -438,20 +474,21 @@ export default function EarningsCard({
                     }}
                   >
                     <div>
-                      <div style={{ fontSize: '13px', fontWeight: 'bold', color: '#ffffff' }}>৳{item.amount.toLocaleString()}</div>
-                      <div style={{ fontSize: '10px', color: '#888888', marginTop: '2px' }}>
+                      <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#ffffff' }}>৳{item.amount.toLocaleString()}</div>
+                      <div style={{ fontSize: '11px', color: '#888888', marginTop: '2px' }}>
                         {item.payout_method} ({item.account_number})
                       </div>
-                      <div style={{ fontSize: '9px', color: '#555555', marginTop: '2px' }}>
+                      <div style={{ fontSize: '9px', color: '#555555', marginTop: '4px' }}>
                         {new Date(item.created_at).toLocaleDateString()}
                       </div>
                     </div>
                     <span
                       style={{
                         fontSize: '9px',
-                        padding: '4px 8px',
+                        padding: '4px 10px',
                         borderRadius: '4px',
                         fontWeight: 'bold',
+                        letterSpacing: '0.5px',
                         backgroundColor:
                           item.status === 'PAID' ? '#064e3b' : item.status === 'REJECTED' ? '#4c0519' : '#451a03',
                         color:
@@ -461,9 +498,9 @@ export default function EarningsCard({
                       {item.status}
                     </span>
                   </div>
-                ))}
-              </div>
-            )}
+                ))
+              )}
+            </div>
           </div>
         </div>
       )}
