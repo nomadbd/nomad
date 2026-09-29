@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/supabaseClient';
 import StoreLink from './StoreLink';
+import EarningsCard from './EarningsCard'; // <--- EarningsCard ইম্পোর্ট করা হলো
 
 interface AmbassadorDashboardProps {
   ambassadorData: any;
@@ -141,6 +142,11 @@ export default function AmbassadorDashboard({
     }
   };
 
+  const handleWithdrawClick = () => {
+    // এখানে পরবর্তীতে উইথড্র প্রসেসিং ফ্লো যুক্ত করা যাবে
+    alert('Withdrawal request initiated!');
+  };
+
   return (
     <div style={{ 
       width: '100%', 
@@ -199,7 +205,15 @@ export default function AmbassadorDashboard({
             isAmbassadorActive={true} 
           />
 
-          {/* ২. STOREFRONT PRODUCTS SECTION */}
+          {/* ২. আর্নিং ও ওয়ালেট সেকশন */}
+          <EarningsCard 
+            availableBalance={ambassadorData?.available_balance ?? ambassadorState?.available_balance}
+            pendingBalance={ambassadorData?.pending_balance ?? ambassadorState?.pending_balance}
+            totalEarned={ambassadorData?.total_earned ?? ambassadorState?.total_earned}
+            onWithdrawClick={handleWithdrawClick}
+          />
+
+          {/* ৩. STOREFRONT PRODUCTS SECTION */}
           <section style={{ 
             backgroundColor: '#050505', 
             border: '1px solid #1a1a1a', 
