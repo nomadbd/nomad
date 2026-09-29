@@ -167,7 +167,7 @@ export default function EarningsCard({
         fontFamily: "'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif"
       }}
     >
-      {/* Apple-grade smooth keyframes & Skeleton animation styles */}
+      {/* CSS Animations */}
       <style>{`
         @keyframes iosSlideUp {
           from { transform: translate3d(0, 100%, 0); }
@@ -211,11 +211,11 @@ export default function EarningsCard({
         }
       `}</style>
 
-      {/* ১. হেডার রো (WALLET একদম বামে, HISTORY › একদম ডানে) */}
+      {/* ১. হেডার রো (WALLET বামে, HISTORY ডানে) */}
       <div
         style={{
           display: 'flex',
-          justifyContent: 'space-between',
+          justify: 'space-between',
           alignItems: 'center',
           width: '100%',
           marginBottom: '14px',
@@ -331,7 +331,7 @@ export default function EarningsCard({
             backgroundColor: 'rgba(0,0,0,0.85)',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center',
+            justify: 'center',
             zIndex: 9999,
             padding: '16px'
           }}
@@ -434,7 +434,7 @@ export default function EarningsCard({
         </div>
       )}
 
-      {/* APPLE-GRADE ULTRA SMOOTH BOTTOM SHEET WITH SKELETON */}
+      {/* PAYOUT HISTORY BOTTOM SHEET */}
       {showHistoryBottomSheet && (
         <div
           onClick={closeBottomSheet}
@@ -461,15 +461,14 @@ export default function EarningsCard({
               borderTopRightRadius: '24px',
               width: '100%',
               maxWidth: '500px',
-              height: '70vh', // Fixed viewport height eliminates layout jumps completely
+              height: '70vh',
               maxHeight: '600px',
               display: 'flex',
               flexDirection: 'column',
               boxSizing: 'border-box',
               padding: '12px 20px 20px 20px',
               boxShadow: '0 -12px 40px rgba(0,0,0,0.9)',
-              transform: 'translate3d(0, 0, 0)',
-              backfaceVisibility: 'hidden'
+              transform: 'translate3d(0, 0, 0)'
             }}
           >
             {/* Drag Bar Handle */}
@@ -509,7 +508,7 @@ export default function EarningsCard({
                   borderRadius: '50%',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
+                  justify: 'center',
                   fontSize: '16px',
                   cursor: 'pointer'
                 }}
@@ -518,7 +517,7 @@ export default function EarningsCard({
               </button>
             </div>
 
-            {/* Scrollable Container with Fixed Height Layout */}
+            {/* Scrollable Container */}
             <div
               style={{
                 overflowY: 'auto',
@@ -531,28 +530,34 @@ export default function EarningsCard({
               }}
             >
               {loadingHistory ? (
-                /* Skeleton Loader: Exact height match to eliminate layout shift */
                 <>
                   {[1, 2, 3, 4].map((n) => (
                     <div
                       key={n}
                       style={{
                         backgroundColor: '#111111',
-                        padding: '14px',
+                        padding: '12px 14px',
                         borderRadius: '12px',
                         border: '1px solid #1a1a1a',
                         display: 'flex',
-                        justify: 'space-between',
-                        alignItems: 'center',
-                        height: '62px',
+                        flexDirection: 'column',
+                        gap: '8px',
+                        height: '84px',
                         boxSizing: 'border-box'
                       }}
                     >
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '60%' }}>
-                        <div className="skeleton-pulse" style={{ height: '14px', width: '50%' }} />
-                        <div className="skeleton-pulse" style={{ height: '10px', width: '80%' }} />
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <div className="skeleton-pulse" style={{ height: '16px', width: '30%' }} />
+                        <div className="skeleton-pulse" style={{ height: '18px', width: '20%' }} />
                       </div>
-                      <div className="skeleton-pulse" style={{ height: '22px', width: '60px', borderRadius: '4px' }} />
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <div className="skeleton-pulse" style={{ height: '12px', width: '40%' }} />
+                        <div className="skeleton-pulse" style={{ height: '12px', width: '20%' }} />
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <div className="skeleton-pulse" style={{ height: '10px', width: '25%' }} />
+                        <div className="skeleton-pulse" style={{ height: '10px', width: '20%' }} />
+                      </div>
                     </div>
                   ))}
                 </>
@@ -561,49 +566,84 @@ export default function EarningsCard({
                   No payout history found.
                 </div>
               ) : (
-                history.map((item) => (
-                  <div
-                    key={item.id}
-                    style={{
-                      backgroundColor: '#111111',
-                      padding: '12px 14px',
-                      borderRadius: '12px',
-                      border: '1px solid #1a1a1a',
-                      display: 'flex',
-                      justify: 'space-between',
-                      alignItems: 'center',
-                      flexShrink: 0
-                    }}
-                  >
-                    <div>
-                      <div style={{ fontSize: '14px', fontWeight: '700', color: '#ffffff' }}>৳{item.amount.toLocaleString()}</div>
-                      <div style={{ fontSize: '11px', color: '#888888', marginTop: '2px' }}>
-                        {item.payout_method} ({item.account_number})
-                      </div>
-                      <div style={{ fontSize: '9px', color: '#555555', marginTop: '4px' }}>
-                        {new Date(item.created_at).toLocaleDateString()}
-                      </div>
-                    </div>
-                    <span
+                history.map((item) => {
+                  const dateObj = new Date(item.created_at);
+                  const year = dateObj.getFullYear();
+                  const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+                  const day = String(dateObj.getDate()).padStart(2, '0');
+                  const formattedDate = `${year}/${month}/${day}`;
+
+                  const formattedTime = dateObj.toLocaleTimeString('en-US', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true
+                  });
+
+                  return (
+                    <div
+                      key={item.id}
                       style={{
-                        fontSize: '9px',
-                        padding: '4px 10px',
-                        borderRadius: '6px',
-                        fontWeight: '700',
-                        letterSpacing: '0.5px',
-                        backgroundColor:
-                          item.status === 'PAID' ? 'rgba(52, 211, 153, 0.1)' : item.status === 'REJECTED' ? 'rgba(248, 113, 113, 0.1)' : 'rgba(251, 191, 36, 0.1)',
-                        color:
-                          item.status === 'PAID' ? '#34d399' : item.status === 'REJECTED' ? '#f87171' : '#fbbf24',
-                        border: `1px solid ${
-                          item.status === 'PAID' ? 'rgba(52, 211, 153, 0.2)' : item.status === 'REJECTED' ? 'rgba(248, 113, 113, 0.2)' : 'rgba(251, 191, 36, 0.2)'
-                        }`
+                        backgroundColor: '#111111',
+                        padding: '12px 14px',
+                        borderRadius: '12px',
+                        border: '1px solid #1a1a1a',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '8px',
+                        flexShrink: 0
                       }}
                     >
-                      {item.status}
-                    </span>
-                  </div>
-                ))
+                      {/* ১. টাকার পরিমাণ (বামে) এবং স্ট্যাটাস (ডানে) */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '15px', fontWeight: '700', color: '#ffffff' }}>
+                          ৳{item.amount.toLocaleString()}
+                        </span>
+                        <span
+                          style={{
+                            fontSize: '9px',
+                            padding: '3px 8px',
+                            borderRadius: '6px',
+                            fontWeight: '700',
+                            letterSpacing: '0.5px',
+                            backgroundColor:
+                              item.status === 'PAID'
+                                ? 'rgba(52, 211, 153, 0.1)'
+                                : item.status === 'REJECTED'
+                                ? 'rgba(248, 113, 113, 0.1)'
+                                : 'rgba(251, 191, 36, 0.1)',
+                            color:
+                              item.status === 'PAID'
+                                ? '#34d399'
+                                : item.status === 'REJECTED'
+                                ? '#f87171'
+                                : '#fbbf24',
+                            border: `1px solid ${
+                              item.status === 'PAID'
+                                ? 'rgba(52, 211, 153, 0.2)'
+                                : item.status === 'REJECTED'
+                                ? 'rgba(248, 113, 113, 0.2)'
+                                : 'rgba(251, 191, 36, 0.2)'
+                            }`
+                          }}
+                        >
+                          {item.status}
+                        </span>
+                      </div>
+
+                      {/* ২. নাম্বার/কার্ড/মোবাইল (বামে) এবং মাধ্যম (ডানে) */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px' }}>
+                        <span style={{ color: '#cccccc', fontFamily: 'monospace', fontSize: '11px' }}>{item.account_number}</span>
+                        <span style={{ color: '#aaaaaa', fontWeight: '500' }}>{item.payout_method}</span>
+                      </div>
+
+                      {/* ৩. তারিখ (বামে) এবং সময় (ডানে) */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '10px', color: '#666666' }}>
+                        <span>{formattedDate}</span>
+                        <span>{formattedTime}</span>
+                      </div>
+                    </div>
+                  );
+                })
               )}
             </div>
           </div>
