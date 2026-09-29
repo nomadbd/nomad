@@ -29,6 +29,7 @@ export default function EarningsCard({
 }: EarningsCardProps) {
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
   const [showHistoryBottomSheet, setShowHistoryBottomSheet] = useState(false);
+  const [isAnimatingOut, setIsAnimatingOut] = useState(false);
 
   const [amount, setAmount] = useState<number | ''>('');
   const [loading, setLoading] = useState<boolean>(false);
@@ -134,8 +135,21 @@ export default function EarningsCard({
     }
   };
 
+  const openBottomSheet = () => {
+    setIsAnimatingOut(false);
+    setShowHistoryBottomSheet(true);
+  };
+
+  const closeBottomSheet = () => {
+    setIsAnimatingOut(true);
+    setTimeout(() => {
+      setShowHistoryBottomSheet(false);
+      setIsAnimatingOut(false);
+    }, 240);
+  };
+
   useEffect(() => {
-    if (showHistoryBottomSheet) {
+    if (showHistoryBottomSheet && !isAnimatingOut) {
       fetchHistory();
     }
   }, [showHistoryBottomSheet]);
@@ -150,9 +164,53 @@ export default function EarningsCard({
         borderRadius: '16px',
         padding: '16px',
         color: '#ffffff',
-        fontFamily: "'Inter', sans-serif"
+        fontFamily: "'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif"
       }}
     >
+      {/* Apple-grade smooth keyframes & Skeleton animation styles */}
+      <style>{`
+        @keyframes iosSlideUp {
+          from { transform: translate3d(0, 100%, 0); }
+          to { transform: translate3d(0, 0, 0); }
+        }
+        @keyframes iosSlideDown {
+          from { transform: translate3d(0, 0, 0); }
+          to { transform: translate3d(0, 100%, 0); }
+        }
+        @keyframes iosFadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes iosFadeOut {
+          from { opacity: 1; }
+          to { opacity: 0; }
+        }
+        @keyframes skeletonPulse {
+          0% { opacity: 0.25; }
+          50% { opacity: 0.6; }
+          100% { opacity: 0.25; }
+        }
+        .apple-sheet-enter {
+          animation: iosSlideUp 0.32s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+          will-change: transform;
+        }
+        .apple-sheet-exit {
+          animation: iosSlideDown 0.24s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+          will-change: transform;
+        }
+        .apple-backdrop-enter {
+          animation: iosFadeIn 0.25s ease-out forwards;
+        }
+        .apple-backdrop-exit {
+          animation: iosFadeOut 0.24s ease-in forwards;
+        }
+        .skeleton-pulse {
+          animation: skeletonPulse 1.4s infinite ease-in-out;
+          background-color: #1e1e1e;
+          border-radius: 6px;
+        }
+      `}</style>
+
       {/* ১. হেডার রো (WALLET একদম বামে, HISTORY › একদম ডানে) */}
       <div
         style={{
@@ -177,7 +235,7 @@ export default function EarningsCard({
         </span>
         <button
           type="button"
-          onClick={() => setShowHistoryBottomSheet(true)}
+          onClick={openBottomSheet}
           style={{
             background: 'none',
             border: 'none',
@@ -273,7 +331,7 @@ export default function EarningsCard({
             backgroundColor: 'rgba(0,0,0,0.85)',
             display: 'flex',
             alignItems: 'center',
-            justify: 'center',
+            justifyContent: 'center',
             zIndex: 9999,
             padding: '16px'
           }}
@@ -376,14 +434,15 @@ export default function EarningsCard({
         </div>
       )}
 
-      {/* LAGG-FREE INSTANT BOTTOM SHEET */}
+      {/* APPLE-GRADE ULTRA SMOOTH BOTTOM SHEET WITH SKELETON */}
       {showHistoryBottomSheet && (
         <div
-          onClick={() => setShowHistoryBottomSheet(false)}
+          onClick={closeBottomSheet}
+          className={isAnimatingOut ? 'apple-backdrop-exit' : 'apple-backdrop-enter'}
           style={{
             position: 'fixed',
             inset: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            backgroundColor: 'rgba(0, 0, 0, 0.75)',
             zIndex: 9999,
             display: 'flex',
             alignItems: 'flex-end',
@@ -392,73 +451,115 @@ export default function EarningsCard({
         >
           <div
             onClick={(e) => e.stopPropagation()}
+            className={isAnimatingOut ? 'apple-sheet-exit' : 'apple-sheet-enter'}
             style={{
-              backgroundColor: '#0a0a0a',
+              backgroundColor: '#0d0d0d',
               borderTop: '1px solid #222222',
               borderLeft: '1px solid #222222',
               borderRight: '1px solid #222222',
-              borderTopLeftRadius: '20px',
-              borderTopRightRadius: '20px',
+              borderTopLeftRadius: '24px',
+              borderTopRightRadius: '24px',
               width: '100%',
               maxWidth: '500px',
-              maxHeight: '75vh',
+              height: '70vh', // Fixed viewport height eliminates layout jumps completely
+              maxHeight: '600px',
               display: 'flex',
               flexDirection: 'column',
               boxSizing: 'border-box',
-              padding: '12px 20px 24px 20px',
-              boxShadow: '0 -10px 30px rgba(0,0,0,0.8)'
+              padding: '12px 20px 20px 20px',
+              boxShadow: '0 -12px 40px rgba(0,0,0,0.9)',
+              transform: 'translate3d(0, 0, 0)',
+              backfaceVisibility: 'hidden'
             }}
           >
-            {/* Top Handle Bar */}
+            {/* Drag Bar Handle */}
             <div
-              onClick={() => setShowHistoryBottomSheet(false)}
+              onClick={closeBottomSheet}
               style={{
                 width: '100%',
                 display: 'flex',
                 justify: 'center',
-                padding: '6px 0 14px 0',
+                padding: '4px 0 14px 0',
                 cursor: 'pointer'
               }}
             >
               <div
                 style={{
-                  width: '38px',
-                  height: '4px',
+                  width: '36px',
+                  height: '5px',
                   backgroundColor: '#333333',
-                  borderRadius: '2px'
+                  borderRadius: '10px'
                 }}
               />
             </div>
 
             {/* Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <h3 style={{ fontSize: '13px', margin: 0, color: '#ffffff', letterSpacing: '1px', fontWeight: 'bold' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexShrink: 0 }}>
+              <h3 style={{ fontSize: '13px', margin: 0, color: '#ffffff', letterSpacing: '1px', fontWeight: '700' }}>
                 PAYOUT HISTORY
               </h3>
               <button
-                onClick={() => setShowHistoryBottomSheet(false)}
-                style={{ background: 'none', border: 'none', color: '#888888', fontSize: '20px', cursor: 'pointer', lineHeight: '1' }}
+                onClick={closeBottomSheet}
+                style={{
+                  background: '#1a1a1a',
+                  border: 'none',
+                  color: '#888888',
+                  width: '26px',
+                  height: '26px',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '16px',
+                  cursor: 'pointer'
+                }}
               >
                 &times;
               </button>
             </div>
 
-            {/* Scrollable List Container */}
+            {/* Scrollable Container with Fixed Height Layout */}
             <div
               style={{
                 overflowY: 'auto',
                 WebkitOverflowScrolling: 'touch',
                 flex: 1,
-                paddingRight: '4px',
+                paddingRight: '2px',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '10px'
               }}
             >
               {loadingHistory ? (
-                <div style={{ fontSize: '11px', color: '#666666', textAlign: 'center', padding: '30px 0' }}>Loading history...</div>
+                /* Skeleton Loader: Exact height match to eliminate layout shift */
+                <>
+                  {[1, 2, 3, 4].map((n) => (
+                    <div
+                      key={n}
+                      style={{
+                        backgroundColor: '#111111',
+                        padding: '14px',
+                        borderRadius: '12px',
+                        border: '1px solid #1a1a1a',
+                        display: 'flex',
+                        justify: 'space-between',
+                        alignItems: 'center',
+                        height: '62px',
+                        boxSizing: 'border-box'
+                      }}
+                    >
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '60%' }}>
+                        <div className="skeleton-pulse" style={{ height: '14px', width: '50%' }} />
+                        <div className="skeleton-pulse" style={{ height: '10px', width: '80%' }} />
+                      </div>
+                      <div className="skeleton-pulse" style={{ height: '22px', width: '60px', borderRadius: '4px' }} />
+                    </div>
+                  ))}
+                </>
               ) : history.length === 0 ? (
-                <div style={{ fontSize: '11px', color: '#666666', textAlign: 'center', padding: '30px 0' }}>No payout history found.</div>
+                <div style={{ fontSize: '12px', color: '#666666', textAlign: 'center', padding: '60px 0' }}>
+                  No payout history found.
+                </div>
               ) : (
                 history.map((item) => (
                   <div
@@ -466,15 +567,16 @@ export default function EarningsCard({
                     style={{
                       backgroundColor: '#111111',
                       padding: '12px 14px',
-                      borderRadius: '10px',
+                      borderRadius: '12px',
                       border: '1px solid #1a1a1a',
                       display: 'flex',
                       justify: 'space-between',
-                      alignItems: 'center'
+                      alignItems: 'center',
+                      flexShrink: 0
                     }}
                   >
                     <div>
-                      <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#ffffff' }}>৳{item.amount.toLocaleString()}</div>
+                      <div style={{ fontSize: '14px', fontWeight: '700', color: '#ffffff' }}>৳{item.amount.toLocaleString()}</div>
                       <div style={{ fontSize: '11px', color: '#888888', marginTop: '2px' }}>
                         {item.payout_method} ({item.account_number})
                       </div>
@@ -486,13 +588,16 @@ export default function EarningsCard({
                       style={{
                         fontSize: '9px',
                         padding: '4px 10px',
-                        borderRadius: '4px',
-                        fontWeight: 'bold',
+                        borderRadius: '6px',
+                        fontWeight: '700',
                         letterSpacing: '0.5px',
                         backgroundColor:
-                          item.status === 'PAID' ? '#064e3b' : item.status === 'REJECTED' ? '#4c0519' : '#451a03',
+                          item.status === 'PAID' ? 'rgba(52, 211, 153, 0.1)' : item.status === 'REJECTED' ? 'rgba(248, 113, 113, 0.1)' : 'rgba(251, 191, 36, 0.1)',
                         color:
-                          item.status === 'PAID' ? '#34d399' : item.status === 'REJECTED' ? '#f87171' : '#fbbf24'
+                          item.status === 'PAID' ? '#34d399' : item.status === 'REJECTED' ? '#f87171' : '#fbbf24',
+                        border: `1px solid ${
+                          item.status === 'PAID' ? 'rgba(52, 211, 153, 0.2)' : item.status === 'REJECTED' ? 'rgba(248, 113, 113, 0.2)' : 'rgba(251, 191, 36, 0.2)'
+                        }`
                       }}
                     >
                       {item.status}
