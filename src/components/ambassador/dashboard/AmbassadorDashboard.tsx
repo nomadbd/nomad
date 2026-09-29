@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '@/supabaseClient';
 import StoreLink from './StoreLink';
 import EarningsCard from './EarningsCard';
+import SalesAndOrdersCard from './SalesAndOrdersCard'; // ১. এখানে ইম্পোর্ট করা হয়েছে
 
 interface AmbassadorDashboardProps {
   ambassadorData: any;
@@ -155,7 +156,7 @@ export default function AmbassadorDashboard({
         width: '100%',
         maxWidth: '100%',
         margin: '0 auto',
-        padding: '0', // ডানে-বামের বাড়তি ফাকা দূর করার জন্য ০ রাখা হয়েছে
+        padding: '0',
         color: '#ffffff',
         fontFamily: "'Inter', sans-serif",
         boxSizing: 'border-box'
@@ -203,7 +204,10 @@ export default function AmbassadorDashboard({
             onSuccessRefresh={refreshAmbassadorData}
           />
 
-          {/* ৩. প্রোডাক্ট ম্যানেজমেন্ট সেকশন */}
+          {/* ৩. নতুন সেলস ও অর্ডার পারফরম্যান্স সেকশন */}
+          <SalesAndOrdersCard ambassadorId={ambassadorId} />
+
+          {/* ৪. প্রোডাক্ট ম্যানেজমেন্ট সেকশন */}
           <section
             style={{
               backgroundColor: '#050505',
@@ -238,7 +242,7 @@ export default function AmbassadorDashboard({
                     style={{
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'space-between',
+                      justify: 'space-between',
                       padding: '10px 12px',
                       backgroundColor: '#0a0a0a',
                       border: '1px solid #1a1a1a',
@@ -248,7 +252,7 @@ export default function AmbassadorDashboard({
                       boxSizing: 'border-box'
                     }}
                   >
-                    {/* বাম পাশের ইমেজ + টেক্সট (Flex 1 ও MinWidth 0 থাকায় এটি সর্বোচ্চ স্পেস নেবে কিন্তু বাটনকে চাপ দেবে না) */}
+                    {/* বাম পাশের ইমেজ + টেক্সট */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 }}>
                       {product.image_url ? (
                         <img src={product.image_url} alt="" style={{ width: '38px', height: '38px', objectFit: 'cover', borderRadius: '4px', flexShrink: 0 }} />
@@ -265,7 +269,7 @@ export default function AmbassadorDashboard({
                       </div>
                     </div>
 
-                    {/* ডান পাশের বাটন (একদম ডানে ফিক্সড থাকবে) */}
+                    {/* ডান পাশের বাটন */}
                     <button
                       type="button"
                       onClick={() => handleToggleVisibility(product.id, product.is_visible)}
