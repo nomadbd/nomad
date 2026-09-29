@@ -6,7 +6,7 @@ interface EarningsCardProps {
   availableBalance: number;
   pendingBalance: number;
   totalEarned: number;
-  payoutDetails?: string; // e.g. "Rocket: 01521731371"
+  payoutDetails?: string;
   onSuccessRefresh?: () => void;
 }
 
@@ -27,20 +27,17 @@ export default function EarningsCard({
   payoutDetails = '',
   onSuccessRefresh
 }: EarningsCardProps) {
-  // Modal States
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
 
-  // Form States
   const [amount, setAmount] = useState<number | ''>('');
   const [loading, setLoading] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string>('');
 
-  // History States
   const [history, setHistory] = useState<PayoutRequest[]>([]);
   const [loadingHistory, setLoadingHistory] = useState<boolean>(false);
 
-  // Parse saved payout details
+  // Parse Saved Payout Details
   let savedMethod = '';
   let savedAccount = '';
 
@@ -57,7 +54,7 @@ export default function EarningsCard({
 
   const hasPayoutDetails = Boolean(savedAccount);
 
-  // Submit Payout Request
+  // Handle Withdraw Submission
   const handleWithdrawSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
@@ -81,7 +78,6 @@ export default function EarningsCard({
     setLoading(true);
 
     try {
-      // 1. Insert payout request
       const { error: insertError } = await supabase
         .from('payout_requests')
         .insert([
@@ -96,7 +92,6 @@ export default function EarningsCard({
 
       if (insertError) throw insertError;
 
-      // 2. Update ambassador balance
       const { error: updateError } = await supabase
         .from('ambassador')
         .update({
@@ -119,7 +114,7 @@ export default function EarningsCard({
     }
   };
 
-  // Fetch Payout History
+  // Fetch History
   const fetchHistory = async () => {
     if (!ambassadorId) return;
     setLoadingHistory(true);
@@ -148,17 +143,19 @@ export default function EarningsCard({
   return (
     <div
       style={{
+        width: '100%',
+        boxSizing: 'border-box',
         backgroundColor: '#050505',
-        border: '1px solid #1a1a1a',
-        borderRadius: '12px',
-        padding: '20px',
+        border: '1px solid #1c1c1c',
+        borderRadius: '16px',
+        padding: '16px',
         color: '#ffffff',
         fontFamily: "'Inter', sans-serif"
       }}
     >
-      {/* Top Header: Left WALLET | Right HISTORY */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-        <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#888888', letterSpacing: '1.5px', textTransform: 'uppercase' }}>
+      {/* 1. Header Row */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', padding: '0 4px' }}>
+        <span style={{ fontSize: '11px', fontWeight: '700', color: '#888888', letterSpacing: '1.5px', textTransform: 'uppercase' }}>
           WALLET
         </span>
         <button
@@ -171,68 +168,74 @@ export default function EarningsCard({
             fontSize: '11px',
             fontWeight: '600',
             cursor: 'pointer',
-            letterSpacing: '1px'
+            letterSpacing: '1px',
+            padding: 0
           }}
         >
           HISTORY &rsaquo;
         </button>
       </div>
 
-      {/* Available Balance Box */}
+      {/* 2. Available Balance & Withdraw Button Box */}
       <div
         style={{
           backgroundColor: '#0a0a0a',
           border: '1px solid #1a1a1a',
-          borderRadius: '8px',
+          borderRadius: '12px',
           padding: '16px',
           marginBottom: '12px',
           display: 'flex',
           justify: 'space-between',
-          alignItems: 'center'
+          alignItems: 'center',
+          gap: '12px',
+          width: '100%',
+          boxSizing: 'border-box'
         }}
       >
-        <div>
-          <div style={{ fontSize: '10px', color: '#888888', textTransform: 'uppercase', letterSpacing: '1px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', overflow: 'hidden' }}>
+          <span style={{ fontSize: '10px', color: '#888888', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: '500' }}>
             AVAILABLE BALANCE
-          </div>
-          <div style={{ fontSize: '26px', fontWeight: 'bold', color: '#ffffff', marginTop: '4px' }}>
+          </span>
+          <span style={{ fontSize: '22px', fontWeight: '800', color: '#ffffff', lineHeight: '1.2' }}>
             ৳{availableBalance.toLocaleString()}
-          </div>
+          </span>
         </div>
 
-        {/* Minimal Oval/Pill shaped Withdraw Button */}
+        {/* Minimal Oval Withdraw Button (Fixed on Far Right) */}
         <button
           type="button"
           onClick={() => setShowWithdrawModal(true)}
           disabled={availableBalance <= 0}
           style={{
+            flexShrink: 0,
             backgroundColor: availableBalance > 0 ? '#ffffff' : '#1c1c1c',
             color: availableBalance > 0 ? '#000000' : '#555555',
             border: 'none',
-            padding: '8px 20px',
+            padding: '8px 18px',
             borderRadius: '20px',
             fontSize: '11px',
-            fontWeight: 'bold',
-            letterSpacing: '1px',
+            fontWeight: '700',
+            letterSpacing: '0.8px',
             cursor: availableBalance > 0 ? 'pointer' : 'not-allowed',
-            transition: 'all 0.2s ease'
+            transition: 'all 0.2s ease',
+            whiteSpace: 'nowrap'
           }}
         >
           WITHDRAW
         </button>
       </div>
 
-      {/* Side-by-side Pending & Total Earned */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-        <div style={{ backgroundColor: '#0a0a0a', border: '1px solid #1a1a1a', padding: '14px', borderRadius: '8px' }}>
+      {/* 3. Pending & Total Earned Cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', width: '100%', boxSizing: 'border-box' }}>
+        <div style={{ backgroundColor: '#0a0a0a', border: '1px solid #1a1a1a', padding: '12px 14px', borderRadius: '10px' }}>
           <div style={{ fontSize: '10px', color: '#888888', textTransform: 'uppercase', letterSpacing: '0.5px' }}>PENDING</div>
-          <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#f59e0b', marginTop: '4px' }}>
+          <div style={{ fontSize: '15px', fontWeight: '700', color: '#f59e0b', marginTop: '4px' }}>
             ৳{pendingBalance.toLocaleString()}
           </div>
         </div>
-        <div style={{ backgroundColor: '#0a0a0a', border: '1px solid #1a1a1a', padding: '14px', borderRadius: '8px' }}>
+        <div style={{ backgroundColor: '#0a0a0a', border: '1px solid #1a1a1a', padding: '12px 14px', borderRadius: '10px' }}>
           <div style={{ fontSize: '10px', color: '#888888', textTransform: 'uppercase', letterSpacing: '0.5px' }}>TOTAL EARNED</div>
-          <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#34d399', marginTop: '4px' }}>
+          <div style={{ fontSize: '15px', fontWeight: '700', color: '#34d399', marginTop: '4px' }}>
             ৳{totalEarned.toLocaleString()}
           </div>
         </div>
@@ -259,32 +262,32 @@ export default function EarningsCard({
             style={{
               backgroundColor: '#0a0a0a',
               border: '1px solid #222222',
-              borderRadius: '10px',
+              borderRadius: '12px',
               width: '100%',
               maxWidth: '380px',
-              padding: '20px'
+              padding: '20px',
+              boxSizing: 'border-box'
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <h3 style={{ fontSize: '13px', margin: 0, color: '#ffffff', letterSpacing: '1px' }}>
+              <h3 style={{ fontSize: '13px', margin: 0, color: '#ffffff', letterSpacing: '1px', textTransform: 'uppercase' }}>
                 REQUEST WITHDRAWAL
               </h3>
               <button
                 onClick={() => setShowWithdrawModal(false)}
-                style={{ background: 'none', border: 'none', color: '#888888', fontSize: '18px', cursor: 'pointer' }}
+                style={{ background: 'none', border: 'none', color: '#888888', fontSize: '20px', cursor: 'pointer', lineHeight: '1' }}
               >
                 &times;
               </button>
             </div>
 
             {errorMsg && (
-              <div style={{ color: '#ef4444', fontSize: '11px', marginBottom: '12px', padding: '8px', backgroundColor: 'rgba(239, 68, 68, 0.1)', borderRadius: '4px' }}>
+              <div style={{ color: '#ef4444', fontSize: '11px', marginBottom: '12px', padding: '8px 10px', backgroundColor: 'rgba(239, 68, 68, 0.1)', borderRadius: '6px' }}>
                 {errorMsg}
               </div>
             )}
 
             {!hasPayoutDetails ? (
-              /* Message if no payout details are saved */
               <div style={{ padding: '20px 10px', textAlign: 'center' }}>
                 <div style={{ fontSize: '12px', color: '#f59e0b', fontWeight: 'bold', marginBottom: '8px' }}>
                   No Payout Details Found
@@ -294,16 +297,8 @@ export default function EarningsCard({
                 </p>
               </div>
             ) : (
-              /* Fixed Payout Details & Amount Input */
               <form onSubmit={handleWithdrawSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                <div
-                  style={{
-                    backgroundColor: '#111111',
-                    border: '1px solid #222222',
-                    borderRadius: '6px',
-                    padding: '12px'
-                  }}
-                >
+                <div style={{ backgroundColor: '#111111', border: '1px solid #222222', borderRadius: '8px', padding: '12px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
                     <span style={{ fontSize: '10px', color: '#888888' }}>METHOD</span>
                     <span style={{ fontSize: '11px', color: '#ffffff', fontWeight: 'bold' }}>{savedMethod}</span>
@@ -328,8 +323,8 @@ export default function EarningsCard({
                       backgroundColor: '#111111',
                       border: '1px solid #222222',
                       color: '#ffffff',
-                      padding: '10px',
-                      borderRadius: '4px',
+                      padding: '10px 12px',
+                      borderRadius: '6px',
                       fontSize: '12px',
                       boxSizing: 'border-box',
                       outline: 'none'
@@ -344,7 +339,7 @@ export default function EarningsCard({
                     backgroundColor: '#ffffff',
                     color: '#000000',
                     border: 'none',
-                    padding: '11px',
+                    padding: '10px',
                     borderRadius: '20px',
                     fontWeight: 'bold',
                     fontSize: '11px',
@@ -382,21 +377,22 @@ export default function EarningsCard({
             style={{
               backgroundColor: '#0a0a0a',
               border: '1px solid #222222',
-              borderRadius: '10px',
+              borderRadius: '12px',
               width: '100%',
               maxWidth: '420px',
               padding: '20px',
               maxHeight: '80vh',
-              overflowY: 'auto'
+              overflowY: 'auto',
+              boxSizing: 'border-box'
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <h3 style={{ fontSize: '13px', margin: 0, color: '#ffffff', letterSpacing: '1px' }}>
+              <h3 style={{ fontSize: '13px', margin: 0, color: '#ffffff', letterSpacing: '1px', textTransform: 'uppercase' }}>
                 PAYOUT HISTORY
               </h3>
               <button
                 onClick={() => setShowHistoryModal(false)}
-                style={{ background: 'none', border: 'none', color: '#888888', fontSize: '18px', cursor: 'pointer' }}
+                style={{ background: 'none', border: 'none', color: '#888888', fontSize: '20px', cursor: 'pointer', lineHeight: '1' }}
               >
                 &times;
               </button>
@@ -414,7 +410,7 @@ export default function EarningsCard({
                     style={{
                       backgroundColor: '#111111',
                       padding: '12px',
-                      borderRadius: '6px',
+                      borderRadius: '8px',
                       border: '1px solid #1a1a1a',
                       display: 'flex',
                       justify: 'space-between',
