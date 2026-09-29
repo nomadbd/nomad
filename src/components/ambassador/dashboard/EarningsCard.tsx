@@ -1,21 +1,21 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '@/supabaseClient';
 
-export interface PayoutRecord {
-  id: string;
-  amount: number;
-  date: string;
-  method: string;
-  accountNumber: string;
-  status: 'PENDING' | 'PAID' | 'REJECTED';
+interface EarningsCardProps {
+  ambassadorId: string;
+  availableBalance: number;
+  pendingBalance: number;
+  totalEarned: number;
+  onSuccessRefresh?: () => void;
 }
 
-interface EarningsCardProps {
-  ambassadorId?: string;
-  availableBalance?: number;
-  pendingBalance?: number;
-  totalEarned?: number;
-  onWithdrawClick?: () => void;
+interface PayoutRequest {
+  id: string;
+  amount: number;
+  payout_method: string;
+  account_number: string;
+  status: 'PENDING' | 'APPROVED' | 'PAID' | 'REJECTED';
+  created_at: string;
 }
 
 export default function EarningsCard({
@@ -23,312 +23,268 @@ export default function EarningsCard({
   availableBalance = 0,
   pendingBalance = 0,
   totalEarned = 0,
-  onWithdrawClick
+  onSuccessRefresh
 }: EarningsCardProps) {
-  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
-  const [payoutHistory, setPayoutHistory] = useState<PayoutRecord[]>([]);
+  // Modal States
+  const [showWithdrawModal, setShowWithdrawModal] = useState(false);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+
+  // Form States
+  const [amount, setAmount] = useState<number | ''>('');
+  const [method, setMethod] = useState<string>('bKash');
+  const [accountNumber, setAccountNumber] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(false);
+  const [errorMsg, setErrorMsg] = useState<string>('');
+
+  // History States
+  const [history, setHistory] = useState<PayoutRequest[]>([]);
   const [loadingHistory, setLoadingHistory] = useState<boolean>(false);
-  const [keyboardOffset, setKeyboardOffset] = useState(0);
 
-  // ===== Visual Viewport Effect =====
-  useEffect(() => {
-    const vv = window.visualViewport;
-    if (!vv) return;
+  // Submit Payout Request
+  const handleWithdrawSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMsg('');
 
-    const update = () => {
-      const offset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
-      setKeyboardOffset(offset);
-    };
+    const numericAmount = Number(amount);
+    if (!numericAmount || numericAmount <= 0) {
+      setErrorMsg('অন অনুগ্রহ করে সঠিক টাকার পরিমাণ দিন।');
+      return;
+    }
 
-    vv.addEventListener('resize', update, { passive: true });
-    vv.addEventListener('scroll', update, { passive: true });
+    if (numericAmount > availableBalance) {
+      setErrorMsg('আপনার অ্যাভেলেবল ব্যালেন্সের চেয়ে বেশি টাকা উইথড্র করতে পারবেন না।');
+      return;
+    }
 
-    return () => {
-      vv.removeEventListener('resize', update);
-      vv.removeEventListener('scroll', update);
-    };
-  }, []);
+    if (!accountNumber.trim()) {
+      setErrorMsg('পেমেন্ট অ্যাকাউন্ট নম্বরটি লিখুন।');
+      return;
+    }
 
-  // ===== Real Supabase Fetch for Payout History =====
-  const fetchPayoutHistory = async () => {
+    setLoading(true);
+
+    try {
+      // 1. payout_requests টেবিলে রিকোয়েস্ট ইনসার্ট করা
+      const { error: insertError } = await supabase
+        .from('payout_requests')
+        .insert([
+          {
+            ambassador_id: ambassadorId,
+            amount: numericAmount,
+            payout_method: method,
+            account_number: accountNumber.trim(),
+            status: 'PENDING'
+          }
+        ]);
+
+      if (insertError) throw insertError;
+
+      // 2. ambassador টেবিলে available_balance কমানো ও pending_balance বাড়ানো
+      const { error: updateError } = await supabase
+        .from('ambassador')
+        .update({
+          available_balance: availableBalance - numericAmount,
+          pending_balance: pendingBalance + numericAmount
+        })
+        .eq('id', ambassadorId);
+
+      if (updateError) throw updateError;
+
+      alert('উইথড্র রিকোয়েস্ট সফলভাবে পাঠানো হয়েছে!');
+      setShowWithdrawModal(false);
+      setAmount('');
+      setAccountNumber('');
+
+      if (onSuccessRefresh) onSuccessRefresh();
+    } catch (err: any) {
+      setErrorMsg(err.message || 'উইথড্র রিকোয়েস্ট পাঠাতে সমস্যা হয়েছে।');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch Payout History
+  const fetchHistory = async () => {
     if (!ambassadorId) return;
-
     setLoadingHistory(true);
     try {
       const { data, error } = await supabase
-        .from('payout_requests') // আপনার টেবিল নাম payouts বা payout_requests অনুযায়ী মিলায় নিন
+        .from('payout_requests')
         .select('*')
         .eq('ambassador_id', ambassadorId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-
-      if (data) {
-        const formatted: PayoutRecord[] = data.map((item: any) => ({
-          id: item.id,
-          amount: item.amount || 0,
-          date: item.created_at
-            ? new Date(item.created_at).toLocaleDateString('en-GB', {
-                day: 'numeric',
-                month: 'short',
-                year: 'numeric',
-              })
-            : '',
-          method: item.method || item.payment_method || 'bKash',
-          accountNumber: item.account_number || item.account_no || 'N/A',
-          status: (item.status?.toUpperCase() as PayoutRecord['status']) || 'PENDING',
-        }));
-        setPayoutHistory(formatted);
-      }
+      setHistory(data || []);
     } catch (err: any) {
-      console.error('Error fetching payout history:', err.message);
+      console.error('History fetch error:', err.message);
     } finally {
       setLoadingHistory(false);
     }
   };
 
-  // হিস্ট্রি ওপেন হলে ডাটা ফেচ হবে
   useEffect(() => {
-    if (isHistoryOpen && ambassadorId) {
-      fetchPayoutHistory();
+    if (showHistoryModal) {
+      fetchHistory();
     }
-  }, [isHistoryOpen, ambassadorId]);
-
-  const getStatusStyle = (status: PayoutRecord['status']) => {
-    switch (status) {
-      case 'PAID':
-        return { bg: '#0D2818', color: '#2ECC71', border: '#145A32', label: 'PAID' };
-      case 'PENDING':
-        return { bg: '#2A2100', color: '#F1C40F', border: '#5C4800', label: 'PENDING' };
-      case 'REJECTED':
-        return { bg: '#2A0808', color: '#E74C3C', border: '#5C1414', label: 'REJECTED' };
-      default:
-        return { bg: '#2A2100', color: '#F1C40F', border: '#5C4800', label: 'PENDING' };
-    }
-  };
+  }, [showHistoryModal]);
 
   return (
-    <>
-      {/* ===== MAIN EARNINGS CARD ===== */}
-      <div style={{
-        backgroundColor: '#050505',
-        border: '1px solid #1a1a1a',
-        borderRadius: '12px',
-        padding: '20px',
-        color: '#FFFFFF',
-        width: '100%',
-        boxSizing: 'border-box'
-      }}>
-        {/* Top Header Row */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <span style={{ fontSize: '10px', fontWeight: '600', letterSpacing: '1.5px', color: '#888888' }}>
-            EARNINGS & WALLET
-          </span>
-          <button
-            type="button"
-            onClick={() => setIsHistoryOpen(true)}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: '#FFFFFF',
-              fontSize: '11px',
-              fontWeight: '500',
-              letterSpacing: '1px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              opacity: 0.8
-            }}
-          >
-            HISTORY <span style={{ color: '#888888' }}>›</span>
-          </button>
+    <div style={{ backgroundColor: '#050505', border: '1px solid #1a1a1a', padding: '20px', borderRadius: '8px', color: '#fff' }}>
+      
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+        <span style={{ fontSize: '11px', color: '#888', letterSpacing: '1px', textTransform: 'uppercase' }}>
+          EARNINGS & WALLET
+        </span>
+        <button
+          type="button"
+          onClick={() => setShowHistoryModal(true)}
+          style={{ background: 'none', border: 'none', color: '#888', fontSize: '11px', cursor: 'pointer', letterSpacing: '1px' }}
+        >
+          HISTORY &rsaquo;
+        </button>
+      </div>
+
+      {/* Main Balance & Withdraw Button */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '16px', borderBottom: '1px solid #111' }}>
+        <div>
+          <div style={{ fontSize: '10px', color: '#666', textTransform: 'uppercase' }}>AVAILABLE BALANCE</div>
+          <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#fff', marginTop: '4px' }}>৳{availableBalance}</div>
         </div>
 
-        {/* Available Balance & Withdraw Button */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'flex-end',
-          paddingBottom: '20px',
-          borderBottom: '1px solid #1A1A1A',
-          marginBottom: '16px'
-        }}>
-          <div>
-            <p style={{ fontSize: '10px', color: '#AAAAAA', margin: '0 0 4px 0', letterSpacing: '0.5px' }}>
-              AVAILABLE BALANCE
-            </p>
-            <h1 style={{ fontSize: '28px', fontWeight: '700', margin: 0, letterSpacing: '-0.5px' }}>
-              ৳{availableBalance.toLocaleString()}
-            </h1>
-          </div>
+        <button
+          type="button"
+          onClick={() => setShowWithdrawModal(true)}
+          disabled={availableBalance <= 0}
+          style={{
+            backgroundColor: availableBalance > 0 ? '#ffffff' : '#1a1a1a',
+            color: availableBalance > 0 ? '#000000' : '#555555',
+            border: 'none',
+            padding: '10px 20px',
+            borderRadius: '6px',
+            fontSize: '11px',
+            fontWeight: 'bold',
+            letterSpacing: '1px',
+            cursor: availableBalance > 0 ? 'pointer' : 'not-allowed'
+          }}
+        >
+          WITHDRAW
+        </button>
+      </div>
 
-          <button
-            type="button"
-            onClick={onWithdrawClick}
-            disabled={availableBalance <= 0}
-            style={{
-              backgroundColor: availableBalance > 0 ? '#FFFFFF' : '#1A1A1A',
-              color: availableBalance > 0 ? '#000000' : '#555555',
-              border: 'none',
-              borderRadius: '20px',
-              padding: '10px 20px',
-              fontSize: '11px',
-              fontWeight: '700',
-              letterSpacing: '1px',
-              cursor: availableBalance > 0 ? 'pointer' : 'not-allowed',
-              transition: 'all 0.2s ease'
-            }}
-          >
-            WITHDRAW
-          </button>
+      {/* Pending & Total Earned */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginTop: '16px' }}>
+        <div>
+          <div style={{ fontSize: '10px', color: '#666', textTransform: 'uppercase' }}>PENDING</div>
+          <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#eab308', marginTop: '2px' }}>৳{pendingBalance}</div>
         </div>
-
-        {/* Sub Stats: Pending & Total Earned */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-          <div>
-            <p style={{ fontSize: '10px', color: '#888888', margin: '0 0 2px 0', letterSpacing: '0.5px' }}>
-              PENDING
-            </p>
-            <p style={{ fontSize: '15px', fontWeight: '600', margin: 0 }}>
-              ৳{pendingBalance.toLocaleString()}
-            </p>
-          </div>
-
-          <div>
-            <p style={{ fontSize: '10px', color: '#888888', margin: '0 0 2px 0', letterSpacing: '0.5px' }}>
-              TOTAL EARNED
-            </p>
-            <p style={{ fontSize: '15px', fontWeight: '600', margin: 0 }}>
-              ৳{totalEarned.toLocaleString()}
-            </p>
-          </div>
+        <div>
+          <div style={{ fontSize: '10px', color: '#666', textTransform: 'uppercase' }}>TOTAL EARNED</div>
+          <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#34d399', marginTop: '2px' }}>৳{totalEarned}</div>
         </div>
       </div>
 
-      {/* ===== PAYOUT HISTORY BOTTOM SHEET ===== */}
-      <div
-        onClick={() => setIsHistoryOpen(false)}
-        style={{
-          position: 'fixed',
-          inset: 0,
-          backgroundColor: 'rgba(0,0,0,0.75)',
-          zIndex: 1100,
-          opacity: isHistoryOpen ? 1 : 0,
-          pointerEvents: isHistoryOpen ? 'auto' : 'none',
-          transition: 'opacity 0.3s ease',
-        }}
-      />
-
-      <div
-        style={{
-          position: 'fixed',
-          left: 0,
-          right: 0,
-          bottom: keyboardOffset,
-          zIndex: 1101,
-          backgroundColor: '#0A0A0A',
-          borderTopLeftRadius: '20px',
-          borderTopRightRadius: '20px',
-          borderTop: '1px solid #222222',
-          display: 'flex',
-          flexDirection: 'column',
-          maxHeight: '80vh',
-          transform: isHistoryOpen ? 'translateY(0)' : 'translateY(110%)',
-          transition: 'transform 0.35s cubic-bezier(0.32, 0.72, 0, 1), bottom 0.25s ease',
-          willChange: 'transform, bottom',
-        }}
-      >
-        {/* Handle bar */}
-        <div style={{
-          width: '36px',
-          height: '4px',
-          backgroundColor: '#333333',
-          borderRadius: '2px',
-          margin: '12px auto 8px',
-          flexShrink: 0,
-        }} />
-
-        {/* Header */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          padding: '8px 20px 16px',
-          borderBottom: '1px solid #1A1A1A',
-          flexShrink: 0,
-        }}>
-          <h3 style={{ margin: 0, fontSize: '13px', fontWeight: '600', letterSpacing: '1.5px', color: '#FFFFFF' }}>
-            PAYOUT HISTORY
-          </h3>
-          <button
-            type="button"
-            onClick={() => setIsHistoryOpen(false)}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: '#888888',
-              fontSize: '22px',
-              cursor: 'pointer',
-              padding: '0 4px',
-              lineHeight: 1,
-            }}
-          >
-            ×
-          </button>
-        </div>
-
-        {/* List Content */}
-        <div style={{ padding: '16px 20px', overflowY: 'auto', flex: 1 }}>
-          {loadingHistory ? (
-            <div style={{ textAlign: 'center', color: '#666666', fontSize: '11px', padding: '30px 0' }}>
-              LOADING HISTORY...
+      {/* WITHDRAW MODAL */}
+      {showWithdrawModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '16px' }}>
+          <div style={{ backgroundColor: '#0a0a0a', border: '1px solid #222', borderRadius: '8px', width: '100%', maxWidth: '400px', padding: '20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ fontSize: '14px', margin: 0, color: '#fff' }}>REQUEST WITHDRAWAL</h3>
+              <button onClick={() => setShowWithdrawModal(false)} style={{ background: 'none', border: 'none', color: '#888', fontSize: '18px', cursor: 'pointer' }}>&times;</button>
             </div>
-          ) : payoutHistory.length === 0 ? (
-            <div style={{ textAlign: 'center', color: '#666666', fontSize: '11px', padding: '30px 0' }}>
-              NO PAYOUT REQUESTS FOUND.
-            </div>
-          ) : (
-            payoutHistory.map((item) => {
-              const statusStyle = getStatusStyle(item.status);
-              return (
-                <div
-                  key={item.id}
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    padding: '12px 0',
-                    borderBottom: '1px solid #141414'
-                  }}
+
+            {errorMsg && <div style={{ color: '#ef4444', fontSize: '12px', marginBottom: '12px' }}>{errorMsg}</div>}
+
+            <form onSubmit={handleWithdrawSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div>
+                <label style={{ fontSize: '10px', color: '#888', display: 'block', marginBottom: '4px' }}>METHOD</label>
+                <select
+                  value={method}
+                  onChange={(e) => setMethod(e.target.value)}
+                  style={{ width: '100%', backgroundColor: '#111', border: '1px solid #222', color: '#fff', padding: '10px', borderRadius: '4px', fontSize: '12px' }}
                 >
-                  <div>
-                    <p style={{ margin: '0 0 2px 0', fontSize: '14px', fontWeight: '600', color: '#FFFFFF' }}>
-                      ৳{item.amount.toLocaleString()}
-                    </p>
-                    <p style={{ margin: 0, fontSize: '10px', color: '#777777' }}>
-                      {item.method} ({item.accountNumber}) {item.date ? `• ${item.date}` : ''}
-                    </p>
-                  </div>
+                  <option value="bKash">bKash</option>
+                  <option value="Nagad">Nagad</option>
+                  <option value="Rocket">Rocket</option>
+                  <option value="Bank">Bank Account</option>
+                </select>
+              </div>
 
-                  <span style={{
-                    fontSize: '9px',
-                    fontWeight: '700',
-                    letterSpacing: '0.8px',
-                    padding: '4px 8px',
-                    borderRadius: '4px',
-                    backgroundColor: statusStyle.bg,
-                    color: statusStyle.color,
-                    border: `1px solid ${statusStyle.border}`
-                  }}>
-                    {statusStyle.label}
-                  </span>
-                </div>
-              );
-            })
-          )}
+              <div>
+                <label style={{ fontSize: '10px', color: '#888', display: 'block', marginBottom: '4px' }}>ACCOUNT NUMBER</label>
+                <input
+                  type="text"
+                  placeholder="e.g. 01700000000"
+                  value={accountNumber}
+                  onChange={(e) => setAccountNumber(e.target.value)}
+                  style={{ width: '100%', backgroundColor: '#111', border: '1px solid #222', color: '#fff', padding: '10px', borderRadius: '4px', fontSize: '12px', boxSizing: 'border-box' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: '10px', color: '#888', display: 'block', marginBottom: '4px' }}>AMOUNT (Max: ৳{availableBalance})</label>
+                <input
+                  type="number"
+                  placeholder="Enter amount"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value ? Number(e.target.value) : '')}
+                  style={{ width: '100%', backgroundColor: '#111', border: '1px solid #222', color: '#fff', padding: '10px', borderRadius: '4px', fontSize: '12px', boxSizing: 'border-box' }}
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                style={{ backgroundColor: '#fff', color: '#000', border: 'none', padding: '12px', borderRadius: '4px', fontWeight: 'bold', fontSize: '12px', marginTop: '8px', cursor: 'pointer' }}
+              >
+                {loading ? 'SUBMITTING...' : 'CONFIRM WITHDRAWAL'}
+              </button>
+            </form>
+          </div>
         </div>
-      </div>
-    </>
+      )}
+
+      {/* HISTORY MODAL */}
+      {showHistoryModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '16px' }}>
+          <div style={{ backgroundColor: '#0a0a0a', border: '1px solid #222', borderRadius: '8px', width: '100%', maxWidth: '450px', padding: '20px', maxHeight: '80vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ fontSize: '14px', margin: 0, color: '#fff' }}>PAYOUT HISTORY</h3>
+              <button onClick={() => setShowHistoryModal(false)} style={{ background: 'none', border: 'none', color: '#888', fontSize: '18px', cursor: 'pointer' }}>&times;</button>
+            </div>
+
+            {loadingHistory ? (
+              <div style={{ fontSize: '12px', color: '#666', textAlign: 'center', padding: '20px' }}>Loading history...</div>
+            ) : history.length === 0 ? (
+              <div style={{ fontSize: '12px', color: '#666', textAlign: 'center', padding: '20px' }}>No payout history found.</div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {history.map((item) => (
+                  <div key={item.id} style={{ backgroundColor: '#111', padding: '12px', borderRadius: '6px', border: '1px solid #1a1a1a', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#fff' }}>৳{item.amount}</div>
+                      <div style={{ fontSize: '10px', color: '#888', marginTop: '2px' }}>{item.payout_method} ({item.account_number})</div>
+                      <div style={{ fontSize: '9px', color: '#555', marginTop: '2px' }}>{new Date(item.created_at).toLocaleDateString()}</div>
+                    </div>
+                    <span style={{
+                      fontSize: '10px',
+                      padding: '4px 8px',
+                      borderRadius: '4px',
+                      fontWeight: 'bold',
+                      backgroundColor: item.status === 'PAID' ? '#064e3b' : item.status === 'REJECTED' ? '#4c0519' : '#451a03',
+                      color: item.status === 'PAID' ? '#34d399' : item.status === 'REJECTED' ? '#f87171' : '#fbbf24'
+                    }}>
+                      {item.status}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+    </div>
   );
 }
