@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 export interface AssignedProduct {
   id: string | number;
   title: string;
+  description?: string;
   price: number;
   image_url?: string;
   category?: string;
@@ -42,77 +43,69 @@ export default function StorefrontProductsCard({
       style={{
         backgroundColor: '#000000',
         border: '1px solid #141414',
-        padding: '18px 14px',
-        borderRadius: '12px',
+        padding: '14px',
+        borderRadius: '10px',
         width: '100%',
         boxSizing: 'border-box'
       }}
     >
-      {/* কার্ড হেডার ও ফিল্টার/ভিজিবিলিটি স্ট্যাটাস */}
+      {/* সংক্ষেপিত ক্লিন হেডার */}
       <div
         style={{
           display: 'flex',
           justify: 'space-between',
           alignItems: 'center',
-          marginBottom: '16px',
-          gap: '10px',
-          paddingBottom: '12px',
+          marginBottom: '12px',
+          paddingBottom: '10px',
           borderBottom: '1px solid #141414'
         }}
       >
-        <div>
-          <h2
-            style={{
-              fontSize: '11px',
-              margin: 0,
-              textTransform: 'uppercase',
-              letterSpacing: '2px',
-              color: '#b3b3b3',
-              fontWeight: '600'
-            }}
-          >
-            STOREFRONT PRODUCTS
-          </h2>
-          <p style={{ fontSize: '10px', color: '#666', margin: '4px 0 0 0', letterSpacing: '0.3px' }}>
-            Manage which products appear on your public nomad collection.
-          </p>
-        </div>
+        <h2
+          style={{
+            fontSize: '11px',
+            margin: 0,
+            textTransform: 'uppercase',
+            letterSpacing: '1.5px',
+            color: '#888888',
+            fontWeight: '700'
+          }}
+        >
+          PRODUCTS
+        </h2>
 
         <span
           style={{
-            flexShrink: 0,
             fontSize: '9px',
             fontWeight: '600',
-            color: '#888',
+            color: '#aaa',
             border: '1px solid #222',
-            padding: '4px 8px',
+            padding: '3px 8px',
             borderRadius: '4px',
-            backgroundColor: '#050505',
-            letterSpacing: '1px'
+            backgroundColor: '#080808',
+            letterSpacing: '0.8px'
           }}
         >
           {visibleCount} / {assignedProducts.length} VISIBLE
         </span>
       </div>
 
-      {/* কন্টেন্ট লোডিং ও খালি অবস্থা */}
+      {/* লোডিং ও খালি স্টেট */}
       {loadingProducts ? (
-        <div style={{ fontSize: '11px', color: '#555', padding: '30px 0', textAlign: 'center', letterSpacing: '1.5px' }}>
-          LOADING ASSIGNED PRODUCTS...
+        <div style={{ fontSize: '11px', color: '#555', padding: '20px 0', textAlign: 'center', letterSpacing: '1px' }}>
+          LOADING PRODUCTS...
         </div>
       ) : assignedProducts.length === 0 ? (
         <div
           style={{
             fontSize: '11px',
             color: '#555',
-            padding: '30px 0',
+            padding: '24px 0',
             textAlign: 'center',
             border: '1px dashed #1a1a1a',
-            borderRadius: '8px',
-            letterSpacing: '1px'
+            borderRadius: '6px'
           }}
         >
-          NO PRODUCTS ASSIGNED BY ADMIN YET.
+          NO PRODUCTS ASSIGNED.
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%', boxSizing: 'border-box' }}>
@@ -122,7 +115,6 @@ export default function StorefrontProductsCard({
             const isExpanded = expandedProductId === product.id;
             const isSoldOut = product.status === 'sold_out' || (product.stock_quantity !== undefined && product.stock_quantity <= 0);
 
-            // সম্ভাব্য কমিশন গণনা
             const estimatedEarn = product.commission_amount
               ? product.commission_amount
               : product.commission_rate
@@ -139,113 +131,107 @@ export default function StorefrontProductsCard({
                   padding: '12px',
                   width: '100%',
                   boxSizing: 'border-box',
-                  opacity: isVisible ? 1 : 0.6,
-                  transition: 'all 0.25s ease'
+                  opacity: isVisible ? 1 : 0.65,
+                  transition: 'all 0.2s ease'
                 }}
               >
-                {/* প্রাইমারি রো (ইমেজ, টাইটেল, প্রাইস, টগল বাটন) */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-                  {/* থাম্বনেইল ও টাইটেল সংলগ্ন অংশ */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
-                    <div
+                {/* টপ রো: অরিজিনাল রেশিও ইমেজ, টাইটেল ও অ্যাকশন */}
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
+                  
+                  {/* অরিজিনাল রেশিও বজায় রাখার সুবিধার্থে objectFit: 'contain' */}
+                  <div
+                    style={{
+                      width: '60px',
+                      minHeight: '75px',
+                      borderRadius: '6px',
+                      backgroundColor: '#0a0a0a',
+                      border: '1px solid #1f1f1f',
+                      overflow: 'hidden',
+                      flexShrink: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    {product.image_url ? (
+                      <img
+                        src={product.image_url}
+                        alt={product.title}
+                        style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
+                      />
+                    ) : (
+                      <span style={{ fontSize: '8px', color: '#444', fontFamily: 'monospace' }}>NO IMG</span>
+                    )}
+                  </div>
+
+                  {/* প্রোডাক্টের মূল সারসংক্ষেপ */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <h4
                       style={{
-                        width: '46px',
-                        height: '46px',
-                        borderRadius: '6px',
-                        backgroundColor: '#111',
-                        border: '1px solid #1a1a1a',
-                        overflow: 'hidden',
-                        flexShrink: 0,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
+                        fontSize: '13px',
+                        fontWeight: '600',
+                        color: '#ffffff',
+                        margin: '0 0 4px 0',
+                        lineHeight: '1.3'
                       }}
                     >
-                      {product.image_url ? (
-                        <img
-                          src={product.image_url}
-                          alt={product.title}
-                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                        />
-                      ) : (
-                        <span style={{ fontSize: '9px', color: '#444', fontFamily: 'monospace' }}>NO IMG</span>
+                      {product.title}
+                    </h4>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '6px' }}>
+                      <span style={{ fontSize: '13px', color: '#fff', fontWeight: '600', fontFamily: 'monospace' }}>
+                        ৳{product.price}
+                      </span>
+
+                      {estimatedEarn !== null && (
+                        <span
+                          style={{
+                            fontSize: '10px',
+                            color: '#34d399',
+                            backgroundColor: '#04140a',
+                            border: '1px solid #0a381b',
+                            padding: '1px 6px',
+                            borderRadius: '3px',
+                            fontWeight: '600'
+                          }}
+                        >
+                          Earn: ৳{estimatedEarn}
+                        </span>
+                      )}
+
+                      {isSoldOut && (
+                        <span
+                          style={{
+                            fontSize: '8px',
+                            color: '#ff4d4d',
+                            border: '1px solid #441111',
+                            backgroundColor: '#1a0505',
+                            padding: '1px 5px',
+                            borderRadius: '3px',
+                            fontWeight: '600'
+                          }}
+                        >
+                          SOLD OUT
+                        </span>
                       )}
                     </div>
 
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px' }}>
-                        <h4
-                          style={{
-                            fontSize: '13px',
-                            fontWeight: '600',
-                            color: '#ffffff',
-                            margin: 0,
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis'
-                          }}
-                        >
-                          {product.title}
-                        </h4>
-
-                        {isSoldOut && (
-                          <span
-                            style={{
-                              fontSize: '8px',
-                              color: '#ff4d4d',
-                              border: '1px solid #441111',
-                              backgroundColor: '#1a0505',
-                              padding: '1px 4px',
-                              borderRadius: '3px',
-                              fontWeight: '600',
-                              letterSpacing: '0.5px'
-                            }}
-                          >
-                            SOLD OUT
-                          </span>
-                        )}
-                      </div>
-
-                      {/* প্রাইস, কমিশন ও এক্সপ্যান্ড বাটন */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                        <span style={{ fontSize: '12px', color: '#fff', fontWeight: '500', fontFamily: 'monospace' }}>
-                          ৳{product.price}
-                        </span>
-
-                        {estimatedEarn !== null && (
-                          <span
-                            style={{
-                              fontSize: '10px',
-                              color: '#34d399',
-                              backgroundColor: '#04140a',
-                              border: '1px solid #0a381b',
-                              padding: '1px 6px',
-                              borderRadius: '3px',
-                              fontWeight: '600'
-                            }}
-                          >
-                            Earn: ৳{estimatedEarn}
-                          </span>
-                        )}
-
-                        <span
-                          onClick={() => toggleExpand(product.id)}
-                          style={{
-                            fontSize: '10px',
-                            color: '#888',
-                            cursor: 'pointer',
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.5px',
-                            textDecoration: 'underline'
-                          }}
-                        >
-                          {isExpanded ? 'see less' : 'see details'}
-                        </span>
-                      </div>
-                    </div>
+                    <span
+                      onClick={() => toggleExpand(product.id)}
+                      style={{
+                        fontSize: '10px',
+                        color: '#888',
+                        cursor: 'pointer',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.5px',
+                        fontWeight: '500'
+                      }}
+                    >
+                      {isExpanded ? '▲ SEE LESS' : '▼ SEE DETAILS'}
+                    </span>
                   </div>
 
-                  {/* অন / অফ অ্যাকশন বাটন */}
+                  {/* ভিজিবিলিটি অন/অফ বাটন */}
                   <button
                     type="button"
                     onClick={() => onToggleVisibility(product.id, isVisible)}
@@ -255,81 +241,80 @@ export default function StorefrontProductsCard({
                       backgroundColor: isVisible ? '#ffffff' : 'transparent',
                       color: isVisible ? '#000000' : '#888888',
                       border: isVisible ? '1px solid #ffffff' : '1px solid #222222',
-                      padding: '8px 12px',
-                      fontSize: '10px',
+                      padding: '7px 10px',
+                      fontSize: '9px',
                       fontWeight: '700',
                       borderRadius: '4px',
                       cursor: 'pointer',
                       whiteSpace: 'nowrap',
                       letterSpacing: '1px',
-                      textTransform: 'uppercase',
-                      transition: 'all 0.2s ease'
+                      textTransform: 'uppercase'
                     }}
                   >
-                    {isToggling ? 'UPDATING...' : isVisible ? 'VISIBLE' : 'HIDDEN'}
+                    {isToggling ? '...' : isVisible ? 'VISIBLE' : 'HIDDEN'}
                   </button>
                 </div>
 
-                {/* এক্সপ্যান্ডেবল ডিটেইলস সেকশন (গ্রাহক প্যানেলের মতো স্পেসিফিকেশন) */}
+                {/* বিস্তারিত তথ্য সেকশন (SEE DETAILS এ ক্লিক করলে আসবে) */}
                 {isExpanded && (
                   <div
                     style={{
                       marginTop: '12px',
                       paddingTop: '12px',
-                      borderTop: '1px solid #141414',
-                      animation: 'swapFadeIn 0.25s ease-in-out'
+                      borderTop: '1px solid #181818',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '8px',
+                      fontSize: '11px'
                     }}
                   >
-                    <div
-                      style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
-                        gap: '8px',
-                        fontFamily: 'monospace',
-                        fontSize: '11px'
-                      }}
-                    >
+                    {/* ডেসক্রিপশন */}
+                    {product.description && (
+                      <div>
+                        <span style={{ color: '#666', fontSize: '10px', textTransform: 'uppercase', display: 'block', marginBottom: '2px' }}>Description</span>
+                        <p style={{ color: '#ccc', margin: 0, lineHeight: '1.4' }}>{product.description}</p>
+                      </div>
+                    )}
+
+                    {/* ক্যাটাগরি, সাইজ, কালার ও স্টক */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '8px', fontFamily: 'monospace' }}>
                       {product.category && (
-                        <div style={{ display: 'flex', gap: '6px' }}>
-                          <span style={{ color: '#666' }}>CATEGORY:</span>
+                        <div>
+                          <span style={{ color: '#666' }}>CATEGORY: </span>
                           <span style={{ color: '#fff' }}>{product.category}</span>
                         </div>
                       )}
 
+                      {product.stock_quantity !== undefined && (
+                        <div>
+                          <span style={{ color: '#666' }}>STOCK: </span>
+                          <span style={{ color: '#fff' }}>{product.stock_quantity}</span>
+                        </div>
+                      )}
+
                       {product.sizes && product.sizes.length > 0 && (
-                        <div style={{ display: 'flex', gap: '6px' }}>
-                          <span style={{ color: '#666' }}>SIZES:</span>
+                        <div>
+                          <span style={{ color: '#666' }}>SIZES: </span>
                           <span style={{ color: '#fff' }}>{product.sizes.join(', ')}</span>
                         </div>
                       )}
 
                       {product.colors && product.colors.length > 0 && (
-                        <div style={{ display: 'flex', gap: '6px' }}>
-                          <span style={{ color: '#666' }}>COLORS:</span>
+                        <div>
+                          <span style={{ color: '#666' }}>COLORS: </span>
                           <span style={{ color: '#fff' }}>{product.colors.join(', ')}</span>
                         </div>
                       )}
                     </div>
 
-                    {/* প্রোডাক্ট ডিটেইলস কি-ভ্যালু জোড়া */}
+                    {/* প্রোডাক্টের বিস্তারিত স্পেসিফিকেশন (FIT, GSM, MATERIAL ইত্যাদি) */}
                     {product.details && Object.keys(product.details).length > 0 && (
-                      <div
-                        style={{
-                          marginTop: '8px',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: '4px',
-                          fontFamily: 'monospace',
-                          fontSize: '11px'
-                        }}
-                      >
-                        {Object.entries(product.details).map(([k, v]) => (
-                          <div key={k} style={{ display: 'flex', alignItems: 'flex-start' }}>
-                            <span style={{ color: '#666', width: '85px', flexShrink: 0, textTransform: 'uppercase' }}>
-                              {k}
-                            </span>
+                      <div style={{ borderTop: '1px dashed #1a1a1a', paddingTop: '8px', marginTop: '4px', fontFamily: 'monospace' }}>
+                        {Object.entries(product.details).map(([key, val]) => (
+                          <div key={key} style={{ display: 'flex', marginBottom: '3px' }}>
+                            <span style={{ color: '#666', width: '90px', flexShrink: 0, textTransform: 'uppercase' }}>{key}</span>
                             <span style={{ color: '#333', marginRight: '6px' }}>:</span>
-                            <span style={{ color: '#ccc', flex: 1 }}>{String(v)}</span>
+                            <span style={{ color: '#ddd' }}>{String(val)}</span>
                           </div>
                         ))}
                       </div>
