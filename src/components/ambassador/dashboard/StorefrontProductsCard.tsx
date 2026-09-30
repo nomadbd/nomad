@@ -1,21 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 
 export interface AssignedProduct {
   id: string | number;
   title: string;
   description?: string;
-  regular_price?: number; // গ্রাহকের মূল রিটেইল প্রাইস
-  price: number;         // ফাইনাল বিক্রয় মূল্য (Selling Price)
+  regular_price?: number; // কাস্টমারের মূল রিটেইল প্রাইস
+  price: number;         // ফাইনাল বিক্রয় মূল্য (এডমিন নির্ধারিত)
   image_url?: string;
   category?: string;
   is_visible: boolean;
   status?: 'active' | 'sold_out' | string;
   stock_quantity?: number;
-  commission_amount?: number; // নির্দিষ্ট ফিক্সড কমিশন (যদি থাকে)
-  commission_rate?: number;   // শতাংশ কমিশন (যদি থাকে)
-  details?: Record<string, string> | null;
-  sizes?: string[];
-  colors?: string[];
+  commission_amount?: number; // ফিক্সড কমিশন
+  commission_rate?: number;   // শতাংশ কমিশন
 }
 
 interface StorefrontProductsCardProps {
@@ -31,95 +28,150 @@ export default function StorefrontProductsCard({
   togglingId,
   onToggleVisibility
 }: StorefrontProductsCardProps) {
-  const [expandedProductId, setExpandedProductId] = useState<string | number | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'visible' | 'hidden'>('all');
+
+  // ফিল্টারড প্রোডাক্ট হিসেব
+  const filteredProducts = useMemo(() => {
+    return assignedProducts.filter((product) => {
+      const matchesSearch = product.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                            (product.category && product.category.toLowerCase().includes(searchQuery.toLowerCase()));
+      
+      if (filterStatus === 'visible') return matchesSearch && product.is_visible;
+      if (filterStatus === 'hidden') return matchesSearch && !product.is_visible;
+      return matchesSearch;
+    });
+  }, [assignedProducts, searchQuery, filterStatus]);
 
   const visibleCount = assignedProducts.filter((p) => p.is_visible).length;
-
-  const toggleExpand = (id: string | number) => {
-    setExpandedProductId((prev) => (prev === id ? null : id));
-  };
 
   return (
     <section
       style={{
-        backgroundColor: '#000000',
-        border: '1px solid #141414',
-        padding: '14px',
-        borderRadius: '12px',
+        backgroundColor: '#09090b',
+        border: '1px solid #27272a',
+        padding: '16px',
+        borderRadius: '16px',
         width: '100%',
-        boxSizing: 'border-box'
+        boxSizing: 'border-box',
+        color: '#ffffff'
       }}
     >
-      {/* সংক্ষেপিত ক্লিন হেডার */}
+      {/* ১. প্রিমিয়াম হেডার ও কাউন্টার */}
       <div
         style={{
           display: 'flex',
           justify: 'space-between',
           alignItems: 'center',
           marginBottom: '14px',
-          paddingBottom: '10px',
-          borderBottom: '1px solid #141414'
+          paddingBottom: '12px',
+          borderBottom: '1px solid #18181b'
         }}
       >
-        <h2
-          style={{
-            fontSize: '11px',
-            margin: 0,
-            textTransform: 'uppercase',
-            letterSpacing: '1.5px',
-            color: '#888888',
-            fontWeight: '700'
-          }}
-        >
-          PRODUCTS
-        </h2>
+        <div>
+          <h2
+            style={{
+              fontSize: '13px',
+              margin: 0,
+              textTransform: 'uppercase',
+              letterSpacing: '1.2px',
+              color: '#f4f4f5',
+              fontWeight: '700'
+            }}
+          >
+            Store Products
+          </h2>
+          <p style={{ margin: '2px 0 0 0', fontSize: '11px', color: '#a1a1aa' }}>
+            আপনার স্টোরের প্রোডাক্ট ও কমিশন ম্যানেজমেন্ট
+          </p>
+        </div>
 
         <span
           style={{
-            fontSize: '9px',
+            fontSize: '10px',
             fontWeight: '600',
-            color: '#aaa',
-            border: '1px solid #222',
-            padding: '3px 8px',
-            borderRadius: '4px',
-            backgroundColor: '#080808',
-            letterSpacing: '0.8px'
+            color: '#10b981',
+            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+            border: '1px solid rgba(16, 185, 129, 0.2)',
+            padding: '4px 10px',
+            borderRadius: '20px',
+            letterSpacing: '0.5px'
           }}
         >
-          {visibleCount} / {assignedProducts.length} VISIBLE
+          {visibleCount} Active
         </span>
       </div>
 
-      {/* লোডিং ও খালি স্টেট */}
-      {loadingProducts ? (
-        <div style={{ fontSize: '11px', color: '#555', padding: '30px 0', textAlign: 'center', letterSpacing: '1px' }}>
-          LOADING PRODUCTS...
+      {/* ২. সার্চ ও ফিল্টার বার (অনেক প্রোডাক্ট সামলানোর জন্য) */}
+      {assignedProducts.length > 0 && (
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+          <input
+            type="text"
+            placeholder="Search products..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            style={{
+              flex: 1,
+              backgroundColor: '#18181b',
+              border: '1px solid #27272a',
+              borderRadius: '8px',
+              padding: '8px 12px',
+              fontSize: '12px',
+              color: '#fff',
+              outline: 'none'
+            }}
+          />
+          <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value as any)}
+            style={{
+              backgroundColor: '#18181b',
+              border: '1px solid #27272a',
+              borderRadius: '8px',
+              padding: '8px 10px',
+              fontSize: '12px',
+              color: '#a1a1aa',
+              outline: 'none',
+              cursor: 'pointer'
+            }}
+          >
+            <option value="all">All</option>
+            <option value="visible">Visible</option>
+            <option value="hidden">Hidden</option>
+          </select>
         </div>
-      ) : assignedProducts.length === 0 ? (
+      )}
+
+      {/* ৩. লোডিং ও খালি স্টেট */}
+      {loadingProducts ? (
+        <div style={{ fontSize: '12px', color: '#71717a', padding: '30px 0', textAlign: 'center' }}>
+          Loading products...
+        </div>
+      ) : filteredProducts.length === 0 ? (
         <div
           style={{
-            fontSize: '11px',
-            color: '#555',
-            padding: '24px 0',
+            fontSize: '12px',
+            color: '#71717a',
+            padding: '24px',
             textAlign: 'center',
-            border: '1px dashed #1a1a1a',
-            borderRadius: '6px'
+            border: '1px dashed #27272a',
+            borderRadius: '12px'
           }}
         >
-          NO PRODUCTS ASSIGNED.
+          No products found.
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%', boxSizing: 'border-box' }}>
-          {assignedProducts.map((product) => {
+        /* ৪. স্লিম প্রিমিয়াম প্রোডাক্ট লিস্ট */
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%' }}>
+          {filteredProducts.map((product) => {
             const isVisible = product.is_visible;
             const isToggling = togglingId === product.id;
-            const isExpanded = expandedProductId === product.id;
-            const isSoldOut = product.status === 'sold_out' || (product.stock_quantity !== undefined && product.stock_quantity <= 0);
 
-            // প্রাইসিং ও কমিশন হিসেব
+            // মূল হিসাবসমূহ
             const regularPrice = product.regular_price || product.price;
             const sellingPrice = product.price;
             const customerDiscount = regularPrice > sellingPrice ? regularPrice - sellingPrice : 0;
+            
             const commission = product.commission_amount
               ? product.commission_amount
               : product.commission_rate
@@ -130,260 +182,131 @@ export default function StorefrontProductsCard({
               <div
                 key={product.id}
                 style={{
-                  backgroundColor: '#050505',
-                  border: isVisible ? '1px solid #222222' : '1px solid #141414',
-                  borderRadius: '10px',
+                  backgroundColor: isVisible ? '#121215' : '#0c0c0e',
+                  border: isVisible ? '1px solid #27272a' : '1px solid #1a1a1e',
+                  borderRadius: '12px',
                   padding: '12px',
-                  width: '100%',
-                  boxSizing: 'border-box',
-                  opacity: isVisible ? 1 : 0.65,
-                  transition: 'all 0.2s ease'
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '12px',
+                  opacity: isVisible ? 1 : 0.6,
+                  transition: 'all 0.2s ease-in-out'
                 }}
               >
-                {/* ১. ফুল-উইডথ প্রোডাক্ট ছবি (অরিজিনাল রেশিও সহ) + ছবির ভেতরে ওভারলে ব্যাজ */}
-                <div
-                  style={{
-                    position: 'relative',
-                    width: '100%',
-                    backgroundColor: '#0a0a0a',
-                    borderRadius: '8px',
-                    overflow: 'hidden',
-                    border: '1px solid #1f1f1f'
-                  }}
-                >
-                  {product.image_url ? (
-                    <img
-                      src={product.image_url}
-                      alt={product.title}
-                      style={{
-                        width: '100%',
-                        height: 'auto',
-                        maxHeight: '380px',
-                        objectFit: 'contain',
-                        display: 'block'
-                      }}
-                    />
-                  ) : (
-                    <div style={{ height: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#444', fontSize: '11px', fontFamily: 'monospace' }}>
-                      NO IMAGE AVAILABLE
-                    </div>
-                  )}
+                {/* কার্ড টপ: থাম্বনেইল, প্রোডাক্ট টাইটেল ও VISIBLE অ্যাকশন বাটন */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  {/* পরিচ্ছন্ন থাম্বনেইল ছবি (কোনো ওভারলে ছাড়া) */}
+                  <div
+                    style={{
+                      width: '64px',
+                      height: '64px',
+                      borderRadius: '8px',
+                      overflow: 'hidden',
+                      backgroundColor: '#18181b',
+                      flexShrink: 0,
+                      border: '1px solid #27272a'
+                    }}
+                  >
+                    {product.image_url ? (
+                      <img
+                        src={product.image_url}
+                        alt={product.title}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      />
+                    ) : (
+                      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#52525b', fontSize: '9px' }}>
+                        NO IMG
+                      </div>
+                    )}
+                  </div>
 
-                  {/* ছবির বাম দিকে উপরে: বিক্রয়মূল্য ও ডিসকাউন্ট ট্যাগের ওভারলে */}
-                  <div style={{ position: 'absolute', top: '10px', left: '10px', display: 'flex', flexDirection: 'column', gap: '4px', zIndex: 2 }}>
-                    <span
+                  {/* টাইটেল ও ক্যাটাগরি */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <h3
                       style={{
-                        backgroundColor: 'rgba(0, 0, 0, 0.85)',
+                        fontSize: '14px',
+                        fontWeight: '600',
                         color: '#ffffff',
-                        padding: '4px 8px',
-                        borderRadius: '4px',
-                        fontSize: '13px',
-                        fontWeight: 'bold',
-                        fontFamily: 'monospace',
-                        backdropFilter: 'blur(4px)',
-                        border: '1px solid rgba(255,255,255,0.15)'
+                        margin: '0 0 4px 0',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis'
                       }}
                     >
-                      ৳{sellingPrice.toLocaleString()}
-                    </span>
-
-                    {customerDiscount > 0 && (
-                      <span
-                        style={{
-                          backgroundColor: '#dc2626',
-                          color: '#ffffff',
-                          padding: '2px 6px',
-                          borderRadius: '4px',
-                          fontSize: '9px',
-                          fontWeight: 'bold',
-                          letterSpacing: '0.5px'
-                        }}
-                      >
-                        SAVE ৳{customerDiscount.toLocaleString()}
+                      {product.title}
+                    </h3>
+                    {product.category && (
+                      <span style={{ fontSize: '10px', color: '#71717a', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                        {product.category}
                       </span>
                     )}
                   </div>
 
-                  {/* ছবির ডান দিকে উপরে: VISIBLE / HIDDEN বাটনের ওভারলে */}
+                  {/* ভিসিবল / হাইড বাটন (কার্ডের ডান পাশে প্রিমিয়াম টগল বাটন) */}
                   <button
                     type="button"
                     onClick={() => onToggleVisibility(product.id, isVisible)}
                     disabled={isToggling}
                     style={{
-                      position: 'absolute',
-                      top: '10px',
-                      right: '10px',
-                      zIndex: 2,
-                      backgroundColor: isVisible ? '#ffffff' : 'rgba(0, 0, 0, 0.85)',
-                      color: isVisible ? '#000000' : '#888888',
-                      border: isVisible ? '1px solid #ffffff' : '1px solid #333333',
-                      padding: '6px 10px',
-                      fontSize: '9px',
+                      backgroundColor: isVisible ? '#ffffff' : '#18181b',
+                      color: isVisible ? '#000000' : '#71717a',
+                      border: isVisible ? '1px solid #ffffff' : '1px solid #27272a',
+                      padding: '6px 12px',
+                      fontSize: '10px',
                       fontWeight: '700',
-                      borderRadius: '4px',
+                      borderRadius: '6px',
                       cursor: 'pointer',
-                      backdropFilter: 'blur(4px)',
-                      letterSpacing: '1px',
-                      textTransform: 'uppercase'
+                      letterSpacing: '0.5px',
+                      flexShrink: 0,
+                      transition: 'all 0.15s ease'
                     }}
                   >
                     {isToggling ? '...' : isVisible ? 'VISIBLE' : 'HIDDEN'}
                   </button>
-
-                  {/* সোল্ড আউট ব্যাজ (যদি থাকে) */}
-                  {isSoldOut && (
-                    <div style={{ position: 'absolute', bottom: '10px', left: '10px', backgroundColor: '#991b1b', color: '#fff', fontSize: '9px', fontWeight: 'bold', padding: '3px 8px', borderRadius: '4px', letterSpacing: '1px' }}>
-                      SOLD OUT
-                    </div>
-                  )}
                 </div>
 
-                {/* ২. ছবির ঠিক নিচে প্রোডাক্টের নাম */}
-                <div style={{ marginTop: '12px' }}>
-                  <h3
-                    style={{
-                      fontSize: '15px',
-                      fontWeight: '600',
-                      color: '#ffffff',
-                      margin: '0 0 8px 0',
-                      lineHeight: '1.3'
-                    }}
-                  >
-                    {product.title}
-                  </h3>
-
-                  {/* ৩. ফিন্যান্সিয়াল সামারি বক্স (কত বিক্রি, কত ডিসকাউন্ট, কত কমিশন) */}
-                  <div
-                    style={{
-                      display: 'grid',
-                      gridTemplateColumns: 'repeat(2, 1fr)',
-                      gap: '8px',
-                      backgroundColor: '#0a0a0a',
-                      padding: '10px',
-                      borderRadius: '6px',
-                      border: '1px solid #1a1a1a',
-                      margin: '8px 0',
-                      fontFamily: 'monospace'
-                    }}
-                  >
-                    <div>
-                      <span style={{ fontSize: '9px', color: '#666', textTransform: 'uppercase', display: 'block', marginBottom: '2px' }}>
-                        Regular Price
-                      </span>
-                      <span style={{ fontSize: '12px', color: customerDiscount > 0 ? '#888' : '#fff', textDecoration: customerDiscount > 0 ? 'line-through' : 'none', fontWeight: '600' }}>
-                        ৳{regularPrice.toLocaleString()}
-                      </span>
-                    </div>
-
-                    <div>
-                      <span style={{ fontSize: '9px', color: '#666', textTransform: 'uppercase', display: 'block', marginBottom: '2px' }}>
-                        Selling Price
-                      </span>
-                      <span style={{ fontSize: '12px', color: '#38bdf8', fontWeight: '700' }}>
-                        ৳{sellingPrice.toLocaleString()}
-                      </span>
-                    </div>
-
-                    <div>
-                      <span style={{ fontSize: '9px', color: '#666', textTransform: 'uppercase', display: 'block', marginBottom: '2px' }}>
-                        Customer Discount
-                      </span>
-                      <span style={{ fontSize: '12px', color: customerDiscount > 0 ? '#ef4444' : '#555', fontWeight: '600' }}>
-                        {customerDiscount > 0 ? `৳${customerDiscount.toLocaleString()}` : '0% OFF'}
-                      </span>
-                    </div>
-
-                    <div>
-                      <span style={{ fontSize: '9px', color: '#666', textTransform: 'uppercase', display: 'block', marginBottom: '2px' }}>
-                        Your Profit / Comm
-                      </span>
-                      <span style={{ fontSize: '12px', color: '#34d399', fontWeight: '700' }}>
-                        +৳{commission.toLocaleString()}
-                      </span>
-                    </div>
+                {/* কার্ড বটম: অ্যাম্বাসেডরের জন্য প্রয়োজনীয় ৩টি পরিষ্কার ইনফরমেশন গ্রিড */}
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(3, 1fr)',
+                    gap: '6px',
+                    backgroundColor: '#18181b',
+                    padding: '8px 10px',
+                    borderRadius: '8px',
+                    border: '1px solid #27272a'
+                  }}
+                >
+                  {/* ১. প্রডাক্ট এর দাম (Admin Set Price) */}
+                  <div>
+                    <span style={{ fontSize: '9px', color: '#a1a1aa', display: 'block', marginBottom: '2px', textTransform: 'uppercase' }}>
+                      Price
+                    </span>
+                    <span style={{ fontSize: '13px', color: '#ffffff', fontWeight: '700', fontFamily: 'monospace' }}>
+                      ৳{sellingPrice.toLocaleString()}
+                    </span>
                   </div>
 
-                  {/* ৪. ডিটেইলস এক্সপ্যান্ড বাটন */}
-                  <span
-                    onClick={() => toggleExpand(product.id)}
-                    style={{
-                      fontSize: '10px',
-                      color: '#888',
-                      cursor: 'pointer',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.5px',
-                      fontWeight: '500',
-                      display: 'inline-block',
-                      marginTop: '4px'
-                    }}
-                  >
-                    {isExpanded ? '▲ SEE LESS' : '▼ SEE DETAILS'}
-                  </span>
+                  {/* ২. অ্যাম্বাসেডরের নিজের কমিশন */}
+                  <div>
+                    <span style={{ fontSize: '9px', color: '#a1a1aa', display: 'block', marginBottom: '2px', textTransform: 'uppercase' }}>
+                      Your Comm.
+                    </span>
+                    <span style={{ fontSize: '13px', color: '#34d399', fontWeight: '700', fontFamily: 'monospace' }}>
+                      +৳{commission.toLocaleString()}
+                    </span>
+                  </div>
+
+                  {/* ৩. কাস্টমার কী ছাড় পাবে */}
+                  <div>
+                    <span style={{ fontSize: '9px', color: '#a1a1aa', display: 'block', marginBottom: '2px', textTransform: 'uppercase' }}>
+                      Cust. Offer
+                    </span>
+                    <span style={{ fontSize: '13px', color: customerDiscount > 0 ? '#f43f5e' : '#71717a', fontWeight: '700', fontFamily: 'monospace' }}>
+                      {customerDiscount > 0 ? `-৳${customerDiscount.toLocaleString()}` : 'None'}
+                    </span>
+                  </div>
                 </div>
-
-                {/* ৫. ড্রপডাউন ডিটেইলস (Description, Specs, Sizes, Colors) */}
-                {isExpanded && (
-                  <div
-                    style={{
-                      marginTop: '10px',
-                      paddingTop: '10px',
-                      borderTop: '1px solid #181818',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '8px',
-                      fontSize: '11px'
-                    }}
-                  >
-                    {product.description && (
-                      <div>
-                        <span style={{ color: '#666', fontSize: '9px', textTransform: 'uppercase', display: 'block', marginBottom: '2px' }}>Description</span>
-                        <p style={{ color: '#ccc', margin: 0, lineHeight: '1.4' }}>{product.description}</p>
-                      </div>
-                    )}
-
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '8px', fontFamily: 'monospace' }}>
-                      {product.category && (
-                        <div>
-                          <span style={{ color: '#666' }}>CATEGORY: </span>
-                          <span style={{ color: '#fff' }}>{product.category}</span>
-                        </div>
-                      )}
-
-                      {product.stock_quantity !== undefined && (
-                        <div>
-                          <span style={{ color: '#666' }}>STOCK: </span>
-                          <span style={{ color: '#fff' }}>{product.stock_quantity}</span>
-                        </div>
-                      )}
-
-                      {product.sizes && product.sizes.length > 0 && (
-                        <div>
-                          <span style={{ color: '#666' }}>SIZES: </span>
-                          <span style={{ color: '#fff' }}>{product.sizes.join(', ')}</span>
-                        </div>
-                      )}
-
-                      {product.colors && product.colors.length > 0 && (
-                        <div>
-                          <span style={{ color: '#666' }}>COLORS: </span>
-                          <span style={{ color: '#fff' }}>{product.colors.join(', ')}</span>
-                        </div>
-                      )}
-                    </div>
-
-                    {product.details && Object.keys(product.details).length > 0 && (
-                      <div style={{ borderTop: '1px dashed #1a1a1a', paddingTop: '8px', marginTop: '4px', fontFamily: 'monospace' }}>
-                        {Object.entries(product.details).map(([key, val]) => (
-                          <div key={key} style={{ display: 'flex', marginBottom: '3px' }}>
-                            <span style={{ color: '#666', width: '90px', flexShrink: 0, textTransform: 'uppercase' }}>{key}</span>
-                            <span style={{ color: '#333', marginRight: '6px' }}>:</span>
-                            <span style={{ color: '#ddd' }}>{String(val)}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
               </div>
             );
           })}
