@@ -7,6 +7,8 @@ export interface AssignedProduct {
   image_url?: string;
   category?: string;
   is_visible: boolean;
+  commission_amount?: number; // নির্দিষ্ট ফিক্সড কমিশন (যদি থাকে)
+  commission_rate?: number;  // শতাংশ কমিশন (যদি থাকে)
 }
 
 interface StorefrontProductsCardProps {
@@ -65,7 +67,7 @@ export default function StorefrontProductsCard({
               margin: '3px 0 0 0'
             }}
           >
-            Select which assigned products to display on your public showcase.
+            Select assigned products to display on your public showcase.
           </p>
         </div>
 
@@ -88,7 +90,7 @@ export default function StorefrontProductsCard({
 
       {/* প্রোডাক্ট লিস্ট / লোডিং স্টেট */}
       {loadingProducts ? (
-        <div style={{ fontSize: '11px', color: '#555', padding: '20px 0', textAlign: 'center' }}>
+        <div style={{ fontSize: '11px', color: '#555', padding: '24px 0', textAlign: 'center' }}>
           LOADING ASSIGNED PRODUCTS...
         </div>
       ) : assignedProducts.length === 0 ? (
@@ -110,6 +112,13 @@ export default function StorefrontProductsCard({
             const isVisible = product.is_visible;
             const isToggling = togglingId === product.id;
 
+            // সম্ভাব্য আর্নিং / কমিশন হিসেব
+            const commissionText = product.commission_amount
+              ? `৳${product.commission_amount.toLocaleString()}`
+              : product.commission_rate
+              ? `${product.commission_rate}%`
+              : null;
+
             return (
               <div
                 key={product.id}
@@ -124,18 +133,18 @@ export default function StorefrontProductsCard({
                   gap: '12px',
                   width: '100%',
                   boxSizing: 'border-box',
-                  opacity: isVisible ? 1 : 0.65,
+                  opacity: isVisible ? 1 : 0.6,
                   transition: 'all 0.2s ease'
                 }}
               >
-                {/* ইমেজ ও প্রোডাক্ট তথ্য */}
+                {/* প্রোডাক্ট থাম্বনেইল ও ডিটেইলস */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
                   <div
                     style={{
-                      width: '42px',
-                      height: '42px',
+                      width: '44px',
+                      height: '44px',
                       borderRadius: '6px',
-                      backgroundColor: '#151515',
+                      backgroundColor: '#141414',
                       border: '1px solid #222',
                       overflow: 'hidden',
                       flexShrink: 0,
@@ -149,9 +158,12 @@ export default function StorefrontProductsCard({
                         src={product.image_url}
                         alt={product.title}
                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        onError={(e) => {
+                          (e.target as HTMLElement).style.display = 'none';
+                        }}
                       />
                     ) : (
-                      <span style={{ fontSize: '10px', color: '#444' }}>IMG</span>
+                      <span style={{ fontSize: '9px', color: '#444', fontWeight: 'bold' }}>NO IMG</span>
                     )}
                   </div>
 
@@ -170,10 +182,27 @@ export default function StorefrontProductsCard({
                       {product.title}
                     </h4>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '3px' }}>
-                      <span style={{ fontSize: '11px', fontWeight: '600', color: '#34d399' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px', flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: '11px', fontWeight: '700', color: '#fff' }}>
                         ৳{product.price.toLocaleString()}
                       </span>
+
+                      {commissionText && (
+                        <span
+                          style={{
+                            fontSize: '9px',
+                            fontWeight: '600',
+                            color: '#34d399',
+                            backgroundColor: '#04140a',
+                            border: '1px solid #0a381b',
+                            padding: '1px 5px',
+                            borderRadius: '3px'
+                          }}
+                        >
+                          Earn: {commissionText}
+                        </span>
+                      )}
+
                       {product.category && (
                         <span
                           style={{
@@ -192,7 +221,7 @@ export default function StorefrontProductsCard({
                   </div>
                 </div>
 
-                {/* ভিজিবিলিটি টগল বাটন */}
+                {/* ভিজিবিলিটি অন/অফ বাটন */}
                 <button
                   type="button"
                   onClick={() => onToggleVisibility(product.id, isVisible)}
@@ -200,9 +229,9 @@ export default function StorefrontProductsCard({
                   style={{
                     flexShrink: 0,
                     backgroundColor: isVisible ? '#04140a' : '#111111',
-                    color: isVisible ? '#4dff88' : '#777777',
+                    color: isVisible ? '#4dff88' : '#666666',
                     border: `1px solid ${isVisible ? '#0a381b' : '#222222'}`,
-                    padding: '7px 12px',
+                    padding: '7px 11px',
                     fontSize: '9px',
                     fontWeight: '700',
                     borderRadius: '6px',
