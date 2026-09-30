@@ -20,8 +20,8 @@ interface StorefrontProductsCardProps {
   loadingProducts: boolean;
   togglingId: string | number | null;
   onToggleVisibility: (productId: string | number, currentStatus: boolean) => void;
-  ambassadorCommissionRate?: number; // অ্যাম্বাসেডরের নির্ধারিত কমিশন % (প্যারেন্ট থেকে আসবে)
-  customerDiscountRate?: number;     // কাস্টমার অফার % (প্যারেন্ট থেকে আসবে)
+  ambassadorCommissionRate?: number; // অ্যাম্বাসেডরের নির্ধারিত কমিশন %
+  customerDiscountRate?: number;     // কাস্টমার অফার %
 }
 
 export default function StorefrontProductsCard({
@@ -35,7 +35,7 @@ export default function StorefrontProductsCard({
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'visible' | 'hidden'>('all');
 
-  // ফিল্টারড প্রোডাক্ট হিসেব
+  // ফিল্টারড প্রোডাক্ট হিসাব
   const filteredProducts = useMemo(() => {
     return assignedProducts.filter((product) => {
       const matchesSearch =
@@ -62,7 +62,7 @@ export default function StorefrontProductsCard({
         color: '#ffffff'
       }}
     >
-      {/* ১. প্রিমিয়াম হেডার ও প্রোফাইল সংক্ষেপ */}
+      {/* ১. প্রিমিয়াম হেডার ও সামারি */}
       <div
         style={{
           display: 'flex',
@@ -105,7 +105,7 @@ export default function StorefrontProductsCard({
         </span>
       </div>
 
-      {/* ২. সার্চ ও ফিল্টার বার */}
+      {/* ২. ডার্ক ম্যাচিং সার্চ ও ফিল্টার বার */}
       {assignedProducts.length > 0 && (
         <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
           <div style={{ flex: 1, position: 'relative' }}>
@@ -167,13 +167,13 @@ export default function StorefrontProductsCard({
           No products found.
         </div>
       ) : (
-        /* ৪. রিয়েল-টাইম গাণিতিক হিসেব সহ কার্ড লিস্ট */
+        /* ৪. ডায়নামিক ক্যালকুলেশন সহ প্রোডাক্ট লিস্ট */
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%' }}>
           {filteredProducts.map((product) => {
             const isVisible = product.is_visible;
             const isToggling = togglingId === product.id;
 
-            // --- 🧮 গাণিতিক হিসাব (Dynamic Math Calculations) ---
+            // --- 🧮 গাণিতিক হিসাব ---
             const basePrice = product.regular_price || product.price || 0;
             const activeCommRate = product.commission_rate ?? ambassadorCommissionRate;
             const activeDiscountRate = customerDiscountRate;
@@ -204,7 +204,7 @@ export default function StorefrontProductsCard({
                   transition: 'all 0.2s ease-in-out'
                 }}
               >
-                {/* কার্ডের উপরের অংশ */}
+                {/* কার্ডের উপরের অংশ: ছবি, টাইটেল, টগল বাটন */}
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
                   <div
                     style={{
@@ -280,7 +280,7 @@ export default function StorefrontProductsCard({
                   </button>
                 </div>
 
-                {/* কার্ডের নিচের অংশ: স্বয়ংক্রিয় হিসাবকৃত তথ্যসমূহ */}
+                {/* কার্ডের নিচের অংশ: উন্নত ৩টি বক্সে রিয়েল-টাইম তথ্য */}
                 <div
                   style={{
                     display: 'grid',
@@ -293,17 +293,22 @@ export default function StorefrontProductsCard({
                     textAlign: 'center'
                   }}
                 >
-                  {/* ১. বিক্রয় মূল্য (কাস্টমার যা পরিশোধ করবে) */}
+                  {/* ১. বিক্রয় মূল্য (ছাড় প্রয়োগের পর) */}
                   <div>
                     <span style={{ fontSize: '9px', color: '#a1a1aa', display: 'block', marginBottom: '2px', textTransform: 'uppercase' }}>
-                      Price
+                      Sell Price
                     </span>
                     <span style={{ fontSize: '12px', color: '#ffffff', fontWeight: '700', fontFamily: 'monospace' }}>
                       ৳{sellingPrice.toLocaleString()}
                     </span>
+                    {customerDiscountAmount > 0 && (
+                      <span style={{ fontSize: '9px', color: '#71717a', textDecoration: 'line-through', display: 'block', marginTop: '1px' }}>
+                        ৳{basePrice.toLocaleString()}
+                      </span>
+                    )}
                   </div>
 
-                  {/* ২. অ্যাম্বাসেডরের কমিশন (+৳) */}
+                  {/* ২. অ্যাম্বাসেডরের নিট কমিশন */}
                   <div>
                     <span style={{ fontSize: '9px', color: '#a1a1aa', display: 'block', marginBottom: '2px', textTransform: 'uppercase' }}>
                       Your Comm.
@@ -311,9 +316,12 @@ export default function StorefrontProductsCard({
                     <span style={{ fontSize: '12px', color: '#34d399', fontWeight: '700', fontFamily: 'monospace' }}>
                       +৳{ambassadorCommissionAmount.toLocaleString()}
                     </span>
+                    <span style={{ fontSize: '9px', color: '#71717a', display: 'block', marginTop: '1px' }}>
+                      ({activeCommRate}%)
+                    </span>
                   </div>
 
-                  {/* ৩. কাস্টমার অফার/ছাড় (-৳) */}
+                  {/* ৩. কাস্টমার অফার / ছাড় */}
                   <div>
                     <span style={{ fontSize: '9px', color: '#a1a1aa', display: 'block', marginBottom: '2px', textTransform: 'uppercase' }}>
                       Cust. Offer
@@ -321,6 +329,11 @@ export default function StorefrontProductsCard({
                     <span style={{ fontSize: '12px', color: customerDiscountAmount > 0 ? '#f43f5e' : '#71717a', fontWeight: '700', fontFamily: 'monospace' }}>
                       {customerDiscountAmount > 0 ? `-৳${customerDiscountAmount.toLocaleString()}` : 'None'}
                     </span>
+                    {customerDiscountAmount > 0 && (
+                      <span style={{ fontSize: '9px', color: '#f43f5e', display: 'block', marginTop: '1px' }}>
+                        ({activeDiscountRate}%)
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
