@@ -26,6 +26,10 @@ export default function AmbassadorDashboard({
   const [loadingProducts, setLoadingProducts] = useState<boolean>(true);
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
+  // ডাটাবেজ থেকে কমিশন ও ডিসকাউন্ট পারসেন্টেজ নিশ্চিত করা
+  const ambassadorCommissionRate = Number(ambassadorData?.commission_rate ?? 0);
+  const customerDiscountRate = Number(ambassadorData?.discount_percent ?? 0);
+
   // Ambassador Data Refresh Function
   const refreshAmbassadorData = async () => {
     if (!ambassadorId) return;
@@ -98,6 +102,7 @@ export default function AmbassadorDashboard({
             id: prod.id,
             title: prod.name || 'Untitled Product',
             price: prod.price || 0,
+            regular_price: prod.price || 0, // মূল দাম
             image_url: mediaObj?.media_url || '',
             category: prod.category || '',
             is_visible: item.is_visible ?? true,
@@ -199,12 +204,14 @@ export default function AmbassadorDashboard({
           {/* ৩. সেলস ও অর্ডার পারফরম্যান্স সেকশন */}
           <SalesAndOrdersCard ambassadorId={ambassadorId} />
 
-          {/* ৪. আলাদা করা প্রোডাক্ট ম্যানেজমেন্ট কম্পোনেন্ট */}
+          {/* ৪. প্রোডাক্ট ম্যানেজমেন্ট (ডাটাবেজ থেকে কমিশন ও কাস্টমার ডিসকাউন্ট ডাইনামিকালি পাস করা হচ্ছে) */}
           <StorefrontProductsCard
             assignedProducts={assignedProducts}
             loadingProducts={loadingProducts}
             togglingId={togglingId}
             onToggleVisibility={handleToggleVisibility}
+            ambassadorCommissionRate={ambassadorCommissionRate}
+            customerDiscountRate={customerDiscountRate}
           />
         </div>
       )}
