@@ -18,3 +18,4 @@ export * from './MessageIcon';
 export * from './NotificationIcon';
 export * from './SettingsIcon';
 export * from './ScheduleIcon';
+export * from './VisibilityIcon';
