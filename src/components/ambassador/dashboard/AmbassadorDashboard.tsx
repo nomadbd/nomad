@@ -2,22 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '@/supabaseClient';
 import StoreLink from './StoreLink';
 import EarningsCard from './EarningsCard';
-import SalesAndOrdersCard from './SalesAndOrdersCard'; // ১. এখানে ইম্পোর্ট করা হয়েছে
+import SalesAndOrdersCard from './SalesAndOrdersCard';
+import StorefrontProductsCard, { AssignedProduct } from './StorefrontProductsCard';
 
 interface AmbassadorDashboardProps {
   ambassadorData: any;
   profile: any;
   ambassadorState: any;
   isOwner?: boolean;
-}
-
-interface AssignedProduct {
-  id: string;
-  title: string;
-  price: number;
-  image_url?: string;
-  category?: string;
-  is_visible: boolean;
 }
 
 export default function AmbassadorDashboard({
@@ -204,97 +196,16 @@ export default function AmbassadorDashboard({
             onSuccessRefresh={refreshAmbassadorData}
           />
 
-          {/* ৩. নতুন সেলস ও অর্ডার পারফরম্যান্স সেকশন */}
+          {/* ৩. সেলস ও অর্ডার পারফরম্যান্স সেকশন */}
           <SalesAndOrdersCard ambassadorId={ambassadorId} />
 
-          {/* ৪. প্রোডাক্ট ম্যানেজমেন্ট সেকশন */}
-          <section
-            style={{
-              backgroundColor: '#050505',
-              border: '1px solid #1a1a1a',
-              padding: '14px 12px',
-              borderRadius: '12px',
-              width: '100%',
-              boxSizing: 'border-box'
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', gap: '10px' }}>
-              <div>
-                <h2 style={{ fontSize: '12px', margin: 0, textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 'bold' }}>STOREFRONT PRODUCTS</h2>
-                <p style={{ fontSize: '10px', color: '#888', margin: '3px 0 0 0' }}>Select which assigned products to display on your public showcase.</p>
-              </div>
-              <span style={{ flexShrink: 0, fontSize: '10px', color: '#aaa', border: '1px solid #222', padding: '4px 8px', borderRadius: '4px', backgroundColor: '#0a0a0a', fontWeight: '600' }}>
-                {assignedProducts.filter(p => p.is_visible).length} / {assignedProducts.length} VISIBLE
-              </span>
-            </div>
-
-            {loadingProducts ? (
-              <div style={{ fontSize: '11px', color: '#666', padding: '16px 0', textAlign: 'center' }}>LOADING ASSIGNED PRODUCTS...</div>
-            ) : assignedProducts.length === 0 ? (
-              <div style={{ fontSize: '11px', color: '#666', padding: '24px 0', textAlign: 'center', border: '1px dashed #222', borderRadius: '8px' }}>
-                NO PRODUCTS ASSIGNED BY ADMIN YET.
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%', boxSizing: 'border-box' }}>
-                {assignedProducts.map((product) => (
-                  <div
-                    key={product.id}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justify: 'space-between',
-                      padding: '10px 12px',
-                      backgroundColor: '#0a0a0a',
-                      border: '1px solid #1a1a1a',
-                      borderRadius: '8px',
-                      gap: '12px',
-                      width: '100%',
-                      boxSizing: 'border-box'
-                    }}
-                  >
-                    {/* বাম পাশের ইমেজ + টেক্সট */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 }}>
-                      {product.image_url ? (
-                        <img src={product.image_url} alt="" style={{ width: '38px', height: '38px', objectFit: 'cover', borderRadius: '4px', flexShrink: 0 }} />
-                      ) : (
-                        <div style={{ width: '38px', height: '38px', backgroundColor: '#111', borderRadius: '4px', flexShrink: 0 }} />
-                      )}
-                      <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
-                        <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          {product.title}
-                        </div>
-                        <div style={{ fontSize: '11px', fontWeight: '600', color: '#888', marginTop: '2px', whiteSpace: 'nowrap' }}>
-                          ৳{product.price.toLocaleString()}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* ডান পাশের বাটন */}
-                    <button
-                      type="button"
-                      onClick={() => handleToggleVisibility(product.id, product.is_visible)}
-                      disabled={togglingId === product.id}
-                      style={{
-                        flexShrink: 0,
-                        marginLeft: 'auto',
-                        backgroundColor: product.is_visible ? '#082210' : '#111111',
-                        color: product.is_visible ? '#4dff88' : '#666666',
-                        border: `1px solid ${product.is_visible ? '#115522' : '#333333'}`,
-                        padding: '6px 12px',
-                        fontSize: '10px',
-                        fontWeight: 'bold',
-                        borderRadius: '4px',
-                        cursor: 'pointer',
-                        whiteSpace: 'nowrap'
-                      }}
-                    >
-                      {togglingId === product.id ? 'UPDATING...' : product.is_visible ? 'SHOWING ON STORE' : 'HIDDEN FROM STORE'}
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
+          {/* ৪. আলাদা করা প্রোডাক্ট ম্যানেজমেন্ট কম্পোনেন্ট */}
+          <StorefrontProductsCard
+            assignedProducts={assignedProducts}
+            loadingProducts={loadingProducts}
+            togglingId={togglingId}
+            onToggleVisibility={handleToggleVisibility}
+          />
         </div>
       )}
     </div>
