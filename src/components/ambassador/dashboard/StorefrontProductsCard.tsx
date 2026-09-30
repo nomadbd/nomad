@@ -35,12 +35,12 @@ export default function StorefrontProductsCard({
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
 
-  // ১. কাউন্ট মেট্রিক্স
+  // ১. কাউন্ট মেট্রিক্স (Total, Active, Hidden)
   const totalCount = assignedProducts.length;
   const activeCount = useMemo(() => assignedProducts.filter((p) => p.is_visible).length, [assignedProducts]);
   const hiddenCount = totalCount - activeCount;
 
-  // ২. ফিল্টার ও ক্যাটাগরি অনুসারে গ্রুপিং
+  // ২. ক্যাটাগরি ভিত্তিক প্রোডাক্ট ফিল্টারিং ও গ্রুপিং
   const groupedProducts = useMemo(() => {
     const filtered = assignedProducts.filter((product) => {
       const q = searchQuery.toLowerCase();
@@ -63,7 +63,7 @@ export default function StorefrontProductsCard({
     return groups;
   }, [assignedProducts, searchQuery]);
 
-  // See More / See Less টগল হ্যান্ডলার
+  // See More / See Less টগল
   const toggleCategoryExpand = (catName: string) => {
     setExpandedCategories((prev) => ({
       ...prev,
@@ -83,7 +83,7 @@ export default function StorefrontProductsCard({
         color: '#ffffff'
       }}
     >
-      {/* ১. টপ ৩টি সামারি কার্ড (Total, Active, Hidden) */}
+      {/* ১. টপ ৩টি সামারি কার্ড */}
       <div
         style={{
           display: 'grid',
@@ -92,7 +92,6 @@ export default function StorefrontProductsCard({
           marginBottom: '16px'
         }}
       >
-        {/* Total Card */}
         <div
           style={{
             backgroundColor: '#121215',
@@ -110,7 +109,6 @@ export default function StorefrontProductsCard({
           </span>
         </div>
 
-        {/* Active Card */}
         <div
           style={{
             backgroundColor: '#062016',
@@ -128,7 +126,6 @@ export default function StorefrontProductsCard({
           </span>
         </div>
 
-        {/* Hidden Card */}
         <div
           style={{
             backgroundColor: '#1f1315',
@@ -147,7 +144,7 @@ export default function StorefrontProductsCard({
         </div>
       </div>
 
-      {/* ২. সেকশন টাইটেল ও ফুল-উইডথ সার্চ বার */}
+      {/* ২. সেকশন টাইটেল ও ফুল-উইডথ স্বাধীন সার্চবার */}
       <div style={{ marginBottom: '16px' }}>
         <h2
           style={{
@@ -183,7 +180,7 @@ export default function StorefrontProductsCard({
         </div>
       </div>
 
-      {/* ৩. লোডিং ও নো-প্রোডাক্ট স্টেট */}
+      {/* ৩. লোডিং ও খালি স্টেট */}
       {loadingProducts ? (
         <div style={{ fontSize: '12px', color: '#71717a', padding: '30px 0', textAlign: 'center' }}>
           Loading products...
@@ -202,21 +199,22 @@ export default function StorefrontProductsCard({
           No products found.
         </div>
       ) : (
-        /* ৪. ক্যাটাগরি ভিত্তিক স্ক্রলিং ও গ্রিড লেআউট */
+        /* ৪. ক্যাটাগরি ভিত্তিক লেআউট */
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%' }}>
           {Object.entries(groupedProducts).map(([categoryName, products]) => {
             const isExpanded = !!expandedCategories[categoryName];
 
             return (
               <div key={categoryName} style={{ width: '100%' }}>
-                {/* ক্যাটাগরি হেডার ও See More / See Less বাটন */}
+                {/* ক্যাটাগরি হেডার - See More/Less একদম ডানপাশে রাখা হয়েছে */}
                 <div
                   style={{
                     display: 'flex',
                     justify: 'space-between',
                     alignItems: 'center',
+                    width: '100%',
                     marginBottom: '10px',
-                    paddingBottom: '4px',
+                    paddingBottom: '6px',
                     borderBottom: '1px solid #1f1f23'
                   }}
                 >
@@ -231,17 +229,18 @@ export default function StorefrontProductsCard({
                       background: 'none',
                       border: 'none',
                       color: '#38bdf8',
-                      fontSize: '10px',
+                      fontSize: '11px',
                       fontWeight: '600',
                       cursor: 'pointer',
-                      padding: 0
+                      padding: 0,
+                      marginLeft: 'auto'
                     }}
                   >
                     {isExpanded ? 'See Less ▲' : 'See More ▼'}
                   </button>
                 </div>
 
-                {/* প্রোডাক্ট কনটেইনার (স্ক্রল বনাম বিস্তৃত গ্রিড) */}
+                {/* প্রডাক্ট কনটেইনার */}
                 <div
                   style={
                     isExpanded
@@ -257,6 +256,7 @@ export default function StorefrontProductsCard({
                           overflowX: 'auto',
                           paddingBottom: '8px',
                           width: '100%',
+                          scrollSnapType: 'x mandatory',
                           WebkitOverflowScrolling: 'touch'
                         }
                   }
@@ -287,20 +287,22 @@ export default function StorefrontProductsCard({
                           padding: '12px',
                           display: 'flex',
                           flexDirection: 'column',
-                          gap: '12px',
+                          gap: '10px',
                           opacity: isVisible ? 1 : 0.55,
                           transition: 'all 0.2s ease-in-out',
-                          // স্ক্রল মোডে ফিক্সড চওড়া রাখা যেন না চ্যাপ্টা হয়ে যায়
-                          flex: isExpanded ? 'none' : '0 0 280px',
+                          // স্ক্রিনে সম্পূর্ণ ফিট হওয়ার ব্যবস্থা (88% width যাতে ১টি সম্পূর্ণ প্রডাক্ট দেখা যায় এবং পরের প্রডাক্ট হালকা দেখা যায়)
+                          flex: isExpanded ? 'none' : '0 0 88%',
+                          maxWidth: isExpanded ? '100%' : '320px',
+                          scrollSnapAlign: 'start',
                           boxSizing: 'border-box'
                         }}
                       >
                         {/* কার্ডের উপরের অংশ */}
-                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                           <div
                             style={{
-                              width: '64px',
-                              height: '64px',
+                              width: '56px',
+                              height: '56px',
                               borderRadius: '8px',
                               overflow: 'hidden',
                               backgroundColor: '#18181b',
@@ -326,13 +328,13 @@ export default function StorefrontProductsCard({
                             )}
                           </div>
 
-                          <div style={{ flex: 1, minWidth: 0, paddingTop: '2px' }}>
+                          <div style={{ flex: 1, minWidth: 0 }}>
                             <h4
                               style={{
                                 fontSize: '12px',
                                 fontWeight: '600',
                                 color: '#ffffff',
-                                margin: '0 0 4px 0',
+                                margin: 0,
                                 lineHeight: '1.3',
                                 display: '-webkit-box',
                                 WebkitLineClamp: 2,
@@ -365,14 +367,14 @@ export default function StorefrontProductsCard({
                           </button>
                         </div>
 
-                        {/* কার্ডের নিচের অংশ: ৩টি প্রাইস বক্সে রিয়েল-টাইম ডাটা */}
+                        {/* কার্ডের নিচের অংশ: ৩টি প্রাইস বক্সে সুনির্দিষ্ট তথ্য */}
                         <div
                           style={{
                             display: 'grid',
                             gridTemplateColumns: 'repeat(3, 1fr)',
                             gap: '4px',
                             backgroundColor: '#18181b',
-                            padding: '8px',
+                            padding: '8px 4px',
                             borderRadius: '8px',
                             border: '1px solid #27272a',
                             textAlign: 'center'
@@ -393,7 +395,7 @@ export default function StorefrontProductsCard({
                             )}
                           </div>
 
-                          {/* ২. অ্যাম্বাসেডরের নিট কমিশন (পারসেন্টেজ লেখা বাদ দেওয়া হয়েছে) */}
+                          {/* ২. কমিশন */}
                           <div>
                             <span style={{ fontSize: '8px', color: '#a1a1aa', display: 'block', marginBottom: '2px', textTransform: 'uppercase' }}>
                               Your Comm.
