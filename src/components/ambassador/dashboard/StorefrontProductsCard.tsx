@@ -1,5 +1,4 @@
 import React, { useState, useMemo } from 'react';
-// index.ts থেকে VisibilityIcon এবং CloseIcon ইম্পোর্ট করা হয়েছে
 import { VisibilityIcon, CloseIcon } from '../../icons';
 
 export interface AssignedProduct {
@@ -199,12 +198,13 @@ export default function StorefrontProductsCard({
             return (
               <div key={categoryName} style={{ width: '100%' }}>
                 
-                {/* ক্যাটাগরি হেডার */}
+                {/* ক্যাটাগরি হেডার (SEE MORE একদম ডানপাশে থাকবে) */}
                 <div
                   style={{
                     display: 'flex',
                     alignItems: 'center',
-                    justify: 'space-between',
+                    justifyConstraint: 'space-between',
+                    justifyContent: 'space-between',
                     width: '100%',
                     marginBottom: '10px',
                     paddingBottom: '6px',
@@ -225,7 +225,6 @@ export default function StorefrontProductsCard({
                     {categoryName} <span style={{ color: '#52525b', fontSize: '11px' }}>({products.length})</span>
                   </h3>
 
-                  {/* See More / See Less বাটন - marginLeft: auto যোগ করা হয়েছে যাতে ডানপাশে চলে যায় */}
                   <button
                     type="button"
                     onClick={() => toggleCategoryExpand(categoryName)}
@@ -239,7 +238,7 @@ export default function StorefrontProductsCard({
                       letterSpacing: '0.8px',
                       cursor: 'pointer',
                       padding: 0,
-                      marginLeft: 'auto'
+                      whiteSpace: 'nowrap'
                     }}
                   >
                     {isExpanded ? 'SEE LESS' : 'SEE MORE'}
@@ -302,7 +301,7 @@ export default function StorefrontProductsCard({
                           boxSizing: 'border-box'
                         }}
                       >
-                        {/* প্রডাক্ট হেডার: ছবি, নাম ও Visibility Icon */}
+                        {/* প্রডাক্ট হেডার: ছবি, নাম ও সরাসরি SVG Visibility Icon (কোনো স্কয়ার বক্স নেই) */}
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
                           {/* ছবি */}
                           <div
@@ -353,31 +352,28 @@ export default function StorefrontProductsCard({
                             </h4>
                           </div>
 
-                          {/* SVG Visibility Icon Button */}
+                          {/* সরাসরি মূল Visibility Icon বাটন (কোনো স্কয়ার বক্স ব্যাকগ্রাউন্ড ছাড়াই) */}
                           <button
                             type="button"
                             onClick={() => onToggleVisibility(product.id, isVisible)}
                             disabled={isToggling}
                             title={isVisible ? 'Hide Product' : 'Make Product Visible'}
                             style={{
-                              backgroundColor: isVisible ? 'rgba(16, 185, 129, 0.12)' : 'rgba(255, 255, 255, 0.05)',
-                              border: isVisible ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid #27272a',
-                              borderRadius: '8px',
-                              width: '38px',
-                              height: '38px',
+                              background: 'none',
+                              border: 'none',
+                              padding: '4px',
                               display: 'flex',
                               alignItems: 'center',
                               justify: 'center',
                               cursor: 'pointer',
                               flexShrink: 0,
-                              transition: 'all 0.2s ease',
-                              padding: 0
+                              opacity: isToggling ? 0.5 : 1
                             }}
                           >
                             {isToggling ? (
                               <span style={{ fontSize: '10px', color: '#a1a1aa' }}>...</span>
                             ) : (
-                              <VisibilityIcon visible={isVisible} size={18} />
+                              <VisibilityIcon visible={isVisible} size={22} />
                             )}
                           </button>
                         </div>
@@ -434,7 +430,7 @@ export default function StorefrontProductsCard({
         </div>
       )}
 
-      {/* লাইটবক্স ইমেজ প্রিভিউ পপআপ (CloseIcon ব্যবহার করা হয়েছে) */}
+      {/* লাইটবক্স ইমেজ প্রিভিউ পপআপ (কোনো ব্যাকগ্রাউন্ড সার্কেল ছাড়াই টপ-রাইটে CloseIcon) */}
       {previewImage && (
         <div
           onClick={() => setPreviewImage(null)}
@@ -461,36 +457,32 @@ export default function StorefrontProductsCard({
               maxHeight: '90%',
               backgroundColor: '#121215',
               borderRadius: '16px',
-              padding: '8px',
+              padding: '12px',
               border: '1px solid #27272a',
               boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5)'
             }}
           >
-            {/* index.ts থেকে আনীত CloseIcon যুক্ত ক্রস বাটন */}
+            {/* সার্কেল ছাড়া সরাসরি CloseIcon বাটন */}
             <button
               type="button"
               onClick={() => setPreviewImage(null)}
               title="Close Preview"
               style={{
                 position: 'absolute',
-                top: '-12px',
-                right: '-12px',
-                backgroundColor: '#27272a',
-                color: '#ffffff',
-                border: '1px solid #3f3f46',
-                borderRadius: '50%',
-                width: '32px',
-                height: '32px',
+                top: '16px',
+                right: '16px',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                zIndex: 10,
+                padding: '4px',
                 display: 'flex',
                 alignItems: 'center',
                 justify: 'center',
-                cursor: 'pointer',
-                zIndex: 10,
-                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.4)',
-                padding: 0
+                filter: 'drop-shadow(0px 2px 4px rgba(0,0,0,0.8))'
               }}
             >
-              <CloseIcon size={16} color="#ffffff" />
+              <CloseIcon size={24} color="#ffffff" />
             </button>
 
             <img
