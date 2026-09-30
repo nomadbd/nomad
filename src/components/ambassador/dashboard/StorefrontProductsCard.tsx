@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { VisibilityIcon } from '../../icons'; // অথবা '../icons' (আপনার ফোল্ডার স্ট্রাকচার অনুযায়ী)
+// index.ts থেকে VisibilityIcon এবং CloseIcon ইম্পোর্ট করা হয়েছে
+import { VisibilityIcon, CloseIcon } from '../../icons';
 
 export interface AssignedProduct {
   id: string | number;
@@ -37,7 +38,7 @@ export default function StorefrontProductsCard({
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
   const [previewImage, setPreviewImage] = useState<string | null>(null);
 
-  // ১. মেট্রিাক্স কাউন্ট
+  // ১. মেট্রিক্স কাউন্ট
   const totalCount = assignedProducts.length;
   const activeCount = useMemo(() => assignedProducts.filter((p) => p.is_visible).length, [assignedProducts]);
   const hiddenCount = totalCount - activeCount;
@@ -198,16 +199,17 @@ export default function StorefrontProductsCard({
             return (
               <div key={categoryName} style={{ width: '100%' }}>
                 
-                {/* ক্যাটাগরি হেডার: See More / See Less একদম ডানপাশে ক্যাটাগরি ফন্টের স্টাইলে */}
+                {/* ক্যাটাগরি হেডার */}
                 <div
                   style={{
                     display: 'flex',
-                    justify: 'space-between',
                     alignItems: 'center',
+                    justify: 'space-between',
                     width: '100%',
                     marginBottom: '10px',
                     paddingBottom: '6px',
-                    borderBottom: '1px solid #1f1f23'
+                    borderBottom: '1px solid #1f1f23',
+                    boxSizing: 'border-box'
                   }}
                 >
                   <h3
@@ -223,6 +225,7 @@ export default function StorefrontProductsCard({
                     {categoryName} <span style={{ color: '#52525b', fontSize: '11px' }}>({products.length})</span>
                   </h3>
 
+                  {/* See More / See Less বাটন - marginLeft: auto যোগ করা হয়েছে যাতে ডানপাশে চলে যায় */}
                   <button
                     type="button"
                     onClick={() => toggleCategoryExpand(categoryName)}
@@ -235,14 +238,15 @@ export default function StorefrontProductsCard({
                       textTransform: 'uppercase',
                       letterSpacing: '0.8px',
                       cursor: 'pointer',
-                      padding: 0
+                      padding: 0,
+                      marginLeft: 'auto'
                     }}
                   >
-                    {isExpanded ? 'See Less' : 'See More'}
+                    {isExpanded ? 'SEE LESS' : 'SEE MORE'}
                   </button>
                 </div>
 
-                {/* প্রডাক্ট কনটেইনার: See More / See Less করলেও কার্ড লেআউট অপরিবর্তিত থাকবে */}
+                {/* প্রডাক্ট কনটেইনার */}
                 <div
                   style={
                     isExpanded
@@ -298,7 +302,7 @@ export default function StorefrontProductsCard({
                           boxSizing: 'border-box'
                         }}
                       >
-                        {/* প্রডাক্ট হেডার: ছবি, নাম ও নতুন SVG বাটন */}
+                        {/* প্রডাক্ট হেডার: ছবি, নাম ও Visibility Icon */}
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
                           {/* ছবি */}
                           <div
@@ -333,7 +337,7 @@ export default function StorefrontProductsCard({
                             )}
                           </div>
 
-                          {/* নাম (এখন পর্যাপ্ত জায়গা পাবে) */}
+                          {/* নাম */}
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <h4
                               style={{
@@ -430,7 +434,7 @@ export default function StorefrontProductsCard({
         </div>
       )}
 
-      {/* লাইটবক্স ইমেজ প্রিভিউ পপআপ */}
+      {/* লাইটবক্স ইমেজ প্রিভিউ পপআপ (CloseIcon ব্যবহার করা হয়েছে) */}
       {previewImage && (
         <div
           onClick={() => setPreviewImage(null)}
@@ -462,9 +466,11 @@ export default function StorefrontProductsCard({
               boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5)'
             }}
           >
+            {/* index.ts থেকে আনীত CloseIcon যুক্ত ক্রস বাটন */}
             <button
               type="button"
               onClick={() => setPreviewImage(null)}
+              title="Close Preview"
               style={{
                 position: 'absolute',
                 top: '-12px',
@@ -473,19 +479,20 @@ export default function StorefrontProductsCard({
                 color: '#ffffff',
                 border: '1px solid #3f3f46',
                 borderRadius: '50%',
-                width: '28px',
-                height: '28px',
+                width: '32px',
+                height: '32px',
                 display: 'flex',
                 alignItems: 'center',
                 justify: 'center',
                 cursor: 'pointer',
-                fontSize: '14px',
-                fontWeight: 'bold',
-                zIndex: 1
+                zIndex: 10,
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.4)',
+                padding: 0
               }}
             >
-              ✕
+              <CloseIcon size={16} color="#ffffff" />
             </button>
+
             <img
               src={previewImage}
               alt="Product Full Preview"
