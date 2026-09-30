@@ -4,8 +4,8 @@ export interface AssignedProduct {
   id: string | number;
   title: string;
   description?: string;
-  regular_price?: number; // মূল দাম (Base / MRP Price)
-  price: number;         // ব্যাকএন্ড প্রাইস
+  regular_price?: number;
+  price: number;
   image_url?: string;
   category?: string;
   is_visible: boolean;
@@ -35,12 +35,12 @@ export default function StorefrontProductsCard({
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
 
-  // ১. কাউন্ট মেট্রিক্স (Total, Active, Hidden)
+  // ১. কাউন্ট মেট্রিক্স
   const totalCount = assignedProducts.length;
   const activeCount = useMemo(() => assignedProducts.filter((p) => p.is_visible).length, [assignedProducts]);
   const hiddenCount = totalCount - activeCount;
 
-  // ২. ক্যাটাগরি ভিত্তিক প্রোডাক্ট ফিল্টারিং ও গ্রুপিং
+  // ২. ক্যাটাগরি ভিত্তিক গ্রুপিং ও ফিল্টারিং
   const groupedProducts = useMemo(() => {
     const filtered = assignedProducts.filter((product) => {
       const q = searchQuery.toLowerCase();
@@ -72,18 +72,9 @@ export default function StorefrontProductsCard({
   };
 
   return (
-    <section
-      style={{
-        backgroundColor: '#09090b',
-        border: '1px solid #1f1f23',
-        padding: '16px',
-        borderRadius: '16px',
-        width: '100%',
-        boxSizing: 'border-box',
-        color: '#ffffff'
-      }}
-    >
-      {/* ১. টপ ৩টি সামারি কার্ড */}
+    <div style={{ width: '100%', boxSizing: 'border-box', color: '#ffffff' }}>
+      
+      {/* ১. টপ ৩টি সামারি কার্ড (মূল লেআউটের সাথে সামঞ্জস্যপূর্ণ) */}
       <div
         style={{
           display: 'grid',
@@ -97,14 +88,14 @@ export default function StorefrontProductsCard({
             backgroundColor: '#121215',
             border: '1px solid #27272a',
             borderRadius: '12px',
-            padding: '10px 8px',
+            padding: '12px 8px',
             textAlign: 'center'
           }}
         >
-          <span style={{ fontSize: '9px', color: '#a1a1aa', display: 'block', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-            Total
+          <span style={{ fontSize: '10px', color: '#a1a1aa', display: 'block', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            TOTAL
           </span>
-          <span style={{ fontSize: '16px', fontWeight: '800', color: '#ffffff', fontFamily: 'monospace' }}>
+          <span style={{ fontSize: '18px', fontWeight: '800', color: '#ffffff', fontFamily: 'monospace', marginTop: '2px', display: 'block' }}>
             {totalCount}
           </span>
         </div>
@@ -114,14 +105,14 @@ export default function StorefrontProductsCard({
             backgroundColor: '#062016',
             border: '1px solid rgba(16, 185, 129, 0.25)',
             borderRadius: '12px',
-            padding: '10px 8px',
+            padding: '12px 8px',
             textAlign: 'center'
           }}
         >
-          <span style={{ fontSize: '9px', color: '#34d399', display: 'block', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-            Active
+          <span style={{ fontSize: '10px', color: '#34d399', display: 'block', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            ACTIVE
           </span>
-          <span style={{ fontSize: '16px', fontWeight: '800', color: '#10b981', fontFamily: 'monospace' }}>
+          <span style={{ fontSize: '18px', fontWeight: '800', color: '#10b981', fontFamily: 'monospace', marginTop: '2px', display: 'block' }}>
             {activeCount}
           </span>
         </div>
@@ -131,20 +122,20 @@ export default function StorefrontProductsCard({
             backgroundColor: '#1f1315',
             border: '1px solid rgba(244, 63, 94, 0.25)',
             borderRadius: '12px',
-            padding: '10px 8px',
+            padding: '12px 8px',
             textAlign: 'center'
           }}
         >
-          <span style={{ fontSize: '9px', color: '#f43f5e', display: 'block', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-            Hidden
+          <span style={{ fontSize: '10px', color: '#f43f5e', display: 'block', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            HIDDEN
           </span>
-          <span style={{ fontSize: '16px', fontWeight: '800', color: '#f43f5e', fontFamily: 'monospace' }}>
+          <span style={{ fontSize: '18px', fontWeight: '800', color: '#f43f5e', fontFamily: 'monospace', marginTop: '2px', display: 'block' }}>
             {hiddenCount}
           </span>
         </div>
       </div>
 
-      {/* ২. সেকশন টাইটেল ও ফুল-উইডথ স্বাধীন সার্চবার */}
+      {/* ২. সেকশন টাইটেল ও স্বাধীন ফুল-উইডথ সার্চবার */}
       <div style={{ marginBottom: '16px' }}>
         <h2
           style={{
@@ -156,22 +147,22 @@ export default function StorefrontProductsCard({
             fontWeight: '700'
           }}
         >
-          Store Products
+          STORE PRODUCTS
         </h2>
 
         <div style={{ width: '100%' }}>
           <input
             type="text"
-            placeholder="Search products across all categories..."
+            placeholder="Search products across all categories.."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             style={{
               width: '100%',
               backgroundColor: '#121215',
               border: '1px solid #27272a',
-              borderRadius: '8px',
-              padding: '10px 12px',
-              fontSize: '12px',
+              borderRadius: '10px',
+              padding: '12px 14px',
+              fontSize: '13px',
               color: '#ffffff',
               outline: 'none',
               boxSizing: 'border-box'
@@ -199,14 +190,17 @@ export default function StorefrontProductsCard({
           No products found.
         </div>
       ) : (
-        /* ৪. ক্যাটাগরি ভিত্তিক লেআউট */
+        /* ৪. ক্যাটাগরি ভিত্তিক পণ্য তালিকা */
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%' }}>
           {Object.entries(groupedProducts).map(([categoryName, products]) => {
             const isExpanded = !!expandedCategories[categoryName];
+            // ডিফল্টভাবে ১টি বা ২টি প্রডাক্ট দেখানো হবে, 'See More' এ ক্লিক করলে সবকটি দেখাবে
+            const visibleProducts = isExpanded ? products : products.slice(0, 2);
 
             return (
               <div key={categoryName} style={{ width: '100%' }}>
-                {/* ক্যাটাগরি হেডার - See More/Less একদম ডানপাশে রাখা হয়েছে */}
+                
+                {/* ক্যাটাগরি হেডার (See More/Less এখন ক্যাটাগরির মতো একই কালার ও ট্রায়াঙ্গেল টগল ছাড়া) */}
                 <div
                   style={{
                     display: 'flex',
@@ -218,54 +212,36 @@ export default function StorefrontProductsCard({
                     borderBottom: '1px solid #1f1f23'
                   }}
                 >
-                  <h3 style={{ fontSize: '11px', fontWeight: '700', color: '#a1a1aa', margin: 0, textTransform: 'uppercase', letterSpacing: '0.8px' }}>
-                    {categoryName} <span style={{ color: '#52525b', fontSize: '10px' }}>({products.length})</span>
+                  <h3 style={{ fontSize: '12px', fontWeight: '700', color: '#a1a1aa', margin: 0, textTransform: 'uppercase', letterSpacing: '0.8px' }}>
+                    {categoryName} <span style={{ color: '#52525b', fontSize: '11px' }}>({products.length})</span>
                   </h3>
 
-                  <button
-                    type="button"
-                    onClick={() => toggleCategoryExpand(categoryName)}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      color: '#38bdf8',
-                      fontSize: '11px',
-                      fontWeight: '600',
-                      cursor: 'pointer',
-                      padding: 0,
-                      marginLeft: 'auto'
-                    }}
-                  >
-                    {isExpanded ? 'See Less ▲' : 'See More ▼'}
-                  </button>
+                  {products.length > 2 && (
+                    <button
+                      type="button"
+                      onClick={() => toggleCategoryExpand(categoryName)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#a1a1aa', // ক্যাটাগরির রঙের সাথে ম্যাচিং
+                        fontSize: '11px',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        padding: 0
+                      }}
+                    >
+                      {isExpanded ? 'See Less' : 'See More'}
+                    </button>
+                  )}
                 </div>
 
-                {/* প্রডাক্ট কনটেইনার */}
-                <div
-                  style={
-                    isExpanded
-                      ? {
-                          display: 'grid',
-                          gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-                          gap: '12px',
-                          width: '100%'
-                        }
-                      : {
-                          display: 'flex',
-                          gap: '12px',
-                          overflowX: 'auto',
-                          paddingBottom: '8px',
-                          width: '100%',
-                          scrollSnapType: 'x mandatory',
-                          WebkitOverflowScrolling: 'touch'
-                        }
-                  }
-                >
-                  {products.map((product) => {
+                {/* প্রডাক্ট লিস্ট (১০০% উইডথ যাতে পর্যাপ্ত জায়গা থাকে) */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%' }}>
+                  {visibleProducts.map((product) => {
                     const isVisible = product.is_visible;
                     const isToggling = togglingId === product.id;
 
-                    // --- 🧮 গাণিতিক হিসাব ---
+                    // --- 🧮 প্রাইসিং হিসাব ---
                     const basePrice = product.regular_price || product.price || 0;
                     const activeCommRate = product.commission_rate ?? ambassadorCommissionRate;
                     const activeDiscountRate = customerDiscountRate;
@@ -284,25 +260,21 @@ export default function StorefrontProductsCard({
                           backgroundColor: isVisible ? '#121215' : '#0a0a0c',
                           border: isVisible ? '1px solid #27272a' : '1px solid #1a1a1e',
                           borderRadius: '12px',
-                          padding: '12px',
+                          padding: '12px 14px',
                           display: 'flex',
                           flexDirection: 'column',
-                          gap: '10px',
-                          opacity: isVisible ? 1 : 0.55,
-                          transition: 'all 0.2s ease-in-out',
-                          // স্ক্রিনে সম্পূর্ণ ফিট হওয়ার ব্যবস্থা (88% width যাতে ১টি সম্পূর্ণ প্রডাক্ট দেখা যায় এবং পরের প্রডাক্ট হালকা দেখা যায়)
-                          flex: isExpanded ? 'none' : '0 0 88%',
-                          maxWidth: isExpanded ? '100%' : '320px',
-                          scrollSnapAlign: 'start',
+                          gap: '12px',
+                          opacity: isVisible ? 1 : 0.6,
+                          width: '100%',
                           boxSizing: 'border-box'
                         }}
                       >
-                        {/* কার্ডের উপরের অংশ */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        {/* প্রডাক্ট হেডার: ছবি, নাম ও VISIBLE বাটন */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
                           <div
                             style={{
-                              width: '56px',
-                              height: '56px',
+                              width: '52px',
+                              height: '52px',
                               borderRadius: '8px',
                               overflow: 'hidden',
                               backgroundColor: '#18181b',
@@ -320,7 +292,7 @@ export default function StorefrontProductsCard({
                                 style={{
                                   width: '100%',
                                   height: '100%',
-                                  objectFit: 'contain'
+                                  objectFit: 'cover'
                                 }}
                               />
                             ) : (
@@ -331,15 +303,12 @@ export default function StorefrontProductsCard({
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <h4
                               style={{
-                                fontSize: '12px',
+                                fontSize: '13px',
                                 fontWeight: '600',
                                 color: '#ffffff',
                                 margin: 0,
                                 lineHeight: '1.3',
-                                display: '-webkit-box',
-                                WebkitLineClamp: 2,
-                                WebkitBoxOrient: 'vertical',
-                                overflow: 'hidden'
+                                wordBreak: 'break-word'
                               }}
                             >
                               {product.title}
@@ -354,8 +323,8 @@ export default function StorefrontProductsCard({
                               backgroundColor: isVisible ? '#ffffff' : '#18181b',
                               color: isVisible ? '#000000' : '#71717a',
                               border: isVisible ? '1px solid #ffffff' : '1px solid #27272a',
-                              padding: '5px 8px',
-                              fontSize: '9px',
+                              padding: '6px 10px',
+                              fontSize: '10px',
                               fontWeight: '700',
                               borderRadius: '6px',
                               cursor: 'pointer',
@@ -367,50 +336,47 @@ export default function StorefrontProductsCard({
                           </button>
                         </div>
 
-                        {/* কার্ডের নিচের অংশ: ৩টি প্রাইস বক্সে সুনির্দিষ্ট তথ্য */}
+                        {/* প্রাইসিং মেট্রিক্স - পর্যাপ্ত জায়গা পাওয়ায় এখন ৩টি সুন্দর কলামে দেখাবে */}
                         <div
                           style={{
                             display: 'grid',
                             gridTemplateColumns: 'repeat(3, 1fr)',
-                            gap: '4px',
+                            gap: '6px',
                             backgroundColor: '#18181b',
-                            padding: '8px 4px',
+                            padding: '10px 8px',
                             borderRadius: '8px',
                             border: '1px solid #27272a',
-                            textAlign: 'center'
+                            textAlign: 'center',
+                            width: '100%',
+                            boxSizing: 'border-box'
                           }}
                         >
                           {/* ১. বিক্রয় মূল্য */}
                           <div>
-                            <span style={{ fontSize: '8px', color: '#a1a1aa', display: 'block', marginBottom: '2px', textTransform: 'uppercase' }}>
-                              Sell Price
+                            <span style={{ fontSize: '9px', color: '#a1a1aa', display: 'block', marginBottom: '2px', textTransform: 'uppercase' }}>
+                              SELL PRICE
                             </span>
-                            <span style={{ fontSize: '11px', color: '#ffffff', fontWeight: '700', fontFamily: 'monospace' }}>
+                            <span style={{ fontSize: '12px', color: '#ffffff', fontWeight: '700', fontFamily: 'monospace' }}>
                               ৳{sellingPrice.toLocaleString()}
                             </span>
-                            {customerDiscountAmount > 0 && (
-                              <span style={{ fontSize: '8px', color: '#71717a', textDecoration: 'line-through', display: 'block' }}>
-                                ৳{basePrice.toLocaleString()}
-                              </span>
-                            )}
                           </div>
 
                           {/* ২. কমিশন */}
                           <div>
-                            <span style={{ fontSize: '8px', color: '#a1a1aa', display: 'block', marginBottom: '2px', textTransform: 'uppercase' }}>
-                              Your Comm.
+                            <span style={{ fontSize: '9px', color: '#a1a1aa', display: 'block', marginBottom: '2px', textTransform: 'uppercase' }}>
+                              YOUR COMM.
                             </span>
-                            <span style={{ fontSize: '11px', color: '#34d399', fontWeight: '700', fontFamily: 'monospace' }}>
+                            <span style={{ fontSize: '12px', color: '#34d399', fontWeight: '700', fontFamily: 'monospace' }}>
                               +৳{ambassadorCommissionAmount.toLocaleString()}
                             </span>
                           </div>
 
                           {/* ৩. কাস্টমার অফার */}
                           <div>
-                            <span style={{ fontSize: '8px', color: '#a1a1aa', display: 'block', marginBottom: '2px', textTransform: 'uppercase' }}>
-                              Cust. Offer
+                            <span style={{ fontSize: '9px', color: '#a1a1aa', display: 'block', marginBottom: '2px', textTransform: 'uppercase' }}>
+                              CUST. OFFER
                             </span>
-                            <span style={{ fontSize: '11px', color: customerDiscountAmount > 0 ? '#f43f5e' : '#71717a', fontWeight: '700', fontFamily: 'monospace' }}>
+                            <span style={{ fontSize: '12px', color: customerDiscountAmount > 0 ? '#f43f5e' : '#71717a', fontWeight: '700', fontFamily: 'monospace' }}>
                               {customerDiscountAmount > 0 ? `-৳${customerDiscountAmount.toLocaleString()}` : 'None'}
                             </span>
                           </div>
@@ -424,6 +390,6 @@ export default function StorefrontProductsCard({
           })}
         </div>
       )}
-    </section>
+    </div>
   );
 }
