@@ -34,6 +34,7 @@ export default function StorefrontProductsCard({
 }: StorefrontProductsCardProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   // ১. কাউন্ট মেট্রিক্স
   const totalCount = assignedProducts.length;
@@ -63,7 +64,7 @@ export default function StorefrontProductsCard({
     return groups;
   }, [assignedProducts, searchQuery]);
 
-  // See More / See Less টগল
+  // See More / See Less টগল হ্যান্ডলার
   const toggleCategoryExpand = (catName: string) => {
     setExpandedCategories((prev) => ({
       ...prev,
@@ -74,7 +75,21 @@ export default function StorefrontProductsCard({
   return (
     <div style={{ width: '100%', boxSizing: 'border-box', color: '#ffffff' }}>
       
-      {/* ১. টপ ৩টি সামারি কার্ড (মূল লেআউটের সাথে সামঞ্জস্যপূর্ণ) */}
+      {/* ১. মূল শিরোনাম (এখন Total, Active, Hidden এর উপরে) */}
+      <h2
+        style={{
+          fontSize: '12px',
+          margin: '0 0 12px 0',
+          textTransform: 'uppercase',
+          letterSpacing: '1.2px',
+          color: '#ffffff',
+          fontWeight: '700'
+        }}
+      >
+        STORE PRODUCTS
+      </h2>
+
+      {/* ২. টপ ৩টি সামারি কার্ড (TOTAL, ACTIVE, HIDDEN) */}
       <div
         style={{
           display: 'grid',
@@ -135,43 +150,28 @@ export default function StorefrontProductsCard({
         </div>
       </div>
 
-      {/* ২. সেকশন টাইটেল ও স্বাধীন ফুল-উইডথ সার্চবার */}
-      <div style={{ marginBottom: '16px' }}>
-        <h2
+      {/* ৩. স্বাধীন ফুল-উইডথ সার্চবার */}
+      <div style={{ marginBottom: '16px', width: '100%' }}>
+        <input
+          type="text"
+          placeholder="Search products across all categories.."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
           style={{
-            fontSize: '12px',
-            margin: '0 0 10px 0',
-            textTransform: 'uppercase',
-            letterSpacing: '1.2px',
+            width: '100%',
+            backgroundColor: '#121215',
+            border: '1px solid #27272a',
+            borderRadius: '10px',
+            padding: '12px 14px',
+            fontSize: '13px',
             color: '#ffffff',
-            fontWeight: '700'
+            outline: 'none',
+            boxSizing: 'border-box'
           }}
-        >
-          STORE PRODUCTS
-        </h2>
-
-        <div style={{ width: '100%' }}>
-          <input
-            type="text"
-            placeholder="Search products across all categories.."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            style={{
-              width: '100%',
-              backgroundColor: '#121215',
-              border: '1px solid #27272a',
-              borderRadius: '10px',
-              padding: '12px 14px',
-              fontSize: '13px',
-              color: '#ffffff',
-              outline: 'none',
-              boxSizing: 'border-box'
-            }}
-          />
-        </div>
+        />
       </div>
 
-      {/* ৩. লোডিং ও খালি স্টেট */}
+      {/* ৪. লোডিং ও খালি স্টেট */}
       {loadingProducts ? (
         <div style={{ fontSize: '12px', color: '#71717a', padding: '30px 0', textAlign: 'center' }}>
           Loading products...
@@ -190,17 +190,15 @@ export default function StorefrontProductsCard({
           No products found.
         </div>
       ) : (
-        /* ৪. ক্যাটাগরি ভিত্তিক পণ্য তালিকা */
+        /* ৫. ক্যাটাগরি ভিত্তিক স্ক্রলেবল পণ্য তালিকা */
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%' }}>
           {Object.entries(groupedProducts).map(([categoryName, products]) => {
             const isExpanded = !!expandedCategories[categoryName];
-            // ডিফল্টভাবে ১টি বা ২টি প্রডাক্ট দেখানো হবে, 'See More' এ ক্লিক করলে সবকটি দেখাবে
-            const visibleProducts = isExpanded ? products : products.slice(0, 2);
 
             return (
               <div key={categoryName} style={{ width: '100%' }}>
                 
-                {/* ক্যাটাগরি হেডার (See More/Less এখন ক্যাটাগরির মতো একই কালার ও ট্রায়াঙ্গেল টগল ছাড়া) */}
+                {/* ক্যাটাগরি হেডার (See More/Less একদম ডানপাশে ক্যাটাগরি রঙে) */}
                 <div
                   style={{
                     display: 'flex',
@@ -216,32 +214,49 @@ export default function StorefrontProductsCard({
                     {categoryName} <span style={{ color: '#52525b', fontSize: '11px' }}>({products.length})</span>
                   </h3>
 
-                  {products.length > 2 && (
-                    <button
-                      type="button"
-                      onClick={() => toggleCategoryExpand(categoryName)}
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        color: '#a1a1aa', // ক্যাটাগরির রঙের সাথে ম্যাচিং
-                        fontSize: '11px',
-                        fontWeight: '600',
-                        cursor: 'pointer',
-                        padding: 0
-                      }}
-                    >
-                      {isExpanded ? 'See Less' : 'See More'}
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => toggleCategoryExpand(categoryName)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#a1a1aa',
+                      fontSize: '11px',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      padding: 0
+                    }}
+                  >
+                    {isExpanded ? 'See Less' : 'See More'}
+                  </button>
                 </div>
 
-                {/* প্রডাক্ট লিস্ট (১০০% উইডথ যাতে পর্যাপ্ত জায়গা থাকে) */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%' }}>
-                  {visibleProducts.map((product) => {
+                {/* প্রডাক্ট কনটেইনার: কলাপ্স অবস্থায় হরিজন্টাল স্ক্রল এবং বিস্তৃত অবস্থায় ভার্টিকাল লিস্ট */}
+                <div
+                  style={
+                    isExpanded
+                      ? {
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '12px',
+                          width: '100%'
+                        }
+                      : {
+                          display: 'flex',
+                          gap: '12px',
+                          overflowX: 'auto',
+                          paddingBottom: '8px',
+                          width: '100%',
+                          scrollSnapType: 'x mandatory',
+                          WebkitOverflowScrolling: 'touch'
+                        }
+                  }
+                >
+                  {products.map((product) => {
                     const isVisible = product.is_visible;
                     const isToggling = togglingId === product.id;
 
-                    // --- 🧮 প্রাইসিং হিসাব ---
+                    // --- 🧮 গাণিতিক হিসাব ---
                     const basePrice = product.regular_price || product.price || 0;
                     const activeCommRate = product.commission_rate ?? ambassadorCommissionRate;
                     const activeDiscountRate = customerDiscountRate;
@@ -265,16 +280,22 @@ export default function StorefrontProductsCard({
                           flexDirection: 'column',
                           gap: '12px',
                           opacity: isVisible ? 1 : 0.6,
-                          width: '100%',
+                          // হরিজন্টাল স্ক্রলিংয়ে চওড়া ১টি কার্ড সুন্দর ফিট হবে
+                          flex: isExpanded ? 'none' : '0 0 calc(100% - 16px)',
+                          width: isExpanded ? '100%' : 'auto',
+                          scrollSnapAlign: 'start',
                           boxSizing: 'border-box'
                         }}
                       >
                         {/* প্রডাক্ট হেডার: ছবি, নাম ও VISIBLE বাটন */}
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
+                          {/* ছবি (ক্লিক করলে মূল ছবি প্রিভিউ দেখাবে) */}
                           <div
+                            onClick={() => product.image_url && setPreviewImage(product.image_url)}
+                            title="Click to expand image"
                             style={{
-                              width: '52px',
-                              height: '52px',
+                              width: '56px',
+                              height: '56px',
                               borderRadius: '8px',
                               overflow: 'hidden',
                               backgroundColor: '#18181b',
@@ -282,7 +303,8 @@ export default function StorefrontProductsCard({
                               border: '1px solid #27272a',
                               display: 'flex',
                               alignItems: 'center',
-                              justify: 'center'
+                              justify: 'center',
+                              cursor: product.image_url ? 'pointer' : 'default'
                             }}
                           >
                             {product.image_url ? (
@@ -336,7 +358,7 @@ export default function StorefrontProductsCard({
                           </button>
                         </div>
 
-                        {/* প্রাইসিং মেট্রিক্স - পর্যাপ্ত জায়গা পাওয়ায় এখন ৩টি সুন্দর কলামে দেখাবে */}
+                        {/* প্রাইসিং তথ্য বক্স */}
                         <div
                           style={{
                             display: 'grid',
@@ -351,7 +373,6 @@ export default function StorefrontProductsCard({
                             boxSizing: 'border-box'
                           }}
                         >
-                          {/* ১. বিক্রয় মূল্য */}
                           <div>
                             <span style={{ fontSize: '9px', color: '#a1a1aa', display: 'block', marginBottom: '2px', textTransform: 'uppercase' }}>
                               SELL PRICE
@@ -361,7 +382,6 @@ export default function StorefrontProductsCard({
                             </span>
                           </div>
 
-                          {/* ২. কমিশন */}
                           <div>
                             <span style={{ fontSize: '9px', color: '#a1a1aa', display: 'block', marginBottom: '2px', textTransform: 'uppercase' }}>
                               YOUR COMM.
@@ -371,7 +391,6 @@ export default function StorefrontProductsCard({
                             </span>
                           </div>
 
-                          {/* ৩. কাস্টমার অফার */}
                           <div>
                             <span style={{ fontSize: '9px', color: '#a1a1aa', display: 'block', marginBottom: '2px', textTransform: 'uppercase' }}>
                               CUST. OFFER
@@ -388,6 +407,77 @@ export default function StorefrontProductsCard({
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* ৬. প্রডাক্ট ছবির মূল প্রিভিউ পপআপ (Lightbox Modal) */}
+      {previewImage && (
+        <div
+          onClick={() => setPreviewImage(null)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.85)',
+            zIndex: 99999,
+            display: 'flex',
+            alignItems: 'center',
+            justify: 'center',
+            padding: '16px',
+            backdropFilter: 'blur(4px)'
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              position: 'relative',
+              maxWidth: '90%',
+              maxHeight: '90%',
+              backgroundColor: '#121215',
+              borderRadius: '16px',
+              padding: '8px',
+              border: '1px solid #27272a',
+              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5)'
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => setPreviewImage(null)}
+              style={{
+                position: 'absolute',
+                top: '-12px',
+                right: '-12px',
+                backgroundColor: '#27272a',
+                color: '#ffffff',
+                border: '1px solid #3f3f46',
+                borderRadius: '50%',
+                width: '28px',
+                height: '28px',
+                display: 'flex',
+                alignItems: 'center',
+                justify: 'center',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: 'bold',
+                zIndex: 1
+              }}
+            >
+              ✕
+            </button>
+            <img
+              src={previewImage}
+              alt="Product Full Preview"
+              style={{
+                maxWidth: '100%',
+                maxHeight: '75vh',
+                objectFit: 'contain',
+                borderRadius: '12px',
+                display: 'block'
+              }}
+            />
+          </div>
         </div>
       )}
     </div>
