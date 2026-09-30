@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { VisibilityIcon } from '../../icons'; // অথবা '../icons' (আপনার ফোল্ডার স্ট্রাকচার অনুযায়ী)
 
 export interface AssignedProduct {
   id: string | number;
@@ -36,12 +37,12 @@ export default function StorefrontProductsCard({
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
   const [previewImage, setPreviewImage] = useState<string | null>(null);
 
-  // ১. কাউন্ট মেট্রিক্স
+  // ১. মেট্রিাক্স কাউন্ট
   const totalCount = assignedProducts.length;
   const activeCount = useMemo(() => assignedProducts.filter((p) => p.is_visible).length, [assignedProducts]);
   const hiddenCount = totalCount - activeCount;
 
-  // ২. ক্যাটাগরি ভিত্তিক গ্রুপিং ও ফিল্টারিং
+  // ২. ক্যাটাগরি ফিল্টারিং ও গ্রুপিং
   const groupedProducts = useMemo(() => {
     const filtered = assignedProducts.filter((product) => {
       const q = searchQuery.toLowerCase();
@@ -64,7 +65,6 @@ export default function StorefrontProductsCard({
     return groups;
   }, [assignedProducts, searchQuery]);
 
-  // See More / See Less টগল হ্যান্ডলার
   const toggleCategoryExpand = (catName: string) => {
     setExpandedCategories((prev) => ({
       ...prev,
@@ -75,7 +75,7 @@ export default function StorefrontProductsCard({
   return (
     <div style={{ width: '100%', boxSizing: 'border-box', color: '#ffffff' }}>
       
-      {/* ১. মূল শিরোনাম (এখন Total, Active, Hidden এর উপরে) */}
+      {/* মূল টাইটেল */}
       <h2
         style={{
           fontSize: '12px',
@@ -89,7 +89,7 @@ export default function StorefrontProductsCard({
         STORE PRODUCTS
       </h2>
 
-      {/* ২. টপ ৩টি সামারি কার্ড (TOTAL, ACTIVE, HIDDEN) */}
+      {/* সামারি কার্ড ৩টি */}
       <div
         style={{
           display: 'grid',
@@ -150,7 +150,7 @@ export default function StorefrontProductsCard({
         </div>
       </div>
 
-      {/* ৩. স্বাধীন ফুল-উইডথ সার্চবার */}
+      {/* সার্চবার */}
       <div style={{ marginBottom: '16px', width: '100%' }}>
         <input
           type="text"
@@ -171,7 +171,7 @@ export default function StorefrontProductsCard({
         />
       </div>
 
-      {/* ৪. লোডিং ও খালি স্টেট */}
+      {/* লোডিং / খালি স্টেট */}
       {loadingProducts ? (
         <div style={{ fontSize: '12px', color: '#71717a', padding: '30px 0', textAlign: 'center' }}>
           Loading products...
@@ -190,7 +190,7 @@ export default function StorefrontProductsCard({
           No products found.
         </div>
       ) : (
-        /* ৫. ক্যাটাগরি ভিত্তিক স্ক্রলেবল পণ্য তালিকা */
+        /* ক্যাটাগরি লিস্ট */
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%' }}>
           {Object.entries(groupedProducts).map(([categoryName, products]) => {
             const isExpanded = !!expandedCategories[categoryName];
@@ -198,7 +198,7 @@ export default function StorefrontProductsCard({
             return (
               <div key={categoryName} style={{ width: '100%' }}>
                 
-                {/* ক্যাটাগরি হেডার (See More/Less একদম ডানপাশে ক্যাটাগরি রঙে) */}
+                {/* ক্যাটাগরি হেডার: See More / See Less একদম ডানপাশে ক্যাটাগরি ফন্টের স্টাইলে */}
                 <div
                   style={{
                     display: 'flex',
@@ -210,7 +210,16 @@ export default function StorefrontProductsCard({
                     borderBottom: '1px solid #1f1f23'
                   }}
                 >
-                  <h3 style={{ fontSize: '12px', fontWeight: '700', color: '#a1a1aa', margin: 0, textTransform: 'uppercase', letterSpacing: '0.8px' }}>
+                  <h3
+                    style={{
+                      fontSize: '12px',
+                      fontWeight: '700',
+                      color: '#a1a1aa',
+                      margin: 0,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.8px'
+                    }}
+                  >
                     {categoryName} <span style={{ color: '#52525b', fontSize: '11px' }}>({products.length})</span>
                   </h3>
 
@@ -220,9 +229,11 @@ export default function StorefrontProductsCard({
                     style={{
                       background: 'none',
                       border: 'none',
+                      fontSize: '12px',
+                      fontWeight: '700',
                       color: '#a1a1aa',
-                      fontSize: '11px',
-                      fontWeight: '600',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.8px',
                       cursor: 'pointer',
                       padding: 0
                     }}
@@ -231,7 +242,7 @@ export default function StorefrontProductsCard({
                   </button>
                 </div>
 
-                {/* প্রডাক্ট কনটেইনার: কলাপ্স অবস্থায় হরিজন্টাল স্ক্রল এবং বিস্তৃত অবস্থায় ভার্টিকাল লিস্ট */}
+                {/* প্রডাক্ট কনটেইনার: See More / See Less করলেও কার্ড লেআউট অপরিবর্তিত থাকবে */}
                 <div
                   style={
                     isExpanded
@@ -256,7 +267,7 @@ export default function StorefrontProductsCard({
                     const isVisible = product.is_visible;
                     const isToggling = togglingId === product.id;
 
-                    // --- 🧮 গাণিতিক হিসাব ---
+                    // প্রাইসিং হিসাব
                     const basePrice = product.regular_price || product.price || 0;
                     const activeCommRate = product.commission_rate ?? ambassadorCommissionRate;
                     const activeDiscountRate = customerDiscountRate;
@@ -280,22 +291,22 @@ export default function StorefrontProductsCard({
                           flexDirection: 'column',
                           gap: '12px',
                           opacity: isVisible ? 1 : 0.6,
-                          // হরিজন্টাল স্ক্রলিংয়ে চওড়া ১টি কার্ড সুন্দর ফিট হবে
-                          flex: isExpanded ? 'none' : '0 0 calc(100% - 16px)',
-                          width: isExpanded ? '100%' : 'auto',
+                          width: '100%',
+                          minWidth: isExpanded ? '100%' : 'calc(100% - 16px)',
+                          flexShrink: 0,
                           scrollSnapAlign: 'start',
                           boxSizing: 'border-box'
                         }}
                       >
-                        {/* প্রডাক্ট হেডার: ছবি, নাম ও VISIBLE বাটন */}
+                        {/* প্রডাক্ট হেডার: ছবি, নাম ও নতুন SVG বাটন */}
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
-                          {/* ছবি (ক্লিক করলে মূল ছবি প্রিভিউ দেখাবে) */}
+                          {/* ছবি */}
                           <div
                             onClick={() => product.image_url && setPreviewImage(product.image_url)}
-                            title="Click to expand image"
+                            title="Click to preview image"
                             style={{
-                              width: '56px',
-                              height: '56px',
+                              width: '52px',
+                              height: '52px',
                               borderRadius: '8px',
                               overflow: 'hidden',
                               backgroundColor: '#18181b',
@@ -322,10 +333,11 @@ export default function StorefrontProductsCard({
                             )}
                           </div>
 
+                          {/* নাম (এখন পর্যাপ্ত জায়গা পাবে) */}
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <h4
                               style={{
-                                fontSize: '13px',
+                                fontSize: '14px',
                                 fontWeight: '600',
                                 color: '#ffffff',
                                 margin: 0,
@@ -337,28 +349,36 @@ export default function StorefrontProductsCard({
                             </h4>
                           </div>
 
+                          {/* SVG Visibility Icon Button */}
                           <button
                             type="button"
                             onClick={() => onToggleVisibility(product.id, isVisible)}
                             disabled={isToggling}
+                            title={isVisible ? 'Hide Product' : 'Make Product Visible'}
                             style={{
-                              backgroundColor: isVisible ? '#ffffff' : '#18181b',
-                              color: isVisible ? '#000000' : '#71717a',
-                              border: isVisible ? '1px solid #ffffff' : '1px solid #27272a',
-                              padding: '6px 10px',
-                              fontSize: '10px',
-                              fontWeight: '700',
-                              borderRadius: '6px',
+                              backgroundColor: isVisible ? 'rgba(16, 185, 129, 0.12)' : 'rgba(255, 255, 255, 0.05)',
+                              border: isVisible ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid #27272a',
+                              borderRadius: '8px',
+                              width: '38px',
+                              height: '38px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justify: 'center',
                               cursor: 'pointer',
-                              letterSpacing: '0.5px',
-                              flexShrink: 0
+                              flexShrink: 0,
+                              transition: 'all 0.2s ease',
+                              padding: 0
                             }}
                           >
-                            {isToggling ? '...' : isVisible ? 'VISIBLE' : 'HIDDEN'}
+                            {isToggling ? (
+                              <span style={{ fontSize: '10px', color: '#a1a1aa' }}>...</span>
+                            ) : (
+                              <VisibilityIcon visible={isVisible} size={18} />
+                            )}
                           </button>
                         </div>
 
-                        {/* প্রাইসিং তথ্য বক্স */}
+                        {/* প্রাইসিং তথ্য গ্রিড */}
                         <div
                           style={{
                             display: 'grid',
@@ -410,7 +430,7 @@ export default function StorefrontProductsCard({
         </div>
       )}
 
-      {/* ৬. প্রডাক্ট ছবির মূল প্রিভিউ পপআপ (Lightbox Modal) */}
+      {/* লাইটবক্স ইমেজ প্রিভিউ পপআপ */}
       {previewImage && (
         <div
           onClick={() => setPreviewImage(null)}
