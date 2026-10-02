@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '@/supabaseClient';
 import AmbassadorSkeleton from './AmbassadorSkeleton';
 import ProductManager from './ProductManager';
-import PayoutList from '../payouts/PayoutList';
+import PayoutManager from './payouts/PayoutManager';
 
 interface AmbassadorProfile {
   id: string; // Profiles ID
@@ -256,7 +256,7 @@ export default function AmbassadorList({
 
       {/* RENDER PAYOUTS VIEW */}
       {activeSubTab === 'PAYOUTS' ? (
-        <PayoutList />
+        <PayoutManager />
       ) : (
         <>
           {/* FILTER SECTION */}
