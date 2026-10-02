@@ -38,6 +38,17 @@ export default function EarningsCard({
   const [history, setHistory] = useState<PayoutRequest[]>([]);
   const [loadingHistory, setLoadingHistory] = useState<boolean>(false);
 
+  // Custom Toast State
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  // Trigger Toast Notification
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => {
+      setToast(null);
+    }, 3500);
+  };
+
   // Parse saved payout details
   let savedMethod = '';
   let savedAccount = '';
@@ -103,13 +114,17 @@ export default function EarningsCard({
 
       if (updateError) throw updateError;
 
-      alert('Withdrawal request submitted successfully!');
+      // সুন্দর কাস্টম টোস্ট শো করা
+      showToast('Withdrawal request submitted successfully!', 'success');
+      
       setShowWithdrawModal(false);
       setAmount('');
 
       if (onSuccessRefresh) onSuccessRefresh();
     } catch (err: any) {
-      setErrorMsg(err.message || 'Failed to submit withdrawal request.');
+      const errorText = err.message || 'Failed to submit withdrawal request.';
+      setErrorMsg(errorText);
+      showToast(errorText, 'error');
     } finally {
       setLoading(false);
     }
@@ -204,6 +219,11 @@ export default function EarningsCard({
           50% { opacity: 0.6; }
           100% { opacity: 0.25; }
         }
+        @keyframes toastBounceIn {
+          0% { transform: translate3d(-50%, -30px, 0) scale(0.95); opacity: 0; }
+          70% { transform: translate3d(-50%, 4px, 0) scale(1.02); opacity: 1; }
+          100% { transform: translate3d(-50%, 0, 0) scale(1); opacity: 1; }
+        }
         .apple-sheet-enter {
           animation: iosSlideUp 0.32s cubic-bezier(0.32, 0.72, 0, 1) forwards;
           will-change: transform;
@@ -223,9 +243,61 @@ export default function EarningsCard({
           background-color: #1e1e1e;
           border-radius: 6px;
         }
+        .toast-animate {
+          animation: toastBounceIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
       `}</style>
 
-      {/* ১. হেডার (WALLET বামে, HISTORY ডানে - Absolute Positioning দিয়ে স্পেস ফিক্সড) */}
+      {/* CUSTOM TOAST NOTIFICATION */}
+      {toast && (
+        <div
+          className="toast-animate"
+          style={{
+            position: 'fixed',
+            top: '24px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 10000,
+            backgroundColor: '#0f0f11',
+            border: `1px solid ${toast.type === 'success' ? 'rgba(52, 211, 153, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
+            boxShadow: '0 12px 32px rgba(0, 0, 0, 0.8), 0 2px 6px rgba(0, 0, 0, 0.4)',
+            borderRadius: '100px',
+            padding: '10px 18px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            maxWidth: '90vw',
+            pointerEvents: 'none'
+          }}
+        >
+          {/* Status Indicator Icon Dot */}
+          <div
+            style={{
+              width: '8px',
+              height: '8px',
+              borderRadius: '50%',
+              backgroundColor: toast.type === 'success' ? '#34d399' : '#ef4444',
+              boxShadow: `0 0 10px ${toast.type === 'success' ? '#34d399' : '#ef4444'}`,
+              flexShrink: 0
+            }}
+          />
+          <span
+            style={{
+              fontSize: '12px',
+              fontWeight: '600',
+              color: '#ffffff',
+              letterSpacing: '0.2px',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis'
+            }}
+          >
+            {toast.message}
+          </span>
+        </div>
+      )}
+
+      {/* ১. হেডার */}
       <div
         style={{
           position: 'relative',
@@ -513,7 +585,7 @@ export default function EarningsCard({
               />
             </div>
 
-            {/* Header - সার্কেল বিহীন র নরমাল ক্রস বাটন */}
+            {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexShrink: 0 }}>
               <h3 style={{ fontSize: '13px', margin: 0, color: '#ffffff', letterSpacing: '1.5px', fontWeight: '700' }}>
                 PAYOUT HISTORY
@@ -610,7 +682,6 @@ export default function EarningsCard({
                         flexShrink: 0
                       }}
                     >
-                      {/* ১. টাকার পরিমাণ (বামে) এবং পিল ছাড়া কালার্ড টেক্সট স্ট্যাটাস (ডানে) */}
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <span style={{ fontSize: '16px', fontWeight: '700', color: '#ffffff' }}>
                           ৳{item.amount.toLocaleString()}
@@ -627,7 +698,6 @@ export default function EarningsCard({
                         </span>
                       </div>
 
-                      {/* ২. নাম্বার/কার্ড/মোবাইল (বামে) এবং মাধ্যম (ডানে) */}
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px' }}>
                         <span style={{ color: '#cccccc', fontFamily: "'SF Mono', Consolas, monospace", fontSize: '11px' }}>
                           {item.account_number}
@@ -635,7 +705,6 @@ export default function EarningsCard({
                         <span style={{ color: '#aaaaaa', fontWeight: '500' }}>{item.payout_method}</span>
                       </div>
 
-                      {/* ৩. তারিখ (বামে) এবং সময় (ডানে) */}
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '10px', color: '#666666' }}>
                         <span>{formattedDate}</span>
                         <span>{formattedTime}</span>
