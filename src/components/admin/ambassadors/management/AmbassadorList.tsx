@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '@/supabaseClient';
 import AmbassadorSkeleton from './AmbassadorSkeleton';
 import ProductManager from './ProductManager';
-import PayoutManager from './payouts/PayoutManager';
+import PayoutManager from '../payouts/PayoutManager';
 
 interface AmbassadorProfile {
   id: string; // Profiles ID
