@@ -256,7 +256,7 @@ export default function AmbassadorList({
 
       {/* RENDER PAYOUTS VIEW */}
       {activeSubTab === 'PAYOUTS' ? (
-        <PayoutManager />
+        <PayoutManager isFilterOpen={isFilterOpen} />
       ) : (
         <>
           {/* FILTER SECTION */}
