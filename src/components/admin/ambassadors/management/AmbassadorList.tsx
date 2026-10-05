@@ -3,17 +3,16 @@ import { supabase } from '@/supabaseClient';
 import AmbassadorSkeleton from './AmbassadorSkeleton';
 import ProductManager from './ProductManager';
 import PayoutManager from '@/components/admin/ambassadors/payouts/PayoutManager';
-// Icon Imports from '@/components/icons'
+
+// Valid Icon Imports from '@/components/icons/index.ts'
 import {
-  MessageIcon,
-  EmailIcon,
-  ProductsIcon,
-  PayoutIcon,
-  CloseIcon,
-  ChevronRightIcon,
-  CopyIcon,
-  ExternalLinkIcon,
   CheckIcon,
+  CloseIcon,
+  EmailIcon,
+  MessageIcon,
+  CartIcon,
+  HistoryIcon,
+  SettingsIcon,
 } from '@/components/icons';
 
 interface AmbassadorProfile {
@@ -289,15 +288,15 @@ export default function AmbassadorList({
                         style={{ cursor: 'pointer', flex: 1 }}
                       >
                         <div style={{ fontSize: '15px', fontWeight: '700', color: '#ffffff', letterSpacing: '-0.2px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <span style={{ textDecoration: 'none' }} className="hover:underline">{amb.name}</span>
-                          <span style={{ fontSize: '10px', color: '#71717a' }}>⚙</span>
+                          <span className="hover:underline">{amb.name}</span>
+                          <SettingsIcon style={{ width: '12px', height: '12px', color: '#71717a' }} />
                         </div>
                         <div style={{ fontSize: '11px', color: '#71717a', marginTop: '2px', fontFamily: 'monospace' }}>
                           {amb.email}
                         </div>
                       </div>
 
-                      {/* STATUS PILL */}
+                      {/* STATUS PILL BADGE */}
                       <div
                         onClick={() => handleToggleStatus(amb)}
                         style={{
@@ -356,7 +355,7 @@ export default function AmbassadorList({
                           <div style={{ fontSize: '8px', color: '#2997ff', fontFamily: 'monospace', letterSpacing: '0.8px', textTransform: 'uppercase', fontWeight: 'bold' }}>
                             ASSIGNED PRODUCTS
                           </div>
-                          <span style={{ fontSize: '10px', color: '#2997ff' }}>⚙</span>
+                          <SettingsIcon style={{ width: '10px', height: '10px', color: '#2997ff' }} />
                         </div>
                         <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#ffffff', marginTop: '4px', fontFamily: 'monospace' }}>
                           {amb.assigned_products_count || 0} <span style={{ fontSize: '9px', color: '#71717a', fontWeight: 'normal' }}>items</span>
@@ -381,9 +380,7 @@ export default function AmbassadorList({
                                 <CheckIcon style={{ width: '12px', height: '12px' }} /> COPIED!
                               </>
                             ) : (
-                              <>
-                                <CopyIcon style={{ width: '12px', height: '12px' }} /> COPY
-                              </>
+                              '📋 COPY'
                             )}
                           </button>
                           <a
@@ -392,7 +389,7 @@ export default function AmbassadorList({
                             rel="noopener noreferrer"
                             style={{ color: '#2997ff', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '2px' }}
                           >
-                            OPEN <ExternalLinkIcon style={{ width: '10px', height: '10px' }} />
+                            OPEN ↗
                           </a>
                         </div>
                       </div>
@@ -434,7 +431,6 @@ export default function AmbassadorList({
               display: 'flex',
               flexDirection: 'column',
               gap: '16px',
-              animation: 'slideUp 0.25s ease-out',
             }}
           >
             {/* SHEET HEADER */}
@@ -528,7 +524,7 @@ export default function AmbassadorList({
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <ProductsIcon style={{ width: '16px', height: '16px', color: '#2997ff' }} />
+                  <CartIcon style={{ width: '16px', height: '16px', color: '#2997ff' }} />
                   <div>
                     <div style={{ fontWeight: '600' }}>Manage Products</div>
                     <div style={{ fontSize: '10px', color: '#71717a', fontFamily: 'monospace' }}>
@@ -536,7 +532,7 @@ export default function AmbassadorList({
                     </div>
                   </div>
                 </div>
-                <ChevronRightIcon style={{ width: '14px', height: '14px', color: '#71717a' }} />
+                <span style={{ fontSize: '12px', color: '#71717a' }}>→</span>
               </button>
 
               {/* ACTION 2: PAYOUT HISTORY / FILTER */}
@@ -561,7 +557,7 @@ export default function AmbassadorList({
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <PayoutIcon style={{ width: '16px', height: '16px', color: '#e3a008' }} />
+                  <HistoryIcon style={{ width: '16px', height: '16px', color: '#e3a008' }} />
                   <div>
                     <div style={{ fontWeight: '600' }}>Payout Requests & History</div>
                     <div style={{ fontSize: '10px', color: '#71717a', fontFamily: 'monospace' }}>
@@ -569,7 +565,7 @@ export default function AmbassadorList({
                     </div>
                   </div>
                 </div>
-                <ChevronRightIcon style={{ width: '14px', height: '14px', color: '#71717a' }} />
+                <span style={{ fontSize: '12px', color: '#71717a' }}>→</span>
               </button>
 
               {/* ACTION 3: TOGGLE STATUS */}
