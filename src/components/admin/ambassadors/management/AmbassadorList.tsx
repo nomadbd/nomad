@@ -3,6 +3,18 @@ import { supabase } from '@/supabaseClient';
 import AmbassadorSkeleton from './AmbassadorSkeleton';
 import ProductManager from './ProductManager';
 import PayoutManager from '@/components/admin/ambassadors/payouts/PayoutManager';
+// Icon Imports from '@/components/icons'
+import {
+  MessageIcon,
+  EmailIcon,
+  ProductsIcon,
+  PayoutIcon,
+  CloseIcon,
+  ChevronRightIcon,
+  CopyIcon,
+  ExternalLinkIcon,
+  CheckIcon,
+} from '@/components/icons';
 
 interface AmbassadorProfile {
   id: string; // Profiles ID
@@ -33,13 +45,12 @@ export default function AmbassadorList({
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [copiedSlug, setCopiedSlug] = useState<string | null>(null);
 
+  // Bottom Sheet & Modal States
+  const [bottomSheetAmbassador, setBottomSheetAmbassador] = useState<AmbassadorProfile | null>(null);
+  const [selectedAmbassadorForProducts, setSelectedAmbassadorForProducts] = useState<AmbassadorProfile | null>(null);
+
   // Filter States
   const [sortOrder, setSortOrder] = useState<'NEWEST' | 'OLDEST'>('NEWEST');
-  const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'BLOCKED'>('ALL');
-  const [salesFilter, setSalesFilter] = useState<'ALL' | 'HIGHEST' | 'LOWEST' | 'NO_SALES'>('ALL');
-
-  // Product Manager Modal State
-  const [selectedAmbassador, setSelectedAmbassador] = useState<AmbassadorProfile | null>(null);
 
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
 
@@ -47,7 +58,6 @@ export default function AmbassadorList({
     setLoading(true);
     setErrorMessage(null);
     try {
-      // 1. Fetch Ambassadors with accurate column selection
       const { data, error } = await supabase
         .from('profiles')
         .select(`
@@ -75,7 +85,7 @@ export default function AmbassadorList({
         const formattedData: AmbassadorProfile[] = data.map((item: any) => {
           const ambData = Array.isArray(item.ambassador) ? item.ambassador[0] : item.ambassador;
           const productsList = ambData?.ambassador_products || [];
-          
+
           return {
             id: item.id,
             ambassador_id: ambData?.id || item.id,
@@ -91,7 +101,7 @@ export default function AmbassadorList({
         setAmbassadors(formattedData);
       }
 
-      // 2. Fetch Pending Payout Requests Count
+      // Fetch Pending Payout Requests Count
       const { count } = await supabase
         .from('payout_requests')
         .select('*', { count: 'exact', head: true })
@@ -110,7 +120,8 @@ export default function AmbassadorList({
     fetchAmbassadorsAndStats();
   }, []);
 
-  const handleCopyLink = (fullUrl: string, slug: string) => {
+  const handleCopyLink = (e: React.MouseEvent, fullUrl: string, slug: string) => {
+    e.stopPropagation();
     navigator.clipboard.writeText(fullUrl);
     setCopiedSlug(slug);
     setTimeout(() => setCopiedSlug(null), 2000);
@@ -119,7 +130,7 @@ export default function AmbassadorList({
   const handleToggleStatus = async (amb: AmbassadorProfile) => {
     const isBlocked = amb.status?.toUpperCase() === 'BLOCKED' || amb.status?.toUpperCase() === 'DEACTIVATED';
     const actionText = isBlocked ? 'activate' : 'deactivate';
-    
+
     const confirm = window.confirm(`Are you sure you want to ${actionText} ${amb.name}?`);
     if (!confirm) return;
 
@@ -129,6 +140,11 @@ export default function AmbassadorList({
       const { error } = await supabase.rpc(rpcName, { target_user_id: amb.id });
       if (error) throw error;
       fetchAmbassadorsAndStats();
+      if (bottomSheetAmbassador) {
+        setBottomSheetAmbassador((prev) =>
+          prev ? { ...prev, status: isBlocked ? 'ACTIVE' : 'DEACTIVATED' } : null
+        );
+      }
     } catch (err: any) {
       alert(`Failed to ${actionText} ambassador: ` + err.message);
     } finally {
@@ -136,13 +152,8 @@ export default function AmbassadorList({
     }
   };
 
-  // Filter Logic
   const filteredAmbassadors = ambassadors
     .filter((amb) => {
-      if (statusFilter === 'ACTIVE' && amb.status?.toUpperCase() !== 'ACTIVE') return false;
-      if (statusFilter === 'BLOCKED' && amb.status?.toUpperCase() !== 'BLOCKED' && amb.status?.toUpperCase() !== 'DEACTIVATED') return false;
-      if (salesFilter === 'NO_SALES' && (amb.total_sales || 0) > 0) return false;
-
       if (searchQuery && searchQuery.trim() !== '') {
         const query = searchQuery.trim().toLowerCase();
         const matchesName = amb.name?.toLowerCase().includes(query);
@@ -153,9 +164,6 @@ export default function AmbassadorList({
       return true;
     })
     .sort((a, b) => {
-      if (salesFilter === 'HIGHEST') return (b.total_sales || 0) - (a.total_sales || 0);
-      if (salesFilter === 'LOWEST') return (a.total_sales || 0) - (b.total_sales || 0);
-
       const dateA = new Date(a.created_at || 0).getTime();
       const dateB = new Date(b.created_at || 0).getTime();
       return sortOrder === 'OLDEST' ? dateA - dateB : dateB - dateA;
@@ -218,23 +226,32 @@ export default function AmbassadorList({
         <>
           {/* FILTER PANEL */}
           {isFilterOpen && (
-            <div className="animate-fade-in" style={{ marginBottom: '16px' }}>
-              <div style={{ backgroundColor: '#09090b', border: '1px solid #1f1f23', padding: '14px 16px', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '9px', color: '#666', marginBottom: '6px', letterSpacing: '1px' }}>SORT BY JOIN DATE</label>
-                  <div style={{ display: 'flex', gap: '12px' }}>
-                    {['NEWEST', 'OLDEST'].map((opt) => (
-                      <button key={opt} type="button" onClick={() => setSortOrder(opt as any)} style={{ backgroundColor: 'transparent', color: sortOrder === opt ? '#2997ff' : '#666', border: 'none', fontSize: '10px', fontFamily: 'monospace', cursor: 'pointer', fontWeight: sortOrder === opt ? 'bold' : 'normal' }}>
-                        {opt}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+            <div style={{ marginBottom: '16px' }}>
+              <div style={{ backgroundColor: '#09090b', border: '1px solid #1f1f23', padding: '12px 14px', borderRadius: '8px', display: 'flex', gap: '12px', alignItems: 'center' }}>
+                <span style={{ fontSize: '9px', color: '#71717a', fontFamily: 'monospace', letterSpacing: '1px' }}>SORT BY:</span>
+                {['NEWEST', 'OLDEST'].map((opt) => (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() => setSortOrder(opt as any)}
+                    style={{
+                      backgroundColor: 'transparent',
+                      color: sortOrder === opt ? '#2997ff' : '#71717a',
+                      border: 'none',
+                      fontSize: '10px',
+                      fontFamily: 'monospace',
+                      cursor: 'pointer',
+                      fontWeight: sortOrder === opt ? 'bold' : 'normal',
+                    }}
+                  >
+                    {opt}
+                  </button>
+                ))}
               </div>
             </div>
           )}
 
-          {/* AMBASSADOR LIST */}
+          {/* AMBASSADOR CARDS LIST */}
           {loading ? (
             <AmbassadorSkeleton />
           ) : errorMessage ? (
@@ -259,27 +276,29 @@ export default function AmbassadorList({
                       backgroundColor: '#09090b',
                       border: '1px solid #1f1f23',
                       padding: '16px',
-                      borderRadius: '10px',
+                      borderRadius: '12px',
                       display: 'flex',
                       flexDirection: 'column',
                       gap: '14px',
                     }}
                   >
-                    {/* TOP HEADER: NAME + INTERACTIVE STATUS BADGE */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div>
-                        <div style={{ fontSize: '15px', fontWeight: '700', color: '#ffffff', letterSpacing: '-0.2px' }}>
-                          {amb.name}
+                    {/* TOP HEADER: NAME (CLICK OPENS BOTTOM SHEET) + STATUS */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <div
+                        onClick={() => setBottomSheetAmbassador(amb)}
+                        style={{ cursor: 'pointer', flex: 1 }}
+                      >
+                        <div style={{ fontSize: '15px', fontWeight: '700', color: '#ffffff', letterSpacing: '-0.2px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span style={{ textDecoration: 'none' }} className="hover:underline">{amb.name}</span>
+                          <span style={{ fontSize: '10px', color: '#71717a' }}>⚙</span>
                         </div>
                         <div style={{ fontSize: '11px', color: '#71717a', marginTop: '2px', fontFamily: 'monospace' }}>
                           {amb.email}
                         </div>
                       </div>
 
-                      {/* STATUS PILL BADGE */}
-                      <button
-                        type="button"
-                        disabled={actionLoading === amb.id}
+                      {/* STATUS PILL */}
+                      <div
                         onClick={() => handleToggleStatus(amb)}
                         style={{
                           backgroundColor: isBlocked ? 'rgba(239, 68, 68, 0.1)' : 'rgba(34, 197, 94, 0.1)',
@@ -294,11 +313,12 @@ export default function AmbassadorList({
                           display: 'inline-flex',
                           alignItems: 'center',
                           gap: '6px',
+                          userSelect: 'none',
                         }}
                       >
                         <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: isBlocked ? '#ef4444' : '#22c55e' }} />
                         {actionLoading === amb.id ? 'UPDATING...' : isBlocked ? 'DEACTIVATED' : 'ACTIVE'}
-                      </button>
+                      </div>
                     </div>
 
                     {/* METRIC CARDS (GRID OF 2: SALES & ASSIGNED PRODUCTS) */}
@@ -307,9 +327,9 @@ export default function AmbassadorList({
                       <div
                         style={{
                           backgroundColor: '#121215',
-                          border: '1px solid #27272a',
+                          border: '1px solid #1f1f23',
                           padding: '10px 12px',
-                          borderRadius: '6px',
+                          borderRadius: '8px',
                         }}
                       >
                         <div style={{ fontSize: '8px', color: '#71717a', fontFamily: 'monospace', letterSpacing: '0.8px', textTransform: 'uppercase' }}>
@@ -320,14 +340,14 @@ export default function AmbassadorList({
                         </div>
                       </div>
 
-                      {/* CARD 2: ASSIGNED PRODUCTS (CLICKABLE ACTION BUTTON) */}
+                      {/* CARD 2: ASSIGNED PRODUCTS (ACTIONABLE TRIGGER) */}
                       <div
-                        onClick={() => setSelectedAmbassador(amb)}
+                        onClick={() => setSelectedAmbassadorForProducts(amb)}
                         style={{
                           backgroundColor: '#121215',
-                          border: '1px solid #2997ff40',
+                          border: '1px solid rgba(41, 151, 255, 0.3)',
                           padding: '10px 12px',
-                          borderRadius: '6px',
+                          borderRadius: '8px',
                           cursor: 'pointer',
                           transition: 'all 0.2s ease',
                         }}
@@ -344,27 +364,35 @@ export default function AmbassadorList({
                       </div>
                     </div>
 
-                    {/* SMART URL & COPY ACTION BAR */}
+                    {/* SMART URL BOX */}
                     {amb.assigned_slug && (
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#000000', border: '1px solid #1a1a1e', padding: '6px 10px', borderRadius: '6px', fontSize: '10px', fontFamily: 'monospace' }}>
                         <span style={{ color: '#71717a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginRight: '8px' }}>
                           {shortDisplayLink}
                         </span>
-                        <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+                        <div style={{ display: 'flex', gap: '8px', flexShrink: 0, alignItems: 'center' }}>
                           <button
                             type="button"
-                            onClick={() => handleCopyLink(fullLink, amb.assigned_slug)}
-                            style={{ backgroundColor: 'transparent', color: copiedSlug === amb.assigned_slug ? '#64ffda' : '#a1a1aa', border: 'none', cursor: 'pointer', fontSize: '10px', padding: 0 }}
+                            onClick={(e) => handleCopyLink(e, fullLink, amb.assigned_slug)}
+                            style={{ backgroundColor: 'transparent', color: copiedSlug === amb.assigned_slug ? '#64ffda' : '#a1a1aa', border: 'none', cursor: 'pointer', fontSize: '10px', padding: 0, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
                           >
-                            {copiedSlug === amb.assigned_slug ? 'COPIED!' : '📋 COPY'}
+                            {copiedSlug === amb.assigned_slug ? (
+                              <>
+                                <CheckIcon style={{ width: '12px', height: '12px' }} /> COPIED!
+                              </>
+                            ) : (
+                              <>
+                                <CopyIcon style={{ width: '12px', height: '12px' }} /> COPY
+                              </>
+                            )}
                           </button>
                           <a
                             href={fullLink}
                             target="_blank"
                             rel="noopener noreferrer"
-                            style={{ color: '#2997ff', textDecoration: 'none' }}
+                            style={{ color: '#2997ff', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '2px' }}
                           >
-                            ↗ OPEN
+                            OPEN <ExternalLinkIcon style={{ width: '10px', height: '10px' }} />
                           </a>
                         </div>
                       </div>
@@ -377,14 +405,209 @@ export default function AmbassadorList({
         </>
       )}
 
+      {/* ========================================== */}
+      {/* ACTION CENTER - BOTTOM SHEET MODAL */}
+      {/* ========================================== */}
+      {bottomSheetAmbassador && (
+        <div
+          onClick={() => setBottomSheetAmbassador(null)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.75)',
+            backdropFilter: 'blur(4px)',
+            zIndex: 100,
+            display: 'flex',
+            alignItems: 'flex-end',
+            justifyContent: 'center',
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: '100%',
+              maxWidth: '500px',
+              backgroundColor: '#09090b',
+              borderTop: '1px solid #1f1f23',
+              borderRadius: '16px 16px 0 0',
+              padding: '20px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px',
+              animation: 'slideUp 0.25s ease-out',
+            }}
+          >
+            {/* SHEET HEADER */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div>
+                <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#ffffff' }}>
+                  {bottomSheetAmbassador.name}
+                </div>
+                <div style={{ fontSize: '11px', color: '#71717a', fontFamily: 'monospace', marginTop: '2px' }}>
+                  {bottomSheetAmbassador.email}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setBottomSheetAmbassador(null)}
+                style={{ backgroundColor: '#121215', border: '1px solid #27272a', color: '#a1a1aa', borderRadius: '50%', padding: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              >
+                <CloseIcon style={{ width: '14px', height: '14px' }} />
+              </button>
+            </div>
+
+            {/* QUICK COMMUNICATION ACTION BAR */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+              {/* DIRECT MESSAGE */}
+              <a
+                href={`mailto:${bottomSheetAmbassador.email}`}
+                style={{
+                  backgroundColor: '#121215',
+                  border: '1px solid #27272a',
+                  borderRadius: '8px',
+                  padding: '10px',
+                  color: '#ffffff',
+                  textDecoration: 'none',
+                  fontSize: '11px',
+                  fontFamily: 'monospace',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                }}
+              >
+                <MessageIcon style={{ width: '14px', height: '14px', color: '#2997ff' }} />
+                Send Message
+              </a>
+
+              {/* DIRECT EMAIL */}
+              <a
+                href={`mailto:${bottomSheetAmbassador.email}`}
+                style={{
+                  backgroundColor: '#121215',
+                  border: '1px solid #27272a',
+                  borderRadius: '8px',
+                  padding: '10px',
+                  color: '#ffffff',
+                  textDecoration: 'none',
+                  fontSize: '11px',
+                  fontFamily: 'monospace',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                }}
+              >
+                <EmailIcon style={{ width: '14px', height: '14px', color: '#64ffda' }} />
+                Email Profile
+              </a>
+            </div>
+
+            {/* ACTION LIST */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {/* ACTION 1: MANAGE ASSIGNED PRODUCTS */}
+              <button
+                type="button"
+                onClick={() => {
+                  const amb = bottomSheetAmbassador;
+                  setBottomSheetAmbassador(null);
+                  setSelectedAmbassadorForProducts(amb);
+                }}
+                style={{
+                  backgroundColor: '#121215',
+                  border: '1px solid #1f1f23',
+                  borderRadius: '10px',
+                  padding: '12px 14px',
+                  color: '#ffffff',
+                  fontSize: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <ProductsIcon style={{ width: '16px', height: '16px', color: '#2997ff' }} />
+                  <div>
+                    <div style={{ fontWeight: '600' }}>Manage Products</div>
+                    <div style={{ fontSize: '10px', color: '#71717a', fontFamily: 'monospace' }}>
+                      {bottomSheetAmbassador.assigned_products_count || 0} products currently assigned
+                    </div>
+                  </div>
+                </div>
+                <ChevronRightIcon style={{ width: '14px', height: '14px', color: '#71717a' }} />
+              </button>
+
+              {/* ACTION 2: PAYOUT HISTORY / FILTER */}
+              <button
+                type="button"
+                onClick={() => {
+                  setBottomSheetAmbassador(null);
+                  setActiveSubTab('PAYOUTS');
+                }}
+                style={{
+                  backgroundColor: '#121215',
+                  border: '1px solid #1f1f23',
+                  borderRadius: '10px',
+                  padding: '12px 14px',
+                  color: '#ffffff',
+                  fontSize: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <PayoutIcon style={{ width: '16px', height: '16px', color: '#e3a008' }} />
+                  <div>
+                    <div style={{ fontWeight: '600' }}>Payout Requests & History</div>
+                    <div style={{ fontSize: '10px', color: '#71717a', fontFamily: 'monospace' }}>
+                      View all payouts for this ambassador
+                    </div>
+                  </div>
+                </div>
+                <ChevronRightIcon style={{ width: '14px', height: '14px', color: '#71717a' }} />
+              </button>
+
+              {/* ACTION 3: TOGGLE STATUS */}
+              <button
+                type="button"
+                onClick={() => handleToggleStatus(bottomSheetAmbassador)}
+                style={{
+                  backgroundColor: '#121215',
+                  border: '1px solid #1f1f23',
+                  borderRadius: '10px',
+                  padding: '12px 14px',
+                  color: bottomSheetAmbassador.status?.toUpperCase() === 'BLOCKED' ? '#22c55e' : '#ef4444',
+                  fontSize: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                }}
+              >
+                <div style={{ fontWeight: '600' }}>
+                  {bottomSheetAmbassador.status?.toUpperCase() === 'BLOCKED' ? 'Activate Ambassador Account' : 'Deactivate Ambassador Account'}
+                </div>
+                <span style={{ fontSize: '10px', fontFamily: 'monospace' }}>●</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* PRODUCT MANAGER MODAL */}
-      {selectedAmbassador && (
+      {selectedAmbassadorForProducts && (
         <ProductManager
-          ambassadorId={selectedAmbassador.ambassador_id}
-          ambassadorName={selectedAmbassador.name}
-          ambassadorSlug={selectedAmbassador.assigned_slug}
+          ambassadorId={selectedAmbassadorForProducts.ambassador_id}
+          ambassadorName={selectedAmbassadorForProducts.name}
+          ambassadorSlug={selectedAmbassadorForProducts.assigned_slug}
           onClose={() => {
-            setSelectedAmbassador(null);
+            setSelectedAmbassadorForProducts(null);
             fetchAmbassadorsAndStats();
           }}
         />
