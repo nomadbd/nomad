@@ -14,7 +14,6 @@ interface AmbassadorProfile {
   created_at?: string;
   total_sales?: number;
   assigned_products_count?: number;
-  products_sold_count?: number;
 }
 
 interface AmbassadorListProps {
@@ -48,7 +47,7 @@ export default function AmbassadorList({
     setLoading(true);
     setErrorMessage(null);
     try {
-      // 1. Fetch Ambassadors with product details
+      // 1. Fetch Ambassadors with accurate column selection
       const { data, error } = await supabase
         .from('profiles')
         .select(`
@@ -63,7 +62,7 @@ export default function AmbassadorList({
             total_sales,
             ambassador_products (
               id,
-              sales_count
+              is_visible
             )
           )
         `)
@@ -77,9 +76,6 @@ export default function AmbassadorList({
           const ambData = Array.isArray(item.ambassador) ? item.ambassador[0] : item.ambassador;
           const productsList = ambData?.ambassador_products || [];
           
-          const assignedCount = productsList.length;
-          const soldCount = productsList.reduce((acc: number, curr: any) => acc + (curr.sales_count || 0), 0);
-
           return {
             id: item.id,
             ambassador_id: ambData?.id || item.id,
@@ -89,8 +85,7 @@ export default function AmbassadorList({
             assigned_slug: ambData?.assigned_slug || '',
             created_at: item.created_at || '',
             total_sales: ambData?.total_sales || 0,
-            assigned_products_count: assignedCount,
-            products_sold_count: soldCount,
+            assigned_products_count: productsList.length,
           };
         });
         setAmbassadors(formattedData);
@@ -268,7 +263,6 @@ export default function AmbassadorList({
                       display: 'flex',
                       flexDirection: 'column',
                       gap: '14px',
-                      transition: 'border-color 0.2s ease',
                     }}
                   >
                     {/* TOP HEADER: NAME + INTERACTIVE STATUS BADGE */}
@@ -307,8 +301,8 @@ export default function AmbassadorList({
                       </button>
                     </div>
 
-                    {/* INTERACTIVE METRIC CARDS (GRID OF 3) */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: '8px' }}>
+                    {/* METRIC CARDS (GRID OF 2: SALES & ASSIGNED PRODUCTS) */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
                       {/* CARD 1: TOTAL SALES */}
                       <div
                         style={{
@@ -326,7 +320,7 @@ export default function AmbassadorList({
                         </div>
                       </div>
 
-                      {/* CARD 2: ASSIGNED PRODUCTS (ACTIONABLE - CLICK OPENS MODAL) */}
+                      {/* CARD 2: ASSIGNED PRODUCTS (CLICKABLE ACTION BUTTON) */}
                       <div
                         onClick={() => setSelectedAmbassador(amb)}
                         style={{
@@ -336,7 +330,6 @@ export default function AmbassadorList({
                           borderRadius: '6px',
                           cursor: 'pointer',
                           transition: 'all 0.2s ease',
-                          position: 'relative',
                         }}
                       >
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -347,23 +340,6 @@ export default function AmbassadorList({
                         </div>
                         <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#ffffff', marginTop: '4px', fontFamily: 'monospace' }}>
                           {amb.assigned_products_count || 0} <span style={{ fontSize: '9px', color: '#71717a', fontWeight: 'normal' }}>items</span>
-                        </div>
-                      </div>
-
-                      {/* CARD 3: PRODUCTS SOLD */}
-                      <div
-                        style={{
-                          backgroundColor: '#121215',
-                          border: '1px solid #27272a',
-                          padding: '10px 12px',
-                          borderRadius: '6px',
-                        }}
-                      >
-                        <div style={{ fontSize: '8px', color: '#71717a', fontFamily: 'monospace', letterSpacing: '0.8px', textTransform: 'uppercase' }}>
-                          UNITS SOLD
-                        </div>
-                        <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#ffffff', marginTop: '4px', fontFamily: 'monospace' }}>
-                          {amb.products_sold_count || 0}
                         </div>
                       </div>
                     </div>
@@ -409,7 +385,7 @@ export default function AmbassadorList({
           ambassadorSlug={selectedAmbassador.assigned_slug}
           onClose={() => {
             setSelectedAmbassador(null);
-            fetchAmbassadorsAndStats(); // Refresh product counts after closing modal
+            fetchAmbassadorsAndStats();
           }}
         />
       )}
