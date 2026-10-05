@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/router'; // অথবা আপনার ব্যবহৃত রাউটার
+import { useNavigate } from 'react-router-dom'; // React Router integration
 import { supabase } from '@/supabaseClient';
 import AmbassadorSkeleton from './AmbassadorSkeleton';
 import ProductManager from './ProductManager';
 import PayoutManager from '@/components/admin/ambassadors/payouts/PayoutManager';
 
-// Valid Icon Imports
+// Valid Icon Imports from '@/components/icons'
 import {
   CheckIcon,
   CloseIcon,
@@ -31,7 +31,7 @@ interface AmbassadorProfile {
 interface AmbassadorListProps {
   searchQuery?: string;
   isFilterOpen?: boolean;
-  onOpenChat?: (ambassadorId: string, ambassadorEmail: string) => void; // মেসেজ অপেন করার জন্য কলব্যাক
+  onOpenChat?: (ambassadorId: string, ambassadorEmail: string) => void;
 }
 
 export default function AmbassadorList({
@@ -39,7 +39,8 @@ export default function AmbassadorList({
   isFilterOpen = true,
   onOpenChat,
 }: AmbassadorListProps) {
-  const router = useRouter();
+  const navigate = useNavigate(); // React Router navigation
+
   const [activeSubTab, setActiveSubTab] = useState<'AMBASSADORS' | 'PAYOUTS'>('AMBASSADORS');
   const [ambassadors, setAmbassadors] = useState<AmbassadorProfile[]>([]);
   const [pendingPayoutCount, setPendingPayoutCount] = useState<number>(0);
@@ -122,24 +123,23 @@ export default function AmbassadorList({
     fetchAmbassadorsAndStats();
   }, []);
 
-  // চ্যাট অপেন করার হ্যান্ডলার
+  // চ্যাট ওপেন করার ফাংশন
   const handleSendMessage = (ambassador: AmbassadorProfile) => {
     setBottomSheetAmbassador(null);
     if (onOpenChat) {
       onOpenChat(ambassador.id, ambassador.email);
     } else {
-      // যদি অন-ওপেন-চ্যাট প্রপ না থাকে তবে সরাসরি মেসেজ পেজে নেভিগেট করবে
-      router.push(`/admin/messages?userId=${ambassador.id}`);
+      // React Router দিয়ে মেসেজ রুটে নেভিগেট
+      navigate(`/admin/messages?userId=${ambassador.id}`);
     }
   };
 
-  // ইমেইল অ্যাপ খোলার নিরাপদ হ্যান্ডলার
+  // ইমেইল অ্যাপ ওপেন করার নিরাপদ ফাংশন
   const handleOpenEmail = (email: string) => {
     if (!email || email === 'No Email') {
       alert('Email not available');
       return;
     }
-    // সরাসরি ইমেইল ক্লায়েন্ট খোলার চেষ্টা
     window.location.href = `mailto:${email}`;
   };
 
