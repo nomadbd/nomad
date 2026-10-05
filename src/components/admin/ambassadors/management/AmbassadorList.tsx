@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom'; // React Router integration
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/supabaseClient';
 import AmbassadorSkeleton from './AmbassadorSkeleton';
 import ProductManager from './ProductManager';
 import PayoutManager from '@/components/admin/ambassadors/payouts/PayoutManager';
 
-// Valid Icon Imports from '@/components/icons'
 import {
   CheckIcon,
   CloseIcon,
@@ -13,11 +12,14 @@ import {
   MessageIcon,
   CartIcon,
   HistoryIcon,
-  SettingsIcon,
+  ShareIcon,
+  PlusIcon,
+  EditIcon,
+  BackIcon,
 } from '@/components/icons';
 
 interface AmbassadorProfile {
-  id: string; // Profiles ID
+  id: string;
   ambassador_id: string;
   name: string;
   email: string;
@@ -39,7 +41,7 @@ export default function AmbassadorList({
   isFilterOpen = true,
   onOpenChat,
 }: AmbassadorListProps) {
-  const navigate = useNavigate(); // React Router navigation
+  const navigate = useNavigate();
 
   const [activeSubTab, setActiveSubTab] = useState<'AMBASSADORS' | 'PAYOUTS'>('AMBASSADORS');
   const [ambassadors, setAmbassadors] = useState<AmbassadorProfile[]>([]);
@@ -49,11 +51,9 @@ export default function AmbassadorList({
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [copiedSlug, setCopiedSlug] = useState<string | null>(null);
 
-  // Bottom Sheet & Modal States
   const [bottomSheetAmbassador, setBottomSheetAmbassador] = useState<AmbassadorProfile | null>(null);
   const [selectedAmbassadorForProducts, setSelectedAmbassadorForProducts] = useState<AmbassadorProfile | null>(null);
 
-  // Filter States
   const [sortOrder, setSortOrder] = useState<'NEWEST' | 'OLDEST'>('NEWEST');
 
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
@@ -123,18 +123,15 @@ export default function AmbassadorList({
     fetchAmbassadorsAndStats();
   }, []);
 
-  // চ্যাট ওপেন করার ফাংশন
   const handleSendMessage = (ambassador: AmbassadorProfile) => {
     setBottomSheetAmbassador(null);
     if (onOpenChat) {
       onOpenChat(ambassador.id, ambassador.email);
     } else {
-      // React Router দিয়ে মেসেজ রুটে নেভিগেট
-      navigate(`/admin/messages?userId=${ambassador.id}`);
+      navigate(`/admin?tab=messages&userId=${ambassador.id}`);
     }
   };
 
-  // ইমেইল অ্যাপ ওপেন করার নিরাপদ ফাংশন
   const handleOpenEmail = (email: string) => {
     if (!email || email === 'No Email') {
       alert('Email not available');
@@ -193,8 +190,7 @@ export default function AmbassadorList({
     });
 
   return (
-    <div style={{ width: '100%', color: '#ffffff', fontFamily: 'sans-serif' }}>
-      {/* SUB-TAB NAVIGATION */}
+    <div style={{ width: '100%', color: '#ffffff', fontFamily: 'monospace, sans-serif' }}>
       <div style={{ display: 'flex', gap: '16px', borderBottom: '1px solid #1a1a1a', marginBottom: '16px', paddingBottom: '2px' }}>
         <button
           type="button"
@@ -247,7 +243,6 @@ export default function AmbassadorList({
         <PayoutManager isFilterOpen={isFilterOpen} />
       ) : (
         <>
-          {/* FILTER PANEL */}
           {isFilterOpen && (
             <div style={{ marginBottom: '16px' }}>
               <div style={{ backgroundColor: '#09090b', border: '1px solid #1f1f23', padding: '12px 14px', borderRadius: '8px', display: 'flex', gap: '12px', alignItems: 'center' }}>
@@ -274,7 +269,6 @@ export default function AmbassadorList({
             </div>
           )}
 
-          {/* AMBASSADOR CARDS LIST */}
           {loading ? (
             <AmbassadorSkeleton />
           ) : errorMessage ? (
@@ -305,15 +299,13 @@ export default function AmbassadorList({
                       gap: '14px',
                     }}
                   >
-                    {/* TOP HEADER */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                       <div
                         onClick={() => setBottomSheetAmbassador(amb)}
                         style={{ cursor: 'pointer', flex: 1 }}
                       >
-                        <div style={{ fontSize: '15px', fontWeight: '700', color: '#ffffff', letterSpacing: '-0.2px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <span className="hover:underline">{amb.name}</span>
-                          <SettingsIcon style={{ width: '12px', height: '12px', color: '#71717a' }} />
+                        <div style={{ fontSize: '15px', fontWeight: '700', color: '#ffffff', letterSpacing: '-0.2px' }}>
+                          {amb.name}
                         </div>
                         <div style={{ fontSize: '11px', color: '#71717a', marginTop: '2px', fontFamily: 'monospace' }}>
                           {amb.email}
@@ -343,7 +335,6 @@ export default function AmbassadorList({
                       </div>
                     </div>
 
-                    {/* METRIC CARDS */}
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
                       <div style={{ backgroundColor: '#121215', border: '1px solid #1f1f23', padding: '10px 12px', borderRadius: '8px' }}>
                         <div style={{ fontSize: '8px', color: '#71717a', fontFamily: 'monospace', letterSpacing: '0.8px', textTransform: 'uppercase' }}>
@@ -358,7 +349,7 @@ export default function AmbassadorList({
                         onClick={() => setSelectedAmbassadorForProducts(amb)}
                         style={{
                           backgroundColor: '#121215',
-                          border: '1px solid rgba(41, 151, 255, 0.3)',
+                          border: '1px solid #1f1f23',
                           padding: '10px 12px',
                           borderRadius: '8px',
                           cursor: 'pointer',
@@ -368,7 +359,7 @@ export default function AmbassadorList({
                           <div style={{ fontSize: '8px', color: '#2997ff', fontFamily: 'monospace', letterSpacing: '0.8px', textTransform: 'uppercase', fontWeight: 'bold' }}>
                             ASSIGNED PRODUCTS
                           </div>
-                          <SettingsIcon style={{ width: '10px', height: '10px', color: '#2997ff' }} />
+                          <CartIcon style={{ width: '12px', height: '12px', color: '#2997ff' }} />
                         </div>
                         <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#ffffff', marginTop: '4px', fontFamily: 'monospace' }}>
                           {amb.assigned_products_count || 0} <span style={{ fontSize: '9px', color: '#71717a', fontWeight: 'normal' }}>items</span>
@@ -376,7 +367,6 @@ export default function AmbassadorList({
                       </div>
                     </div>
 
-                    {/* SMART URL BOX */}
                     {amb.assigned_slug && (
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#000000', border: '1px solid #1a1a1e', padding: '6px 10px', borderRadius: '6px', fontSize: '10px', fontFamily: 'monospace' }}>
                         <span style={{ color: '#71717a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginRight: '8px' }}>
@@ -389,20 +379,19 @@ export default function AmbassadorList({
                             style={{ backgroundColor: 'transparent', color: copiedSlug === amb.assigned_slug ? '#64ffda' : '#a1a1aa', border: 'none', cursor: 'pointer', fontSize: '10px', padding: 0, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
                           >
                             {copiedSlug === amb.assigned_slug ? (
-                              <>
-                                <CheckIcon style={{ width: '12px', height: '12px' }} /> COPIED!
-                              </>
+                              <CheckIcon style={{ width: '12px', height: '12px' }} />
                             ) : (
-                              '📋 COPY'
+                              'COPY'
                             )}
                           </button>
                           <a
                             href={fullLink}
                             target="_blank"
                             rel="noopener noreferrer"
-                            style={{ color: '#2997ff', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '2px' }}
+                            style={{ color: '#2997ff', textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}
+                            title="Open Link"
                           >
-                            OPEN ↗
+                            <ShareIcon style={{ width: '12px', height: '12px' }} />
                           </a>
                         </div>
                       </div>
@@ -415,9 +404,6 @@ export default function AmbassadorList({
         </>
       )}
 
-      {/* ========================================== */}
-      {/* ACTION CENTER - BOTTOM SHEET MODAL */}
-      {/* ========================================== */}
       {bottomSheetAmbassador && (
         <div
           onClick={() => setBottomSheetAmbassador(null)}
@@ -446,8 +432,7 @@ export default function AmbassadorList({
               gap: '16px',
             }}
           >
-            {/* SHEET HEADER */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#ffffff' }}>
                   {bottomSheetAmbassador.name}
@@ -465,56 +450,50 @@ export default function AmbassadorList({
               </button>
             </div>
 
-            {/* QUICK COMMUNICATION ACTION BAR */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-              {/* DIRECT IN-APP MESSAGE BUTTON */}
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
               <button
                 type="button"
                 onClick={() => handleSendMessage(bottomSheetAmbassador)}
+                title="Send Message"
+                aria-label="Send Message"
                 style={{
+                  flex: 1,
                   backgroundColor: '#121215',
                   border: '1px solid #27272a',
                   borderRadius: '8px',
-                  padding: '10px',
+                  padding: '12px',
                   color: '#ffffff',
-                  fontSize: '11px',
-                  fontFamily: 'monospace',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: '8px',
                   cursor: 'pointer',
                 }}
               >
-                <MessageIcon style={{ width: '14px', height: '14px', color: '#2997ff' }} />
-                Send Message
+                <MessageIcon style={{ width: '18px', height: '18px', color: '#2997ff' }} />
               </button>
 
-              {/* DIRECT EMAIL BUTTON */}
               <button
                 type="button"
                 onClick={() => handleOpenEmail(bottomSheetAmbassador.email)}
+                title="Send Email"
+                aria-label="Send Email"
                 style={{
+                  flex: 1,
                   backgroundColor: '#121215',
                   border: '1px solid #27272a',
                   borderRadius: '8px',
-                  padding: '10px',
+                  padding: '12px',
                   color: '#ffffff',
-                  fontSize: '11px',
-                  fontFamily: 'monospace',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: '8px',
                   cursor: 'pointer',
                 }}
               >
-                <EmailIcon style={{ width: '14px', height: '14px', color: '#64ffda' }} />
-                Email Profile
+                <EmailIcon style={{ width: '18px', height: '18px', color: '#64ffda' }} />
               </button>
             </div>
 
-            {/* ACTION LIST */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <button
                 type="button"
@@ -546,7 +525,6 @@ export default function AmbassadorList({
                     </div>
                   </div>
                 </div>
-                <span style={{ fontSize: '12px', color: '#71717a' }}>→</span>
               </button>
 
               <button
@@ -578,7 +556,6 @@ export default function AmbassadorList({
                     </div>
                   </div>
                 </div>
-                <span style={{ fontSize: '12px', color: '#71717a' }}>→</span>
               </button>
 
               <button
@@ -589,7 +566,7 @@ export default function AmbassadorList({
                   border: '1px solid #1f1f23',
                   borderRadius: '10px',
                   padding: '12px 14px',
-                  color: bottomSheetAmbassador.status?.toUpperCase() === 'BLOCKED' ? '#22c55e' : '#ef4444',
+                  color: bottomSheetAmbassador.status?.toUpperCase() === 'BLOCKED' || bottomSheetAmbassador.status?.toUpperCase() === 'DEACTIVATED' ? '#22c55e' : '#ef4444',
                   fontSize: '12px',
                   display: 'flex',
                   alignItems: 'center',
@@ -599,16 +576,14 @@ export default function AmbassadorList({
                 }}
               >
                 <div style={{ fontWeight: '600' }}>
-                  {bottomSheetAmbassador.status?.toUpperCase() === 'BLOCKED' ? 'Activate Ambassador Account' : 'Deactivate Ambassador Account'}
+                  {bottomSheetAmbassador.status?.toUpperCase() === 'BLOCKED' || bottomSheetAmbassador.status?.toUpperCase() === 'DEACTIVATED' ? 'Activate Ambassador Account' : 'Deactivate Ambassador Account'}
                 </div>
-                <span style={{ fontSize: '10px', fontFamily: 'monospace' }}>●</span>
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* PRODUCT MANAGER MODAL */}
       {selectedAmbassadorForProducts && (
         <ProductManager
           ambassadorId={selectedAmbassadorForProducts.ambassador_id}
