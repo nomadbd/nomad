@@ -15,7 +15,11 @@ interface PayoutRequest {
   };
 }
 
-export default function PayoutManager() {
+interface PayoutManagerProps {
+  isFilterOpen?: boolean;
+}
+
+export default function PayoutManager({ isFilterOpen = true }: PayoutManagerProps) {
   const [payouts, setPayouts] = useState<PayoutRequest[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -81,35 +85,82 @@ export default function PayoutManager() {
 
   return (
     <div style={{ width: '100%', fontFamily: 'monospace' }}>
-      {/* FILTER BUTTONS */}
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', overflowX: 'auto', paddingBottom: '4px' }}>
-        {(['PENDING', 'APPROVED', 'REJECTED', 'ALL'] as const).map((st) => (
-          <button
-            key={st}
-            type="button"
-            onClick={() => setStatusFilter(st)}
+      {/* EXPANDABLE MINIMAL FILTER SECTION */}
+      {isFilterOpen && (
+        <div className="filter-expand-content animate-fade-in" style={{ marginBottom: '16px' }}>
+          <div
             style={{
-              backgroundColor: statusFilter === st ? '#111' : 'transparent',
-              color: statusFilter === st ? '#2997ff' : '#666',
-              border: '1px solid',
-              borderColor: statusFilter === st ? '#2997ff' : '#222',
-              padding: '4px 10px',
-              fontSize: '10px',
-              cursor: 'pointer',
+              backgroundColor: '#050505',
+              border: '1px solid #222',
+              padding: '14px 16px',
               borderRadius: '2px',
-              letterSpacing: '1px',
+              width: '100%',
+              boxSizing: 'border-box',
             }}
           >
-            {st} ({payouts.filter((p) => st === 'ALL' || p.status === st).length})
-          </button>
-        ))}
-      </div>
+            <label
+              style={{
+                display: 'block',
+                fontSize: '9px',
+                color: '#666',
+                marginBottom: '8px',
+                letterSpacing: '1px',
+                textTransform: 'uppercase',
+              }}
+            >
+              PAYOUT STATUS
+            </label>
+            <div style={{ display: 'flex', gap: '16px', overflowX: 'auto', width: '100%', paddingBottom: '2px' }}>
+              {(['PENDING', 'APPROVED', 'REJECTED', 'ALL'] as const).map((st) => {
+                const count = payouts.filter((p) => st === 'ALL' || p.status === st).length;
+                const isActive = statusFilter === st;
+
+                return (
+                  <button
+                    key={st}
+                    type="button"
+                    onClick={() => setStatusFilter(st)}
+                    style={{
+                      backgroundColor: 'transparent',
+                      color: isActive ? '#ffffff' : '#666666',
+                      border: 'none',
+                      fontSize: '10px',
+                      fontFamily: 'monospace',
+                      letterSpacing: '1px',
+                      fontWeight: isActive ? 'bold' : 'normal',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      whiteSpace: 'nowrap',
+                      padding: 0,
+                    }}
+                  >
+                    <span>{st}</span>
+                    <span style={{ color: isActive ? '#2997ff' : '#444' }}>({count})</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* LIST CONTENT */}
       {loading ? (
         <div style={{ color: '#666', fontSize: '11px', padding: '20px 0' }}>LOADING PAYOUT REQUESTS...</div>
       ) : filteredPayouts.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '30px', color: '#555', backgroundColor: '#050505', border: '1px solid #222', borderRadius: '2px', fontSize: '11px' }}>
+        <div
+          style={{
+            textAlign: 'center',
+            padding: '30px',
+            color: '#555',
+            backgroundColor: '#050505',
+            border: '1px solid #222',
+            borderRadius: '2px',
+            fontSize: '11px',
+          }}
+        >
           NO PAYOUT REQUESTS FOUND.
         </div>
       ) : (
