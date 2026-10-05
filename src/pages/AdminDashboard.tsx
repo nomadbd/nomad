@@ -212,10 +212,8 @@ const AdminDashboard: React.FC = () => {
       overflowX: 'hidden',
       position: 'relative'
     }}>
-      {/* মূল হেডার */}
       {!isChatOpen && (
         <header className={`${styles.nomadHeader} ${!isHeaderVisible ? styles.headerHidden : ''}`}>
-          {/* প্রিমিয়াম হালকা ডিম্বাকার (Pill-Shaped) সার্চ ইনপুট */}
           {isSearchOpen ? (
             <div style={{ display: 'flex', alignItems: 'center', width: '100%', gap: '10px' }}>
               <div
@@ -553,6 +551,15 @@ const AdminDashboard: React.FC = () => {
                 key="ambassadors-list"
                 searchQuery={searchQuery}
                 isFilterOpen={isFilterOpen}
+                onOpenChat={(ambassadorId, ambassadorEmail) => {
+                  handleTabChange('messages');
+                  setActiveChat({
+                    id: ambassadorId,
+                    userName: '',
+                    userEmail: ambassadorEmail,
+                    role: 'AMBASSADOR',
+                  });
+                }}
               />
               <SendInvite
                 key="ambassadors-invite"
