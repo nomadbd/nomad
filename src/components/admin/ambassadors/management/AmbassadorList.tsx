@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/router'; // অথবা আপনার ব্যবহৃত রাউটার
 import { supabase } from '@/supabaseClient';
 import AmbassadorSkeleton from './AmbassadorSkeleton';
 import ProductManager from './ProductManager';
 import PayoutManager from '@/components/admin/ambassadors/payouts/PayoutManager';
 
-// Valid Icon Imports from '@/components/icons/index.ts'
+// Valid Icon Imports
 import {
   CheckIcon,
   CloseIcon,
@@ -17,7 +18,7 @@ import {
 
 interface AmbassadorProfile {
   id: string; // Profiles ID
-  ambassador_id: string; // Ambassador table ID
+  ambassador_id: string;
   name: string;
   email: string;
   status: string;
@@ -30,12 +31,15 @@ interface AmbassadorProfile {
 interface AmbassadorListProps {
   searchQuery?: string;
   isFilterOpen?: boolean;
+  onOpenChat?: (ambassadorId: string, ambassadorEmail: string) => void; // মেসেজ অপেন করার জন্য কলব্যাক
 }
 
 export default function AmbassadorList({
   searchQuery = '',
   isFilterOpen = true,
+  onOpenChat,
 }: AmbassadorListProps) {
+  const router = useRouter();
   const [activeSubTab, setActiveSubTab] = useState<'AMBASSADORS' | 'PAYOUTS'>('AMBASSADORS');
   const [ambassadors, setAmbassadors] = useState<AmbassadorProfile[]>([]);
   const [pendingPayoutCount, setPendingPayoutCount] = useState<number>(0);
@@ -100,7 +104,6 @@ export default function AmbassadorList({
         setAmbassadors(formattedData);
       }
 
-      // Fetch Pending Payout Requests Count
       const { count } = await supabase
         .from('payout_requests')
         .select('*', { count: 'exact', head: true })
@@ -118,6 +121,27 @@ export default function AmbassadorList({
   useEffect(() => {
     fetchAmbassadorsAndStats();
   }, []);
+
+  // চ্যাট অপেন করার হ্যান্ডলার
+  const handleSendMessage = (ambassador: AmbassadorProfile) => {
+    setBottomSheetAmbassador(null);
+    if (onOpenChat) {
+      onOpenChat(ambassador.id, ambassador.email);
+    } else {
+      // যদি অন-ওপেন-চ্যাট প্রপ না থাকে তবে সরাসরি মেসেজ পেজে নেভিগেট করবে
+      router.push(`/admin/messages?userId=${ambassador.id}`);
+    }
+  };
+
+  // ইমেইল অ্যাপ খোলার নিরাপদ হ্যান্ডলার
+  const handleOpenEmail = (email: string) => {
+    if (!email || email === 'No Email') {
+      alert('Email not available');
+      return;
+    }
+    // সরাসরি ইমেইল ক্লায়েন্ট খোলার চেষ্টা
+    window.location.href = `mailto:${email}`;
+  };
 
   const handleCopyLink = (e: React.MouseEvent, fullUrl: string, slug: string) => {
     e.stopPropagation();
@@ -281,7 +305,7 @@ export default function AmbassadorList({
                       gap: '14px',
                     }}
                   >
-                    {/* TOP HEADER: NAME (CLICK OPENS BOTTOM SHEET) + STATUS */}
+                    {/* TOP HEADER */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                       <div
                         onClick={() => setBottomSheetAmbassador(amb)}
@@ -296,7 +320,6 @@ export default function AmbassadorList({
                         </div>
                       </div>
 
-                      {/* STATUS PILL BADGE */}
                       <div
                         onClick={() => handleToggleStatus(amb)}
                         style={{
@@ -320,17 +343,9 @@ export default function AmbassadorList({
                       </div>
                     </div>
 
-                    {/* METRIC CARDS (GRID OF 2: SALES & ASSIGNED PRODUCTS) */}
+                    {/* METRIC CARDS */}
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
-                      {/* CARD 1: TOTAL SALES */}
-                      <div
-                        style={{
-                          backgroundColor: '#121215',
-                          border: '1px solid #1f1f23',
-                          padding: '10px 12px',
-                          borderRadius: '8px',
-                        }}
-                      >
+                      <div style={{ backgroundColor: '#121215', border: '1px solid #1f1f23', padding: '10px 12px', borderRadius: '8px' }}>
                         <div style={{ fontSize: '8px', color: '#71717a', fontFamily: 'monospace', letterSpacing: '0.8px', textTransform: 'uppercase' }}>
                           TOTAL SALES
                         </div>
@@ -339,7 +354,6 @@ export default function AmbassadorList({
                         </div>
                       </div>
 
-                      {/* CARD 2: ASSIGNED PRODUCTS (ACTIONABLE TRIGGER) */}
                       <div
                         onClick={() => setSelectedAmbassadorForProducts(amb)}
                         style={{
@@ -348,7 +362,6 @@ export default function AmbassadorList({
                           padding: '10px 12px',
                           borderRadius: '8px',
                           cursor: 'pointer',
-                          transition: 'all 0.2s ease',
                         }}
                       >
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -454,54 +467,55 @@ export default function AmbassadorList({
 
             {/* QUICK COMMUNICATION ACTION BAR */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-              {/* DIRECT MESSAGE */}
-              <a
-                href={`mailto:${bottomSheetAmbassador.email}`}
+              {/* DIRECT IN-APP MESSAGE BUTTON */}
+              <button
+                type="button"
+                onClick={() => handleSendMessage(bottomSheetAmbassador)}
                 style={{
                   backgroundColor: '#121215',
                   border: '1px solid #27272a',
                   borderRadius: '8px',
                   padding: '10px',
                   color: '#ffffff',
-                  textDecoration: 'none',
                   fontSize: '11px',
                   fontFamily: 'monospace',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: '8px',
+                  cursor: 'pointer',
                 }}
               >
                 <MessageIcon style={{ width: '14px', height: '14px', color: '#2997ff' }} />
                 Send Message
-              </a>
+              </button>
 
-              {/* DIRECT EMAIL */}
-              <a
-                href={`mailto:${bottomSheetAmbassador.email}`}
+              {/* DIRECT EMAIL BUTTON */}
+              <button
+                type="button"
+                onClick={() => handleOpenEmail(bottomSheetAmbassador.email)}
                 style={{
                   backgroundColor: '#121215',
                   border: '1px solid #27272a',
                   borderRadius: '8px',
                   padding: '10px',
                   color: '#ffffff',
-                  textDecoration: 'none',
                   fontSize: '11px',
                   fontFamily: 'monospace',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: '8px',
+                  cursor: 'pointer',
                 }}
               >
                 <EmailIcon style={{ width: '14px', height: '14px', color: '#64ffda' }} />
                 Email Profile
-              </a>
+              </button>
             </div>
 
             {/* ACTION LIST */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {/* ACTION 1: MANAGE ASSIGNED PRODUCTS */}
               <button
                 type="button"
                 onClick={() => {
@@ -535,7 +549,6 @@ export default function AmbassadorList({
                 <span style={{ fontSize: '12px', color: '#71717a' }}>→</span>
               </button>
 
-              {/* ACTION 2: PAYOUT HISTORY / FILTER */}
               <button
                 type="button"
                 onClick={() => {
@@ -568,7 +581,6 @@ export default function AmbassadorList({
                 <span style={{ fontSize: '12px', color: '#71717a' }}>→</span>
               </button>
 
-              {/* ACTION 3: TOGGLE STATUS */}
               <button
                 type="button"
                 onClick={() => handleToggleStatus(bottomSheetAmbassador)}
