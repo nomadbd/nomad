@@ -166,10 +166,38 @@ export const AmbassadorCard: React.FC<AmbassadorCardProps> = ({
 
       {/* Bottom Share Link Bar */}
       {amb.assigned_slug && (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#000000', border: '1px solid #1a1a1e', padding: '6px 10px', borderRadius: '6px', fontSize: '10px', fontFamily: 'monospace' }}>
-          <span style={{ color: '#71717a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginRight: '8px' }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            backgroundColor: '#000000',
+            border: '1px solid #1a1a1e',
+            padding: '6px 10px',
+            borderRadius: '6px',
+            fontSize: '10px',
+            fontFamily: 'monospace',
+            gap: '8px',
+          }}
+        >
+          <a
+            href={fullLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            title={fullLink}
+            style={{
+              color: '#71717a',
+              textDecoration: 'none',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              flex: 1,
+              minWidth: 0,
+              cursor: 'pointer',
+            }}
+          >
             {shortDisplayLink}
-          </span>
+          </a>
           <button
             type="button"
             onClick={handleShare}
@@ -181,7 +209,7 @@ export const AmbassadorCard: React.FC<AmbassadorCardProps> = ({
               padding: 0,
               display: 'inline-flex',
               alignItems: 'center',
-              justifyContent: 'center',
+              justify.content: 'center',
               flexShrink: 0,
             }}
             title="Share Link"
