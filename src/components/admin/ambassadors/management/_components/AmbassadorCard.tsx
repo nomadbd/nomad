@@ -185,6 +185,7 @@ export const AmbassadorCard: React.FC<AmbassadorCardProps> = ({
             target="_blank"
             rel="noopener noreferrer"
             title={fullLink}
+            onClick={(e) => e.stopPropagation()}
             style={{
               color: '#71717a',
               textDecoration: 'none',
@@ -209,7 +210,7 @@ export const AmbassadorCard: React.FC<AmbassadorCardProps> = ({
               padding: 0,
               display: 'inline-flex',
               alignItems: 'center',
-              justify.content: 'center',
+              justifyContent: 'center',
               flexShrink: 0,
             }}
             title="Share Link"
