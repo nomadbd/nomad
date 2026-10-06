@@ -10,6 +10,7 @@ import {
   AmbassadorBottomSheet,
   AmbassadorTabs,
   AmbassadorFilterBar,
+  AmbassadorSalesSheet, // <-- ১. নতুন কম্পোনেন্ট ইম্পোর্ট করা হয়েছে
   AmbassadorProfile,
 } from './_components';
 
@@ -36,6 +37,8 @@ export default function AmbassadorList({
 
   const [bottomSheetAmbassador, setBottomSheetAmbassador] = useState<AmbassadorProfile | null>(null);
   const [selectedAmbassadorForProducts, setSelectedAmbassadorForProducts] = useState<AmbassadorProfile | null>(null);
+  // ২. সেস্লস ব্রেকডাউনের জন্য নতুন স্টেট
+  const [selectedAmbassadorForSales, setSelectedAmbassadorForSales] = useState<AmbassadorProfile | null>(null);
 
   const [sortOrder, setSortOrder] = useState<'NEWEST' | 'OLDEST'>('NEWEST');
 
@@ -211,6 +214,7 @@ export default function AmbassadorList({
                   onSelect={setBottomSheetAmbassador}
                   onToggleStatus={handleToggleStatus}
                   onOpenProducts={setSelectedAmbassadorForProducts}
+                  onOpenSalesBreakdown={(selected) => setSelectedAmbassadorForSales(selected)} // <-- ৩. সেস্লস শিট খোলার হ্যান্ডলার পাস করা হয়েছে
                   onCopyLink={handleCopyLink}
                 />
               ))}
@@ -246,6 +250,14 @@ export default function AmbassadorList({
             setSelectedAmbassadorForProducts(null);
             fetchAmbassadorsAndStats();
           }}
+        />
+      )}
+
+      {/* ৪. সেলস ব্রেকডাউন মোডাল রেন্ডারিং */}
+      {selectedAmbassadorForSales && (
+        <AmbassadorSalesSheet
+          ambassador={selectedAmbassadorForSales}
+          onClose={() => setSelectedAmbassadorForSales(null)}
         />
       )}
     </div>
