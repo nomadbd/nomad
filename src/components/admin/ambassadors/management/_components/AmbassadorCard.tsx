@@ -8,8 +8,13 @@ export interface AmbassadorProfile {
   email: string;
   status: string;
   assigned_slug: string;
+  avatar_url?: string | null;
   created_at?: string;
   total_sales?: number;
+  total_earned?: number;
+  commission_rate?: number;
+  unpaid_balance?: number;
+  pending_balance?: number;
   assigned_products_count?: number;
 }
 
@@ -38,6 +43,16 @@ export const AmbassadorCard: React.FC<AmbassadorCardProps> = ({
   const isBlocked = amb.status?.toUpperCase() === 'BLOCKED' || amb.status?.toUpperCase() === 'DEACTIVATED';
   const fullLink = amb.assigned_slug ? `${baseUrl}/${amb.assigned_slug}` : '';
   const shortDisplayLink = amb.assigned_slug ? `${baseUrl.replace(/^https?:\/\//, '')}/${amb.assigned_slug}` : 'N/A';
+
+  // Helper function for name initials when avatar_url is missing
+  const getInitials = (name: string) => {
+    if (!name) return 'AM';
+    const parts = name.trim().split(' ').filter(Boolean);
+    if (parts.length >= 2) {
+      return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+    }
+    return parts[0].slice(0, 2).toUpperCase();
+  };
 
   const handleShare = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -70,34 +85,75 @@ export const AmbassadorCard: React.FC<AmbassadorCardProps> = ({
         gap: '14px',
       }}
     >
-      {/* Top Header: Name, Email & Status Badge */}
+      {/* Top Header: Avatar, Name, Email & Status Badge */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
-        <div onClick={() => onSelect(amb)} style={{ cursor: 'pointer', flex: 1, minWidth: 0 }}>
-          <div
-            style={{
-              fontSize: '15px',
-              fontWeight: '700',
-              color: '#ffffff',
-              letterSpacing: '-0.2px',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {amb.name}
-          </div>
-          <div
-            style={{
-              fontSize: '11px',
-              color: '#71717a',
-              marginTop: '2px',
-              fontFamily: 'monospace',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {amb.email}
+        <div
+          onClick={() => onSelect(amb)}
+          style={{ cursor: 'pointer', flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: '10px' }}
+        >
+          {/* Avatar / Initial Circle */}
+          {amb.avatar_url ? (
+            <img
+              src={amb.avatar_url}
+              alt={amb.name}
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: '50%',
+                objectFit: 'cover',
+                border: '1px solid #27272a',
+                flexShrink: 0,
+              }}
+            />
+          ) : (
+            <div
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: '50%',
+                backgroundColor: '#18181b',
+                border: '1px solid #27272a',
+                color: '#a1a1aa',
+                fontSize: '12px',
+                fontWeight: 'bold',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                letterSpacing: '0.5px',
+              }}
+            >
+              {getInitials(amb.name)}
+            </div>
+          )}
+
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div
+              style={{
+                fontSize: '15px',
+                fontWeight: '700',
+                color: '#ffffff',
+                letterSpacing: '-0.2px',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {amb.name}
+            </div>
+            <div
+              style={{
+                fontSize: '11px',
+                color: '#71717a',
+                marginTop: '1px',
+                fontFamily: 'monospace',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {amb.email}
+            </div>
           </div>
         </div>
 
@@ -125,8 +181,9 @@ export const AmbassadorCard: React.FC<AmbassadorCardProps> = ({
         </div>
       </div>
 
-      {/* Middle Stats: Total Sales & Products */}
+      {/* Middle Stats Grid (2x2) */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
+        {/* TOTAL SALES */}
         <div
           onClick={() => onOpenSalesBreakdown?.(amb)}
           style={{
@@ -140,11 +197,55 @@ export const AmbassadorCard: React.FC<AmbassadorCardProps> = ({
           <div style={{ fontSize: '8px', color: '#71717a', fontFamily: 'monospace', letterSpacing: '0.8px', textTransform: 'uppercase' }}>
             TOTAL SALES
           </div>
-          <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#ffffff', marginTop: '4px', fontFamily: 'monospace' }}>
+          <div style={{ fontSize: '13px', fontWeight: 'bold', color: '#ffffff', marginTop: '4px', fontFamily: 'monospace' }}>
             ৳{(amb.total_sales || 0).toLocaleString()}
           </div>
         </div>
 
+        {/* EARNINGS / COMMISSION */}
+        <div
+          onClick={() => onOpenSalesBreakdown?.(amb)}
+          style={{
+            backgroundColor: '#121215',
+            border: '1px solid #1f1f23',
+            padding: '10px 12px',
+            borderRadius: '8px',
+            cursor: 'pointer',
+          }}
+        >
+          <div style={{ fontSize: '8px', color: '#71717a', fontFamily: 'monospace', letterSpacing: '0.8px', textTransform: 'uppercase' }}>
+            EARNINGS
+          </div>
+          <div style={{ fontSize: '13px', fontWeight: 'bold', color: '#22c55e', marginTop: '4px', fontFamily: 'monospace' }}>
+            ৳{(amb.total_earned || 0).toLocaleString()}
+            {amb.commission_rate ? (
+              <span style={{ fontSize: '9px', color: '#71717a', fontWeight: 'normal', marginLeft: '4px' }}>
+                ({amb.commission_rate}%)
+              </span>
+            ) : null}
+          </div>
+        </div>
+
+        {/* UNPAID BALANCE */}
+        <div
+          onClick={() => onSelect(amb)}
+          style={{
+            backgroundColor: '#121215',
+            border: '1px solid #1f1f23',
+            padding: '10px 12px',
+            borderRadius: '8px',
+            cursor: 'pointer',
+          }}
+        >
+          <div style={{ fontSize: '8px', color: '#71717a', fontFamily: 'monospace', letterSpacing: '0.8px', textTransform: 'uppercase' }}>
+            UNPAID BAL
+          </div>
+          <div style={{ fontSize: '13px', fontWeight: 'bold', color: '#eab308', marginTop: '4px', fontFamily: 'monospace' }}>
+            ৳{(amb.unpaid_balance || 0).toLocaleString()}
+          </div>
+        </div>
+
+        {/* PRODUCTS */}
         <div
           onClick={() => onOpenProducts(amb)}
           style={{
@@ -158,7 +259,7 @@ export const AmbassadorCard: React.FC<AmbassadorCardProps> = ({
           <div style={{ fontSize: '8px', color: '#71717a', fontFamily: 'monospace', letterSpacing: '0.8px', textTransform: 'uppercase' }}>
             PRODUCTS
           </div>
-          <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#ffffff', marginTop: '4px', fontFamily: 'monospace' }}>
+          <div style={{ fontSize: '13px', fontWeight: 'bold', color: '#ffffff', marginTop: '4px', fontFamily: 'monospace' }}>
             {amb.assigned_products_count || 0} <span style={{ fontSize: '9px', color: '#71717a', fontWeight: 'normal' }}>items</span>
           </div>
         </div>
