@@ -77,7 +77,7 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
       style={{
         position: 'fixed',
         inset: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        backgroundColor: 'rgba(0, 0, 0, 0.85)',
         backdropFilter: 'blur(6px)',
         zIndex: 100,
         display: 'flex',
@@ -91,12 +91,12 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
           width: '100%',
           maxWidth: '500px',
           backgroundColor: '#09090b',
-          borderTop: '1px solid #1f1f23',
+          borderTop: '1px solid #27272a',
           borderRadius: '20px 20px 0 0',
           padding: '24px 20px 28px 20px',
           display: 'flex',
           flexDirection: 'column',
-          gap: '20px',
+          gap: '16px',
           maxHeight: '90vh',
           overflowY: 'auto',
           boxSizing: 'border-box',
@@ -111,23 +111,23 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
                 src={ambassador.avatar_url}
                 alt={ambassador.name}
                 style={{
-                  width: '44px',
-                  height: '44px',
+                  width: '46px',
+                  height: '46px',
                   borderRadius: '50%',
                   objectFit: 'cover',
-                  border: '1px solid #27272a',
+                  border: '1px solid #3f3f46',
                   flexShrink: 0,
                 }}
               />
             ) : (
               <div
                 style={{
-                  width: '44px',
-                  height: '44px',
+                  width: '46px',
+                  height: '46px',
                   borderRadius: '50%',
                   backgroundColor: '#18181b',
-                  border: '1px solid #27272a',
-                  color: '#a1a1aa',
+                  border: '1px solid #3f3f46',
+                  color: '#f4f4f5',
                   fontSize: '14px',
                   fontWeight: 'bold',
                   display: 'flex',
@@ -141,7 +141,7 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
               </div>
             )}
 
-            {/* Name & Email Container (Ensures full text displays properly without break) */}
+            {/* Name & Email Container (Ensures full visibility with high contrast) */}
             <div style={{ flex: 1, minWidth: 0 }}>
               <div
                 style={{
@@ -156,8 +156,8 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
               </div>
               <div
                 style={{
-                  fontSize: '11px',
-                  color: '#71717a',
+                  fontSize: '12px',
+                  color: '#a1a1aa', // Bright silver grey for high readability
                   fontFamily: 'monospace',
                   marginTop: '3px',
                   wordBreak: 'break-all',
@@ -173,9 +173,9 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
             type="button"
             onClick={onClose}
             style={{
-              backgroundColor: '#121215',
+              backgroundColor: '#18181b',
               border: '1px solid #27272a',
-              color: '#a1a1aa',
+              color: '#d4d4d8',
               borderRadius: '50%',
               width: '32px',
               height: '32px',
@@ -190,50 +190,52 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
           </button>
         </div>
 
-        {/* 2. Quick Contact Buttons (Minimal Circular Design with White Icons) */}
-        <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+        {/* 2. Side-by-Side Balanced Quick Communication Buttons */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
           <button
             type="button"
             onClick={() => onSendMessage(ambassador)}
-            title="Send Message"
-            aria-label="Send Message"
             style={{
-              width: '44px',
-              height: '44px',
-              borderRadius: '50%',
               backgroundColor: '#121215',
               border: '1px solid #27272a',
+              borderRadius: '12px',
+              padding: '12px 14px',
               color: '#ffffff',
+              fontSize: '12px',
+              fontWeight: '600',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              gap: '8px',
               cursor: 'pointer',
-              transition: 'all 0.2s ease',
+              transition: 'background-color 0.2s',
             }}
           >
-            <MessageIcon style={{ width: '18px', height: '18px', color: '#ffffff' }} />
+            <MessageIcon style={{ width: '16px', height: '16px', color: '#ffffff' }} />
+            <span>Send Message</span>
           </button>
 
           <button
             type="button"
             onClick={() => onOpenEmail(ambassador.email)}
-            title="Send Email"
-            aria-label="Send Email"
             style={{
-              width: '44px',
-              height: '44px',
-              borderRadius: '50%',
               backgroundColor: '#121215',
               border: '1px solid #27272a',
+              borderRadius: '12px',
+              padding: '12px 14px',
               color: '#ffffff',
+              fontSize: '12px',
+              fontWeight: '600',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              gap: '8px',
               cursor: 'pointer',
-              transition: 'all 0.2s ease',
+              transition: 'background-color 0.2s',
             }}
           >
-            <EmailIcon style={{ width: '18px', height: '18px', color: '#ffffff' }} />
+            <EmailIcon style={{ width: '16px', height: '16px', color: '#ffffff' }} />
+            <span>Send Email</span>
           </button>
         </div>
 
@@ -245,7 +247,7 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
             onClick={() => onOpenProducts(ambassador)}
             style={{
               backgroundColor: '#121215',
-              border: '1px solid #1f1f23',
+              border: '1px solid #27272a',
               borderRadius: '12px',
               padding: '14px 16px',
               color: '#ffffff',
@@ -260,8 +262,8 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <CartIcon style={{ width: '18px', height: '18px', color: '#ffffff' }} />
               <div>
-                <div style={{ fontWeight: '600' }}>Manage Products</div>
-                <div style={{ fontSize: '10px', color: '#71717a', fontFamily: 'monospace', marginTop: '2px' }}>
+                <div style={{ fontWeight: '600', color: '#ffffff' }}>Manage Products</div>
+                <div style={{ fontSize: '11px', color: '#a1a1aa', fontFamily: 'monospace', marginTop: '2px' }}>
                   {ambassador.assigned_products_count || 0} products currently assigned
                 </div>
               </div>
@@ -274,7 +276,7 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
             onClick={onOpenPayouts}
             style={{
               backgroundColor: '#121215',
-              border: '1px solid #1f1f23',
+              border: '1px solid #27272a',
               borderRadius: '12px',
               padding: '14px 16px',
               color: '#ffffff',
@@ -289,19 +291,19 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <HistoryIcon style={{ width: '18px', height: '18px', color: '#ffffff' }} />
               <div>
-                <div style={{ fontWeight: '600' }}>Payout Requests & History</div>
-                <div style={{ fontSize: '10px', color: '#71717a', fontFamily: 'monospace', marginTop: '2px' }}>
+                <div style={{ fontWeight: '600', color: '#ffffff' }}>Payout Requests & History</div>
+                <div style={{ fontSize: '11px', color: '#a1a1aa', fontFamily: 'monospace', marginTop: '2px' }}>
                   View all payouts for this ambassador
                 </div>
               </div>
             </div>
           </button>
 
-          {/* 4. Configure Rates Section (Placed right above Deactivate) */}
+          {/* 4. Configure Rates Section */}
           <div
             style={{
               backgroundColor: '#121215',
-              border: '1px solid #1f1f23',
+              border: '1px solid #27272a',
               borderRadius: '12px',
               padding: '16px',
               display: 'flex',
@@ -309,13 +311,13 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
               gap: '12px',
             }}
           >
-            <div style={{ fontSize: '10px', fontWeight: 'bold', color: '#71717a', fontFamily: 'monospace', letterSpacing: '0.8px', textTransform: 'uppercase' }}>
+            <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#d4d4d8', fontFamily: 'monospace', letterSpacing: '0.8px', textTransform: 'uppercase' }}>
               CONFIGURE RATES
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '9px', color: '#71717a', fontFamily: 'monospace', marginBottom: '6px', textTransform: 'uppercase' }}>
+                <label style={{ display: 'block', fontSize: '10px', color: '#a1a1aa', fontFamily: 'monospace', marginBottom: '6px', textTransform: 'uppercase' }}>
                   COMMISSION (%)
                 </label>
                 <input
@@ -328,7 +330,7 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
                   style={{
                     width: '100%',
                     backgroundColor: '#09090b',
-                    border: '1px solid #27272a',
+                    border: '1px solid #3f3f46',
                     borderRadius: '8px',
                     padding: '10px 12px',
                     color: '#22c55e',
@@ -342,7 +344,7 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '9px', color: '#71717a', fontFamily: 'monospace', marginBottom: '6px', textTransform: 'uppercase' }}>
+                <label style={{ display: 'block', fontSize: '10px', color: '#a1a1aa', fontFamily: 'monospace', marginBottom: '6px', textTransform: 'uppercase' }}>
                   CUST. DISCOUNT (%)
                 </label>
                 <input
@@ -355,7 +357,7 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
                   style={{
                     width: '100%',
                     backgroundColor: '#09090b',
-                    border: '1px solid #27272a',
+                    border: '1px solid #3f3f46',
                     borderRadius: '8px',
                     padding: '10px 12px',
                     color: '#3b82f6',
@@ -376,7 +378,7 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
               style={{
                 width: '100%',
                 backgroundColor: '#18181b',
-                border: '1px solid #27272a',
+                border: '1px solid #3f3f46',
                 borderRadius: '8px',
                 padding: '10px',
                 color: '#ffffff',
@@ -394,7 +396,7 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
             {statusMsg && (
               <div
                 style={{
-                  fontSize: '10px',
+                  fontSize: '11px',
                   fontFamily: 'monospace',
                   color: statusMsg.type === 'success' ? '#22c55e' : '#ef4444',
                   textAlign: 'center',
@@ -411,7 +413,7 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
             onClick={() => onToggleStatus(ambassador)}
             style={{
               backgroundColor: '#121215',
-              border: `1px solid ${isBlocked ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)'}`,
+              border: `1px solid ${isBlocked ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
               borderRadius: '12px',
               padding: '14px 16px',
               color: isBlocked ? '#22c55e' : '#ef4444',
