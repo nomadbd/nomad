@@ -10,7 +10,7 @@ import {
   AmbassadorBottomSheet,
   AmbassadorTabs,
   AmbassadorFilterBar,
-  AmbassadorSalesSheet, // <-- ১. নতুন কম্পোনেন্ট ইম্পোর্ট করা হয়েছে
+  AmbassadorSalesSheet,
   AmbassadorProfile,
 } from './_components';
 
@@ -37,7 +37,6 @@ export default function AmbassadorList({
 
   const [bottomSheetAmbassador, setBottomSheetAmbassador] = useState<AmbassadorProfile | null>(null);
   const [selectedAmbassadorForProducts, setSelectedAmbassadorForProducts] = useState<AmbassadorProfile | null>(null);
-  // ২. সেস্লস ব্রেকডাউনের জন্য নতুন স্টেট
   const [selectedAmbassadorForSales, setSelectedAmbassadorForSales] = useState<AmbassadorProfile | null>(null);
 
   const [sortOrder, setSortOrder] = useState<'NEWEST' | 'OLDEST'>('NEWEST');
@@ -55,11 +54,16 @@ export default function AmbassadorList({
           name,
           email,
           status,
+          avatar_url,
           created_at,
           ambassador (
             id,
             assigned_slug,
             total_sales,
+            total_earned,
+            commission_rate,
+            unpaid_balance,
+            pending_balance,
             ambassador_products (
               id,
               is_visible
@@ -82,9 +86,14 @@ export default function AmbassadorList({
             name: item.name || 'Unnamed Ambassador',
             email: item.email || 'No Email',
             status: item.status || 'ACTIVE',
+            avatar_url: item.avatar_url || null,
             assigned_slug: ambData?.assigned_slug || '',
             created_at: item.created_at || '',
             total_sales: ambData?.total_sales || 0,
+            total_earned: ambData?.total_earned || 0,
+            commission_rate: ambData?.commission_rate || 0,
+            unpaid_balance: ambData?.unpaid_balance || 0,
+            pending_balance: ambData?.pending_balance || 0,
             assigned_products_count: productsList.length,
           };
         });
@@ -214,7 +223,7 @@ export default function AmbassadorList({
                   onSelect={setBottomSheetAmbassador}
                   onToggleStatus={handleToggleStatus}
                   onOpenProducts={setSelectedAmbassadorForProducts}
-                  onOpenSalesBreakdown={(selected) => setSelectedAmbassadorForSales(selected)} // <-- ৩. সেস্লস শিট খোলার হ্যান্ডলার পাস করা হয়েছে
+                  onOpenSalesBreakdown={(selected) => setSelectedAmbassadorForSales(selected)}
                   onCopyLink={handleCopyLink}
                 />
               ))}
@@ -253,7 +262,6 @@ export default function AmbassadorList({
         />
       )}
 
-      {/* ৪. সেলস ব্রেকডাউন মোডাল রেন্ডারিং */}
       {selectedAmbassadorForSales && (
         <AmbassadorSalesSheet
           ambassador={selectedAmbassadorForSales}
