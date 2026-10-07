@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { CloseIcon, MessageIcon, EmailIcon, CartIcon, HistoryIcon } from '@/components/icons';
 import { AmbassadorProfile } from './AmbassadorCard';
 import { supabase } from '@/supabaseClient';
@@ -36,8 +36,10 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  // ইনপুটে কোনো মান লেখা হলে বাটন শো করবে
+  // ইনপুটে কোনো মান লেখা আছে কি না
   const hasChanges = commissionRate !== '' || discountPercent !== '';
+
+  const ratesSectionRef = useRef<HTMLDivElement>(null);
 
   // অ্যাম্বাসেডর চেঞ্জ হলে প্লেসহোল্ডার মান সিঙ্ক
   useEffect(() => {
@@ -55,10 +57,12 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
     return parts[0].slice(0, 2).toUpperCase();
   };
 
-  // কীবোর্ড চালু হলে ফিল্ড অটো-স্ক্রল ফাংশন
-  const handleInputFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+  // কীবোর্ড চালু হলে লাফানো ছাড়াই স্থিতিশীলভাবে কীবোর্ডের উপরে পজিশন রাখার ফাংশন
+  const handleInputFocus = () => {
     setTimeout(() => {
-      e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      if (ratesSectionRef.current) {
+        ratesSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
     }, 200);
   };
 
@@ -88,7 +92,7 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
 
       setStatusMsg({ type: 'success', text: 'Rates updated successfully!' });
       
-      // ইনপুট ক্লিয়ার (যাতে সেভ বাটন আবার স্বয়ংক্রিয়ভাবে লুকিয়ে যায়)
+      // ইনপুট ক্লিয়ার (যাতে সেভ বাটন আবার স্মুথভাবে লুকিয়ে যায়)
       setCommissionRate('');
       setDiscountPercent('');
 
@@ -116,7 +120,7 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
         display: 'flex',
         alignItems: 'flex-end',
         justifyContent: 'center',
-        paddingTop: '80px', // অ্যাপের মূল হেডারের জন্য সেফ স্পেস
+        paddingTop: '80px',
       }}
     >
       <div
@@ -353,6 +357,7 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
 
           {/* 3. Configure Rates Section */}
           <div
+            ref={ratesSectionRef}
             style={{
               backgroundColor: '#121215',
               border: '1px solid #27272a',
@@ -363,36 +368,37 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
               gap: '12px',
             }}
           >
-            {/* Header with Dynamic Floating Save Button */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: '26px' }}>
+            {/* Header: Fixed Height & Hidden/Visible Toggle for zero layout shifts */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '26px' }}>
               <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#d4d4d8', fontFamily: 'monospace', letterSpacing: '0.8px', textTransform: 'uppercase' }}>
                 CONFIGURE RATES
               </div>
 
-              {/* ইনপুট দিলে কেবল তখনই ভেসে উঠবে ডিম্বাকার সাদা সেভ বাটন */}
-              {hasChanges && (
-                <button
-                  type="button"
-                  onClick={handleSaveRates}
-                  disabled={isSaving}
-                  style={{
-                    backgroundColor: '#ffffff',
-                    color: '#000000',
-                    border: 'none',
-                    borderRadius: '20px',
-                    padding: '4px 14px',
-                    fontSize: '11px',
-                    fontWeight: '700',
-                    fontFamily: 'monospace',
-                    cursor: isSaving ? 'not-allowed' : 'pointer',
-                    letterSpacing: '0.5px',
-                    boxShadow: '0 2px 8px rgba(255, 255, 255, 0.2)',
-                    transition: 'all 0.2s ease',
-                  }}
-                >
-                  {isSaving ? 'SAVING...' : 'SAVE'}
-                </button>
-              )}
+              {/* বাটনটি তৈরি থাকছে, কেবল ইনপুট দিলে ভিজিবল হবে - কোনো পজিশন শিফট হবে না */}
+              <button
+                type="button"
+                onClick={handleSaveRates}
+                disabled={isSaving || !hasChanges}
+                style={{
+                  backgroundColor: '#ffffff',
+                  color: '#000000',
+                  border: 'none',
+                  borderRadius: '20px',
+                  padding: '4px 14px',
+                  fontSize: '11px',
+                  fontWeight: '700',
+                  fontFamily: 'monospace',
+                  cursor: isSaving ? 'not-allowed' : 'pointer',
+                  letterSpacing: '0.5px',
+                  boxShadow: '0 2px 8px rgba(255, 255, 255, 0.2)',
+                  opacity: hasChanges ? 1 : 0,
+                  visibility: hasChanges ? 'visible' : 'hidden',
+                  transition: 'opacity 0.2s ease, visibility 0.2s ease',
+                  pointerEvents: hasChanges ? 'auto' : 'none',
+                }}
+              >
+                {isSaving ? 'SAVING...' : 'SAVE'}
+              </button>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
