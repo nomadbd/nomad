@@ -26,9 +26,9 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
 }) => {
   const isBlocked = ambassador.status?.toUpperCase() === 'BLOCKED' || ambassador.status?.toUpperCase() === 'DEACTIVATED';
 
-  // State for rates
-  const [commissionRate, setCommissionRate] = useState<number | string>(ambassador.commission_rate ?? 0);
-  const [discountPercent, setDiscountPercent] = useState<number | string>(ambassador.discount_percent ?? 0);
+  // ইনপুট ফিল্ড খালি রাখছি যেন সরাসরি নতুন মান টাইপ করা যায়
+  const [commissionRate, setCommissionRate] = useState<string>('');
+  const [discountPercent, setDiscountPercent] = useState<string>('');
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
@@ -46,12 +46,18 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
   const handleSaveRates = async () => {
     setIsSaving(true);
     setStatusMsg(null);
+
+    // ইউজার নতুন ইনপুট না দিলে প্লেসহোল্ডার/আগের মানটি ডাটাবেজে পাঠাবে
+    const finalCommission = commissionRate === '' ? (ambassador.commission_rate ?? 0) : Number(commissionRate);
+    const finalDiscount = discountPercent === '' ? (ambassador.discount_percent ?? 0) : Number(discountPercent);
+
     try {
+      // টেবিল নাম 'ambassadors' বদলে 'ambassador' করা হলো
       const { error } = await supabase
-        .from('ambassadors')
+        .from('ambassador')
         .update({
-          commission_rate: Number(commissionRate) || 0,
-          discount_percent: Number(discountPercent) || 0,
+          commission_rate: finalCommission,
+          discount_percent: finalDiscount,
           updated_at: new Date().toISOString(),
         })
         .eq('id', ambassador.ambassador_id);
@@ -59,6 +65,11 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
       if (error) throw error;
 
       setStatusMsg({ type: 'success', text: 'Rates updated successfully!' });
+      
+      // স্টেট ক্লিয়ার করা যাতে প্লেসহোল্ডারে নতুন সেভ হওয়া মান আপডেট দেখায়
+      setCommissionRate('');
+      setDiscountPercent('');
+
       if (onUpdateSuccess) {
         onUpdateSuccess();
       }
@@ -83,7 +94,7 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
         display: 'flex',
         alignItems: 'flex-end',
         justifyContent: 'center',
-        paddingTop: '80px', // Top header safe margin
+        paddingTop: '80px',
       }}
     >
       <div
@@ -98,7 +109,7 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
           display: 'flex',
           flexDirection: 'column',
           gap: '16px',
-          maxHeight: 'calc(100dvh - 80px)', // Ensures sheet top never goes under app header
+          maxHeight: 'calc(100dvh - 80px)',
           overflowY: 'auto',
           boxSizing: 'border-box',
         }}
@@ -345,7 +356,7 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
                   max="100"
                   value={commissionRate}
                   onChange={(e) => setCommissionRate(e.target.value)}
-                  placeholder="10"
+                  placeholder={String(ambassador.commission_rate ?? 0)}
                   style={{
                     width: '100%',
                     backgroundColor: '#09090b',
@@ -372,7 +383,7 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
                   max="100"
                   value={discountPercent}
                   onChange={(e) => setDiscountPercent(e.target.value)}
-                  placeholder="5"
+                  placeholder={String(ambassador.discount_percent ?? 0)}
                   style={{
                     width: '100%',
                     backgroundColor: '#09090b',
