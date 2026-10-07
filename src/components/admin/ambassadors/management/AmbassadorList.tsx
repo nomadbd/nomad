@@ -224,6 +224,7 @@ export default function AmbassadorList({
                   onToggleStatus={handleToggleStatus}
                   onOpenProducts={setSelectedAmbassadorForProducts}
                   onOpenSalesBreakdown={(selected) => setSelectedAmbassadorForSales(selected)}
+                  onOpenPayouts={() => setActiveSubTab('PAYOUTS')}
                   onCopyLink={handleCopyLink}
                 />
               ))}
