@@ -11,7 +11,7 @@ interface AmbassadorBottomSheetProps {
   onOpenProducts: (amb: AmbassadorProfile) => void;
   onOpenPayouts: () => void;
   onToggleStatus: (amb: AmbassadorProfile) => void;
-  onUpdateSuccess?: () => void; // ডাটা সেভ হলে প্যারেন্ট লিস্ট রিফ্রেশ করার জন্য
+  onUpdateSuccess?: () => void;
 }
 
 export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
@@ -26,13 +26,23 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
 }) => {
   const isBlocked = ambassador.status?.toUpperCase() === 'BLOCKED' || ambassador.status?.toUpperCase() === 'DEACTIVATED';
 
-  // কমিশন এবং ডিসকাউন্ট এরিয়া স্টেট
+  // State for rates
   const [commissionRate, setCommissionRate] = useState<number | string>(ambassador.commission_rate ?? 0);
   const [discountPercent, setDiscountPercent] = useState<number | string>(ambassador.discount_percent ?? 0);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  // Supabase-এ কমিশন ও ডিসকাউন্ট আপডেট করার ফাংশন
+  // Helper for Initials
+  const getInitials = (name: string) => {
+    if (!name) return 'AM';
+    const parts = name.trim().split(' ').filter(Boolean);
+    if (parts.length >= 2) {
+      return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+    }
+    return parts[0].slice(0, 2).toUpperCase();
+  };
+
+  // Supabase Update Logic
   const handleSaveRates = async () => {
     setIsSaving(true);
     setStatusMsg(null);
@@ -67,8 +77,8 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
       style={{
         position: 'fixed',
         inset: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.75)',
-        backdropFilter: 'blur(4px)',
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        backdropFilter: 'blur(6px)',
         zIndex: 100,
         display: 'flex',
         alignItems: 'flex-end',
@@ -82,25 +92,83 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
           maxWidth: '500px',
           backgroundColor: '#09090b',
           borderTop: '1px solid #1f1f23',
-          borderRadius: '16px 16px 0 0',
-          padding: '20px',
+          borderRadius: '20px 20px 0 0',
+          padding: '24px 20px 28px 20px',
           display: 'flex',
           flexDirection: 'column',
-          gap: '16px',
+          gap: '20px',
           maxHeight: '90vh',
           overflowY: 'auto',
+          boxSizing: 'border-box',
         }}
       >
-        {/* Header Section */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#ffffff' }}>
-              {ambassador.name}
-            </div>
-            <div style={{ fontSize: '11px', color: '#71717a', fontFamily: 'monospace', marginTop: '2px' }}>
-              {ambassador.email}
+        {/* 1. Header: Avatar + Name + Email + Close Button */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
+            {/* Avatar Circle */}
+            {ambassador.avatar_url ? (
+              <img
+                src={ambassador.avatar_url}
+                alt={ambassador.name}
+                style={{
+                  width: '44px',
+                  height: '44px',
+                  borderRadius: '50%',
+                  objectFit: 'cover',
+                  border: '1px solid #27272a',
+                  flexShrink: 0,
+                }}
+              />
+            ) : (
+              <div
+                style={{
+                  width: '44px',
+                  height: '44px',
+                  borderRadius: '50%',
+                  backgroundColor: '#18181b',
+                  border: '1px solid #27272a',
+                  color: '#a1a1aa',
+                  fontSize: '14px',
+                  fontWeight: 'bold',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  letterSpacing: '0.5px',
+                }}
+              >
+                {getInitials(ambassador.name)}
+              </div>
+            )}
+
+            {/* Name & Email Container (Ensures full text displays properly without break) */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div
+                style={{
+                  fontSize: '16px',
+                  fontWeight: '700',
+                  color: '#ffffff',
+                  lineHeight: '1.3',
+                  wordBreak: 'break-word',
+                }}
+              >
+                {ambassador.name}
+              </div>
+              <div
+                style={{
+                  fontSize: '11px',
+                  color: '#71717a',
+                  fontFamily: 'monospace',
+                  marginTop: '3px',
+                  wordBreak: 'break-all',
+                }}
+              >
+                {ambassador.email}
+              </div>
             </div>
           </div>
+
+          {/* Close Button */}
           <button
             type="button"
             onClick={onClose}
@@ -109,38 +177,41 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
               border: '1px solid #27272a',
               color: '#a1a1aa',
               borderRadius: '50%',
-              padding: '6px',
+              width: '32px',
+              height: '32px',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              flexShrink: 0,
             }}
           >
             <CloseIcon style={{ width: '14px', height: '14px' }} />
           </button>
         </div>
 
-        {/* Quick Communication Actions */}
-        <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+        {/* 2. Quick Contact Buttons (Minimal Circular Design with White Icons) */}
+        <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
           <button
             type="button"
             onClick={() => onSendMessage(ambassador)}
             title="Send Message"
             aria-label="Send Message"
             style={{
-              flex: 1,
+              width: '44px',
+              height: '44px',
+              borderRadius: '50%',
               backgroundColor: '#121215',
               border: '1px solid #27272a',
-              borderRadius: '8px',
-              padding: '12px',
               color: '#ffffff',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               cursor: 'pointer',
+              transition: 'all 0.2s ease',
             }}
           >
-            <MessageIcon style={{ width: '18px', height: '18px', color: '#2997ff' }} />
+            <MessageIcon style={{ width: '18px', height: '18px', color: '#ffffff' }} />
           </button>
 
           <button
@@ -149,141 +220,36 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
             title="Send Email"
             aria-label="Send Email"
             style={{
-              flex: 1,
+              width: '44px',
+              height: '44px',
+              borderRadius: '50%',
               backgroundColor: '#121215',
               border: '1px solid #27272a',
-              borderRadius: '8px',
-              padding: '12px',
               color: '#ffffff',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               cursor: 'pointer',
+              transition: 'all 0.2s ease',
             }}
           >
-            <EmailIcon style={{ width: '18px', height: '18px', color: '#64ffda' }} />
+            <EmailIcon style={{ width: '18px', height: '18px', color: '#ffffff' }} />
           </button>
         </div>
 
-        {/* Edit Commission & Discount Section */}
-        <div
-          style={{
-            backgroundColor: '#121215',
-            border: '1px solid #1f1f23',
-            borderRadius: '10px',
-            padding: '14px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '12px',
-          }}
-        >
-          <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#a1a1aa', fontFamily: 'monospace', letterSpacing: '0.5px', textTransform: 'uppercase' }}>
-            Configure Rates
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
-            <div>
-              <label style={{ display: 'block', fontSize: '10px', color: '#71717a', fontFamily: 'monospace', marginBottom: '4px' }}>
-                COMMISSION (%)
-              </label>
-              <input
-                type="number"
-                min="0"
-                max="100"
-                value={commissionRate}
-                onChange={(e) => setCommissionRate(e.target.value)}
-                placeholder="10"
-                style={{
-                  width: '100%',
-                  backgroundColor: '#09090b',
-                  border: '1px solid #27272a',
-                  borderRadius: '6px',
-                  padding: '8px 10px',
-                  color: '#22c55e',
-                  fontSize: '13px',
-                  fontWeight: 'bold',
-                  fontFamily: 'monospace',
-                  outline: 'none',
-                  boxSizing: 'border-box',
-                }}
-              />
-            </div>
-
-            <div>
-              <label style={{ display: 'block', fontSize: '10px', color: '#71717a', fontFamily: 'monospace', marginBottom: '4px' }}>
-                CUST. DISCOUNT (%)
-              </label>
-              <input
-                type="number"
-                min="0"
-                max="100"
-                value={discountPercent}
-                onChange={(e) => setDiscountPercent(e.target.value)}
-                placeholder="5"
-                style={{
-                  width: '100%',
-                  backgroundColor: '#09090b',
-                  border: '1px solid #27272a',
-                  borderRadius: '6px',
-                  padding: '8px 10px',
-                  color: '#3b82f6',
-                  fontSize: '13px',
-                  fontWeight: 'bold',
-                  fontFamily: 'monospace',
-                  outline: 'none',
-                  boxSizing: 'border-box',
-                }}
-              />
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={handleSaveRates}
-            disabled={isSaving}
-            style={{
-              width: '100%',
-              backgroundColor: '#27272a',
-              border: '1px solid #3f3f46',
-              borderRadius: '6px',
-              padding: '8px',
-              color: '#ffffff',
-              fontSize: '11px',
-              fontWeight: '600',
-              fontFamily: 'monospace',
-              cursor: isSaving ? 'not-allowed' : 'pointer',
-              marginTop: '4px',
-            }}
-          >
-            {isSaving ? 'SAVING...' : 'SAVE RATES'}
-          </button>
-
-          {statusMsg && (
-            <div
-              style={{
-                fontSize: '10px',
-                fontFamily: 'monospace',
-                color: statusMsg.type === 'success' ? '#22c55e' : '#ef4444',
-                textAlign: 'center',
-              }}
-            >
-              {statusMsg.text}
-            </div>
-          )}
-        </div>
-
-        {/* Action Options List */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        {/* 3. Action Options List */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          {/* Manage Products */}
           <button
             type="button"
             onClick={() => onOpenProducts(ambassador)}
             style={{
               backgroundColor: '#121215',
               border: '1px solid #1f1f23',
-              borderRadius: '10px',
-              padding: '12px 14px',
+              borderRadius: '12px',
+              padding: '14px 16px',
               color: '#ffffff',
-              fontSize: '12px',
+              fontSize: '13px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
@@ -291,27 +257,28 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
               textAlign: 'left',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <CartIcon style={{ width: '16px', height: '16px', color: '#2997ff' }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <CartIcon style={{ width: '18px', height: '18px', color: '#ffffff' }} />
               <div>
                 <div style={{ fontWeight: '600' }}>Manage Products</div>
-                <div style={{ fontSize: '10px', color: '#71717a', fontFamily: 'monospace' }}>
+                <div style={{ fontSize: '10px', color: '#71717a', fontFamily: 'monospace', marginTop: '2px' }}>
                   {ambassador.assigned_products_count || 0} products currently assigned
                 </div>
               </div>
             </div>
           </button>
 
+          {/* Payout Requests & History */}
           <button
             type="button"
             onClick={onOpenPayouts}
             style={{
               backgroundColor: '#121215',
               border: '1px solid #1f1f23',
-              borderRadius: '10px',
-              padding: '12px 14px',
+              borderRadius: '12px',
+              padding: '14px 16px',
               color: '#ffffff',
-              fontSize: '12px',
+              fontSize: '13px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
@@ -319,37 +286,145 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
               textAlign: 'left',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <HistoryIcon style={{ width: '16px', height: '16px', color: '#e3a008' }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <HistoryIcon style={{ width: '18px', height: '18px', color: '#ffffff' }} />
               <div>
                 <div style={{ fontWeight: '600' }}>Payout Requests & History</div>
-                <div style={{ fontSize: '10px', color: '#71717a', fontFamily: 'monospace' }}>
+                <div style={{ fontSize: '10px', color: '#71717a', fontFamily: 'monospace', marginTop: '2px' }}>
                   View all payouts for this ambassador
                 </div>
               </div>
             </div>
           </button>
 
+          {/* 4. Configure Rates Section (Placed right above Deactivate) */}
+          <div
+            style={{
+              backgroundColor: '#121215',
+              border: '1px solid #1f1f23',
+              borderRadius: '12px',
+              padding: '16px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px',
+            }}
+          >
+            <div style={{ fontSize: '10px', fontWeight: 'bold', color: '#71717a', fontFamily: 'monospace', letterSpacing: '0.8px', textTransform: 'uppercase' }}>
+              CONFIGURE RATES
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '9px', color: '#71717a', fontFamily: 'monospace', marginBottom: '6px', textTransform: 'uppercase' }}>
+                  COMMISSION (%)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={commissionRate}
+                  onChange={(e) => setCommissionRate(e.target.value)}
+                  placeholder="10"
+                  style={{
+                    width: '100%',
+                    backgroundColor: '#09090b',
+                    border: '1px solid #27272a',
+                    borderRadius: '8px',
+                    padding: '10px 12px',
+                    color: '#22c55e',
+                    fontSize: '14px',
+                    fontWeight: 'bold',
+                    fontFamily: 'monospace',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '9px', color: '#71717a', fontFamily: 'monospace', marginBottom: '6px', textTransform: 'uppercase' }}>
+                  CUST. DISCOUNT (%)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={discountPercent}
+                  onChange={(e) => setDiscountPercent(e.target.value)}
+                  placeholder="5"
+                  style={{
+                    width: '100%',
+                    backgroundColor: '#09090b',
+                    border: '1px solid #27272a',
+                    borderRadius: '8px',
+                    padding: '10px 12px',
+                    color: '#3b82f6',
+                    fontSize: '14px',
+                    fontWeight: 'bold',
+                    fontFamily: 'monospace',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                  }}
+                />
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleSaveRates}
+              disabled={isSaving}
+              style={{
+                width: '100%',
+                backgroundColor: '#18181b',
+                border: '1px solid #27272a',
+                borderRadius: '8px',
+                padding: '10px',
+                color: '#ffffff',
+                fontSize: '11px',
+                fontWeight: '600',
+                fontFamily: 'monospace',
+                cursor: isSaving ? 'not-allowed' : 'pointer',
+                marginTop: '4px',
+                letterSpacing: '0.5px',
+              }}
+            >
+              {isSaving ? 'SAVING...' : 'SAVE RATES'}
+            </button>
+
+            {statusMsg && (
+              <div
+                style={{
+                  fontSize: '10px',
+                  fontFamily: 'monospace',
+                  color: statusMsg.type === 'success' ? '#22c55e' : '#ef4444',
+                  textAlign: 'center',
+                }}
+              >
+                {statusMsg.text}
+              </div>
+            )}
+          </div>
+
+          {/* 5. Account Deactivation / Activation (Bottom) */}
           <button
             type="button"
             onClick={() => onToggleStatus(ambassador)}
             style={{
               backgroundColor: '#121215',
-              border: '1px solid #1f1f23',
-              borderRadius: '10px',
-              padding: '12px 14px',
+              border: `1px solid ${isBlocked ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)'}`,
+              borderRadius: '12px',
+              padding: '14px 16px',
               color: isBlocked ? '#22c55e' : '#ef4444',
-              fontSize: '12px',
+              fontSize: '13px',
+              fontWeight: '600',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'space-between',
+              justifyContent: 'center',
               cursor: 'pointer',
-              textAlign: 'left',
+              textAlign: 'center',
             }}
           >
-            <div style={{ fontWeight: '600' }}>
-              {isBlocked ? 'Activate Ambassador Account' : 'Deactivate Ambassador Account'}
-            </div>
+            {isBlocked ? 'Activate Ambassador Account' : 'Deactivate Ambassador Account'}
           </button>
         </div>
       </div>
