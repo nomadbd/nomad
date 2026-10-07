@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CloseIcon, MessageIcon, EmailIcon, CartIcon, HistoryIcon } from '@/components/icons';
 import { AmbassadorProfile } from './AmbassadorCard';
 import { supabase } from '@/supabaseClient';
@@ -39,8 +39,6 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
   // ইনপুটে কোনো মান লেখা আছে কি না
   const hasChanges = commissionRate !== '' || discountPercent !== '';
 
-  const ratesSectionRef = useRef<HTMLDivElement>(null);
-
   // অ্যাম্বাসেডর চেঞ্জ হলে প্লেসহোল্ডার মান সিঙ্ক
   useEffect(() => {
     setDisplayCommission(ambassador.commission_rate ?? 0);
@@ -55,15 +53,6 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
       return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
     }
     return parts[0].slice(0, 2).toUpperCase();
-  };
-
-  // কীবোর্ড চালু হলে লাফানো ছাড়াই স্থিতিশীলভাবে কীবোর্ডের উপরে পজিশন রাখার ফাংশন
-  const handleInputFocus = () => {
-    setTimeout(() => {
-      if (ratesSectionRef.current) {
-        ratesSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      }
-    }, 200);
   };
 
   // Supabase Update Logic
@@ -92,7 +81,7 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
 
       setStatusMsg({ type: 'success', text: 'Rates updated successfully!' });
       
-      // ইনপুট ক্লিয়ার (যাতে সেভ বাটন আবার স্মুথভাবে লুকিয়ে যায়)
+      // ইনপুট ক্লিয়ার
       setCommissionRate('');
       setDiscountPercent('');
 
@@ -357,7 +346,6 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
 
           {/* 3. Configure Rates Section */}
           <div
-            ref={ratesSectionRef}
             style={{
               backgroundColor: '#121215',
               border: '1px solid #27272a',
@@ -411,7 +399,6 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
                   min="0"
                   max="100"
                   value={commissionRate}
-                  onFocus={handleInputFocus}
                   onChange={(e) => setCommissionRate(e.target.value)}
                   placeholder={String(displayCommission)}
                   style={{
@@ -439,7 +426,6 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
                   min="0"
                   max="100"
                   value={discountPercent}
-                  onFocus={handleInputFocus}
                   onChange={(e) => setDiscountPercent(e.target.value)}
                   placeholder={String(displayDiscount)}
                   style={{
