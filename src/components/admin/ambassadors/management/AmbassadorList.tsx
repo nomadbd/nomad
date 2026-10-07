@@ -62,6 +62,7 @@ export default function AmbassadorList({
             total_sales,
             total_earned,
             commission_rate,
+            discount_percent,
             unpaid_balance,
             pending_balance,
             ambassador_products (
@@ -92,6 +93,7 @@ export default function AmbassadorList({
             total_sales: ambData?.total_sales || 0,
             total_earned: ambData?.total_earned || 0,
             commission_rate: ambData?.commission_rate || 0,
+            discount_percent: ambData?.discount_percent || 0,
             unpaid_balance: ambData?.unpaid_balance || 0,
             pending_balance: ambData?.pending_balance || 0,
             assigned_products_count: productsList.length,
@@ -248,6 +250,7 @@ export default function AmbassadorList({
             setActiveSubTab('PAYOUTS');
           }}
           onToggleStatus={handleToggleStatus}
+          onUpdateSuccess={fetchAmbassadorsAndStats}
         />
       )}
 
