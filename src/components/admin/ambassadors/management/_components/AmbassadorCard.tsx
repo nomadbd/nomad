@@ -27,6 +27,7 @@ interface AmbassadorCardProps {
   onToggleStatus: (amb: AmbassadorProfile) => void;
   onOpenProducts: (amb: AmbassadorProfile) => void;
   onOpenSalesBreakdown?: (amb: AmbassadorProfile) => void;
+  onOpenPayouts?: () => void;
   onCopyLink: (e: React.MouseEvent, fullUrl: string, slug: string) => void;
 }
 
@@ -38,13 +39,14 @@ export const AmbassadorCard: React.FC<AmbassadorCardProps> = ({
   onToggleStatus,
   onOpenProducts,
   onOpenSalesBreakdown,
+  onOpenPayouts,
   onCopyLink,
 }) => {
   const isBlocked = amb.status?.toUpperCase() === 'BLOCKED' || amb.status?.toUpperCase() === 'DEACTIVATED';
   const fullLink = amb.assigned_slug ? `${baseUrl}/${amb.assigned_slug}` : '';
   const shortDisplayLink = amb.assigned_slug ? `${baseUrl.replace(/^https?:\/\//, '')}/${amb.assigned_slug}` : 'N/A';
 
-  // Helper function for name initials when avatar_url is missing
+  // Helper function to generate initials if avatar_url is missing
   const getInitials = (name: string) => {
     if (!name) return 'AM';
     const parts = name.trim().split(' ').filter(Boolean);
@@ -226,9 +228,9 @@ export const AmbassadorCard: React.FC<AmbassadorCardProps> = ({
           </div>
         </div>
 
-        {/* UNPAID BALANCE */}
+        {/* UNPAID BALANCE (Clicks to PAYOUTS tab) */}
         <div
-          onClick={() => onSelect(amb)}
+          onClick={() => onOpenPayouts?.()}
           style={{
             backgroundColor: '#121215',
             border: '1px solid #1f1f23',
