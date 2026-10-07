@@ -83,6 +83,7 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
         display: 'flex',
         alignItems: 'flex-end',
         justifyContent: 'center',
+        paddingTop: '80px', // Top header safe margin
       }}
     >
       <div
@@ -97,7 +98,7 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
           display: 'flex',
           flexDirection: 'column',
           gap: '16px',
-          maxHeight: '90vh',
+          maxHeight: 'calc(100dvh - 80px)', // Ensures sheet top never goes under app header
           overflowY: 'auto',
           boxSizing: 'border-box',
         }}
@@ -190,10 +191,10 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
           </button>
         </div>
 
-        {/* 2. Perfectly Structured Action Options List */}
+        {/* 2. Action Options List */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           
-          {/* Send Email (First) */}
+          {/* Send Email */}
           <button
             type="button"
             onClick={() => onOpenEmail(ambassador.email)}
@@ -224,7 +225,7 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
             </div>
           </button>
 
-          {/* Send Message (Second) */}
+          {/* Send Message */}
           <button
             type="button"
             onClick={() => onSendMessage(ambassador)}
