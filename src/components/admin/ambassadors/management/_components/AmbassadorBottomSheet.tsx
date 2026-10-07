@@ -30,13 +30,16 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
   const [displayCommission, setDisplayCommission] = useState<number>(ambassador.commission_rate ?? 0);
   const [displayDiscount, setDisplayDiscount] = useState<number>(ambassador.discount_percent ?? 0);
 
-  // ইনপুট টাইপিং স্টেট (খালি রাখা যাতে সরাসরি নতুন ভ্যালু টাইপ করা যায়)
+  // ইনপুট টাইপিং স্টেট (ডিফল্ট খালি রাখা হয়েছে)
   const [commissionRate, setCommissionRate] = useState<string>('');
   const [discountPercent, setDiscountPercent] = useState<string>('');
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  // অ্যাম্বাসেডর চেঞ্জ হলে ডিসপ্লে স্টেট সিঙ্ক
+  // ইনপুটে কোনো মান লেখা হলে বাটন শো করবে
+  const hasChanges = commissionRate !== '' || discountPercent !== '';
+
+  // অ্যাম্বাসেডর চেঞ্জ হলে প্লেসহোল্ডার মান সিঙ্ক
   useEffect(() => {
     setDisplayCommission(ambassador.commission_rate ?? 0);
     setDisplayDiscount(ambassador.discount_percent ?? 0);
@@ -52,11 +55,11 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
     return parts[0].slice(0, 2).toUpperCase();
   };
 
-  // কীবোর্ড চালু হলে ইনপুট ও সেভ বাটন স্ক্রিনে সামনে নিয়ে আসার ফাংশন
+  // কীবোর্ড চালু হলে ফিল্ড অটো-স্ক্রল ফাংশন
   const handleInputFocus = (e: React.FocusEvent<HTMLInputElement>) => {
     setTimeout(() => {
       e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 250);
+    }, 200);
   };
 
   // Supabase Update Logic
@@ -79,13 +82,13 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
 
       if (error) throw error;
 
-      // সাথে সাথেই প্লেসহোল্ডারের মান আপডেট
+      // সাথে সাথেই লোকাল প্লেসহোল্ডার মান আপডেট
       setDisplayCommission(finalCommission);
       setDisplayDiscount(finalDiscount);
 
       setStatusMsg({ type: 'success', text: 'Rates updated successfully!' });
       
-      // ইনপুট ক্লিয়ার
+      // ইনপুট ক্লিয়ার (যাতে সেভ বাটন আবার স্বয়ংক্রিয়ভাবে লুকিয়ে যায়)
       setCommissionRate('');
       setDiscountPercent('');
 
@@ -113,7 +116,7 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
         display: 'flex',
         alignItems: 'flex-end',
         justifyContent: 'center',
-        paddingTop: '80px', // মূল অ্যাপ হেডারের (NOMAD) জন্য সেফ মার্জিন
+        paddingTop: '80px', // অ্যাপের মূল হেডারের জন্য সেফ স্পেস
       }}
     >
       <div
@@ -128,12 +131,12 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
           display: 'flex',
           flexDirection: 'column',
           gap: '16px',
-          maxHeight: 'calc(100dvh - 80px)', // মূল অ্যাপ হেডারের নিচে সীমাবদ্ধ রাখা
+          maxHeight: 'calc(100dvh - 80px)',
           overflowY: 'auto',
           boxSizing: 'border-box',
         }}
       >
-        {/* 1. Header: Avatar + Name + Email + Close Button (স্বাভাবিক লেআউট) */}
+        {/* 1. Header: Avatar + Name + Email + Close Button */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
             {/* Avatar Circle */}
@@ -360,8 +363,36 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
               gap: '12px',
             }}
           >
-            <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#d4d4d8', fontFamily: 'monospace', letterSpacing: '0.8px', textTransform: 'uppercase' }}>
-              CONFIGURE RATES
+            {/* Header with Dynamic Floating Save Button */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: '26px' }}>
+              <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#d4d4d8', fontFamily: 'monospace', letterSpacing: '0.8px', textTransform: 'uppercase' }}>
+                CONFIGURE RATES
+              </div>
+
+              {/* ইনপুট দিলে কেবল তখনই ভেসে উঠবে ডিম্বাকার সাদা সেভ বাটন */}
+              {hasChanges && (
+                <button
+                  type="button"
+                  onClick={handleSaveRates}
+                  disabled={isSaving}
+                  style={{
+                    backgroundColor: '#ffffff',
+                    color: '#000000',
+                    border: 'none',
+                    borderRadius: '20px',
+                    padding: '4px 14px',
+                    fontSize: '11px',
+                    fontWeight: '700',
+                    fontFamily: 'monospace',
+                    cursor: isSaving ? 'not-allowed' : 'pointer',
+                    letterSpacing: '0.5px',
+                    boxShadow: '0 2px 8px rgba(255, 255, 255, 0.2)',
+                    transition: 'all 0.2s ease',
+                  }}
+                >
+                  {isSaving ? 'SAVING...' : 'SAVE'}
+                </button>
+              )}
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
@@ -422,28 +453,6 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={handleSaveRates}
-              disabled={isSaving}
-              style={{
-                width: '100%',
-                backgroundColor: '#18181b',
-                border: '1px solid #3f3f46',
-                borderRadius: '8px',
-                padding: '10px',
-                color: '#ffffff',
-                fontSize: '11px',
-                fontWeight: '600',
-                fontFamily: 'monospace',
-                cursor: isSaving ? 'not-allowed' : 'pointer',
-                marginTop: '4px',
-                letterSpacing: '0.5px',
-              }}
-            >
-              {isSaving ? 'SAVING...' : 'SAVE RATES'}
-            </button>
-
             {statusMsg && (
               <div
                 style={{
@@ -451,6 +460,7 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
                   fontFamily: 'monospace',
                   color: statusMsg.type === 'success' ? '#22c55e' : '#ef4444',
                   textAlign: 'center',
+                  marginTop: '4px',
                 }}
               >
                 {statusMsg.text}
