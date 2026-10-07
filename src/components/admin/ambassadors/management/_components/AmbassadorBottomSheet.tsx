@@ -141,7 +141,7 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
               </div>
             )}
 
-            {/* Name & Email Container (Ensures full visibility with high contrast) */}
+            {/* Name & Email Container */}
             <div style={{ flex: 1, minWidth: 0 }}>
               <div
                 style={{
@@ -157,7 +157,7 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
               <div
                 style={{
                   fontSize: '12px',
-                  color: '#a1a1aa', // Bright silver grey for high readability
+                  color: '#a1a1aa',
                   fontFamily: 'monospace',
                   marginTop: '3px',
                   wordBreak: 'break-all',
@@ -190,31 +190,10 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
           </button>
         </div>
 
-        {/* 2. Side-by-Side Balanced Quick Communication Buttons */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
-          <button
-            type="button"
-            onClick={() => onSendMessage(ambassador)}
-            style={{
-              backgroundColor: '#121215',
-              border: '1px solid #27272a',
-              borderRadius: '12px',
-              padding: '12px 14px',
-              color: '#ffffff',
-              fontSize: '12px',
-              fontWeight: '600',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              cursor: 'pointer',
-              transition: 'background-color 0.2s',
-            }}
-          >
-            <MessageIcon style={{ width: '16px', height: '16px', color: '#ffffff' }} />
-            <span>Send Message</span>
-          </button>
-
+        {/* 2. Perfectly Structured Action Options List */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          
+          {/* Send Email (First) */}
           <button
             type="button"
             onClick={() => onOpenEmail(ambassador.email)}
@@ -222,25 +201,60 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
               backgroundColor: '#121215',
               border: '1px solid #27272a',
               borderRadius: '12px',
-              padding: '12px 14px',
+              padding: '14px 16px',
               color: '#ffffff',
-              fontSize: '12px',
-              fontWeight: '600',
+              fontSize: '13px',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
+              justifyContent: 'space-between',
               cursor: 'pointer',
-              transition: 'background-color 0.2s',
+              textAlign: 'left',
             }}
           >
-            <EmailIcon style={{ width: '16px', height: '16px', color: '#ffffff' }} />
-            <span>Send Email</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{ width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <EmailIcon style={{ width: '18px', height: '18px', color: '#ffffff' }} />
+              </div>
+              <div>
+                <div style={{ fontWeight: '600', color: '#ffffff' }}>Send Email</div>
+                <div style={{ fontSize: '11px', color: '#a1a1aa', fontFamily: 'monospace', marginTop: '2px' }}>
+                  Open default email client
+                </div>
+              </div>
+            </div>
           </button>
-        </div>
 
-        {/* 3. Action Options List */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          {/* Send Message (Second) */}
+          <button
+            type="button"
+            onClick={() => onSendMessage(ambassador)}
+            style={{
+              backgroundColor: '#121215',
+              border: '1px solid #27272a',
+              borderRadius: '12px',
+              padding: '14px 16px',
+              color: '#ffffff',
+              fontSize: '13px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              cursor: 'pointer',
+              textAlign: 'left',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{ width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <MessageIcon style={{ width: '18px', height: '18px', color: '#ffffff' }} />
+              </div>
+              <div>
+                <div style={{ fontWeight: '600', color: '#ffffff' }}>Send Message</div>
+                <div style={{ fontSize: '11px', color: '#a1a1aa', fontFamily: 'monospace', marginTop: '2px' }}>
+                  Chat directly with ambassador
+                </div>
+              </div>
+            </div>
+          </button>
+
           {/* Manage Products */}
           <button
             type="button"
@@ -260,7 +274,9 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <CartIcon style={{ width: '18px', height: '18px', color: '#ffffff' }} />
+              <div style={{ width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <CartIcon style={{ width: '18px', height: '18px', color: '#ffffff' }} />
+              </div>
               <div>
                 <div style={{ fontWeight: '600', color: '#ffffff' }}>Manage Products</div>
                 <div style={{ fontSize: '11px', color: '#a1a1aa', fontFamily: 'monospace', marginTop: '2px' }}>
@@ -289,7 +305,9 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <HistoryIcon style={{ width: '18px', height: '18px', color: '#ffffff' }} />
+              <div style={{ width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <HistoryIcon style={{ width: '18px', height: '18px', color: '#ffffff' }} />
+              </div>
               <div>
                 <div style={{ fontWeight: '600', color: '#ffffff' }}>Payout Requests & History</div>
                 <div style={{ fontSize: '11px', color: '#a1a1aa', fontFamily: 'monospace', marginTop: '2px' }}>
@@ -299,7 +317,7 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
             </div>
           </button>
 
-          {/* 4. Configure Rates Section */}
+          {/* 3. Configure Rates Section */}
           <div
             style={{
               backgroundColor: '#121215',
@@ -407,7 +425,7 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
             )}
           </div>
 
-          {/* 5. Account Deactivation / Activation (Bottom) */}
+          {/* 4. Account Deactivation / Activation (Bottom) */}
           <button
             type="button"
             onClick={() => onToggleStatus(ambassador)}
