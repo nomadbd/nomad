@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CloseIcon, MessageIcon, EmailIcon, CartIcon, HistoryIcon } from '@/components/icons';
 import { AmbassadorProfile } from './AmbassadorCard';
 import { supabase } from '@/supabaseClient';
@@ -26,11 +26,21 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
 }) => {
   const isBlocked = ambassador.status?.toUpperCase() === 'BLOCKED' || ambassador.status?.toUpperCase() === 'DEACTIVATED';
 
-  // ইনপুট ফিল্ড খালি রাখছি যেন সরাসরি নতুন মান টাইপ করা যায়
+  // ইনস্ট্যান্ট প্লেসহোল্ডার আপডেটের জন্য ডিসপ্লে স্টেট
+  const [displayCommission, setDisplayCommission] = useState<number>(ambassador.commission_rate ?? 0);
+  const [displayDiscount, setDisplayDiscount] = useState<number>(ambassador.discount_percent ?? 0);
+
+  // ইনপুট টাইপিং স্টেট
   const [commissionRate, setCommissionRate] = useState<string>('');
   const [discountPercent, setDiscountPercent] = useState<string>('');
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // অ্যাম্বাসেডর চেঞ্জ হলে ডিসপ্লে স্টেট আপডেট
+  useEffect(() => {
+    setDisplayCommission(ambassador.commission_rate ?? 0);
+    setDisplayDiscount(ambassador.discount_percent ?? 0);
+  }, [ambassador.commission_rate, ambassador.discount_percent]);
 
   // Helper for Initials
   const getInitials = (name: string) => {
@@ -42,17 +52,22 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
     return parts[0].slice(0, 2).toUpperCase();
   };
 
+  // কীবোর্ড চালু হলে অটোমেটিক ইনপুট ও সেভ বাটন স্ক্রিনে সুন্দরভাবে নিয়ে আসার ফাংশন
+  const handleInputFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    setTimeout(() => {
+      e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 250);
+  };
+
   // Supabase Update Logic
   const handleSaveRates = async () => {
     setIsSaving(true);
     setStatusMsg(null);
 
-    // ইউজার নতুন ইনপুট না দিলে প্লেসহোল্ডার/আগের মানটি ডাটাবেজে পাঠাবে
-    const finalCommission = commissionRate === '' ? (ambassador.commission_rate ?? 0) : Number(commissionRate);
-    const finalDiscount = discountPercent === '' ? (ambassador.discount_percent ?? 0) : Number(discountPercent);
+    const finalCommission = commissionRate === '' ? displayCommission : Number(commissionRate);
+    const finalDiscount = discountPercent === '' ? displayDiscount : Number(discountPercent);
 
     try {
-      // টেবিল নাম 'ambassadors' বদলে 'ambassador' করা হলো
       const { error } = await supabase
         .from('ambassador')
         .update({
@@ -64,9 +79,13 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
 
       if (error) throw error;
 
+      // সাথে সাথেই লোকাল প্লেসহোল্ডার মান আপডেট
+      setDisplayCommission(finalCommission);
+      setDisplayDiscount(finalDiscount);
+
       setStatusMsg({ type: 'success', text: 'Rates updated successfully!' });
       
-      // স্টেট ক্লিয়ার করা যাতে প্লেসহোল্ডারে নতুন সেভ হওয়া মান আপডেট দেখায়
+      // ইনপুট ক্লিয়ার
       setCommissionRate('');
       setDiscountPercent('');
 
@@ -94,7 +113,7 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
         display: 'flex',
         alignItems: 'flex-end',
         justifyContent: 'center',
-        paddingTop: '80px',
+        paddingTop: '60px',
       }}
     >
       <div
@@ -109,13 +128,28 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
           display: 'flex',
           flexDirection: 'column',
           gap: '16px',
-          maxHeight: 'calc(100dvh - 80px)',
+          maxHeight: 'calc(100dvh - 60px)',
           overflowY: 'auto',
           boxSizing: 'border-box',
+          position: 'relative',
         }}
       >
-        {/* 1. Header: Avatar + Name + Email + Close Button */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
+        {/* 1. STICKY HEADER: কীবোর্ড খুললেও এটি উপরে স্থির থাকবে */}
+        <div
+          style={{
+            position: 'sticky',
+            top: '-24px',
+            backgroundColor: '#09090b',
+            zIndex: 20,
+            paddingTop: '4px',
+            paddingBottom: '12px',
+            borderBottom: '1px solid #1f1f23',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+            gap: '12px',
+          }}
+        >
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
             {/* Avatar Circle */}
             {ambassador.avatar_url ? (
@@ -355,8 +389,9 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
                   min="0"
                   max="100"
                   value={commissionRate}
+                  onFocus={handleInputFocus}
                   onChange={(e) => setCommissionRate(e.target.value)}
-                  placeholder={String(ambassador.commission_rate ?? 0)}
+                  placeholder={String(displayCommission)}
                   style={{
                     width: '100%',
                     backgroundColor: '#09090b',
@@ -382,8 +417,9 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
                   min="0"
                   max="100"
                   value={discountPercent}
+                  onFocus={handleInputFocus}
                   onChange={(e) => setDiscountPercent(e.target.value)}
-                  placeholder={String(ambassador.discount_percent ?? 0)}
+                  placeholder={String(displayDiscount)}
                   style={{
                     width: '100%',
                     backgroundColor: '#09090b',
