@@ -30,13 +30,13 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
   const [displayCommission, setDisplayCommission] = useState<number>(ambassador.commission_rate ?? 0);
   const [displayDiscount, setDisplayDiscount] = useState<number>(ambassador.discount_percent ?? 0);
 
-  // ইনপুট টাইপিং স্টেট
+  // ইনপুট টাইপিং স্টেট (খালি রাখা যাতে সরাসরি নতুন ভ্যালু টাইপ করা যায়)
   const [commissionRate, setCommissionRate] = useState<string>('');
   const [discountPercent, setDiscountPercent] = useState<string>('');
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  // অ্যাম্বাসেডর চেঞ্জ হলে ডিসপ্লে স্টেট আপডেট
+  // অ্যাম্বাসেডর চেঞ্জ হলে ডিসপ্লে স্টেট সিঙ্ক
   useEffect(() => {
     setDisplayCommission(ambassador.commission_rate ?? 0);
     setDisplayDiscount(ambassador.discount_percent ?? 0);
@@ -52,7 +52,7 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
     return parts[0].slice(0, 2).toUpperCase();
   };
 
-  // কীবোর্ড চালু হলে অটোমেটিক ইনপুট ও সেভ বাটন স্ক্রিনে সুন্দরভাবে নিয়ে আসার ফাংশন
+  // কীবোর্ড চালু হলে ইনপুট ও সেভ বাটন স্ক্রিনে সামনে নিয়ে আসার ফাংশন
   const handleInputFocus = (e: React.FocusEvent<HTMLInputElement>) => {
     setTimeout(() => {
       e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -79,7 +79,7 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
 
       if (error) throw error;
 
-      // সাথে সাথেই লোকাল প্লেসহোল্ডার মান আপডেট
+      // সাথে সাথেই প্লেসহোল্ডারের মান আপডেট
       setDisplayCommission(finalCommission);
       setDisplayDiscount(finalDiscount);
 
@@ -113,7 +113,7 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
         display: 'flex',
         alignItems: 'flex-end',
         justifyContent: 'center',
-        paddingTop: '60px',
+        paddingTop: '80px', // মূল অ্যাপ হেডারের (NOMAD) জন্য সেফ মার্জিন
       }}
     >
       <div
@@ -128,28 +128,13 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
           display: 'flex',
           flexDirection: 'column',
           gap: '16px',
-          maxHeight: 'calc(100dvh - 60px)',
+          maxHeight: 'calc(100dvh - 80px)', // মূল অ্যাপ হেডারের নিচে সীমাবদ্ধ রাখা
           overflowY: 'auto',
           boxSizing: 'border-box',
-          position: 'relative',
         }}
       >
-        {/* 1. STICKY HEADER: কীবোর্ড খুললেও এটি উপরে স্থির থাকবে */}
-        <div
-          style={{
-            position: 'sticky',
-            top: '-24px',
-            backgroundColor: '#09090b',
-            zIndex: 20,
-            paddingTop: '4px',
-            paddingBottom: '12px',
-            borderBottom: '1px solid #1f1f23',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'flex-start',
-            gap: '12px',
-          }}
-        >
+        {/* 1. Header: Avatar + Name + Email + Close Button (স্বাভাবিক লেআউট) */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
             {/* Avatar Circle */}
             {ambassador.avatar_url ? (
