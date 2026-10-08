@@ -26,7 +26,8 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
   onToggleStatus,
   onUpdateSuccess,
 }) => {
-  const isBlocked = ambassador.status?.toUpperCase() === 'BLOCKED' || ambassador.status?.toUpperCase() === 'DEACTIVATED';
+  const currentStatus = ambassador.status?.toUpperCase() || 'ACTIVE';
+  const isBlocked = currentStatus === 'BLOCKED' || currentStatus === 'DEACTIVATED' || currentStatus === 'INACTIVE';
 
   // সাব-ভিউ নেভিগেশন স্টেট ('main' | 'activity_logs')
   const [currentView, setCurrentView] = useState<'main' | 'activity_logs'>('main');
@@ -61,13 +62,24 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
     return parts[0].slice(0, 2).toUpperCase();
   };
 
-  // Supabase Update Logic + Audit Logging
+  // Supabase Rate Update Logic + Audit Logging
   const handleSaveRates = async () => {
     setIsSaving(true);
     setStatusMsg(null);
 
-    const finalCommission = commissionRate === '' ? displayCommission : Number(commissionRate);
-    const finalDiscount = discountPercent === '' ? displayDiscount : Number(discountPercent);
+    const commNum = Number(commissionRate);
+    const discNum = Number(discountPercent);
+
+    const isCommChanged = commissionRate !== '' && commNum !== displayCommission;
+    const isDiscChanged = discountPercent !== '' && discNum !== displayDiscount;
+
+    if (!isCommChanged && !isDiscChanged) {
+      setIsSaving(false);
+      return;
+    }
+
+    const finalCommission = isCommChanged ? commNum : displayCommission;
+    const finalDiscount = isDiscChanged ? discNum : displayDiscount;
 
     try {
       const { error } = await supabase
@@ -81,14 +93,29 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
 
       if (error) throw error;
 
-      // ১. অটোমেটিক Audit Log সেভ করা
+      // পরিবর্তিত ফিল্ড অনুযায়ী অডিট লগের নাম ও মান ঠিক করা
+      let fieldName = 'Commission & Discount';
+      let oldValue = `${displayCommission}% Commission / ${displayDiscount}% Discount`;
+      let newValue = `${finalCommission}% Commission / ${finalDiscount}% Discount`;
+
+      if (isCommChanged && !isDiscChanged) {
+        fieldName = 'Commission Rate';
+        oldValue = `${displayCommission}%`;
+        newValue = `${finalCommission}%`;
+      } else if (!isCommChanged && isDiscChanged) {
+        fieldName = 'Customer Discount';
+        oldValue = `${displayDiscount}%`;
+        newValue = `${finalDiscount}%`;
+      }
+
+      // ১. Audit Log সেভ করা
       await logAuditActivity({
         entityType: 'ambassador',
         entityId: ambassador.ambassador_id,
         actionType: 'RATE_UPDATE',
-        fieldName: 'Commission & Discount',
-        oldValue: `${displayCommission}% Commission / ${displayDiscount}% Discount`,
-        newValue: `${finalCommission}% Commission / ${finalDiscount}% Discount`,
+        fieldName,
+        oldValue,
+        newValue,
         reason: 'Updated rate configuration from bottom sheet',
       });
 
@@ -98,7 +125,6 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
 
       setStatusMsg({ type: 'success', text: 'Rates updated successfully!' });
 
-      // ইনপুট ক্লিয়ার
       setCommissionRate('');
       setDiscountPercent('');
 
@@ -109,6 +135,56 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
     } catch (err: any) {
       console.error('Error updating rates:', err.message);
       setStatusMsg({ type: 'error', text: err.message || 'Failed to update rates.' });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Status Change (Block / Unblock / Deactivate / Reactivate) Logic + Audit Logging
+  const handleToggleStatus = async () => {
+    setIsSaving(true);
+    setStatusMsg(null);
+
+    const oldStatus = currentStatus;
+    const newStatus = isBlocked ? 'ACTIVE' : 'INACTIVE';
+
+    try {
+      const { error } = await supabase
+        .from('ambassador')
+        .update({
+          status: newStatus,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', ambassador.ambassador_id);
+
+      if (error) throw error;
+
+      // অডিট লগ সেভ করা
+      await logAuditActivity({
+        entityType: 'ambassador',
+        entityId: ambassador.ambassador_id,
+        actionType: 'STATUS_CHANGE',
+        fieldName: 'Status',
+        oldValue: oldStatus,
+        newValue: newStatus,
+        reason: newStatus === 'INACTIVE' ? 'Account Deactivated' : 'Account Reactivated',
+      });
+
+      setStatusMsg({
+        type: 'success',
+        text: `Account ${newStatus === 'INACTIVE' ? 'deactivated' : 'activated'} successfully!`,
+      });
+
+      if (onToggleStatus) {
+        onToggleStatus({ ...ambassador, status: newStatus });
+      }
+      if (onUpdateSuccess) {
+        onUpdateSuccess();
+      }
+      setTimeout(() => setStatusMsg(null), 3000);
+    } catch (err: any) {
+      console.error('Error toggling status:', err.message);
+      setStatusMsg({ type: 'error', text: err.message || 'Failed to update status.' });
     } finally {
       setIsSaving(false);
     }
@@ -516,7 +592,8 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
               {/* 4. Account Deactivation / Activation */}
               <button
                 type="button"
-                onClick={() => onToggleStatus(ambassador)}
+                onClick={handleToggleStatus}
+                disabled={isSaving}
                 style={{
                   backgroundColor: '#121215',
                   border: `1px solid ${isBlocked ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
@@ -528,8 +605,9 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  cursor: 'pointer',
+                  cursor: isSaving ? 'not-allowed' : 'pointer',
                   textAlign: 'center',
+                  opacity: isSaving ? 0.6 : 1,
                 }}
               >
                 {isBlocked ? 'Activate Ambassador Account' : 'Deactivate Ambassador Account'}
