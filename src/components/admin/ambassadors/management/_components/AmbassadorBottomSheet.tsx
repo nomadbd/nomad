@@ -26,8 +26,12 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
   onToggleStatus,
   onUpdateSuccess,
 }) => {
-  const currentStatus = ambassador.status?.toUpperCase() || 'ACTIVE';
-  const isBlocked = currentStatus === 'BLOCKED' || currentStatus === 'DEACTIVATED' || currentStatus === 'INACTIVE';
+  // is_active কলাম (boolean) দিয়ে স্ট্যাটাস নির্ধারণ
+  const isActive = typeof ambassador.is_active === 'boolean' 
+    ? ambassador.is_active 
+    : ambassador.status?.toUpperCase() === 'ACTIVE';
+
+  const isBlocked = !isActive;
 
   // সাব-ভিউ নেভিগেশন স্টেট ('main' | 'activity_logs')
   const [currentView, setCurrentView] = useState<'main' | 'activity_logs'>('main');
@@ -36,7 +40,7 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
   const [displayCommission, setDisplayCommission] = useState<number>(ambassador.commission_rate ?? 0);
   const [displayDiscount, setDisplayDiscount] = useState<number>(ambassador.discount_percent ?? 0);
 
-  // ইনপুট টাইপিং স্টেট (ডিফল্ট খালি রাখা হয়েছে)
+  // ইনপুট টাইপিং স্টেট
   const [commissionRate, setCommissionRate] = useState<string>('');
   const [discountPercent, setDiscountPercent] = useState<string>('');
   const [isSaving, setIsSaving] = useState<boolean>(false);
@@ -93,7 +97,7 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
 
       if (error) throw error;
 
-      // পরিবর্তিত ফিল্ড অনুযায়ী অডিট লগের নাম ও মান ঠিক করা
+      // লগের জন্য ফিল্ড ও ভ্যালু প্রস্তুত করা
       let fieldName = 'Commission & Discount';
       let oldValue = `${displayCommission}% Commission / ${displayDiscount}% Discount`;
       let newValue = `${finalCommission}% Commission / ${finalDiscount}% Discount`;
@@ -108,7 +112,7 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
         newValue = `${finalDiscount}%`;
       }
 
-      // ১. Audit Log সেভ করা
+      // অডিট লগ সেভ করা
       await logAuditActivity({
         entityType: 'ambassador',
         entityId: ambassador.ambassador_id,
@@ -119,7 +123,6 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
         reason: 'Updated rate configuration from bottom sheet',
       });
 
-      // ২. লোকাল প্লেসহোল্ডার মান আপডেট
       setDisplayCommission(finalCommission);
       setDisplayDiscount(finalDiscount);
 
@@ -140,19 +143,18 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
     }
   };
 
-  // Status Change (Block / Unblock / Deactivate / Reactivate) Logic + Audit Logging
+  // Status Toggle (is_active boolean) + Audit Logging
   const handleToggleStatus = async () => {
     setIsSaving(true);
     setStatusMsg(null);
 
-    const oldStatus = currentStatus;
-    const newStatus = isBlocked ? 'ACTIVE' : 'INACTIVE';
+    const nextIsActive = !isActive;
 
     try {
       const { error } = await supabase
         .from('ambassador')
         .update({
-          status: newStatus,
+          is_active: nextIsActive,
           updated_at: new Date().toISOString(),
         })
         .eq('id', ambassador.ambassador_id);
@@ -164,19 +166,23 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
         entityType: 'ambassador',
         entityId: ambassador.ambassador_id,
         actionType: 'STATUS_CHANGE',
-        fieldName: 'Status',
-        oldValue: oldStatus,
-        newValue: newStatus,
-        reason: newStatus === 'INACTIVE' ? 'Account Deactivated' : 'Account Reactivated',
+        fieldName: 'is_active',
+        oldValue: isActive ? 'ACTIVE' : 'INACTIVE',
+        newValue: nextIsActive ? 'ACTIVE' : 'INACTIVE',
+        reason: nextIsActive ? 'Account Reactivated' : 'Account Deactivated',
       });
 
       setStatusMsg({
         type: 'success',
-        text: `Account ${newStatus === 'INACTIVE' ? 'deactivated' : 'activated'} successfully!`,
+        text: `Account ${nextIsActive ? 'activated' : 'deactivated'} successfully!`,
       });
 
       if (onToggleStatus) {
-        onToggleStatus({ ...ambassador, status: newStatus });
+        onToggleStatus({
+          ...ambassador,
+          is_active: nextIsActive,
+          status: nextIsActive ? 'ACTIVE' : 'INACTIVE',
+        });
       }
       if (onUpdateSuccess) {
         onUpdateSuccess();
@@ -320,7 +326,7 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
             {/* 2. Action Options List */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
 
-              {/* Activity & Audit Logs (Sub-view Toggle) */}
+              {/* Activity & Audit Logs */}
               <button
                 type="button"
                 onClick={() => setCurrentView('activity_logs')}
@@ -589,7 +595,7 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
                 )}
               </div>
 
-              {/* 4. Account Deactivation / Activation */}
+              {/* 4. Account Deactivation / Activation (is_active boolean ভিত্তিক) */}
               <button
                 type="button"
                 onClick={handleToggleStatus}
