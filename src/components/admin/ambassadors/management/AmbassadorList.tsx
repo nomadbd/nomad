@@ -65,6 +65,7 @@ export default function AmbassadorList({
             discount_percent,
             unpaid_balance,
             pending_balance,
+            is_active,
             ambassador_products (
               id,
               is_visible
@@ -86,7 +87,8 @@ export default function AmbassadorList({
             ambassador_id: ambData?.id || item.id,
             name: item.name || 'Unnamed Ambassador',
             email: item.email || 'No Email',
-            status: item.status || 'ACTIVE',
+            status: ambData?.is_active ? 'ACTIVE' : 'INACTIVE',
+            is_active: ambData?.is_active ?? true,
             avatar_url: item.avatar_url || null,
             assigned_slug: ambData?.assigned_slug || '',
             created_at: item.created_at || '',
@@ -144,28 +146,11 @@ export default function AmbassadorList({
     setTimeout(() => setCopiedSlug(null), 2000);
   };
 
-  const handleToggleStatus = async (amb: AmbassadorProfile) => {
-    const isBlocked = amb.status?.toUpperCase() === 'BLOCKED' || amb.status?.toUpperCase() === 'DEACTIVATED';
-    const actionText = isBlocked ? 'activate' : 'deactivate';
-
-    const confirm = window.confirm(`Are you sure you want to ${actionText} ${amb.name}?`);
-    if (!confirm) return;
-
-    setActionLoading(amb.id);
-    try {
-      const rpcName = isBlocked ? 'activate_ambassador' : 'deactivate_ambassador';
-      const { error } = await supabase.rpc(rpcName, { target_user_id: amb.id });
-      if (error) throw error;
-      fetchAmbassadorsAndStats();
-      if (bottomSheetAmbassador) {
-        setBottomSheetAmbassador((prev) =>
-          prev ? { ...prev, status: isBlocked ? 'ACTIVE' : 'DEACTIVATED' } : null
-        );
-      }
-    } catch (err: any) {
-      alert(`Failed to ${actionText} ambassador: ` + err.message);
-    } finally {
-      setActionLoading(null);
+  // বটম শিটে কাস্টম মোডাল থেকে স্ট্যাটাস পরিবর্তন সম্পন্ন হলে ডাটা আপডেট করার ফাংশন
+  const handleStatusUpdated = (updatedAmb: AmbassadorProfile) => {
+    fetchAmbassadorsAndStats();
+    if (bottomSheetAmbassador) {
+      setBottomSheetAmbassador(updatedAmb);
     }
   };
 
@@ -223,7 +208,7 @@ export default function AmbassadorList({
                   actionLoading={actionLoading}
                   copiedSlug={copiedSlug}
                   onSelect={setBottomSheetAmbassador}
-                  onToggleStatus={handleToggleStatus}
+                  /* onToggleStatus সরিয়ে ফেলা হয়েছে যেন কারিকুলাম/নামের পাশে ক্লিক করলেও টগল না হয় */
                   onOpenProducts={setSelectedAmbassadorForProducts}
                   onOpenSalesBreakdown={(selected) => setSelectedAmbassadorForSales(selected)}
                   onOpenPayouts={() => setActiveSubTab('PAYOUTS')}
@@ -249,7 +234,7 @@ export default function AmbassadorList({
             setBottomSheetAmbassador(null);
             setActiveSubTab('PAYOUTS');
           }}
-          onToggleStatus={handleToggleStatus}
+          onToggleStatus={handleStatusUpdated}
           onUpdateSuccess={fetchAmbassadorsAndStats}
         />
       )}
