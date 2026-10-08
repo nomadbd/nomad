@@ -142,11 +142,8 @@ export const ActivityLogs: React.FC<Props> = ({ ambassadorId, onBack }) => {
         </button>
         <div>
           <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '600', color: '#ffffff' }}>
-            Activity & Audit Logs
+            Activity History
           </h3>
-          <p style={{ margin: '2px 0 0 0', fontSize: '11px', color: '#a1a1aa' }}>
-            অ্যাম্বাসেডরের সমস্ত আপডেটের ইতিহাস
-          </p>
         </div>
       </div>
 
