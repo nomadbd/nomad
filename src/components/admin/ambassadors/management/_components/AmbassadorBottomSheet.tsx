@@ -472,6 +472,37 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
                   </div>
                 </button>
 
+                {/* Activity & Audit Logs (Payout Requests & History-এর ঠিক নিচে নিয়ে আসা হলো) */}
+                <button
+                  type="button"
+                  onClick={() => setCurrentView('activity_logs')}
+                  style={{
+                    backgroundColor: '#121215',
+                    border: '1px solid #27272a',
+                    borderRadius: '12px',
+                    padding: '14px 16px',
+                    color: '#ffffff',
+                    fontSize: '13px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <HistoryIcon style={{ width: '18px', height: '18px', color: '#38bdf8' }} />
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: '600', color: '#ffffff' }}>Activity & Audit Logs</div>
+                      <div style={{ fontSize: '11px', color: '#a1a1aa', fontFamily: 'monospace', marginTop: '2px' }}>
+                        View all audit logs and admin changes
+                      </div>
+                    </div>
+                  </div>
+                </button>
+
                 {/* 3. Configure Rates Section */}
                 <div
                   style={{
@@ -572,38 +603,7 @@ export const AmbassadorBottomSheet: React.FC<AmbassadorBottomSheetProps> = ({
                   </div>
                 </div>
 
-                {/* 4. Activity & Audit Logs (একেবারে নিচে নিয়ে আসা হয়েছে) */}
-                <button
-                  type="button"
-                  onClick={() => setCurrentView('activity_logs')}
-                  style={{
-                    backgroundColor: '#121215',
-                    border: '1px solid #27272a',
-                    borderRadius: '12px',
-                    padding: '14px 16px',
-                    color: '#ffffff',
-                    fontSize: '13px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    cursor: 'pointer',
-                    textAlign: 'left',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{ width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <HistoryIcon style={{ width: '18px', height: '18px', color: '#38bdf8' }} />
-                    </div>
-                    <div>
-                      <div style={{ fontWeight: '600', color: '#ffffff' }}>Activity & Audit Logs</div>
-                      <div style={{ fontSize: '11px', color: '#a1a1aa', fontFamily: 'monospace', marginTop: '2px' }}>
-                        View all audit logs and admin changes
-                      </div>
-                    </div>
-                  </div>
-                </button>
-
-                {/* 5. Account Deactivation / Activation (Danger Action) */}
+                {/* 4. Account Deactivation / Activation (Danger Action - সবার নিচে) */}
                 <button
                   type="button"
                   onClick={() => setShowConfirmModal(true)}
