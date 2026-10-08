@@ -1,27 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/supabaseClient';
-
-// Pure Inline SVG Icons (No external library required)
-const ChevronLeftIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M15 18l-6-6 6-6" />
-  </svg>
-);
-
-const ClockIcon = ({ size = 16 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="10" />
-    <polyline points="12 6 12 12 16 14" />
-  </svg>
-);
-
-const UserCircleIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M18 20a6 6 0 0 0-12 0" />
-    <circle cx="12" cy="10" r="4" />
-    <circle cx="12" cy="12" r="10" />
-  </svg>
-);
+import { BackIcon, HistoryIcon, ProfileIcon } from '@/components/icons';
 
 interface AuditLog {
   id: string;
@@ -102,9 +81,9 @@ export const ActivityLogs: React.FC<Props> = ({ ambassadorId, onBack }) => {
         <button
           type="button"
           onClick={onBack}
-          className="p-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 transition-colors"
+          className="p-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 transition-colors flex items-center justify-center"
         >
-          <ChevronLeftIcon />
+          <BackIcon style={{ width: '16px', height: '16px', color: '#ffffff' }} />
         </button>
         <div>
           <h3 className="text-sm font-semibold text-zinc-100">Activity & Audit Logs</h3>
@@ -120,7 +99,7 @@ export const ActivityLogs: React.FC<Props> = ({ ambassadorId, onBack }) => {
           </div>
         ) : logs.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-zinc-500 text-xs">
-            <ClockIcon size={28} />
+            <HistoryIcon style={{ width: '28px', height: '28px', opacity: 0.4 }} />
             <span className="mt-2">কোনো একটিভিটি হিস্ট্রি পাওয়া যায়নি</span>
           </div>
         ) : (
@@ -142,7 +121,7 @@ export const ActivityLogs: React.FC<Props> = ({ ambassadorId, onBack }) => {
                     {log.action_type || 'UPDATE'}
                   </span>
                   <span className="text-[11px] text-zinc-500 flex items-center gap-1 font-mono">
-                    <ClockIcon size={12} />
+                    <HistoryIcon style={{ width: '12px', height: '12px' }} />
                     {formatDate(log.created_at)}
                   </span>
                 </div>
@@ -171,7 +150,7 @@ export const ActivityLogs: React.FC<Props> = ({ ambassadorId, onBack }) => {
 
                 <div className="flex items-center justify-between pt-2 border-t border-zinc-800/60 text-[11px] text-zinc-400">
                   <div className="flex items-center gap-1.5">
-                    <UserCircleIcon />
+                    <ProfileIcon style={{ width: '14px', height: '14px' }} />
                     <span className="font-mono text-[11px]">{adminEmail}</span>
                   </div>
                   <span className="text-[9px] px-1.5 py-0.5 bg-zinc-800 rounded text-zinc-400 uppercase font-mono">
