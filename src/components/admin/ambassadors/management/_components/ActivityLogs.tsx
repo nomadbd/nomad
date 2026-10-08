@@ -54,13 +54,29 @@ export const ActivityLogs: React.FC<Props> = ({ ambassadorId, onBack }) => {
     switch (type?.toUpperCase()) {
       case 'RATE_UPDATE':
       case 'COMMISSION_CHANGE':
-        return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+        return {
+          backgroundColor: 'rgba(16, 185, 129, 0.12)',
+          color: '#34d399',
+          borderColor: 'rgba(16, 185, 129, 0.25)',
+        };
       case 'STATUS_CHANGE':
-        return 'bg-amber-500/10 text-amber-400 border-amber-500/20';
+        return {
+          backgroundColor: 'rgba(245, 158, 11, 0.12)',
+          color: '#fbbf24',
+          borderColor: 'rgba(245, 158, 11, 0.25)',
+        };
       case 'PRODUCT_ASSIGN':
-        return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
+        return {
+          backgroundColor: 'rgba(59, 130, 246, 0.12)',
+          color: '#60a5fa',
+          borderColor: 'rgba(59, 130, 246, 0.25)',
+        };
       default:
-        return 'bg-zinc-800 text-zinc-300 border-zinc-700';
+        return {
+          backgroundColor: '#18181b',
+          color: '#d4d4d8',
+          borderColor: '#27272a',
+        };
     }
   };
 
@@ -75,85 +91,217 @@ export const ActivityLogs: React.FC<Props> = ({ ambassadorId, onBack }) => {
   };
 
   return (
-    <div className="flex flex-col h-full bg-zinc-950 text-zinc-100 rounded-t-2xl">
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
+        minHeight: '420px',
+        maxHeight: 'calc(100dvh - 100px)',
+        backgroundColor: '#09090b',
+        color: '#f4f4f5',
+        borderRadius: '20px 20px 0 0',
+        overflow: 'hidden',
+        boxSizing: 'border-box',
+      }}
+    >
       {/* Header */}
-      <div className="flex items-center gap-3 p-4 border-b border-zinc-800 sticky top-0 bg-zinc-950/95 backdrop-blur z-10">
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          padding: '16px 20px',
+          borderBottom: '1px solid #27272a',
+          position: 'sticky',
+          top: 0,
+          backgroundColor: '#09090b',
+          zIndex: 10,
+        }}
+      >
         <button
           type="button"
           onClick={onBack}
-          className="p-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 transition-colors flex items-center justify-center"
+          style={{
+            backgroundColor: '#18181b',
+            border: '1px solid #27272a',
+            color: '#d4d4d8',
+            borderRadius: '10px',
+            width: '32px',
+            height: '32px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+          }}
         >
-          <BackIcon style={{ width: '16px', height: '16px', color: '#ffffff' }} />
+          <div style={{ width: '16px', height: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <BackIcon style={{ width: '16px', height: '16px', color: '#ffffff' }} />
+          </div>
         </button>
         <div>
-          <h3 className="text-sm font-semibold text-zinc-100">Activity & Audit Logs</h3>
-          <p className="text-[11px] text-zinc-400">অ্যাম্বাসেডরের সমস্ত আপডেটের ইতিহাস</p>
+          <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '600', color: '#ffffff' }}>
+            Activity & Audit Logs
+          </h3>
+          <p style={{ margin: '2px 0 0 0', fontSize: '11px', color: '#a1a1aa' }}>
+            অ্যাম্বাসেডরের সমস্ত আপডেটের ইতিহাস
+          </p>
         </div>
       </div>
 
       {/* Log List */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+      <div
+        style={{
+          flex: 1,
+          overflowY: 'auto',
+          padding: '16px 20px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '12px',
+        }}
+      >
         {loading ? (
-          <div className="flex items-center justify-center py-12 text-zinc-500 text-xs font-mono">
+          <div style={{ textAlign: 'center', padding: '40px 0', color: '#71717a', fontSize: '12px', fontFamily: 'monospace' }}>
             লগ লোড হচ্ছে...
           </div>
         ) : logs.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 text-zinc-500 text-xs">
-            <HistoryIcon style={{ width: '28px', height: '28px', opacity: 0.4 }} />
-            <span className="mt-2">কোনো একটিভিটি হিস্ট্রি পাওয়া যায়নি</span>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 0', color: '#71717a', fontSize: '12px' }}>
+            <div style={{ width: '28px', height: '28px', opacity: 0.4, marginBottom: '8px' }}>
+              <HistoryIcon style={{ width: '28px', height: '28px', color: '#71717a' }} />
+            </div>
+            <span>কোনো একটিভিটি হিস্ট্রি পাওয়া যায়নি</span>
           </div>
         ) : (
           logs.map((log) => {
             const adminEmail = log.metadata?.admin_email || 'System / Admin';
             const adminRole = log.metadata?.admin_role || 'Admin';
+            const badgeStyle = getBadgeStyle(log.action_type);
 
             return (
               <div
                 key={log.id}
-                className="p-3 rounded-xl bg-zinc-900/80 border border-zinc-800 space-y-2"
+                style={{
+                  backgroundColor: '#121215',
+                  border: '1px solid #27272a',
+                  borderRadius: '12px',
+                  padding: '14px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '10px',
+                }}
               >
-                <div className="flex items-center justify-between gap-2">
+                {/* Badge & Date */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
                   <span
-                    className={`text-[10px] font-mono px-2 py-0.5 rounded-full border ${getBadgeStyle(
-                      log.action_type
-                    )}`}
+                    style={{
+                      fontSize: '10px',
+                      fontWeight: '600',
+                      fontFamily: 'monospace',
+                      padding: '2px 8px',
+                      borderRadius: '12px',
+                      border: '1px solid',
+                      textTransform: 'uppercase',
+                      ...badgeStyle,
+                    }}
                   >
                     {log.action_type || 'UPDATE'}
                   </span>
-                  <span className="text-[11px] text-zinc-500 flex items-center gap-1 font-mono">
-                    <HistoryIcon style={{ width: '12px', height: '12px' }} />
-                    {formatDate(log.created_at)}
-                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: '#71717a', fontFamily: 'monospace' }}>
+                    <div style={{ width: '12px', height: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <HistoryIcon style={{ width: '12px', height: '12px', color: '#71717a' }} />
+                    </div>
+                    <span>{formatDate(log.created_at)}</span>
+                  </div>
                 </div>
 
-                <div className="text-xs text-zinc-200">
+                {/* Details / Field */}
+                <div style={{ fontSize: '12px', color: '#e4e4e7' }}>
                   {log.field_name && (
-                    <div className="font-semibold text-zinc-300 mb-1 uppercase font-mono text-[10px]">
+                    <div
+                      style={{
+                        fontSize: '10px',
+                        fontWeight: '700',
+                        color: '#a1a1aa',
+                        fontFamily: 'monospace',
+                        textTransform: 'uppercase',
+                        marginBottom: '6px',
+                        letterSpacing: '0.5px',
+                      }}
+                    >
                       {log.field_name}
                     </div>
                   )}
 
                   {log.old_value || log.new_value ? (
-                    <div className="flex items-center gap-2 text-[11px] font-mono bg-zinc-950 p-2 rounded-lg border border-zinc-800/80">
-                      <span className="text-red-400/80 line-through">
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        flexWrap: 'wrap',
+                        gap: '6px',
+                        fontSize: '11px',
+                        fontFamily: 'monospace',
+                        backgroundColor: '#09090b',
+                        padding: '8px 10px',
+                        borderRadius: '8px',
+                        border: '1px solid #27272a',
+                      }}
+                    >
+                      <span style={{ color: '#f87171', textDecoration: 'line-through' }}>
                         {log.old_value || 'None'}
                       </span>
-                      <span className="text-zinc-600">➔</span>
-                      <span className="text-emerald-400 font-medium">
+                      <span style={{ color: '#52525b' }}>➔</span>
+                      <span style={{ color: '#34d399', fontWeight: '600' }}>
                         {log.new_value || 'None'}
                       </span>
                     </div>
                   ) : log.reason ? (
-                    <p className="text-xs text-zinc-300">{log.reason}</p>
+                    <p style={{ margin: 0, fontSize: '12px', color: '#d4d4d8' }}>{log.reason}</p>
                   ) : null}
                 </div>
 
-                <div className="flex items-center justify-between pt-2 border-t border-zinc-800/60 text-[11px] text-zinc-400">
-                  <div className="flex items-center gap-1.5">
-                    <ProfileIcon style={{ width: '14px', height: '14px' }} />
-                    <span className="font-mono text-[11px]">{adminEmail}</span>
+                {/* Footer Admin Info */}
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    paddingTop: '8px',
+                    borderTop: '1px solid rgba(39, 39, 42, 0.6)',
+                    fontSize: '11px',
+                    color: '#a1a1aa',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0, overflow: 'hidden' }}>
+                    <div style={{ width: '16px', height: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden' }}>
+                      <ProfileIcon style={{ width: '16px', height: '16px', maxWidth: '16px', maxHeight: '16px', color: '#a1a1aa' }} />
+                    </div>
+                    <span
+                      style={{
+                        fontFamily: 'monospace',
+                        fontSize: '11px',
+                        color: '#a1a1aa',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {adminEmail}
+                    </span>
                   </div>
-                  <span className="text-[9px] px-1.5 py-0.5 bg-zinc-800 rounded text-zinc-400 uppercase font-mono">
+                  <span
+                    style={{
+                      fontSize: '9px',
+                      fontFamily: 'monospace',
+                      padding: '2px 6px',
+                      backgroundColor: '#18181b',
+                      borderRadius: '4px',
+                      color: '#a1a1aa',
+                      textTransform: 'uppercase',
+                      flexShrink: 0,
+                    }}
+                  >
                     {adminRole}
                   </span>
                 </div>
