@@ -299,7 +299,7 @@ const AdminDashboard: React.FC = () => {
               </a>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                {(activeTab === 'products' || activeTab === 'ambassadors' || activeTab === 'messages') && (
+                {(activeTab === 'products' || activeTab === 'ambassadors' || activeTab === 'messages' || activeTab === 'staff') && (
                   <button
                     className={`${styles.nomadActionBtn} ${isAddOpen ? styles.nomadActionBtnActive : ''}`}
                     onClick={() => setIsAddOpen(!isAddOpen)}
@@ -308,6 +308,8 @@ const AdminDashboard: React.FC = () => {
                         ? 'Start New Chat'
                         : activeTab === 'products'
                         ? 'Add Product'
+                        : activeTab === 'staff'
+                        ? 'Add Staff'
                         : 'Add Ambassador'
                     }
                     title={
@@ -315,6 +317,8 @@ const AdminDashboard: React.FC = () => {
                         ? 'Start New Chat'
                         : activeTab === 'products'
                         ? 'Add Product'
+                        : activeTab === 'staff'
+                        ? 'Add Staff'
                         : 'Add Ambassador'
                     }
                   >
@@ -575,6 +579,8 @@ const AdminDashboard: React.FC = () => {
               isFilterOpen={isFilterOpen}
               isSearchOpen={isSearchOpen}
               dateFormat="DD/MM/YYYY"
+              isAddOpen={isAddOpen}
+              onCloseAdd={() => setIsAddOpen(false)}
             />
           )}
           {activeTab === 'customers' && (
