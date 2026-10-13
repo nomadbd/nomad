@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
+import { StaffBottomSheet, StaffMember } from './StaffBottomSheet';
 
 interface AdminStaffProps {
   searchQuery?: string;
@@ -8,20 +9,6 @@ interface AdminStaffProps {
   dateFormat?: string;
   isAddOpen?: boolean;
   onCloseAdd?: () => void;
-}
-
-interface StaffMember {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-  designation?: string | null;
-  status: string;
-  created_at: string;
-  hired_at?: string | null;
-  role_assigned_at?: string | null;
-  updated_at?: string | null;
-  avatar_url?: string | null;
 }
 
 export default function AdminStaff({
@@ -35,8 +22,8 @@ export default function AdminStaff({
   const [loading, setLoading] = useState<boolean>(true);
   const [roleFilter, setRoleFilter] = useState<string>('ALL');
 
-  // Selected Staff for Bottom Sheet
-  const [selectedStaff, setSelectedStaff] = useState<StaffMember | null>(null);
+  // Bottom Sheet State
+  const [bottomSheetStaff, setBottomSheetStaff] = useState<StaffMember | null>(null);
 
   // New Staff Form States
   const [newName, setNewName] = useState('');
@@ -167,7 +154,7 @@ export default function AdminStaff({
             return (
               <div
                 key={staff.id}
-                onClick={() => setSelectedStaff(staff)}
+                onClick={() => setBottomSheetStaff(staff)}
                 style={{
                   backgroundColor: '#09090b',
                   border: '1px solid #1f1f23',
@@ -290,6 +277,18 @@ export default function AdminStaff({
             );
           })}
         </div>
+      )}
+
+      {/* Staff Bottom Sheet Component */}
+      {bottomSheetStaff && (
+        <StaffBottomSheet
+          staff={bottomSheetStaff}
+          onClose={() => setBottomSheetStaff(null)}
+          onUpdateSuccess={() => {
+            fetchStaff();
+            setBottomSheetStaff(null);
+          }}
+        />
       )}
 
       {/* Add Staff Modal */}
