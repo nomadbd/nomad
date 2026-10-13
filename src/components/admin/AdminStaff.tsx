@@ -35,6 +35,9 @@ export default function AdminStaff({
   const [loading, setLoading] = useState<boolean>(true);
   const [roleFilter, setRoleFilter] = useState<string>('ALL');
 
+  // Selected Staff for Bottom Sheet
+  const [selectedStaff, setSelectedStaff] = useState<StaffMember | null>(null);
+
   // New Staff Form States
   const [newName, setNewName] = useState('');
   const [newEmail, setNewEmail] = useState('');
@@ -64,56 +67,12 @@ export default function AdminStaff({
     fetchStaff();
   }, []);
 
-  const handleRoleChange = async (id: string, role: string) => {
+  const formatDate = (dateStr?: string | null) => {
+    if (!dateStr) return 'N/A';
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          role,
-          role_assigned_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', id);
-
-      if (error) throw error;
-      fetchStaff();
-    } catch (err: any) {
-      alert('Failed to update role: ' + err.message);
-    }
-  };
-
-  const handleDesignationChange = async (id: string, designation: string) => {
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          designation: designation.trim() ? designation.trim() : null,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', id);
-
-      if (error) throw error;
-      fetchStaff();
-    } catch (err: any) {
-      alert('Failed to update designation: ' + err.message);
-    }
-  };
-
-  const handleToggleStatus = async (id: string, currentStatus: string) => {
-    const nextStatus = currentStatus === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          status: nextStatus,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', id);
-
-      if (error) throw error;
-      fetchStaff();
-    } catch (err: any) {
-      alert('Failed to update status: ' + err.message);
+      return new Date(dateStr).toLocaleDateString();
+    } catch {
+      return 'N/A';
     }
   };
 
@@ -134,6 +93,7 @@ export default function AdminStaff({
           status: 'ACTIVE',
           hired_at: now,
           role_assigned_at: now,
+          updated_at: now,
         },
       ]);
 
@@ -190,7 +150,7 @@ export default function AdminStaff({
         </div>
       )}
 
-      {/* Staff Cards View */}
+      {/* Staff Cards Read-Only List */}
       {loading ? (
         <div style={{ fontSize: '11px', color: '#666', padding: '20px 0', textAlign: 'center', fontFamily: 'monospace' }}>
           LOADING STAFF DATA...
@@ -207,6 +167,7 @@ export default function AdminStaff({
             return (
               <div
                 key={staff.id}
+                onClick={() => setSelectedStaff(staff)}
                 style={{
                   backgroundColor: '#09090b',
                   border: '1px solid #1f1f23',
@@ -216,30 +177,30 @@ export default function AdminStaff({
                   flexDirection: 'column',
                   gap: '12px',
                   boxSizing: 'border-box',
+                  cursor: 'pointer',
                   opacity: isInactive ? 0.6 : 1,
+                  transition: 'border-color 0.2s ease',
                 }}
               >
-                {/* Top Section: Member Info (Left) + Role Select (Right) */}
+                {/* Top Section: Member Details + System Role Badge */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px' }}>
-                  
-                  {/* Left: Avatar + Name + Designation + Email */}
                   <div style={{ display: 'flex', gap: '12px', flex: 1, minWidth: 0 }}>
                     {staff.avatar_url ? (
                       <img
                         src={staff.avatar_url}
                         alt={staff.name}
-                        style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover', border: '1px solid #27272a', flexShrink: 0 }}
+                        style={{ width: '42px', height: '42px', borderRadius: '50%', objectFit: 'cover', border: '1px solid #27272a', flexShrink: 0 }}
                       />
                     ) : (
                       <div
                         style={{
-                          width: '40px',
-                          height: '40px',
+                          width: '42px',
+                          height: '42px',
                           borderRadius: '50%',
                           backgroundColor: '#18181b',
                           border: '1px solid #27272a',
                           color: '#fff',
-                          fontSize: '12px',
+                          fontSize: '13px',
                           fontWeight: 'bold',
                           display: 'flex',
                           alignItems: 'center',
@@ -258,109 +219,71 @@ export default function AdminStaff({
                         {staff.name || 'UNNAMED STAFF'}
                       </div>
 
-                      {/* Designation Inline Editor (উপরে নাম, নিচে পদবি) */}
-                      <div style={{ marginTop: '3px' }}>
-                        <input
-                          type="text"
-                          placeholder="+ Set Designation (e.g. CEO)"
-                          defaultValue={staff.designation || ''}
-                          onBlur={(e) => handleDesignationChange(staff.id, e.target.value)}
-                          style={{
-                            width: '100%',
-                            maxWidth: '180px',
-                            backgroundColor: 'transparent',
-                            color: '#22c55e',
-                            border: 'none',
-                            borderBottom: '1px dashed #27272a',
-                            padding: '1px 0',
-                            fontSize: '11px',
-                            fontWeight: '600',
-                            fontFamily: 'monospace',
-                            outline: 'none',
-                            boxSizing: 'border-box',
-                          }}
-                        />
+                      {/* Designation */}
+                      <div style={{ fontSize: '11px', fontWeight: '600', color: '#22c55e', fontFamily: 'monospace', marginTop: '2px' }}>
+                        {staff.designation || 'No Designation Set'}
                       </div>
 
                       {/* Email */}
-                      <div style={{ fontSize: '10px', color: '#71717a', fontFamily: 'monospace', marginTop: '4px', wordBreak: 'break-all' }}>
+                      <div style={{ fontSize: '10px', color: '#71717a', fontFamily: 'monospace', marginTop: '3px', wordBreak: 'break-all' }}>
                         {staff.email}
                       </div>
                     </div>
                   </div>
 
-                  {/* Right: System Role Select */}
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', flexShrink: 0 }}>
-                    <span style={{ fontSize: '8px', color: '#52525b', fontFamily: 'monospace', marginBottom: '3px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                      SYSTEM ROLE
-                    </span>
-                    <select
-                      value={staff.role}
-                      onChange={(e) => handleRoleChange(staff.id, e.target.value)}
+                  {/* System Role Badge */}
+                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                    <span
                       style={{
+                        display: 'inline-block',
                         backgroundColor: '#121215',
                         color: staff.role === 'SUPER_ADMIN' ? '#38bdf8' : staff.role === 'ADMIN' ? '#22c55e' : '#a1a1aa',
                         border: '1px solid #27272a',
                         borderRadius: '6px',
                         padding: '4px 8px',
-                        fontSize: '10px',
+                        fontSize: '9px',
                         fontWeight: '700',
                         fontFamily: 'monospace',
-                        outline: 'none',
-                        cursor: 'pointer',
                       }}
                     >
-                      <option value="STAFF">STAFF</option>
-                      <option value="ADMIN">ADMIN</option>
-                      <option value="SUPER_ADMIN">SUPER ADMIN</option>
-                    </select>
+                      {staff.role}
+                    </span>
                   </div>
                 </div>
 
                 {/* Divider */}
                 <div style={{ height: '1px', backgroundColor: '#18181b', width: '100%' }} />
 
-                {/* Bottom Row Columns: Joined + Hired At + Status Toggle */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', alignItems: 'center' }}>
-                  {/* Column 1: Joined */}
-                  <div>
+                {/* Bottom Row: Date Columns (JOINED, HIRED AT, UPDATED AT) */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', textAlign: 'center' }}>
+                  {/* Joined Date */}
+                  <div style={{ textAlign: 'left' }}>
                     <div style={{ fontSize: '8px', color: '#52525b', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                       JOINED
                     </div>
                     <div style={{ fontSize: '10px', color: '#a1a1aa', fontFamily: 'monospace', marginTop: '2px' }}>
-                      {staff.created_at ? new Date(staff.created_at).toLocaleDateString() : 'N/A'}
+                      {formatDate(staff.created_at)}
                     </div>
                   </div>
 
-                  {/* Column 2: Hired At */}
+                  {/* Hired Date */}
                   <div>
                     <div style={{ fontSize: '8px', color: '#52525b', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                       HIRED AT
                     </div>
                     <div style={{ fontSize: '10px', color: '#a1a1aa', fontFamily: 'monospace', marginTop: '2px' }}>
-                      {staff.hired_at ? new Date(staff.hired_at).toLocaleDateString() : 'N/A'}
+                      {formatDate(staff.hired_at)}
                     </div>
                   </div>
 
-                  {/* Column 3: Action Button */}
+                  {/* Updated Date */}
                   <div style={{ textAlign: 'right' }}>
-                    <button
-                      onClick={() => handleToggleStatus(staff.id, staff.status)}
-                      style={{
-                        backgroundColor: isInactive ? 'rgba(34, 197, 94, 0.08)' : 'rgba(239, 68, 68, 0.08)',
-                        border: `1px solid ${isInactive ? 'rgba(34, 197, 94, 0.25)' : 'rgba(239, 68, 68, 0.25)'}`,
-                        color: isInactive ? '#22c55e' : '#ef4444',
-                        padding: '4px 10px',
-                        borderRadius: '6px',
-                        fontSize: '9px',
-                        fontWeight: '700',
-                        fontFamily: 'monospace',
-                        cursor: 'pointer',
-                        letterSpacing: '0.5px',
-                      }}
-                    >
-                      {isInactive ? 'ACTIVATE' : 'REVOKE'}
-                    </button>
+                    <div style={{ fontSize: '8px', color: '#52525b', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      UPDATED AT
+                    </div>
+                    <div style={{ fontSize: '10px', color: '#a1a1aa', fontFamily: 'monospace', marginTop: '2px' }}>
+                      {formatDate(staff.updated_at)}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -369,7 +292,7 @@ export default function AdminStaff({
         </div>
       )}
 
-      {/* Add Staff Modal (Controlled by Header Plus Icon) */}
+      {/* Add Staff Modal */}
       {isAddOpen && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0, 0, 0, 0.85)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '16px' }}>
           <div style={{ backgroundColor: '#09090b', border: '1px solid #27272a', borderRadius: '16px', padding: '20px', width: '100%', maxWidth: '360px', boxSizing: 'border-box' }}>
