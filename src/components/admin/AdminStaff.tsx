@@ -34,7 +34,6 @@ export default function AdminStaff({
   // New Staff Form States
   const [newName, setNewName] = useState('');
   const [newEmail, setNewEmail] = useState('');
-  const [newRole, setNewRole] = useState('STAFF');
   const [newDesignation, setNewDesignation] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
 
@@ -70,7 +69,7 @@ export default function AdminStaff({
       if (error) throw error;
       fetchStaff();
     } catch (err: any) {
-      alert('Failed to update role: ' + err.message);
+      alert('Failed to update status: ' + err.message);
     }
   };
 
@@ -98,7 +97,7 @@ export default function AdminStaff({
         {
           name: newName,
           email: newEmail,
-          role: newRole,
+          role: 'ADMIN', // Default system role
           designation: newDesignation.trim() ? newDesignation.trim() : null,
           status: 'active',
         },
@@ -127,24 +126,28 @@ export default function AdminStaff({
   });
 
   return (
-    <div style={{ color: '#fff', width: '100%' }}>
-      {/* Header & Total Count */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+    <div style={{ color: '#fff', width: '100%', boxSizing: 'border-box' }}>
+      {/* Header Info */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
         <div>
-          <h2 style={{ fontSize: '16px', letterSpacing: '2px', margin: 0 }}>STAFF MANAGEMENT</h2>
-          <span style={{ fontSize: '10px', color: '#888' }}>TOTAL STAFF: {filteredStaff.length}</span>
+          <h2 style={{ fontSize: '15px', fontWeight: '800', letterSpacing: '1.5px', margin: 0, textTransform: 'uppercase' }}>
+            STAFF MANAGEMENT
+          </h2>
+          <span style={{ fontSize: '10px', color: '#666', fontFamily: 'monospace', letterSpacing: '1px' }}>
+            TOTAL MEMBERS: {filteredStaff.length}
+          </span>
         </div>
       </div>
 
       {/* Filter Bar */}
       {isFilterOpen && (
-        <div style={{ backgroundColor: '#0a0a0a', border: '1px solid #1f1f1f', padding: '12px', marginBottom: '20px', display: 'flex', gap: '12px' }}>
+        <div style={{ backgroundColor: '#09090b', border: '1px solid #1f1f23', borderRadius: '8px', padding: '10px', marginBottom: '16px' }}>
           <select
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
-            style={{ backgroundColor: '#111', color: '#fff', border: '1px solid #222', padding: '8px 12px', fontSize: '11px' }}
+            style={{ width: '100%', backgroundColor: '#121215', color: '#fff', border: '1px solid #27272a', borderRadius: '6px', padding: '8px 12px', fontSize: '11px', fontFamily: 'monospace' }}
           >
-            <option value="ALL">ALL ROLES</option>
+            <option value="ALL">ALL STAFF</option>
             <option value="SUPER_ADMIN">SUPER ADMIN</option>
             <option value="ADMIN">ADMIN</option>
             <option value="STAFF">STAFF</option>
@@ -152,115 +155,162 @@ export default function AdminStaff({
         </div>
       )}
 
-      {/* Staff List Table */}
+      {/* Staff Mobile Friendly Card List */}
       {loading ? (
-        <div style={{ fontSize: '11px', color: '#888', padding: '20px 0' }}>LOADING STAFF DATA...</div>
+        <div style={{ fontSize: '11px', color: '#666', padding: '20px 0', textAlign: 'center', fontFamily: 'monospace' }}>
+          LOADING STAFF DATA...
+        </div>
+      ) : filteredStaff.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '30px', color: '#555', fontSize: '11px', fontFamily: 'monospace', backgroundColor: '#09090b', border: '1px solid #1f1f23', borderRadius: '8px' }}>
+          NO STAFF MEMBERS FOUND.
+        </div>
       ) : (
-        <div style={{ overflowX: 'auto', border: '1px solid #1a1a1a', backgroundColor: '#060606' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '11px' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid #1a1a1a', color: '#666', height: '40px' }}>
-                <th style={{ padding: '0 16px' }}>MEMBER</th>
-                <th style={{ padding: '0 16px' }}>ROLE & DESIGNATION</th>
-                <th style={{ padding: '0 16px' }}>JOINED</th>
-                <th style={{ padding: '0 16px', textAlign: 'right' }}>ACTION</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredStaff.map((staff) => (
-                <tr key={staff.id} style={{ borderBottom: '1px solid #111', height: '64px' }}>
-                  <td style={{ padding: '0 16px' }}>
-                    <div style={{ fontWeight: 'bold', color: '#fff' }}>{staff.name || 'UNNAMED'}</div>
-                    <div style={{ fontSize: '10px', color: '#666' }}>{staff.email}</div>
-                  </td>
-                  <td style={{ padding: '0 16px' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <select
-                        value={staff.role}
-                        onChange={(e) => handleRoleChange(staff.id, e.target.value)}
-                        style={{ backgroundColor: '#111', color: '#2ecc71', border: '1px solid #222', padding: '4px 8px', fontSize: '10px', fontWeight: 'bold', width: 'fit-content' }}
-                      >
-                        <option value="STAFF">STAFF</option>
-                        <option value="ADMIN">ADMIN</option>
-                        <option value="SUPER_ADMIN">SUPER ADMIN</option>
-                      </select>
-                      <input
-                        type="text"
-                        placeholder="Set Designation (e.g. CEO, MD)"
-                        defaultValue={staff.designation || ''}
-                        onBlur={(e) => handleDesignationChange(staff.id, e.target.value)}
-                        style={{ backgroundColor: '#111', color: '#fff', border: '1px solid #222', padding: '3px 6px', fontSize: '10px', width: '140px' }}
-                      />
-                    </div>
-                  </td>
-                  <td style={{ padding: '0 16px', color: '#888' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          {filteredStaff.map((staff) => (
+            <div
+              key={staff.id}
+              style={{
+                backgroundColor: '#09090b',
+                border: '1px solid #1f1f23',
+                borderRadius: '10px',
+                padding: '14px 16px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px',
+                boxSizing: 'border-box',
+              }}
+            >
+              {/* Member Top Row: Name + Action Button */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px' }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: '14px', fontWeight: '700', color: '#ffffff', lineHeight: '1.3', wordBreak: 'break-word' }}>
+                    {staff.name || 'UNNAMED STAFF'}
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#71717a', fontFamily: 'monospace', marginTop: '2px', wordBreak: 'break-all' }}>
+                    {staff.email}
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => handleRoleChange(staff.id, 'INACTIVE')}
+                  style={{
+                    backgroundColor: 'rgba(239, 68, 68, 0.08)',
+                    border: '1px solid rgba(239, 68, 68, 0.25)',
+                    color: '#ef4444',
+                    padding: '5px 10px',
+                    borderRadius: '6px',
+                    fontSize: '10px',
+                    fontWeight: '700',
+                    fontFamily: 'monospace',
+                    cursor: 'pointer',
+                    flexShrink: 0,
+                    letterSpacing: '0.5px',
+                  }}
+                >
+                  REVOKE
+                </button>
+              </div>
+
+              {/* Divider */}
+              <div style={{ height: '1px', backgroundColor: '#18181b', width: '100%' }} />
+
+              {/* Bottom Row: Designation Field + Joined Date */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: 'block', fontSize: '9px', color: '#52525b', fontFamily: 'monospace', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    DESIGNATION
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Set Designation (e.g. CEO)"
+                    defaultValue={staff.designation || ''}
+                    onBlur={(e) => handleDesignationChange(staff.id, e.target.value)}
+                    style={{
+                      width: '100%',
+                      maxWidth: '180px',
+                      backgroundColor: '#121215',
+                      color: '#22c55e',
+                      border: '1px solid #27272a',
+                      borderRadius: '6px',
+                      padding: '6px 10px',
+                      fontSize: '11px',
+                      fontWeight: '600',
+                      fontFamily: 'monospace',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                    }}
+                  />
+                </div>
+
+                <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                  <div style={{ fontSize: '9px', color: '#52525b', fontFamily: 'monospace', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    JOINED
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#a1a1aa', fontFamily: 'monospace', fontWeight: '500' }}>
                     {new Date(staff.created_at).toLocaleDateString()}
-                  </td>
-                  <td style={{ padding: '0 16px', textAlign: 'right' }}>
-                    <button
-                      onClick={() => handleRoleChange(staff.id, 'INACTIVE')}
-                      style={{ background: 'transparent', border: '1px solid #331111', color: '#ff4d4d', padding: '4px 8px', fontSize: '9px', cursor: 'pointer' }}
-                    >
-                      REVOKE
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
-      {/* Add Staff Modal (Controlled by Header Plus Icon) */}
+      {/* Add Staff Modal (Triggered by Header Plus Icon) */}
       {isAddOpen && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ backgroundColor: '#0d0d0d', border: '1px solid #222', padding: '24px', width: '360px' }}>
-            <h3 style={{ margin: '0 0 16px 0', fontSize: '13px', letterSpacing: '1px' }}>ADD NEW STAFF MEMBER</h3>
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0, 0, 0, 0.85)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '16px' }}>
+          <div style={{ backgroundColor: '#09090b', border: '1px solid #27272a', borderRadius: '16px', padding: '20px', width: '100%', maxWidth: '360px', boxSizing: 'border-box' }}>
+            <h3 style={{ margin: '0 0 16px 0', fontSize: '13px', fontWeight: '800', letterSpacing: '1px', color: '#fff', textTransform: 'uppercase' }}>
+              ADD NEW STAFF MEMBER
+            </h3>
             <form onSubmit={handleAddStaff} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <input
-                type="text"
-                placeholder="FULL NAME"
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                required
-                style={{ backgroundColor: '#111', border: '1px solid #222', color: '#fff', padding: '10px', fontSize: '11px' }}
-              />
-              <input
-                type="email"
-                placeholder="EMAIL ADDRESS"
-                value={newEmail}
-                onChange={(e) => setNewEmail(e.target.value)}
-                required
-                style={{ backgroundColor: '#111', border: '1px solid #222', color: '#fff', padding: '10px', fontSize: '11px' }}
-              />
-              <input
-                type="text"
-                placeholder="DESIGNATION (e.g. CEO, MD, Chairman)"
-                value={newDesignation}
-                onChange={(e) => setNewDesignation(e.target.value)}
-                style={{ backgroundColor: '#111', border: '1px solid #222', color: '#fff', padding: '10px', fontSize: '11px' }}
-              />
-              <select
-                value={newRole}
-                onChange={(e) => setNewRole(e.target.value)}
-                style={{ backgroundColor: '#111', border: '1px solid #222', color: '#fff', padding: '10px', fontSize: '11px' }}
-              >
-                <option value="STAFF">STAFF</option>
-                <option value="ADMIN">ADMIN</option>
-                <option value="SUPER_ADMIN">SUPER ADMIN</option>
-              </select>
-              <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '9px', color: '#a1a1aa', fontFamily: 'monospace', marginBottom: '4px', textTransform: 'uppercase' }}>FULL NAME</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Md Toha Ali"
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  required
+                  style={{ width: '100%', backgroundColor: '#121215', border: '1px solid #27272a', borderRadius: '8px', color: '#fff', padding: '10px', fontSize: '12px', fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '9px', color: '#a1a1aa', fontFamily: 'monospace', marginBottom: '4px', textTransform: 'uppercase' }}>EMAIL ADDRESS</label>
+                <input
+                  type="email"
+                  placeholder="name@company.com"
+                  value={newEmail}
+                  onChange={(e) => setNewEmail(e.target.value)}
+                  required
+                  style={{ width: '100%', backgroundColor: '#121215', border: '1px solid #27272a', borderRadius: '8px', color: '#fff', padding: '10px', fontSize: '12px', fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '9px', color: '#a1a1aa', fontFamily: 'monospace', marginBottom: '4px', textTransform: 'uppercase' }}>DESIGNATION (OPTIONAL)</label>
+                <input
+                  type="text"
+                  placeholder="e.g. CEO, MD, Chairman"
+                  value={newDesignation}
+                  onChange={(e) => setNewDesignation(e.target.value)}
+                  style={{ width: '100%', backgroundColor: '#121215', border: '1px solid #27272a', borderRadius: '8px', color: '#fff', padding: '10px', fontSize: '12px', fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
                 <button
                   type="submit"
                   disabled={actionLoading}
-                  style={{ flex: 1, backgroundColor: '#fff', color: '#000', border: 'none', padding: '10px', fontWeight: 'bold', fontSize: '10px', cursor: 'pointer' }}
+                  style={{ flex: 1, backgroundColor: '#ffffff', color: '#000000', border: 'none', borderRadius: '8px', padding: '12px', fontWeight: 'bold', fontSize: '11px', fontFamily: 'monospace', cursor: 'pointer', letterSpacing: '0.5px' }}
                 >
                   {actionLoading ? 'ADDING...' : 'CONFIRM'}
                 </button>
                 <button
                   type="button"
                   onClick={onCloseAdd}
-                  style={{ flex: 1, backgroundColor: 'transparent', color: '#888', border: '1px solid #333', padding: '10px', fontSize: '10px', cursor: 'pointer' }}
+                  style={{ flex: 1, backgroundColor: 'transparent', color: '#a1a1aa', border: '1px solid #27272a', borderRadius: '8px', padding: '12px', fontSize: '11px', fontFamily: 'monospace', cursor: 'pointer' }}
                 >
                   CANCEL
                 </button>
