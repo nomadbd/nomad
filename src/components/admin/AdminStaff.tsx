@@ -6,6 +6,8 @@ interface AdminStaffProps {
   isFilterOpen?: boolean;
   isSearchOpen?: boolean;
   dateFormat?: string;
+  isAddOpen?: boolean;
+  onCloseAdd?: () => void;
 }
 
 interface StaffMember {
@@ -13,20 +15,27 @@ interface StaffMember {
   name: string;
   email: string;
   role: string;
+  designation?: string | null;
   status: 'active' | 'inactive';
   created_at: string;
 }
 
-export default function AdminStaff({ searchQuery = '', isFilterOpen, dateFormat = 'DD/MM/YYYY' }: AdminStaffProps) {
+export default function AdminStaff({
+  searchQuery = '',
+  isFilterOpen,
+  dateFormat = 'DD/MM/YYYY',
+  isAddOpen = false,
+  onCloseAdd,
+}: AdminStaffProps) {
   const [staffList, setStaffList] = useState<StaffMember[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [roleFilter, setRoleFilter] = useState<string>('ALL');
-  
-  // New Staff Modal State
-  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+
+  // New Staff Form States
   const [newName, setNewName] = useState('');
   const [newEmail, setNewEmail] = useState('');
   const [newRole, setNewRole] = useState('STAFF');
+  const [newDesignation, setNewDesignation] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
 
   const fetchStaff = async () => {
@@ -65,21 +74,41 @@ export default function AdminStaff({ searchQuery = '', isFilterOpen, dateFormat 
     }
   };
 
+  const handleDesignationChange = async (id: string, designation: string) => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ designation: designation.trim() ? designation.trim() : null })
+        .eq('id', id);
+
+      if (error) throw error;
+      fetchStaff();
+    } catch (err: any) {
+      alert('Failed to update designation: ' + err.message);
+    }
+  };
+
   const handleAddStaff = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newEmail || !newName) return;
     setActionLoading(true);
 
     try {
-      // Create user auth or trigger invite
       const { error } = await supabase.from('profiles').insert([
-        { name: newName, email: newEmail, role: newRole, status: 'active' }
+        {
+          name: newName,
+          email: newEmail,
+          role: newRole,
+          designation: newDesignation.trim() ? newDesignation.trim() : null,
+          status: 'active',
+        },
       ]);
 
       if (error) throw error;
-      setIsModalOpen(false);
+      if (onCloseAdd) onCloseAdd();
       setNewName('');
       setNewEmail('');
+      setNewDesignation('');
       fetchStaff();
     } catch (err: any) {
       alert('Error adding staff: ' + err.message);
@@ -91,35 +120,20 @@ export default function AdminStaff({ searchQuery = '', isFilterOpen, dateFormat 
   const filteredStaff = staffList.filter((staff) => {
     const matchesSearch =
       staff.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      staff.email?.toLowerCase().includes(searchQuery.toLowerCase());
+      staff.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      staff.designation?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesRole = roleFilter === 'ALL' || staff.role === roleFilter;
     return matchesSearch && matchesRole;
   });
 
   return (
     <div style={{ color: '#fff', width: '100%' }}>
-      {/* Header & Control Bar */}
+      {/* Header & Total Count */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <div>
           <h2 style={{ fontSize: '16px', letterSpacing: '2px', margin: 0 }}>STAFF MANAGEMENT</h2>
           <span style={{ fontSize: '10px', color: '#888' }}>TOTAL STAFF: {filteredStaff.length}</span>
         </div>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          style={{
-            backgroundColor: '#ffffff',
-            color: '#000000',
-            border: 'none',
-            padding: '10px 16px',
-            fontSize: '11px',
-            fontWeight: 'bold',
-            letterSpacing: '1px',
-            cursor: 'pointer',
-            borderRadius: '2px'
-          }}
-        >
-          + ADD NEW STAFF
-        </button>
       </div>
 
       {/* Filter Bar */}
@@ -147,28 +161,37 @@ export default function AdminStaff({ searchQuery = '', isFilterOpen, dateFormat 
             <thead>
               <tr style={{ borderBottom: '1px solid #1a1a1a', color: '#666', height: '40px' }}>
                 <th style={{ padding: '0 16px' }}>MEMBER</th>
-                <th style={{ padding: '0 16px' }}>ROLE</th>
+                <th style={{ padding: '0 16px' }}>ROLE & DESIGNATION</th>
                 <th style={{ padding: '0 16px' }}>JOINED</th>
                 <th style={{ padding: '0 16px', textAlign: 'right' }}>ACTION</th>
               </tr>
             </thead>
             <tbody>
               {filteredStaff.map((staff) => (
-                <tr key={staff.id} style={{ borderBottom: '1px solid #111', height: '52px' }}>
+                <tr key={staff.id} style={{ borderBottom: '1px solid #111', height: '64px' }}>
                   <td style={{ padding: '0 16px' }}>
                     <div style={{ fontWeight: 'bold', color: '#fff' }}>{staff.name || 'UNNAMED'}</div>
                     <div style={{ fontSize: '10px', color: '#666' }}>{staff.email}</div>
                   </td>
                   <td style={{ padding: '0 16px' }}>
-                    <select
-                      value={staff.role}
-                      onChange={(e) => handleRoleChange(staff.id, e.target.value)}
-                      style={{ backgroundColor: '#111', color: '#2ecc71', border: '1px solid #222', padding: '4px 8px', fontSize: '10px', fontWeight: 'bold' }}
-                    >
-                      <option value="STAFF">STAFF</option>
-                      <option value="ADMIN">ADMIN</option>
-                      <option value="SUPER_ADMIN">SUPER ADMIN</option>
-                    </select>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <select
+                        value={staff.role}
+                        onChange={(e) => handleRoleChange(staff.id, e.target.value)}
+                        style={{ backgroundColor: '#111', color: '#2ecc71', border: '1px solid #222', padding: '4px 8px', fontSize: '10px', fontWeight: 'bold', width: 'fit-content' }}
+                      >
+                        <option value="STAFF">STAFF</option>
+                        <option value="ADMIN">ADMIN</option>
+                        <option value="SUPER_ADMIN">SUPER ADMIN</option>
+                      </select>
+                      <input
+                        type="text"
+                        placeholder="Set Designation (e.g. CEO, MD)"
+                        defaultValue={staff.designation || ''}
+                        onBlur={(e) => handleDesignationChange(staff.id, e.target.value)}
+                        style={{ backgroundColor: '#111', color: '#fff', border: '1px solid #222', padding: '3px 6px', fontSize: '10px', width: '140px' }}
+                      />
+                    </div>
                   </td>
                   <td style={{ padding: '0 16px', color: '#888' }}>
                     {new Date(staff.created_at).toLocaleDateString()}
@@ -188,8 +211,8 @@ export default function AdminStaff({ searchQuery = '', isFilterOpen, dateFormat 
         </div>
       )}
 
-      {/* Add Staff Modal */}
-      {isModalOpen && (
+      {/* Add Staff Modal (Controlled by Header Plus Icon) */}
+      {isAddOpen && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
           <div style={{ backgroundColor: '#0d0d0d', border: '1px solid #222', padding: '24px', width: '360px' }}>
             <h3 style={{ margin: '0 0 16px 0', fontSize: '13px', letterSpacing: '1px' }}>ADD NEW STAFF MEMBER</h3>
@@ -210,6 +233,13 @@ export default function AdminStaff({ searchQuery = '', isFilterOpen, dateFormat 
                 required
                 style={{ backgroundColor: '#111', border: '1px solid #222', color: '#fff', padding: '10px', fontSize: '11px' }}
               />
+              <input
+                type="text"
+                placeholder="DESIGNATION (e.g. CEO, MD, Chairman)"
+                value={newDesignation}
+                onChange={(e) => setNewDesignation(e.target.value)}
+                style={{ backgroundColor: '#111', border: '1px solid #222', color: '#fff', padding: '10px', fontSize: '11px' }}
+              />
               <select
                 value={newRole}
                 onChange={(e) => setNewRole(e.target.value)}
@@ -217,6 +247,7 @@ export default function AdminStaff({ searchQuery = '', isFilterOpen, dateFormat 
               >
                 <option value="STAFF">STAFF</option>
                 <option value="ADMIN">ADMIN</option>
+                <option value="SUPER_ADMIN">SUPER ADMIN</option>
               </select>
               <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
                 <button
@@ -228,7 +259,7 @@ export default function AdminStaff({ searchQuery = '', isFilterOpen, dateFormat 
                 </button>
                 <button
                   type="button"
-                  onClick={() => setIsModalOpen(false)}
+                  onClick={onCloseAdd}
                   style={{ flex: 1, backgroundColor: 'transparent', color: '#888', border: '1px solid #333', padding: '10px', fontSize: '10px', cursor: 'pointer' }}
                 >
                   CANCEL
