@@ -36,6 +36,8 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
   const [reason, setReason] = useState<string>('');
   const [isSaving, setIsSaving] = useState<boolean>(false);
 
+  const [currentAdminId, setCurrentAdminId] = useState<string | null>(null);
+
   const [showConfirmModal, setShowConfirmModal] = useState<boolean>(false);
   const [confirmText, setConfirmText] = useState<string>('');
   const [pendingAction, setPendingAction] = useState<'UPDATE_DETAILS' | 'TOGGLE_STATUS' | null>(null);
@@ -45,6 +47,19 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
   const [toastMsg, setToastMsg] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
   const isActive = staff.status === 'ACTIVE';
+
+  // বর্তমান লগইন করা ইউজারের আইডি চেক করা
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setCurrentAdminId(user.id);
+      }
+    };
+    fetchCurrentUser();
+  }, []);
+
+  const isSelf = currentAdminId === staff.id;
 
   const finalDesignation = designationInput.trim() !== '' ? designationInput.trim() : (staff.designation || '');
   const finalRole = roleInput.trim() !== '' ? roleInput.toUpperCase().trim() : staff.role;
@@ -87,6 +102,11 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
   };
 
   const triggerSaveDetails = () => {
+    if (isSelf) {
+      setToastMsg({ text: 'You cannot edit your own profile details!', type: 'error' });
+      return;
+    }
+
     if (!hasChanges) return;
 
     if (!reason.trim()) {
@@ -105,6 +125,11 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
   };
 
   const triggerToggleStatus = () => {
+    if (isSelf) {
+      setToastMsg({ text: 'You cannot revoke your own staff access!', type: 'error' });
+      return;
+    }
+
     if (!reason.trim()) {
       setToastMsg({ text: 'Please provide a reason before changing status!', type: 'error' });
       return;
@@ -142,7 +167,6 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
 
         if (error) throw error;
 
-        // একাধিক পরিবর্তনকে ১টি লগে গ্রুপ করা
         const changesObject: Record<string, { old: string; new: string }> = {};
 
         if (isDesignationChanged) {
@@ -336,12 +360,22 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', overflowY: 'auto', maxHeight: '380px' }}>
                   {logs.map((log) => {
-                    const adminName = log.metadata?.admin_name || 'System Admin';
                     const adminEmail = log.metadata?.admin_email || log.performed_by || '';
-                    const adminRole = log.metadata?.admin_role || '';
+                    
+                    // পুরানো লগের জন্য নাম সমাধান
+                    let adminName = log.metadata?.admin_name;
+                    if (!adminName || adminName === 'System Admin') {
+                      if (adminEmail.includes('@')) {
+                        const emailPrefix = adminEmail.split('@')[0];
+                        adminName = emailPrefix.charAt(0).toUpperCase() + emailPrefix.slice(1);
+                      } else {
+                        adminName = 'Super Admin';
+                      }
+                    }
+
+                    const adminRole = log.metadata?.admin_role || 'SUPER_ADMIN';
                     const adminDesignation = log.metadata?.admin_designation || '';
 
-                    // চেঞ্জ অবজেক্ট হ্যান্ডেলিং (নতুন এবং আগের সিঙ্গেল ফরম্যাট উভয়ের সাথেই সামঞ্জস্যপূর্ণ)
                     let changeItems: Array<{ label: string; oldVal: string; newVal: string }> = [];
 
                     if (log.changes && typeof log.changes === 'object') {
@@ -362,14 +396,12 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
 
                     return (
                       <div key={log.id} style={{ backgroundColor: '#121215', border: '1px solid #27272a', borderRadius: '12px', padding: '14px', fontSize: '11px', fontFamily: 'monospace', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        {/* তারিখ ও সময় ডান দিকে */}
                         <div style={{ display: 'flex', justifyContent: 'flex-end', borderBottom: '1px solid #1a1a1e', paddingBottom: '4px' }}>
                           <span style={{ color: '#71717a', fontSize: '10px' }}>
                             {new Date(log.created_at).toLocaleString()}
                           </span>
                         </div>
 
-                        {/* সকল পরিমার্জিত ফিল্ডগুলোর তালিকা */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                           {changeItems.map((item, idx) => (
                             <div key={idx} style={{ color: '#d4d4d8', fontSize: '12px', lineHeight: '1.4' }}>
@@ -381,24 +413,20 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
                           ))}
                         </div>
 
-                        {/* কারণ (Reason) */}
                         {log.reason && (
                           <div style={{ color: '#a1a1aa', fontSize: '11px', fontStyle: 'italic', backgroundColor: '#09090b', padding: '6px 10px', borderRadius: '6px', border: '1px solid #1f1f23', lineHeight: '1.4' }}>
                             Reason: {log.reason}
                           </div>
                         )}
 
-                        {/* কে পরিবর্তন করেছেন (Admin Information) */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', borderTop: '1px solid #1f1f23', paddingTop: '8px', marginTop: '2px', color: '#a1a1aa' }}>
                           <div style={{ fontSize: '11px' }}>
                             <span style={{ color: '#71717a' }}>By: </span>
                             <strong style={{ color: '#ffffff' }}>{adminName}</strong>
                           </div>
-                          {(adminDesignation || adminRole) && (
-                            <div style={{ fontSize: '10px', color: '#a1a1aa' }}>
-                              {adminDesignation ? `${adminDesignation} • ${adminRole}` : adminRole}
-                            </div>
-                          )}
+                          <div style={{ fontSize: '10px', color: '#38bdf8' }}>
+                            {adminDesignation ? `${adminDesignation} • ${adminRole}` : adminRole}
+                          </div>
                           {adminEmail && (
                             <div style={{ fontSize: '10px', color: '#71717a' }}>
                               {adminEmail}
@@ -430,8 +458,11 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
                   )}
 
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: '15px', fontWeight: '700', color: '#ffffff', lineHeight: '1.2', wordBreak: 'break-word' }}>
+                    <div style={{ fontSize: '15px', fontWeight: '700', color: '#ffffff', lineHeight: '1.2', wordBreak: 'break-word', display: 'flex', alignItems: 'center', gap: '8px' }}>
                       {staff.name}
+                      {isSelf && (
+                        <span style={{ fontSize: '9px', backgroundColor: '#27272a', color: '#38bdf8', padding: '2px 6px', borderRadius: '4px', fontFamily: 'monospace' }}>YOU</span>
+                      )}
                     </div>
                     <div style={{ fontSize: '11px', color: '#a1a1aa', fontFamily: 'monospace', marginTop: '2px', wordBreak: 'break-all' }}>
                       {staff.email}
@@ -448,6 +479,13 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
                 </button>
               </div>
 
+              {/* নিজের প্রোফাইল এডিটের সতর্কবার্তা */}
+              {isSelf && (
+                <div style={{ fontSize: '10px', color: '#f59e0b', backgroundColor: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.2)', padding: '8px 12px', borderRadius: '8px', fontFamily: 'monospace' }}>
+                  ⚠️ You cannot edit your own role or designation to prevent system conflicts.
+                </div>
+              )}
+
               <div style={{ backgroundColor: '#121215', border: '1px solid #27272a', borderRadius: '12px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
                 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -455,27 +493,29 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
                     CONFIGURATION
                   </span>
 
-                  <button
-                    type="button"
-                    onClick={triggerSaveDetails}
-                    disabled={isSaving || !hasChanges}
-                    style={{
-                      backgroundColor: '#ffffff',
-                      color: '#000000',
-                      border: 'none',
-                      borderRadius: '20px',
-                      padding: '3px 12px',
-                      fontSize: '10px',
-                      fontWeight: '700',
-                      fontFamily: 'monospace',
-                      cursor: isSaving ? 'not-allowed' : 'pointer',
-                      opacity: hasChanges ? 1 : 0,
-                      visibility: hasChanges ? 'visible' : 'hidden',
-                      transition: 'opacity 0.2s ease',
-                    }}
-                  >
-                    {isSaving ? 'SAVING...' : 'SAVE'}
-                  </button>
+                  {!isSelf && (
+                    <button
+                      type="button"
+                      onClick={triggerSaveDetails}
+                      disabled={isSaving || !hasChanges}
+                      style={{
+                        backgroundColor: '#ffffff',
+                        color: '#000000',
+                        border: 'none',
+                        borderRadius: '20px',
+                        padding: '3px 12px',
+                        fontSize: '10px',
+                        fontWeight: '700',
+                        fontFamily: 'monospace',
+                        cursor: isSaving ? 'not-allowed' : 'pointer',
+                        opacity: hasChanges ? 1 : 0,
+                        visibility: hasChanges ? 'visible' : 'hidden',
+                        transition: 'opacity 0.2s ease',
+                      }}
+                    >
+                      {isSaving ? 'SAVING...' : 'SAVE'}
+                    </button>
+                  )}
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '16px' }}>
@@ -483,6 +523,7 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
                     <span style={{ fontSize: '9px', color: '#71717a', fontFamily: 'monospace', textTransform: 'uppercase' }}>Designation</span>
                     <input
                       type="text"
+                      disabled={isSelf}
                       value={designationInput}
                       onChange={(e) => setDesignationInput(e.target.value)}
                       placeholder={staff.designation || 'e.g. CEO'}
@@ -499,6 +540,8 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
                         fontFamily: 'monospace',
                         outline: 'none',
                         boxSizing: 'border-box',
+                        opacity: isSelf ? 0.5 : 1,
+                        cursor: isSelf ? 'not-allowed' : 'text'
                       }}
                     />
                   </div>
@@ -507,6 +550,7 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
                     <span style={{ fontSize: '9px', color: '#71717a', fontFamily: 'monospace', textTransform: 'uppercase' }}>Role</span>
                     <input
                       type="text"
+                      disabled={isSelf}
                       value={roleInput}
                       onChange={(e) => setRoleInput(e.target.value)}
                       placeholder={staff.role || 'STAFF'}
@@ -523,34 +567,38 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
                         fontFamily: 'monospace',
                         outline: 'none',
                         boxSizing: 'border-box',
+                        opacity: isSelf ? 0.5 : 1,
+                        cursor: isSelf ? 'not-allowed' : 'text'
                       }}
                     />
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '4px' }}>
-                  <textarea
-                    rows={2}
-                    value={reason}
-                    onChange={(e) => setReason(e.target.value)}
-                    placeholder="Reason for change (Required)..."
-                    style={{
-                      width: '100%',
-                      backgroundColor: 'transparent',
-                      border: 'none',
-                      borderBottom: '1px solid #27272a',
-                      borderRadius: '0',
-                      padding: '6px 0',
-                      color: '#a1a1aa',
-                      fontSize: '11px',
-                      fontFamily: 'monospace',
-                      outline: 'none',
-                      boxSizing: 'border-box',
-                      resize: 'none',
-                      lineHeight: '1.4',
-                    }}
-                  />
-                </div>
+                {!isSelf && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '4px' }}>
+                    <textarea
+                      rows={2}
+                      value={reason}
+                      onChange={(e) => setReason(e.target.value)}
+                      placeholder="Reason for change (Required)..."
+                      style={{
+                        width: '100%',
+                        backgroundColor: 'transparent',
+                        border: 'none',
+                        borderBottom: '1px solid #27272a',
+                        borderRadius: '0',
+                        padding: '6px 0',
+                        color: '#a1a1aa',
+                        fontSize: '11px',
+                        fontFamily: 'monospace',
+                        outline: 'none',
+                        boxSizing: 'border-box',
+                        resize: 'none',
+                        lineHeight: '1.4',
+                      }}
+                    />
+                  </div>
+                )}
               </div>
 
               <button
@@ -565,26 +613,28 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
                 <span style={{ fontWeight: '600', fontSize: '12px' }}>Activity & Audit Logs</span>
               </button>
 
-              <button
-                type="button"
-                onClick={triggerToggleStatus}
-                disabled={isSaving}
-                style={{
-                  backgroundColor: '#121215',
-                  border: isActive ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid rgba(34, 197, 94, 0.3)',
-                  borderRadius: '12px',
-                  padding: '14px 16px',
-                  color: isActive ? '#ef4444' : '#22c55e',
-                  fontSize: '12px',
-                  fontWeight: '600',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: isSaving ? 'not-allowed' : 'pointer',
-                }}
-              >
-                {isActive ? 'Revoke Staff Access' : 'Activate Staff Access'}
-              </button>
+              {!isSelf && (
+                <button
+                  type="button"
+                  onClick={triggerToggleStatus}
+                  disabled={isSaving}
+                  style={{
+                    backgroundColor: '#121215',
+                    border: isActive ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid rgba(34, 197, 94, 0.3)',
+                    borderRadius: '12px',
+                    padding: '14px 16px',
+                    color: isActive ? '#ef4444' : '#22c55e',
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: isSaving ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  {isActive ? 'Revoke Staff Access' : 'Activate Staff Access'}
+                </button>
+              )}
             </>
           )}
         </div>
