@@ -22,30 +22,21 @@ export const logAuditActivity = async ({
   changes,
 }: AuditLogOptions) => {
   try {
-    // ১. বর্তমান লগইনকৃত অ্যাডমিনের আইডি বের করা
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    // ২. অ্যাডমিনের ডিটেইলস নিয়ে আসা
+    // profiles টেবিল থেকে সরাসরি name, designation, role ফেস করা
     const { data: profile } = await supabase
       .from('profiles')
-      .select('*')
+      .select('name, role, designation, email')
       .eq('id', user.id)
       .single();
 
-    // নামের নিখুঁত ফ্যালব্যাক লজিক
-    let resolvedName = profile?.name || profile?.full_name || user.user_metadata?.full_name || user.user_metadata?.name;
-    if (!resolvedName && user.email) {
-      const emailPrefix = user.email.split('@')[0];
-      resolvedName = emailPrefix.charAt(0).toUpperCase() + emailPrefix.slice(1);
-    }
-    if (!resolvedName) resolvedName = 'Admin User';
-
-    const adminRole = profile?.role || 'ADMIN';
+    const adminName = profile?.name || 'Admin User';
+    const adminRole = profile?.role || 'SUPER_ADMIN';
     const adminDesignation = profile?.designation || '';
-    const adminEmail = user.email || '';
+    const adminEmail = profile?.email || user.email || '';
 
-    // ৩. পেলোড অবজেক্ট তৈরি
     const logPayload: Record<string, any> = {
       entity_type: entityType,
       performed_by: user.id,
@@ -56,14 +47,13 @@ export const logAuditActivity = async ({
       reason: reason || null,
       changes: changes || null,
       metadata: {
-        admin_name: resolvedName,
+        admin_name: adminName,
         admin_email: adminEmail,
         admin_role: adminRole,
         admin_designation: adminDesignation,
       },
     };
 
-    // entityType অনুযায়ী সঠিক কলাম সেট করা
     if (entityType === 'ambassador') {
       logPayload.ambassador_id = entityId;
     } else if (entityType === 'orders') {
@@ -72,7 +62,6 @@ export const logAuditActivity = async ({
       logPayload.profile_id = entityId;
     }
 
-    // ৪. audit_logs টেবিলে ইনসার্ট
     await supabase.from('audit_logs').insert(logPayload);
   } catch (err) {
     console.error('Failed to record audit log:', err);
