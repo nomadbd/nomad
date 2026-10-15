@@ -313,31 +313,58 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
               </div>
 
               {loadingLogs ? (
-                <div style={{ fontSize: '11px', color: '#71717a', textAlign: 'center', padding: '40px', fontFamily: 'monospace' }}>
-                  Loading logs...
+                /* লোডিং স্কেলিটন (Loading Skeleton UI) */
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {[1, 2, 3].map((n) => (
+                    <div key={n} style={{ backgroundColor: '#121215', border: '1px solid #27272a', borderRadius: '12px', padding: '14px', display: 'flex', flexDirection: 'column', gap: '8px', opacity: 0.6, animation: 'pulse 1.5s infinite' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <div style={{ width: '120px', height: '12px', backgroundColor: '#27272a', borderRadius: '4px' }} />
+                        <div style={{ width: '80px', height: '10px', backgroundColor: '#27272a', borderRadius: '4px' }} />
+                      </div>
+                      <div style={{ width: '180px', height: '12px', backgroundColor: '#27272a', borderRadius: '4px', marginTop: '4px' }} />
+                      <div style={{ width: '140px', height: '10px', backgroundColor: '#27272a', borderRadius: '4px' }} />
+                    </div>
+                  ))}
                 </div>
               ) : logs.length === 0 ? (
                 <div style={{ fontSize: '11px', color: '#71717a', textAlign: 'center', padding: '40px', fontFamily: 'monospace', backgroundColor: '#121215', border: '1px solid #27272a', borderRadius: '12px' }}>
                   No audit history found.
                 </div>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', overflowY: 'auto', maxHeight: '350px' }}>
-                  {logs.map((log) => (
-                    <div key={log.id} style={{ backgroundColor: '#121215', border: '1px solid #27272a', borderRadius: '12px', padding: '12px 14px', fontSize: '11px', fontFamily: 'monospace' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', color: '#38bdf8', fontWeight: 'bold', marginBottom: '4px' }}>
-                        <span>{log.action_type || log.action || 'UPDATE'}</span>
-                        <span style={{ color: '#71717a', fontSize: '10px' }}>{new Date(log.created_at).toLocaleString()}</span>
-                      </div>
-                      <div style={{ color: '#d4d4d8', marginBottom: '4px' }}>
-                        {log.field_name || 'Details'}: <span style={{ color: '#ef4444' }}>{log.old_value || 'None'}</span> → <span style={{ color: '#22c55e' }}>{log.new_value || 'Updated'}</span>
-                      </div>
-                      {log.reason && (
-                        <div style={{ color: '#a1a1aa', fontSize: '10px', marginTop: '2px' }}>
-                          Reason: {log.reason}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', overflowY: 'auto', maxHeight: '380px' }}>
+                  {logs.map((log) => {
+                    const adminEmail = log.metadata?.admin_email || log.performed_by || 'System Admin';
+                    const adminRole = log.metadata?.admin_role ? ` (${log.metadata.admin_role})` : '';
+
+                    return (
+                      <div key={log.id} style={{ backgroundColor: '#121215', border: '1px solid #27272a', borderRadius: '12px', padding: '14px', fontSize: '11px', fontFamily: 'monospace', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ color: '#38bdf8', fontWeight: 'bold', fontSize: '12px', letterSpacing: '0.5px' }}>
+                            {log.action_type || log.action || 'UPDATE'}
+                          </span>
+                          <span style={{ color: '#71717a', fontSize: '10px' }}>
+                            {new Date(log.created_at).toLocaleString()}
+                          </span>
                         </div>
-                      )}
-                    </div>
-                  ))}
+
+                        <div style={{ color: '#d4d4d8', fontSize: '12px' }}>
+                          {log.field_name || 'Details'}: <span style={{ color: '#ef4444' }}>{log.old_value || 'None'}</span> → <span style={{ color: '#22c55e' }}>{log.new_value || 'Updated'}</span>
+                        </div>
+
+                        {log.reason && (
+                          <div style={{ color: '#a1a1aa', fontSize: '11px', fontStyle: 'italic', backgroundColor: '#09090b', padding: '6px 8px', borderRadius: '6px', border: '1px solid #1f1f23' }}>
+                            Reason: {log.reason}
+                          </div>
+                        )}
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#71717a', fontSize: '10px', marginTop: '2px', borderTop: '1px solid #1f1f23', paddingTop: '6px' }}>
+                          <span>By:</span>
+                          <strong style={{ color: '#a1a1aa' }}>{adminEmail}</strong>
+                          <span style={{ color: '#52525b' }}>{adminRole}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -408,6 +435,7 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
                   </button>
                 </div>
 
+                {/* Designation এবং Role-এর কালার ও ফন্ট হুবহু এক করা হয়েছে */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '16px' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     <span style={{ fontSize: '9px', color: '#71717a', fontFamily: 'monospace', textTransform: 'uppercase' }}>Designation</span>
@@ -423,7 +451,7 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
                         borderBottom: '1px solid #3f3f46',
                         borderRadius: '0',
                         padding: '6px 0',
-                        color: '#22c55e',
+                        color: '#ffffff',
                         fontSize: '13px',
                         fontWeight: 'bold',
                         fontFamily: 'monospace',
@@ -499,7 +527,7 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
                 type="button"
                 onClick={triggerToggleStatus}
                 disabled={isSaving}
-                style={{ backgroundColor: '#121215', border: `1px solid ${isActive ? 'rgba(239, 68, 68, 0.3)' : 'rgba(34, 197, 94, 0.3)'}`, borderRadius: '12px', padding: '12px 16px', color: isActive ? '#ef4444' : '#22c55e', fontSize: '12px', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: isSaving ? 'not-allowed' : 'pointer' }}
+                style={{ backgroundColor: '#121215', border: `1px solid ${isActive ? 'rgba(239, 68, 68, 0.3)` : 'rgba(34, 197, 94, 0.3)'}`, borderRadius: '12px', padding: '14px 16px', color: isActive ? '#ef4444' : '#22c55e', fontSize: '12px', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: isSaving ? 'not-allowed' : 'pointer' }}
               >
                 {isActive ? 'Revoke Staff Access' : 'Activate Staff Access'}
               </button>
