@@ -1,9 +1,9 @@
 import { supabase } from '@/supabaseClient';
 
 export interface AuditLogOptions {
-  entityType: 'ambassador' | 'orders' | 'products' | 'payouts' | string;
-  entityId?: string;       // যেমন: ambassador_id বা order_id
-  actionType: string;      // যেমন: 'RATE_UPDATE', 'STATUS_CHANGE', 'ORDER_CANCELLED'
+  entityType: 'ambassador' | 'orders' | 'products' | 'payouts' | 'profile' | string;
+  entityId?: string;       // ambassador_id, order_id, বা profile_id
+  actionType: string;      // যেমন: 'RATE_UPDATE', 'STATUS_CHANGE', 'DESIGNATION_UPDATE', 'ROLE_UPDATE'
   fieldName?: string;
   oldValue?: string | number | null;
   newValue?: string | number | null;
@@ -57,6 +57,8 @@ export const logAuditActivity = async ({
       logPayload.ambassador_id = entityId;
     } else if (entityType === 'orders') {
       logPayload.order_id = entityId;
+    } else if (entityType === 'profile') {
+      logPayload.profile_id = entityId; // স্টাফ/প্রোফাইল আইডির জন্য
     }
 
     // ৪. audit_logs টেবিলে ইনসার্ট
