@@ -318,7 +318,7 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
           justifyContent: 'center',
         }}
       >
-        {/* ফুল উইডথ বটম শীট কন্টেইনার (100dvh দিয়ে মোবাইল ও ডেক্সটপ উভয়তেই ফিক্সড) */}
+        {/* ফুল উইডথ বটম শীট কন্টেইনার */}
         <div
           onClick={(e) => e.stopPropagation()}
           style={{
@@ -326,16 +326,16 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
             backgroundColor: '#09090b',
             borderTop: '1px solid #27272a',
             borderRadius: '20px 20px 0 0',
-            padding: currentView === 'activity_logs' ? '0' : '20px 20px 40px 20px',
+            padding: currentView === 'activity_logs' ? '0' : '20px 20px 56px 20px',
             display: 'flex',
             flexDirection: 'column',
             gap: '16px',
-            maxHeight: 'calc(100dvh - 40px)', // ভিজিবল স্ক্রিনের ৮০-৯০% এর মধ্যেই সীমাবদ্ধ থাকবে
+            maxHeight: '82vh',
             overflowY: 'auto',
             boxSizing: 'border-box',
           }}
         >
-          {/* ভিতরের সেন্টারড ব্লক */}
+          {/* ভিতরের সেন্টারড রেসপন্সিভ ব্লক */}
           <div style={{ maxWidth: '800px', width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {currentView === 'activity_logs' ? (
               <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '20px 0 20px 0', boxSizing: 'border-box' }}>
@@ -373,7 +373,7 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
                     No audit history found.
                   </div>
                 ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', overflowY: 'auto', maxHeight: '55vh' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', overflowY: 'auto', maxHeight: '50vh' }}>
                     {logs.map((log) => {
                       const fetchedAdmin = adminProfiles[log.performed_by];
                       const adminName = fetchedAdmin?.name || log.metadata?.admin_name || 'Admin User';
@@ -617,7 +617,6 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
                     alignItems: 'center',
                     justifyContent: 'center',
                     cursor: isSaving ? 'not-allowed' : 'pointer',
-                    marginBottom: '8px'
                   }}
                 >
                   {isActive ? 'Revoke Staff Access' : 'Activate Staff Access'}
