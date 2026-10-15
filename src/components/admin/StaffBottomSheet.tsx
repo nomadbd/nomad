@@ -31,31 +31,24 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
 }) => {
   const [currentView, setCurrentView] = useState<'main' | 'activity_logs'>('main');
 
-  // Form States - ইনপুটগুলো খালি থাকবে, বর্তমান ভ্যালু প্লেসহোল্ডার হিসেবে দেখাবে
   const [designationInput, setDesignationInput] = useState<string>('');
   const [roleInput, setRoleInput] = useState<string>('');
   const [reason, setReason] = useState<string>('');
   const [isSaving, setIsSaving] = useState<boolean>(false);
 
-  // Security Confirmation Modal State
   const [showConfirmModal, setShowConfirmModal] = useState<boolean>(false);
   const [confirmText, setConfirmText] = useState<string>('');
   const [pendingAction, setPendingAction] = useState<'UPDATE_DETAILS' | 'TOGGLE_STATUS' | null>(null);
 
-  // Audit Logs State
   const [logs, setLogs] = useState<any[]>([]);
   const [loadingLogs, setLoadingLogs] = useState<boolean>(false);
-
-  // Toast Notification State
   const [toastMsg, setToastMsg] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
   const isActive = staff.status === 'ACTIVE';
 
-  // ইনপুটে নতুন মান দিলে সেটি কার্যকর হবে, নাহলে প্লেসহোল্ডার/পুরানো ভ্যালু বহাল থাকবে
   const finalDesignation = designationInput.trim() !== '' ? designationInput.trim() : (staff.designation || '');
   const finalRole = roleInput.trim() !== '' ? roleInput.toUpperCase().trim() : staff.role;
 
-  // কোনো পরিবর্তন হয়েছে কি না
   const hasChanges = (staff.designation || '') !== finalDesignation || staff.role !== finalRole;
 
   useEffect(() => {
@@ -80,7 +73,8 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
       const { data, error } = await supabase
         .from('audit_logs')
         .select('*')
-        .eq('entity_id', staff.id)
+        .eq('entity_type', 'profile')
+        .eq('profile_id', staff.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -95,7 +89,6 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
   const triggerSaveDetails = () => {
     if (!hasChanges) return;
 
-    // কারণ লেখা বাধ্যতামূলক চেক
     if (!reason.trim()) {
       setToastMsg({ text: 'Please provide a reason for the change!', type: 'error' });
       return;
@@ -225,7 +218,6 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
         />
       )}
 
-      {/* সিকিউরিটি কনফার্মেশন মোডাল */}
       {showConfirmModal && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0, 0, 0, 0.9)', backdropFilter: 'blur(8px)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
           <div style={{ backgroundColor: '#09090b', border: '1px solid #27272a', borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '380px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -270,7 +262,6 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
         </div>
       )}
 
-      {/* বটম শিট */}
       <div
         onClick={onClose}
         style={{
@@ -304,7 +295,6 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
           }}
         >
           {currentView === 'activity_logs' ? (
-            /* Activity Logs Sub-View */
             <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '24px 20px', boxSizing: 'border-box' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -335,21 +325,24 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
                   {logs.map((log) => (
                     <div key={log.id} style={{ backgroundColor: '#121215', border: '1px solid #27272a', borderRadius: '12px', padding: '12px 14px', fontSize: '11px', fontFamily: 'monospace' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', color: '#38bdf8', fontWeight: 'bold', marginBottom: '4px' }}>
-                        <span>{log.action_type || log.action}</span>
+                        <span>{log.action_type || log.action || 'UPDATE'}</span>
                         <span style={{ color: '#71717a', fontSize: '10px' }}>{new Date(log.created_at).toLocaleString()}</span>
                       </div>
                       <div style={{ color: '#d4d4d8', marginBottom: '4px' }}>
-                        {log.field_name}: <span style={{ color: '#ef4444' }}>{log.old_value || 'None'}</span> → <span style={{ color: '#22c55e' }}>{log.new_value}</span>
+                        {log.field_name || 'Details'}: <span style={{ color: '#ef4444' }}>{log.old_value || 'None'}</span> → <span style={{ color: '#22c55e' }}>{log.new_value || 'Updated'}</span>
                       </div>
+                      {log.reason && (
+                        <div style={{ color: '#a1a1aa', fontSize: '10px', marginTop: '2px' }}>
+                          Reason: {log.reason}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
               )}
             </div>
           ) : (
-            /* Main View Content */
             <>
-              {/* Header */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
                   {staff.avatar_url ? (
@@ -385,7 +378,6 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
                 </button>
               </div>
 
-              {/* কনফিগারেশন সেকশন */}
               <div style={{ backgroundColor: '#121215', border: '1px solid #27272a', borderRadius: '12px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
                 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -416,9 +408,7 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
                   </button>
                 </div>
 
-                {/* Designation এবং Role (প্লেসহোল্ডার স্টাইলিং) */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '16px' }}>
-                  {/* Designation Input */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     <span style={{ fontSize: '9px', color: '#71717a', fontFamily: 'monospace', textTransform: 'uppercase' }}>Designation</span>
                     <input
@@ -443,7 +433,6 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
                     />
                   </div>
 
-                  {/* System Role Input */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     <span style={{ fontSize: '9px', color: '#71717a', fontFamily: 'monospace', textTransform: 'uppercase' }}>Role</span>
                     <input
@@ -469,7 +458,6 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
                   </div>
                 </div>
 
-                {/* Reason for Change (মাল্টিলাইন Textarea) */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '4px' }}>
                   <textarea
                     rows={2}
@@ -495,7 +483,6 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
                 </div>
               </div>
 
-              {/* Activity Logs Button */}
               <button
                 type="button"
                 onClick={() => {
@@ -508,7 +495,6 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
                 <span style={{ fontWeight: '600', fontSize: '12px' }}>Activity & Audit Logs</span>
               </button>
 
-              {/* Account Revoke / Activate */}
               <button
                 type="button"
                 onClick={triggerToggleStatus}
