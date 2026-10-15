@@ -142,29 +142,30 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
 
         if (error) throw error;
 
+        // একাধিক পরিবর্তনকে ১টি লগে গ্রুপ করা
+        const changesObject: Record<string, { old: string; new: string }> = {};
+
         if (isDesignationChanged) {
-          await logAuditActivity({
-            entityType: 'profile',
-            entityId: staff.id,
-            actionType: 'DESIGNATION_UPDATE',
-            fieldName: 'designation',
-            oldValue: staff.designation || 'None',
-            newValue: finalDesignation || 'None',
-            reason: reason.trim(),
-          });
+          changesObject.Designation = {
+            old: staff.designation || 'None',
+            new: finalDesignation || 'None',
+          };
         }
 
         if (isRoleChanged) {
-          await logAuditActivity({
-            entityType: 'profile',
-            entityId: staff.id,
-            actionType: 'ROLE_UPDATE',
-            fieldName: 'role',
-            oldValue: staff.role,
-            newValue: finalRole,
-            reason: reason.trim(),
-          });
+          changesObject.Role = {
+            old: staff.role || 'None',
+            new: finalRole,
+          };
         }
+
+        await logAuditActivity({
+          entityType: 'profile',
+          entityId: staff.id,
+          actionType: 'PROFILE_UPDATE',
+          reason: reason.trim(),
+          changes: changesObject,
+        });
 
         setToastMsg({ text: 'Staff details updated successfully!', type: 'success' });
       } else if (pendingAction === 'TOGGLE_STATUS') {
@@ -181,10 +182,13 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
           entityType: 'profile',
           entityId: staff.id,
           actionType: 'STATUS_CHANGE',
-          fieldName: 'status',
-          oldValue: staff.status,
-          newValue: nextStatus,
           reason: reason.trim(),
+          changes: {
+            Status: {
+              old: staff.status,
+              new: nextStatus,
+            },
+          },
         });
 
         setToastMsg({
@@ -330,36 +334,76 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
                   No audit history found.
                 </div>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', overflowY: 'auto', maxHeight: '380px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', overflowY: 'auto', maxHeight: '380px' }}>
                   {logs.map((log) => {
-                    const adminEmail = log.metadata?.admin_email || log.performed_by || 'System Admin';
-                    const adminRole = log.metadata?.admin_role ? ` (${log.metadata.admin_role})` : '';
+                    const adminName = log.metadata?.admin_name || 'System Admin';
+                    const adminEmail = log.metadata?.admin_email || log.performed_by || '';
+                    const adminRole = log.metadata?.admin_role || '';
+                    const adminDesignation = log.metadata?.admin_designation || '';
+
+                    // চেঞ্জ অবজেক্ট হ্যান্ডেলিং (নতুন এবং আগের সিঙ্গেল ফরম্যাট উভয়ের সাথেই সামঞ্জস্যপূর্ণ)
+                    let changeItems: Array<{ label: string; oldVal: string; newVal: string }> = [];
+
+                    if (log.changes && typeof log.changes === 'object') {
+                      Object.entries(log.changes).forEach(([key, val]: [string, any]) => {
+                        changeItems.push({
+                          label: key,
+                          oldVal: String(val.old ?? 'None'),
+                          newVal: String(val.new ?? 'None'),
+                        });
+                      });
+                    } else if (log.field_name) {
+                      changeItems.push({
+                        label: log.field_name.charAt(0).toUpperCase() + log.field_name.slice(1),
+                        oldVal: String(log.old_value ?? 'None'),
+                        newVal: String(log.new_value ?? 'None'),
+                      });
+                    }
 
                     return (
-                      <div key={log.id} style={{ backgroundColor: '#121215', border: '1px solid #27272a', borderRadius: '12px', padding: '14px', fontSize: '11px', fontFamily: 'monospace', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{ color: '#38bdf8', fontWeight: 'bold', fontSize: '12px', letterSpacing: '0.5px' }}>
-                            {log.action_type || log.action || 'UPDATE'}
-                          </span>
+                      <div key={log.id} style={{ backgroundColor: '#121215', border: '1px solid #27272a', borderRadius: '12px', padding: '14px', fontSize: '11px', fontFamily: 'monospace', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        {/* তারিখ ও সময় ডান দিকে */}
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', borderBottom: '1px solid #1a1a1e', paddingBottom: '4px' }}>
                           <span style={{ color: '#71717a', fontSize: '10px' }}>
                             {new Date(log.created_at).toLocaleString()}
                           </span>
                         </div>
 
-                        <div style={{ color: '#d4d4d8', fontSize: '12px' }}>
-                          {log.field_name || 'Details'}: <span style={{ color: '#ef4444' }}>{log.old_value || 'None'}</span> → <span style={{ color: '#22c55e' }}>{log.new_value || 'Updated'}</span>
+                        {/* সকল পরিমার্জিত ফিল্ডগুলোর তালিকা */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          {changeItems.map((item, idx) => (
+                            <div key={idx} style={{ color: '#d4d4d8', fontSize: '12px', lineHeight: '1.4' }}>
+                              <span style={{ color: '#a1a1aa' }}>{item.label} : </span>
+                              <span style={{ color: '#ef4444' }}>{item.oldVal}</span>
+                              <span style={{ color: '#71717a', margin: '0 6px' }}>→</span>
+                              <span style={{ color: '#22c55e' }}>{item.newVal}</span>
+                            </div>
+                          ))}
                         </div>
 
+                        {/* কারণ (Reason) */}
                         {log.reason && (
-                          <div style={{ color: '#a1a1aa', fontSize: '11px', fontStyle: 'italic', backgroundColor: '#09090b', padding: '6px 8px', borderRadius: '6px', border: '1px solid #1f1f23' }}>
+                          <div style={{ color: '#a1a1aa', fontSize: '11px', fontStyle: 'italic', backgroundColor: '#09090b', padding: '6px 10px', borderRadius: '6px', border: '1px solid #1f1f23', lineHeight: '1.4' }}>
                             Reason: {log.reason}
                           </div>
                         )}
 
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#71717a', fontSize: '10px', marginTop: '2px', borderTop: '1px solid #1f1f23', paddingTop: '6px' }}>
-                          <span>By:</span>
-                          <strong style={{ color: '#a1a1aa' }}>{adminEmail}</strong>
-                          <span style={{ color: '#52525b' }}>{adminRole}</span>
+                        {/* কে পরিবর্তন করেছেন (Admin Information) */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', borderTop: '1px solid #1f1f23', paddingTop: '8px', marginTop: '2px', color: '#a1a1aa' }}>
+                          <div style={{ fontSize: '11px' }}>
+                            <span style={{ color: '#71717a' }}>By: </span>
+                            <strong style={{ color: '#ffffff' }}>{adminName}</strong>
+                          </div>
+                          {(adminDesignation || adminRole) && (
+                            <div style={{ fontSize: '10px', color: '#a1a1aa' }}>
+                              {adminDesignation ? `${adminDesignation} • ${adminRole}` : adminRole}
+                            </div>
+                          )}
+                          {adminEmail && (
+                            <div style={{ fontSize: '10px', color: '#71717a' }}>
+                              {adminEmail}
+                            </div>
+                          )}
                         </div>
                       </div>
                     );
@@ -536,7 +580,7 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  cursor: isSaving ? 'not-allowed' : 'pointer'
+                  cursor: isSaving ? 'not-allowed' : 'pointer',
                 }}
               >
                 {isActive ? 'Revoke Staff Access' : 'Activate Staff Access'}
