@@ -43,12 +43,12 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
   const [pendingAction, setPendingAction] = useState<'UPDATE_DETAILS' | 'TOGGLE_STATUS' | null>(null);
 
   const [logs, setLogs] = useState<any[]>([]);
+  const [adminProfiles, setAdminProfiles] = useState<Record<string, { name: string; designation?: string; email?: string; role?: string }>>({});
   const [loadingLogs, setLoadingLogs] = useState<boolean>(false);
   const [toastMsg, setToastMsg] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
   const isActive = staff.status === 'ACTIVE';
 
-  // বর্তমান লগইন করা ইউজারের আইডি চেক করা
   useEffect(() => {
     const fetchCurrentUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -82,6 +82,7 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
     return parts[0].slice(0, 2).toUpperCase();
   };
 
+  // profiles টেবিল থেকে পারফর্মকৃত অ্যাডমিনদের সঠিক নাম ফেচ করার ফাংশন
   const fetchAuditLogs = async () => {
     setLoadingLogs(true);
     try {
@@ -93,7 +94,32 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setLogs(data || []);
+
+      const rawLogs = data || [];
+      setLogs(rawLogs);
+
+      //performed_by ইউনিক আইডিগুলোর নামের তথ্য profiles টেবিল থেকে আনা
+      const adminIds = Array.from(new Set(rawLogs.map((l) => l.performed_by).filter(Boolean)));
+
+      if (adminIds.length > 0) {
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('id, name, designation, email, role')
+          .in('id', adminIds);
+
+        if (profilesData) {
+          const profileMap: Record<string, { name: string; designation?: string; email?: string; role?: string }> = {};
+          profilesData.forEach((p) => {
+            profileMap[p.id] = {
+              name: p.name || 'Admin User',
+              designation: p.designation || '',
+              email: p.email || '',
+              role: p.role || '',
+            };
+          });
+          setAdminProfiles(profileMap);
+        }
+      }
     } catch (err: any) {
       console.error('Error fetching logs:', err.message);
     } finally {
@@ -102,11 +128,6 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
   };
 
   const triggerSaveDetails = () => {
-    if (isSelf) {
-      setToastMsg({ text: 'You cannot edit your own profile details!', type: 'error' });
-      return;
-    }
-
     if (!hasChanges) return;
 
     if (!reason.trim()) {
@@ -125,11 +146,6 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
   };
 
   const triggerToggleStatus = () => {
-    if (isSelf) {
-      setToastMsg({ text: 'You cannot revoke your own staff access!', type: 'error' });
-      return;
-    }
-
     if (!reason.trim()) {
       setToastMsg({ text: 'Please provide a reason before changing status!', type: 'error' });
       return;
@@ -167,6 +183,7 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
 
         if (error) throw error;
 
+        // একাধিক চেঞ্জকে ১টি লগে গ্রুপ করা
         const changesObject: Record<string, { old: string; new: string }> = {};
 
         if (isDesignationChanged) {
@@ -360,21 +377,11 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', overflowY: 'auto', maxHeight: '380px' }}>
                   {logs.map((log) => {
-                    const adminEmail = log.metadata?.admin_email || log.performed_by || '';
-                    
-                    // পুরানো লগের জন্য নাম সমাধান
-                    let adminName = log.metadata?.admin_name;
-                    if (!adminName || adminName === 'System Admin') {
-                      if (adminEmail.includes('@')) {
-                        const emailPrefix = adminEmail.split('@')[0];
-                        adminName = emailPrefix.charAt(0).toUpperCase() + emailPrefix.slice(1);
-                      } else {
-                        adminName = 'Super Admin';
-                      }
-                    }
-
-                    const adminRole = log.metadata?.admin_role || 'SUPER_ADMIN';
-                    const adminDesignation = log.metadata?.admin_designation || '';
+                    const fetchedAdmin = adminProfiles[log.performed_by];
+                    const adminName = fetchedAdmin?.name || log.metadata?.admin_name || 'Admin User';
+                    const adminEmail = fetchedAdmin?.email || log.metadata?.admin_email || '';
+                    const adminRole = fetchedAdmin?.role || log.metadata?.admin_role || 'SUPER_ADMIN';
+                    const adminDesignation = fetchedAdmin?.designation || log.metadata?.admin_designation || '';
 
                     let changeItems: Array<{ label: string; oldVal: string; newVal: string }> = [];
 
@@ -479,13 +486,6 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
                 </button>
               </div>
 
-              {/* নিজের প্রোফাইল এডিটের সতর্কবার্তা */}
-              {isSelf && (
-                <div style={{ fontSize: '10px', color: '#f59e0b', backgroundColor: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.2)', padding: '8px 12px', borderRadius: '8px', fontFamily: 'monospace' }}>
-                  ⚠️ You cannot edit your own role or designation to prevent system conflicts.
-                </div>
-              )}
-
               <div style={{ backgroundColor: '#121215', border: '1px solid #27272a', borderRadius: '12px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
                 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -493,29 +493,27 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
                     CONFIGURATION
                   </span>
 
-                  {!isSelf && (
-                    <button
-                      type="button"
-                      onClick={triggerSaveDetails}
-                      disabled={isSaving || !hasChanges}
-                      style={{
-                        backgroundColor: '#ffffff',
-                        color: '#000000',
-                        border: 'none',
-                        borderRadius: '20px',
-                        padding: '3px 12px',
-                        fontSize: '10px',
-                        fontWeight: '700',
-                        fontFamily: 'monospace',
-                        cursor: isSaving ? 'not-allowed' : 'pointer',
-                        opacity: hasChanges ? 1 : 0,
-                        visibility: hasChanges ? 'visible' : 'hidden',
-                        transition: 'opacity 0.2s ease',
-                      }}
-                    >
-                      {isSaving ? 'SAVING...' : 'SAVE'}
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    onClick={triggerSaveDetails}
+                    disabled={isSaving || !hasChanges}
+                    style={{
+                      backgroundColor: '#ffffff',
+                      color: '#000000',
+                      border: 'none',
+                      borderRadius: '20px',
+                      padding: '3px 12px',
+                      fontSize: '10px',
+                      fontWeight: '700',
+                      fontFamily: 'monospace',
+                      cursor: isSaving ? 'not-allowed' : 'pointer',
+                      opacity: hasChanges ? 1 : 0,
+                      visibility: hasChanges ? 'visible' : 'hidden',
+                      transition: 'opacity 0.2s ease',
+                    }}
+                  >
+                    {isSaving ? 'SAVING...' : 'SAVE'}
+                  </button>
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '16px' }}>
@@ -523,7 +521,6 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
                     <span style={{ fontSize: '9px', color: '#71717a', fontFamily: 'monospace', textTransform: 'uppercase' }}>Designation</span>
                     <input
                       type="text"
-                      disabled={isSelf}
                       value={designationInput}
                       onChange={(e) => setDesignationInput(e.target.value)}
                       placeholder={staff.designation || 'e.g. CEO'}
@@ -540,8 +537,6 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
                         fontFamily: 'monospace',
                         outline: 'none',
                         boxSizing: 'border-box',
-                        opacity: isSelf ? 0.5 : 1,
-                        cursor: isSelf ? 'not-allowed' : 'text'
                       }}
                     />
                   </div>
@@ -550,7 +545,6 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
                     <span style={{ fontSize: '9px', color: '#71717a', fontFamily: 'monospace', textTransform: 'uppercase' }}>Role</span>
                     <input
                       type="text"
-                      disabled={isSelf}
                       value={roleInput}
                       onChange={(e) => setRoleInput(e.target.value)}
                       placeholder={staff.role || 'STAFF'}
@@ -567,38 +561,34 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
                         fontFamily: 'monospace',
                         outline: 'none',
                         boxSizing: 'border-box',
-                        opacity: isSelf ? 0.5 : 1,
-                        cursor: isSelf ? 'not-allowed' : 'text'
                       }}
                     />
                   </div>
                 </div>
 
-                {!isSelf && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '4px' }}>
-                    <textarea
-                      rows={2}
-                      value={reason}
-                      onChange={(e) => setReason(e.target.value)}
-                      placeholder="Reason for change (Required)..."
-                      style={{
-                        width: '100%',
-                        backgroundColor: 'transparent',
-                        border: 'none',
-                        borderBottom: '1px solid #27272a',
-                        borderRadius: '0',
-                        padding: '6px 0',
-                        color: '#a1a1aa',
-                        fontSize: '11px',
-                        fontFamily: 'monospace',
-                        outline: 'none',
-                        boxSizing: 'border-box',
-                        resize: 'none',
-                        lineHeight: '1.4',
-                      }}
-                    />
-                  </div>
-                )}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '4px' }}>
+                  <textarea
+                    rows={2}
+                    value={reason}
+                    onChange={(e) => setReason(e.target.value)}
+                    placeholder="Reason for change (Required)..."
+                    style={{
+                      width: '100%',
+                      backgroundColor: 'transparent',
+                      border: 'none',
+                      borderBottom: '1px solid #27272a',
+                      borderRadius: '0',
+                      padding: '6px 0',
+                      color: '#a1a1aa',
+                      fontSize: '11px',
+                      fontFamily: 'monospace',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                      resize: 'none',
+                      lineHeight: '1.4',
+                    }}
+                  />
+                </div>
               </div>
 
               <button
@@ -613,28 +603,26 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
                 <span style={{ fontWeight: '600', fontSize: '12px' }}>Activity & Audit Logs</span>
               </button>
 
-              {!isSelf && (
-                <button
-                  type="button"
-                  onClick={triggerToggleStatus}
-                  disabled={isSaving}
-                  style={{
-                    backgroundColor: '#121215',
-                    border: isActive ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid rgba(34, 197, 94, 0.3)',
-                    borderRadius: '12px',
-                    padding: '14px 16px',
-                    color: isActive ? '#ef4444' : '#22c55e',
-                    fontSize: '12px',
-                    fontWeight: '600',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: isSaving ? 'not-allowed' : 'pointer',
-                  }}
-                >
-                  {isActive ? 'Revoke Staff Access' : 'Activate Staff Access'}
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={triggerToggleStatus}
+                disabled={isSaving}
+                style={{
+                  backgroundColor: '#121215',
+                  border: isActive ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid rgba(34, 197, 94, 0.3)',
+                  borderRadius: '12px',
+                  padding: '14px 16px',
+                  color: isActive ? '#ef4444' : '#22c55e',
+                  fontSize: '12px',
+                  fontWeight: '600',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: isSaving ? 'not-allowed' : 'pointer',
+                }}
+              >
+                {isActive ? 'Revoke Staff Access' : 'Activate Staff Access'}
+              </button>
             </>
           )}
         </div>
