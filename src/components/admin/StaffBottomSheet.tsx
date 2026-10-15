@@ -304,7 +304,7 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
         </div>
       )}
 
-      {/* ব্যাকড্রপ overlay: বটম শীট স্টাইলে স্ক্রিনের একদম নিচে ফিক্সড */}
+      {/* ব্যাকড্রপ overlay */}
       <div
         onClick={onClose}
         style={{
@@ -316,15 +316,20 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
           display: 'flex',
           alignItems: 'flex-end',
           justifyContent: 'center',
+          padding: '0 16px', // ডেক্সটপে সাইডে মার্জিন রাখার জন্য
         }}
       >
-        {/* সত্যিকারের বটম শীট কন্টেইনার (শুধু ওপরের দুই কোণ গোল এবং স্ক্রিনের নিচে আটকানো) */}
+        {/* বটম শীট কন্টেইনার */}
         <div
           onClick={(e) => e.stopPropagation()}
           style={{
             width: '100%',
+            maxWidth: '520px', // ডেক্সটপে অতিরিক্ত চওড়া হওয়া রোধ করবে
+            margin: '0 auto', // সেন্টারে রাখবে
             backgroundColor: '#09090b',
             borderTop: '1px solid #27272a',
+            borderLeft: '1px solid #27272a',
+            borderRight: '1px solid #27272a',
             borderRadius: '20px 20px 0 0',
             padding: currentView === 'activity_logs' ? '0' : '20px 20px calc(32px + env(safe-area-inset-bottom, 20px)) 20px',
             display: 'flex',
