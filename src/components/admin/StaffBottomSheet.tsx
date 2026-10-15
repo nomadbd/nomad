@@ -51,7 +51,6 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
 
   const isActive = staff.status === 'ACTIVE';
 
-  // ইনপুটে কোনো পরিবর্তন হয়েছে কি না
   const hasChanges = (staff.designation || '') !== designation.trim() || staff.role !== roleInput.toUpperCase().trim();
 
   useEffect(() => {
@@ -88,7 +87,6 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
     }
   };
 
-  // ১. মেম্বার তথ্য ও রোল আপডেটের ট্র্রিগার
   const triggerSaveDetails = () => {
     if (!hasChanges) return;
     const formattedRole = roleInput.toUpperCase().trim();
@@ -101,14 +99,12 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
     setShowConfirmModal(true);
   };
 
-  // ২. অ্যাকাউন্ট স্ট্যাটাস পরিবর্তনের ট্র্রিগার
   const triggerToggleStatus = () => {
     setPendingAction('TOGGLE_STATUS');
     setConfirmText('');
     setShowConfirmModal(true);
   };
 
-  // চূড়ান্ত অ্যাকশন এক্সিকিউশন (কনফার্মেশন পাওয়ার পর)
   const executeAction = async () => {
     if (confirmText.toUpperCase().trim() !== 'CONFIRM') {
       setToastMsg({ text: 'Please type "CONFIRM" correctly to proceed.', type: 'error' });
@@ -146,7 +142,7 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
             fieldName: 'designation',
             oldValue: staff.designation || 'None',
             newValue: designation.trim() || 'None',
-            reason: reason || 'Updated staff designation from bottom sheet',
+            reason: reason || 'Updated staff designation',
           });
         }
 
@@ -158,7 +154,7 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
             fieldName: 'role',
             oldValue: staff.role,
             newValue: formattedRole,
-            reason: reason || 'Updated staff system role from bottom sheet',
+            reason: reason || 'Updated staff system role',
           });
         }
 
@@ -180,7 +176,7 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
           fieldName: 'status',
           oldValue: staff.status,
           newValue: nextStatus,
-          reason: reason || (nextStatus === 'ACTIVE' ? 'Staff Reactivated' : 'Staff Revoked/Deactivated'),
+          reason: reason || (nextStatus === 'ACTIVE' ? 'Staff Reactivated' : 'Staff Revoked'),
         });
 
         setToastMsg({
@@ -212,33 +208,28 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
         />
       )}
 
-      {/* সিকিউরিটি এক্সপ্লিসিট কনফার্মেশন মোডাল */}
+      {/* সিকিউরিটি কনফার্মেশন মোডাল */}
       {showConfirmModal && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0, 0, 0, 0.9)', backdropFilter: 'blur(8px)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
           <div style={{ backgroundColor: '#09090b', border: '1px solid #27272a', borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '380px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div>
-              <div style={{ fontSize: '14px', fontWeight: '800', color: '#ffffff', fontFamily: 'monospace', letterSpacing: '1px' }}>
+              <div style={{ fontSize: '13px', fontWeight: '800', color: '#ffffff', fontFamily: 'monospace', letterSpacing: '1px' }}>
                 SECURITY CONFIRMATION
               </div>
               <div style={{ fontSize: '11px', color: '#a1a1aa', fontFamily: 'monospace', marginTop: '6px', lineHeight: '1.4' }}>
-                You are modifying critical permissions for <strong style={{ color: '#fff' }}>{staff.name}</strong>. Type <span style={{ color: '#ef4444', fontWeight: 'bold' }}>CONFIRM</span> to process.
+                Type <span style={{ color: '#ef4444', fontWeight: 'bold' }}>CONFIRM</span> to process changes for <strong style={{ color: '#fff' }}>{staff.name}</strong>.
               </div>
             </div>
 
-            <div>
-              <label style={{ display: 'block', fontSize: '9px', color: '#71717a', fontFamily: 'monospace', marginBottom: '6px', textTransform: 'uppercase' }}>
-                TYPE "CONFIRM" TO PROCEED
-              </label>
-              <input
-                type="text"
-                value={confirmText}
-                onChange={(e) => setConfirmText(e.target.value)}
-                placeholder="CONFIRM"
-                style={{ width: '100%', backgroundColor: '#121215', border: '1px solid #3f3f46', borderRadius: '8px', padding: '10px', color: '#ef4444', fontSize: '12px', fontWeight: 'bold', fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box' }}
-              />
-            </div>
+            <input
+              type="text"
+              value={confirmText}
+              onChange={(e) => setConfirmText(e.target.value)}
+              placeholder="CONFIRM"
+              style={{ width: '100%', backgroundColor: '#121215', border: '1px solid #3f3f46', borderRadius: '8px', padding: '10px', color: '#ef4444', fontSize: '12px', fontWeight: 'bold', fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box' }}
+            />
 
-            <div style={{ display: 'flex', gap: '10px', marginTop: '4px' }}>
+            <div style={{ display: 'flex', gap: '10px' }}>
               <button
                 type="button"
                 onClick={executeAction}
@@ -262,7 +253,7 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
         </div>
       )}
 
-      {/* মেইন বটম শিট কন্টেইনার */}
+      {/* বটম শিট */}
       <div
         onClick={onClose}
         style={{
@@ -320,7 +311,7 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
                 </div>
               ) : logs.length === 0 ? (
                 <div style={{ fontSize: '11px', color: '#71717a', textAlign: 'center', padding: '40px', fontFamily: 'monospace', backgroundColor: '#121215', border: '1px solid #27272a', borderRadius: '12px' }}>
-                  No audit history found for this staff member.
+                  No audit history found.
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', overflowY: 'auto', maxHeight: '350px' }}>
@@ -333,9 +324,6 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
                       <div style={{ color: '#d4d4d8', marginBottom: '4px' }}>
                         {log.field_name}: <span style={{ color: '#ef4444' }}>{log.old_value || 'None'}</span> → <span style={{ color: '#22c55e' }}>{log.new_value}</span>
                       </div>
-                      {log.performed_by && (
-                        <div style={{ color: '#71717a', fontSize: '9px' }}>By: {log.performed_by}</div>
-                      )}
                     </div>
                   ))}
                 </div>
@@ -344,28 +332,28 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
           ) : (
             /* Main View Content */
             <>
-              {/* Header: Member Avatar + Name + Email */}
+              {/* Header */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
                   {staff.avatar_url ? (
                     <img
                       src={staff.avatar_url}
                       alt={staff.name}
-                      style={{ width: '46px', height: '46px', borderRadius: '50%', objectFit: 'cover', border: '1px solid #3f3f46', flexShrink: 0 }}
+                      style={{ width: '42px', height: '42px', borderRadius: '50%', objectFit: 'cover', border: '1px solid #3f3f46', flexShrink: 0 }}
                     />
                   ) : (
                     <div
-                      style={{ width: '46px', height: '46px', borderRadius: '50%', backgroundColor: '#18181b', border: '1px solid #3f3f46', color: '#f4f4f5', fontSize: '14px', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, letterSpacing: '0.5px', fontFamily: 'monospace' }}
+                      style={{ width: '42px', height: '42px', borderRadius: '50%', backgroundColor: '#18181b', border: '1px solid #3f3f46', color: '#f4f4f5', fontSize: '13px', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontFamily: 'monospace' }}
                     >
                       {getInitials(staff.name)}
                     </div>
                   )}
 
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: '16px', fontWeight: '700', color: '#ffffff', lineHeight: '1.3', wordBreak: 'break-word' }}>
+                    <div style={{ fontSize: '15px', fontWeight: '700', color: '#ffffff', lineHeight: '1.2', wordBreak: 'break-word' }}>
                       {staff.name}
                     </div>
-                    <div style={{ fontSize: '12px', color: '#a1a1aa', fontFamily: 'monospace', marginTop: '3px', wordBreak: 'break-all' }}>
+                    <div style={{ fontSize: '11px', color: '#a1a1aa', fontFamily: 'monospace', marginTop: '2px', wordBreak: 'break-all' }}>
                       {staff.email}
                     </div>
                   </div>
@@ -380,112 +368,136 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
                 </button>
               </div>
 
-              {/* Action Options List */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {/* অত্যন্ত ক্লিন ও মিনিমাল কনফিগারেশন সেকশন */}
+              <div style={{ backgroundColor: '#121215', border: '1px solid #27272a', borderRadius: '12px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '10px', fontWeight: 'bold', color: '#71717a', fontFamily: 'monospace', letterSpacing: '0.8px', textTransform: 'uppercase' }}>
+                    CONFIGURATION
+                  </span>
 
-                {/* Configuration Box */}
-                <div style={{ backgroundColor: '#121215', border: '1px solid #27272a', borderRadius: '12px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '26px' }}>
-                    <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#d4d4d8', fontFamily: 'monospace', letterSpacing: '0.8px', textTransform: 'uppercase' }}>
-                      STAFF CONFIGURATION
-                    </div>
+                  <button
+                    type="button"
+                    onClick={triggerSaveDetails}
+                    disabled={isSaving || !hasChanges}
+                    style={{
+                      backgroundColor: '#ffffff',
+                      color: '#000000',
+                      border: 'none',
+                      borderRadius: '20px',
+                      padding: '3px 12px',
+                      fontSize: '10px',
+                      fontWeight: '700',
+                      fontFamily: 'monospace',
+                      cursor: isSaving ? 'not-allowed' : 'pointer',
+                      opacity: hasChanges ? 1 : 0,
+                      visibility: hasChanges ? 'visible' : 'hidden',
+                      transition: 'opacity 0.2s ease',
+                    }}
+                  >
+                    {isSaving ? 'SAVING...' : 'SAVE'}
+                  </button>
+                </div>
 
-                    <button
-                      type="button"
-                      onClick={triggerSaveDetails}
-                      disabled={isSaving || !hasChanges}
+                {/* Designation এবং Role পাশাপাশি আন্ডারলাইন স্টাইল ইনপুট */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '16px' }}>
+                  {/* Designation */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <span style={{ fontSize: '9px', color: '#71717a', fontFamily: 'monospace', textTransform: 'uppercase' }}>Designation</span>
+                    <input
+                      type="text"
+                      value={designation}
+                      onChange={(e) => setDesignation(e.target.value)}
+                      placeholder={staff.designation || 'e.g. CEO'}
                       style={{
-                        backgroundColor: '#ffffff',
-                        color: '#000000',
+                        width: '100%',
+                        backgroundColor: 'transparent',
                         border: 'none',
-                        borderRadius: '20px',
-                        padding: '4px 14px',
-                        fontSize: '11px',
-                        fontWeight: '700',
+                        borderBottom: '1px solid #3f3f46',
+                        borderRadius: '0',
+                        padding: '6px 0',
+                        color: '#22c55e',
+                        fontSize: '13px',
+                        fontWeight: 'bold',
                         fontFamily: 'monospace',
-                        cursor: isSaving ? 'not-allowed' : 'pointer',
-                        letterSpacing: '0.5px',
-                        boxShadow: '0 2px 8px rgba(255, 255, 255, 0.2)',
-                        opacity: hasChanges ? 1 : 0,
-                        visibility: hasChanges ? 'visible' : 'hidden',
-                        transition: 'opacity 0.2s ease, visibility 0.2s ease',
-                        pointerEvents: hasChanges ? 'auto' : 'none',
+                        outline: 'none',
+                        boxSizing: 'border-box',
                       }}
-                    >
-                      {isSaving ? 'SAVING...' : 'SAVE'}
-                    </button>
+                    />
                   </div>
 
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    {/* Designation Input */}
-                    <div>
-                      <label style={{ display: 'block', fontSize: '10px', color: '#a1a1aa', fontFamily: 'monospace', marginBottom: '6px', textTransform: 'uppercase' }}>
-                        DESIGNATION
-                      </label>
-                      <input
-                        type="text"
-                        value={designation}
-                        onChange={(e) => setDesignation(e.target.value)}
-                        placeholder="e.g. CEO, MD, Chairman"
-                        style={{ width: '100%', backgroundColor: '#09090b', border: '1px solid #3f3f46', borderRadius: '8px', padding: '10px 12px', color: '#22c55e', fontSize: '13px', fontWeight: 'bold', fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box' }}
-                      />
-                    </div>
-
-                    {/* System Role Input (No Dropdown - Manual Type for Safety) */}
-                    <div>
-                      <label style={{ display: 'block', fontSize: '10px', color: '#a1a1aa', fontFamily: 'monospace', marginBottom: '6px', textTransform: 'uppercase' }}>
-                        SYSTEM ROLE (STAFF / ADMIN / SUPER_ADMIN)
-                      </label>
-                      <input
-                        type="text"
-                        value={roleInput}
-                        onChange={(e) => setRoleInput(e.target.value)}
-                        placeholder="STAFF, ADMIN, or SUPER_ADMIN"
-                        style={{ width: '100%', backgroundColor: '#09090b', border: '1px solid #3f3f46', borderRadius: '8px', padding: '10px 12px', color: '#ffffff', fontSize: '13px', fontWeight: 'bold', fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box' }}
-                      />
-                    </div>
-
-                    {/* Audit Reason Input */}
-                    <div>
-                      <label style={{ display: 'block', fontSize: '10px', color: '#a1a1aa', fontFamily: 'monospace', marginBottom: '6px', textTransform: 'uppercase' }}>
-                        REASON FOR CHANGE (AUDIT LOG)
-                      </label>
-                      <input
-                        type="text"
-                        value={reason}
-                        onChange={(e) => setReason(e.target.value)}
-                        placeholder="e.g. Promotion approved by HR"
-                        style={{ width: '100%', backgroundColor: '#09090b', border: '1px solid #3f3f46', borderRadius: '8px', padding: '8px 12px', color: '#a1a1aa', fontSize: '11px', fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box' }}
-                      />
-                    </div>
+                  {/* System Role */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <span style={{ fontSize: '9px', color: '#71717a', fontFamily: 'monospace', textTransform: 'uppercase' }}>Role</span>
+                    <input
+                      type="text"
+                      value={roleInput}
+                      onChange={(e) => setRoleInput(e.target.value)}
+                      placeholder="STAFF / ADMIN"
+                      style={{
+                        width: '100%',
+                        backgroundColor: 'transparent',
+                        border: 'none',
+                        borderBottom: '1px solid #3f3f46',
+                        borderRadius: '0',
+                        padding: '6px 0',
+                        color: '#ffffff',
+                        fontSize: '13px',
+                        fontWeight: 'bold',
+                        fontFamily: 'monospace',
+                        outline: 'none',
+                        boxSizing: 'border-box',
+                      }}
+                    />
                   </div>
                 </div>
 
-                {/* Audit Logs Option (অহেতুক সাবটাইটেল রিমুভ করা হয়েছে) */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setCurrentView('activity_logs');
-                    fetchAuditLogs();
-                  }}
-                  style={{ backgroundColor: '#121215', border: '1px solid #27272a', borderRadius: '12px', padding: '14px 16px', color: '#ffffff', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', textAlign: 'left' }}
-                >
-                  <div style={{ width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <HistoryIcon style={{ width: '18px', height: '18px', color: '#38bdf8' }} />
-                  </div>
-                  <div style={{ fontWeight: '600', color: '#ffffff' }}>Activity & Audit Logs</div>
-                </button>
-
-                {/* Account Revoke / Activate Button */}
-                <button
-                  type="button"
-                  onClick={triggerToggleStatus}
-                  disabled={isSaving}
-                  style={{ backgroundColor: '#121215', border: `1px solid ${isActive ? 'rgba(239, 68, 68, 0.3)' : 'rgba(34, 197, 94, 0.3)'}`, borderRadius: '12px', padding: '14px 16px', color: isActive ? '#ef4444' : '#22c55e', fontSize: '13px', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: isSaving ? 'not-allowed' : 'pointer', textAlign: 'center', opacity: isSaving ? 0.6 : 1 }}
-                >
-                  {isActive ? 'Revoke Staff Access' : 'Activate Staff Access'}
-                </button>
+                {/* Reason for Change (আন্ডারলাইন ইনপুট) */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '2px' }}>
+                  <input
+                    type="text"
+                    value={reason}
+                    onChange={(e) => setReason(e.target.value)}
+                    placeholder="Reason for change..."
+                    style={{
+                      width: '100%',
+                      backgroundColor: 'transparent',
+                      border: 'none',
+                      borderBottom: '1px solid #27272a',
+                      borderRadius: '0',
+                      padding: '6px 0',
+                      color: '#a1a1aa',
+                      fontSize: '11px',
+                      fontFamily: 'monospace',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                    }}
+                  />
+                </div>
               </div>
+
+              {/* Activity Logs Button */}
+              <button
+                type="button"
+                onClick={() => {
+                  setCurrentView('activity_logs');
+                  fetchAuditLogs();
+                }}
+                style={{ backgroundColor: '#121215', border: '1px solid #27272a', borderRadius: '12px', padding: '12px 16px', color: '#ffffff', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', textAlign: 'left' }}
+              >
+                <HistoryIcon style={{ width: '16px', height: '16px', color: '#38bdf8' }} />
+                <span style={{ fontWeight: '600', fontSize: '12px' }}>Activity & Audit Logs</span>
+              </button>
+
+              {/* Account Revoke / Activate */}
+              <button
+                type="button"
+                onClick={triggerToggleStatus}
+                disabled={isSaving}
+                style={{ backgroundColor: '#121215', border: `1px solid ${isActive ? 'rgba(239, 68, 68, 0.3)' : 'rgba(34, 197, 94, 0.3)'}`, borderRadius: '12px', padding: '12px 16px', color: isActive ? '#ef4444' : '#22c55e', fontSize: '12px', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: isSaving ? 'not-allowed' : 'pointer' }}
+              >
+                {isActive ? 'Revoke Staff Access' : 'Activate Staff Access'}
+              </button>
             </>
           )}
         </div>
