@@ -304,7 +304,7 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
         </div>
       )}
 
-      {/* ব্যাকড্রপ overlay: ডেক্সটপ ভিউ এবং মোবাইল সব কভার করবে ও নিচে সেফ মার্জিন রাখবে */}
+      {/* ব্যাকড্রপ overlay: বটম শীট স্টাইলে স্ক্রিনের একদম নিচে ফিক্সড */}
       <div
         onClick={onClose}
         style={{
@@ -316,23 +316,21 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
           display: 'flex',
           alignItems: 'flex-end',
           justifyContent: 'center',
-          paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 90px)', // ব্রাউজার বটম বার থেকে উপরে তুলে আনার জন্য ৯০ পিক্সেল সেফ স্পেস
         }}
       >
-        {/* ফুল উইডথ বটম শীট কন্টেইনার */}
+        {/* সত্যিকারের বটম শীট কন্টেইনার (শুধু ওপরের দুই কোণ গোল এবং স্ক্রিনের নিচে আটকানো) */}
         <div
           onClick={(e) => e.stopPropagation()}
           style={{
             width: '100%',
             backgroundColor: '#09090b',
             borderTop: '1px solid #27272a',
-            borderBottom: '1px solid #27272a',
-            borderRadius: '20px',
-            padding: currentView === 'activity_logs' ? '0' : '20px 20px 24px 20px',
+            borderRadius: '20px 20px 0 0',
+            padding: currentView === 'activity_logs' ? '0' : '20px 20px calc(32px + env(safe-area-inset-bottom, 20px)) 20px',
             display: 'flex',
             flexDirection: 'column',
             gap: '14px',
-            maxHeight: 'calc(100vh - 120px)',
+            maxHeight: '85vh',
             overflowY: 'auto',
             boxSizing: 'border-box',
           }}
