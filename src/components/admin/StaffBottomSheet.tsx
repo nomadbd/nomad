@@ -316,22 +316,20 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
           display: 'flex',
           alignItems: 'flex-end',
           justifyContent: 'center',
-          padding: '0 16px', // ডেক্সটপে সাইডে মার্জিন রাখার জন্য
         }}
       >
-        {/* বটম শীট কন্টেইনার */}
+        {/* রিমুভ করা হয়েছে চওড়া করার বাধ্যবাধকতা, যাতে ডেক্সটপ ও মোবাইল দুটিতেই ব্যালেন্সড থাকে */}
         <div
           onClick={(e) => e.stopPropagation()}
+          className="staff-bottom-sheet"
           style={{
             width: '100%',
-            maxWidth: '520px', // ডেক্সটপে অতিরিক্ত চওড়া হওয়া রোধ করবে
-            margin: '0 auto', // সেন্টারে রাখবে
+            maxWidth: '540px', // ডেক্সটপে অতিরিক্ত বড় হবে না, ফলে বাটন কখনো হাইড হবে না
             backgroundColor: '#09090b',
-            borderTop: '1px solid #27272a',
-            borderLeft: '1px solid #27272a',
-            borderRight: '1px solid #27272a',
+            border: '1px solid #27272a',
+            borderBottom: 'none',
             borderRadius: '20px 20px 0 0',
-            padding: currentView === 'activity_logs' ? '0' : '20px 20px calc(32px + env(safe-area-inset-bottom, 20px)) 20px',
+            padding: currentView === 'activity_logs' ? '0' : '20px 20px 32px 20px',
             display: 'flex',
             flexDirection: 'column',
             gap: '14px',
