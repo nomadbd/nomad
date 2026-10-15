@@ -3,7 +3,7 @@ import { supabase } from '@/supabaseClient';
 export interface AuditLogOptions {
   entityType: 'ambassador' | 'orders' | 'products' | 'payouts' | 'profile' | string;
   entityId?: string;       // ambassador_id, order_id, বা profile_id
-  actionType: string;      // যেমন: 'RATE_UPDATE', 'STATUS_CHANGE', 'DESIGNATION_UPDATE', 'ROLE_UPDATE'
+  actionType: string;      // যেমন: 'PROFILE_UPDATE', 'STATUS_CHANGE'
   fieldName?: string;
   oldValue?: string | number | null;
   newValue?: string | number | null;
@@ -26,15 +26,17 @@ export const logAuditActivity = async ({
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    // ২. অ্যাডমিনের রোল বের করা
+    // ২. অ্যাডমিনের নাম, রোল এবং ডেজিগনেশন বের করা
     const { data: profile } = await supabase
       .from('profiles')
-      .select('role')
+      .select('name, role, designation')
       .eq('id', user.id)
       .single();
 
-    const adminRole = profile?.role || 'admin';
-    const adminEmail = user.email || 'Admin';
+    const adminName = profile?.name || user.user_metadata?.full_name || 'Admin User';
+    const adminRole = profile?.role || 'ADMIN';
+    const adminDesignation = profile?.designation || '';
+    const adminEmail = user.email || '';
 
     // ৩. অবজেক্ট তৈরি
     const logPayload: Record<string, any> = {
@@ -47,8 +49,10 @@ export const logAuditActivity = async ({
       reason: reason || null,
       changes: changes || null,
       metadata: {
+        admin_name: adminName,
         admin_email: adminEmail,
         admin_role: adminRole,
+        admin_designation: adminDesignation,
       },
     };
 
@@ -58,7 +62,7 @@ export const logAuditActivity = async ({
     } else if (entityType === 'orders') {
       logPayload.order_id = entityId;
     } else if (entityType === 'profile') {
-      logPayload.profile_id = entityId; // স্টাফ/প্রোফাইল আইডির জন্য
+      logPayload.profile_id = entityId;
     }
 
     // ৪. audit_logs টেবিলে ইনসার্ট
