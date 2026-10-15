@@ -304,7 +304,7 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
         </div>
       )}
 
-      {/* ব্যাকড্রপ overlay: ডেক্সটপ ও মোবাইলে সম্পূর্ণ কভার করবে */}
+      {/* ব্যাকড্রপ overlay */}
       <div
         onClick={onClose}
         style={{
@@ -314,31 +314,31 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
           backdropFilter: 'blur(6px)',
           zIndex: 100,
           display: 'flex',
-          alignItems: 'flex-end', // সবসময় একদম নিচে লেগে থাকবে
+          alignItems: 'flex-end',
           justifyContent: 'center',
         }}
       >
-        {/* ফুল উইডথ বটম শীট: width: '100vw' দিয়ে চওড়ায় পুরো স্ক্রিন কভার করবে */}
+        {/* ফুল উইডথ বটম শীট কন্টেইনার (100dvh দিয়ে মোবাইল ও ডেক্সটপ উভয়তেই ফিক্সড) */}
         <div
           onClick={(e) => e.stopPropagation()}
           style={{
-            width: '100vw',
+            width: '100%',
             backgroundColor: '#09090b',
             borderTop: '1px solid #27272a',
             borderRadius: '20px 20px 0 0',
-            padding: currentView === 'activity_logs' ? '0' : '24px 24px 28px 24px',
+            padding: currentView === 'activity_logs' ? '0' : '20px 20px 40px 20px',
             display: 'flex',
             flexDirection: 'column',
             gap: '16px',
-            maxHeight: '90vh',
+            maxHeight: 'calc(100dvh - 40px)', // ভিজিবল স্ক্রিনের ৮০-৯০% এর মধ্যেই সীমাবদ্ধ থাকবে
             overflowY: 'auto',
             boxSizing: 'border-box',
           }}
         >
-          {/* কনটেন্ট সুন্দর দেখানোর জন্য একটি সেন্ট্রাল কন্টেইনার যুক্ত করা হয়েছে */}
+          {/* ভিতরের সেন্টারড ব্লক */}
           <div style={{ maxWidth: '800px', width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {currentView === 'activity_logs' ? (
-              <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '24px 0', boxSizing: 'border-box' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '20px 0 20px 0', boxSizing: 'border-box' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <HistoryIcon style={{ width: '18px', height: '18px', color: '#38bdf8' }} />
@@ -373,7 +373,7 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
                     No audit history found.
                   </div>
                 ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', overflowY: 'auto', maxHeight: '60vh' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', overflowY: 'auto', maxHeight: '55vh' }}>
                     {logs.map((log) => {
                       const fetchedAdmin = adminProfiles[log.performed_by];
                       const adminName = fetchedAdmin?.name || log.metadata?.admin_name || 'Admin User';
@@ -484,7 +484,7 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
                   </button>
                 </div>
 
-                <div style={{ backgroundColor: '#121215', border: '1px solid #27272a', borderRadius: '12px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div style={{ backgroundColor: '#121215', border: '1px solid #27272a', borderRadius: '12px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
                   
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ fontSize: '10px', fontWeight: 'bold', color: '#71717a', fontFamily: 'monospace', letterSpacing: '0.8px', textTransform: 'uppercase' }}>
@@ -514,7 +514,7 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
                     </button>
                   </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       <span style={{ fontSize: '9px', color: '#71717a', fontFamily: 'monospace', textTransform: 'uppercase' }}>Designation</span>
                       <input
@@ -617,6 +617,7 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
                     alignItems: 'center',
                     justifyContent: 'center',
                     cursor: isSaving ? 'not-allowed' : 'pointer',
+                    marginBottom: '8px'
                   }}
                 >
                   {isActive ? 'Revoke Staff Access' : 'Activate Staff Access'}
