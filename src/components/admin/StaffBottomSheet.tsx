@@ -31,9 +31,9 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
 }) => {
   const [currentView, setCurrentView] = useState<'main' | 'activity_logs'>('main');
 
-  // Form States
-  const [designation, setDesignation] = useState<string>(staff.designation || '');
-  const [roleInput, setRoleInput] = useState<string>(staff.role || 'STAFF');
+  // Form States - ইনপুটগুলো খালি থাকবে, বর্তমান ভ্যালু প্লেসহোল্ডার হিসেবে দেখাবে
+  const [designationInput, setDesignationInput] = useState<string>('');
+  const [roleInput, setRoleInput] = useState<string>('');
   const [reason, setReason] = useState<string>('');
   const [isSaving, setIsSaving] = useState<boolean>(false);
 
@@ -51,12 +51,17 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
 
   const isActive = staff.status === 'ACTIVE';
 
-  const hasChanges = (staff.designation || '') !== designation.trim() || staff.role !== roleInput.toUpperCase().trim();
+  // ইনপুটে নতুন মান দিলে সেটি কার্যকর হবে, নাহলে প্লেসহোল্ডার/পুরানো ভ্যালু বহাল থাকবে
+  const finalDesignation = designationInput.trim() !== '' ? designationInput.trim() : (staff.designation || '');
+  const finalRole = roleInput.trim() !== '' ? roleInput.toUpperCase().trim() : staff.role;
+
+  // কোনো পরিবর্তন হয়েছে কি না
+  const hasChanges = (staff.designation || '') !== finalDesignation || staff.role !== finalRole;
 
   useEffect(() => {
     setCurrentView('main');
-    setDesignation(staff.designation || '');
-    setRoleInput(staff.role || 'STAFF');
+    setDesignationInput('');
+    setRoleInput('');
     setReason('');
   }, [staff]);
 
@@ -89,17 +94,28 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
 
   const triggerSaveDetails = () => {
     if (!hasChanges) return;
-    const formattedRole = roleInput.toUpperCase().trim();
-    if (!['STAFF', 'ADMIN', 'SUPER_ADMIN'].includes(formattedRole)) {
+
+    // কারণ লেখা বাধ্যতামূলক চেক
+    if (!reason.trim()) {
+      setToastMsg({ text: 'Please provide a reason for the change!', type: 'error' });
+      return;
+    }
+
+    if (!['STAFF', 'ADMIN', 'SUPER_ADMIN'].includes(finalRole)) {
       setToastMsg({ text: 'Invalid Role! Use STAFF, ADMIN, or SUPER_ADMIN', type: 'error' });
       return;
     }
+
     setPendingAction('UPDATE_DETAILS');
     setConfirmText('');
     setShowConfirmModal(true);
   };
 
   const triggerToggleStatus = () => {
+    if (!reason.trim()) {
+      setToastMsg({ text: 'Please provide a reason before changing status!', type: 'error' });
+      return;
+    }
     setPendingAction('TOGGLE_STATUS');
     setConfirmText('');
     setShowConfirmModal(true);
@@ -116,14 +132,13 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
 
     try {
       if (pendingAction === 'UPDATE_DETAILS') {
-        const isDesignationChanged = (staff.designation || '') !== designation.trim();
-        const formattedRole = roleInput.toUpperCase().trim();
-        const isRoleChanged = staff.role !== formattedRole;
+        const isDesignationChanged = (staff.designation || '') !== finalDesignation;
+        const isRoleChanged = staff.role !== finalRole;
 
         const updateData: any = { updated_at: now };
-        if (isDesignationChanged) updateData.designation = designation.trim() || null;
+        if (isDesignationChanged) updateData.designation = finalDesignation || null;
         if (isRoleChanged) {
-          updateData.role = formattedRole;
+          updateData.role = finalRole;
           updateData.role_assigned_at = now;
         }
 
@@ -141,8 +156,8 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
             actionType: 'DESIGNATION_UPDATE',
             fieldName: 'designation',
             oldValue: staff.designation || 'None',
-            newValue: designation.trim() || 'None',
-            reason: reason || 'Updated staff designation',
+            newValue: finalDesignation || 'None',
+            reason: reason.trim(),
           });
         }
 
@@ -153,8 +168,8 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
             actionType: 'ROLE_UPDATE',
             fieldName: 'role',
             oldValue: staff.role,
-            newValue: formattedRole,
-            reason: reason || 'Updated staff system role',
+            newValue: finalRole,
+            reason: reason.trim(),
           });
         }
 
@@ -176,7 +191,7 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
           fieldName: 'status',
           oldValue: staff.status,
           newValue: nextStatus,
-          reason: reason || (nextStatus === 'ACTIVE' ? 'Staff Reactivated' : 'Staff Revoked'),
+          reason: reason.trim(),
         });
 
         setToastMsg({
@@ -188,6 +203,8 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
       setShowConfirmModal(false);
       setPendingAction(null);
       setReason('');
+      setDesignationInput('');
+      setRoleInput('');
       setConfirmText('');
       if (onUpdateSuccess) onUpdateSuccess();
     } catch (err: any) {
@@ -368,7 +385,7 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
                 </button>
               </div>
 
-              {/* অত্যন্ত ক্লিন ও মিনিমাল কনফিগারেশন সেকশন */}
+              {/* কনফিগারেশন সেকশন */}
               <div style={{ backgroundColor: '#121215', border: '1px solid #27272a', borderRadius: '12px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
                 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -399,15 +416,15 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
                   </button>
                 </div>
 
-                {/* Designation এবং Role পাশাপাশি আন্ডারলাইন স্টাইল ইনপুট */}
+                {/* Designation এবং Role (প্লেসহোল্ডার স্টাইলিং) */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '16px' }}>
-                  {/* Designation */}
+                  {/* Designation Input */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     <span style={{ fontSize: '9px', color: '#71717a', fontFamily: 'monospace', textTransform: 'uppercase' }}>Designation</span>
                     <input
                       type="text"
-                      value={designation}
-                      onChange={(e) => setDesignation(e.target.value)}
+                      value={designationInput}
+                      onChange={(e) => setDesignationInput(e.target.value)}
                       placeholder={staff.designation || 'e.g. CEO'}
                       style={{
                         width: '100%',
@@ -426,14 +443,14 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
                     />
                   </div>
 
-                  {/* System Role */}
+                  {/* System Role Input */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     <span style={{ fontSize: '9px', color: '#71717a', fontFamily: 'monospace', textTransform: 'uppercase' }}>Role</span>
                     <input
                       type="text"
                       value={roleInput}
                       onChange={(e) => setRoleInput(e.target.value)}
-                      placeholder="STAFF / ADMIN"
+                      placeholder={staff.role || 'STAFF'}
                       style={{
                         width: '100%',
                         backgroundColor: 'transparent',
@@ -452,13 +469,13 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
                   </div>
                 </div>
 
-                {/* Reason for Change (আন্ডারলাইন ইনপুট) */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '2px' }}>
-                  <input
-                    type="text"
+                {/* Reason for Change (মাল্টিলাইন Textarea) */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '4px' }}>
+                  <textarea
+                    rows={2}
                     value={reason}
                     onChange={(e) => setReason(e.target.value)}
-                    placeholder="Reason for change..."
+                    placeholder="Reason for change (Required)..."
                     style={{
                       width: '100%',
                       backgroundColor: 'transparent',
@@ -471,6 +488,8 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
                       fontFamily: 'monospace',
                       outline: 'none',
                       boxSizing: 'border-box',
+                      resize: 'none',
+                      lineHeight: '1.4',
                     }}
                   />
                 </div>
