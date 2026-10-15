@@ -304,7 +304,7 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
         </div>
       )}
 
-      {/* ব্যাকড্রপ overlay */}
+      {/* ব্যাকড্রপ overlay: ডেক্সটপ ভিউ এবং মোবাইল সব কভার করবে ও নিচে সেফ মার্জিন রাখবে */}
       <div
         onClick={onClose}
         style={{
@@ -316,59 +316,63 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
           display: 'flex',
           alignItems: 'flex-end',
           justifyContent: 'center',
+          paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 90px)', // ব্রাউজার বটম বার থেকে উপরে তুলে আনার জন্য ৯০ পিক্সেল সেফ স্পেস
         }}
       >
-        {/* কমপ্যাক্ট ফুল উইডথ বটম শীট কন্টেইনার (সবকিছু স্ক্রিনেই ফিট করার জন্য অপ্টিমাইজড) */}
+        {/* ফুল উইডথ বটম শীট কন্টেইনার */}
         <div
           onClick={(e) => e.stopPropagation()}
           style={{
             width: '100%',
             backgroundColor: '#09090b',
             borderTop: '1px solid #27272a',
-            borderRadius: '20px 20px 0 0',
-            padding: currentView === 'activity_logs' ? '0' : '16px 16px 20px 16px',
+            borderBottom: '1px solid #27272a',
+            borderRadius: '20px',
+            padding: currentView === 'activity_logs' ? '0' : '20px 20px 24px 20px',
             display: 'flex',
             flexDirection: 'column',
-            gap: '10px',
+            gap: '14px',
+            maxHeight: 'calc(100vh - 120px)',
+            overflowY: 'auto',
             boxSizing: 'border-box',
           }}
         >
           {currentView === 'activity_logs' ? (
-            <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '16px', boxSizing: 'border-box', maxHeight: '75vh' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '20px', boxSizing: 'border-box' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <HistoryIcon style={{ width: '16px', height: '16px', color: '#38bdf8' }} />
-                  <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#ffffff', fontFamily: 'monospace' }}>
+                  <HistoryIcon style={{ width: '18px', height: '18px', color: '#38bdf8' }} />
+                  <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#ffffff', fontFamily: 'monospace' }}>
                     Activity & Audit Logs
                   </span>
                 </div>
                 <button
                   type="button"
                   onClick={() => setCurrentView('main')}
-                  style={{ backgroundColor: '#18181b', border: '1px solid #27272a', color: '#d4d4d8', borderRadius: '50%', width: '28px', height: '28px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  style={{ backgroundColor: '#18181b', border: '1px solid #27272a', color: '#d4d4d8', borderRadius: '50%', width: '32px', height: '32px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                 >
-                  <CloseIcon style={{ width: '12px', height: '12px' }} />
+                  <CloseIcon style={{ width: '14px', height: '14px' }} />
                 </button>
               </div>
 
               {loadingLogs ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {[1, 2, 3].map((n) => (
-                    <div key={n} style={{ backgroundColor: '#121215', border: '1px solid #27272a', borderRadius: '10px', padding: '10px', display: 'flex', flexDirection: 'column', gap: '6px', opacity: 0.6 }}>
+                    <div key={n} style={{ backgroundColor: '#121215', border: '1px solid #27272a', borderRadius: '12px', padding: '14px', display: 'flex', flexDirection: 'column', gap: '8px', opacity: 0.6 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <div style={{ width: '120px', height: '10px', backgroundColor: '#27272a', borderRadius: '4px' }} />
-                        <div style={{ width: '80px', height: '8px', backgroundColor: '#27272a', borderRadius: '4px' }} />
+                        <div style={{ width: '120px', height: '12px', backgroundColor: '#27272a', borderRadius: '4px' }} />
+                        <div style={{ width: '80px', height: '10px', backgroundColor: '#27272a', borderRadius: '4px' }} />
                       </div>
-                      <div style={{ width: '150px', height: '10px', backgroundColor: '#27272a', borderRadius: '4px', marginTop: '2px' }} />
+                      <div style={{ width: '180px', height: '12px', backgroundColor: '#27272a', borderRadius: '4px', marginTop: '4px' }} />
                     </div>
                   ))}
                 </div>
               ) : logs.length === 0 ? (
-                <div style={{ fontSize: '11px', color: '#71717a', textAlign: 'center', padding: '30px', fontFamily: 'monospace', backgroundColor: '#121215', border: '1px solid #27272a', borderRadius: '10px' }}>
+                <div style={{ fontSize: '11px', color: '#71717a', textAlign: 'center', padding: '40px', fontFamily: 'monospace', backgroundColor: '#121215', border: '1px solid #27272a', borderRadius: '12px' }}>
                   No audit history found.
                 </div>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', overflowY: 'auto', maxHeight: '60vh' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', overflowY: 'auto', maxHeight: '55vh' }}>
                   {logs.map((log) => {
                     const fetchedAdmin = adminProfiles[log.performed_by];
                     const adminName = fetchedAdmin?.name || log.metadata?.admin_name || 'Admin User';
@@ -395,40 +399,40 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
                     }
 
                     return (
-                      <div key={log.id} style={{ backgroundColor: '#121215', border: '1px solid #27272a', borderRadius: '10px', padding: '12px', fontSize: '11px', fontFamily: 'monospace', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', borderBottom: '1px solid #1a1a1e', paddingBottom: '3px' }}>
+                      <div key={log.id} style={{ backgroundColor: '#121215', border: '1px solid #27272a', borderRadius: '12px', padding: '14px', fontSize: '11px', fontFamily: 'monospace', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', borderBottom: '1px solid #1a1a1e', paddingBottom: '4px' }}>
                           <span style={{ color: '#71717a', fontSize: '10px' }}>
                             {new Date(log.created_at).toLocaleString()}
                           </span>
                         </div>
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                           {changeItems.map((item, idx) => (
-                            <div key={idx} style={{ color: '#d4d4d8', fontSize: '11px', lineHeight: '1.3' }}>
+                            <div key={idx} style={{ color: '#d4d4d8', fontSize: '12px', lineHeight: '1.4' }}>
                               <span style={{ color: '#a1a1aa' }}>{item.label} : </span>
                               <span style={{ color: '#ef4444' }}>{item.oldVal}</span>
-                              <span style={{ color: '#71717a', margin: '0 4px' }}>→</span>
+                              <span style={{ color: '#71717a', margin: '0 6px' }}>→</span>
                               <span style={{ color: '#22c55e' }}>{item.newVal}</span>
                             </div>
                           ))}
                         </div>
 
                         {log.reason && (
-                          <div style={{ color: '#a1a1aa', fontSize: '10px', fontStyle: 'italic', backgroundColor: '#09090b', padding: '6px 8px', borderRadius: '6px', border: '1px solid #1f1f23', lineHeight: '1.3' }}>
+                          <div style={{ color: '#a1a1aa', fontSize: '11px', fontStyle: 'italic', backgroundColor: '#09090b', padding: '6px 10px', borderRadius: '6px', border: '1px solid #1f1f23', lineHeight: '1.4' }}>
                             Reason: {log.reason}
                           </div>
                         )}
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', borderTop: '1px solid #1f1f23', paddingTop: '6px', marginTop: '2px', color: '#a1a1aa' }}>
-                          <div style={{ fontSize: '10px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', borderTop: '1px solid #1f1f23', paddingTop: '8px', marginTop: '2px', color: '#a1a1aa' }}>
+                          <div style={{ fontSize: '11px' }}>
                             <span style={{ color: '#71717a' }}>By: </span>
                             <strong style={{ color: '#ffffff' }}>{adminName}</strong>
                           </div>
-                          <div style={{ fontSize: '9px', color: '#38bdf8' }}>
+                          <div style={{ fontSize: '10px', color: '#38bdf8' }}>
                             {adminDesignation ? `${adminDesignation} • ${adminRole}` : adminRole}
                           </div>
                           {adminEmail && (
-                            <div style={{ fontSize: '9px', color: '#71717a' }}>
+                            <div style={{ fontSize: '10px', color: '#71717a' }}>
                               {adminEmail}
                             </div>
                           )}
@@ -441,31 +445,31 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
             </div>
           ) : (
             <>
-              {/* হেডার অংশ */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 }}>
+              {/* ১. হেডার */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
                   {staff.avatar_url ? (
                     <img
                       src={staff.avatar_url}
                       alt={staff.name}
-                      style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', border: '1px solid #3f3f46', flexShrink: 0 }}
+                      style={{ width: '42px', height: '42px', borderRadius: '50%', objectFit: 'cover', border: '1px solid #3f3f46', flexShrink: 0 }}
                     />
                   ) : (
                     <div
-                      style={{ width: '36px', height: '36px', borderRadius: '50%', backgroundColor: '#18181b', border: '1px solid #3f3f46', color: '#f4f4f5', fontSize: '12px', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontFamily: 'monospace' }}
+                      style={{ width: '42px', height: '42px', borderRadius: '50%', backgroundColor: '#18181b', border: '1px solid #3f3f46', color: '#f4f4f5', fontSize: '13px', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontFamily: 'monospace' }}
                     >
                       {getInitials(staff.name)}
                     </div>
                   )}
 
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: '14px', fontWeight: '700', color: '#ffffff', lineHeight: '1.2', wordBreak: 'break-word', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <div style={{ fontSize: '15px', fontWeight: '700', color: '#ffffff', lineHeight: '1.2', wordBreak: 'break-word', display: 'flex', alignItems: 'center', gap: '8px' }}>
                       {staff.name}
                       {isSelf && (
-                        <span style={{ fontSize: '8px', backgroundColor: '#27272a', color: '#38bdf8', padding: '1px 5px', borderRadius: '4px', fontFamily: 'monospace' }}>YOU</span>
+                        <span style={{ fontSize: '9px', backgroundColor: '#27272a', color: '#38bdf8', padding: '2px 6px', borderRadius: '4px', fontFamily: 'monospace' }}>YOU</span>
                       )}
                     </div>
-                    <div style={{ fontSize: '10px', color: '#a1a1aa', fontFamily: 'monospace', marginTop: '1px', wordBreak: 'break-all' }}>
+                    <div style={{ fontSize: '11px', color: '#a1a1aa', fontFamily: 'monospace', marginTop: '2px', wordBreak: 'break-all' }}>
                       {staff.email}
                     </div>
                   </div>
@@ -474,17 +478,17 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
                 <button
                   type="button"
                   onClick={onClose}
-                  style={{ backgroundColor: '#18181b', border: '1px solid #27272a', color: '#d4d4d8', borderRadius: '50%', width: '28px', height: '28px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+                  style={{ backgroundColor: '#18181b', border: '1px solid #27272a', color: '#d4d4d8', borderRadius: '50%', width: '32px', height: '32px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
                 >
-                  <CloseIcon style={{ width: '12px', height: '12px' }} />
+                  <CloseIcon style={{ width: '14px', height: '14px' }} />
                 </button>
               </div>
 
-              {/* কনফিগারেশন বক্স */}
-              <div style={{ backgroundColor: '#121215', border: '1px solid #27272a', borderRadius: '10px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {/* ২. কনফিগারেশন বক্স */}
+              <div style={{ backgroundColor: '#121215', border: '1px solid #27272a', borderRadius: '12px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
                 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '9px', fontWeight: 'bold', color: '#71717a', fontFamily: 'monospace', letterSpacing: '0.8px', textTransform: 'uppercase' }}>
+                  <span style={{ fontSize: '10px', fontWeight: 'bold', color: '#71717a', fontFamily: 'monospace', letterSpacing: '0.8px', textTransform: 'uppercase' }}>
                     CONFIGURATION
                   </span>
 
@@ -496,9 +500,9 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
                       backgroundColor: '#ffffff',
                       color: '#000000',
                       border: 'none',
-                      borderRadius: '16px',
-                      padding: '3px 10px',
-                      fontSize: '9px',
+                      borderRadius: '20px',
+                      padding: '4px 14px',
+                      fontSize: '10px',
                       fontWeight: '700',
                       fontFamily: 'monospace',
                       cursor: isSaving ? 'not-allowed' : 'pointer',
@@ -511,9 +515,9 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
                   </button>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                    <span style={{ fontSize: '8px', color: '#71717a', fontFamily: 'monospace', textTransform: 'uppercase' }}>Designation</span>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <span style={{ fontSize: '9px', color: '#71717a', fontFamily: 'monospace', textTransform: 'uppercase' }}>Designation</span>
                     <input
                       type="text"
                       value={designationInput}
@@ -525,9 +529,9 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
                         border: 'none',
                         borderBottom: '1px solid #3f3f46',
                         borderRadius: '0',
-                        padding: '4px 0',
+                        padding: '6px 0',
                         color: '#ffffff',
-                        fontSize: '12px',
+                        fontSize: '13px',
                         fontWeight: 'bold',
                         fontFamily: 'monospace',
                         outline: 'none',
@@ -536,8 +540,8 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
                     />
                   </div>
 
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                    <span style={{ fontSize: '8px', color: '#71717a', fontFamily: 'monospace', textTransform: 'uppercase' }}>Role</span>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <span style={{ fontSize: '9px', color: '#71717a', fontFamily: 'monospace', textTransform: 'uppercase' }}>Role</span>
                     <input
                       type="text"
                       value={roleInput}
@@ -549,9 +553,9 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
                         border: 'none',
                         borderBottom: '1px solid #3f3f46',
                         borderRadius: '0',
-                        padding: '4px 0',
+                        padding: '6px 0',
                         color: '#ffffff',
-                        fontSize: '12px',
+                        fontSize: '13px',
                         fontWeight: 'bold',
                         fontFamily: 'monospace',
                         outline: 'none',
@@ -561,9 +565,9 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '4px' }}>
                   <textarea
-                    rows={1}
+                    rows={2}
                     value={reason}
                     onChange={(e) => setReason(e.target.value)}
                     placeholder="Reason for change (Required)..."
@@ -573,33 +577,33 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
                       border: 'none',
                       borderBottom: '1px solid #27272a',
                       borderRadius: '0',
-                      padding: '4px 0',
+                      padding: '6px 0',
                       color: '#a1a1aa',
-                      fontSize: '10px',
+                      fontSize: '11px',
                       fontFamily: 'monospace',
                       outline: 'none',
                       boxSizing: 'border-box',
                       resize: 'none',
-                      lineHeight: '1.3',
+                      lineHeight: '1.4',
                     }}
                   />
                 </div>
               </div>
 
-              {/* অ্যাক্টিভিটি লগস বাটন */}
+              {/* ৩. হিস্ট্রি ও লগের বাটন */}
               <button
                 type="button"
                 onClick={() => {
                   setCurrentView('activity_logs');
                   fetchAuditLogs();
                 }}
-                style={{ backgroundColor: '#121215', border: '1px solid #27272a', borderRadius: '10px', padding: '10px 14px', color: '#ffffff', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', textAlign: 'left' }}
+                style={{ backgroundColor: '#121215', border: '1px solid #27272a', borderRadius: '12px', padding: '14px 16px', color: '#ffffff', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', textAlign: 'left' }}
               >
-                <HistoryIcon style={{ width: '14px', height: '14px', color: '#38bdf8' }} />
-                <span style={{ fontWeight: '600', fontSize: '11px' }}>Activity & Audit Logs</span>
+                <HistoryIcon style={{ width: '16px', height: '16px', color: '#38bdf8' }} />
+                <span style={{ fontWeight: '600', fontSize: '12px' }}>Activity & Audit Logs</span>
               </button>
 
-              {/* রিভোক বাটন */}
+              {/* ৪. রিভোক বাটন */}
               <button
                 type="button"
                 onClick={triggerToggleStatus}
@@ -607,10 +611,10 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
                 style={{
                   backgroundColor: '#121215',
                   border: isActive ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid rgba(34, 197, 94, 0.3)',
-                  borderRadius: '10px',
-                  padding: '11px 14px',
+                  borderRadius: '12px',
+                  padding: '14px 16px',
                   color: isActive ? '#ef4444' : '#22c55e',
-                  fontSize: '11px',
+                  fontSize: '12px',
                   fontWeight: '600',
                   display: 'flex',
                   alignItems: 'center',
