@@ -22,23 +22,30 @@ export const logAuditActivity = async ({
   changes,
 }: AuditLogOptions) => {
   try {
-    // ১. অ্যাডমিনের আইডি বের করা
+    // ১. বর্তমান লগইনকৃত অ্যাডমিনের আইডি বের করা
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    // ২. অ্যাডমিনের নাম, রোল এবং ডেজিগনেশন বের করা
+    // ২. অ্যাডমিনের ডিটেইলস নিয়ে আসা
     const { data: profile } = await supabase
       .from('profiles')
-      .select('name, role, designation')
+      .select('*')
       .eq('id', user.id)
       .single();
 
-    const adminName = profile?.name || user.user_metadata?.full_name || 'Admin User';
+    // নামের নিখুঁত ফ্যালব্যাক লজিক
+    let resolvedName = profile?.name || profile?.full_name || user.user_metadata?.full_name || user.user_metadata?.name;
+    if (!resolvedName && user.email) {
+      const emailPrefix = user.email.split('@')[0];
+      resolvedName = emailPrefix.charAt(0).toUpperCase() + emailPrefix.slice(1);
+    }
+    if (!resolvedName) resolvedName = 'Admin User';
+
     const adminRole = profile?.role || 'ADMIN';
     const adminDesignation = profile?.designation || '';
     const adminEmail = user.email || '';
 
-    // ৩. অবজেক্ট তৈরি
+    // ৩. পেলোড অবজেক্ট তৈরি
     const logPayload: Record<string, any> = {
       entity_type: entityType,
       performed_by: user.id,
@@ -49,7 +56,7 @@ export const logAuditActivity = async ({
       reason: reason || null,
       changes: changes || null,
       metadata: {
-        admin_name: adminName,
+        admin_name: resolvedName,
         admin_email: adminEmail,
         admin_role: adminRole,
         admin_designation: adminDesignation,
