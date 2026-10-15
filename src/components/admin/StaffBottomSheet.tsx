@@ -313,10 +313,9 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
               </div>
 
               {loadingLogs ? (
-                /* লোডিং স্কেলিটন (Loading Skeleton UI) */
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {[1, 2, 3].map((n) => (
-                    <div key={n} style={{ backgroundColor: '#121215', border: '1px solid #27272a', borderRadius: '12px', padding: '14px', display: 'flex', flexDirection: 'column', gap: '8px', opacity: 0.6, animation: 'pulse 1.5s infinite' }}>
+                    <div key={n} style={{ backgroundColor: '#121215', border: '1px solid #27272a', borderRadius: '12px', padding: '14px', display: 'flex', flexDirection: 'column', gap: '8px', opacity: 0.6 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                         <div style={{ width: '120px', height: '12px', backgroundColor: '#27272a', borderRadius: '4px' }} />
                         <div style={{ width: '80px', height: '10px', backgroundColor: '#27272a', borderRadius: '4px' }} />
@@ -435,7 +434,6 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
                   </button>
                 </div>
 
-                {/* Designation এবং Role-এর কালার ও ফন্ট হুবহু এক করা হয়েছে */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '16px' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     <span style={{ fontSize: '9px', color: '#71717a', fontFamily: 'monospace', textTransform: 'uppercase' }}>Designation</span>
@@ -527,7 +525,19 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
                 type="button"
                 onClick={triggerToggleStatus}
                 disabled={isSaving}
-                style={{ backgroundColor: '#121215', border: `1px solid ${isActive ? 'rgba(239, 68, 68, 0.3)` : 'rgba(34, 197, 94, 0.3)'}`, borderRadius: '12px', padding: '14px 16px', color: isActive ? '#ef4444' : '#22c55e', fontSize: '12px', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: isSaving ? 'not-allowed' : 'pointer' }}
+                style={{
+                  backgroundColor: '#121215',
+                  border: isActive ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid rgba(34, 197, 94, 0.3)',
+                  borderRadius: '12px',
+                  padding: '14px 16px',
+                  color: isActive ? '#ef4444' : '#22c55e',
+                  fontSize: '12px',
+                  fontWeight: '600',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: isSaving ? 'not-allowed' : 'pointer'
+                }}
               >
                 {isActive ? 'Revoke Staff Access' : 'Activate Staff Access'}
               </button>
