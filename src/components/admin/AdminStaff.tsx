@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 import { StaffBottomSheet, StaffMember } from './StaffBottomSheet';
-import { MessageIcon, SendIcon, CloseIcon } from '@/components/icons';
+import { MessageIcon } from '@/components/icons';
 
 interface AdminStaffProps {
   searchQuery?: string;
@@ -10,6 +10,7 @@ interface AdminStaffProps {
   dateFormat?: string;
   isAddOpen?: boolean;
   onCloseAdd?: () => void;
+  onNavigateToTab?: (tab: string, params?: Record<string, string>) => void;
 }
 
 export default function AdminStaff({
@@ -18,6 +19,7 @@ export default function AdminStaff({
   dateFormat = 'DD/MM/YYYY',
   isAddOpen = false,
   onCloseAdd,
+  onNavigateToTab,
 }: AdminStaffProps) {
   const [staffList, setStaffList] = useState<StaffMember[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -25,12 +27,6 @@ export default function AdminStaff({
 
   // Bottom Sheet State
   const [bottomSheetStaff, setBottomSheetStaff] = useState<StaffMember | null>(null);
-
-  // Messaging States
-  const [activeChatStaff, setActiveChatStaff] = useState<StaffMember | 'GROUP' | null>(null);
-  const [messageText, setMessageText] = useState('');
-  const [chatMessages, setChatMessages] = useState<any[]>([]);
-  const [sendingMsg, setSendingMsg] = useState(false);
 
   // New Staff Form States
   const [newName, setNewName] = useState('');
@@ -60,57 +56,6 @@ export default function AdminStaff({
   useEffect(() => {
     fetchStaff();
   }, []);
-
-  // Fetch messages when chat modal opens
-  useEffect(() => {
-    if (!activeChatStaff) return;
-
-    const fetchMessages = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('communications')
-          .select('*')
-          .order('created_at', { ascending: true });
-
-        if (error) throw error;
-        setChatMessages(data || []);
-      } catch (err) {
-        console.error('Error fetching communications:', err);
-      }
-    };
-
-    fetchMessages();
-  }, [activeChatStaff]);
-
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!messageText.trim()) return;
-
-    setSendingMsg(true);
-    try {
-      const { error } = await supabase.from('communications').insert([
-        {
-          message: messageText.trim(),
-          is_read: false,
-          created_at: new Date().toISOString(),
-        },
-      ]);
-
-      if (error) throw error;
-      setMessageText('');
-      
-      // Refresh messages
-      const { data } = await supabase
-        .from('communications')
-        .select('*')
-        .order('created_at', { ascending: true });
-      setChatMessages(data || []);
-    } catch (err: any) {
-      alert('Error sending message: ' + err.message);
-    } finally {
-      setSendingMsg(false);
-    }
-  };
 
   const formatDate = (dateStr?: string | null) => {
     if (!dateStr) return 'N/A';
@@ -156,6 +101,21 @@ export default function AdminStaff({
     }
   };
 
+  const handleOpenChat = (staff: StaffMember, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const targetKey = staff.email || staff.id;
+    
+    // যদি প্রপসে নেভিগেশন ফাংশন থাকে অথবা সরাসরি URL এর মাধ্যমে মেসেজ ট্যাবে রিডাইরেক্ট করা
+    if (onNavigateToTab) {
+      onNavigateToTab('messages', { userId: targetKey });
+    } else {
+      const currentUrl = new URL(window.location.href);
+      currentUrl.searchParams.set('tab', 'messages');
+      currentUrl.searchParams.set('userId', targetKey);
+      window.location.href = currentUrl.toString();
+    }
+  };
+
   const filteredStaff = staffList.filter((staff) => {
     const matchesSearch =
       staff.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -177,29 +137,6 @@ export default function AdminStaff({
             TOTAL MEMBERS: {filteredStaff.length}
           </span>
         </div>
-
-        {/* Global Group Broadcast Chat Button */}
-        <button
-          type="button"
-          onClick={() => setActiveChatStaff('GROUP')}
-          style={{
-            backgroundColor: '#121215',
-            border: '1px solid #27272a',
-            color: '#38bdf8',
-            borderRadius: '8px',
-            padding: '8px 12px',
-            fontSize: '11px',
-            fontWeight: '700',
-            fontFamily: 'monospace',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            cursor: 'pointer',
-          }}
-        >
-          <MessageIcon style={{ width: '14px', height: '14px', color: '#38bdf8' }} />
-          <span>STAFF BROADCAST</span>
-        </button>
       </div>
 
       {/* Filter Bar */}
@@ -250,7 +187,7 @@ export default function AdminStaff({
                   transition: 'border-color 0.2s ease',
                 }}
               >
-                {/* Top Section: Member Details + System Role Badge + Direct Chat Icon */}
+                {/* Top Section: Member Details + System Role Badge + Message Shortcut */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px' }}>
                   <div style={{ display: 'flex', gap: '12px', flex: 1, minWidth: 0 }}>
                     {staff.avatar_url ? (
@@ -299,7 +236,7 @@ export default function AdminStaff({
                     </div>
                   </div>
 
-                  {/* System Role Badge & Quick Action Chat Button */}
+                  {/* System Role Badge & Quick Chat Button */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
                     <span
                       style={{
@@ -319,11 +256,8 @@ export default function AdminStaff({
 
                     <button
                       type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setActiveChatStaff(staff);
-                      }}
-                      title="Send Message"
+                      onClick={(e) => handleOpenChat(staff, e)}
+                      title="Direct Message"
                       style={{
                         backgroundColor: '#18181b',
                         border: '1px solid #27272a',
@@ -343,9 +277,8 @@ export default function AdminStaff({
                 {/* Divider */}
                 <div style={{ height: '1px', backgroundColor: '#18181b', width: '100%' }} />
 
-                {/* Bottom Row: Date Columns (JOINED, HIRED AT, UPDATED AT) */}
+                {/* Bottom Row: Date Columns */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', textAlign: 'center' }}>
-                  {/* Joined Date */}
                   <div style={{ textAlign: 'left' }}>
                     <div style={{ fontSize: '8px', color: '#52525b', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                       JOINED
@@ -355,7 +288,6 @@ export default function AdminStaff({
                     </div>
                   </div>
 
-                  {/* Hired Date */}
                   <div>
                     <div style={{ fontSize: '8px', color: '#52525b', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                       HIRED AT
@@ -365,7 +297,6 @@ export default function AdminStaff({
                     </div>
                   </div>
 
-                  {/* Updated Date */}
                   <div style={{ textAlign: 'right' }}>
                     <div style={{ fontSize: '8px', color: '#52525b', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                       UPDATED AT
@@ -378,106 +309,6 @@ export default function AdminStaff({
               </div>
             );
           })}
-        </div>
-      )}
-
-      {/* Messaging Modal / Window */}
-      {activeChatStaff && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0, 0, 0, 0.85)', backdropFilter: 'blur(6px)', zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
-          <div style={{ backgroundColor: '#09090b', border: '1px solid #27272a', borderRadius: '16px', width: '100%', maxWidth: '450px', height: '520px', display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
-            
-            {/* Modal Header */}
-            <div style={{ padding: '16px', borderBottom: '1px solid #1f1f23', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <MessageIcon style={{ width: '18px', height: '18px', color: '#38bdf8' }} />
-                <div>
-                  <div style={{ fontSize: '13px', fontWeight: 'bold', color: '#ffffff', fontFamily: 'monospace' }}>
-                    {activeChatStaff === 'GROUP' ? 'ALL STAFF BROADCAST' : activeChatStaff.name}
-                  </div>
-                  <div style={{ fontSize: '9px', color: '#71717a', fontFamily: 'monospace' }}>
-                    {activeChatStaff === 'GROUP' ? 'Global Channel' : activeChatStaff.email}
-                  </div>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setActiveChatStaff(null)}
-                style={{ backgroundColor: '#18181b', border: '1px solid #27272a', color: '#d4d4d8', borderRadius: '50%', width: '28px', height: '28px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-              >
-                <CloseIcon style={{ width: '12px', height: '12px' }} />
-              </button>
-            </div>
-
-            {/* Chat History List */}
-            <div style={{ flex: 1, padding: '16px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {chatMessages.length === 0 ? (
-                <div style={{ fontSize: '11px', color: '#52525b', textAlign: 'center', margin: 'auto', fontFamily: 'monospace' }}>
-                  No messages yet. Start the conversation!
-                </div>
-              ) : (
-                chatMessages.map((msg) => (
-                  <div
-                    key={msg.id}
-                    style={{
-                      backgroundColor: '#121215',
-                      border: '1px solid #27272a',
-                      borderRadius: '10px',
-                      padding: '10px 12px',
-                      alignSelf: 'flex-start',
-                      maxWidth: '85%',
-                    }}
-                  >
-                    <div style={{ fontSize: '12px', color: '#ffffff', fontFamily: 'monospace', lineHeight: '1.4' }}>
-                      {msg.message}
-                    </div>
-                    <div style={{ fontSize: '8px', color: '#71717a', fontFamily: 'monospace', marginTop: '4px', textAlign: 'right' }}>
-                      {msg.created_at ? new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-
-            {/* Chat Input Bar */}
-            <form onSubmit={handleSendMessage} style={{ padding: '12px 16px', borderTop: '1px solid #1f1f23', display: 'flex', gap: '8px' }}>
-              <input
-                type="text"
-                placeholder="Type a message..."
-                value={messageText}
-                onChange={(e) => setMessageText(e.target.value)}
-                style={{
-                  flex: 1,
-                  backgroundColor: '#121215',
-                  border: '1px solid #27272a',
-                  borderRadius: '8px',
-                  padding: '10px 12px',
-                  color: '#ffffff',
-                  fontSize: '11px',
-                  fontFamily: 'monospace',
-                  outline: 'none',
-                }}
-              />
-              <button
-                type="submit"
-                disabled={sendingMsg || !messageText.trim()}
-                style={{
-                  backgroundColor: '#ffffff',
-                  color: '#000000',
-                  border: 'none',
-                  borderRadius: '8px',
-                  padding: '10px 14px',
-                  cursor: sendingMsg || !messageText.trim() ? 'not-allowed' : 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  opacity: sendingMsg || !messageText.trim() ? 0.5 : 1,
-                }}
-              >
-                <SendIcon style={{ width: '14px', height: '14px', color: '#000000' }} />
-              </button>
-            </form>
-
-          </div>
         </div>
       )}
 
