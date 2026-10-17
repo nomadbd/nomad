@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '@/supabaseClient';
+import { supabase } from '../../supabaseClient';
 import { StaffBottomSheet, StaffMember } from './StaffBottomSheet';
-import { MessageIcon, ShareIcon, MailIcon } from '@/components/icons';
+import { MessageIcon, ShareIcon, EmailIcon } from '@/components/icons';
 
 interface AdminStaffProps {
   searchQuery?: string;
@@ -353,7 +353,7 @@ export default function AdminStaff({
                         justifyContent: 'center',
                       }}
                     >
-                      <MailIcon style={{ width: '14px', height: '14px', color: '#38bdf8' }} />
+                      <EmailIcon style={{ width: '14px', height: '14px', color: '#38bdf8' }} />
                     </button>
                   </div>
                 </div>
