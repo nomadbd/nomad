@@ -31,12 +31,12 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
   onClose,
   onUpdateSuccess,
 }) => {
-  // ৩টি পরিষ্কার ভিউ স্টেট: 'main', 'avatar_manage', 'activity_logs'
   const [currentView, setCurrentView] = useState<'main' | 'avatar_manage' | 'activity_logs'>('main');
 
   const [designationInput, setDesignationInput] = useState<string>('');
   const [roleInput, setRoleInput] = useState<string>('');
   const [reason, setReason] = useState<string>('');
+  const [avatarReason, setAvatarReason] = useState<string>('');
   const [isSaving, setIsSaving] = useState<boolean>(false);
 
   const [currentAdminId, setCurrentAdminId] = useState<string | null>(null);
@@ -51,7 +51,6 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
   const [loadingLogs, setLoadingLogs] = useState<boolean>(false);
   const [toastMsg, setToastMsg] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
-  // Avatar Upload & Crop states
   const [selectedImageSrc, setSelectedImageSrc] = useState<string | null>(null);
   const [isCropModalOpen, setIsCropModalOpen] = useState<boolean>(false);
   const [uploadingAvatar, setUploadingAvatar] = useState<boolean>(false);
@@ -90,6 +89,7 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
     setDesignationInput('');
     setRoleInput('');
     setReason('');
+    setAvatarReason('');
   }, [staff]);
 
   const getInitials = (name: string) => {
@@ -99,6 +99,14 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
       return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
     }
     return parts[0].slice(0, 2).toUpperCase();
+  };
+
+  const triggerSelectImage = () => {
+    if (!avatarReason.trim()) {
+      setToastMsg({ text: 'Please enter a reason before updating the photo!', type: 'error' });
+      return;
+    }
+    fileInputRef.current?.click();
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -131,7 +139,7 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
         entityType: 'profile',
         entityId: staff.id,
         actionType: 'PROFILE_UPDATE',
-        reason: 'Updated avatar image via Super Admin panel',
+        reason: avatarReason.trim() || 'Updated avatar image via Super Admin panel',
         changes: {
           Avatar: {
             old: staff.avatar_url ? '[Previous Image]' : 'None',
@@ -141,6 +149,7 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
       });
 
       setToastMsg({ text: 'Profile image updated successfully!', type: 'success' });
+      setAvatarReason('');
       setCurrentView('main');
       if (onUpdateSuccess) onUpdateSuccess();
     } catch (err: any) {
@@ -154,6 +163,10 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
   };
 
   const triggerDeleteAvatar = () => {
+    if (!avatarReason.trim()) {
+      setToastMsg({ text: 'Please enter a reason before deleting the photo!', type: 'error' });
+      return;
+    }
     setPendingAction('DELETE_AVATAR');
     setConfirmText('');
     setShowConfirmModal(true);
@@ -322,7 +335,7 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
           entityType: 'profile',
           entityId: staff.id,
           actionType: 'PROFILE_UPDATE',
-          reason: 'Removed profile image via Super Admin',
+          reason: avatarReason.trim() || 'Removed profile image via Super Admin',
           changes: {
             Avatar: {
               old: '[Previous Image]',
@@ -332,6 +345,7 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
         });
 
         setToastMsg({ text: 'Profile image removed successfully!', type: 'success' });
+        setAvatarReason('');
         setCurrentView('main');
       }
 
@@ -459,9 +473,9 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
             boxSizing: 'border-box',
           }}
         >
-          {/* VIEW ১: AVATAR MANAGE (বটম শীটের ভেতরেই প্রোফাইল পিকচার ভিউ) */}
+          {/* VIEW ১: AVATAR MANAGE */}
           {currentView === 'avatar_manage' ? (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '18px', padding: '10px 0 10px 0' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', padding: '10px 0 10px 0', width: '100%' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
                 <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#71717a', fontFamily: 'monospace', letterSpacing: '1px', textTransform: 'uppercase' }}>
                   MEDIA PREVIEW
@@ -469,21 +483,21 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
                 <button
                   type="button"
                   onClick={() => setCurrentView('main')}
-                  style={{ backgroundColor: '#18181b', border: '1px solid #27272a', color: '#d4d4d8', borderRadius: '50%', width: '30px', height: '30px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  style={{ backgroundColor: '#18181b', border: '1px solid #27272a', color: '#d4d4d8', borderRadius: '50%', width: '30px', height: '30px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
                 >
                   <CloseIcon style={{ width: '12px', height: '12px' }} />
                 </button>
               </div>
 
-              {/* ছবিটির মাঝখানে বড় প্রিভিউ (বটম শীট ফ্রেমে) */}
               <div
                 style={{
-                  width: '140px',
-                  height: '140px',
+                  width: '130px',
+                  height: '130px',
                   borderRadius: '50%',
                   overflow: 'hidden',
                   border: '2px solid #27272a',
                   backgroundColor: '#121215',
+                  flexShrink: 0,
                 }}
               >
                 {staff.avatar_url ? (
@@ -511,36 +525,38 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
                 )}
               </div>
 
-              {/* ডিম্বাকার EDIT ও DELETE বাটন */}
+              {/* ছবি পরিবর্তনের জন্য কারণ ইনপুট */}
               {isSuperAdmin && (
-                <div style={{ display: 'flex', gap: '12px' }}>
-                  <button
-                    type="button"
-                    disabled={uploadingAvatar}
-                    onClick={() => fileInputRef.current?.click()}
+                <div style={{ width: '100%', maxWidth: '340px', display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '4px' }}>
+                  <textarea
+                    rows={2}
+                    value={avatarReason}
+                    onChange={(e) => setAvatarReason(e.target.value)}
+                    placeholder="Reason for photo change/deletion (Required)..."
                     style={{
-                      backgroundColor: '#18181b',
-                      color: '#38bdf8',
+                      width: '100%',
+                      backgroundColor: '#121215',
                       border: '1px solid #27272a',
-                      borderRadius: '20px',
-                      padding: '8px 22px',
+                      borderRadius: '8px',
+                      padding: '8px 12px',
+                      color: '#a1a1aa',
                       fontSize: '11px',
-                      fontWeight: '700',
                       fontFamily: 'monospace',
-                      cursor: 'pointer',
-                      letterSpacing: '0.8px',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                      resize: 'none',
+                      lineHeight: '1.4',
                     }}
-                  >
-                    {uploadingAvatar ? 'UPLOADING...' : 'EDIT'}
-                  </button>
+                  />
 
-                  {staff.avatar_url && (
+                  <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
                     <button
                       type="button"
-                      onClick={triggerDeleteAvatar}
+                      disabled={uploadingAvatar}
+                      onClick={triggerSelectImage}
                       style={{
                         backgroundColor: '#18181b',
-                        color: '#ef4444',
+                        color: '#38bdf8',
                         border: '1px solid #27272a',
                         borderRadius: '20px',
                         padding: '8px 22px',
@@ -551,9 +567,30 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
                         letterSpacing: '0.8px',
                       }}
                     >
-                      DELETE
+                      {uploadingAvatar ? 'UPLOADING...' : 'EDIT'}
                     </button>
-                  )}
+
+                    {staff.avatar_url && (
+                      <button
+                        type="button"
+                        onClick={triggerDeleteAvatar}
+                        style={{
+                          backgroundColor: '#18181b',
+                          color: '#ef4444',
+                          border: '1px solid #27272a',
+                          borderRadius: '20px',
+                          padding: '8px 22px',
+                          fontSize: '11px',
+                          fontWeight: '700',
+                          fontFamily: 'monospace',
+                          cursor: 'pointer',
+                          letterSpacing: '0.8px',
+                        }}
+                      >
+                        DELETE
+                      </button>
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -567,7 +604,7 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
                   fontSize: '10px',
                   fontFamily: 'monospace',
                   cursor: 'pointer',
-                  marginTop: '4px',
+                  marginTop: '2px',
                 }}
               >
                 BACK TO PROFILE
@@ -586,7 +623,7 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
                 <button
                   type="button"
                   onClick={() => setCurrentView('main')}
-                  style={{ backgroundColor: '#18181b', border: '1px solid #27272a', color: '#d4d4d8', borderRadius: '50%', width: '32px', height: '32px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  style={{ backgroundColor: '#18181b', border: '1px solid #27272a', color: '#d4d4d8', borderRadius: '50%', width: '32px', height: '32px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
                 >
                   <CloseIcon style={{ width: '14px', height: '14px' }} />
                 </button>
@@ -685,7 +722,7 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
               )}
             </div>
           ) : (
-            /* VIEW ৩: MAIN PROFILE (বামে ছোট ছবি + নাম + কনফিগারেশন ইনপুট) */
+            /* VIEW ৩: MAIN PROFILE */
             <>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
@@ -709,14 +746,14 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
                     )}
                   </div>
 
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: '15px', fontWeight: '700', color: '#ffffff', lineHeight: '1.2', wordBreak: 'break-word', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      {staff.name}
+                  <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
+                    <div style={{ fontSize: '15px', fontWeight: '700', color: '#ffffff', lineHeight: '1.2', wordBreak: 'break-word', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                      <span style={{ wordBreak: 'break-word' }}>{staff.name}</span>
                       {isSelf && (
-                        <span style={{ fontSize: '9px', backgroundColor: '#27272a', color: '#38bdf8', padding: '2px 6px', borderRadius: '4px', fontFamily: 'monospace' }}>YOU</span>
+                        <span style={{ fontSize: '9px', backgroundColor: '#27272a', color: '#38bdf8', padding: '2px 6px', borderRadius: '4px', fontFamily: 'monospace', flexShrink: 0 }}>YOU</span>
                       )}
                     </div>
-                    <div style={{ fontSize: '11px', color: '#a1a1aa', fontFamily: 'monospace', marginTop: '2px', wordBreak: 'break-all' }}>
+                    <div style={{ fontSize: '11px', color: '#a1a1aa', fontFamily: 'monospace', marginTop: '3px', wordBreak: 'break-all', overflowWrap: 'anywhere' }}>
                       {staff.email}
                     </div>
                   </div>
