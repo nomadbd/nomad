@@ -18,8 +18,6 @@ export const uploadToCloudinary = async (
     formData.append('folder', folder);
   }
 
-  // দ্রষ্টব্য: Cloudinary Unsigned preset-এ public_id পাঠালে Cloudinary Settings-এ 
-  // "Use filename or specified public id" অপশনটি অন থাকতে হবে।
   if (publicId) {
     formData.append('public_id', publicId);
   }
@@ -32,14 +30,13 @@ export const uploadToCloudinary = async (
   const data = await response.json();
 
   if (!response.ok) {
-    // Cloudinary থেকে যে আসল এরর আসছে তা স্ক্রিনে দেখাবে
     throw new Error(data.error?.message || 'Cloudinary upload failed.');
   }
 
   return data.secure_url;
 };
 
-const getPublicIdFromUrl = (url: string): string | null => {
+export const getPublicIdFromUrl = (url: string): string | null => {
   try {
     const parts = url.split('/');
     const uploadIndex = parts.indexOf('upload');
@@ -55,10 +52,4 @@ const getPublicIdFromUrl = (url: string): string | null => {
   } catch {
     return null;
   }
-};
-
-export const deleteFromCloudinary = async (mediaUrl: string): Promise<any> => {
-  // ফ্রন্টএন্ড (Unsigned) থেকে সরাসরি ফাইল ডিলিট করা ক্লাউডিনারি এলাউ করে না।
-  console.warn('Unsigned preset দিয়ে ক্লায়েন্ট সাইড থেকে ফাইল ডিলিট করা সম্ভব নয়।');
-  return null;
 };
