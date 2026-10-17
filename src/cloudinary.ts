@@ -53,3 +53,9 @@ export const getPublicIdFromUrl = (url: string): string | null => {
     return null;
   }
 };
+
+// ProfilePage.tsx এর জন্য প্রয়োজনীয় deleteFromCloudinary এক্সপোর্ট
+export const deleteFromCloudinary = async (mediaUrl: string): Promise<any> => {
+  console.warn('Unsigned preset দিয়ে ক্লায়েন্ট সাইড থেকে ফাইল ডিলিট করা সম্ভব নয়।');
+  return null;
+};
