@@ -50,9 +50,10 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
   const [loadingLogs, setLoadingLogs] = useState<boolean>(false);
   const [toastMsg, setToastMsg] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
-  // Avatar Upload & Crop states
+  // Avatar Upload, Crop & Preview states
   const [selectedImageSrc, setSelectedImageSrc] = useState<string | null>(null);
   const [isCropModalOpen, setIsCropModalOpen] = useState<boolean>(false);
+  const [isImageViewerOpen, setIsImageViewerOpen] = useState<boolean>(false);
   const [uploadingAvatar, setUploadingAvatar] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -106,7 +107,8 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
       const reader = new FileReader();
       reader.onload = () => {
         setSelectedImageSrc(reader.result as string);
-        setIsCropModalOpen(true);
+        setIsImageViewerOpen(false); // ক্লোজ প্রিভিউ মডাল
+        setIsCropModalOpen(true); // ওপেন ক্রপ মডাল
       };
       reader.readAsDataURL(file);
     }
@@ -116,7 +118,6 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
     setIsCropModalOpen(false);
     setUploadingAvatar(true);
     try {
-      // স্টাফের আইডি দিয়ে ফিক্সড public_id ব্যবহার করায় ক্লাউডিনারিতে আগের ছবি অটোমেটিক রিপ্লেস হবে
       const uploadedUrl = await uploadToCloudinary(croppedFile, 'staff_avatars', `avatar_${staff.id}`);
       
       const now = new Date().toISOString();
@@ -127,7 +128,6 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
 
       if (error) throw error;
 
-      // অডিট লগে লং URL না দেখিয়ে সংক্ষিপ্ত সুন্দর টেক্সট
       await logAuditActivity({
         entityType: 'profile',
         entityId: staff.id,
@@ -154,6 +154,7 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
   };
 
   const triggerDeleteAvatar = () => {
+    setIsImageViewerOpen(false);
     setPendingAction('DELETE_AVATAR');
     setConfirmText('');
     setShowConfirmModal(true);
@@ -381,6 +382,135 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
         onApply={handleCropApply}
       />
 
+      {/* Large Image Preview Modal (ছবিতে ক্লিক করলে যেটি খুলবে) */}
+      {isImageViewerOpen && (
+        <div
+          onClick={() => setIsImageViewerOpen(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.92)',
+            backdropFilter: 'blur(10px)',
+            zIndex: 10002,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px',
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '16px',
+              maxWidth: '320px',
+              width: '100%',
+            }}
+          >
+            {/* ছবি প্রিভিউ */}
+            <div
+              style={{
+                width: '180px',
+                height: '180px',
+                borderRadius: '50%',
+                overflow: 'hidden',
+                border: '2px solid #27272a',
+                boxShadow: '0 0 25px rgba(0,0,0,0.8)',
+                backgroundColor: '#121215',
+              }}
+            >
+              {staff.avatar_url ? (
+                <img
+                  src={staff.avatar_url}
+                  alt={staff.name}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              ) : (
+                <div
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    color: '#ffffff',
+                    fontSize: '48px',
+                    fontWeight: 'bold',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontFamily: 'monospace',
+                  }}
+                >
+                  {getInitials(staff.name)}
+                </div>
+              )}
+            </div>
+
+            {/* ডিম্বাকার EDIT ও DELETE বাটন */}
+            {isSuperAdmin && (
+              <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+                <button
+                  type="button"
+                  disabled={uploadingAvatar}
+                  onClick={() => fileInputRef.current?.click()}
+                  style={{
+                    backgroundColor: '#18181b',
+                    color: '#38bdf8',
+                    border: '1px solid #27272a',
+                    borderRadius: '20px',
+                    padding: '8px 20px',
+                    fontSize: '11px',
+                    fontWeight: '700',
+                    fontFamily: 'monospace',
+                    cursor: 'pointer',
+                    letterSpacing: '1px',
+                  }}
+                >
+                  {uploadingAvatar ? 'UPLOADING...' : 'EDIT'}
+                </button>
+
+                {staff.avatar_url && (
+                  <button
+                    type="button"
+                    onClick={triggerDeleteAvatar}
+                    style={{
+                      backgroundColor: '#18181b',
+                      color: '#ef4444',
+                      border: '1px solid #27272a',
+                      borderRadius: '20px',
+                      padding: '8px 20px',
+                      fontSize: '11px',
+                      fontWeight: '700',
+                      fontFamily: 'monospace',
+                      cursor: 'pointer',
+                      letterSpacing: '1px',
+                    }}
+                  >
+                    DELETE
+                  </button>
+                )}
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={() => setIsImageViewerOpen(false)}
+              style={{
+                marginTop: '12px',
+                backgroundColor: 'transparent',
+                border: 'none',
+                color: '#71717a',
+                fontSize: '11px',
+                fontFamily: 'monospace',
+                cursor: 'pointer',
+              }}
+            >
+              CLOSE
+            </button>
+          </div>
+        </div>
+      )}
+
       {showConfirmModal && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0, 0, 0, 0.9)', backdropFilter: 'blur(8px)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
           <div style={{ backgroundColor: '#09090b', border: '1px solid #27272a', borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '380px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -452,7 +582,7 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
             padding: currentView === 'activity_logs' ? '0' : '20px 20px 32px 20px',
             display: 'flex',
             flexDirection: 'column',
-            gap: '16px',
+            gap: '14px',
             maxHeight: '85vh',
             overflowY: 'auto',
             boxSizing: 'border-box',
@@ -570,80 +700,37 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
             </div>
           ) : (
             <>
-              {/* ১. হেডার ও প্রোফাইল ইমেজ প্রিভিউ */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', flex: 1, alignItems: 'center' }}>
-                  {/* বড় আকারের প্রফাইল ছবি প্রিভিউ */}
-                  <div style={{ position: 'relative', width: '72px', height: '72px' }}>
+              {/* ১. মূল হেডার (আগের মতো বামে সংক্ষেপিত প্রফাইল পিকচার + নাম) */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
+                  <div
+                    onClick={() => setIsImageViewerOpen(true)}
+                    style={{ cursor: 'pointer', flexShrink: 0 }}
+                    title="Click to view image"
+                  >
                     {staff.avatar_url ? (
                       <img
                         src={staff.avatar_url}
                         alt={staff.name}
-                        style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover', border: '1px solid #3f3f46' }}
+                        style={{ width: '42px', height: '42px', borderRadius: '50%', objectFit: 'cover', border: '1px solid #3f3f46' }}
                       />
                     ) : (
                       <div
-                        style={{ width: '100%', height: '100%', borderRadius: '50%', backgroundColor: '#18181b', border: '1px solid #3f3f46', color: '#f4f4f5', fontSize: '20px', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'monospace' }}
+                        style={{ width: '42px', height: '42px', borderRadius: '50%', backgroundColor: '#18181b', border: '1px solid #3f3f46', color: '#f4f4f5', fontSize: '13px', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'monospace' }}
                       >
                         {getInitials(staff.name)}
                       </div>
                     )}
                   </div>
 
-                  {/* মিনিমাল pill-shaped EDIT ও DELETE বাটন */}
-                  {isSuperAdmin && (
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <button
-                        type="button"
-                        disabled={uploadingAvatar}
-                        onClick={() => fileInputRef.current?.click()}
-                        style={{
-                          backgroundColor: '#18181b',
-                          color: '#38bdf8',
-                          border: '1px solid #27272a',
-                          borderRadius: '20px',
-                          padding: '4px 14px',
-                          fontSize: '10px',
-                          fontWeight: '600',
-                          fontFamily: 'monospace',
-                          cursor: 'pointer',
-                          letterSpacing: '0.5px',
-                        }}
-                      >
-                        {uploadingAvatar ? 'UPLOADING...' : 'EDIT'}
-                      </button>
-
-                      {staff.avatar_url && (
-                        <button
-                          type="button"
-                          onClick={triggerDeleteAvatar}
-                          style={{
-                            backgroundColor: '#18181b',
-                            color: '#ef4444',
-                            border: '1px solid #27272a',
-                            borderRadius: '20px',
-                            padding: '4px 14px',
-                            fontSize: '10px',
-                            fontWeight: '600',
-                            fontFamily: 'monospace',
-                            cursor: 'pointer',
-                            letterSpacing: '0.5px',
-                          }}
-                        >
-                          DELETE
-                        </button>
-                      )}
-                    </div>
-                  )}
-
-                  <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontSize: '15px', fontWeight: '700', color: '#ffffff', lineHeight: '1.2', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '15px', fontWeight: '700', color: '#ffffff', lineHeight: '1.2', wordBreak: 'break-word', display: 'flex', alignItems: 'center', gap: '8px' }}>
                       {staff.name}
                       {isSelf && (
                         <span style={{ fontSize: '9px', backgroundColor: '#27272a', color: '#38bdf8', padding: '2px 6px', borderRadius: '4px', fontFamily: 'monospace' }}>YOU</span>
                       )}
                     </div>
-                    <div style={{ fontSize: '11px', color: '#a1a1aa', fontFamily: 'monospace', marginTop: '4px' }}>
+                    <div style={{ fontSize: '11px', color: '#a1a1aa', fontFamily: 'monospace', marginTop: '2px', wordBreak: 'break-all' }}>
                       {staff.email}
                     </div>
                   </div>
