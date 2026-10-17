@@ -148,12 +148,12 @@ export default function AdminStaff({
   return (
     <div style={{ color: '#fff', width: '100%', boxSizing: 'border-box' }}>
       {/* Header Info */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
         <div>
-          <h2 style={{ fontSize: '15px', fontWeight: '800', letterSpacing: '1.5px', margin: 0, textTransform: 'uppercase', color: '#ffffff' }}>
+          <h2 style={{ fontSize: '14px', fontWeight: '800', letterSpacing: '1.2px', margin: 0, textTransform: 'uppercase', color: '#ffffff' }}>
             STAFF MANAGEMENT
           </h2>
-          <span style={{ fontSize: '10px', color: '#71717a', fontFamily: 'monospace', letterSpacing: '1px' }}>
+          <span style={{ fontSize: '10px', color: '#71717a', fontFamily: 'monospace', letterSpacing: '0.8px' }}>
             TOTAL MEMBERS: {filteredStaff.length}
           </span>
         </div>
@@ -161,11 +161,11 @@ export default function AdminStaff({
 
       {/* Filter Bar */}
       {isFilterOpen && (
-        <div style={{ backgroundColor: '#09090b', border: '1px solid #1f1f23', borderRadius: '8px', padding: '10px', marginBottom: '16px' }}>
+        <div style={{ backgroundColor: '#09090b', border: '1px solid #1f1f23', borderRadius: '8px', padding: '8px', marginBottom: '14px' }}>
           <select
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
-            style={{ width: '100%', backgroundColor: '#121215', color: '#fff', border: '1px solid #27272a', borderRadius: '6px', padding: '8px 12px', fontSize: '11px', fontFamily: 'monospace', outline: 'none' }}
+            style={{ width: '100%', backgroundColor: '#121215', color: '#fff', border: '1px solid #27272a', borderRadius: '6px', padding: '6px 10px', fontSize: '11px', fontFamily: 'monospace', outline: 'none' }}
           >
             <option value="ALL">ALL ROLES</option>
             <option value="SUPER_ADMIN">SUPER ADMIN</option>
@@ -177,15 +177,15 @@ export default function AdminStaff({
 
       {/* Staff Cards Read-Only List */}
       {loading ? (
-        <div style={{ fontSize: '11px', color: '#71717a', padding: '30px 0', textAlign: 'center', fontFamily: 'monospace' }}>
+        <div style={{ fontSize: '11px', color: '#71717a', padding: '24px 0', textAlign: 'center', fontFamily: 'monospace' }}>
           LOADING STAFF DATA...
         </div>
       ) : filteredStaff.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '30px', color: '#71717a', fontSize: '11px', fontFamily: 'monospace', backgroundColor: '#09090b', border: '1px solid #1f1f23', borderRadius: '8px' }}>
+        <div style={{ textAlign: 'center', padding: '24px', color: '#71717a', fontSize: '11px', fontFamily: 'monospace', backgroundColor: '#09090b', border: '1px solid #1f1f23', borderRadius: '8px' }}>
           NO STAFF MEMBERS FOUND.
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           {filteredStaff.map((staff) => {
             const isInactive = staff.status === 'INACTIVE' || staff.status === 'BLOCKED';
             const hasDesignation = Boolean(staff.designation && staff.designation.trim());
@@ -198,18 +198,19 @@ export default function AdminStaff({
                   backgroundColor: '#09090b',
                   border: '1px solid #1f1f23',
                   borderRadius: '12px',
-                  padding: '16px',
+                  padding: '14px',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: '12px',
+                  gap: '10px',
                   boxSizing: 'border-box',
                   cursor: 'pointer',
                   opacity: isInactive ? 0.6 : 1,
                   transition: 'border-color 0.2s ease, background-color 0.2s ease',
                 }}
               >
-                {/* ১. প্রোফাইল এবং নাম (একই লাইনে) */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                {/* প্রোফাইল + টেক্সট কলাম সেকশন */}
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                  {/* প্রোফাইল পিকচার */}
                   {staff.avatar_url ? (
                     <img
                       src={staff.avatar_url}
@@ -238,58 +239,62 @@ export default function AdminStaff({
                     </div>
                   )}
 
-                  <div style={{ fontSize: '15px', fontWeight: '700', color: '#ffffff', lineHeight: '1.2', wordBreak: 'break-word' }}>
-                    {staff.name || 'UNNAMED STAFF'}
+                  {/* নাম, ইমেইল, পদবী ও রোল এর কমপ্যাক্ট কলাম */}
+                  <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    {/* ১. নাম */}
+                    <div style={{ fontSize: '14px', fontWeight: '700', color: '#ffffff', lineHeight: '1.2', wordBreak: 'break-word' }}>
+                      {staff.name || 'UNNAMED STAFF'}
+                    </div>
+
+                    {/* ২. ইমেইল (নামের ঠিক নিচে) */}
+                    <div
+                      style={{
+                        fontSize: '11px',
+                        color: '#a1a1aa',
+                        fontFamily: 'monospace',
+                        wordBreak: 'break-all',
+                        overflowWrap: 'anywhere',
+                        lineHeight: '1.3',
+                      }}
+                    >
+                      {staff.email}
+                    </div>
+
+                    {/* ৩. পদবী এবং রোল (একই সারিতে) */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px', flexWrap: 'wrap' }}>
+                      <span
+                        style={{
+                          fontSize: '11px',
+                          fontWeight: '600',
+                          color: hasDesignation ? '#22c55e' : '#52525b',
+                          fontFamily: 'monospace',
+                        }}
+                      >
+                        {hasDesignation ? staff.designation : 'No Designation Set'}
+                      </span>
+
+                      <span
+                        style={{
+                          display: 'inline-block',
+                          backgroundColor: '#121215',
+                          color: staff.role === 'SUPER_ADMIN' ? '#38bdf8' : staff.role === 'ADMIN' ? '#22c55e' : '#a1a1aa',
+                          border: '1px solid #27272a',
+                          borderRadius: '4px',
+                          padding: '1px 5px',
+                          fontSize: '8px',
+                          fontWeight: '700',
+                          fontFamily: 'monospace',
+                          letterSpacing: '0.5px',
+                        }}
+                      >
+                        {staff.role}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
-                {/* ২. ইমেইল */}
-                <div
-                  style={{
-                    fontSize: '11px',
-                    color: '#71717a',
-                    fontFamily: 'monospace',
-                    wordBreak: 'break-all',
-                    overflowWrap: 'anywhere',
-                    lineHeight: '1.3',
-                  }}
-                >
-                  {staff.email}
-                </div>
-
-                {/* ৩. পদবী এবং রোল (একই লাইনে) */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                  <span
-                    style={{
-                      fontSize: '12px',
-                      fontWeight: '600',
-                      color: hasDesignation ? '#22c55e' : '#52525b',
-                      fontFamily: 'monospace',
-                    }}
-                  >
-                    {hasDesignation ? staff.designation : 'No Designation Set'}
-                  </span>
-
-                  <span
-                    style={{
-                      display: 'inline-block',
-                      backgroundColor: '#121215',
-                      color: staff.role === 'SUPER_ADMIN' ? '#38bdf8' : staff.role === 'ADMIN' ? '#22c55e' : '#a1a1aa',
-                      border: '1px solid #27272a',
-                      borderRadius: '4px',
-                      padding: '2px 6px',
-                      fontSize: '9px',
-                      fontWeight: '700',
-                      fontFamily: 'monospace',
-                      letterSpacing: '0.5px',
-                    }}
-                  >
-                    {staff.role}
-                  </span>
-                </div>
-
-                {/* ৪. আইকন সেকশন (বামে ফাকা থাকবে, ডান দিকে সাদা কালারের ৩টি আইকন) */}
-                <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '12px', marginTop: '2px' }}>
+                {/* ৪. আইকন রো (বামে ফাকা, ডানে একদম স্পষ্ট ৩টি সাদা আইকন) */}
+                <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '14px', marginTop: '2px' }}>
                   {/* শেয়ার আইকন */}
                   <button
                     type="button"
@@ -298,11 +303,12 @@ export default function AdminStaff({
                     style={{
                       backgroundColor: 'transparent',
                       border: 'none',
-                      padding: '4px',
+                      padding: '2px',
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
+                      opacity: 0.85,
                     }}
                   >
                     <ShareIcon style={{ width: '16px', height: '16px', color: '#ffffff' }} />
@@ -316,11 +322,12 @@ export default function AdminStaff({
                     style={{
                       backgroundColor: 'transparent',
                       border: 'none',
-                      padding: '4px',
+                      padding: '2px',
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
+                      opacity: 0.85,
                     }}
                   >
                     <MessageIcon style={{ width: '16px', height: '16px', color: '#ffffff' }} />
@@ -334,11 +341,12 @@ export default function AdminStaff({
                     style={{
                       backgroundColor: 'transparent',
                       border: 'none',
-                      padding: '4px',
+                      padding: '2px',
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
+                      opacity: 0.85,
                     }}
                   >
                     <EmailIcon style={{ width: '16px', height: '16px', color: '#ffffff' }} />
@@ -349,7 +357,7 @@ export default function AdminStaff({
                 <div style={{ height: '1px', backgroundColor: '#18181b', width: '100%' }} />
 
                 {/* Bottom Row: Date Columns */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '4px' }}>
                   <div style={{ textAlign: 'left' }}>
                     <div style={{ fontSize: '8px', color: '#52525b', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                       JOINED
