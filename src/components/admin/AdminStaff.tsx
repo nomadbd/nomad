@@ -179,7 +179,6 @@ export default function AdminStaff({
             return (
               <div
                 key={staff.id}
-                onClick={() => setBottomSheetStaff(staff)}
                 style={{
                   backgroundColor: '#09090b',
                   border: '1px solid #1f1f23',
@@ -189,13 +188,16 @@ export default function AdminStaff({
                   flexDirection: 'column',
                   gap: '12px',
                   boxSizing: 'border-box',
-                  cursor: 'pointer',
                   opacity: isInactive ? 0.6 : 1,
                   transition: 'border-color 0.2s ease, background-color 0.2s ease',
                 }}
               >
-                {/* প্রোফাইল হেডার ও বিস্তারিত কলাম */}
-                <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                {/* প্রোফাইল হেডার ও বিস্তারিত কলাম (কেবল এই অংশে ক্লিকে বটম শীট ওপেন হবে) */}
+                <div
+                  onClick={() => setBottomSheetStaff(staff)}
+                  style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', cursor: 'pointer' }}
+                  title="Click to view full profile & manage staff"
+                >
                   {/* ১. প্রোফাইল পিকচার */}
                   {staff.avatar_url ? (
                     <img
@@ -277,7 +279,7 @@ export default function AdminStaff({
                   </div>
                 </div>
 
-                {/* ৩. আইকন একশন রো (ব্যাকগ্রাউন্ড বক্স ছাড়া, ডানদিকে সাদা আইকন) */}
+                {/* ৩. আইকন একশন রো (স্বাধীন অ্যাকশন বাটন) */}
                 <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '16px', marginTop: '2px' }}>
                   {/* মেসেজ আইকন */}
                   <button
