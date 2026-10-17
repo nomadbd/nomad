@@ -3,7 +3,9 @@ import { CloseIcon, HistoryIcon } from '@/components/icons';
 import { supabase } from '@/supabaseClient';
 import { logAuditActivity } from '@/utils/auditLogger';
 import Toast from '@/components/ui/Toast';
-import ImageCropModal, { uploadToCloudinary } from './ImageCropModal';
+import ImageCropModal from '@/components/ui/ImageCropModal';
+import { uploadToCloudinary } from '@/cloudinary';
+
 
 export interface StaffMember {
   id: string;
