@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 import { StaffBottomSheet, StaffMember } from './StaffBottomSheet';
-import { MessageIcon, ShareIcon, EmailIcon } from '@/components/icons';
+import { MessageIcon, EmailIcon } from '@/components/icons';
 
 interface AdminStaffProps {
   searchQuery?: string;
@@ -112,20 +112,6 @@ export default function AdminStaff({
       currentUrl.searchParams.set('tab', 'messages');
       currentUrl.searchParams.set('userId', targetKey);
       window.location.href = currentUrl.toString();
-    }
-  };
-
-  const handleShareStaff = (staff: StaffMember, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (navigator.share) {
-      navigator.share({
-        title: staff.name,
-        text: `Staff Profile: ${staff.name} (${staff.designation || 'Staff'}) - ${staff.email}`,
-        url: window.location.href,
-      }).catch(() => {});
-    } else {
-      navigator.clipboard.writeText(`${staff.name} - ${staff.email}`);
-      alert('Staff details copied to clipboard!');
     }
   };
 
@@ -291,79 +277,45 @@ export default function AdminStaff({
                   </div>
                 </div>
 
-                {/* ৩. আইকন একশন বার (সাদা কালার ফোরসিং ও মার্জিত বাটন চিপ পজিশনিং) */}
-                <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '8px' }}>
-                  <div
+                {/* ৩. আইকন একশন রো (ব্যাকগ্রাউন্ড বক্স ছাড়া, ডানদিকে সাদা আইকন) */}
+                <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '16px', marginTop: '2px' }}>
+                  {/* মেসেজ আইকন */}
+                  <button
+                    type="button"
+                    onClick={(e) => handleOpenChat(staff, e)}
+                    title="Direct Message"
                     style={{
+                      backgroundColor: 'transparent',
+                      border: 'none',
+                      padding: '4px',
+                      cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '4px',
-                      backgroundColor: '#121215',
-                      border: '1px solid #27272a',
-                      borderRadius: '8px',
-                      padding: '3px 6px',
+                      justifyContent: 'center',
+                      filter: 'brightness(0) invert(1)',
                     }}
                   >
-                    {/* শেয়ার আইকন */}
-                    <button
-                      type="button"
-                      onClick={(e) => handleShareStaff(staff, e)}
-                      title="Share Profile"
-                      style={{
-                        backgroundColor: 'transparent',
-                        border: 'none',
-                        padding: '5px 8px',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: '#ffffff',
-                        filter: 'brightness(0) invert(1)', // SVG শেয়ার আইকনকে শতভাগ ধবধবে সাদা করতে
-                      }}
-                    >
-                      <ShareIcon style={{ width: '15px', height: '15px' }} />
-                    </button>
+                    <MessageIcon style={{ width: '16px', height: '16px' }} />
+                  </button>
 
-                    {/* মেসেজ আইকন */}
-                    <button
-                      type="button"
-                      onClick={(e) => handleOpenChat(staff, e)}
-                      title="Direct Message"
-                      style={{
-                        backgroundColor: 'transparent',
-                        border: 'none',
-                        padding: '5px 8px',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: '#ffffff',
-                        filter: 'brightness(0) invert(1)',
-                      }}
-                    >
-                      <MessageIcon style={{ width: '15px', height: '15px' }} />
-                    </button>
-
-                    {/* মেইল আইকন */}
-                    <button
-                      type="button"
-                      onClick={(e) => handleSendMail(staff, e)}
-                      title="Send Email"
-                      style={{
-                        backgroundColor: 'transparent',
-                        border: 'none',
-                        padding: '5px 8px',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: '#ffffff',
-                        filter: 'brightness(0) invert(1)',
-                      }}
-                    >
-                      <EmailIcon style={{ width: '15px', height: '15px' }} />
-                    </button>
-                  </div>
+                  {/* মেইল আইকন */}
+                  <button
+                    type="button"
+                    onClick={(e) => handleSendMail(staff, e)}
+                    title="Send Email"
+                    style={{
+                      backgroundColor: 'transparent',
+                      border: 'none',
+                      padding: '4px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      filter: 'brightness(0) invert(1)',
+                    }}
+                  >
+                    <EmailIcon style={{ width: '16px', height: '16px' }} />
+                  </button>
                 </div>
 
                 {/* Divider */}
