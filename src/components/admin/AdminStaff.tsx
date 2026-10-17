@@ -201,161 +201,148 @@ export default function AdminStaff({
                   padding: '16px',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: '14px',
+                  gap: '12px',
                   boxSizing: 'border-box',
                   cursor: 'pointer',
                   opacity: isInactive ? 0.6 : 1,
                   transition: 'border-color 0.2s ease, background-color 0.2s ease',
                 }}
               >
-                {/* Top Section: Profile + Info (Name, Email, Designation + Role) + 3 Action Icons */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
-                  
-                  {/* Left Column: Avatar & Details */}
-                  <div style={{ display: 'flex', gap: '12px', flex: 1, minWidth: 0 }}>
-                    {staff.avatar_url ? (
-                      <img
-                        src={staff.avatar_url}
-                        alt={staff.name}
-                        style={{ width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover', border: '1px solid #27272a', flexShrink: 0 }}
-                      />
-                    ) : (
-                      <div
-                        style={{
-                          width: '44px',
-                          height: '44px',
-                          borderRadius: '50%',
-                          backgroundColor: '#18181b',
-                          border: '1px solid #27272a',
-                          color: '#fff',
-                          fontSize: '13px',
-                          fontWeight: 'bold',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          flexShrink: 0,
-                          fontFamily: 'monospace',
-                        }}
-                      >
-                        {staff.name ? staff.name.slice(0, 2).toUpperCase() : 'ST'}
-                      </div>
-                    )}
-
-                    <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
-                      {/* ১. নাম */}
-                      <div style={{ fontSize: '14px', fontWeight: '700', color: '#ffffff', lineHeight: '1.2', wordBreak: 'break-word' }}>
-                        {staff.name || 'UNNAMED STAFF'}
-                      </div>
-
-                      {/* ২. ইমেইল */}
-                      <div
-                        style={{
-                          fontSize: '10px',
-                          color: '#71717a',
-                          fontFamily: 'monospace',
-                          marginTop: '3px',
-                          wordBreak: 'break-all',
-                          overflowWrap: 'anywhere',
-                          lineHeight: '1.3',
-                        }}
-                      >
-                        {staff.email}
-                      </div>
-
-                      {/* ৩. পদবী + রোল ব্যাজ (একই লাইনে) */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px', flexWrap: 'wrap' }}>
-                        <span
-                          style={{
-                            fontSize: '11px',
-                            fontWeight: '600',
-                            color: hasDesignation ? '#22c55e' : '#52525b',
-                            fontFamily: 'monospace',
-                            wordBreak: 'break-word',
-                          }}
-                        >
-                          {hasDesignation ? staff.designation : 'No Designation Set'}
-                        </span>
-
-                        {/* রোল ব্যাজ (পদবির পাশে) */}
-                        <span
-                          style={{
-                            display: 'inline-block',
-                            backgroundColor: '#121215',
-                            color: staff.role === 'SUPER_ADMIN' ? '#38bdf8' : staff.role === 'ADMIN' ? '#22c55e' : '#a1a1aa',
-                            border: '1px solid #27272a',
-                            borderRadius: '4px',
-                            padding: '1px 5px',
-                            fontSize: '8px',
-                            fontWeight: '700',
-                            fontFamily: 'monospace',
-                            letterSpacing: '0.5px',
-                          }}
-                        >
-                          {staff.role}
-                        </span>
-                      </div>
+                {/* ১. প্রোফাইল এবং নাম (একই লাইনে) */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  {staff.avatar_url ? (
+                    <img
+                      src={staff.avatar_url}
+                      alt={staff.name}
+                      style={{ width: '42px', height: '42px', borderRadius: '50%', objectFit: 'cover', border: '1px solid #27272a', flexShrink: 0 }}
+                    />
+                  ) : (
+                    <div
+                      style={{
+                        width: '42px',
+                        height: '42px',
+                        borderRadius: '50%',
+                        backgroundColor: '#18181b',
+                        border: '1px solid #27272a',
+                        color: '#fff',
+                        fontSize: '13px',
+                        fontWeight: 'bold',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                        fontFamily: 'monospace',
+                      }}
+                    >
+                      {staff.name ? staff.name.slice(0, 2).toUpperCase() : 'ST'}
                     </div>
+                  )}
+
+                  <div style={{ fontSize: '15px', fontWeight: '700', color: '#ffffff', lineHeight: '1.2', wordBreak: 'break-word' }}>
+                    {staff.name || 'UNNAMED STAFF'}
                   </div>
+                </div>
 
-                  {/* Right Column: ৩টি অ্যাকশন আইকন (শেয়ার, মেসেজ, মেইল) */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
-                    {/* শেয়ার আইকন */}
-                    <button
-                      type="button"
-                      onClick={(e) => handleShareStaff(staff, e)}
-                      title="Share Profile"
-                      style={{
-                        backgroundColor: '#18181b',
-                        border: '1px solid #27272a',
-                        borderRadius: '6px',
-                        padding: '6px',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
-                    >
-                      <ShareIcon style={{ width: '14px', height: '14px', color: '#38bdf8' }} />
-                    </button>
+                {/* ২. ইমেইল */}
+                <div
+                  style={{
+                    fontSize: '11px',
+                    color: '#71717a',
+                    fontFamily: 'monospace',
+                    wordBreak: 'break-all',
+                    overflowWrap: 'anywhere',
+                    lineHeight: '1.3',
+                  }}
+                >
+                  {staff.email}
+                </div>
 
-                    {/* মেসেজ আইকন */}
-                    <button
-                      type="button"
-                      onClick={(e) => handleOpenChat(staff, e)}
-                      title="Direct Message"
-                      style={{
-                        backgroundColor: '#18181b',
-                        border: '1px solid #27272a',
-                        borderRadius: '6px',
-                        padding: '6px',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
-                    >
-                      <MessageIcon style={{ width: '14px', height: '14px', color: '#38bdf8' }} />
-                    </button>
+                {/* ৩. পদবী এবং রোল (একই লাইনে) */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                  <span
+                    style={{
+                      fontSize: '12px',
+                      fontWeight: '600',
+                      color: hasDesignation ? '#22c55e' : '#52525b',
+                      fontFamily: 'monospace',
+                    }}
+                  >
+                    {hasDesignation ? staff.designation : 'No Designation Set'}
+                  </span>
 
-                    {/* মেইল আইকন */}
-                    <button
-                      type="button"
-                      onClick={(e) => handleSendMail(staff, e)}
-                      title="Send Email"
-                      style={{
-                        backgroundColor: '#18181b',
-                        border: '1px solid #27272a',
-                        borderRadius: '6px',
-                        padding: '6px',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
-                    >
-                      <EmailIcon style={{ width: '14px', height: '14px', color: '#38bdf8' }} />
-                    </button>
-                  </div>
+                  <span
+                    style={{
+                      display: 'inline-block',
+                      backgroundColor: '#121215',
+                      color: staff.role === 'SUPER_ADMIN' ? '#38bdf8' : staff.role === 'ADMIN' ? '#22c55e' : '#a1a1aa',
+                      border: '1px solid #27272a',
+                      borderRadius: '4px',
+                      padding: '2px 6px',
+                      fontSize: '9px',
+                      fontWeight: '700',
+                      fontFamily: 'monospace',
+                      letterSpacing: '0.5px',
+                    }}
+                  >
+                    {staff.role}
+                  </span>
+                </div>
+
+                {/* ৪. আইকন সেকশন (বামে ফাকা থাকবে, ডান দিকে সাদা কালারের ৩টি আইকন) */}
+                <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '12px', marginTop: '2px' }}>
+                  {/* শেয়ার আইকন */}
+                  <button
+                    type="button"
+                    onClick={(e) => handleShareStaff(staff, e)}
+                    title="Share Profile"
+                    style={{
+                      backgroundColor: 'transparent',
+                      border: 'none',
+                      padding: '4px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <ShareIcon style={{ width: '16px', height: '16px', color: '#ffffff' }} />
+                  </button>
+
+                  {/* মেসেজ আইকন */}
+                  <button
+                    type="button"
+                    onClick={(e) => handleOpenChat(staff, e)}
+                    title="Direct Message"
+                    style={{
+                      backgroundColor: 'transparent',
+                      border: 'none',
+                      padding: '4px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <MessageIcon style={{ width: '16px', height: '16px', color: '#ffffff' }} />
+                  </button>
+
+                  {/* মেইল আইকন */}
+                  <button
+                    type="button"
+                    onClick={(e) => handleSendMail(staff, e)}
+                    title="Send Email"
+                    style={{
+                      backgroundColor: 'transparent',
+                      border: 'none',
+                      padding: '4px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <EmailIcon style={{ width: '16px', height: '16px', color: '#ffffff' }} />
+                  </button>
                 </div>
 
                 {/* Divider */}
