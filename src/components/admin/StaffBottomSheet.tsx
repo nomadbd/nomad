@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { CloseIcon, HistoryIcon } from '@/components/icons';
 import { supabase } from '@/supabaseClient';
 import { logAuditActivity } from '@/utils/auditLogger';
 import Toast from '@/components/ui/Toast';
+import ImageCropModal, { uploadToCloudinary } from './ImageCropModal';
 
 export interface StaffMember {
   id: string;
@@ -37,15 +38,22 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
   const [isSaving, setIsSaving] = useState<boolean>(false);
 
   const [currentAdminId, setCurrentAdminId] = useState<string | null>(null);
+  const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
 
   const [showConfirmModal, setShowConfirmModal] = useState<boolean>(false);
   const [confirmText, setConfirmText] = useState<string>('');
-  const [pendingAction, setPendingAction] = useState<'UPDATE_DETAILS' | 'TOGGLE_STATUS' | null>(null);
+  const [pendingAction, setPendingAction] = useState<'UPDATE_DETAILS' | 'TOGGLE_STATUS' | 'DELETE_AVATAR' | null>(null);
 
   const [logs, setLogs] = useState<any[]>([]);
   const [adminProfiles, setAdminProfiles] = useState<Record<string, { name: string; designation?: string; email?: string; role?: string }>>({});
   const [loadingLogs, setLoadingLogs] = useState<boolean>(false);
   const [toastMsg, setToastMsg] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+
+  // Avatar Upload & Crop states
+  const [selectedImageSrc, setSelectedImageSrc] = useState<string | null>(null);
+  const [isCropModalOpen, setIsCropModalOpen] = useState<boolean>(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState<boolean>(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const isActive = staff.status === 'ACTIVE';
 
@@ -54,11 +62,20 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         setCurrentAdminId(user.id);
+        const { data: userProfile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .single();
+        if (userProfile) {
+          setCurrentUserRole(userProfile.role);
+        }
       }
     };
     fetchCurrentUser();
   }, []);
 
+  const isSuperAdmin = currentUserRole === 'SUPER_ADMIN';
   const isSelf = currentAdminId === staff.id;
 
   const finalDesignation = designationInput.trim() !== '' ? designationInput.trim() : (staff.designation || '');
@@ -80,6 +97,63 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
       return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
     }
     return parts[0].slice(0, 2).toUpperCase();
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.onload = () => {
+        setSelectedImageSrc(reader.result as string);
+        setIsCropModalOpen(true);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleCropApply = async (croppedFile: File) => {
+    setIsCropModalOpen(false);
+    setUploadingAvatar(true);
+    try {
+      const uploadedUrl = await uploadToCloudinary(croppedFile, 'staff_avatars', `avatar_${staff.id}`);
+      
+      const now = new Date().toISOString();
+      const { error } = await supabase
+        .from('profiles')
+        .update({ avatar_url: uploadedUrl, updated_at: now })
+        .eq('id', staff.id);
+
+      if (error) throw error;
+
+      await logAuditActivity({
+        entityType: 'profile',
+        entityId: staff.id,
+        actionType: 'PROFILE_UPDATE',
+        reason: 'Updated avatar image via Super Admin panel',
+        changes: {
+          Avatar: {
+            old: staff.avatar_url || 'None',
+            new: uploadedUrl,
+          },
+        },
+      });
+
+      setToastMsg({ text: 'Profile image updated successfully!', type: 'success' });
+      if (onUpdateSuccess) onUpdateSuccess();
+    } catch (err: any) {
+      console.error('Avatar upload error:', err);
+      setToastMsg({ text: err.message || 'Failed to upload image.', type: 'error' });
+    } finally {
+      setUploadingAvatar(false);
+      setSelectedImageSrc(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const triggerDeleteAvatar = () => {
+    setPendingAction('DELETE_AVATAR');
+    setConfirmText('');
+    setShowConfirmModal(true);
   };
 
   const fetchAuditLogs = async () => {
@@ -233,6 +307,28 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
           text: `Staff access ${nextStatus === 'ACTIVE' ? 'activated' : 'revoked'} successfully!`,
           type: 'success',
         });
+      } else if (pendingAction === 'DELETE_AVATAR') {
+        const { error } = await supabase
+          .from('profiles')
+          .update({ avatar_url: null, updated_at: now })
+          .eq('id', staff.id);
+
+        if (error) throw error;
+
+        await logAuditActivity({
+          entityType: 'profile',
+          entityId: staff.id,
+          actionType: 'PROFILE_UPDATE',
+          reason: 'Removed profile image via Super Admin',
+          changes: {
+            Avatar: {
+              old: staff.avatar_url || 'None',
+              new: 'None',
+            },
+          },
+        });
+
+        setToastMsg({ text: 'Profile image removed successfully!', type: 'success' });
       }
 
       setShowConfirmModal(false);
@@ -259,6 +355,28 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
           onClose={() => setToastMsg(null)}
         />
       )}
+
+      {/* Hidden File Input for Image Selection */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        accept="image/*"
+        onChange={handleFileSelect}
+        style={{ display: 'none' }}
+      />
+
+      {/* Image Crop Modal */}
+      <ImageCropModal
+        isOpen={isCropModalOpen}
+        selectedImageSrc={selectedImageSrc}
+        isAmbassadorActive={false}
+        onClose={() => {
+          setIsCropModalOpen(false);
+          setSelectedImageSrc(null);
+          if (fileInputRef.current) fileInputRef.current.value = '';
+        }}
+        onApply={handleCropApply}
+      />
 
       {showConfirmModal && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0, 0, 0, 0.9)', backdropFilter: 'blur(8px)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
@@ -304,7 +422,7 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
         </div>
       )}
 
-      {/* ব্যাকড্রপ overlay */}
+      {/* Backdrop */}
       <div
         onClick={onClose}
         style={{
@@ -318,13 +436,12 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
           justifyContent: 'center',
         }}
       >
-        {/* রিমুভ করা হয়েছে চওড়া করার বাধ্যবাধকতা, যাতে ডেক্সটপ ও মোবাইল দুটিতেই ব্যালেন্সড থাকে */}
         <div
           onClick={(e) => e.stopPropagation()}
           className="staff-bottom-sheet"
           style={{
             width: '100%',
-            maxWidth: '540px', // ডেক্সটপে অতিরিক্ত বড় হবে না, ফলে বাটন কখনো হাইড হবে না
+            maxWidth: '540px',
             backgroundColor: '#09090b',
             border: '1px solid #27272a',
             borderBottom: 'none',
@@ -446,22 +563,76 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
             </div>
           ) : (
             <>
-              {/* ১. হেডার */}
+              {/* ১. হেডার ও প্রোফাইল পিকচার সেকশন */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
-                  {staff.avatar_url ? (
-                    <img
-                      src={staff.avatar_url}
-                      alt={staff.name}
-                      style={{ width: '42px', height: '42px', borderRadius: '50%', objectFit: 'cover', border: '1px solid #3f3f46', flexShrink: 0 }}
-                    />
-                  ) : (
-                    <div
-                      style={{ width: '42px', height: '42px', borderRadius: '50%', backgroundColor: '#18181b', border: '1px solid #3f3f46', color: '#f4f4f5', fontSize: '13px', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontFamily: 'monospace' }}
-                    >
-                      {getInitials(staff.name)}
-                    </div>
-                  )}
+                  <div style={{ position: 'relative', flexShrink: 0 }}>
+                    {staff.avatar_url ? (
+                      <img
+                        src={staff.avatar_url}
+                        alt={staff.name}
+                        style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover', border: '1px solid #3f3f46' }}
+                      />
+                    ) : (
+                      <div
+                        style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: '#18181b', border: '1px solid #3f3f46', color: '#f4f4f5', fontSize: '14px', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'monospace' }}
+                      >
+                        {getInitials(staff.name)}
+                      </div>
+                    )}
+
+                    {/* সুপার অ্যাডমিনদের জন্য ফটো আপলোড এবং ডিলিট বাটন */}
+                    {isSuperAdmin && (
+                      <div style={{ display: 'flex', gap: '4px', position: 'absolute', bottom: '-4px', right: '-8px' }}>
+                        <button
+                          type="button"
+                          title="Upload Image"
+                          disabled={uploadingAvatar}
+                          onClick={() => fileInputRef.current?.click()}
+                          style={{
+                            backgroundColor: '#38bdf8',
+                            color: '#000',
+                            border: 'none',
+                            borderRadius: '50%',
+                            width: '20px',
+                            height: '20px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '10px',
+                            fontWeight: 'bold',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          {uploadingAvatar ? '...' : '✎'}
+                        </button>
+
+                        {staff.avatar_url && (
+                          <button
+                            type="button"
+                            title="Remove Image"
+                            onClick={triggerDeleteAvatar}
+                            style={{
+                              backgroundColor: '#ef4444',
+                              color: '#fff',
+                              border: 'none',
+                              borderRadius: '50%',
+                              width: '20px',
+                              height: '20px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: '10px',
+                              fontWeight: 'bold',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
 
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: '15px', fontWeight: '700', color: '#ffffff', lineHeight: '1.2', wordBreak: 'break-word', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -487,7 +658,7 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
 
               {/* ২. কনফিগারেশন বক্স */}
               <div style={{ backgroundColor: '#121215', border: '1px solid #27272a', borderRadius: '12px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                
+
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: '10px', fontWeight: 'bold', color: '#71717a', fontFamily: 'monospace', letterSpacing: '0.8px', textTransform: 'uppercase' }}>
                     CONFIGURATION
@@ -632,4 +803,3 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
     </>
   );
 };
- 
