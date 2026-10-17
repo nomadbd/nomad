@@ -201,16 +201,16 @@ export default function AdminStaff({
                   padding: '14px',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: '10px',
+                  gap: '12px',
                   boxSizing: 'border-box',
                   cursor: 'pointer',
                   opacity: isInactive ? 0.6 : 1,
                   transition: 'border-color 0.2s ease, background-color 0.2s ease',
                 }}
               >
-                {/* প্রোফাইল + টেক্সট কলাম সেকশন */}
+                {/* প্রোফাইল হেডার ও বিস্তারিত কলাম */}
                 <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-                  {/* প্রোফাইল পিকচার */}
+                  {/* ১. প্রোফাইল পিকচার */}
                   {staff.avatar_url ? (
                     <img
                       src={staff.avatar_url}
@@ -239,14 +239,12 @@ export default function AdminStaff({
                     </div>
                   )}
 
-                  {/* নাম, ইমেইল, পদবী ও রোল এর কমপ্যাক্ট কলাম */}
+                  {/* ২. নাম, ইমেইল, পদবী ও রোল এর কমপ্যাক্ট কলাম */}
                   <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                    {/* ১. নাম */}
                     <div style={{ fontSize: '14px', fontWeight: '700', color: '#ffffff', lineHeight: '1.2', wordBreak: 'break-word' }}>
                       {staff.name || 'UNNAMED STAFF'}
                     </div>
 
-                    {/* ২. ইমেইল (নামের ঠিক নিচে) */}
                     <div
                       style={{
                         fontSize: '11px',
@@ -255,12 +253,12 @@ export default function AdminStaff({
                         wordBreak: 'break-all',
                         overflowWrap: 'anywhere',
                         lineHeight: '1.3',
+                        marginTop: '2px',
                       }}
                     >
                       {staff.email}
                     </div>
 
-                    {/* ৩. পদবী এবং রোল (একই সারিতে) */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px', flexWrap: 'wrap' }}>
                       <span
                         style={{
@@ -280,7 +278,7 @@ export default function AdminStaff({
                           color: staff.role === 'SUPER_ADMIN' ? '#38bdf8' : staff.role === 'ADMIN' ? '#22c55e' : '#a1a1aa',
                           border: '1px solid #27272a',
                           borderRadius: '4px',
-                          padding: '1px 5px',
+                          padding: '1px 6px',
                           fontSize: '8px',
                           fontWeight: '700',
                           fontFamily: 'monospace',
@@ -293,64 +291,79 @@ export default function AdminStaff({
                   </div>
                 </div>
 
-                {/* ৪. আইকন রো (বামে ফাকা, ডানে একদম স্পষ্ট ৩টি সাদা আইকন) */}
-                <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '14px', marginTop: '2px' }}>
-                  {/* শেয়ার আইকন */}
-                  <button
-                    type="button"
-                    onClick={(e) => handleShareStaff(staff, e)}
-                    title="Share Profile"
+                {/* ৩. আইকন একশন বার (সাদা কালার ফোরসিং ও মার্জিত বাটন চিপ পজিশনিং) */}
+                <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '8px' }}>
+                  <div
                     style={{
-                      backgroundColor: 'transparent',
-                      border: 'none',
-                      padding: '2px',
-                      cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'center',
-                      opacity: 0.85,
+                      gap: '4px',
+                      backgroundColor: '#121215',
+                      border: '1px solid #27272a',
+                      borderRadius: '8px',
+                      padding: '3px 6px',
                     }}
                   >
-                    <ShareIcon style={{ width: '16px', height: '16px', color: '#ffffff' }} />
-                  </button>
+                    {/* শেয়ার আইকন */}
+                    <button
+                      type="button"
+                      onClick={(e) => handleShareStaff(staff, e)}
+                      title="Share Profile"
+                      style={{
+                        backgroundColor: 'transparent',
+                        border: 'none',
+                        padding: '5px 8px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: '#ffffff',
+                        filter: 'brightness(0) invert(1)', // SVG শেয়ার আইকনকে শতভাগ ধবধবে সাদা করতে
+                      }}
+                    >
+                      <ShareIcon style={{ width: '15px', height: '15px' }} />
+                    </button>
 
-                  {/* মেসেজ আইকন */}
-                  <button
-                    type="button"
-                    onClick={(e) => handleOpenChat(staff, e)}
-                    title="Direct Message"
-                    style={{
-                      backgroundColor: 'transparent',
-                      border: 'none',
-                      padding: '2px',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      opacity: 0.85,
-                    }}
-                  >
-                    <MessageIcon style={{ width: '16px', height: '16px', color: '#ffffff' }} />
-                  </button>
+                    {/* মেসেজ আইকন */}
+                    <button
+                      type="button"
+                      onClick={(e) => handleOpenChat(staff, e)}
+                      title="Direct Message"
+                      style={{
+                        backgroundColor: 'transparent',
+                        border: 'none',
+                        padding: '5px 8px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: '#ffffff',
+                        filter: 'brightness(0) invert(1)',
+                      }}
+                    >
+                      <MessageIcon style={{ width: '15px', height: '15px' }} />
+                    </button>
 
-                  {/* মেইল আইকন */}
-                  <button
-                    type="button"
-                    onClick={(e) => handleSendMail(staff, e)}
-                    title="Send Email"
-                    style={{
-                      backgroundColor: 'transparent',
-                      border: 'none',
-                      padding: '2px',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      opacity: 0.85,
-                    }}
-                  >
-                    <EmailIcon style={{ width: '16px', height: '16px', color: '#ffffff' }} />
-                  </button>
+                    {/* মেইল আইকন */}
+                    <button
+                      type="button"
+                      onClick={(e) => handleSendMail(staff, e)}
+                      title="Send Email"
+                      style={{
+                        backgroundColor: 'transparent',
+                        border: 'none',
+                        padding: '5px 8px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: '#ffffff',
+                        filter: 'brightness(0) invert(1)',
+                      }}
+                    >
+                      <EmailIcon style={{ width: '15px', height: '15px' }} />
+                    </button>
+                  </div>
                 </div>
 
                 {/* Divider */}
