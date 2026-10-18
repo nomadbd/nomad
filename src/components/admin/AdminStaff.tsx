@@ -15,7 +15,7 @@ interface AdminStaffProps {
 
 export default function AdminStaff({
   searchQuery = '',
-  isFilterOpen,
+  isFilterOpen = false,
   dateFormat = 'DD/MM/YYYY',
   isAddOpen = false,
   onCloseAdd,
@@ -131,6 +131,13 @@ export default function AdminStaff({
     return matchesSearch && matchesRole;
   });
 
+  const rolesList = [
+    { label: 'ALL ROLES', value: 'ALL' },
+    { label: 'STAFF', value: 'STAFF' },
+    { label: 'ADMIN', value: 'ADMIN' },
+    { label: 'SUPER ADMIN', value: 'SUPER_ADMIN' },
+  ];
+
   return (
     <div style={{ color: '#fff', width: '100%', boxSizing: 'border-box' }}>
       {/* Header Info */}
@@ -145,21 +152,49 @@ export default function AdminStaff({
         </div>
       </div>
 
-      {/* Filter Bar */}
-      {isFilterOpen && (
-        <div style={{ backgroundColor: '#09090b', border: '1px solid #1f1f23', borderRadius: '8px', padding: '8px', marginBottom: '14px' }}>
-          <select
-            value={roleFilter}
-            onChange={(e) => setRoleFilter(e.target.value)}
-            style={{ width: '100%', backgroundColor: '#121215', color: '#fff', border: '1px solid #27272a', borderRadius: '6px', padding: '6px 10px', fontSize: '11px', fontFamily: 'monospace', outline: 'none' }}
+      {/* Smooth Expandable Filter Bar (No layout jitter & seamless transition) */}
+      <div className={`filter-expand-wrapper ${isFilterOpen ? 'open' : ''}`}>
+        <div className="filter-expand-content">
+          <div
+            className="animate-fade-in no-scrollbar"
+            style={{
+              display: 'flex',
+              gap: '8px',
+              overflowX: 'auto',
+              paddingBottom: '2px',
+              alignItems: 'center',
+            }}
           >
-            <option value="ALL">ALL ROLES</option>
-            <option value="SUPER_ADMIN">SUPER ADMIN</option>
-            <option value="ADMIN">ADMIN</option>
-            <option value="STAFF">STAFF</option>
-          </select>
+            {rolesList.map((item) => {
+              const isActive = roleFilter === item.value;
+              return (
+                <button
+                  key={item.value}
+                  type="button"
+                  onClick={() => setRoleFilter(item.value)}
+                  className="apple-button-press"
+                  style={{
+                    backgroundColor: isActive ? '#ffffff' : '#09090b',
+                    color: isActive ? '#000000' : '#a1a1aa',
+                    border: isActive ? '1px solid #ffffff' : '1px solid #27272a',
+                    borderRadius: '20px',
+                    padding: '6px 14px',
+                    fontSize: '10px',
+                    fontWeight: '700',
+                    fontFamily: 'monospace',
+                    letterSpacing: '0.5px',
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                    transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
+                  }}
+                >
+                  {item.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
-      )}
+      </div>
 
       {/* Staff Cards Read-Only List */}
       {loading ? (
@@ -244,7 +279,7 @@ export default function AdminStaff({
                       {staff.name || 'UNNAMED STAFF'}
                     </div>
 
-                    {/* ২. পদবী (Designation) - অফ-হোয়াইট ও হালকা ছোট টাইপোগ্রাফি */}
+                    {/* ২. পদবী (Designation) */}
                     <div
                       style={{
                         fontSize: '11px',
@@ -293,9 +328,8 @@ export default function AdminStaff({
                   </div>
                 </div>
 
-                {/* ৩. আইকন একশন রো (স্বাধীন অ্যাকশন বাটন) */}
+                {/* ৩. আইকন একশন রো */}
                 <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '16px', marginTop: '2px' }}>
-                  {/* মেসেজ আইকন */}
                   <button
                     type="button"
                     onClick={(e) => handleOpenChat(staff, e)}
@@ -314,7 +348,6 @@ export default function AdminStaff({
                     <MessageIcon style={{ width: '16px', height: '16px' }} />
                   </button>
 
-                  {/* মেইল আইকন */}
                   <button
                     type="button"
                     onClick={(e) => handleSendMail(staff, e)}
