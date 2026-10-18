@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import * as styles from './AdminMessages.styles';
 
 interface MessageListProps {
@@ -14,6 +14,7 @@ export const MessageList: React.FC<MessageListProps> = ({
 }) => {
   let lastRenderedDate: string | null = null;
   const isGroupChat = activeThread?.id === 'all_staff';
+  const [activeSeenTooltip, setActiveSeenTooltip] = useState<string | null>(null);
 
   return (
     <div ref={chatContainerRef} style={styles.chatFeedStyle}>
@@ -48,9 +49,13 @@ export const MessageList: React.FC<MessageListProps> = ({
             return msg.timestamp || '';
           })();
 
-          // নাম ও পদবী প্রস্তুতকরণ (রোল বা ইমেইল বাদ দিয়ে)
-          const senderName = msg.senderName || msg.sender_name || (isAdmin ? 'Admin' : activeThread?.userName || 'Staff Member');
-          const senderDesignation = msg.senderDesignation || msg.sender_designation || (!isAdmin && activeThread?.designation ? activeThread.designation : '');
+          // 'Admin' ফলব্যাক রিমুভ করে সঠিক নাম ও পদবী নির্ধারণ
+          const senderName = msg.senderName || msg.sender_name || (isAdmin ? 'Md Toha Ali' : activeThread?.userName || '');
+          const senderDesignation = msg.senderDesignation || msg.sender_designation || (isAdmin ? 'Managing Director' : activeThread?.designation || '');
+
+          // কারা মেসেজ সিন করেছে (Seen By List)
+          const readByList: Array<{ user_email: string; user_name?: string; seen_at?: string }> = Array.isArray(msg.read_by) ? msg.read_by : [];
+          const seenCount = readByList.length;
 
           return (
             <React.Fragment key={msg.id}>
@@ -78,9 +83,10 @@ export const MessageList: React.FC<MessageListProps> = ({
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: isAdmin ? 'flex-end' : 'flex-start',
+                  position: 'relative',
                 }}
               >
-                {/* গ্রুপ চ্যাট হলে মেসেজের ওপর শুধু নাম এবং পদবী দেখাবে (রোল বা ইমেইল ছাড়া) */}
+                {/* গ্রুপ চ্যাট হলে মেসেজের ওপর নাম ও পদবী দেখাবে */}
                 {isGroupChat && (
                   <div
                     style={{
@@ -91,16 +97,18 @@ export const MessageList: React.FC<MessageListProps> = ({
                       padding: '0 4px',
                     }}
                   >
-                    <span
-                      style={{
-                        fontSize: '11px',
-                        fontWeight: '700',
-                        color: '#ffffff',
-                        letterSpacing: '0.2px',
-                      }}
-                    >
-                      {senderName}
-                    </span>
+                    {senderName && (
+                      <span
+                        style={{
+                          fontSize: '11px',
+                          fontWeight: '700',
+                          color: '#ffffff',
+                          letterSpacing: '0.2px',
+                        }}
+                      >
+                        {senderName}
+                      </span>
+                    )}
                     {senderDesignation && (
                       <span
                         style={{
@@ -134,18 +142,68 @@ export const MessageList: React.FC<MessageListProps> = ({
                   {msg.text}
                 </div>
 
-                {/* সময় (Timestamp) */}
-                <span
+                {/* সময় ও সিন স্ট্যাটাস (Seen status) */}
+                <div
                   style={{
-                    fontSize: '10.5px',
-                    color: '#aaaaaa',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
                     marginTop: '3px',
                     padding: '0 2px',
-                    fontWeight: 400,
                   }}
                 >
-                  {displayTime}
-                </span>
+                  <span style={{ fontSize: '10.5px', color: '#aaaaaa', fontWeight: 400 }}>
+                    {displayTime}
+                  </span>
+
+                  {/* গ্রুপ চ্যাটে কে কে সিন করেছে তা দেখাবে */}
+                  {isGroupChat && seenCount > 0 && (
+                    <div style={{ position: 'relative', display: 'inline-block' }}>
+                      <span
+                        onClick={() => setActiveSeenTooltip(activeSeenTooltip === msg.id ? null : msg.id)}
+                        style={{
+                          fontSize: '10px',
+                          color: '#818cf8',
+                          cursor: 'pointer',
+                          fontWeight: 500,
+                        }}
+                      >
+                        • Seen by {seenCount}
+                      </span>
+
+                      {/* ক্লিক করলে লিস্ট পপ-আপ করবে (কারা এবং কখন দেখেছে) */}
+                      {activeSeenTooltip === msg.id && (
+                        <div
+                          style={{
+                            position: 'absolute',
+                            bottom: '18px',
+                            right: isAdmin ? 0 : 'auto',
+                            left: isAdmin ? 'auto' : 0,
+                            backgroundColor: '#18181b',
+                            border: '1px solid rgba(255, 255, 255, 0.2)',
+                            borderRadius: '8px',
+                            padding: '8px 12px',
+                            minWidth: '160px',
+                            zIndex: 10,
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                          }}
+                        >
+                          <div style={{ fontSize: '10px', fontWeight: 700, color: '#ffffff', marginBottom: '6px', borderBottom: '1px solid #333', paddingBottom: '4px' }}>
+                            SEEN BY
+                          </div>
+                          {readByList.map((item, idx) => (
+                            <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', fontSize: '10px', color: '#ccc', marginBottom: '3px' }}>
+                              <span style={{ color: '#fff', fontWeight: 500 }}>{item.user_name || item.user_email}</span>
+                              <span style={{ color: '#888', fontSize: '9px' }}>
+                                {item.seen_at ? new Date(item.seen_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             </React.Fragment>
           );
