@@ -5,7 +5,7 @@ interface MessageListProps {
   activeThread: any;
   chatContainerRef: React.RefObject<HTMLDivElement>;
   getDateLabel: (dateInput?: string | number | Date) => string;
-  currentUserEmail?: string; // কারেন্ট লগইন ইউজারের ইমেইল
+  currentUserEmail?: string;
 }
 
 export const MessageList: React.FC<MessageListProps> = ({
@@ -22,11 +22,12 @@ export const MessageList: React.FC<MessageListProps> = ({
     <div ref={chatContainerRef} style={styles.chatFeedStyle}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
         {activeThread?.messages?.map((msg: any) => {
-          // কারেন্ট ইউজারের নিজের পাঠানো মেসেজ কি না তা চেক করা
-          const senderEmail = msg.senderEmail || msg.sender_email || msg.sender;
-          const isMe = currentUserEmail 
-            ? senderEmail === currentUserEmail 
-            : msg.sender === 'ADMIN'; // ফলব্যাক
+          const senderEmail = (msg.senderEmail || msg.sender_email || msg.sender || '').trim().toLowerCase();
+          const currentEmail = (currentUserEmail || '').trim().toLowerCase();
+          
+          const isMe = currentEmail 
+            ? senderEmail === currentEmail 
+            : msg.sender === 'ADMIN';
 
           const rawDate =
             msg.createdAt ||
@@ -59,9 +60,14 @@ export const MessageList: React.FC<MessageListProps> = ({
           const senderName = msg.senderName || msg.sender_name || (isMe ? 'You' : activeThread?.userName || 'Staff');
           const senderDesignation = msg.senderDesignation || msg.sender_designation || '';
 
+          // সেন্ডারের নিজস্ব ইমেল বাদ দিয়ে অন্যদের সিন লিস্ট ফিল্টার করা
           const readByList: Array<{ user_email: string; user_name?: string; seen_at?: string }> = 
-            Array.isArray(msg.read_by) ? msg.read_by : (Array.isArray(msg.readBy) ? msg.readBy : []);
-          
+            (Array.isArray(msg.read_by) ? msg.read_by : (Array.isArray(msg.readBy) ? msg.readBy : []))
+            .filter((item: any) => {
+              const itemEmail = (item.user_email || '').trim().toLowerCase();
+              return itemEmail && itemEmail !== senderEmail;
+            });
+
           const seenCount = readByList.length;
 
           return (
@@ -85,7 +91,6 @@ export const MessageList: React.FC<MessageListProps> = ({
                 </div>
               )}
 
-              {/* alignment: isMe সত্য হলে ডানে, মিথ্যা (অন্য কেউ হলে) বামে */}
               <div
                 style={{
                   display: 'flex',
@@ -94,7 +99,6 @@ export const MessageList: React.FC<MessageListProps> = ({
                   position: 'relative',
                 }}
               >
-                {/* গ্রুপ চ্যাট হলে মেসেজের ওপর নাম ও পদবী */}
                 {isGroupChat && (
                   <div
                     style={{
@@ -118,7 +122,6 @@ export const MessageList: React.FC<MessageListProps> = ({
                   </div>
                 )}
 
-                {/* মূল মেসেজ বাবল */}
                 <div
                   style={{
                     maxWidth: '85%',
@@ -137,13 +140,11 @@ export const MessageList: React.FC<MessageListProps> = ({
                   {msg.text}
                 </div>
 
-                {/* সময় ও সিন স্ট্যাটাস */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '3px', padding: '0 2px' }}>
                   <span style={{ fontSize: '10.5px', color: '#aaaaaa', fontWeight: 400 }}>
                     {displayTime}
                   </span>
 
-                  {/* গ্রুপ চ্যাটে Seen Status */}
                   {isGroupChat && (
                     <div style={{ position: 'relative', display: 'inline-block' }}>
                       <span
@@ -158,7 +159,6 @@ export const MessageList: React.FC<MessageListProps> = ({
                         • {seenCount > 0 ? `Seen by ${seenCount}` : 'Unseen'}
                       </span>
 
-                      {/* Tooltip Pop-up */}
                       {activeSeenTooltip === msg.id && seenCount > 0 && (
                         <div
                           style={{
