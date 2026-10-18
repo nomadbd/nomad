@@ -49,12 +49,14 @@ export const MessageList: React.FC<MessageListProps> = ({
             return msg.timestamp || '';
           })();
 
-          // 'Admin' ফলব্যাক রিমুভ করে সঠিক নাম ও পদবী নির্ধারণ
-          const senderName = msg.senderName || msg.sender_name || (isAdmin ? 'Md Toha Ali' : activeThread?.userName || '');
-          const senderDesignation = msg.senderDesignation || msg.sender_designation || (isAdmin ? 'Managing Director' : activeThread?.designation || '');
+          // প্রেরকের ডাইনামিক নাম ও পদবী
+          const senderName = msg.senderName || msg.sender_name || (isAdmin ? 'Admin' : activeThread?.userName || '');
+          const senderDesignation = msg.senderDesignation || msg.sender_designation || (isAdmin ? '' : activeThread?.designation || '');
 
           // কারা মেসেজ সিন করেছে (Seen By List)
-          const readByList: Array<{ user_email: string; user_name?: string; seen_at?: string }> = Array.isArray(msg.read_by) ? msg.read_by : [];
+          const readByList: Array<{ user_email: string; user_name?: string; seen_at?: string }> = Array.isArray(msg.read_by || msg.readBy)
+            ? (msg.read_by || msg.readBy)
+            : [];
           const seenCount = readByList.length;
 
           return (
