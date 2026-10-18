@@ -26,7 +26,7 @@ export const MessageSidebar: React.FC<MessageSidebarProps> = ({
 
   return (
     <div style={{ width: '100%', padding: '0 4px', boxSizing: 'border-box' }}>
-      
+
       {/* ALL STAFF GROUP CHAT TILE */}
       <div
         onClick={() =>
@@ -139,6 +139,11 @@ export const MessageSidebar: React.FC<MessageSidebarProps> = ({
           const displayUnread = isRead ? 0 : (thread.unreadCount ?? 0);
           const isSelected = activeThreadId === thread.id;
 
+          // পদবী বা রোলের স্মার্ট ডিসপ্লে ভ্যালু নির্ধারণ
+          const badgeText = thread.designation && thread.designation.trim() !== '' 
+            ? thread.designation 
+            : thread.role;
+
           return (
             <div
               key={thread.id}
@@ -225,6 +230,7 @@ export const MessageSidebar: React.FC<MessageSidebarProps> = ({
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', width: '100%' }}>
+                  {/* স্মার্ট পদবী/রোল ব্যাজ */}
                   <span
                     style={{
                       fontSize: '8.5px',
@@ -238,7 +244,7 @@ export const MessageSidebar: React.FC<MessageSidebarProps> = ({
                       textTransform: 'uppercase',
                     }}
                   >
-                    {thread.role}
+                    {badgeText}
                   </span>
 
                   {displayUnread > 0 && (
