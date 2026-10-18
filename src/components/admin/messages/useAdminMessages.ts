@@ -34,6 +34,8 @@ export const useAdminMessages = (
     propActiveThreadId !== undefined && propActiveThreadId !== null ? propActiveThreadId : internalActiveThreadId;
 
   const markThreadAsRead = async (thread: Thread) => {
+    if (thread.id === 'all_staff') return; // গ্রুপ চ্যাটের জন্য আলাদা আনরিড হ্যান্ডেলিং
+
     setThreads((prevThreads) =>
       prevThreads.map((t) => (t.id === thread.id ? { ...t, unreadCount: 0 } : t))
     );
@@ -118,17 +120,50 @@ export const useAdminMessages = (
         });
       }
 
-      if (commsRes.data) {
-        const threadMap: { [key: string]: Thread } = {};
+      // ১. প্রথমে ডিফলต์ভাবে 'All Staff Group' থ্রেডটি যোগ করে রাখা হলো
+      const threadMap: { [key: string]: Thread } = {
+        all_staff: {
+          id: 'all_staff',
+          userName: 'All Staff Group',
+          userEmail: '',
+          userPhone: '',
+          role: 'GROUP',
+          avatarUrl: '',
+          createdAt: '',
+          inviteSentAt: '',
+          unreadCount: 0,
+          lastMessage: 'Welcome to the team group chat',
+          lastMessageTime: new Date().toISOString(),
+          messages: [],
+        },
+      };
 
+      if (commsRes.data) {
         commsRes.data.forEach((item: any) => {
           const isSenderAdmin = (item.sender_role || '').toLowerCase() === 'admin';
+          const isGroupMsg = item.channel_type === 'staff_group' || item.channel_id === 'all_staff';
+
+          if (isGroupMsg) {
+            const rawCreatedAt = item.created_at || new Date().toISOString();
+            const formattedTime = item.created_at
+              ? new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+              : '';
+
+            threadMap['all_staff'].messages.push({
+              id: item.id || String(Math.random()),
+              sender: isSenderAdmin ? 'ADMIN' : 'USER',
+              text: item.message || '',
+              timestamp: formattedTime,
+            });
+            threadMap['all_staff'].lastMessage = item.message || '';
+            threadMap['all_staff'].lastMessageTime = rawCreatedAt;
+            return;
+          }
 
           let rawEmail = isSenderAdmin ? item.recipient_email : item.sender_email;
           if (rawEmail === 'EMPTY') rawEmail = '';
 
           const channelId = (item.channel_id || '').trim().toLowerCase();
-
           const ambData = (channelId ? ambassadorMap[channelId] : null) || (rawEmail ? ambassadorMap[rawEmail.trim().toLowerCase()] : null);
 
           const effectiveEmail = (rawEmail || ambData?.email || '').trim().toLowerCase();
@@ -213,6 +248,8 @@ export const useAdminMessages = (
   }, []);
 
   const filteredThreads = threads.filter((t) => {
+    if (t.id === 'all_staff') return true; // গ্রুপ চ্যাট সবসময় সাইডবারে দৃশ্যমান থাকবে
+
     const threadRole = (t.role || '').toUpperCase();
     const filterRole = (roleFilter || 'ALL').toUpperCase();
 
@@ -241,9 +278,6 @@ export const useAdminMessages = (
     return matchesRole && matchesSearch;
   });
 
-  // -------------------------------------------------------------
-  // AUTO SELECT THREAD FROM URL PARAMS (?userId=... OR ?search=...)
-  // -------------------------------------------------------------
   useEffect(() => {
     if (threads.length > 0 && !activeThreadId && typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
@@ -266,8 +300,6 @@ export const useAdminMessages = (
         if (matchedThread) {
           handleSelectThread(matchedThread);
 
-          // চ্যাট সিলেক্ট হওয়ার সাথে সাথেই URL থেকে প্যারামিটারগুলো রিমুভ করা হচ্ছে
-          // যাতে ব্যাকে ক্লিক করলে একই চ্যাটে আবার রি-ডাইরেক্ট না হয়
           const newUrl = new URL(window.location.href);
           newUrl.searchParams.delete('userId');
           newUrl.searchParams.delete('search');
@@ -317,17 +349,29 @@ export const useAdminMessages = (
     }
 
     try {
-      const { error } = await supabase.from('communications').insert([
-        {
-          sender_email: adminEmail || 'admin@nomadbd.com',
-          sender_role: 'admin',
-          recipient_email: activeThread.userEmail || null,
-          message: messageText,
-          channel_type: (activeThread.role || '').toLowerCase(),
-          channel_id: activeThread.id,
-          is_read: true,
-        },
-      ]);
+      const isGroup = activeThread.id === 'all_staff';
+
+      const payload = isGroup
+        ? {
+            sender_email: adminEmail || 'admin@nomadbd.com',
+            sender_role: 'admin',
+            recipient_email: null,
+            message: messageText,
+            channel_type: 'staff_group',
+            channel_id: 'all_staff',
+            is_read: true,
+          }
+        : {
+            sender_email: adminEmail || 'admin@nomadbd.com',
+            sender_role: 'admin',
+            recipient_email: activeThread.userEmail || null,
+            message: messageText,
+            channel_type: (activeThread.role || '').toLowerCase(),
+            channel_id: activeThread.id,
+            is_read: true,
+          };
+
+      const { error } = await supabase.from('communications').insert([payload]);
 
       if (error) {
         console.error('Send error:', error.message);
