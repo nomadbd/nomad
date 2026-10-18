@@ -13,6 +13,7 @@ export const MessageList: React.FC<MessageListProps> = ({
   getDateLabel,
 }) => {
   let lastRenderedDate: string | null = null;
+  const isGroupChat = activeThread?.id === 'all_staff';
 
   return (
     <div ref={chatContainerRef} style={styles.chatFeedStyle}>
@@ -47,6 +48,12 @@ export const MessageList: React.FC<MessageListProps> = ({
             return msg.timestamp || '';
           })();
 
+          // গ্রুপ চ্যাটের জন্য প্রেরকের নাম নির্ধারণ
+          const senderName =
+            msg.senderName ||
+            msg.sender_name ||
+            (isAdmin ? 'Admin' : activeThread?.userName || 'Staff Member');
+
           return (
             <React.Fragment key={msg.id}>
               {showDateDivider && (
@@ -75,6 +82,23 @@ export const MessageList: React.FC<MessageListProps> = ({
                   alignItems: isAdmin ? 'flex-end' : 'flex-start',
                 }}
               >
+                {/* ১. গ্রুপ চ্যাট হলে মেসেজের ওপর প্রেরকের নাম দেখাবে */}
+                {isGroupChat && (
+                  <span
+                    style={{
+                      fontSize: '10px',
+                      fontWeight: 600,
+                      color: isAdmin ? '#d4d4d8' : '#a1a1aa',
+                      marginBottom: '3px',
+                      padding: '0 4px',
+                      letterSpacing: '0.3px',
+                    }}
+                  >
+                    {senderName}
+                  </span>
+                )}
+
+                {/* ২. মূল মেসেজ বাবল */}
                 <div
                   style={{
                     maxWidth: '85%',
@@ -92,6 +116,8 @@ export const MessageList: React.FC<MessageListProps> = ({
                 >
                   {msg.text}
                 </div>
+
+                {/* ৩. সময় (Timestamp) */}
                 <span
                   style={{
                     fontSize: '10.5px',
