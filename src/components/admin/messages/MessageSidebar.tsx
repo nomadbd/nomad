@@ -23,129 +23,8 @@ export const MessageSidebar: React.FC<MessageSidebarProps> = ({
   formatThreadTime,
   activeThreadId,
 }) => {
-  const isGroupActive = activeThreadId === 'all_staff';
-
-  const groupThread = filteredThreads.find((t) => t.id === 'all_staff') || {
-    id: 'all_staff',
-    userName: 'Management Team',
-    lastMessage: 'Core management workspace',
-    lastMessageTime: '',
-    unreadCount: 0,
-  };
-
-  const regularThreads = filteredThreads.filter((t) => t.id !== 'all_staff');
-
   return (
     <div style={{ width: '100%', padding: '0 4px', boxSizing: 'border-box' }}>
-
-      {/* MANAGEMENT TEAM GROUP CHAT TILE (PARALLEL GAP WITH OTHER THREADS) */}
-      <div
-        onClick={() => handleThreadClick(groupThread)}
-        style={{
-          display: 'flex',
-          alignItems: 'flex-start',
-          padding: '12px 8px',
-          borderRadius: '8px',
-          cursor: 'pointer',
-          gap: '12px',
-          width: '100%',
-          boxSizing: 'border-box',
-          backgroundColor: isGroupActive ? 'rgba(255, 255, 255, 0.06)' : 'transparent',
-          transition: 'background-color 0.15s ease',
-        }}
-        onMouseEnter={(e) => {
-          if (!isGroupActive) e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.04)';
-        }}
-        onMouseLeave={(e) => {
-          if (!isGroupActive) e.currentTarget.style.backgroundColor = 'transparent';
-        }}
-      >
-        {/* AVATAR */}
-        <div
-          style={{
-            width: '40px',
-            height: '40px',
-            borderRadius: '50%',
-            backgroundColor: 'rgba(255, 255, 255, 0.1)',
-            border: '1px solid rgba(255, 255, 255, 0.18)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexShrink: 0,
-            marginTop: '2px',
-          }}
-        >
-          <GroupIcon size={18} color="#ffffff" />
-        </div>
-
-        {/* CARD CONTENT */}
-        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '3px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', width: '100%' }}>
-            <span style={{ color: '#ffffff', fontWeight: 500, fontSize: '13.5px' }}>Management Team</span>
-            <span style={{ color: '#aaaaaa', fontSize: '11px', whiteSpace: 'nowrap', fontWeight: 400 }}>
-              {groupThread.lastMessageTime ? formatThreadTime(groupThread.lastMessageTime) : ''}
-            </span>
-          </div>
-
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', width: '100%' }}>
-            <span
-              style={{
-                fontSize: '8.5px',
-                fontWeight: 600,
-                letterSpacing: '0.5px',
-                padding: '2px 6px',
-                borderRadius: '4px',
-                backgroundColor: 'rgba(255, 255, 255, 0.08)',
-                color: '#bbbbbb',
-                textTransform: 'uppercase',
-              }}
-            >
-              CORE GROUP
-            </span>
-
-            {groupThread.unreadCount > 0 && (
-              <span
-                style={{
-                  backgroundColor: '#ffffff',
-                  color: '#000000',
-                  fontWeight: 700,
-                  fontSize: '9px',
-                  minWidth: '16px',
-                  height: '16px',
-                  borderRadius: '8px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  padding: '0 4px',
-                  lineHeight: 1,
-                  flexShrink: 0,
-                }}
-              >
-                {groupThread.unreadCount}
-              </span>
-            )}
-          </div>
-
-          <p
-            style={{
-              color: '#cccccc',
-              fontSize: '12px',
-              fontWeight: 300,
-              margin: 0,
-              marginTop: '1px',
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              width: '100%',
-            }}
-          >
-            {groupThread.lastMessage || 'Core management workspace'}
-          </p>
-        </div>
-      </div>
-
-      {/* DIVIDER LINE WITH EQUAL SPACING */}
-      <div style={{ height: '1px', backgroundColor: 'rgba(255, 255, 255, 0.08)', width: '100%' }} />
 
       {/* FILTER BAR */}
       {isFilterOpen && (
@@ -194,20 +73,27 @@ export const MessageSidebar: React.FC<MessageSidebarProps> = ({
         </div>
       )}
 
-      {/* REGULAR THREAD LIST */}
-      {regularThreads.length === 0 ? (
+      {/* DYNAMIC THREAD LIST (LATEST MESSAGES FIRST) */}
+      {filteredThreads.length === 0 ? (
         <div style={{ ...styles.emptyTextStyle, color: '#aaaaaa' }}>NO CONVERSATIONS FOUND</div>
       ) : (
-        regularThreads.map((thread) => {
-          const displayName = thread.userName && thread.userName.trim() ? thread.userName : thread.userEmail;
-          const initialLetter = displayName ? displayName.charAt(0).toUpperCase() : 'U';
+        filteredThreads.map((thread) => {
+          const isGroup = thread.id === 'all_staff';
+          const displayName = isGroup
+            ? 'Management Team'
+            : thread.userName && thread.userName.trim()
+            ? thread.userName
+            : thread.userEmail;
 
+          const initialLetter = displayName ? displayName.charAt(0).toUpperCase() : 'U';
           const isRead = readThreadIds[thread.id];
           const displayUnread = isRead ? 0 : (thread.unreadCount ?? 0);
           const isSelected = activeThreadId === thread.id;
 
-          const badgeText = thread.designation && thread.designation.trim() !== '' 
-            ? thread.designation 
+          const badgeText = isGroup
+            ? 'CORE GROUP'
+            : thread.designation && thread.designation.trim() !== ''
+            ? thread.designation
             : thread.role;
 
           return (
@@ -253,7 +139,9 @@ export const MessageSidebar: React.FC<MessageSidebarProps> = ({
                   overflow: 'hidden',
                 }}
               >
-                {thread.avatarUrl ? (
+                {isGroup ? (
+                  <GroupIcon size={18} color="#ffffff" />
+                ) : thread.avatarUrl ? (
                   <img
                     src={thread.avatarUrl}
                     alt={displayName}
@@ -291,7 +179,7 @@ export const MessageSidebar: React.FC<MessageSidebarProps> = ({
                       fontWeight: 400,
                     }}
                   >
-                    {formatThreadTime(thread.lastMessageTime)}
+                    {thread.lastMessageTime ? formatThreadTime(thread.lastMessageTime) : ''}
                   </span>
                 </div>
 
@@ -348,7 +236,7 @@ export const MessageSidebar: React.FC<MessageSidebarProps> = ({
                     width: '100%',
                   }}
                 >
-                  {thread.lastMessage || 'No messages yet'}
+                  {thread.lastMessage || (isGroup ? 'Core management workspace' : 'No messages yet')}
                 </p>
               </div>
             </div>
