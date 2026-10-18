@@ -228,11 +228,23 @@ export default function AdminStaff({
                   )}
 
                   {/* ২. নাম, ইমেইল, পদবী ও রোল এর কমপ্যাক্ট কলাম */}
-                  <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                    <div style={{ fontSize: '14px', fontWeight: '800', color: '#ffffff', lineHeight: '1.2', wordBreak: 'break-word' }}>
+                  <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                    {/* স্পষ্ট ও চওড়া বোল্ড নাম */}
+                    <div
+                      style={{
+                        fontSize: '15px',
+                        fontWeight: '800',
+                        color: '#ffffff',
+                        lineHeight: '1.2',
+                        wordBreak: 'break-word',
+                        fontFamily: 'system-ui, -apple-system, sans-serif',
+                        letterSpacing: '0.2px',
+                      }}
+                    >
                       {staff.name || 'UNNAMED STAFF'}
                     </div>
 
+                    {/* ইমেইল */}
                     <div
                       style={{
                         fontSize: '11px',
@@ -241,24 +253,26 @@ export default function AdminStaff({
                         wordBreak: 'break-all',
                         overflowWrap: 'anywhere',
                         lineHeight: '1.3',
-                        marginTop: '2px',
                       }}
                     >
                       {staff.email}
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px', flexWrap: 'wrap' }}>
-                      <span
-                        style={{
-                          fontSize: '11px',
-                          fontWeight: '600',
-                          color: hasDesignation ? '#ffffff' : '#52525b',
-                          fontFamily: 'monospace',
-                        }}
-                      >
-                        {hasDesignation ? staff.designation : 'No Designation Set'}
-                      </span>
+                    {/* সাদা রং ও হালকা মানানসই বোল্ড পদবী */}
+                    <div
+                      style={{
+                        fontSize: '12px',
+                        fontWeight: '600',
+                        color: hasDesignation ? '#ffffff' : '#52525b',
+                        fontFamily: 'system-ui, -apple-system, sans-serif',
+                        marginTop: '1px',
+                      }}
+                    >
+                      {hasDesignation ? staff.designation : 'No Designation Set'}
+                    </div>
 
+                    {/* পদবীর ঠিক নিচে আলাদা রো-তে রোল ব্যাজ */}
+                    <div style={{ display: 'flex', alignItems: 'center', marginTop: '3px' }}>
                       <span
                         style={{
                           display: 'inline-block',
