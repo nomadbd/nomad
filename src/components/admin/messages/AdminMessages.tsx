@@ -42,6 +42,7 @@ export const AdminMessages: React.FC<ExtendedAdminMessagesProps> = ({
     handleSelectThread,
     handleSendMessage,
     fetchCommunicationsAndUsers,
+    adminEmail, // <--- useAdminMessages থেকে কারেন্ট লগইন ইউজার ইমেইল আনা হয়েছে
   } = useAdminMessages(searchQuery, propActiveThreadId, onSelectThread);
 
   const [viewportHeight, setViewportHeight] = useState<number | null>(null);
@@ -215,6 +216,7 @@ export const AdminMessages: React.FC<ExtendedAdminMessagesProps> = ({
           readThreadIds={readThreadIds}
           handleThreadClick={handleThreadClick}
           formatThreadTime={formatThreadTime}
+          activeThreadId={activeThreadId}
         />
       ) : (
         <div
@@ -235,6 +237,7 @@ export const AdminMessages: React.FC<ExtendedAdminMessagesProps> = ({
             activeThread={activeThread}
             chatContainerRef={chatContainerRef as React.RefObject<HTMLDivElement>}
             getDateLabel={getDateLabel}
+            currentUserEmail={adminEmail} // <--- মেসেজ এলাইনমেন্ট এবং সিন ট্র্যাক করার জন্য পাস করা হলো
           />
 
           <ChatInput
