@@ -78,19 +78,20 @@ export const useAdminMessages = (
 
       const [commsRes, profilesRes, ambRes] = await Promise.all([
         supabase.from('communications').select('*').order('created_at', { ascending: true }),
-        supabase.from('profiles').select('email, name, role, avatar_url, created_at'),
+        supabase.from('profiles').select('email, name, role, designation, avatar_url, created_at'),
         supabase.from('ambassador').select('email, recipient_identifier, phone, assigned_slug, token, display_name, invite_sent_at'),
       ]);
 
       if (commsRes.error) throw commsRes.error;
 
-      const profileMap: Record<string, { name: string; role: string; avatarUrl?: string; createdAt?: string }> = {};
+      const profileMap: Record<string, { name: string; role: string; designation?: string; avatarUrl?: string; createdAt?: string }> = {};
       if (profilesRes.data) {
         profilesRes.data.forEach((p: any) => {
           if (p.email) {
             profileMap[p.email.trim().toLowerCase()] = {
               name: p.name || '',
               role: (p.role || 'CUSTOMER').toUpperCase(),
+              designation: p.designation || '',
               avatarUrl: p.avatar_url || '',
               createdAt: p.created_at || '',
             };
@@ -120,7 +121,7 @@ export const useAdminMessages = (
         });
       }
 
-      // ১. প্রথমে ডিফলต์ভাবে 'All Staff Group' থ্রেডটি যোগ করে রাখা হলো
+      // ১. প্রথমে ডিফল্টভাবে 'All Staff Group' থ্রেডটি যোগ করে রাখা হলো
       const threadMap: { [key: string]: Thread } = {
         all_staff: {
           id: 'all_staff',
@@ -128,6 +129,7 @@ export const useAdminMessages = (
           userEmail: '',
           userPhone: '',
           role: 'GROUP',
+          designation: '',
           avatarUrl: '',
           createdAt: '',
           inviteSentAt: '',
@@ -143,6 +145,9 @@ export const useAdminMessages = (
           const isSenderAdmin = (item.sender_role || '').toLowerCase() === 'admin';
           const isGroupMsg = item.channel_type === 'staff_group' || item.channel_id === 'all_staff';
 
+          let senderEmail = (item.sender_email || '').trim().toLowerCase();
+          let senderProfile = senderEmail ? profileMap[senderEmail] : null;
+
           if (isGroupMsg) {
             const rawCreatedAt = item.created_at || new Date().toISOString();
             const formattedTime = item.created_at
@@ -152,6 +157,8 @@ export const useAdminMessages = (
             threadMap['all_staff'].messages.push({
               id: item.id || String(Math.random()),
               sender: isSenderAdmin ? 'ADMIN' : 'USER',
+              senderName: senderProfile?.name || (isSenderAdmin ? 'Admin' : 'Staff Member'),
+              senderDesignation: senderProfile?.designation || '',
               text: item.message || '',
               timestamp: formattedTime,
             });
@@ -179,6 +186,7 @@ export const useAdminMessages = (
 
           let displayName = ambData?.displayName || profileData?.name || userEmail || ambData?.phone || channelId || 'Guest';
           let userRole = profileData ? profileData.role : (ambData ? 'INVITED AMBASSADOR' : 'GUEST');
+          let userDesignation = profileData?.designation || '';
           let userPhone = ambData?.phone || '';
 
           if (!threadMap[threadId]) {
@@ -188,6 +196,7 @@ export const useAdminMessages = (
               userEmail: userEmail,
               userPhone: userPhone,
               role: userRole,
+              designation: userDesignation,
               avatarUrl: profileData?.avatarUrl || '',
               createdAt: profileData?.createdAt || '',
               inviteSentAt: ambData?.inviteSentAt || '',
@@ -203,11 +212,16 @@ export const useAdminMessages = (
             if (!threadMap[threadId].avatarUrl && profileData?.avatarUrl) {
               threadMap[threadId].avatarUrl = profileData.avatarUrl;
             }
+            if (!threadMap[threadId].designation && userDesignation) {
+              threadMap[threadId].designation = userDesignation;
+            }
           }
 
           threadMap[threadId].messages.push({
             id: item.id || String(Math.random()),
             sender: isSenderAdmin ? 'ADMIN' : 'USER',
+            senderName: profileData?.name || displayName,
+            senderDesignation: userDesignation,
             text: item.message || '',
             timestamp: formattedTime,
           });
