@@ -9,6 +9,7 @@ interface MessageSidebarProps {
   readThreadIds: Record<string, boolean>;
   handleThreadClick: (thread: any) => void;
   formatThreadTime: (dateInput?: string | number | Date) => string;
+  activeThreadId?: string | null;
 }
 
 export const MessageSidebar: React.FC<MessageSidebarProps> = ({
@@ -19,9 +20,66 @@ export const MessageSidebar: React.FC<MessageSidebarProps> = ({
   readThreadIds,
   handleThreadClick,
   formatThreadTime,
+  activeThreadId,
 }) => {
+  const isGroupActive = activeThreadId === 'all_staff';
+
   return (
     <div style={{ width: '100%', padding: '0 4px', boxSizing: 'border-box' }}>
+      
+      {/* ALL STAFF GROUP CHAT TILE */}
+      <div
+        onClick={() =>
+          handleThreadClick({
+            id: 'all_staff',
+            userName: 'All Staff Group',
+            userEmail: '',
+            role: 'GROUP',
+            avatarUrl: '',
+            messages: [],
+          })
+        }
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          padding: '12px 10px',
+          borderRadius: '10px',
+          marginBottom: '10px',
+          cursor: 'pointer',
+          gap: '12px',
+          width: '100%',
+          boxSizing: 'border-box',
+          backgroundColor: isGroupActive ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.03)',
+          border: '1px solid',
+          borderColor: isGroupActive ? 'rgba(255, 255, 255, 0.2)' : 'rgba(255, 255, 255, 0.06)',
+          transition: 'background-color 0.15s ease',
+        }}
+      >
+        <div
+          style={{
+            width: '40px',
+            height: '40px',
+            borderRadius: '50%',
+            backgroundColor: 'rgba(255, 255, 255, 0.15)',
+            color: '#ffffff',
+            fontSize: '16px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+            fontWeight: 'bold',
+          }}
+        >
+          👥
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ color: '#ffffff', fontWeight: 600, fontSize: '13px' }}>All Staff Group</div>
+          <div style={{ color: '#aaaaaa', fontSize: '11px' }}>Common team workspace</div>
+        </div>
+      </div>
+
+      <div style={{ height: '1px', backgroundColor: 'rgba(255, 255, 255, 0.08)', marginBottom: '10px' }} />
+
       {/* FILTER BAR */}
       {isFilterOpen && (
         <div style={styles.headerFilterBarStyle}>
@@ -79,6 +137,7 @@ export const MessageSidebar: React.FC<MessageSidebarProps> = ({
 
           const isRead = readThreadIds[thread.id];
           const displayUnread = isRead ? 0 : (thread.unreadCount ?? 0);
+          const isSelected = activeThreadId === thread.id;
 
           return (
             <div
@@ -94,11 +153,15 @@ export const MessageSidebar: React.FC<MessageSidebarProps> = ({
                 gap: '12px',
                 width: '100%',
                 boxSizing: 'border-box',
-                backgroundColor: 'transparent',
+                backgroundColor: isSelected ? 'rgba(255, 255, 255, 0.06)' : 'transparent',
                 transition: 'background-color 0.15s ease',
               }}
-              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.04)')}
-              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+              onMouseEnter={(e) => {
+                if (!isSelected) e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.04)';
+              }}
+              onMouseLeave={(e) => {
+                if (!isSelected) e.currentTarget.style.backgroundColor = 'transparent';
+              }}
             >
               {/* AVATAR */}
               <div
