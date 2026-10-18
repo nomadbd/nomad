@@ -229,7 +229,7 @@ export default function AdminStaff({
 
                   {/* ২. নাম, ইমেইল, পদবী ও রোল এর কমপ্যাক্ট কলাম */}
                   <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                    <div style={{ fontSize: '14px', fontWeight: '700', color: '#ffffff', lineHeight: '1.2', wordBreak: 'break-word' }}>
+                    <div style={{ fontSize: '14px', fontWeight: '800', color: '#ffffff', lineHeight: '1.2', wordBreak: 'break-word' }}>
                       {staff.name || 'UNNAMED STAFF'}
                     </div>
 
@@ -252,7 +252,7 @@ export default function AdminStaff({
                         style={{
                           fontSize: '11px',
                           fontWeight: '600',
-                          color: hasDesignation ? '#22c55e' : '#52525b',
+                          color: hasDesignation ? '#ffffff' : '#52525b',
                           fontFamily: 'monospace',
                         }}
                       >
@@ -263,7 +263,7 @@ export default function AdminStaff({
                         style={{
                           display: 'inline-block',
                           backgroundColor: '#121215',
-                          color: staff.role === 'SUPER_ADMIN' ? '#38bdf8' : staff.role === 'ADMIN' ? '#22c55e' : '#a1a1aa',
+                          color: '#a1a1aa',
                           border: '1px solid #27272a',
                           borderRadius: '4px',
                           padding: '1px 6px',
