@@ -73,7 +73,7 @@ export const MessageSidebar: React.FC<MessageSidebarProps> = ({
         </div>
       )}
 
-      {/* DYNAMIC THREAD LIST (LATEST MESSAGES FIRST) */}
+      {/* THREAD LIST */}
       {filteredThreads.length === 0 ? (
         <div style={{ ...styles.emptyTextStyle, color: '#aaaaaa' }}>NO CONVERSATIONS FOUND</div>
       ) : (
@@ -120,7 +120,7 @@ export const MessageSidebar: React.FC<MessageSidebarProps> = ({
                 if (!isSelected) e.currentTarget.style.backgroundColor = 'transparent';
               }}
             >
-              {/* AVATAR - সুনির্দিষ্ট থ্রেডের ছবি रেন্ডার করা */}
+              {/* AVATAR */}
               <div
                 style={{
                   width: '40px',
@@ -141,7 +141,7 @@ export const MessageSidebar: React.FC<MessageSidebarProps> = ({
               >
                 {isGroup ? (
                   <GroupIcon size={18} color="#ffffff" />
-                ) : thread.avatarUrl ? (
+                ) : thread.avatarUrl && typeof thread.avatarUrl === 'string' && thread.avatarUrl.trim() !== '' ? (
                   <img
                     src={thread.avatarUrl}
                     alt={displayName}
