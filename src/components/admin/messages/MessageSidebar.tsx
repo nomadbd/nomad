@@ -25,7 +25,6 @@ export const MessageSidebar: React.FC<MessageSidebarProps> = ({
 }) => {
   const isGroupActive = activeThreadId === 'all_staff';
 
-  // ফিল্টার করা লিস্ট থেকে ম্যানেজমেন্ট গ্রুপটি নেওয়া হচ্ছে
   const groupThread = filteredThreads.find((t) => t.id === 'all_staff') || {
     id: 'all_staff',
     userName: 'Management Team',
@@ -34,13 +33,12 @@ export const MessageSidebar: React.FC<MessageSidebarProps> = ({
     unreadCount: 0,
   };
 
-  // ডুপ্লিকেট এড়াতে সাধারণ লিস্ট থেকে গ্রুপ বাদ রাখা হচ্ছে
   const regularThreads = filteredThreads.filter((t) => t.id !== 'all_staff');
 
   return (
     <div style={{ width: '100%', padding: '0 4px', boxSizing: 'border-box' }}>
 
-      {/* MANAGEMENT TEAM GROUP CHAT TILE */}
+      {/* MANAGEMENT TEAM GROUP CHAT TILE (PARALLEL GAP WITH OTHER THREADS) */}
       <div
         onClick={() => handleThreadClick(groupThread)}
         style={{
@@ -48,7 +46,6 @@ export const MessageSidebar: React.FC<MessageSidebarProps> = ({
           alignItems: 'flex-start',
           padding: '12px 8px',
           borderRadius: '8px',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
           cursor: 'pointer',
           gap: '12px',
           width: '100%',
@@ -63,7 +60,7 @@ export const MessageSidebar: React.FC<MessageSidebarProps> = ({
           if (!isGroupActive) e.currentTarget.style.backgroundColor = 'transparent';
         }}
       >
-        {/* AVATAR WITH GroupIcon IMPORTED FROM ICONS DIRECTORY */}
+        {/* AVATAR */}
         <div
           style={{
             width: '40px',
@@ -82,7 +79,7 @@ export const MessageSidebar: React.FC<MessageSidebarProps> = ({
         </div>
 
         {/* CARD CONTENT */}
-        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '3px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', width: '100%' }}>
             <span style={{ color: '#ffffff', fontWeight: 500, fontSize: '13.5px' }}>Management Team</span>
             <span style={{ color: '#aaaaaa', fontSize: '11px', whiteSpace: 'nowrap', fontWeight: 400 }}>
@@ -147,7 +144,8 @@ export const MessageSidebar: React.FC<MessageSidebarProps> = ({
         </div>
       </div>
 
-      <div style={{ height: '1px', backgroundColor: 'rgba(255, 255, 255, 0.08)', margin: '4px 0 6px 0' }} />
+      {/* DIVIDER LINE WITH EQUAL SPACING */}
+      <div style={{ height: '1px', backgroundColor: 'rgba(255, 255, 255, 0.08)', width: '100%' }} />
 
       {/* FILTER BAR */}
       {isFilterOpen && (
@@ -267,7 +265,7 @@ export const MessageSidebar: React.FC<MessageSidebarProps> = ({
               </div>
 
               {/* CARD CONTENT */}
-              <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '3px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', width: '100%' }}>
                   <span
                     style={{
