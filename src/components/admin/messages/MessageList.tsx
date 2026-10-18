@@ -48,11 +48,9 @@ export const MessageList: React.FC<MessageListProps> = ({
             return msg.timestamp || '';
           })();
 
-          // গ্রুপ চ্যাটের জন্য প্রেরকের নাম নির্ধারণ
-          const senderName =
-            msg.senderName ||
-            msg.sender_name ||
-            (isAdmin ? 'Admin' : activeThread?.userName || 'Staff Member');
+          // নাম ও পদবী প্রস্তুতকরণ (রোল বা ইমেইল বাদ দিয়ে)
+          const senderName = msg.senderName || msg.sender_name || (isAdmin ? 'Admin' : activeThread?.userName || 'Staff Member');
+          const senderDesignation = msg.senderDesignation || msg.sender_designation || (!isAdmin && activeThread?.designation ? activeThread.designation : '');
 
           return (
             <React.Fragment key={msg.id}>
@@ -82,23 +80,42 @@ export const MessageList: React.FC<MessageListProps> = ({
                   alignItems: isAdmin ? 'flex-end' : 'flex-start',
                 }}
               >
-                {/* ১. গ্রুপ চ্যাট হলে মেসেজের ওপর প্রেরকের নাম দেখাবে */}
+                {/* গ্রুপ চ্যাট হলে মেসেজের ওপর শুধু নাম এবং পদবী দেখাবে (রোল বা ইমেইল ছাড়া) */}
                 {isGroupChat && (
-                  <span
+                  <div
                     style={{
-                      fontSize: '10px',
-                      fontWeight: 600,
-                      color: isAdmin ? '#d4d4d8' : '#a1a1aa',
+                      display: 'flex',
+                      alignItems: 'baseline',
+                      gap: '6px',
                       marginBottom: '3px',
                       padding: '0 4px',
-                      letterSpacing: '0.3px',
                     }}
                   >
-                    {senderName}
-                  </span>
+                    <span
+                      style={{
+                        fontSize: '11px',
+                        fontWeight: '700',
+                        color: '#ffffff',
+                        letterSpacing: '0.2px',
+                      }}
+                    >
+                      {senderName}
+                    </span>
+                    {senderDesignation && (
+                      <span
+                        style={{
+                          fontSize: '10px',
+                          fontWeight: '500',
+                          color: '#d4d4d8',
+                        }}
+                      >
+                        • {senderDesignation}
+                      </span>
+                    )}
+                  </div>
                 )}
 
-                {/* ২. মূল মেসেজ বাবল */}
+                {/* মূল মেসেজ বাবল */}
                 <div
                   style={{
                     maxWidth: '85%',
@@ -117,7 +134,7 @@ export const MessageList: React.FC<MessageListProps> = ({
                   {msg.text}
                 </div>
 
-                {/* ৩. সময় (Timestamp) */}
+                {/* সময় (Timestamp) */}
                 <span
                   style={{
                     fontSize: '10.5px',
