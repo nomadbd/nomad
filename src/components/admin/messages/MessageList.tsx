@@ -60,7 +60,7 @@ export const MessageList: React.FC<MessageListProps> = ({
           const senderName = msg.senderName || msg.sender_name || (isMe ? 'You' : activeThread?.userName || 'Staff');
           const senderDesignation = msg.senderDesignation || msg.sender_designation || '';
 
-          // সেন্ডারের নিজস্ব ইমেল বাদ দিয়ে অন্যদের সিন লিস্ট ফিল্টার করা
+          // সেন্ডার বাদে বাকিদের Seen স্ট্যাটাস
           const readByList: Array<{ user_email: string; user_name?: string; seen_at?: string }> = 
             (Array.isArray(msg.read_by) ? msg.read_by : (Array.isArray(msg.readBy) ? msg.readBy : []))
             .filter((item: any) => {
