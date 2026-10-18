@@ -227,9 +227,9 @@ export default function AdminStaff({
                     </div>
                   )}
 
-                  {/* ২. নাম, ইমেইল, পদবী ও রোল এর কমপ্যাক্ট কলাম */}
+                  {/* ২. সুবিন্যস্ত সিকোয়েন্স: নাম ➔ পদবী ➔ ইমেইল ➔ রোল */}
                   <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                    {/* স্পষ্ট ও চওড়া বোল্ড নাম */}
+                    {/* ১. নাম (Name) */}
                     <div
                       style={{
                         fontSize: '15px',
@@ -244,7 +244,19 @@ export default function AdminStaff({
                       {staff.name || 'UNNAMED STAFF'}
                     </div>
 
-                    {/* ইমেইল */}
+                    {/* ২. পদবী (Designation) */}
+                    <div
+                      style={{
+                        fontSize: '12px',
+                        fontWeight: '600',
+                        color: hasDesignation ? '#ffffff' : '#52525b',
+                        fontFamily: 'system-ui, -apple-system, sans-serif',
+                      }}
+                    >
+                      {hasDesignation ? staff.designation : 'No Designation Set'}
+                    </div>
+
+                    {/* ৩. ইমেইল (Email) */}
                     <div
                       style={{
                         fontSize: '11px',
@@ -253,25 +265,13 @@ export default function AdminStaff({
                         wordBreak: 'break-all',
                         overflowWrap: 'anywhere',
                         lineHeight: '1.3',
+                        marginTop: '1px',
                       }}
                     >
                       {staff.email}
                     </div>
 
-                    {/* সাদা রং ও হালকা মানানসই বোল্ড পদবী */}
-                    <div
-                      style={{
-                        fontSize: '12px',
-                        fontWeight: '600',
-                        color: hasDesignation ? '#ffffff' : '#52525b',
-                        fontFamily: 'system-ui, -apple-system, sans-serif',
-                        marginTop: '1px',
-                      }}
-                    >
-                      {hasDesignation ? staff.designation : 'No Designation Set'}
-                    </div>
-
-                    {/* পদবীর ঠিক নিচে আলাদা রো-তে রোল ব্যাজ */}
+                    {/* ৪. রোল ব্যাজ (Role Badge) */}
                     <div style={{ display: 'flex', alignItems: 'center', marginTop: '3px' }}>
                       <span
                         style={{
