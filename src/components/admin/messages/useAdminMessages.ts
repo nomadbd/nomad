@@ -50,12 +50,35 @@ export const useAdminMessages = (
     }
   };
 
-  const handleSelectThread = (thread: Thread | null) => {
+  const handleSelectThread = async (thread: Thread | null) => {
     const threadId = thread ? thread.id : null;
     setInternalActiveThreadId(threadId);
 
     if (thread && thread.unreadCount > 0) {
       markThreadAsRead(thread);
+    }
+
+    if (thread && adminEmail) {
+      // চ ওপেন করার সাথে সাথে মেসেজগুলো সিন হিসেবে আপডেট করা (নিজের ইমেল বাদ দিয়ে)
+      const unreadMsgs = thread.messages.filter((m: any) => {
+        const readBy = Array.isArray(m.read_by) ? m.read_by : [];
+        return !readBy.some((r: any) => r.user_email?.toLowerCase() === adminEmail);
+      });
+
+      if (unreadMsgs.length > 0) {
+        const msgIds = unreadMsgs.map(m => m.id);
+        // ডাটাবেজে read_by আপডেট লজিক
+        const { data: commsData } = await supabase.from('communications').select('id, read_by').in('id', msgIds);
+        if (commsData) {
+          for (const comm of commsData) {
+            const existingReadBy = Array.isArray(comm.read_by) ? comm.read_by : [];
+            if (!existingReadBy.some((r: any) => r.user_email?.toLowerCase() === adminEmail)) {
+              const updatedReadBy = [...existingReadBy, { user_email: adminEmail, seen_at: new Date().toISOString() }];
+              await supabase.from('communications').update({ read_by: updatedReadBy }).eq('id', comm.id);
+            }
+          }
+        }
+      }
     }
 
     if (onSelectThread) {
@@ -188,6 +211,7 @@ export const useAdminMessages = (
           let userRole = profileData ? profileData.role : (ambData ? 'INVITED AMBASSADOR' : 'GUEST');
           let userDesignation = profileData?.designation || '';
           let userPhone = ambData?.phone || '';
+          let userAvatar = profileData?.avatarUrl || ''; // প্রোফাইল পিকচার সুনির্দিষ্টভাবে ম্যাপ করা
 
           if (!threadMap[threadId]) {
             threadMap[threadId] = {
@@ -197,7 +221,7 @@ export const useAdminMessages = (
               userPhone: userPhone,
               role: userRole,
               designation: userDesignation,
-              avatarUrl: profileData?.avatarUrl || '',
+              avatarUrl: userAvatar,
               createdAt: profileData?.createdAt || '',
               inviteSentAt: ambData?.inviteSentAt || '',
               unreadCount: item.is_read === false && !isMyOwnMessage ? 1 : 0,
@@ -209,11 +233,14 @@ export const useAdminMessages = (
             if (item.is_read === false && !isMyOwnMessage) {
               threadMap[threadId].unreadCount += 1;
             }
-            if (!threadMap[threadId].avatarUrl && profileData?.avatarUrl) {
-              threadMap[threadId].avatarUrl = profileData.avatarUrl;
+            if (!threadMap[threadId].avatarUrl && userAvatar) {
+              threadMap[threadId].avatarUrl = userAvatar;
             }
             if (!threadMap[threadId].designation && userDesignation) {
               threadMap[threadId].designation = userDesignation;
+            }
+            if (displayName && displayName !== threadId && threadMap[threadId].userName === threadId) {
+              threadMap[threadId].userName = displayName;
             }
           }
 
@@ -311,7 +338,7 @@ export const useAdminMessages = (
       senderEmail: adminEmail,
       text: messageText,
       timestamp: nowTime,
-      read_by: [{ user_email: adminEmail, seen_at: nowIso }],
+      read_by: [], // নিজের পাঠানো মেসেজে শুরুতে খালি রাখা হলো
     } as Message;
 
     setThreads((prevThreads) => {
@@ -347,7 +374,7 @@ export const useAdminMessages = (
             channel_type: 'staff_group',
             channel_id: 'all_staff',
             is_read: true,
-            read_by: [{ user_email: adminEmail, seen_at: nowIso }],
+            read_by: [],
           }
         : {
             sender_email: adminEmail || 'admin@nomadbd.com',
@@ -357,7 +384,7 @@ export const useAdminMessages = (
             channel_type: (activeThread.role || '').toLowerCase(),
             channel_id: activeThread.id,
             is_read: true,
-            read_by: [{ user_email: adminEmail, seen_at: nowIso }],
+            read_by: [],
           };
 
       const { error } = await supabase.from('communications').insert([payload]);
@@ -388,6 +415,6 @@ export const useAdminMessages = (
     handleSelectThread,
     handleSendMessage,
     fetchCommunicationsAndUsers,
-    adminEmail, // currentUserEmail পাস করার জন্য এক্সপোর্ট করা হলো
+    adminEmail,
   };
 };
