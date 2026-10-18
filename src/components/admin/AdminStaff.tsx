@@ -192,7 +192,7 @@ export default function AdminStaff({
                   transition: 'border-color 0.2s ease, background-color 0.2s ease',
                 }}
               >
-                {/* প্রোফাইল হেডার ও বিস্তারিত কলাম (কেবল এই অংশে ক্লিকে বটম শীট ওপেন হবে) */}
+                {/* প্রোফাইল হেডার ও বিস্তারিত কলাম */}
                 <div
                   onClick={() => setBottomSheetStaff(staff)}
                   style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', cursor: 'pointer' }}
@@ -227,8 +227,8 @@ export default function AdminStaff({
                     </div>
                   )}
 
-                  {/* ২. সুবিন্যস্ত সিকোয়েন্স: নাম ➔ পদবী ➔ ইমেইল ➔ রোল */}
-                  <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                  {/* ২. সুবিন্যস্ত সিকোয়েন্স: নাম ➔ পদবী (অফ-হোয়াইট ও কমপ্যাক্ট) ➔ ইমেইল ➔ রোল */}
+                  <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '2px' }}>
                     {/* ১. নাম (Name) */}
                     <div
                       style={{
@@ -244,12 +244,12 @@ export default function AdminStaff({
                       {staff.name || 'UNNAMED STAFF'}
                     </div>
 
-                    {/* ২. পদবী (Designation) */}
+                    {/* ২. পদবী (Designation) - অফ-হোয়াইট ও হালকা ছোট টাইপোগ্রাফি */}
                     <div
                       style={{
-                        fontSize: '12px',
+                        fontSize: '11px',
                         fontWeight: '600',
-                        color: hasDesignation ? '#ffffff' : '#52525b',
+                        color: hasDesignation ? '#d4d4d8' : '#52525b',
                         fontFamily: 'system-ui, -apple-system, sans-serif',
                       }}
                     >
