@@ -34,18 +34,16 @@ export const useAdminMessages = (
     propActiveThreadId !== undefined && propActiveThreadId !== null ? propActiveThreadId : internalActiveThreadId;
 
   const markThreadAsRead = async (thread: Thread) => {
-    if (thread.id === 'all_staff') return; // গ্রুপ চ্যাটের জন্য আলাদা আনরিড হ্যান্ডেলিং
-
     setThreads((prevThreads) =>
       prevThreads.map((t) => (t.id === thread.id ? { ...t, unreadCount: 0 } : t))
     );
 
     try {
-      const { error } = await supabase
-        .from('communications')
-        .update({ is_read: true })
-        .eq('channel_id', thread.id)
-        .eq('is_read', false);
+      const query = thread.id === 'all_staff'
+        ? supabase.from('communications').update({ is_read: true }).eq('channel_type', 'staff_group').eq('is_read', false)
+        : supabase.from('communications').update({ is_read: true }).eq('channel_id', thread.id).eq('is_read', false);
+
+      const { error } = await query;
 
       if (error) {
         console.error('Failed to mark messages as read in DB:', error.message);
@@ -121,11 +119,11 @@ export const useAdminMessages = (
         });
       }
 
-      // ১. প্রথমে ডিফল্টভাবে 'All Staff Group' থ্রেডটি যোগ করে রাখা হলো
+      // ১. ম্যানেজমেন্ট টিম গ্রুপ থ্রেড ইনিশিয়ালাইজেশন
       const threadMap: { [key: string]: Thread } = {
         all_staff: {
           id: 'all_staff',
-          userName: 'All Staff Group',
+          userName: 'Management Team',
           userEmail: '',
           userPhone: '',
           role: 'GROUP',
@@ -134,7 +132,7 @@ export const useAdminMessages = (
           createdAt: '',
           inviteSentAt: '',
           unreadCount: 0,
-          lastMessage: 'Welcome to the team group chat',
+          lastMessage: 'Core management workspace',
           lastMessageTime: new Date().toISOString(),
           messages: [],
         },
@@ -162,6 +160,11 @@ export const useAdminMessages = (
               text: item.message || '',
               timestamp: formattedTime,
             });
+
+            if (item.is_read === false && !isSenderAdmin) {
+              threadMap['all_staff'].unreadCount += 1;
+            }
+
             threadMap['all_staff'].lastMessage = item.message || '';
             threadMap['all_staff'].lastMessageTime = rawCreatedAt;
             return;
