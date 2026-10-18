@@ -59,22 +59,20 @@ export const useAdminMessages = (
     }
 
     if (thread && adminEmail) {
-      // চ ওপেন করার সাথে সাথে মেসেজগুলো সিন হিসেবে আপডেট করা (নিজের ইমেল বাদ দিয়ে)
-      const unreadMsgs = thread.messages.filter((m: any) => {
+      const unreadMsgs = thread.messages.filter((m) => {
         const readBy = Array.isArray(m.read_by) ? m.read_by : [];
-        return !readBy.some((r: any) => r.user_email?.toLowerCase() === adminEmail);
+        return !readBy.some((r) => r.user_email?.trim().toLowerCase() === adminEmail);
       });
 
       if (unreadMsgs.length > 0) {
-        const msgIds = unreadMsgs.map(m => m.id);
-        // ডাটাবেজে read_by আপডেট লজিক
+        const msgIds = unreadMsgs.map((m) => m.id);
         const { data: commsData } = await supabase.from('communications').select('id, read_by').in('id', msgIds);
         if (commsData) {
           for (const comm of commsData) {
             const existingReadBy = Array.isArray(comm.read_by) ? comm.read_by : [];
-            if (!existingReadBy.some((r: any) => r.user_email?.toLowerCase() === adminEmail)) {
+            if (!existingReadBy.some((r: any) => r.user_email?.trim().toLowerCase() === adminEmail)) {
               const updatedReadBy = [...existingReadBy, { user_email: adminEmail, seen_at: new Date().toISOString() }];
-              await supabase.from('communications').update({ read_by: updatedReadBy }).eq('id', comm.id);
+              await supabase.from('communications').update({ read_by: updatedReadBy, is_read: true }).eq('id', comm.id);
             }
           }
         }
@@ -106,15 +104,17 @@ export const useAdminMessages = (
 
       if (commsRes.error) throw commsRes.error;
 
+      // প্রোফাইল পিকচার আইসোলেটেড ম্যাপিং
       const profileMap: Record<string, { name: string; role: string; designation?: string; avatarUrl?: string; createdAt?: string }> = {};
       if (profilesRes.data) {
         profilesRes.data.forEach((p: any) => {
           if (p.email) {
-            profileMap[p.email.trim().toLowerCase()] = {
+            const cleanEmail = p.email.trim().toLowerCase();
+            profileMap[cleanEmail] = {
               name: p.name || '',
               role: (p.role || 'CUSTOMER').toUpperCase(),
               designation: p.designation || '',
-              avatarUrl: p.avatar_url || '',
+              avatarUrl: p.avatar_url ? String(p.avatar_url).trim() : '',
               createdAt: p.created_at || '',
             };
           }
@@ -167,7 +167,7 @@ export const useAdminMessages = (
           const isMyOwnMessage = itemSenderEmail === currentEmail;
           const isGroupMsg = item.channel_type === 'staff_group' || item.channel_id === 'all_staff';
 
-          let senderProfile = itemSenderEmail ? profileMap[itemSenderEmail] : null;
+          const senderProfile = itemSenderEmail ? profileMap[itemSenderEmail] : null;
 
           const rawCreatedAt = item.created_at || new Date().toISOString();
           const formattedTime = item.created_at
@@ -183,9 +183,10 @@ export const useAdminMessages = (
               senderDesignation: senderProfile?.designation || item.sender_designation || '',
               text: item.message || '',
               timestamp: formattedTime,
-              read_by: item.read_by || [],
-            } as Message);
+              read_by: Array.isArray(item.read_by) ? item.read_by : [],
+            });
 
+            // আনরিড ব্যাজ লজিক
             if (item.is_read === false && !isMyOwnMessage) {
               threadMap['all_staff'].unreadCount += 1;
             }
@@ -207,11 +208,13 @@ export const useAdminMessages = (
           const threadId = channelId || (effectiveEmail ? effectiveEmail : 'general');
           const userEmail = effectiveEmail;
 
-          let displayName = ambData?.displayName || profileData?.name || userEmail || ambData?.phone || channelId || 'Guest';
-          let userRole = profileData ? profileData.role : (ambData ? 'INVITED AMBASSADOR' : 'GUEST');
-          let userDesignation = profileData?.designation || '';
-          let userPhone = ambData?.phone || '';
-          let userAvatar = profileData?.avatarUrl || ''; // প্রোফাইল পিকচার সুনির্দিষ্টভাবে ম্যাপ করা
+          const displayName = ambData?.displayName || profileData?.name || userEmail || ambData?.phone || channelId || 'Guest';
+          const userRole = profileData ? profileData.role : (ambData ? 'INVITED AMBASSADOR' : 'GUEST');
+          const userDesignation = profileData?.designation || '';
+          const userPhone = ambData?.phone || '';
+
+          // প্রোফাইল পিকচার ওভাররাইট হওয়া সম্পূর্ণ বন্ধ
+          const userAvatar = profileData?.avatarUrl ? profileData.avatarUrl : '';
 
           if (!threadMap[threadId]) {
             threadMap[threadId] = {
@@ -233,10 +236,10 @@ export const useAdminMessages = (
             if (item.is_read === false && !isMyOwnMessage) {
               threadMap[threadId].unreadCount += 1;
             }
-            if (!threadMap[threadId].avatarUrl && userAvatar) {
+            if (userAvatar && !threadMap[threadId].avatarUrl) {
               threadMap[threadId].avatarUrl = userAvatar;
             }
-            if (!threadMap[threadId].designation && userDesignation) {
+            if (userDesignation && !threadMap[threadId].designation) {
               threadMap[threadId].designation = userDesignation;
             }
             if (displayName && displayName !== threadId && threadMap[threadId].userName === threadId) {
@@ -252,8 +255,8 @@ export const useAdminMessages = (
             senderDesignation: userDesignation,
             text: item.message || '',
             timestamp: formattedTime,
-            read_by: item.read_by || [],
-          } as Message);
+            read_by: Array.isArray(item.read_by) ? item.read_by : [],
+          });
 
           threadMap[threadId].lastMessage = item.message || '';
           threadMap[threadId].lastMessageTime = rawCreatedAt;
@@ -278,6 +281,7 @@ export const useAdminMessages = (
   useEffect(() => {
     fetchCommunicationsAndUsers(false);
 
+    // Supabase Realtime Channel
     const channel = supabase
       .channel('public:communications')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'communications' }, () => {
@@ -338,8 +342,8 @@ export const useAdminMessages = (
       senderEmail: adminEmail,
       text: messageText,
       timestamp: nowTime,
-      read_by: [], // নিজের পাঠানো মেসেজে শুরুতে খালি রাখা হলো
-    } as Message;
+      read_by: [], // নিজের জন্য খালি রাখা
+    };
 
     setThreads((prevThreads) => {
       const updated = prevThreads.map((t) => {
@@ -373,7 +377,7 @@ export const useAdminMessages = (
             message: messageText,
             channel_type: 'staff_group',
             channel_id: 'all_staff',
-            is_read: true,
+            is_read: false,
             read_by: [],
           }
         : {
@@ -383,7 +387,7 @@ export const useAdminMessages = (
             message: messageText,
             channel_type: (activeThread.role || '').toLowerCase(),
             channel_id: activeThread.id,
-            is_read: true,
+            is_read: false,
             read_by: [],
           };
 
