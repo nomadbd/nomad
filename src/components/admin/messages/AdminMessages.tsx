@@ -42,7 +42,7 @@ export const AdminMessages: React.FC<ExtendedAdminMessagesProps> = ({
     handleSelectThread,
     handleSendMessage,
     fetchCommunicationsAndUsers,
-    adminEmail, // <--- useAdminMessages থেকে কারেন্ট লগইন ইউজার ইমেইল আনা হয়েছে
+    adminEmail,
   } = useAdminMessages(searchQuery, propActiveThreadId, onSelectThread);
 
   const [viewportHeight, setViewportHeight] = useState<number | null>(null);
@@ -165,19 +165,35 @@ export const AdminMessages: React.FC<ExtendedAdminMessagesProps> = ({
     }
   };
 
+  const getResolvedName = (thread: any) => {
+    if (!thread) return '';
+    if (thread.displayName && thread.displayName.trim()) return thread.displayName;
+    if (thread.userName && thread.userName.trim() && thread.userName !== thread.assigned_slug && thread.userName !== thread.token) {
+      return thread.userName;
+    }
+    return thread.displayName || thread.userName || thread.userEmail || thread.userPhone || 'GUEST';
+  };
+
+  const resolvedThreadName = getResolvedName(activeThread);
+
   const isEmailSameAsName =
-    !activeThread?.userName ||
-    activeThread.userName.toLowerCase().trim() === activeThread.userEmail?.toLowerCase().trim();
+    !resolvedThreadName ||
+    resolvedThreadName.toLowerCase().trim() === activeThread?.userEmail?.toLowerCase().trim();
 
   const headerTitle = isEmailSameAsName
-    ? (activeThread?.userEmail || activeThread?.userPhone || activeThread?.userName)
-    : activeThread?.userName;
+    ? (activeThread?.userEmail || activeThread?.userPhone || resolvedThreadName)
+    : resolvedThreadName;
 
   const headerSubtitle = isEmailSameAsName
     ? (activeThread?.userEmail ? activeThread?.userPhone || '' : '')
     : (activeThread?.userEmail || activeThread?.userPhone || '');
 
-  const newChatUsers = filteredThreads.filter((t) => {
+  const enhancedThreads = filteredThreads.map((t) => ({
+    ...t,
+    userName: getResolvedName(t),
+  }));
+
+  const newChatUsers = enhancedThreads.filter((t) => {
     if (!newChatSearch.trim()) return true;
     const q = newChatSearch.toLowerCase().trim();
     return (
@@ -212,7 +228,7 @@ export const AdminMessages: React.FC<ExtendedAdminMessagesProps> = ({
           isFilterOpen={isFilterOpen}
           roleFilter={roleFilter}
           setRoleFilter={setRoleFilter}
-          filteredThreads={filteredThreads}
+          filteredThreads={enhancedThreads}
           readThreadIds={readThreadIds}
           handleThreadClick={handleThreadClick}
           formatThreadTime={formatThreadTime}
@@ -237,7 +253,7 @@ export const AdminMessages: React.FC<ExtendedAdminMessagesProps> = ({
             activeThread={activeThread}
             chatContainerRef={chatContainerRef as React.RefObject<HTMLDivElement>}
             getDateLabel={getDateLabel}
-            currentUserEmail={adminEmail} // <--- মেসেজ এলাইনমেন্ট এবং সিন ট্র্যাক করার জন্য পাস করা হলো
+            currentUserEmail={adminEmail}
           />
 
           <ChatInput
