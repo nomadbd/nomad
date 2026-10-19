@@ -97,7 +97,7 @@ export const useAdminMessages = (
         supabase.auth.getUser(),
         supabase.from('communications').select('*').order('created_at', { ascending: true }),
         supabase.from('profiles').select('id, email, name, role, designation, avatar_url, created_at, status'),
-        supabase.from('ambassador').select('id, user_id, display_name, email, phone, recipient_identifier, assigned_slug, token, invite_sent_at, is_registered'),
+        supabase.from('ambassador').select('id, user_id, display_name, email, phone, recipient_identifier, assigned_slug, token, invite_sent_at, expires_at, is_registered'),
       ]);
 
       const currentEmail = authRes.data.user?.email?.trim().toLowerCase() || adminEmail;
@@ -146,9 +146,15 @@ export const useAdminMessages = (
       }
 
       const ambassadorBySlug: Record<string, any> = {};
+      const now = new Date();
 
       if (ambRes.data) {
         ambRes.data.forEach((a: any) => {
+          const isExpired = a.expires_at && new Date(a.expires_at) < now;
+          if (!a.is_registered && isExpired) {
+            return;
+          }
+
           const ambObj = {
             id: a.id,
             userId: a.user_id || '',
