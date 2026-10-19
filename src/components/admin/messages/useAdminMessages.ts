@@ -96,7 +96,7 @@ export const useAdminMessages = (
         supabase.auth.getUser(),
         supabase.from('communications').select('*').order('created_at', { ascending: true }),
         supabase.from('profiles').select('id, email, name, role, designation, avatar_url, created_at, status'),
-        supabase.from('ambassador').select('id, user_id, email, phone, recipient_identifier, assigned_slug, token, invite_sent_at'),
+        supabase.from('ambassador').select('id, user_id, email, phone, recipient_identifier, assigned_slug, token, display_name, invite_sent_at, is_registered'),
       ]);
 
       const currentEmail = authRes.data.user?.email?.trim().toLowerCase() || adminEmail;
@@ -104,9 +104,9 @@ export const useAdminMessages = (
 
       if (commsRes.error) throw commsRes.error;
 
-      // ১. Profiles Indexing (UUID and Email)
-      const profilesById: Record<string, any> = {};
+      // ১. Profiles ম্যাপিং (শুধুমাত্র প্রকৃত নিবন্ধিত অ্যাকাউন্টের জন্য)
       const profilesByEmail: Record<string, any> = {};
+      const profilesById: Record<string, any> = {};
 
       if (profilesRes.data) {
         profilesRes.data.forEach((p: any) => {
@@ -122,29 +122,27 @@ export const useAdminMessages = (
             createdAt: p.created_at || '',
           };
 
-          if (p.id) profilesById[p.id] = profileObj;
           if (profileObj.email) profilesByEmail[profileObj.email] = profileObj;
+          if (p.id) profilesById[p.id] = profileObj;
         });
       }
 
-      // ২. Ambassador Indexing (Slug / Identifier / Email / UserID)
+      // ২. Ambassador ম্যাপিং (ইনভাইট করা অ্যাম্বাসেডরদের জন্য)
       const ambassadorBySlug: Record<string, any> = {};
-      const ambassadorByUserId: Record<string, any> = {};
 
       if (ambRes.data) {
         ambRes.data.forEach((a: any) => {
           const ambObj = {
             id: a.id,
             userId: a.user_id || '',
+            slug: a.assigned_slug || a.token || a.display_name || '',
             email: a.email ? a.email.trim().toLowerCase() : '',
             phone: a.phone || '',
             inviteSentAt: a.invite_sent_at || '',
-            identifier: a.recipient_identifier || a.assigned_slug || a.token || '',
+            isRegistered: a.is_registered || false,
           };
 
-          if (a.user_id) ambassadorByUserId[a.user_id] = ambObj;
-
-          const keys = [a.assigned_slug, a.recipient_identifier, a.token, a.email, a.phone];
+          const keys = [a.assigned_slug, a.token, a.recipient_identifier, a.email, a.phone];
           keys.forEach((k) => {
             if (k && typeof k === 'string') {
               const cleanK = k.trim().toLowerCase();
@@ -154,7 +152,7 @@ export const useAdminMessages = (
         });
       }
 
-      // ৩. Base Threads Init
+      // ৩. থ্রেড অবজেক্ট তৈরি
       const threadMap: { [key: string]: Thread } = {
         all_staff: {
           id: 'all_staff',
@@ -207,37 +205,53 @@ export const useAdminMessages = (
             return;
           }
 
-          // ওয়াটারটাইট থ্রেড এবং পার্টনার প্রোফাইল রেজোলিউশন
+          // ১-অন-১ চ্যাট থ্রেড ম্যাচিং
           const channelId = (item.channel_id || '').trim().toLowerCase();
           const threadId = channelId || 'general';
 
-          // ১. প্রথমে channel_id দিয়ে Profile এবং Ambassador খুঁজি
-          let targetProfile = profilesById[channelId] || null;
-          let targetAmbassador = ambassadorBySlug[channelId] || (targetProfile?.id ? ambassadorByUserId[targetProfile.id] : null);
+          // চ্যাট পার্টনারের ইমেইল বের করা (অ্যাডমিনের ইমেইল বাদ দিয়ে)
+          const partnerEmail = isMyOwnMessage
+            ? (item.recipient_email && item.recipient_email !== 'EMPTY' ? item.recipient_email.trim().toLowerCase() : '')
+            : itemSenderEmail;
 
-          // ২. যদি না পাওয়া যায়, তবে ইমেইল দিয়ে রেজলভ করি (এডমিনের ইমেইল বাদ দিয়ে)
-          if (!targetProfile) {
-            const partnerEmail = isMyOwnMessage
-              ? (item.recipient_email && item.recipient_email !== 'EMPTY' ? item.recipient_email.trim().toLowerCase() : '')
-              : itemSenderEmail;
+          // চ্যাট পার্টনার রেজিস্টার্ড ইউজার কিনা চেক করা
+          const targetProfile = partnerEmail && partnerEmail !== currentEmail 
+            ? profilesByEmail[partnerEmail] 
+            : (profilesById[channelId] || null);
 
-            if (partnerEmail && partnerEmail !== currentEmail) {
-              targetProfile = profilesByEmail[partnerEmail] || null;
-              if (!targetAmbassador) {
-                targetAmbassador = ambassadorBySlug[partnerEmail] || null;
-              }
-            }
+          // চ্যাট পার্টনার ইনভাইটেড অ্যাম্বাসেডর কিনা চেক করা
+          const targetAmbassador = ambassadorBySlug[channelId] || (partnerEmail ? ambassadorBySlug[partnerEmail] : null);
+
+          let displayName = '';
+          let userRole = '';
+          let userDesignation = '';
+          let userAvatar = '';
+          let userEmail = '';
+          let userPhone = '';
+
+          if (targetProfile) {
+            // যদি profiles টেবিলে একাউন্ট পাওয়া যায়
+            displayName = targetProfile.name || targetProfile.email || channelId;
+            userRole = targetProfile.role;
+            userDesignation = targetProfile.designation;
+            userAvatar = targetProfile.avatarUrl; // নিজস্ব avatar_url
+            userEmail = targetProfile.email;
+          } else if (targetAmbassador) {
+            // যদি শুধুই ইনভাইটেড অ্যাম্বাসেডর হয় (অ্যাকাউন্ট তৈরি করেনি)
+            displayName = targetAmbassador.slug || channelId;
+            userRole = 'INVITED AMBASSADOR';
+            userDesignation = ''; // কোনো ডেজিগনেশন থাকবে না
+            userAvatar = ''; // কোনো ছবি থাকবে না
+            userEmail = targetAmbassador.email;
+            userPhone = targetAmbassador.phone;
+          } else {
+            // সাধারণ গেস্ট বা অজানা ইউজার
+            displayName = channelId || 'Guest';
+            userRole = 'GUEST';
+            userDesignation = '';
+            userAvatar = '';
+            userEmail = partnerEmail;
           }
-
-          // ৩. ডিসপ্লে নেম ও রোল
-          const displayName = targetProfile?.name || targetAmbassador?.identifier || item.sender_name || channelId || 'User';
-          const userRole = targetProfile ? targetProfile.role : (targetAmbassador ? 'INVITED AMBASSADOR' : 'GUEST');
-          const userDesignation = targetProfile?.designation || '';
-          const userEmail = targetProfile?.email || targetAmbassador?.email || (isMyOwnMessage ? item.recipient_email : item.sender_email) || '';
-          const userPhone = targetAmbassador?.phone || '';
-
-          // ৪. ছবি আইসোলেশন: কেবল যদি চ্যাট পার্টনারের Profiles অ্যাকাউন্টে নিজস্ব avatar_url থাকে
-          const userAvatar = targetProfile?.avatarUrl ? targetProfile.avatarUrl : '';
 
           if (!threadMap[threadId]) {
             threadMap[threadId] = {
@@ -265,7 +279,7 @@ export const useAdminMessages = (
             if (!threadMap[threadId].designation && userDesignation) {
               threadMap[threadId].designation = userDesignation;
             }
-            if (displayName && displayName !== threadId && threadMap[threadId].userName === threadId) {
+            if (displayName && threadMap[threadId].userName === threadId) {
               threadMap[threadId].userName = displayName;
             }
           }
