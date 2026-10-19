@@ -60,9 +60,6 @@ export default function ProfilePage() {
   const [currentSlug, setCurrentSlug] = useState('');
   const [newSlug, setNewSlug] = useState('');
 
-  const [currentDisplayName, setCurrentDisplayName] = useState('');
-  const [newDisplayName, setNewDisplayName] = useState('');
-
   const [payoutMethod, setPayoutMethod] = useState('bKash');
   const [currentPayoutDetails, setCurrentPayoutDetails] = useState('');
   const [newPayoutNumber, setNewPayoutNumber] = useState('');
@@ -212,7 +209,6 @@ export default function ProfilePage() {
         if (amb) {
           setCurrentSlug(amb.assigned_slug || '');
           setCurrentPayoutDetails(amb.payout_details || '');
-          setCurrentDisplayName(amb.display_name || '');
 
           if (amb.payout_details && amb.payout_details.includes(':')) {
             const [method] = amb.payout_details.split(':');
@@ -229,7 +225,6 @@ export default function ProfilePage() {
       setNewPassword('');
       setDeleteConfirmPassword('');
       setNewSlug('');
-      setNewDisplayName('');
       setNewPayoutNumber('');
     }
     setLoading(false);
@@ -409,10 +404,6 @@ export default function ProfilePage() {
       if (isAmbassador && profile?.id) {
         const updatesToAmb: any = {};
 
-        if (newDisplayName.trim()) {
-          updatesToAmb.display_name = newDisplayName.trim().toUpperCase().slice(0, 10);
-        }
-
         const getFallbackSlug = (name?: string) => {
           if (!name?.trim()) return '';
           return name
@@ -472,7 +463,6 @@ export default function ProfilePage() {
       setCurrentPassword('');
       setNewPassword('');
       setDeleteConfirmPassword('');
-      setNewDisplayName('');
       setNewSlug('');
       setNewPayoutNumber('');
 
@@ -594,9 +584,6 @@ export default function ProfilePage() {
             currentSlug={currentSlug}
             newSlug={newSlug}
             setNewSlug={setNewSlug}
-            currentDisplayName={currentDisplayName}
-            newDisplayName={newDisplayName}
-            setNewDisplayName={setNewDisplayName}
             payoutMethod={payoutMethod}
             setPayoutMethod={setPayoutMethod}
             currentPayoutDetails={currentPayoutDetails}
