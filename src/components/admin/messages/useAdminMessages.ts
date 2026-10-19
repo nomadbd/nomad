@@ -104,30 +104,25 @@ export const useAdminMessages = (
 
       if (commsRes.error) throw commsRes.error;
 
+      // স্ট্রিক্ট ইমেইল-ভিত্তিক প্রোফাইল ডিকশনারি
       const profileMap: Record<string, { email: string; name: string; role: string; designation?: string; avatarUrl: string; createdAt?: string }> = {};
-      const profileMapByName: Record<string, { email: string; name: string; role: string; designation?: string; avatarUrl: string; createdAt?: string }> = {};
 
       if (profilesRes.data) {
         profilesRes.data.forEach((p: any) => {
-          const profileObj = {
-            email: p.email ? p.email.trim().toLowerCase() : '',
-            name: p.name || '',
-            role: (p.role || 'CUSTOMER').toUpperCase(),
-            designation: p.designation || '',
-            avatarUrl: p.avatar_url && p.avatar_url !== 'NULL' ? String(p.avatar_url).trim() : '',
-            createdAt: p.created_at || '',
-          };
+          if (p.email) {
+            const cleanEmail = p.email.trim().toLowerCase();
+            const avatar = p.avatar_url && p.avatar_url !== 'NULL' && String(p.avatar_url).trim() !== '' 
+              ? String(p.avatar_url).trim() 
+              : '';
 
-          if (profileObj.email) {
-            profileMap[profileObj.email] = profileObj;
-          }
-          if (profileObj.name) {
-            const cleanNameKey = profileObj.name.trim().toLowerCase();
-            profileMapByName[cleanNameKey] = profileObj;
-            const firstNameKey = cleanNameKey.split(' ')[0];
-            if (firstNameKey) {
-              profileMapByName[firstNameKey] = profileObj;
-            }
+            profileMap[cleanEmail] = {
+              email: cleanEmail,
+              name: p.name || '',
+              role: (p.role || 'CUSTOMER').toUpperCase(),
+              designation: p.designation || '',
+              avatarUrl: avatar,
+              createdAt: p.created_at || '',
+            };
           }
         });
       }
@@ -214,10 +209,8 @@ export const useAdminMessages = (
 
           const effectiveEmail = (rawEmail || ambData?.email || '').trim().toLowerCase();
           
-          const profileData = 
-            (effectiveEmail ? profileMap[effectiveEmail] : null) || 
-            (channelId ? profileMapByName[channelId] : null) || 
-            (item.sender_name ? profileMapByName[item.sender_name.trim().toLowerCase()] : null);
+          // ১. নাম এবং প্রোফাইল তথ্য খোঁজার নিয়ম
+          const profileData = effectiveEmail ? profileMap[effectiveEmail] : null;
 
           const threadId = channelId || (effectiveEmail ? effectiveEmail : 'general');
           const userEmail = effectiveEmail || profileData?.email || '';
@@ -227,7 +220,10 @@ export const useAdminMessages = (
           const userDesignation = profileData?.designation || '';
           const userPhone = ambData?.phone || '';
 
-          const userAvatar = profileData?.avatarUrl ? profileData.avatarUrl : '';
+          // ২. প্রোফাইল পিকচারের কঠোর নিরাপত্তা: শুধুমাত্র এবং শুধুমাত্র যদি ইমেল এক্সেক্ট ম্যাচ করে
+          const userAvatar = (profileData && profileData.email === userEmail && profileData.avatarUrl) 
+            ? profileData.avatarUrl 
+            : '';
 
           if (!threadMap[threadId]) {
             threadMap[threadId] = {
@@ -249,7 +245,8 @@ export const useAdminMessages = (
             if (item.is_read === false && !isMyOwnMessage) {
               threadMap[threadId].unreadCount += 1;
             }
-            if (!threadMap[threadId].avatarUrl && userAvatar) {
+            // যদি আগে থেকে ছবি না থাকে এবং বর্তমান মেসেজে সঠিক ইউজার ইমেলের অবতার পায়
+            if (!threadMap[threadId].avatarUrl && userAvatar && threadMap[threadId].userEmail === userEmail) {
               threadMap[threadId].avatarUrl = userAvatar;
             }
             if (!threadMap[threadId].designation && userDesignation) {
