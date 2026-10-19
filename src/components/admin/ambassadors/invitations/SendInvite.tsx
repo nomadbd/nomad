@@ -189,7 +189,7 @@ const SendInvite: React.FC<SendInviteProps> = ({ isOpen = true, onClose, onInvit
         )}
 
         <div className={styles.inviteHeader}>
-          <h2 className={styles.inviteTitle}>VIP INVITATION</h2>
+          <h2 className={styles.inviteTitle}>AMBASSADOR INVITATION</h2>
         </div>
 
         {errorMessage && <div className={styles.errorBox}>{errorMessage}</div>}
@@ -283,7 +283,8 @@ const SendInvite: React.FC<SendInviteProps> = ({ isOpen = true, onClose, onInvit
 
           <form onSubmit={(e) => handleSendWhatsApp(e, false)} className={styles.inputActionRow}>
             <input
-              type="text"
+              type="tel"
+              inputMode="tel"
               className={styles.minimalInput}
               placeholder="WhatsApp Number"
               value={phone}
