@@ -95,8 +95,8 @@ export const useAdminMessages = (
       const [authRes, commsRes, profilesRes, ambRes] = await Promise.all([
         supabase.auth.getUser(),
         supabase.from('communications').select('*').order('created_at', { ascending: true }),
-        supabase.from('profiles').select('email, name, role, designation, avatar_url, created_at, status'),
-        supabase.from('ambassador').select('email, recipient_identifier, phone, assigned_slug, token, display_name, invite_sent_at'),
+        supabase.from('profiles').select('id, email, name, role, designation, avatar_url, created_at, status'),
+        supabase.from('ambassador').select('id, user_id, email, phone, recipient_identifier, assigned_slug, token, invite_sent_at'),
       ]);
 
       const currentEmail = authRes.data.user?.email?.trim().toLowerCase() || adminEmail;
@@ -104,51 +104,57 @@ export const useAdminMessages = (
 
       if (commsRes.error) throw commsRes.error;
 
-      // স্ট্রিক্ট ইমেইল-ভিত্তিক প্রোফাইল ডিকশনারি
-      const profileMap: Record<string, { email: string; name: string; role: string; designation?: string; avatarUrl: string; createdAt?: string }> = {};
+      // ১. Profiles Indexing (UUID and Email)
+      const profilesById: Record<string, any> = {};
+      const profilesByEmail: Record<string, any> = {};
 
       if (profilesRes.data) {
         profilesRes.data.forEach((p: any) => {
-          if (p.email) {
-            const cleanEmail = p.email.trim().toLowerCase();
-            const avatar = p.avatar_url && p.avatar_url !== 'NULL' && String(p.avatar_url).trim() !== '' 
+          const profileObj = {
+            id: p.id,
+            email: p.email ? p.email.trim().toLowerCase() : '',
+            name: p.name || '',
+            role: (p.role || 'CUSTOMER').toUpperCase(),
+            designation: p.designation || '',
+            avatarUrl: p.avatar_url && p.avatar_url !== 'NULL' && String(p.avatar_url).trim() !== '' 
               ? String(p.avatar_url).trim() 
-              : '';
+              : '',
+            createdAt: p.created_at || '',
+          };
 
-            profileMap[cleanEmail] = {
-              email: cleanEmail,
-              name: p.name || '',
-              role: (p.role || 'CUSTOMER').toUpperCase(),
-              designation: p.designation || '',
-              avatarUrl: avatar,
-              createdAt: p.created_at || '',
-            };
-          }
+          if (p.id) profilesById[p.id] = profileObj;
+          if (profileObj.email) profilesByEmail[profileObj.email] = profileObj;
         });
       }
 
-      const ambassadorMap: Record<string, { displayName: string; identifier: string; phone?: string; inviteSentAt?: string; email?: string; token?: string }> = {};
+      // ২. Ambassador Indexing (Slug / Identifier / Email / UserID)
+      const ambassadorBySlug: Record<string, any> = {};
+      const ambassadorByUserId: Record<string, any> = {};
+
       if (ambRes.data) {
         ambRes.data.forEach((a: any) => {
-          const ambDataObj = {
-            displayName: a.display_name || '',
-            identifier: a.recipient_identifier || a.email || a.assigned_slug || a.token || '',
+          const ambObj = {
+            id: a.id,
+            userId: a.user_id || '',
+            email: a.email ? a.email.trim().toLowerCase() : '',
             phone: a.phone || '',
             inviteSentAt: a.invite_sent_at || '',
-            email: a.email ? a.email.trim().toLowerCase() : '',
-            token: a.token || a.assigned_slug || '',
+            identifier: a.recipient_identifier || a.assigned_slug || a.token || '',
           };
 
-          const possibleKeys = [a.email, a.recipient_identifier, a.assigned_slug, a.token, a.phone];
-          possibleKeys.forEach((key) => {
-            if (key && typeof key === 'string') {
-              const cleanKey = key.trim().toLowerCase();
-              if (cleanKey) ambassadorMap[cleanKey] = ambDataObj;
+          if (a.user_id) ambassadorByUserId[a.user_id] = ambObj;
+
+          const keys = [a.assigned_slug, a.recipient_identifier, a.token, a.email, a.phone];
+          keys.forEach((k) => {
+            if (k && typeof k === 'string') {
+              const cleanK = k.trim().toLowerCase();
+              if (cleanK) ambassadorBySlug[cleanK] = ambObj;
             }
           });
         });
       }
 
+      // ৩. Base Threads Init
       const threadMap: { [key: string]: Thread } = {
         all_staff: {
           id: 'all_staff',
@@ -173,7 +179,7 @@ export const useAdminMessages = (
           const isMyOwnMessage = itemSenderEmail === currentEmail;
           const isGroupMsg = item.channel_type === 'staff_group' || item.channel_id === 'all_staff';
 
-          const senderProfile = itemSenderEmail ? profileMap[itemSenderEmail] : null;
+          const senderProfile = itemSenderEmail ? profilesByEmail[itemSenderEmail] : null;
 
           const rawCreatedAt = item.created_at || new Date().toISOString();
           const formattedTime = item.created_at
@@ -201,29 +207,37 @@ export const useAdminMessages = (
             return;
           }
 
-          let rawEmail = isMyOwnMessage ? item.recipient_email : item.sender_email;
-          if (rawEmail === 'EMPTY' || !rawEmail) rawEmail = '';
-
+          // ওয়াটারটাইট থ্রেড এবং পার্টনার প্রোফাইল রেজোলিউশন
           const channelId = (item.channel_id || '').trim().toLowerCase();
-          const ambData = (channelId ? ambassadorMap[channelId] : null) || (rawEmail ? ambassadorMap[rawEmail.trim().toLowerCase()] : null);
+          const threadId = channelId || 'general';
 
-          const effectiveEmail = (rawEmail || ambData?.email || '').trim().toLowerCase();
-          
-          // ১. নাম এবং প্রোফাইল তথ্য খোঁজার নিয়ম
-          const profileData = effectiveEmail ? profileMap[effectiveEmail] : null;
+          // ১. প্রথমে channel_id দিয়ে Profile এবং Ambassador খুঁজি
+          let targetProfile = profilesById[channelId] || null;
+          let targetAmbassador = ambassadorBySlug[channelId] || (targetProfile?.id ? ambassadorByUserId[targetProfile.id] : null);
 
-          const threadId = channelId || (effectiveEmail ? effectiveEmail : 'general');
-          const userEmail = effectiveEmail || profileData?.email || '';
+          // ২. যদি না পাওয়া যায়, তবে ইমেইল দিয়ে রেজলভ করি (এডমিনের ইমেইল বাদ দিয়ে)
+          if (!targetProfile) {
+            const partnerEmail = isMyOwnMessage
+              ? (item.recipient_email && item.recipient_email !== 'EMPTY' ? item.recipient_email.trim().toLowerCase() : '')
+              : itemSenderEmail;
 
-          const displayName = ambData?.displayName || profileData?.name || userEmail || ambData?.phone || channelId || 'Guest';
-          const userRole = profileData ? profileData.role : (ambData ? 'INVITED AMBASSADOR' : 'GUEST');
-          const userDesignation = profileData?.designation || '';
-          const userPhone = ambData?.phone || '';
+            if (partnerEmail && partnerEmail !== currentEmail) {
+              targetProfile = profilesByEmail[partnerEmail] || null;
+              if (!targetAmbassador) {
+                targetAmbassador = ambassadorBySlug[partnerEmail] || null;
+              }
+            }
+          }
 
-          // ২. প্রোফাইল পিকচারের কঠোর নিরাপত্তা: শুধুমাত্র এবং শুধুমাত্র যদি ইমেল এক্সেক্ট ম্যাচ করে
-          const userAvatar = (profileData && profileData.email === userEmail && profileData.avatarUrl) 
-            ? profileData.avatarUrl 
-            : '';
+          // ৩. ডিসপ্লে নেম ও রোল
+          const displayName = targetProfile?.name || targetAmbassador?.identifier || item.sender_name || channelId || 'User';
+          const userRole = targetProfile ? targetProfile.role : (targetAmbassador ? 'INVITED AMBASSADOR' : 'GUEST');
+          const userDesignation = targetProfile?.designation || '';
+          const userEmail = targetProfile?.email || targetAmbassador?.email || (isMyOwnMessage ? item.recipient_email : item.sender_email) || '';
+          const userPhone = targetAmbassador?.phone || '';
+
+          // ৪. ছবি আইসোলেশন: কেবল যদি চ্যাট পার্টনারের Profiles অ্যাকাউন্টে নিজস্ব avatar_url থাকে
+          const userAvatar = targetProfile?.avatarUrl ? targetProfile.avatarUrl : '';
 
           if (!threadMap[threadId]) {
             threadMap[threadId] = {
@@ -234,8 +248,8 @@ export const useAdminMessages = (
               role: userRole,
               designation: userDesignation,
               avatarUrl: userAvatar,
-              createdAt: profileData?.createdAt || '',
-              inviteSentAt: ambData?.inviteSentAt || '',
+              createdAt: targetProfile?.createdAt || '',
+              inviteSentAt: targetAmbassador?.inviteSentAt || '',
               unreadCount: item.is_read === false && !isMyOwnMessage ? 1 : 0,
               lastMessage: item.message || '',
               lastMessageTime: rawCreatedAt,
@@ -245,8 +259,7 @@ export const useAdminMessages = (
             if (item.is_read === false && !isMyOwnMessage) {
               threadMap[threadId].unreadCount += 1;
             }
-            // যদি আগে থেকে ছবি না থাকে এবং বর্তমান মেসেজে সঠিক ইউজার ইমেলের অবতার পায়
-            if (!threadMap[threadId].avatarUrl && userAvatar && threadMap[threadId].userEmail === userEmail) {
+            if (!threadMap[threadId].avatarUrl && userAvatar) {
               threadMap[threadId].avatarUrl = userAvatar;
             }
             if (!threadMap[threadId].designation && userDesignation) {
@@ -261,7 +274,7 @@ export const useAdminMessages = (
             id: item.id || String(Math.random()),
             sender: isMyOwnMessage ? 'ADMIN' : 'USER',
             senderEmail: itemSenderEmail,
-            senderName: profileData?.name || displayName,
+            senderName: senderProfile?.name || displayName,
             senderDesignation: userDesignation,
             text: item.message || '',
             timestamp: formattedTime,
