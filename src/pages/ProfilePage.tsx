@@ -189,7 +189,42 @@ export default function ProfilePage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
       setSession({ user });
-      const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+
+      const cleanEmail = (user.email || '').toLowerCase();
+      const userInviteToken = user.user_metadata?.invite_token;
+
+      let pendingInvite: any = null;
+
+      if (userInviteToken) {
+        const { data: inviteByToken } = await supabase
+          .from('ambassador')
+          .select('*')
+          .eq('token', userInviteToken)
+          .eq('is_registered', false)
+          .maybeSingle();
+        pendingInvite = inviteByToken;
+      }
+
+      if (!pendingInvite && cleanEmail) {
+        const { data: inviteByEmail } = await supabase
+          .from('ambassador')
+          .select('*')
+          .or(`email.eq.${cleanEmail},recipient_identifier.eq.${cleanEmail}`)
+          .eq('is_registered', false)
+          .maybeSingle();
+        pendingInvite = inviteByEmail;
+      }
+
+      if (pendingInvite) {
+        await supabase.rpc('complete_ambassador_registration', {
+          invite_token: pendingInvite.token,
+          new_user_id: user.id,
+          user_email: cleanEmail,
+          user_name: user.user_metadata?.full_name || pendingInvite.display_name || ''
+        });
+      }
+
+      let { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single();
 
       const normalizedRole = prof?.role ? String(prof.role).toUpperCase().trim() : '';
       const isStaff = ['SUPER_ADMIN', 'ADMIN', 'STAFF'].includes(normalizedRole);
