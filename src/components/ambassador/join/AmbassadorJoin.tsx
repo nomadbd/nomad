@@ -211,14 +211,15 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
   }, [inviteData, defaultEmail]);
 
   useEffect(() => {
+    const activeEmail = email.trim() || defaultEmail;
+    if (!activeEmail || !activeEmail.includes('@') || activeEmail.length < 5) {
+      setAccountFound(null);
+      return;
+    }
+
     const timer = setTimeout(() => {
-      const activeEmail = email.trim() || defaultEmail;
-      if (activeEmail.length > 3 && activeEmail.includes('@')) {
-        checkEmailExistence(activeEmail);
-      } else {
-        setAccountFound(null);
-      }
-    }, 500);
+      checkEmailExistence(activeEmail);
+    }, 800);
 
     return () => clearTimeout(timer);
   }, [email, defaultEmail]);
