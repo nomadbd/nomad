@@ -10,7 +10,6 @@ export default function AuthForm({ isRecoveryPage = false }) {
   const [message, setMessage] = useState<{ text: string; isError: boolean } | null>(null);
   const location = useLocation();
 
-  // Recovery Link Handling
   useEffect(() => {
     if (isRecoveryPage) {
       setView('update');
@@ -20,7 +19,6 @@ export default function AuthForm({ isRecoveryPage = false }) {
       return;
     }
 
-    // মডাল থেকে আসলে hash চেক
     const hash = window.location.hash;
     const params = new URLSearchParams(window.location.search);
 
@@ -86,16 +84,16 @@ export default function AuthForm({ isRecoveryPage = false }) {
   return (
     <div style={{ 
       width: '100%', 
-      maxWidth: '320px',                    // ← সব ফর্মের জন্য একই width
+      maxWidth: '320px',
       color: '#ffffff', 
       fontFamily: 'sans-serif', 
       margin: 'auto', 
-      paddingTop: isRecoveryPage ? '130px' : '100px',   // শুধু update পেজে একটু বেশি padding
+      paddingTop: isRecoveryPage ? '130px' : '100px',
       paddingLeft: '20px',
       paddingRight: '20px',
       boxSizing: 'border-box'
     }}>
-      
+
       <h2 style={{ 
         letterSpacing: '6px', 
         marginBottom: '50px', 
@@ -140,7 +138,7 @@ export default function AuthForm({ isRecoveryPage = false }) {
             cursor: 'pointer', 
             fontSize: '10px', 
             letterSpacing: '2px',
-            marginTop: isRecoveryPage ? '40px' : '10px'   // update এর জন্য একটু বেশি স্পেস
+            marginTop: isRecoveryPage ? '40px' : '10px'
           }}
         >
           {loading ? 'PROCESSING...' : 
