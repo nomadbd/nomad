@@ -197,6 +197,9 @@ export const AdminMessages: React.FC<ExtendedAdminMessagesProps> = ({
   const sourceUsers = allUsers && allUsers.length > 0 ? allUsers : enhancedThreads;
 
   const newChatUsers = sourceUsers.filter((t) => {
+    const userRole = (t.role || '').toUpperCase();
+    if (userRole === 'CUSTOMER') return false;
+
     if (!newChatSearch.trim()) return true;
     const q = newChatSearch.toLowerCase().trim();
     return (
