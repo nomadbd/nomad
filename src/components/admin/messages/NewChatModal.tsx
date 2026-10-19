@@ -35,7 +35,6 @@ export const NewChatModal: React.FC<NewChatModalProps> = ({
         overflow: 'hidden',
       }}
     >
-      {/* প্রিমিয়াম স্টিকি হেডার */}
       <div
         style={{
           display: 'flex',
@@ -77,7 +76,6 @@ export const NewChatModal: React.FC<NewChatModalProps> = ({
         </button>
       </div>
 
-      {/* প্রিমিয়াম ডিম্বাকার (Pill-shaped) সার্চ ইনপুট সেকশন */}
       <div
         style={{
           padding: '16px 20px 12px 20px',
@@ -97,7 +95,7 @@ export const NewChatModal: React.FC<NewChatModalProps> = ({
               border: '1px solid rgba(255, 255, 255, 0.15)',
               color: '#ffffff',
               padding: '12px 20px',
-              borderRadius: '50px', // ডিম্বাকার বা পিল শেপ করার জন্য
+              borderRadius: '50px',
               fontSize: '12px',
               fontFamily: 'monospace',
               outline: 'none',
@@ -110,7 +108,6 @@ export const NewChatModal: React.FC<NewChatModalProps> = ({
         </div>
       </div>
 
-      {/* ইউজার লিস্ট সেকশন (ফুল স্ক্রিন স্ক্রোলযোগ্য) */}
       <div
         style={{
           flex: 1,
@@ -163,7 +160,6 @@ export const NewChatModal: React.FC<NewChatModalProps> = ({
                   e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.06)';
                 }}
               >
-                {/* প্রোফাইল অ্যাভাটার */}
                 <div
                   style={{
                     width: '38px',
@@ -191,8 +187,7 @@ export const NewChatModal: React.FC<NewChatModalProps> = ({
                   )}
                 </div>
 
-                {/* ইউজার ইনফো */}
-                <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '3px' }}>
                   <div
                     style={{
                       color: '#ffffff',
@@ -205,12 +200,12 @@ export const NewChatModal: React.FC<NewChatModalProps> = ({
                   >
                     {name}
                   </div>
+
                   {user.userEmail && (
                     <div
                       style={{
-                        color: '#777777',
+                        color: '#888888',
                         fontSize: '11px',
-                        marginTop: '2px',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
                         whiteSpace: 'nowrap',
@@ -219,25 +214,40 @@ export const NewChatModal: React.FC<NewChatModalProps> = ({
                       {user.userEmail}
                     </div>
                   )}
-                </div>
 
-                {/* রোল ব্যাজ */}
-                {user.role && (
-                  <span
-                    style={{
-                      fontSize: '9px',
-                      padding: '3px 8px',
-                      borderRadius: '4px',
-                      backgroundColor: 'rgba(255, 255, 255, 0.08)',
-                      color: '#aaaaaa',
-                      textTransform: 'uppercase',
-                      fontWeight: 500,
-                      letterSpacing: '0.5px',
-                    }}
-                  >
-                    {user.role}
-                  </span>
-                )}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px', flexWrap: 'wrap' }}>
+                    {user.designation && (
+                      <span
+                        style={{
+                          color: '#bbbbbb',
+                          fontSize: '11px',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {user.designation}
+                      </span>
+                    )}
+
+                    {user.role && (
+                      <span
+                        style={{
+                          fontSize: '9px',
+                          padding: '2px 6px',
+                          borderRadius: '4px',
+                          backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                          color: '#aaaaaa',
+                          textTransform: 'uppercase',
+                          fontWeight: 500,
+                          letterSpacing: '0.5px',
+                        }}
+                      >
+                        {user.role}
+                      </span>
+                    )}
+                  </div>
+                </div>
               </div>
             );
           })
