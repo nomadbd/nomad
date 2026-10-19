@@ -11,7 +11,7 @@ interface JoinSheetProps {
   isCheckingEmail: boolean;
   accountFound: boolean | null;
   errorMessage: string;
-  successMessage?: string; // 👈 সাকসেস মেসেজের জন্য নতুন প্রপ
+  successMessage?: string;
   handleSubmit: (e: React.FormEvent) => void;
   fullName: string;
   setFullName: (val: string) => void;
@@ -99,11 +99,10 @@ export const JoinSheet: React.FC<JoinSheetProps> = ({
             </button>
           </div>
 
-          <div style={{ minHeight: '18px', fontSize: '10px', letterSpacing: '1.5px', fontWeight: 500, textAlign: 'center', marginBottom: '12px' }}>
+          <div style={{ height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', letterSpacing: '1.5px', fontWeight: 500, textAlign: 'center', marginBottom: '12px' }}>
             {isCheckingEmail && <span style={{ color: '#60a5fa' }}>VERIFYING ACCOUNT...</span>}
             {!isCheckingEmail && accountFound === true && <span style={{ color: '#4ade80' }}>✓ EXISTING ACCOUNT DETECTED</span>}
             {errorMessage && <span style={{ color: '#f87171' }}>{errorMessage}</span>}
-            {/* 👇 সাকসেস মেসেজ দেখানোর জন্য যুক্ত করা হয়েছে */}
             {!errorMessage && successMessage && <span style={{ color: '#4ade80', lineHeight: '1.4' }}>{successMessage}</span>}
           </div>
 
