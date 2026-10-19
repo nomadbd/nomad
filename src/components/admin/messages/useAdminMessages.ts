@@ -96,7 +96,7 @@ export const useAdminMessages = (
         supabase.auth.getUser(),
         supabase.from('communications').select('*').order('created_at', { ascending: true }),
         supabase.from('profiles').select('id, email, name, role, designation, avatar_url, created_at, status'),
-        supabase.from('ambassador').select('id, user_id, email, phone, recipient_identifier, assigned_slug, token, display_name, invite_sent_at, is_registered'),
+        supabase.from('ambassador').select('id, user_id, email, phone, recipient_identifier, assigned_slug, token, invite_sent_at, is_registered'),
       ]);
 
       const currentEmail = authRes.data.user?.email?.trim().toLowerCase() || adminEmail;
@@ -104,7 +104,7 @@ export const useAdminMessages = (
 
       if (commsRes.error) throw commsRes.error;
 
-      // ১. Profiles ম্যাপিং (শুধুমাত্র প্রকৃত নিবন্ধিত অ্যাকাউন্টের জন্য)
+      // ১. Profiles ম্যাপিং (নিবন্ধিত ব্যবহারকারীদের জন্য name এবং avatar_url)
       const profilesByEmail: Record<string, any> = {};
       const profilesById: Record<string, any> = {};
 
@@ -127,7 +127,7 @@ export const useAdminMessages = (
         });
       }
 
-      // ২. Ambassador ম্যাপিং (ইনভাইট করা অ্যাম্বাসেডরদের জন্য)
+      // ২. Ambassador ম্যাপিং (display_name বাদ দিয়ে শুধুমাত্র assigned_slug বা token নাম হিসেবে ব্যবহৃত হবে)
       const ambassadorBySlug: Record<string, any> = {};
 
       if (ambRes.data) {
@@ -135,7 +135,7 @@ export const useAdminMessages = (
           const ambObj = {
             id: a.id,
             userId: a.user_id || '',
-            slug: a.assigned_slug || a.token || a.display_name || '',
+            slug: a.assigned_slug || a.token || '', // এখানে display_name ব্যবহার করা হয়নি
             email: a.email ? a.email.trim().toLowerCase() : '',
             phone: a.phone || '',
             inviteSentAt: a.invite_sent_at || '',
@@ -209,17 +209,14 @@ export const useAdminMessages = (
           const channelId = (item.channel_id || '').trim().toLowerCase();
           const threadId = channelId || 'general';
 
-          // চ্যাট পার্টনারের ইমেইল বের করা (অ্যাডমিনের ইমেইল বাদ দিয়ে)
           const partnerEmail = isMyOwnMessage
             ? (item.recipient_email && item.recipient_email !== 'EMPTY' ? item.recipient_email.trim().toLowerCase() : '')
             : itemSenderEmail;
 
-          // চ্যাট পার্টনার রেজিস্টার্ড ইউজার কিনা চেক করা
           const targetProfile = partnerEmail && partnerEmail !== currentEmail 
             ? profilesByEmail[partnerEmail] 
             : (profilesById[channelId] || null);
 
-          // চ্যাট পার্টনার ইনভাইটেড অ্যাম্বাসেডর কিনা চেক করা
           const targetAmbassador = ambassadorBySlug[channelId] || (partnerEmail ? ambassadorBySlug[partnerEmail] : null);
 
           let displayName = '';
@@ -230,22 +227,21 @@ export const useAdminMessages = (
           let userPhone = '';
 
           if (targetProfile) {
-            // যদি profiles টেবিলে একাউন্ট পাওয়া যায়
+            // রেজিস্টার্ড প্রোফাইল থাকলে profiles টেবিল থেকে নাম ও ছবি নেওয়া হবে
             displayName = targetProfile.name || targetProfile.email || channelId;
             userRole = targetProfile.role;
             userDesignation = targetProfile.designation;
-            userAvatar = targetProfile.avatarUrl; // নিজস্ব avatar_url
+            userAvatar = targetProfile.avatarUrl;
             userEmail = targetProfile.email;
           } else if (targetAmbassador) {
-            // যদি শুধুই ইনভাইটেড অ্যাম্বাসেডর হয় (অ্যাকাউন্ট তৈরি করেনি)
+            // ইনভাইটেড অ্যাম্বাসেডর হলে assigned_slug বা token নাম হিসেবে কাজ করবে
             displayName = targetAmbassador.slug || channelId;
             userRole = 'INVITED AMBASSADOR';
-            userDesignation = ''; // কোনো ডেজিগনেশন থাকবে না
-            userAvatar = ''; // কোনো ছবি থাকবে না
+            userDesignation = '';
+            userAvatar = ''; // কোনো অ্যাকাউন্ট বা ছবি নেই
             userEmail = targetAmbassador.email;
             userPhone = targetAmbassador.phone;
           } else {
-            // সাধারণ গেস্ট বা অজানা ইউজার
             displayName = channelId || 'Guest';
             userRole = 'GUEST';
             userDesignation = '';
@@ -288,7 +284,7 @@ export const useAdminMessages = (
             id: item.id || String(Math.random()),
             sender: isMyOwnMessage ? 'ADMIN' : 'USER',
             senderEmail: itemSenderEmail,
-            senderName: senderProfile?.name || displayName,
+            senderName: targetProfile?.name || displayName,
             senderDesignation: userDesignation,
             text: item.message || '',
             timestamp: formattedTime,
