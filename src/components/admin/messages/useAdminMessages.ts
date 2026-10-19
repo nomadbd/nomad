@@ -95,7 +95,7 @@ export const useAdminMessages = (
       const [authRes, commsRes, profilesRes, ambRes] = await Promise.all([
         supabase.auth.getUser(),
         supabase.from('communications').select('*').order('created_at', { ascending: true }),
-        supabase.from('profiles').select('email, name, role, designation, avatar_url, created_at'),
+        supabase.from('profiles').select('email, name, role, designation, avatar_url, created_at, status'),
         supabase.from('ambassador').select('email, recipient_identifier, phone, assigned_slug, token, display_name, invite_sent_at'),
       ]);
 
@@ -104,7 +104,7 @@ export const useAdminMessages = (
 
       if (commsRes.error) throw commsRes.error;
 
-      // প্রোফাইল আইসোলেটেড স্ট্রিক্ট ম্যাপিং
+      // প্রোফাইল ম্যাপিং অত্যন্ত নিখুঁত করা হলো
       const profileMap: Record<string, { email: string; name: string; role: string; designation?: string; avatarUrl: string; createdAt?: string }> = {};
       if (profilesRes.data) {
         profilesRes.data.forEach((p: any) => {
@@ -115,7 +115,7 @@ export const useAdminMessages = (
               name: p.name || '',
               role: (p.role || 'CUSTOMER').toUpperCase(),
               designation: p.designation || '',
-              avatarUrl: p.avatar_url ? String(p.avatar_url).trim() : '',
+              avatarUrl: p.avatar_url && p.avatar_url !== 'NULL' ? String(p.avatar_url).trim() : '',
               createdAt: p.created_at || '',
             };
           }
@@ -213,8 +213,8 @@ export const useAdminMessages = (
           const userDesignation = profileData?.designation || '';
           const userPhone = ambData?.phone || '';
 
-          // প্রোফাইল ছবি লিক হওয়া প্রতিরোধে কড়া আইসোলেশন
-          const userAvatar = (profileData && profileData.email === userEmail) ? profileData.avatarUrl : '';
+          // প্রোফাইল পিকচার নিরাপদ ও নিশ্চিত করার লজিক
+          const userAvatar = profileData?.avatarUrl ? profileData.avatarUrl : '';
 
           if (!threadMap[threadId]) {
             threadMap[threadId] = {
@@ -236,11 +236,10 @@ export const useAdminMessages = (
             if (item.is_read === false && !isMyOwnMessage) {
               threadMap[threadId].unreadCount += 1;
             }
-            // কেবল ইমেল সুনির্দিষ্টভাবে মিললেই ছবি বসবে
-            if (userAvatar && threadMap[threadId].userEmail === userEmail) {
+            if (!threadMap[threadId].avatarUrl && userAvatar) {
               threadMap[threadId].avatarUrl = userAvatar;
             }
-            if (userDesignation && !threadMap[threadId].designation) {
+            if (!threadMap[threadId].designation && userDesignation) {
               threadMap[threadId].designation = userDesignation;
             }
             if (displayName && displayName !== threadId && threadMap[threadId].userName === threadId) {
@@ -282,14 +281,12 @@ export const useAdminMessages = (
   useEffect(() => {
     fetchCommunicationsAndUsers(false);
 
-    // Supabase Realtime Channel
     const channel = supabase
       .channel('public:communications')
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'communications' },
         (payload) => {
-          // রিয়েলটাইমে রিফ্রেশ ছাড়াই ব্যাজ ও মেসেজ আপডেট করা
           if (payload.eventType === 'INSERT') {
             const newMsg = payload.new;
             const senderEmail = (newMsg.sender_email || '').trim().toLowerCase();
