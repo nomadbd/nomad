@@ -96,7 +96,7 @@ export const useAdminMessages = (
         supabase.auth.getUser(),
         supabase.from('communications').select('*').order('created_at', { ascending: true }),
         supabase.from('profiles').select('id, email, name, role, designation, avatar_url, created_at, status'),
-        supabase.from('ambassador').select('id, user_id, email, phone, recipient_identifier, assigned_slug, token, invite_sent_at, is_registered'),
+        supabase.from('ambassador').select('id, user_id, display_name, email, phone, recipient_identifier, assigned_slug, token, invite_sent_at, is_registered'),
       ]);
 
       const currentEmail = authRes.data.user?.email?.trim().toLowerCase() || adminEmail;
@@ -104,7 +104,6 @@ export const useAdminMessages = (
 
       if (commsRes.error) throw commsRes.error;
 
-      // ১. Profiles ম্যাপিং (নিবন্ধিত ব্যবহারকারীদের জন্য name এবং avatar_url)
       const profilesByEmail: Record<string, any> = {};
       const profilesById: Record<string, any> = {};
 
@@ -127,7 +126,6 @@ export const useAdminMessages = (
         });
       }
 
-      // ২. Ambassador ম্যাপিং (display_name বাদ দিয়ে শুধুমাত্র assigned_slug বা token নাম হিসেবে ব্যবহৃত হবে)
       const ambassadorBySlug: Record<string, any> = {};
 
       if (ambRes.data) {
@@ -135,7 +133,8 @@ export const useAdminMessages = (
           const ambObj = {
             id: a.id,
             userId: a.user_id || '',
-            slug: a.assigned_slug || a.token || '', // এখানে display_name ব্যবহার করা হয়নি
+            displayName: a.display_name || a.assigned_slug || a.token || '',
+            slug: a.assigned_slug || a.token || '',
             email: a.email ? a.email.trim().toLowerCase() : '',
             phone: a.phone || '',
             inviteSentAt: a.invite_sent_at || '',
@@ -152,7 +151,6 @@ export const useAdminMessages = (
         });
       }
 
-      // ৩. থ্রেড অবজেক্ট তৈরি
       const threadMap: { [key: string]: Thread } = {
         all_staff: {
           id: 'all_staff',
@@ -205,7 +203,6 @@ export const useAdminMessages = (
             return;
           }
 
-          // ১-অন-১ চ্যাট থ্রেড ম্যাচিং
           const channelId = (item.channel_id || '').trim().toLowerCase();
           const threadId = channelId || 'general';
 
@@ -227,18 +224,16 @@ export const useAdminMessages = (
           let userPhone = '';
 
           if (targetProfile) {
-            // রেজিস্টার্ড প্রোফাইল থাকলে profiles টেবিল থেকে নাম ও ছবি নেওয়া হবে
             displayName = targetProfile.name || targetProfile.email || channelId;
             userRole = targetProfile.role;
             userDesignation = targetProfile.designation;
             userAvatar = targetProfile.avatarUrl;
             userEmail = targetProfile.email;
           } else if (targetAmbassador) {
-            // ইনভাইটেড অ্যাম্বাসেডর হলে assigned_slug বা token নাম হিসেবে কাজ করবে
-            displayName = targetAmbassador.slug || channelId;
+            displayName = targetAmbassador.displayName || targetAmbassador.slug || channelId;
             userRole = 'INVITED AMBASSADOR';
             userDesignation = '';
-            userAvatar = ''; // কোনো অ্যাকাউন্ট বা ছবি নেই
+            userAvatar = '';
             userEmail = targetAmbassador.email;
             userPhone = targetAmbassador.phone;
           } else {
