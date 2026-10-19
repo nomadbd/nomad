@@ -104,7 +104,6 @@ export const useAdminMessages = (
 
       if (commsRes.error) throw commsRes.error;
 
-      // প্রোফাইল ম্যাপিং: ইমেল এবং নাম/স্লাগ উভয় দিয়েই ইনডেক্স করা হলো যাতে কেউ বাদ না পড়ে
       const profileMap: Record<string, { email: string; name: string; role: string; designation?: string; avatarUrl: string; createdAt?: string }> = {};
       const profileMapByName: Record<string, { email: string; name: string; role: string; designation?: string; avatarUrl: string; createdAt?: string }> = {};
 
@@ -125,7 +124,6 @@ export const useAdminMessages = (
           if (profileObj.name) {
             const cleanNameKey = profileObj.name.trim().toLowerCase();
             profileMapByName[cleanNameKey] = profileObj;
-            // নামের প্রথম অংশ দিয়েও কিউ বসালাম (যেমন 'liton', 'imran')
             const firstNameKey = cleanNameKey.split(' ')[0];
             if (firstNameKey) {
               profileMapByName[firstNameKey] = profileObj;
@@ -216,7 +214,6 @@ export const useAdminMessages = (
 
           const effectiveEmail = (rawEmail || ambData?.email || '').trim().toLowerCase();
           
-          // অত্যন্ত সুরক্ষিত প্রোফাইল ডেটা খোঁজার লজিক (ইমেল অথবা চ্যানেল আইডি/নাম দিয়ে)
           const profileData = 
             (effectiveEmail ? profileMap[effectiveEmail] : null) || 
             (channelId ? profileMapByName[channelId] : null) || 
@@ -230,7 +227,6 @@ export const useAdminMessages = (
           const userDesignation = profileData?.designation || '';
           const userPhone = ambData?.phone || '';
 
-          // সুনির্দিষ্টভাবে প্রতিটি থ্রেডের নিজস্ব অবতার অ্যাসাইন করা (অন্য কারো ছবি যেন না আসে)
           const userAvatar = profileData?.avatarUrl ? profileData.avatarUrl : '';
 
           if (!threadMap[threadId]) {
@@ -372,7 +368,7 @@ export const useAdminMessages = (
     const userName = (t.userName || '').toLowerCase();
     const userEmail = (t.userEmail || '').toLowerCase();
     const userPhone = (t.userPhone || '').toLowerCase();
-    val lastMsg = (t.lastMessage || '').toLowerCase();
+    const lastMsg = (t.lastMessage || '').toLowerCase();
 
     const matchesSearch =
       !query ||
