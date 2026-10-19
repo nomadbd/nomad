@@ -11,6 +11,7 @@ interface JoinSheetProps {
   isCheckingEmail: boolean;
   accountFound: boolean | null;
   errorMessage: string;
+  successMessage?: string; // 👈 সাকসেস মেসেজের জন্য নতুন প্রপ
   handleSubmit: (e: React.FormEvent) => void;
   fullName: string;
   setFullName: (val: string) => void;
@@ -33,6 +34,7 @@ export const JoinSheet: React.FC<JoinSheetProps> = ({
   isCheckingEmail,
   accountFound,
   errorMessage,
+  successMessage,
   handleSubmit,
   fullName,
   setFullName,
@@ -101,6 +103,8 @@ export const JoinSheet: React.FC<JoinSheetProps> = ({
             {isCheckingEmail && <span style={{ color: '#60a5fa' }}>VERIFYING ACCOUNT...</span>}
             {!isCheckingEmail && accountFound === true && <span style={{ color: '#4ade80' }}>✓ EXISTING ACCOUNT DETECTED</span>}
             {errorMessage && <span style={{ color: '#f87171' }}>{errorMessage}</span>}
+            {/* 👇 সাকসেস মেসেজ দেখানোর জন্য যুক্ত করা হয়েছে */}
+            {!errorMessage && successMessage && <span style={{ color: '#4ade80', lineHeight: '1.4' }}>{successMessage}</span>}
           </div>
 
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'center' }}>
@@ -119,6 +123,7 @@ export const JoinSheet: React.FC<JoinSheetProps> = ({
                 value={fullName} 
                 onChange={(e) => setFullName(e.target.value)} 
                 placeholder={defaultTitleName || "Full Name"}
+                disabled={submitting}
               />
             </div>
 
@@ -132,6 +137,7 @@ export const JoinSheet: React.FC<JoinSheetProps> = ({
                 value={email} 
                 onChange={(e) => setEmail(e.target.value)} 
                 placeholder={defaultEmail || "Email Address"}
+                disabled={submitting}
               />
             </div>
 
@@ -146,10 +152,21 @@ export const JoinSheet: React.FC<JoinSheetProps> = ({
                 placeholder={mode === 'signup' ? 'Create Password' : 'Password'}
                 required 
                 minLength={6} 
+                disabled={submitting}
               />
             </div>
 
-            <button type="submit" disabled={submitting || isCheckingEmail} style={{ ...pillButtonStyle, width: '100%', marginTop: '10px' }}>
+            <button 
+              type="submit" 
+              disabled={submitting || isCheckingEmail} 
+              style={{ 
+                ...pillButtonStyle, 
+                width: '100%', 
+                marginTop: '10px',
+                opacity: (submitting || isCheckingEmail) ? 0.6 : 1,
+                cursor: (submitting || isCheckingEmail) ? 'not-allowed' : 'pointer'
+              }}
+            >
               {submitting 
                 ? 'PROCESSING...' 
                 : mode === 'signup' 
