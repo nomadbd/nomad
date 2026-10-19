@@ -36,11 +36,9 @@ export default function AdminStaff({
   const [emailCheckInfo, setEmailCheckInfo] = useState<{
     found: boolean;
     role?: string;
-    name?: string;
-    source?: string;
   } | null>(null);
   const [checkingEmail, setCheckingEmail] = useState(false);
-  const [adminRoleConfirmed, setAdminRoleConfirmed] = useState(false);
+  const [adminConfirmInput, setAdminConfirmInput] = useState('');
 
   const fetchStaff = async () => {
     setLoading(true);
@@ -77,7 +75,7 @@ export default function AdminStaff({
       try {
         const { data: profileData } = await supabase
           .from('profiles')
-          .select('name, role')
+          .select('role')
           .eq('email', cleanEmail)
           .maybeSingle();
 
@@ -85,8 +83,6 @@ export default function AdminStaff({
           setEmailCheckInfo({
             found: true,
             role: (profileData.role || 'CUSTOMER').toUpperCase(),
-            name: profileData.name || '',
-            source: 'profiles',
           });
           setCheckingEmail(false);
           return;
@@ -94,7 +90,7 @@ export default function AdminStaff({
 
         const { data: ambData } = await supabase
           .from('ambassador')
-          .select('display_name, is_registered')
+          .select('is_registered')
           .eq('email', cleanEmail)
           .maybeSingle();
 
@@ -102,8 +98,6 @@ export default function AdminStaff({
           setEmailCheckInfo({
             found: true,
             role: ambData.is_registered ? 'AMBASSADOR' : 'INVITED AMBASSADOR',
-            name: ambData.display_name || '',
-            source: 'ambassador',
           });
           setCheckingEmail(false);
           return;
@@ -115,7 +109,7 @@ export default function AdminStaff({
       } finally {
         setCheckingEmail(false);
       }
-    }, 400);
+    }, 350);
 
     return () => clearTimeout(timer);
   }, [newEmail]);
@@ -133,8 +127,7 @@ export default function AdminStaff({
     e.preventDefault();
     if (!newEmail || !newName) return;
 
-    if (newRole === 'ADMIN' && !adminRoleConfirmed) {
-      alert('Security Alert: You must confirm administrative privileges checkbox before proceeding.');
+    if (newRole === 'ADMIN' && adminConfirmInput.trim() !== 'ADMIN') {
       return;
     }
 
@@ -188,10 +181,10 @@ export default function AdminStaff({
       setNewDesignation('');
       setNewRole('STAFF');
       setEmailCheckInfo(null);
-      setAdminRoleConfirmed(false);
+      setAdminConfirmInput('');
       fetchStaff();
     } catch (err: any) {
-      alert('Error updating staff role: ' + err.message);
+      alert('Error: ' + err.message);
     } finally {
       setActionLoading(false);
     }
@@ -233,6 +226,9 @@ export default function AdminStaff({
     { label: 'MANAGER', value: 'MANAGER' },
     { label: 'ADMIN', value: 'ADMIN' },
   ];
+
+  const isSubmitDisabled =
+    actionLoading || (newRole === 'ADMIN' && adminConfirmInput.trim() !== 'ADMIN');
 
   return (
     <div style={{ color: '#fff', width: '100%', boxSizing: 'border-box' }}>
@@ -500,70 +496,59 @@ export default function AdminStaff({
       )}
 
       {isAddOpen && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0, 0, 0, 0.85)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '16px' }}>
-          <div style={{ backgroundColor: '#09090b', border: '1px solid #27272a', borderRadius: '16px', padding: '20px', width: '100%', maxWidth: '380px', boxSizing: 'border-box' }}>
-            <h3 style={{ margin: '0 0 16px 0', fontSize: '13px', fontWeight: '800', letterSpacing: '1px', color: '#fff', textTransform: 'uppercase' }}>
-              APPOINT NEW MANAGEMENT / STAFF
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0, 0, 0, 0.85)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '16px' }}>
+          <div style={{ backgroundColor: '#09090b', border: '1px solid #27272a', borderRadius: '16px', padding: '20px', width: '100%', maxWidth: '360px', boxSizing: 'border-box' }}>
+            <h3 style={{ margin: '0 0 16px 0', fontSize: '12px', fontWeight: '800', letterSpacing: '1px', color: '#fff', textTransform: 'uppercase', fontFamily: 'monospace' }}>
+              APPOINT MEMBER
             </h3>
 
-            <form onSubmit={handleAddStaff} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <form onSubmit={handleAddStaff} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '9px', color: '#a1a1aa', fontFamily: 'monospace', marginBottom: '4px', textTransform: 'uppercase' }}>EMAIL ADDRESS</label>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                  <label style={{ fontSize: '9px', color: '#71717a', fontFamily: 'monospace', textTransform: 'uppercase' }}>EMAIL</label>
+                  {checkingEmail && <span style={{ fontSize: '8px', color: '#a1a1aa', fontFamily: 'monospace' }}>CHECKING...</span>}
+                  {!checkingEmail && emailCheckInfo && (
+                    <span style={{ fontSize: '8px', fontWeight: '700', fontFamily: 'monospace', color: emailCheckInfo.found ? '#f59e0b' : '#10b981' }}>
+                      {emailCheckInfo.found ? `${emailCheckInfo.role} (OVERRIDE)` : 'NEW ACCOUNT'}
+                    </span>
+                  )}
+                </div>
                 <input
                   type="email"
                   placeholder="name@company.com"
                   value={newEmail}
                   onChange={(e) => setNewEmail(e.target.value)}
                   required
-                  style={{ width: '100%', backgroundColor: '#121215', border: '1px solid #27272a', borderRadius: '8px', color: '#fff', padding: '10px', fontSize: '12px', fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box' }}
+                  style={{ width: '100%', backgroundColor: '#121215', border: '1px solid #27272a', borderRadius: '8px', color: '#fff', padding: '10px 12px', fontSize: '12px', fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box' }}
                 />
-
-                {checkingEmail && (
-                  <div style={{ fontSize: '10px', color: '#71717a', fontFamily: 'monospace', marginTop: '4px' }}>
-                    Checking account status...
-                  </div>
-                )}
-
-                {!checkingEmail && emailCheckInfo && (
-                  <div style={{ marginTop: '6px', padding: '8px 10px', borderRadius: '6px', backgroundColor: emailCheckInfo.found ? 'rgba(59, 130, 246, 0.1)' : 'rgba(34, 197, 94, 0.1)', border: emailCheckInfo.found ? '1px solid rgba(59, 130, 246, 0.3)' : '1px solid rgba(34, 197, 94, 0.3)' }}>
-                    <div style={{ fontSize: '10px', fontWeight: '700', color: emailCheckInfo.found ? '#60a5fa' : '#4ade80', fontFamily: 'monospace' }}>
-                      {emailCheckInfo.found ? `EXISTING ${emailCheckInfo.role} ACCOUNT DETECTED` : 'NEW EMAIL (NO EXISTING ACCOUNT)'}
-                    </div>
-                    {emailCheckInfo.found && (
-                      <div style={{ fontSize: '10px', color: '#a1a1aa', marginTop: '2px', fontFamily: 'system-ui' }}>
-                        Current Name: <b>{emailCheckInfo.name || 'N/A'}</b>. Submitting will override their name & upgrade role.
-                      </div>
-                    )}
-                  </div>
-                )}
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '9px', color: '#a1a1aa', fontFamily: 'monospace', marginBottom: '4px', textTransform: 'uppercase' }}>OFFICIAL FULL NAME</label>
+                <label style={{ display: 'block', fontSize: '9px', color: '#71717a', fontFamily: 'monospace', marginBottom: '4px', textTransform: 'uppercase' }}>FULL NAME</label>
                 <input
                   type="text"
                   placeholder="e.g. Md Toha Ali"
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
                   required
-                  style={{ width: '100%', backgroundColor: '#121215', border: '1px solid #27272a', borderRadius: '8px', color: '#fff', padding: '10px', fontSize: '12px', fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box' }}
+                  style={{ width: '100%', backgroundColor: '#121215', border: '1px solid #27272a', borderRadius: '8px', color: '#fff', padding: '10px 12px', fontSize: '12px', fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box' }}
                 />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '9px', color: '#a1a1aa', fontFamily: 'monospace', marginBottom: '4px', textTransform: 'uppercase' }}>DESIGNATION (OPTIONAL)</label>
+                <label style={{ display: 'block', fontSize: '9px', color: '#71717a', fontFamily: 'monospace', marginBottom: '4px', textTransform: 'uppercase' }}>DESIGNATION</label>
                 <input
                   type="text"
-                  placeholder="e.g. CEO, Operations Lead, System Admin"
+                  placeholder="e.g. Operations Lead"
                   value={newDesignation}
                   onChange={(e) => setNewDesignation(e.target.value)}
-                  style={{ width: '100%', backgroundColor: '#121215', border: '1px solid #27272a', borderRadius: '8px', color: '#fff', padding: '10px', fontSize: '12px', fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box' }}
+                  style={{ width: '100%', backgroundColor: '#121215', border: '1px solid #27272a', borderRadius: '8px', color: '#fff', padding: '10px 12px', fontSize: '12px', fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box' }}
                 />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '9px', color: '#a1a1aa', fontFamily: 'monospace', marginBottom: '6px', textTransform: 'uppercase' }}>ASSIGN ROLE & ACCESS LEVEL</label>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
+                <label style={{ display: 'block', fontSize: '9px', color: '#71717a', fontFamily: 'monospace', marginBottom: '6px', textTransform: 'uppercase' }}>ROLE</label>
+                <div style={{ display: 'flex', gap: '6px' }}>
                   {[
                     { roleKey: 'STAFF', label: 'STAFF' },
                     { roleKey: 'MANAGER', label: 'MANAGER' },
@@ -576,19 +561,21 @@ export default function AdminStaff({
                         type="button"
                         onClick={() => {
                           setNewRole(item.roleKey);
-                          if (item.roleKey !== 'ADMIN') setAdminRoleConfirmed(false);
+                          if (item.roleKey !== 'ADMIN') setAdminConfirmInput('');
                         }}
                         style={{
-                          backgroundColor: isSelected ? (item.roleKey === 'ADMIN' ? '#ef4444' : '#ffffff') : '#121215',
-                          color: isSelected ? '#ffffff' : '#a1a1aa',
-                          border: isSelected ? (item.roleKey === 'ADMIN' ? '1px solid #f87171' : '1px solid #ffffff') : '1px solid #27272a',
-                          borderRadius: '8px',
-                          padding: '10px 4px',
+                          flex: 1,
+                          backgroundColor: isSelected ? 'rgba(255, 255, 255, 0.08)' : '#121215',
+                          color: isSelected ? (item.roleKey === 'ADMIN' ? '#f87171' : '#ffffff') : '#71717a',
+                          border: isSelected ? (item.roleKey === 'ADMIN' ? '1px solid #ef4444' : '1px solid #ffffff') : '1px solid #27272a',
+                          borderRadius: '50px',
+                          padding: '8px 0',
                           fontSize: '10px',
-                          fontWeight: '800',
+                          fontWeight: '700',
                           fontFamily: 'monospace',
                           cursor: 'pointer',
                           transition: 'all 0.15s ease',
+                          textAlign: 'center',
                         }}
                       >
                         {item.label}
@@ -599,53 +586,71 @@ export default function AdminStaff({
               </div>
 
               {newRole === 'ADMIN' && (
-                <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.4)', borderRadius: '8px', padding: '10px', marginTop: '2px' }}>
-                  <div style={{ color: '#f87171', fontSize: '10px', fontWeight: '800', fontFamily: 'monospace', marginBottom: '6px' }}>
-                    CRITICAL SECURITY CONFIRMATION
-                  </div>
-                  <label style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', cursor: 'pointer' }}>
-                    <input
-                      type="checkbox"
-                      checked={adminRoleConfirmed}
-                      onChange={(e) => setAdminRoleConfirmed(e.target.checked)}
-                      style={{ marginTop: '2px', accentColor: '#ef4444' }}
-                    />
-                    <span style={{ fontSize: '10px', color: '#fca5a5', lineHeight: '1.3' }}>
-                      I confirm granting FULL ADMINISTRATIVE ACCESS to this account.
-                    </span>
+                <div>
+                  <label style={{ display: 'block', fontSize: '9px', color: '#ef4444', fontFamily: 'monospace', marginBottom: '4px', textTransform: 'uppercase', fontWeight: 'bold' }}>
+                    TYPE "ADMIN" TO CONFIRM
                   </label>
+                  <input
+                    type="text"
+                    placeholder="ADMIN"
+                    value={adminConfirmInput}
+                    onChange={(e) => setAdminConfirmInput(e.target.value)}
+                    style={{
+                      width: '100%',
+                      backgroundColor: 'rgba(239, 68, 68, 0.05)',
+                      border: '1px solid #ef4444',
+                      borderRadius: '8px',
+                      color: '#ffffff',
+                      padding: '10px 12px',
+                      fontSize: '11px',
+                      fontFamily: 'monospace',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                      letterSpacing: '1px',
+                    }}
+                  />
                 </div>
               )}
 
-              <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+              <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
                 <button
                   type="submit"
-                  disabled={actionLoading || (newRole === 'ADMIN' && !adminRoleConfirmed)}
+                  disabled={isSubmitDisabled}
                   style={{
                     flex: 1,
-                    backgroundColor: newRole === 'ADMIN' ? '#ef4444' : '#ffffff',
-                    color: newRole === 'ADMIN' ? '#ffffff' : '#000000',
+                    backgroundColor: isSubmitDisabled ? 'rgba(255, 255, 255, 0.1)' : '#ffffff',
+                    color: isSubmitDisabled ? '#71717a' : '#000000',
                     border: 'none',
                     borderRadius: '8px',
                     padding: '12px',
                     fontWeight: 'bold',
                     fontSize: '11px',
                     fontFamily: 'monospace',
-                    cursor: (actionLoading || (newRole === 'ADMIN' && !adminRoleConfirmed)) ? 'not-allowed' : 'pointer',
-                    opacity: (newRole === 'ADMIN' && !adminRoleConfirmed) ? 0.4 : 1,
+                    cursor: isSubmitDisabled ? 'not-allowed' : 'pointer',
                     letterSpacing: '0.5px',
+                    transition: 'all 0.15s ease',
                   }}
                 >
-                  {actionLoading ? 'APPOINTING...' : 'CONFIRM APPOINTMENT'}
+                  {actionLoading ? 'APPOINTING...' : 'CONFIRM'}
                 </button>
                 <button
                   type="button"
                   onClick={() => {
                     if (onCloseAdd) onCloseAdd();
                     setEmailCheckInfo(null);
-                    setAdminRoleConfirmed(false);
+                    setAdminConfirmInput('');
                   }}
-                  style={{ flex: 1, backgroundColor: 'transparent', color: '#a1a1aa', border: '1px solid #27272a', borderRadius: '8px', padding: '12px', fontSize: '11px', fontFamily: 'monospace', cursor: 'pointer' }}
+                  style={{
+                    flex: 1,
+                    backgroundColor: 'transparent',
+                    color: '#a1a1aa',
+                    border: '1px solid #27272a',
+                    borderRadius: '8px',
+                    padding: '12px',
+                    fontSize: '11px',
+                    fontFamily: 'monospace',
+                    cursor: 'pointer',
+                  }}
                 >
                   CANCEL
                 </button>
