@@ -137,13 +137,15 @@ export default function AdminStaff({
     const now = new Date().toISOString();
 
     try {
-      const { data: existingProfile } = await supabase
+      const { data: existingProfile, error: searchError } = await supabase
         .from('profiles')
         .select('id')
         .eq('email', cleanEmail)
         .maybeSingle();
 
-      if (existingProfile) {
+      if (searchError) throw searchError;
+
+      if (existingProfile?.id) {
         const { error: updateError } = await supabase
           .from('profiles')
           .update({
