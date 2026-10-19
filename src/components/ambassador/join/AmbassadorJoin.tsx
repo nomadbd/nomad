@@ -23,6 +23,7 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
   const [inviteData] = useState<any>(initialInviteData);
   const [isExpired, setIsExpired] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
 
   const [mode, setMode] = useState<'signup' | 'login'>('signup');
   const [fullName, setFullName] = useState('');
@@ -222,7 +223,6 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
     return () => clearTimeout(timer);
   }, [email, defaultEmail]);
 
-  // ১. ফিক্সড ফেচ ফাংশন: টোকেন থাকলে টোকেন দিয়ে একদম নিখুঁত ফিল্টার
   const fetchMessages = async () => {
     const activeEmail = (email.trim() || defaultEmail || customSupportEmail.trim()).toLowerCase();
     const token = inviteData?.token;
@@ -234,10 +234,8 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
       let query = supabase.from('communications').select('*');
 
       if (token) {
-        // টোকেন বা স্লগই চ্যাট রুমের ইউনিক আইডি
         query = query.eq('channel_id', token);
       } else if (activeEmail) {
-        // শুধুমাত্র ইমেইল ভ্যালিড থাকলে ইমেইল ফিল্টার চলবে
         query = query.or(`channel_id.eq.${activeEmail},sender_email.eq.${activeEmail},recipient_email.eq.${activeEmail}`);
       }
 
@@ -282,7 +280,6 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
     };
   }, [email, defaultEmail, customSupportEmail, inviteData]);
 
-  // ২. ফিক্সড রিয়েলটাইম লিসেনার
   useEffect(() => {
     const activeEmail = (email.trim() || defaultEmail || customSupportEmail.trim()).toLowerCase();
     const token = inviteData?.token || '';
@@ -348,9 +345,9 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
 
     setSubmitting(true);
     setErrorMessage('');
+    setSuccessMessage('');
 
     try {
-      let userId = '';
       let userEmail = (email.trim() || defaultEmail).toLowerCase();
       let userName = fullName.trim() ? toTitleCase(fullName.trim()) : defaultTitleName;
 
@@ -362,13 +359,37 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
         const { data: authData, error: authError } = await supabase.auth.signUp({
           email: userEmail,
           password,
-          options: { data: { full_name: userName, role: 'AMBASSADOR' } }
+          options: {
+            data: {
+              full_name: userName,
+              invite_token: inviteData.token
+            }
+          }
         });
 
-        if (authError || !authData.user) {
-          throw new Error(authError?.message || 'SIGN UP FAILED');
+        if (authError) {
+          throw new Error(authError.message || 'SIGN UP FAILED');
         }
-        userId = authData.user.id;
+
+        if (authData.user && authData.session === null) {
+          setSuccessMessage('CONFIRMATION LINK SENT TO YOUR EMAIL. PLEASE VERIFY TO ACTIVATE.');
+          return;
+        }
+
+        if (authData.user && authData.session) {
+          const { data: rpcRes, error: rpcErr } = await supabase.rpc('complete_ambassador_registration', {
+            invite_token: inviteData.token,
+            new_user_id: authData.user.id,
+            user_email: userEmail,
+            user_name: userName
+          });
+
+          if (rpcErr || !rpcRes?.success) {
+            throw new Error(rpcRes?.message || rpcErr?.message || 'REGISTRATION FAILED');
+          }
+
+          window.location.reload();
+        }
       } else {
         const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
           email: userEmail,
@@ -378,22 +399,20 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
         if (authError || !authData.user) {
           throw new Error('INVALID EMAIL OR PASSWORD');
         }
-        userId = authData.user.id;
-        userEmail = authData.user.email || userEmail;
+
+        const { data: rpcRes, error: rpcErr } = await supabase.rpc('complete_ambassador_registration', {
+          invite_token: inviteData.token,
+          new_user_id: authData.user.id,
+          user_email: authData.user.email || userEmail,
+          user_name: userName
+        });
+
+        if (rpcErr || !rpcRes?.success) {
+          throw new Error(rpcRes?.message || rpcErr?.message || 'REGISTRATION FAILED');
+        }
+
+        window.location.reload();
       }
-
-      const { data: rpcRes, error: rpcErr } = await supabase.rpc('complete_ambassador_registration', {
-        invite_token: inviteData.token,
-        new_user_id: userId,
-        user_email: userEmail,
-        user_name: userName
-      });
-
-      if (rpcErr || !rpcRes?.success) {
-        throw new Error(rpcRes?.message || rpcErr?.message || 'REGISTRATION FAILED');
-      }
-
-      window.location.reload();
     } catch (err: any) {
       setErrorMessage(err.message || 'SOMETHING WENT WRONG');
     } finally {
@@ -424,7 +443,6 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
     }
   };
 
-  // ৩. ফিক্সড সাপোর্ট মেসেজ সেন্ড ফাংশন
   const handleSendSupportMessage = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!supportMsg.trim() || isSendingSupport) return;
@@ -438,7 +456,7 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
       const newMessagePayload = {
         channel_type: 'ambassador',
         channel_id: targetChannelId,
-        sender_email: activeEmail || null, // ইমেইল না থাকলে ফাঁকা স্ট্রিং বা 'EMPTY' এর বদলে null সেভ হবে
+        sender_email: activeEmail || null,
         sender_role: 'ambassador',
         message: currentText,
       };
@@ -521,6 +539,7 @@ export default function AmbassadorJoin({ initialInviteData }: AmbassadorJoinProp
         isCheckingEmail={isCheckingEmail}
         accountFound={accountFound}
         errorMessage={errorMessage}
+        successMessage={successMessage}
         handleSubmit={handleSubmit}
         fullName={fullName}
         setFullName={setFullName}
