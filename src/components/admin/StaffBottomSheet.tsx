@@ -69,14 +69,15 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
           .eq('id', user.id)
           .single();
         if (userProfile) {
-          setCurrentUserRole(userProfile.role);
+          setCurrentUserRole((userProfile.role || '').toUpperCase());
         }
       }
     };
     fetchCurrentUser();
   }, []);
 
-  const isSuperAdmin = currentUserRole === 'SUPER_ADMIN';
+  // বর্তমান সিস্টেমের ADMIN রোলকে সুপার অ্যাডমিন হিসেবে গণ্য করা
+  const isSuperAdmin = currentUserRole === 'ADMIN' || currentUserRole === 'SUPER_ADMIN';
   const isSelf = currentAdminId === staff.id;
 
   const finalDesignation = designationInput.trim() !== '' ? designationInput.trim() : (staff.designation || '');
@@ -126,7 +127,7 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
     setUploadingAvatar(true);
     try {
       const uploadedUrl = await uploadToCloudinary(croppedFile, 'staff_avatars', `avatar_${staff.id}`);
-      
+
       const now = new Date().toISOString();
       const { error } = await supabase
         .from('profiles')
@@ -139,7 +140,7 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
         entityType: 'profile',
         entityId: staff.id,
         actionType: 'PROFILE_UPDATE',
-        reason: avatarReason.trim() || 'Updated avatar image via Super Admin panel',
+        reason: avatarReason.trim() || 'Updated avatar image via Admin panel',
         changes: {
           Avatar: {
             old: staff.avatar_url ? '[Previous Image]' : 'None',
@@ -223,8 +224,8 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
       return;
     }
 
-    if (!['STAFF', 'ADMIN', 'SUPER_ADMIN'].includes(finalRole)) {
-      setToastMsg({ text: 'Invalid Role! Use STAFF, ADMIN, or SUPER_ADMIN', type: 'error' });
+    if (!['STAFF', 'MANAGER', 'ADMIN'].includes(finalRole)) {
+      setToastMsg({ text: 'Invalid Role! Use STAFF, MANAGER, or ADMIN', type: 'error' });
       return;
     }
 
@@ -335,7 +336,7 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
           entityType: 'profile',
           entityId: staff.id,
           actionType: 'PROFILE_UPDATE',
-          reason: avatarReason.trim() || 'Removed profile image via Super Admin',
+          reason: avatarReason.trim() || 'Removed profile image via Admin',
           changes: {
             Avatar: {
               old: '[Previous Image]',
@@ -374,7 +375,6 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
         />
       )}
 
-      {/* Hidden File Input */}
       <input
         type="file"
         ref={fileInputRef}
@@ -383,7 +383,6 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
         style={{ display: 'none' }}
       />
 
-      {/* Image Crop Modal */}
       <ImageCropModal
         isOpen={isCropModalOpen}
         selectedImageSrc={selectedImageSrc}
@@ -440,7 +439,6 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
         </div>
       )}
 
-      {/* Backdrop */}
       <div
         onClick={onClose}
         style={{
@@ -473,7 +471,6 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
             boxSizing: 'border-box',
           }}
         >
-          {/* VIEW ১: AVATAR MANAGE */}
           {currentView === 'avatar_manage' ? (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', padding: '10px 0 10px 0', width: '100%' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
@@ -525,7 +522,6 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
                 )}
               </div>
 
-              {/* ছবি পরিবর্তনের জন্য কারণ ইনপুট */}
               {isSuperAdmin && (
                 <div style={{ width: '100%', maxWidth: '340px', display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '4px' }}>
                   <textarea
@@ -611,7 +607,6 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
               </button>
             </div>
           ) : currentView === 'activity_logs' ? (
-            /* VIEW ২: ACTIVITY LOGS */
             <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '20px', boxSizing: 'border-box' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -651,7 +646,7 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
                     const fetchedAdmin = adminProfiles[log.performed_by];
                     const adminName = fetchedAdmin?.name || log.metadata?.admin_name || 'Admin User';
                     const adminEmail = fetchedAdmin?.email || log.metadata?.admin_email || '';
-                    const adminRole = fetchedAdmin?.role || log.metadata?.admin_role || 'SUPER_ADMIN';
+                    const adminRole = fetchedAdmin?.role || log.metadata?.admin_role || 'ADMIN';
                     const adminDesignation = fetchedAdmin?.designation || log.metadata?.admin_designation || '';
 
                     let changeItems: Array<{ label: string; oldVal: string; newVal: string }> = [];
@@ -722,7 +717,6 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
               )}
             </div>
           ) : (
-            /* VIEW ৩: MAIN PROFILE */
             <>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
@@ -768,9 +762,7 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
                 </button>
               </div>
 
-              {/* কনফিগারেশন বক্স */}
               <div style={{ backgroundColor: '#121215', border: '1px solid #27272a', borderRadius: '12px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: '10px', fontWeight: 'bold', color: '#71717a', fontFamily: 'monospace', letterSpacing: '0.8px', textTransform: 'uppercase' }}>
                     CONFIGURATION
@@ -874,7 +866,6 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
                 </div>
               </div>
 
-              {/* হিস্ট্রি ও লগের বাটন */}
               <button
                 type="button"
                 onClick={() => {
@@ -887,7 +878,6 @@ export const StaffBottomSheet: React.FC<StaffBottomSheetProps> = ({
                 <span style={{ fontWeight: '600', fontSize: '12px' }}>Activity & Audit Logs</span>
               </button>
 
-              {/* রিভোক বাটন */}
               <button
                 type="button"
                 onClick={triggerToggleStatus}
