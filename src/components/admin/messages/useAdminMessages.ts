@@ -8,6 +8,7 @@ export const useAdminMessages = (
   onSelectThread?: (id: string | null, thread?: Thread | null) => void
 ) => {
   const [threads, setThreads] = useState<Thread[]>([]);
+  const [allUsers, setAllUsers] = useState<any[]>([]);
   const [internalActiveThreadId, setInternalActiveThreadId] = useState<string | null>(propActiveThreadId);
   const [roleFilter, setRoleFilter] = useState<string>('ALL');
   const [inputText, setInputText] = useState<string>('');
@@ -106,6 +107,7 @@ export const useAdminMessages = (
 
       const profilesByEmail: Record<string, any> = {};
       const profilesById: Record<string, any> = {};
+      const masterUserMap: Record<string, any> = {};
 
       if (profilesRes.data) {
         profilesRes.data.forEach((p: any) => {
@@ -123,6 +125,23 @@ export const useAdminMessages = (
 
           if (profileObj.email) profilesByEmail[profileObj.email] = profileObj;
           if (p.id) profilesById[p.id] = profileObj;
+
+          if (profileObj.id && profileObj.email !== currentEmail) {
+            masterUserMap[profileObj.id] = {
+              id: profileObj.id,
+              userName: profileObj.name || profileObj.email || 'User',
+              userEmail: profileObj.email,
+              userPhone: '',
+              role: profileObj.role,
+              designation: profileObj.designation,
+              avatarUrl: profileObj.avatarUrl,
+              createdAt: profileObj.createdAt,
+              lastMessage: '',
+              lastMessageTime: '',
+              messages: [],
+              unreadCount: 0,
+            };
+          }
         });
       }
 
@@ -148,6 +167,24 @@ export const useAdminMessages = (
               if (cleanK) ambassadorBySlug[cleanK] = ambObj;
             }
           });
+
+          const ambKey = a.user_id || a.assigned_slug || a.token || a.id;
+          if (ambKey && !masterUserMap[ambKey] && (!a.email || a.email.trim().toLowerCase() !== currentEmail)) {
+            masterUserMap[ambKey] = {
+              id: ambKey,
+              userName: a.display_name || a.assigned_slug || a.token || 'Ambassador',
+              userEmail: a.email ? a.email.trim().toLowerCase() : '',
+              userPhone: a.phone || '',
+              role: 'INVITED AMBASSADOR',
+              designation: '',
+              avatarUrl: '',
+              createdAt: a.invite_sent_at || '',
+              lastMessage: '',
+              lastMessageTime: '',
+              messages: [],
+              unreadCount: 0,
+            };
+          }
         });
       }
 
@@ -297,6 +334,19 @@ export const useAdminMessages = (
         });
 
         setThreads(updatedThreads);
+
+        updatedThreads.forEach((t) => {
+          if (t.id !== 'all_staff') {
+            masterUserMap[t.id] = { ...masterUserMap[t.id], ...t };
+          }
+        });
+
+        const allUsersList = [
+          threadMap['all_staff'],
+          ...Object.values(masterUserMap),
+        ];
+
+        setAllUsers(allUsersList);
       }
     } catch (err: any) {
       console.error('Fetch error:', err);
@@ -384,12 +434,14 @@ export const useAdminMessages = (
     const userEmail = (t.userEmail || '').toLowerCase();
     const userPhone = (t.userPhone || '').toLowerCase();
     const lastMsg = (t.lastMessage || '').toLowerCase();
+    const designation = (t.designation || '').toLowerCase();
 
     const matchesSearch =
       !query ||
       userName.includes(query) ||
       userEmail.includes(query) ||
       userPhone.includes(query) ||
+      designation.includes(query) ||
       lastMsg.includes(query);
 
     return matchesRole && matchesSearch;
@@ -474,6 +526,7 @@ export const useAdminMessages = (
 
   return {
     threads,
+    allUsers,
     activeThreadId,
     activeThread,
     filteredThreads,
