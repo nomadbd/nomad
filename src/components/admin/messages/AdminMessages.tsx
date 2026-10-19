@@ -30,6 +30,7 @@ export const AdminMessages: React.FC<ExtendedAdminMessagesProps> = ({
     activeThreadId,
     activeThread,
     filteredThreads,
+    allUsers,
     roleFilter,
     setRoleFilter,
     inputText,
@@ -193,13 +194,16 @@ export const AdminMessages: React.FC<ExtendedAdminMessagesProps> = ({
     userName: getResolvedName(t),
   }));
 
-  const newChatUsers = enhancedThreads.filter((t) => {
+  const sourceUsers = allUsers && allUsers.length > 0 ? allUsers : enhancedThreads;
+
+  const newChatUsers = sourceUsers.filter((t) => {
     if (!newChatSearch.trim()) return true;
     const q = newChatSearch.toLowerCase().trim();
     return (
       t.userName?.toLowerCase().includes(q) ||
       t.userEmail?.toLowerCase().includes(q) ||
       t.userPhone?.toLowerCase().includes(q) ||
+      t.designation?.toLowerCase().includes(q) ||
       t.role?.toLowerCase().includes(q)
     );
   });
