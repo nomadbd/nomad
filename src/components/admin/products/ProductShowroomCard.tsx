@@ -18,6 +18,7 @@ export const ProductShowroomCard: React.FC<ProductShowroomCardProps> = ({
   onUnhide,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isStockEditing, setIsStockEditing] = useState(false);
 
   const mediaList =
     product.product_media && product.product_media.length > 0
@@ -184,20 +185,22 @@ export const ProductShowroomCard: React.FC<ProductShowroomCardProps> = ({
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', width: '100%', marginTop: '2px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span style={{ fontSize: '13px', color: '#fff', fontWeight: 'bold', fontFamily: 'sans-serif' }}>৳{product.price}</span>
-          <span
-            style={{
-              fontSize: '10px',
-              fontWeight: '600',
-              padding: '2px 6px',
-              borderRadius: '4px',
-              fontFamily: 'monospace',
-              backgroundColor: product.stock_quantity > 0 ? 'rgba(255, 255, 255, 0.08)' : 'rgba(239, 68, 68, 0.15)',
-              color: product.stock_quantity > 0 ? '#aaa' : '#ef4444',
-              border: `1px solid ${product.stock_quantity > 0 ? '#222' : 'rgba(239, 68, 68, 0.3)'}`,
-            }}
-          >
-            {product.stock_quantity > 0 ? `STK: ${product.stock_quantity}` : 'OUT OF STOCK'}
-          </span>
+          {!isStockEditing && (
+            <span
+              style={{
+                fontSize: '10px',
+                fontWeight: '600',
+                padding: '2px 6px',
+                borderRadius: '4px',
+                fontFamily: 'monospace',
+                backgroundColor: product.stock_quantity > 0 ? 'rgba(255, 255, 255, 0.08)' : 'rgba(239, 68, 68, 0.15)',
+                color: product.stock_quantity > 0 ? '#aaa' : '#ef4444',
+                border: `1px solid ${product.stock_quantity > 0 ? '#222' : 'rgba(239, 68, 68, 0.3)'}`,
+              }}
+            >
+              {product.stock_quantity > 0 ? `Stock: ${product.stock_quantity}` : 'OUT OF STOCK'}
+            </span>
+          )}
         </div>
 
         <ProductActionToolbar
@@ -205,6 +208,7 @@ export const ProductShowroomCard: React.FC<ProductShowroomCardProps> = ({
           onUpdateStock={onUpdateStock}
           onEdit={onEdit}
           onUnhide={onUnhide}
+          setIsStockEditing={setIsStockEditing}
         />
       </div>
 
