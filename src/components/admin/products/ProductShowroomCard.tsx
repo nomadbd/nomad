@@ -38,10 +38,25 @@ export const ProductShowroomCard: React.FC<ProductShowroomCardProps> = ({
 
   const isHidden = product.status === 'archived' || product.status === 'hidden';
 
-  // Details অবজেক্ট থেকে 'details' কি এবং অন্যান্য স্পেসিফিকেশন পৃথক করা
-  const detailsObj = product.details || {};
-  const { details: extraDetailsText, DETAILS: extraDetailsTextCaps, ...otherDetails } = detailsObj as Record<string, any>;
+  // Details অবজেক্ট থেকে 'details' এবং 'made in' ফিল্ড পৃথক করা
+  const detailsObj = (product.details || {}) as Record<string, any>;
+  
+  // 1. Details ফিল্ড খোঁজা
+  const { details: extraDetailsText, DETAILS: extraDetailsTextCaps, ...remaining1 } = detailsObj;
   const bottomDetailsValue = extraDetailsText || extraDetailsTextCaps;
+
+  // 2. Made In ফিল্ড খোঁজা
+  const madeInEntry = Object.entries(remaining1).find(
+    ([key]) => key.toLowerCase().replace(/_/g, ' ') === 'made in'
+  );
+  
+  const madeInKey = madeInEntry ? madeInEntry[0] : null;
+  const madeInValue = madeInEntry ? madeInEntry[1] : null;
+
+  // 3. বাকি সাধারণ স্পেসিফিকেশনসমূহ
+  const otherDetails = Object.fromEntries(
+    Object.entries(remaining1).filter(([key]) => key !== madeInKey)
+  );
 
   return (
     <div
@@ -195,7 +210,7 @@ export const ProductShowroomCard: React.FC<ProductShowroomCardProps> = ({
             </span>
           </div>
 
-          {/* ২. ডিসক্রিপশন (স্পষ্ট ও উজ্জ্বল সাদা ফন্টে) */}
+          {/* ২. ডিসক্রিপশন */}
           {product.description && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
               <span style={{ fontSize: '10px', color: '#666', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
@@ -207,8 +222,8 @@ export const ProductShowroomCard: React.FC<ProductShowroomCardProps> = ({
             </div>
           )}
 
-          {/* ৩. স্পেসিফিকেশন এবং ডিটেইলস অংশ */}
-          {((otherDetails && Object.keys(otherDetails).length > 0) || bottomDetailsValue) && (
+          {/* ৩. স্পেসিফিকেশন ও ডিটেইলস অংশ */}
+          {((otherDetails && Object.keys(otherDetails).length > 0) || madeInValue || bottomDetailsValue) && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <span style={{ fontSize: '10px', color: '#666', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                 Specifications
@@ -225,7 +240,7 @@ export const ProductShowroomCard: React.FC<ProductShowroomCardProps> = ({
                   border: '1px solid #141414',
                 }}
               >
-                {/* সাধারণ কি-ভ্যালু স্পেসিফিকেশনসমূহ */}
+                {/* সাধারণ কি-ভ্যালু স্পেসিফিকেশনসমূহ (FIT, GSM, CARE ইত্যাদি) */}
                 {Object.keys(otherDetails).length > 0 && (
                   <div
                     style={{
@@ -243,15 +258,35 @@ export const ProductShowroomCard: React.FC<ProductShowroomCardProps> = ({
                   </div>
                 )}
 
-                {/* DETAILS ফিল্ডটি একদম নিচে পৃথকভাবে দেখানো হলো */}
+                {/* MADE IN ফিল্ডটি আলাদাভাবে নিচে */}
+                {madeInValue && (
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '2px',
+                      borderTop: Object.keys(otherDetails).length > 0 ? '1px solid #1a1a1a' : 'none',
+                      paddingTop: Object.keys(otherDetails).length > 0 ? '8px' : '0',
+                    }}
+                  >
+                    <span style={{ color: '#666', fontSize: '10px', textTransform: 'uppercase' }}>
+                      {madeInKey ? madeInKey.replace(/_/g, ' ') : 'MADE IN'}
+                    </span>
+                    <span style={{ color: '#ffffff', fontSize: '13px', fontWeight: '500' }}>
+                      {String(madeInValue)}
+                    </span>
+                  </div>
+                )}
+
+                {/* DETAILS ফিল্ডটি একদম নিচে সর্বশেষে */}
                 {bottomDetailsValue && (
                   <div
                     style={{
                       display: 'flex',
                       flexDirection: 'column',
                       gap: '3px',
-                      borderTop: Object.keys(otherDetails).length > 0 ? '1px solid #1a1a1a' : 'none',
-                      paddingTop: Object.keys(otherDetails).length > 0 ? '8px' : '0',
+                      borderTop: (Object.keys(otherDetails).length > 0 || madeInValue) ? '1px solid #1a1a1a' : 'none',
+                      paddingTop: (Object.keys(otherDetails).length > 0 || madeInValue) ? '8px' : '0',
                     }}
                   >
                     <span style={{ color: '#666', fontSize: '10px', textTransform: 'uppercase' }}>DETAILS</span>
