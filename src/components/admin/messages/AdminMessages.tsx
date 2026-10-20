@@ -53,23 +53,19 @@ export const AdminMessages: React.FC<ExtendedAdminMessagesProps> = ({
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const searchParams = new URLSearchParams(window.location.search);
+  // ইউআরএল থেকে ডিটেক্ট করা
+  const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
   const targetUserIdFromUrl = searchParams.get('userId') || searchParams.get('recipientId');
 
   const clearUserIdParam = () => {
+    if (typeof window === 'undefined') return;
     const url = new URL(window.location.href);
     if (url.searchParams.has('userId') || url.searchParams.has('recipientId')) {
       url.searchParams.delete('userId');
       url.searchParams.delete('recipientId');
-      window.history.replaceState({}, '', url.toString());
+      window.history.replaceState(window.history.state, '', url.toString());
     }
   };
-
-  useEffect(() => {
-    if (targetUserIdFromUrl) {
-      clearUserIdParam();
-    }
-  }, [targetUserIdFromUrl]);
 
   const formatThreadTime = (dateInput?: string | number | Date) => {
     if (!dateInput) return '';
@@ -148,12 +144,14 @@ export const AdminMessages: React.FC<ExtendedAdminMessagesProps> = ({
     };
   }, [activeThreadId]);
 
-  // পারফেক্ট ওয়ান-ট্যাপ ব্যাক নেভিগেশন লজিক
+  // ১-ট্যাপ ব্যাক নেভিগেশন (একবার ব্যাকেই আগের পেজে ফেরা)
   useEffect(() => {
     if (!activeThreadId) return;
 
-    // চ্যাট ওপেন হলে হিস্ট্রি স্ট্যাকে মাত্র ১টি স্টেট পুশ করা
-    window.history.pushState({ chatThreadActive: true, threadId: activeThreadId }, '');
+    // শুধুমাত্র যদি আগে থেকে হিস্ট্রি পুশ না করা থাকে তবেই একটি স্টেট যুক্ত করা
+    if (!window.history.state?.chatThreadActive) {
+      window.history.pushState({ chatThreadActive: true, threadId: activeThreadId }, '');
+    }
 
     const handlePopState = () => {
       clearUserIdParam();
@@ -164,7 +162,7 @@ export const AdminMessages: React.FC<ExtendedAdminMessagesProps> = ({
     return () => {
       window.removeEventListener('popstate', handlePopState);
     };
-  }, [activeThreadId, handleSelectThread]);
+  }, [activeThreadId]);
 
   const scrollToBottom = () => {
     if (chatContainerRef.current) {
@@ -238,10 +236,11 @@ export const AdminMessages: React.FC<ExtendedAdminMessagesProps> = ({
     );
   });
 
-  const isTargetingUserViaUrl = Boolean(targetUserIdFromUrl && !activeThreadId);
+  // সরাসরি চ্যাট ওপেন হওয়ার ফিল্টার
+  const isOpeningDirectChat = Boolean(activeThreadId || targetUserIdFromUrl || propActiveThreadId);
 
-  // উন্নত ও মার্জিত স্কেলিটন লোডার UI (Pulsing Animation)
-  if ((loading && filteredThreads.length === 0) || isTargetingUserViaUrl) {
+  // উন্নত পালসিং স্কেলিটন ಲೋഡর UI
+  if (loading || (isOpeningDirectChat && !activeThread)) {
     return (
       <div
         style={{
@@ -256,18 +255,19 @@ export const AdminMessages: React.FC<ExtendedAdminMessagesProps> = ({
       >
         <style>{`
           @keyframes skeletonPulse {
-            0% { opacity: 0.3; }
-            50% { opacity: 0.7; }
-            100% { opacity: 0.3; }
+            0% { opacity: 0.25; }
+            50% { opacity: 0.65; }
+            100% { opacity: 0.25; }
           }
           .skeleton-pulse {
             animation: skeletonPulse 1.4s ease-in-out infinite;
           }
         `}</style>
 
-        {isTargetingUserViaUrl ? (
-          // ইউআরএল থেকে চ্যাট ওপেন হওয়ার সময়ের স্কেলিটন
+        {isOpeningDirectChat ? (
+          // স্টাফ বা অন্য জায়গা থেকে চ্যাট ওপেন করার সময় সরাসরি চ্যাট উইন্ডোর স্কেলিটন
           <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+            {/* চ্যাট হেডার স্কেলিটন */}
             <div
               className="skeleton-pulse"
               style={{
@@ -286,16 +286,18 @@ export const AdminMessages: React.FC<ExtendedAdminMessagesProps> = ({
               </div>
             </div>
 
+            {/* চ্যাট মেসেজ বাবল স্কেলিটন */}
             <div style={{ flex: 1, padding: '20px 0', display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div className="skeleton-pulse" style={{ alignSelf: 'flex-start', width: '55%', height: '40px', backgroundColor: '#18181b', borderRadius: '12px' }} />
-              <div className="skeleton-pulse" style={{ alignSelf: 'end', width: '65%', height: '52px', backgroundColor: '#27272a', borderRadius: '12px' }} />
+              <div className="skeleton-pulse" style={{ alignSelf: 'flex-end', width: '65%', height: '52px', backgroundColor: '#27272a', borderRadius: '12px' }} />
               <div className="skeleton-pulse" style={{ alignSelf: 'flex-start', width: '45%', height: '36px', backgroundColor: '#18181b', borderRadius: '12px' }} />
             </div>
 
+            {/* ইনপুট বক্স স্কেলিটন */}
             <div className="skeleton-pulse" style={{ height: '48px', backgroundColor: '#18181b', borderRadius: '24px', border: '1px solid #27272a' }} />
           </div>
         ) : (
-          // চ্যাট লিস্ট লোড হওয়ার সময়ের স্কেলিটন
+          // সাধারণ মেসেজ ট্যাবে চ্যাট লিস্টের স্কেলিটন
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             {[1, 2, 3, 4, 5].map((item) => (
               <div
