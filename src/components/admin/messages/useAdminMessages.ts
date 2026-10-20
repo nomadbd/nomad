@@ -7,7 +7,6 @@ export const useAdminMessages = (
   propActiveThreadId: string | null,
   onSelectThread?: (id: string | null, thread?: Thread | null) => void
 ) => {
-  // URL থেকে সরাসরি প্রাথমিক activeThreadId বের করে নেওয়া (Zero-Flash এর জন্য)
   const getInitialThreadId = () => {
     if (propActiveThreadId) return propActiveThreadId;
     if (typeof window !== 'undefined') {
@@ -26,6 +25,7 @@ export const useAdminMessages = (
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
   const [adminEmail, setAdminEmail] = useState<string>('');
+  const [currentAdminId, setCurrentAdminId] = useState<string>('');
 
   useEffect(() => {
     if (propActiveThreadId !== undefined && propActiveThreadId !== null) {
@@ -36,8 +36,9 @@ export const useAdminMessages = (
   useEffect(() => {
     const fetchCurrentAdmin = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (user?.email) {
-        setAdminEmail(user.email.trim().toLowerCase());
+      if (user) {
+        if (user.email) setAdminEmail(user.email.trim().toLowerCase());
+        setCurrentAdminId(user.id);
       }
     };
     fetchCurrentAdmin();
@@ -64,6 +65,11 @@ export const useAdminMessages = (
   };
 
   const handleSelectThread = async (thread: Thread | null) => {
+    // নিজের সাথে চ্যাট বন্ধ করার গার্ড
+    if (thread && (thread.id === currentAdminId || thread.userEmail?.toLowerCase() === adminEmail.toLowerCase())) {
+      return;
+    }
+
     const threadId = thread ? thread.id : null;
     setInternalActiveThreadId(threadId);
 
@@ -116,8 +122,12 @@ export const useAdminMessages = (
         supabase.from('ambassador').select('id, user_id, display_name, email, phone, recipient_identifier, assigned_slug, token, invite_sent_at, expires_at, is_registered'),
       ]);
 
-      const currentEmail = authRes.data.user?.email?.trim().toLowerCase() || adminEmail;
+      const currentAuthUser = authRes.data.user;
+      const currentEmail = currentAuthUser?.email?.trim().toLowerCase() || adminEmail;
+      const myId = currentAuthUser?.id || currentAdminId;
+
       if (currentEmail) setAdminEmail(currentEmail);
+      if (myId) setCurrentAdminId(myId);
 
       if (commsRes.error) throw commsRes.error;
 
@@ -127,11 +137,19 @@ export const useAdminMessages = (
 
       if (profilesRes.data) {
         profilesRes.data.forEach((p: any) => {
+          const userRole = (p.role || 'CUSTOMER').toUpperCase();
+          const pEmail = p.email ? p.email.trim().toLowerCase() : '';
+
+          // কাস্টমার বা নিজের অ্যাকাউন্ট বাদ দেওয়া
+          if (userRole === 'CUSTOMER' || p.id === myId || pEmail === currentEmail) {
+            return;
+          }
+
           const profileObj = {
             id: p.id,
-            email: p.email ? p.email.trim().toLowerCase() : '',
+            email: pEmail,
             name: p.name || '',
-            role: (p.role || 'CUSTOMER').toUpperCase(),
+            role: userRole,
             designation: p.designation || '',
             avatarUrl: p.avatar_url && p.avatar_url !== 'NULL' && String(p.avatar_url).trim() !== '' 
               ? String(p.avatar_url).trim() 
@@ -142,23 +160,21 @@ export const useAdminMessages = (
           if (profileObj.email) profilesByEmail[profileObj.email] = profileObj;
           if (p.id) profilesById[p.id] = profileObj;
 
-          if (profileObj.id && profileObj.email !== currentEmail) {
-            masterUserMap[profileObj.id] = {
-              id: profileObj.id,
-              userName: profileObj.name || profileObj.email || 'User',
-              displayName: profileObj.name || profileObj.email,
-              userEmail: profileObj.email,
-              userPhone: '',
-              role: profileObj.role,
-              designation: profileObj.designation,
-              avatarUrl: profileObj.avatarUrl,
-              createdAt: profileObj.createdAt,
-              lastMessage: '',
-              lastMessageTime: '',
-              messages: [],
-              unreadCount: 0,
-            };
-          }
+          masterUserMap[profileObj.id] = {
+            id: profileObj.id,
+            userName: profileObj.name || profileObj.email || 'User',
+            displayName: profileObj.name || profileObj.email,
+            userEmail: profileObj.email,
+            userPhone: '',
+            role: profileObj.role,
+            designation: profileObj.designation,
+            avatarUrl: profileObj.avatarUrl,
+            createdAt: profileObj.createdAt,
+            lastMessage: '',
+            lastMessageTime: '',
+            messages: [],
+            unreadCount: 0,
+          };
         });
       }
 
@@ -170,12 +186,15 @@ export const useAdminMessages = (
           const isExpired = a.expires_at && new Date(a.expires_at) < now;
           if (!a.is_registered && isExpired) return;
 
+          const ambEmail = a.email ? a.email.trim().toLowerCase() : '';
+          if (ambEmail === currentEmail || a.user_id === myId) return;
+
           const ambObj = {
             id: a.id,
             userId: a.user_id || '',
             displayName: a.display_name || a.assigned_slug || a.token || '',
             slug: a.assigned_slug || a.token || '',
-            email: a.email ? a.email.trim().toLowerCase() : '',
+            email: ambEmail,
             phone: a.phone || '',
             inviteSentAt: a.invite_sent_at || '',
             isRegistered: a.is_registered || false,
@@ -190,12 +209,12 @@ export const useAdminMessages = (
           });
 
           const ambKey = a.user_id || a.assigned_slug || a.token || a.id;
-          if (ambKey && !masterUserMap[ambKey] && (!a.email || a.email.trim().toLowerCase() !== currentEmail)) {
+          if (ambKey && !masterUserMap[ambKey]) {
             masterUserMap[ambKey] = {
               id: ambKey,
               userName: a.display_name || a.assigned_slug || a.token || 'Ambassador',
               displayName: a.display_name || a.assigned_slug,
-              userEmail: a.email ? a.email.trim().toLowerCase() : '',
+              userEmail: ambEmail,
               userPhone: a.phone || '',
               role: 'INVITED AMBASSADOR',
               designation: '',
@@ -273,6 +292,9 @@ export const useAdminMessages = (
           const targetProfile = partnerEmail && partnerEmail !== currentEmail 
             ? profilesByEmail[partnerEmail] 
             : (profilesById[channelId] || null);
+
+          // কাস্টমার বা নিজের সাথে পার্সোনাল চ্যাট বাদ
+          if (targetProfile && targetProfile.role === 'CUSTOMER') return;
 
           const targetAmbassador = ambassadorBySlug[channelId] || (partnerEmail ? ambassadorBySlug[partnerEmail] : null);
 
@@ -353,7 +375,6 @@ export const useAdminMessages = (
         });
       }
 
-      // ব্যাকএন্ডে মেসেজ না থাকা ইউজারদেরও masterUserMap থেকে threads-এ যুক্ত করা (Unified Model)
       Object.values(masterUserMap).forEach((userObj: any) => {
         if (!threadMap[userObj.id]) {
           threadMap[userObj.id] = {
@@ -454,6 +475,8 @@ export const useAdminMessages = (
     if (t.id === 'all_staff') return true;
 
     const threadRole = (t.role || '').toUpperCase();
+    if (threadRole === 'CUSTOMER') return false; // গার্ড: কাস্টমার বাদ
+
     const filterRole = (roleFilter || 'ALL').toUpperCase();
 
     let matchesRole = false;
@@ -596,5 +619,6 @@ export const useAdminMessages = (
     handleSendMessage,
     fetchCommunicationsAndUsers,
     adminEmail,
+    currentAdminId,
   };
 };
