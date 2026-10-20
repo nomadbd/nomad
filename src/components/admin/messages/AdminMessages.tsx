@@ -234,14 +234,86 @@ export const AdminMessages: React.FC<ExtendedAdminMessagesProps> = ({
 
   const isTargetingUserViaUrl = Boolean(targetUserIdFromUrl && !activeThreadId);
 
+  // উন্নত ও মার্জিত স্কেলিটন লোডার UI (Pulsing Animation)
   if ((loading && filteredThreads.length === 0) || isTargetingUserViaUrl) {
     return (
-      <div style={{ ...styles.containerStyle, padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', paddingBottom: '12px', borderBottom: '1px solid #1f1f23' }}>
-          <div style={{ width: '36px', height: '36px', borderRadius: '50%', backgroundColor: '#18181b' }} />
-          <div style={{ width: '120px', height: '14px', backgroundColor: '#18181b', borderRadius: '4px' }} />
-        </div>
-        <div style={{ flex: 1, minHeight: '300px' }} />
+      <div
+        style={{
+          ...styles.containerStyle,
+          padding: '16px',
+          display: 'flex',
+          flexDirection: 'column',
+          height: '100dvh',
+          boxSizing: 'border-box',
+          backgroundColor: '#000000',
+        }}
+      >
+        <style>{`
+          @keyframes skeletonPulse {
+            0% { opacity: 0.3; }
+            50% { opacity: 0.7; }
+            100% { opacity: 0.3; }
+          }
+          .skeleton-pulse {
+            animation: skeletonPulse 1.4s ease-in-out infinite;
+          }
+        `}</style>
+
+        {isTargetingUserViaUrl ? (
+          // ইউআরএল থেকে চ্যাট ওপেন হওয়ার সময়ের স্কেলিটন
+          <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+            <div
+              className="skeleton-pulse"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                paddingBottom: '14px',
+                borderBottom: '1px solid #18181b',
+              }}
+            >
+              <div style={{ width: '24px', height: '24px', borderRadius: '4px', backgroundColor: '#27272a' }} />
+              <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: '#27272a' }} />
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <div style={{ width: '40%', height: '12px', backgroundColor: '#27272a', borderRadius: '4px' }} />
+                <div style={{ width: '25%', height: '10px', backgroundColor: '#1f1f23', borderRadius: '4px' }} />
+              </div>
+            </div>
+
+            <div style={{ flex: 1, padding: '20px 0', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div className="skeleton-pulse" style={{ alignSelf: 'flex-start', width: '55%', height: '40px', backgroundColor: '#18181b', borderRadius: '12px' }} />
+              <div className="skeleton-pulse" style={{ alignSelf: 'flex-end', width: '65%', height: '52px', backgroundColor: '#27272a', borderRadius: '12px' }} />
+              <div className="skeleton-pulse" style={{ alignSelf: 'flex-start', width: '45%', height: '36px', backgroundColor: '#18181b', borderRadius: '12px' }} />
+            </div>
+
+            <div className="skeleton-pulse" style={{ height: '48px', backgroundColor: '#18181b', borderRadius: '24px', border: '1px solid #27272a' }} />
+          </div>
+        ) : (
+          // চ্যাট লিস্ট লোড হওয়ার সময়ের স্কেলিটন
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {[1, 2, 3, 4, 5].map((item) => (
+              <div
+                key={item}
+                className="skeleton-pulse"
+                style={{
+                  backgroundColor: '#09090b',
+                  border: '1px solid #1f1f23',
+                  borderRadius: '12px',
+                  padding: '14px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                }}
+              >
+                <div style={{ width: '42px', height: '42px', borderRadius: '50%', backgroundColor: '#27272a', flexShrink: 0 }} />
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div style={{ width: '45%', height: '12px', backgroundColor: '#27272a', borderRadius: '4px' }} />
+                  <div style={{ width: '70%', height: '10px', backgroundColor: '#1f1f23', borderRadius: '4px' }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     );
   }
