@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Product } from './products.types';
-import { ShareIcon, EditIcon, ChevronDownIcon } from '../../icons';
+import { ShareIcon, EditIcon, ChevronDownIcon, BoxIcon } from '../../icons';
 
 interface ProductActionToolbarProps {
   product: Product;
@@ -20,83 +20,42 @@ export const ProductActionToolbar: React.FC<ProductActionToolbarProps> = ({
   onToggleExpand,
 }) => {
   const [step, setStep] = useState<'idle' | 'manage'>('idle');
-  const isSoldOut = product.status === 'sold_out' || product.stock_quantity <= 0;
   const isHidden = product.status === 'archived' || product.status === 'hidden';
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: '42px', marginTop: '10px', boxSizing: 'border-box', width: '100%' }}>
+    <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', height: '42px', marginTop: '10px', boxSizing: 'border-box', width: '100%' }}>
       {step === 'idle' && (
-        <div className="animate-fade-in" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', gap: '6px' }}>
-          <span style={{ fontSize: '14px', color: isSoldOut ? '#555' : '#fff', fontWeight: 500, fontFamily: 'monospace', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0, flexShrink: 1 }}>৳{product.price}</span>
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 }}>
-            {isHidden ? (
-              <button
-                onClick={() => onUnhide(product.id)}
-                className="smooth-transition"
-                style={{
-                  height: '36px',
-                  padding: '0 8px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  boxSizing: 'border-box',
-                  background: 'rgba(34, 197, 94, 0.15)',
-                  border: '1px solid rgba(34, 197, 94, 0.3)',
-                  borderRadius: '6px',
-                  color: '#22c55e',
-                  fontSize: '10px',
-                  letterSpacing: '0.5px',
-                  cursor: 'pointer',
-                  textTransform: 'uppercase',
-                  fontWeight: '600',
-                  whiteSpace: 'nowrap',
-                  flexShrink: 0
-                }}
-              >
-                UNHIDE
-              </button>
-            ) : (
-              <button
-                onClick={() => setStep('manage')}
-                className="smooth-transition"
-                style={{
-                  height: '36px',
-                  padding: '0 4px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  boxSizing: 'border-box',
-                  background: 'transparent',
-                  border: 'none',
-                  borderRadius: '6px',
-                  color: '#fff',
-                  fontSize: '10px',
-                  letterSpacing: '0.5px',
-                  cursor: 'pointer',
-                  textTransform: 'uppercase',
-                  fontWeight: '600',
-                  whiteSpace: 'nowrap',
-                  flexShrink: 0
-                }}
-              >
-                STOCK ({product.stock_quantity})
-              </button>
-            )}
-
+        <div className="animate-fade-in" style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', width: '100%', gap: '8px' }}>
+          {isHidden ? (
             <button
-              onClick={(e) => {
-                e.stopPropagation();
-                const shareData = {
-                  title: product.name,
-                  text: product.description,
-                  url: window.location.href,
-                };
-                if (navigator.share) {
-                  navigator.share(shareData).catch(() => {});
-                } else if (navigator.clipboard) {
-                  navigator.clipboard.writeText(window.location.href);
-                }
+              onClick={() => onUnhide(product.id)}
+              className="smooth-transition"
+              style={{
+                height: '36px',
+                padding: '0 8px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxSizing: 'border-box',
+                background: 'rgba(34, 197, 94, 0.15)',
+                border: '1px solid rgba(34, 197, 94, 0.3)',
+                borderRadius: '6px',
+                color: '#22c55e',
+                fontSize: '10px',
+                letterSpacing: '0.5px',
+                cursor: 'pointer',
+                textTransform: 'uppercase',
+                fontWeight: '600',
+                whiteSpace: 'nowrap',
+                flexShrink: 0
               }}
+            >
+              UNHIDE
+            </button>
+          ) : (
+            <button
+              onClick={() => setStep('manage')}
+              title={`Stock: ${product.stock_quantity}`}
               className="smooth-transition"
               style={{
                 height: '36px',
@@ -119,68 +78,107 @@ export const ProductActionToolbar: React.FC<ProductActionToolbarProps> = ({
                 e.currentTarget.style.color = '#aaa';
               }}
             >
-              <ShareIcon size={15} color="currentColor" />
+              <BoxIcon size={15} color="currentColor" strokeWidth={2.5} />
             </button>
+          )}
 
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              const shareData = {
+                title: product.name,
+                text: product.description,
+                url: window.location.href,
+              };
+              if (navigator.share) {
+                navigator.share(shareData).catch(() => {});
+              } else if (navigator.clipboard) {
+                navigator.clipboard.writeText(window.location.href);
+              }
+            }}
+            className="smooth-transition"
+            style={{
+              height: '36px',
+              width: '32px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: 'transparent',
+              border: 'none',
+              borderRadius: '0',
+              color: '#aaa',
+              cursor: 'pointer',
+              flexShrink: 0,
+              padding: 0
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = '#ffffff';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = '#aaa';
+            }}
+          >
+            <ShareIcon size={15} color="currentColor" />
+          </button>
+
+          <button
+            onClick={() => onEdit(product)}
+            className="smooth-transition"
+            style={{
+              height: '36px',
+              width: '32px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: 'transparent',
+              border: 'none',
+              borderRadius: '0',
+              color: '#aaa',
+              cursor: 'pointer',
+              flexShrink: 0,
+              padding: 0
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = '#ffffff';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = '#aaa';
+            }}
+          >
+            <EditIcon size={15} color="currentColor" />
+          </button>
+
+          {onToggleExpand && (
             <button
-              onClick={() => onEdit(product)}
+              type="button"
+              onClick={onToggleExpand}
+              title={isExpanded ? 'Hide Details' : 'Show Details'}
               className="smooth-transition"
               style={{
-                height: '36px',
+                background: 'transparent',
+                border: 'none',
+                color: '#aaa',
                 width: '32px',
+                height: '36px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                background: 'transparent',
-                border: 'none',
-                borderRadius: '0',
-                color: '#aaa',
                 cursor: 'pointer',
-                flexShrink: 0,
-                padding: 0
+                padding: 0,
               }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.color = '#ffffff';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.color = '#aaa';
-              }}
+              onMouseEnter={(e) => { e.currentTarget.style.color = '#ffffff'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = '#aaa'; }}
             >
-              <EditIcon size={15} color="currentColor" />
-            </button>
-
-            {onToggleExpand && (
-              <button
-                type="button"
-                onClick={onToggleExpand}
-                title={isExpanded ? 'Hide Details' : 'Show Details'}
-                className="smooth-transition"
+              <ChevronDownIcon
+                size={16}
+                color="currentColor"
                 style={{
-                  background: 'transparent',
-                  border: 'none',
-                  color: '#aaa',
-                  width: '32px',
-                  height: '36px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  padding: 0,
+                  transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                  transition: 'transform 0.2s ease',
                 }}
-                onMouseEnter={(e) => { e.currentTarget.style.color = '#ffffff'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.color = '#aaa'; }}
-              >
-                <ChevronDownIcon
-                  size={16}
-                  color="currentColor"
-                  style={{
-                    transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
-                    transition: 'transform 0.2s ease',
-                  }}
-                />
-              </button>
-            )}
-          </div>
+              />
+            </button>
+          )}
         </div>
       )}
 
