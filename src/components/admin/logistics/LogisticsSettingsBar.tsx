@@ -28,34 +28,33 @@ export default function LogisticsSettingsBar({
   onCancel,
 }: LogisticsSettingsBarProps) {
   return (
-    <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'flex-start', width: '100%' }}>
+    <div style={{ marginBottom: '16px', display: 'flex', gap: '12px', width: '100%', alignItems: 'center', flexWrap: 'wrap' }}>
       <div
         style={{
+          flex: 1,
+          minWidth: '140px',
+          backgroundColor: '#0a0a0a',
+          border: '1px solid #1f1f1f',
+          borderRadius: '4px',
+          padding: '10px 14px',
           display: 'flex',
-          flexDirection: 'row',
-          flexWrap: 'nowrap',
-          gap: '8px',
-          backgroundColor: '#060606',
-          padding: '8px 10px',
-          border: '1px solid #1a1a1a',
-          alignItems: 'center',
-          maxWidth: '100%',
-          boxSizing: 'border-box',
+          flexDirection: 'column',
+          gap: '4px',
         }}
       >
-        <div style={{ flexShrink: 1, minWidth: 0 }}>
-          <span
-            style={{
-              fontSize: '8px',
-              color: '#888',
-              display: 'block',
-              letterSpacing: '0.5px',
-              marginBottom: '2px',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            DELIVERY CHARGE
-          </span>
+        <span
+          style={{
+            fontSize: '9px',
+            color: '#aaa',
+            letterSpacing: '0.8px',
+            textTransform: 'uppercase',
+            fontWeight: '600',
+          }}
+        >
+          Delivery Charge
+        </span>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+          <span style={{ fontSize: '13px', color: '#aaa', fontWeight: '500' }}>৳</span>
           <input
             type="number"
             value={isEditing ? deliveryCharge : initialDeliveryCharge}
@@ -64,34 +63,45 @@ export default function LogisticsSettingsBar({
             placeholder={String(initialDeliveryCharge)}
             style={{
               backgroundColor: 'transparent',
-              color: '#fff',
+              color: '#d4d4d4',
               border: 'none',
               outline: 'none',
-              fontSize: '12px',
-              fontWeight: 'bold',
+              fontSize: '15px',
+              fontWeight: '700',
               width: '100%',
-              maxWidth: '60px',
               padding: '0',
               fontFamily: 'monospace',
               cursor: isEditing ? 'text' : 'default',
-              boxSizing: 'border-box',
             }}
           />
         </div>
+      </div>
 
-        <div style={{ borderLeft: '1px solid #1a1a1a', paddingLeft: '8px', flexShrink: 1, minWidth: 0 }}>
-          <span
-            style={{
-              fontSize: '8px',
-              color: '#888',
-              display: 'block',
-              letterSpacing: '0.5px',
-              marginBottom: '2px',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            VAT RATE
-          </span>
+      <div
+        style={{
+          flex: 1,
+          minWidth: '140px',
+          backgroundColor: '#0a0a0a',
+          border: '1px solid #1f1f1f',
+          borderRadius: '4px',
+          padding: '10px 14px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '4px',
+        }}
+      >
+        <span
+          style={{
+            fontSize: '9px',
+            color: '#aaa',
+            letterSpacing: '0.8px',
+            textTransform: 'uppercase',
+            fontWeight: '600',
+          }}
+        >
+          VAT Rate
+        </span>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
           <input
             type="number"
             step="0.01"
@@ -101,93 +111,90 @@ export default function LogisticsSettingsBar({
             placeholder={String(initialVatRate)}
             style={{
               backgroundColor: 'transparent',
-              color: '#fff',
+              color: '#d4d4d4',
               border: 'none',
               outline: 'none',
-              fontSize: '12px',
-              fontWeight: 'bold',
+              fontSize: '15px',
+              fontWeight: '700',
               width: '100%',
-              maxWidth: '50px',
               padding: '0',
               fontFamily: 'monospace',
               cursor: isEditing ? 'text' : 'default',
-              boxSizing: 'border-box',
             }}
           />
+          <span style={{ fontSize: '13px', color: '#aaa', fontWeight: '500' }}>%</span>
         </div>
+      </div>
 
-        <div style={{ borderLeft: '1px solid #1a1a1a', paddingLeft: '8px', display: 'flex', gap: '4px', alignItems: 'center', flexShrink: 0 }}>
-          {!isEditing ? (
+      <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+        {!isEditing ? (
+          <button
+            onClick={onStartEdit}
+            title="Edit Settings"
+            style={{
+              backgroundColor: '#0a0a0a',
+              color: '#b0b0b0',
+              border: '1px solid #1f1f1f',
+              borderRadius: '4px',
+              padding: '12px 14px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+            }}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+            </svg>
+          </button>
+        ) : (
+          <>
             <button
-              onClick={onStartEdit}
-              title="Edit Settings"
+              onClick={onSaveSettings}
+              disabled={isSaving}
+              title="Save Changes"
               style={{
-                backgroundColor: 'transparent',
-                color: '#888',
+                backgroundColor: '#16a34a',
+                color: '#fff',
                 border: 'none',
-                padding: '4px',
+                borderRadius: '4px',
+                padding: '12px 16px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                fontWeight: 'bold',
+                fontSize: '12px',
+              }}
+            >
+              {isSaving ? '...' : 'SAVE'}
+            </button>
+
+            <button
+              onClick={onCancel}
+              disabled={isSaving}
+              title="Cancel"
+              style={{
+                backgroundColor: '#262626',
+                color: '#b0b0b0',
+                border: 'none',
+                borderRadius: '4px',
+                padding: '12px 14px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 cursor: 'pointer',
               }}
             >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
               </svg>
             </button>
-          ) : (
-            <>
-              <button
-                onClick={onSaveSettings}
-                disabled={isSaving}
-                title="Save Settings"
-                style={{
-                  backgroundColor: 'transparent',
-                  color: '#888',
-                  border: '1px solid #333',
-                  padding: '5px 6px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  borderRadius: '2px',
-                }}
-              >
-                {isSaving ? (
-                  <span style={{ fontSize: '10px', fontFamily: 'monospace', color: '#888' }}>...</span>
-                ) : (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
-                )}
-              </button>
-
-              <button
-                onClick={onCancel}
-                disabled={isSaving}
-                title="Cancel"
-                style={{
-                  backgroundColor: 'transparent',
-                  color: '#888',
-                  border: '1px solid #333',
-                  padding: '5px 6px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  borderRadius: '2px',
-                }}
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="18" y1="6" x2="6" y2="18" />
-                  <line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
-              </button>
-            </>
-          )}
-        </div>
+          </>
+        )}
       </div>
     </div>
   );
