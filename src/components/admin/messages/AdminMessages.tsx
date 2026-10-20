@@ -53,7 +53,9 @@ export const AdminMessages: React.FC<ExtendedAdminMessagesProps> = ({
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // ইউআরএল থেকে userId প্যারামিটার পরিষ্কার করার ফাংশন
+  const searchParams = new URLSearchParams(window.location.search);
+  const targetUserIdFromUrl = searchParams.get('userId') || searchParams.get('recipientId');
+
   const clearUserIdParam = () => {
     const url = new URL(window.location.href);
     if (url.searchParams.has('userId') || url.searchParams.has('recipientId')) {
@@ -63,50 +65,11 @@ export const AdminMessages: React.FC<ExtendedAdminMessagesProps> = ({
     }
   };
 
-  // URL Search Params (userId) অটো-ডিটেক্ট করে চ্যাট ওপেন করার লজিক
   useEffect(() => {
-    if (loading) return;
-
-    const searchParams = new URLSearchParams(window.location.search);
-    const targetUserId = searchParams.get('userId') || searchParams.get('recipientId');
-
-    if (targetUserId && !activeThreadId) {
-      let matchingThread = filteredThreads.find(
-        (t: any) =>
-          t.id === targetUserId ||
-          t.userId === targetUserId ||
-          t.user_id === targetUserId ||
-          t.email?.toLowerCase() === targetUserId.toLowerCase() ||
-          t.userEmail?.toLowerCase() === targetUserId.toLowerCase()
-      );
-
-      if (!matchingThread && allUsers && allUsers.length > 0) {
-        const foundUser = allUsers.find(
-          (u: any) =>
-            u.id === targetUserId ||
-            u.email?.toLowerCase() === targetUserId.toLowerCase()
-        );
-
-        if (foundUser) {
-          matchingThread = {
-            id: foundUser.id,
-            userId: foundUser.id,
-            userName: foundUser.name || foundUser.userName || foundUser.email,
-            displayName: foundUser.name || foundUser.displayName,
-            userEmail: foundUser.email,
-            role: foundUser.role,
-            designation: foundUser.designation,
-            messages: [],
-          };
-        }
-      }
-
-      if (matchingThread) {
-        clearUserIdParam();
-        handleSelectThread(matchingThread);
-      }
+    if (targetUserIdFromUrl) {
+      clearUserIdParam();
     }
-  }, [loading, filteredThreads, allUsers, activeThreadId, handleSelectThread]);
+  }, [targetUserIdFromUrl]);
 
   const formatThreadTime = (dateInput?: string | number | Date) => {
     if (!dateInput) return '';
@@ -269,31 +232,16 @@ export const AdminMessages: React.FC<ExtendedAdminMessagesProps> = ({
     );
   });
 
-  // মানানসই ডার্ক স্কেলিটন লোডার UI
-  if (loading && filteredThreads.length === 0) {
+  const isTargetingUserViaUrl = Boolean(targetUserIdFromUrl && !activeThreadId);
+
+  if ((loading && filteredThreads.length === 0) || isTargetingUserViaUrl) {
     return (
       <div style={{ ...styles.containerStyle, padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        {[1, 2, 3, 4].map((item) => (
-          <div
-            key={item}
-            style={{
-              backgroundColor: '#09090b',
-              border: '1px solid #1f1f23',
-              borderRadius: '12px',
-              padding: '14px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              opacity: 0.6,
-            }}
-          >
-            <div style={{ width: '42px', height: '42px', borderRadius: '50%', backgroundColor: '#18181b', flexShrink: 0 }} />
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <div style={{ width: '40%', height: '12px', backgroundColor: '#18181b', borderRadius: '4px' }} />
-              <div style={{ width: '65%', height: '10px', backgroundColor: '#18181b', borderRadius: '4px' }} />
-            </div>
-          </div>
-        ))}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', paddingBottom: '12px', borderBottom: '1px solid #1f1f23' }}>
+          <div style={{ width: '36px', height: '36px', borderRadius: '50%', backgroundColor: '#18181b' }} />
+          <div style={{ width: '120px', height: '14px', backgroundColor: '#18181b', borderRadius: '4px' }} />
+        </div>
+        <div style={{ flex: 1, minHeight: '300px' }} />
       </div>
     );
   }
