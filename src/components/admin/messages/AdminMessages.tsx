@@ -53,6 +53,16 @@ export const AdminMessages: React.FC<ExtendedAdminMessagesProps> = ({
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  // ইউআরএল থেকে userId প্যারামিটার পরিষ্কার করার ফাংশন (যাতে ব্যাক বা লুপ সমস্যা না হয়)
+  const clearUserIdParam = () => {
+    const url = new URL(window.location.href);
+    if (url.searchParams.has('userId') || url.searchParams.has('recipientId')) {
+      url.searchParams.delete('userId');
+      url.searchParams.delete('recipientId');
+      window.history.replaceState({}, '', url.toString());
+    }
+  };
+
   // --- URL Search Params (userId) অটো-ডিটেক্ট করে চ্যাট ওপেন করার লজিক ---
   useEffect(() => {
     if (loading) return;
@@ -61,7 +71,6 @@ export const AdminMessages: React.FC<ExtendedAdminMessagesProps> = ({
     const targetUserId = searchParams.get('userId') || searchParams.get('recipientId');
 
     if (targetUserId && !activeThreadId) {
-      // প্রথমে থ্রেডের ভেতর আইডি দিয়ে খোঁজা
       let matchingThread = filteredThreads.find(
         (t: any) =>
           t.id === targetUserId ||
@@ -71,7 +80,6 @@ export const AdminMessages: React.FC<ExtendedAdminMessagesProps> = ({
           t.userEmail?.toLowerCase() === targetUserId.toLowerCase()
       );
 
-      // থ্রেডে না পাওয়া গেলে allUsers তালিকা থেকে ইউজার খোঁজা
       if (!matchingThread && allUsers && allUsers.length > 0) {
         const foundUser = allUsers.find(
           (u: any) =>
@@ -94,6 +102,7 @@ export const AdminMessages: React.FC<ExtendedAdminMessagesProps> = ({
       }
 
       if (matchingThread) {
+        clearUserIdParam(); // ইউআরএল পরিষ্কার করা যাতে ব্যাক বাটন কাজ করে
         handleSelectThread(matchingThread);
       }
     }
@@ -179,7 +188,10 @@ export const AdminMessages: React.FC<ExtendedAdminMessagesProps> = ({
   useEffect(() => {
     if (activeThreadId) {
       window.history.pushState({ threadOpen: true }, '');
-      const handlePopState = () => handleSelectThread(null);
+      const handlePopState = () => {
+        clearUserIdParam();
+        handleSelectThread(null);
+      };
       window.addEventListener('popstate', handlePopState);
       return () => window.removeEventListener('popstate', handlePopState);
     }
@@ -298,7 +310,10 @@ export const AdminMessages: React.FC<ExtendedAdminMessagesProps> = ({
             activeThread={activeThread}
             headerTitle={headerTitle}
             headerSubtitle={headerSubtitle}
-            onBack={() => handleSelectThread(null)}
+            onBack={() => {
+              clearUserIdParam();
+              handleSelectThread(null);
+            }}
             openDrawer={openDrawer}
           />
 
