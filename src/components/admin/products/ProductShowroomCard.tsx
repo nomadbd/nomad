@@ -42,32 +42,40 @@ export const ProductShowroomCard: React.FC<ProductShowroomCardProps> = ({
   const rawDetails = (product.details || {}) as Record<string, any>;
   const mergedSpecs: Record<string, any> = { ...rawDetails };
 
-  // ১. সাইজ প্রপার্টি চেক ও মার্জ
+  // হেলপার ফাংশন: ভ্যালু টি খালি/ফাঁকা কি না তা নিখুঁতভাবে চেক করার জন্য
+  const hasValidValue = (val: any) => {
+    if (val === null || val === undefined) return false;
+    if (typeof val === 'string' && val.trim() === '') return false;
+    if (Array.isArray(val) && val.length === 0) return false;
+    return true;
+  };
+
+  // ১. সাইজ প্রপার্টি চেক ও মার্জ (কেবল ভ্যালু থাকলে যুক্ত হবে)
   const sizesData = (product as any).sizes || (product as any).available_sizes || rawDetails.sizes || rawDetails.SIZE || rawDetails.SIZES;
-  if (sizesData && !mergedSpecs.SIZE && !mergedSpecs.SIZES && !mergedSpecs.sizes) {
+  if (hasValidValue(sizesData) && !mergedSpecs.SIZE && !mergedSpecs.SIZES && !mergedSpecs.sizes) {
     mergedSpecs['SIZES'] = Array.isArray(sizesData) ? sizesData.join(', ') : sizesData;
   }
 
-  // ২. কালার প্রপার্টি চেক ও মার্জ
+  // ২. কালার প্রপার্টি চেক ও মার্জ (কেবল ভ্যালু থাকলে যুক্ত হবে)
   const colorsData = (product as any).colors || (product as any).available_colors || rawDetails.colors || rawDetails.COLOR || rawDetails.COLORS;
-  if (colorsData && !mergedSpecs.COLOR && !mergedSpecs.COLORS && !mergedSpecs.colors) {
+  if (hasValidValue(colorsData) && !mergedSpecs.COLOR && !mergedSpecs.COLORS && !mergedSpecs.colors) {
     mergedSpecs['COLORS'] = Array.isArray(colorsData) ? colorsData.join(', ') : colorsData;
   }
 
   // ৩. Details ফিল্ড আলাদা করা
   const { details: extraText1, DETAILS: extraText2, ...specsMap } = mergedSpecs;
-  const bottomDetailsValue = extraText1 || extraText2;
+  const bottomDetailsValue = hasValidValue(extraText1) ? extraText1 : hasValidValue(extraText2) ? extraText2 : null;
 
   // ৪. Made In ফিল্ড আলাদা করা
   const madeInEntry = Object.entries(specsMap).find(
-    ([key]) => key.toLowerCase().replace(/_/g, ' ') === 'made in'
+    ([key, val]) => key.toLowerCase().replace(/_/g, ' ') === 'made in' && hasValidValue(val)
   );
   const madeInKey = madeInEntry ? madeInEntry[0] : null;
   const madeInValue = madeInEntry ? madeInEntry[1] : null;
 
-  // ৫. বাকি সব স্ট্যান্ডার্ড স্পেসিফিকেশনসমূহ
+  // ৫. বাকি সব বৈধ স্ট্যান্ডার্ড স্পেসিফিকেশনসমূহ (যেগুলোর ভ্যালু ফাঁকা নয়)
   const standardSpecs = Object.fromEntries(
-    Object.entries(specsMap).filter(([key]) => key !== madeInKey)
+    Object.entries(specsMap).filter(([key, value]) => key !== madeInKey && hasValidValue(value))
   );
 
   return (
