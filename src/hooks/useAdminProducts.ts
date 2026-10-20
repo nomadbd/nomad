@@ -34,7 +34,7 @@ export function useAdminProducts(searchQuery: string = '', onCloseAdd?: () => vo
   const [editMediaPreviews, setEditMediaPreviews] = useState<{ url: string; type: 'image' | 'video' }[]>([]);
 
   const [stockFilter, setStockFilter] = useState<'all' | 'in_stock' | 'sold_out' | 'hidden'>('all');
-  const [dateSort, setDateSort] = useState<'newest' | 'oldest'>('newest');
+  const [dateSort, setDateSort] = useState<'none' | 'newest' | 'oldest'>('none');
   const [priceSort, setPriceSort] = useState<'none' | 'price_low' | 'price_high'>('none');
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
@@ -573,23 +573,19 @@ export function useAdminProducts(searchQuery: string = '', onCloseAdd?: () => vo
   });
 
   filteredProducts.sort((a, b) => {
-    if (a.stock_quantity !== b.stock_quantity) {
-      return a.stock_quantity - b.stock_quantity;
-    }
-
     if (priceSort === 'price_low') {
       if (a.price !== b.price) return a.price - b.price;
     } else if (priceSort === 'price_high') {
       if (a.price !== b.price) return b.price - a.price;
     }
 
-    const timeA = new Date(a.created_at).getTime();
-    const timeB = new Date(b.created_at).getTime();
-    if (dateSort === 'oldest') {
-      return timeA - timeB;
-    } else {
-      return timeB - timeA;
+    if (dateSort === 'newest') {
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    } else if (dateSort === 'oldest') {
+      return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
     }
+
+    return 0;
   });
 
   const filteredCategories = Array.from(new Set(filteredProducts.map(p => p.category))) as string[];
