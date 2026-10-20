@@ -57,12 +57,12 @@ export const ProductShowroomCard: React.FC<ProductShowroomCardProps> = ({
     >
       {/* রো ০: তারিখ একাই একদম উপরে ডান পাশে */}
       <div style={{ display: 'flex', justifyContent: 'flex-end', width: '100%' }}>
-        <span style={{ fontSize: '10px', color: '#555', fontFamily: 'monospace' }}>
+        <span style={{ fontSize: '10px', color: '#555', fontFamily: 'sans-serif' }}>
           {formatDate(product.created_at)}
         </span>
       </div>
 
-      {/* রো ১: ছবির পাশে নাম এবং তার পাশেই ড্রপডাউন অ্যারো (সর্বোচ্চ ২ লাইনে আবদ্ধ) */}
+      {/* রো ১: ছবির পাশে নাম এবং তার পাশেই ড্রপডাউন অ্যারো */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '10px', width: '100%' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', flex: 1, minWidth: 0 }}>
           <div
@@ -96,6 +96,7 @@ export const ProductShowroomCard: React.FC<ProductShowroomCardProps> = ({
                 maxHeight: '36px',
                 flex: 1,
                 minWidth: 0,
+                fontFamily: 'sans-serif',
               }}
               title={product.name}
             >
@@ -105,12 +106,12 @@ export const ProductShowroomCard: React.FC<ProductShowroomCardProps> = ({
               <span
                 style={{
                   fontSize: '9px',
-                  fontFamily: 'monospace',
                   backgroundColor: 'rgba(239, 68, 68, 0.15)',
                   color: '#ef4444',
                   padding: '2px 6px',
                   borderRadius: '4px',
                   flexShrink: 0,
+                  fontFamily: 'sans-serif',
                 }}
               >
                 HIDDEN
@@ -119,7 +120,7 @@ export const ProductShowroomCard: React.FC<ProductShowroomCardProps> = ({
           </div>
         </div>
 
-        {/* ড্রপডাউন টগল আইকন (প্রডাক্ট নামের পাশে ডানপ্রান্তে) */}
+        {/* ড্রপডাউন টগল আইকন */}
         <button
           type="button"
           onClick={() => setIsExpanded(!isExpanded)}
@@ -151,8 +152,8 @@ export const ProductShowroomCard: React.FC<ProductShowroomCardProps> = ({
 
       {/* রো ২: ছবির নিচে দাম, দাম বরাবর ডানে অ্যাকশন আইকনসমূহ */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', width: '100%', marginTop: '2px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', fontFamily: 'monospace' }}>
-          <span style={{ fontSize: '13px', color: '#fff', fontWeight: 'bold' }}>৳{product.price}</span>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <span style={{ fontSize: '13px', color: '#fff', fontWeight: 'bold', fontFamily: 'sans-serif' }}>৳{product.price}</span>
         </div>
 
         <ProductActionToolbar
@@ -163,47 +164,68 @@ export const ProductShowroomCard: React.FC<ProductShowroomCardProps> = ({
         />
       </div>
 
-      {/* বিস্তারিত অংশ (ড্রপডাউন খুললে সম্পূর্ণ বড় নাম ও ডিটেইলস দেখা যাবে) */}
+      {/* বিস্তারিত অংশ - ধারাবাহিক সাজানো ও সাধারণ রেগুলার ফন্ট */}
       {isExpanded && (
         <div
           className="animate-fade-in"
           style={{
             borderTop: '1px solid #161616',
-            paddingTop: '10px',
-            marginTop: '4px',
+            paddingTop: '12px',
+            marginTop: '6px',
             fontSize: '12px',
-            color: '#aaa',
+            color: '#ccc',
+            fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '12px',
           }}
         >
-          <div style={{ marginBottom: '8px', fontFamily: 'monospace', fontSize: '11px', color: '#888' }}>
-            <span style={{ color: '#555' }}>FULL NAME: </span>
-            <span style={{ color: '#eee' }}>{product.name}</span>
+          {/* ১. পূর্ণাঙ্গ নাম */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <span style={{ fontSize: '10px', color: '#666', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              Full Name
+            </span>
+            <span style={{ color: '#fff', fontSize: '13px', lineHeight: '1.4' }}>
+              {product.name}
+            </span>
           </div>
 
+          {/* ২. শর্ট ডেসক্রিপশন */}
           {product.description && (
-            <p style={{ margin: '0 0 8px 0', lineHeight: '1.4', color: '#bbb' }}>{product.description}</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              <span style={{ fontSize: '10px', color: '#666', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                Description
+              </span>
+              <p style={{ margin: 0, lineHeight: '1.5', color: '#bbb', fontSize: '12px' }}>
+                {product.description}
+              </p>
+            </div>
           )}
 
+          {/* ৩. স্পেসিফিকেশন/ডিটেইলস (সবার নিচে) */}
           {product.details && Object.keys(product.details).length > 0 && (
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
-                gap: '8px',
-                fontFamily: 'monospace',
-                fontSize: '11px',
-                backgroundColor: '#030303',
-                padding: '8px 12px',
-                borderRadius: '4px',
-                border: '1px solid #141414',
-              }}
-            >
-              {Object.entries(product.details).map(([key, value]) => (
-                <div key={key} style={{ display: 'flex', gap: '4px' }}>
-                  <span style={{ color: '#666', textTransform: 'uppercase' }}>{key}:</span>
-                  <span style={{ color: '#ccc' }}>{String(value)}</span>
-                </div>
-              ))}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <span style={{ fontSize: '10px', color: '#666', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                Specifications
+              </span>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))',
+                  gap: '8px 12px',
+                  backgroundColor: '#040404',
+                  padding: '10px 12px',
+                  borderRadius: '6px',
+                  border: '1px solid #141414',
+                }}
+              >
+                {Object.entries(product.details).map(([key, value]) => (
+                  <div key={key} style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+                    <span style={{ color: '#666', fontSize: '10px', textTransform: 'uppercase' }}>{key}</span>
+                    <span style={{ color: '#ddd', fontSize: '12px', fontWeight: '500' }}>{String(value)}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>
