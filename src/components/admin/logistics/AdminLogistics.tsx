@@ -3,8 +3,9 @@ import { supabase } from '@/supabaseClient';
 
 interface OrderItemDetail {
   id: string;
+  order_id?: string | null;
   product_id?: string | null;
-  product_name: string;
+  product_name?: string | null;
   quantity: number;
   size?: string | null;
   color?: string | null;
@@ -39,34 +40,43 @@ export default function AdminLogistics() {
   const fetchOrders = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      const { data: orderData, error: orderError } = await supabase
         .from('orders')
-        .select(`
-          id,
-          user_id,
-          courier_name,
-          return_reason,
-          return_status,
-          status,
-          created_at,
-          order_items (
-            id,
-            product_id,
-            quantity,
-            size,
-            color,
-            product_name
-          )
-        `)
+        .select('*')
         .eq('status', 'Cancelled')
         .not('courier_name', 'is', null)
         .neq('courier_name', '')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setOrders(data || []);
+      if (orderError) throw orderError;
+
+      if (!orderData || orderData.length === 0) {
+        setOrders([]);
+        return;
+      }
+
+      const orderIds = orderData.map((o) => o.id);
+
+      const { data: itemsData, error: itemsError } = await supabase
+        .from('order_items')
+        .select('*')
+        .in('order_id', orderIds);
+
+      if (itemsError) {
+        console.error('Error fetching order items:', itemsError);
+      }
+
+      const combinedOrders: OrderItem[] = orderData.map((ord) => {
+        const matchedItems = (itemsData || []).filter((item) => item.order_id === ord.id);
+        return {
+          ...ord,
+          order_items: matchedItems,
+        };
+      });
+
+      setOrders(combinedOrders);
     } catch (err) {
-      console.error('Error fetching orders:', err);
+      console.error('Error fetching logistics orders:', err);
     } finally {
       setLoading(false);
     }
@@ -117,7 +127,7 @@ export default function AdminLogistics() {
         .update({
           delivery_charge: Number(finalDc),
           vat_rate: Number(finalVat),
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
         .eq('id', targetId)
         .select();
@@ -156,7 +166,7 @@ export default function AdminLogistics() {
   const handleSelectStatus = (orderId: string, status: string) => {
     setSelectedStatuses((prev) => ({
       ...prev,
-      [orderId]: status
+      [orderId]: status,
     }));
   };
 
@@ -169,88 +179,71 @@ export default function AdminLogistics() {
       const currentReturnStatus = targetOrder.return_status || 'Pending';
       if (currentReturnStatus === newStatus) return;
 
-      // Update return_status in orders table
-      const { error } = await supabase
+      // 1. Update return_status in orders table
+      const { error: updateOrderError } = await supabase
         .from('orders')
         .update({ return_status: newStatus })
         .eq('id', orderId);
 
-      if (error) throw error;
+      if (updateOrderError) throw updateOrderError;
 
-      // When marked as Received, increment product stock quantity
+      // Fetch fresh items directly from order_items table using order_id
+      let itemsToProcess = targetOrder.order_items || [];
+      if (itemsToProcess.length === 0) {
+        const { data: freshItems } = await supabase
+          .from('order_items')
+          .select('*')
+          .eq('order_id', orderId);
+        if (freshItems) {
+          itemsToProcess = freshItems;
+        }
+      }
+
+      // 2. Increment stock when Received (Stock Restock)
       if (newStatus === 'Received' && currentReturnStatus !== 'Received') {
-        if (targetOrder.order_items && targetOrder.order_items.length > 0) {
-          for (const item of targetOrder.order_items) {
-            const qty = Number(item.quantity) || 1;
+        for (const item of itemsToProcess) {
+          const qty = Number(item.quantity) || 1;
 
-            if (item.product_id) {
-              const { data: prodData } = await supabase
+          if (item.product_id) {
+            // Fetch current stock using product_id (UUID)
+            const { data: prodData } = await supabase
+              .from('products')
+              .select('id, stock_quantity')
+              .eq('id', item.product_id)
+              .maybeSingle();
+
+            if (prodData) {
+              const currentStock = Number(prodData.stock_quantity) || 0;
+              const newStock = currentStock + qty;
+
+              await supabase
                 .from('products')
-                .select('stock_quantity')
-                .eq('id', item.product_id)
-                .single();
-
-              if (prodData) {
-                const currentStock = Number(prodData.stock_quantity) || 0;
-                await supabase
-                  .from('products')
-                  .update({ stock_quantity: currentStock + qty })
-                  .eq('id', item.product_id);
-              }
-            } else if (item.product_name) {
-              const { data: prodData } = await supabase
-                .from('products')
-                .select('stock_quantity')
-                .eq('name', item.product_name)
-                .single();
-
-              if (prodData) {
-                const currentStock = Number(prodData.stock_quantity) || 0;
-                await supabase
-                  .from('products')
-                  .update({ stock_quantity: currentStock + qty })
-                  .eq('name', item.product_name);
-              }
+                .update({ stock_quantity: newStock })
+                .eq('id', item.product_id);
             }
           }
         }
       } 
-      // If switched back from Received to Pending, reverse the stock addition
+      // 3. Decrement stock if changed back from Received to Pending
       else if (currentReturnStatus === 'Received' && newStatus !== 'Received') {
-        if (targetOrder.order_items && targetOrder.order_items.length > 0) {
-          for (const item of targetOrder.order_items) {
-            const qty = Number(item.quantity) || 1;
+        for (const item of itemsToProcess) {
+          const qty = Number(item.quantity) || 1;
 
-            if (item.product_id) {
-              const { data: prodData } = await supabase
+          if (item.product_id) {
+            const { data: prodData } = await supabase
+              .from('products')
+              .select('id, stock_quantity')
+              .eq('id', item.product_id)
+              .maybeSingle();
+
+            if (prodData) {
+              const currentStock = Number(prodData.stock_quantity) || 0;
+              const newStock = Math.max(0, currentStock - qty);
+
+              await supabase
                 .from('products')
-                .select('stock_quantity')
-                .eq('id', item.product_id)
-                .single();
-
-              if (prodData) {
-                const currentStock = Number(prodData.stock_quantity) || 0;
-                const updatedStock = Math.max(0, currentStock - qty);
-                await supabase
-                  .from('products')
-                  .update({ stock_quantity: updatedStock })
-                  .eq('id', item.product_id);
-              }
-            } else if (item.product_name) {
-              const { data: prodData } = await supabase
-                .from('products')
-                .select('stock_quantity')
-                .eq('name', item.product_name)
-                .single();
-
-              if (prodData) {
-                const currentStock = Number(prodData.stock_quantity) || 0;
-                const updatedStock = Math.max(0, currentStock - qty);
-                await supabase
-                  .from('products')
-                  .update({ stock_quantity: updatedStock })
-                  .eq('name', item.product_name);
-              }
+                .update({ stock_quantity: newStock })
+                .eq('id', item.product_id);
             }
           }
         }
@@ -277,20 +270,31 @@ export default function AdminLogistics() {
   return (
     <div style={{ color: '#fff', width: '100%' }}>
       <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'flex-start', width: '100%' }}>
-        <div style={{
-          display: 'flex',
-          flexDirection: 'row',
-          flexWrap: 'nowrap',
-          gap: '8px',
-          backgroundColor: '#060606',
-          padding: '8px 10px',
-          border: '1px solid #1a1a1a',
-          alignItems: 'center',
-          maxWidth: '100%',
-          boxSizing: 'border-box'
-        }}>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'row',
+            flexWrap: 'nowrap',
+            gap: '8px',
+            backgroundColor: '#060606',
+            padding: '8px 10px',
+            border: '1px solid #1a1a1a',
+            alignItems: 'center',
+            maxWidth: '100%',
+            boxSizing: 'border-box',
+          }}
+        >
           <div style={{ flexShrink: 1, minWidth: 0 }}>
-            <span style={{ fontSize: '8px', color: '#888', display: 'block', letterSpacing: '0.5px', marginBottom: '2px', whiteSpace: 'nowrap' }}>
+            <span
+              style={{
+                fontSize: '8px',
+                color: '#888',
+                display: 'block',
+                letterSpacing: '0.5px',
+                marginBottom: '2px',
+                whiteSpace: 'nowrap',
+              }}
+            >
               DELIVERY CHARGE
             </span>
             <input
@@ -311,13 +315,22 @@ export default function AdminLogistics() {
                 padding: '0',
                 fontFamily: 'monospace',
                 cursor: isEditing ? 'text' : 'default',
-                boxSizing: 'border-box'
+                boxSizing: 'border-box',
               }}
             />
           </div>
 
           <div style={{ borderLeft: '1px solid #1a1a1a', paddingLeft: '8px', flexShrink: 1, minWidth: 0 }}>
-            <span style={{ fontSize: '8px', color: '#888', display: 'block', letterSpacing: '0.5px', marginBottom: '2px', whiteSpace: 'nowrap' }}>
+            <span
+              style={{
+                fontSize: '8px',
+                color: '#888',
+                display: 'block',
+                letterSpacing: '0.5px',
+                marginBottom: '2px',
+                whiteSpace: 'nowrap',
+              }}
+            >
               VAT RATE
             </span>
             <input
@@ -339,7 +352,7 @@ export default function AdminLogistics() {
                 padding: '0',
                 fontFamily: 'monospace',
                 cursor: isEditing ? 'text' : 'default',
-                boxSizing: 'border-box'
+                boxSizing: 'border-box',
               }}
             />
           </div>
@@ -357,7 +370,7 @@ export default function AdminLogistics() {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  cursor: 'pointer'
+                  cursor: 'pointer',
                 }}
               >
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -380,7 +393,7 @@ export default function AdminLogistics() {
                     alignItems: 'center',
                     justifyContent: 'center',
                     cursor: 'pointer',
-                    borderRadius: '2px'
+                    borderRadius: '2px',
                   }}
                 >
                   {isSaving ? (
@@ -405,7 +418,7 @@ export default function AdminLogistics() {
                     alignItems: 'center',
                     justifyContent: 'center',
                     cursor: 'pointer',
-                    borderRadius: '2px'
+                    borderRadius: '2px',
                   }}
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -434,16 +447,15 @@ export default function AdminLogistics() {
             return (
               <div key={item.id} style={{ borderBottom: '1px solid #1a1a1a' }}>
                 <div style={{ padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px' }}>
-
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div 
+                    <div
                       onClick={() => toggleExpand(item.id)}
-                      style={{ 
-                        cursor: 'pointer', 
-                        display: 'inline-flex', 
-                        alignItems: 'center', 
+                      style={{
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
                         gap: '6px',
-                        marginBottom: '4px'
+                        marginBottom: '4px',
                       }}
                     >
                       <span style={{ fontWeight: 'bold', color: '#fff', fontSize: '13px' }}>
@@ -473,7 +485,7 @@ export default function AdminLogistics() {
                           fontWeight: 'bold',
                           borderRadius: '3px',
                           cursor: 'pointer',
-                          letterSpacing: '0.5px'
+                          letterSpacing: '0.5px',
                         }}
                       >
                         {isSavingThis ? 'SAVING...' : 'SAVE'}
@@ -486,14 +498,13 @@ export default function AdminLogistics() {
                           border: '1px solid #222',
                           padding: '4px 8px',
                           fontSize: '10px',
-                          borderRadius: '3px'
+                          borderRadius: '3px',
                         }}
                       >
                         {currentStatus}
                       </div>
                     )}
                   </div>
-
                 </div>
 
                 {isExpanded && (
@@ -507,7 +518,7 @@ export default function AdminLogistics() {
                         item.order_items.map((prod) => (
                           <div key={prod.id} style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                             <div style={{ color: '#ddd', fontSize: '11px', fontWeight: '500' }}>
-                              {prod.product_name}
+                              {prod.product_name || 'Product'}
                             </div>
                             <div style={{ color: '#888', fontSize: '10px' }}>
                               {[prod.size, prod.color, `Qty: ${prod.quantity}`].filter(Boolean).join(' • ')}
@@ -547,7 +558,6 @@ export default function AdminLogistics() {
                     </div>
                   </div>
                 )}
-
               </div>
             );
           })}
