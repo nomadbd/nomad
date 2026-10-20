@@ -49,7 +49,7 @@ export default function AdminLogistics() {
           return_status,
           status,
           created_at,
-          order_items (
+          order_items:order_items (
             id,
             product_id,
             quantity,
@@ -176,9 +176,11 @@ export default function AdminLogistics() {
 
       if (error) throw error;
 
+      // When marked as Received, increment product stock quantity
       if (newStatus === 'Received' && currentReturnStatus !== 'Received') {
-        if (targetOrder.order_items) {
+        if (targetOrder.order_items && targetOrder.order_items.length > 0) {
           for (const item of targetOrder.order_items) {
+            const qty = item.quantity || 1;
             if (item.product_id) {
               const { data: prodData } = await supabase
                 .from('products')
@@ -187,10 +189,10 @@ export default function AdminLogistics() {
                 .single();
 
               if (prodData) {
-                const currentStock = prodData.stock_quantity || 0;
+                const currentStock = Number(prodData.stock_quantity) || 0;
                 await supabase
                   .from('products')
-                  .update({ stock_quantity: currentStock + item.quantity })
+                  .update({ stock_quantity: currentStock + qty })
                   .eq('id', item.product_id);
               }
             } else if (item.product_name) {
@@ -201,18 +203,21 @@ export default function AdminLogistics() {
                 .single();
 
               if (prodData) {
-                const currentStock = prodData.stock_quantity || 0;
+                const currentStock = Number(prodData.stock_quantity) || 0;
                 await supabase
                   .from('products')
-                  .update({ stock_quantity: currentStock + item.quantity })
+                  .update({ stock_quantity: currentStock + qty })
                   .eq('name', item.product_name);
               }
             }
           }
         }
-      } else if (currentReturnStatus === 'Received' && newStatus !== 'Received') {
-        if (targetOrder.order_items) {
+      } 
+      // If switched back from Received to Pending, reverse the stock addition
+      else if (currentReturnStatus === 'Received' && newStatus !== 'Received') {
+        if (targetOrder.order_items && targetOrder.order_items.length > 0) {
           for (const item of targetOrder.order_items) {
+            const qty = item.quantity || 1;
             if (item.product_id) {
               const { data: prodData } = await supabase
                 .from('products')
@@ -221,8 +226,8 @@ export default function AdminLogistics() {
                 .single();
 
               if (prodData) {
-                const currentStock = prodData.stock_quantity || 0;
-                const updatedStock = Math.max(0, currentStock - item.quantity);
+                const currentStock = Number(prodData.stock_quantity) || 0;
+                const updatedStock = Math.max(0, currentStock - qty);
                 await supabase
                   .from('products')
                   .update({ stock_quantity: updatedStock })
@@ -236,8 +241,8 @@ export default function AdminLogistics() {
                 .single();
 
               if (prodData) {
-                const currentStock = prodData.stock_quantity || 0;
-                const updatedStock = Math.max(0, currentStock - item.quantity);
+                const currentStock = Number(prodData.stock_quantity) || 0;
+                const updatedStock = Math.max(0, currentStock - qty);
                 await supabase
                   .from('products')
                   .update({ stock_quantity: updatedStock })
@@ -502,7 +507,7 @@ export default function AdminLogistics() {
                               {prod.product_name}
                             </div>
                             <div style={{ color: '#888', fontSize: '10px' }}>
-                              {[prod.size, prod.color, prod.quantity].filter(Boolean).join(' • ')}
+                              {[prod.size, prod.color, `Qty: ${prod.quantity}`].filter(Boolean).join(' • ')}
                             </div>
                           </div>
                         ))
