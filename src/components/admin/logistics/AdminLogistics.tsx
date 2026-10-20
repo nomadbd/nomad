@@ -1,433 +1,44 @@
-import React, { useState, useEffect } from 'react';
-import { supabase } from '@/supabaseClient';
-
-interface OrderItemDetail {
-  id: string;
-  order_id?: string | null;
-  product_id?: string | null;
-  product_name?: string | null;
-  quantity: number;
-  size?: string | null;
-  color?: string | null;
-}
-
-interface OrderItem {
-  id: string;
-  user_id?: string | null;
-  courier_name?: string | null;
-  return_reason?: string | null;
-  return_status?: string | null;
-  status?: string | null;
-  created_at: string;
-  order_items?: OrderItemDetail[];
-}
+import React from 'react';
+import { useAdminLogistics } from '@/hooks/useAdminLogistics';
+import LogisticsSettingsBar from './LogisticsSettingsBar';
+import LogisticsOrderCard from './LogisticsOrderCard';
 
 export default function AdminLogistics() {
-  const [orders, setOrders] = useState<OrderItem[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
-  const [selectedStatuses, setSelectedStatuses] = useState<{ [key: string]: string }>({});
-  const [savingOrderId, setSavingOrderId] = useState<string | null>(null);
-
-  const [deliveryCharge, setDeliveryCharge] = useState<number | string>('');
-  const [vatRate, setVatRate] = useState<number | string>('');
-  const [initialDeliveryCharge, setInitialDeliveryCharge] = useState<number | string>('');
-  const [initialVatRate, setInitialVatRate] = useState<number | string>('');
-  const [settingId, setSettingId] = useState<number | null>(null);
-  const [isEditing, setIsEditing] = useState<boolean>(false);
-  const [isSaving, setIsSaving] = useState<boolean>(false);
-
-  const fetchOrders = async () => {
-    setLoading(true);
-    try {
-      const { data: orderData, error: orderError } = await supabase
-        .from('orders')
-        .select('*')
-        .eq('status', 'Cancelled')
-        .not('courier_name', 'is', null)
-        .neq('courier_name', '')
-        .order('created_at', { ascending: false });
-
-      if (orderError) throw orderError;
-
-      if (!orderData || orderData.length === 0) {
-        setOrders([]);
-        return;
-      }
-
-      const orderIds = orderData.map((o) => o.id);
-
-      const { data: itemsData, error: itemsError } = await supabase
-        .from('order_items')
-        .select('*')
-        .in('order_id', orderIds);
-
-      if (itemsError) {
-        console.error('Error fetching order items:', itemsError);
-      }
-
-      const combinedOrders: OrderItem[] = orderData.map((ord) => {
-        const matchedItems = (itemsData || []).filter((item) => item.order_id === ord.id);
-        return {
-          ...ord,
-          order_items: matchedItems,
-        };
-      });
-
-      setOrders(combinedOrders);
-    } catch (err) {
-      console.error('Error fetching logistics orders:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchSettings = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('store_settings')
-        .select('*')
-        .limit(1)
-        .maybeSingle();
-
-      if (!error && data) {
-        const dc = data.delivery_charge ?? 100;
-        const vat = data.vat_rate ?? 0.05;
-        setSettingId(data.id);
-        setDeliveryCharge(dc);
-        setVatRate(vat);
-        setInitialDeliveryCharge(dc);
-        setInitialVatRate(vat);
-      }
-    } catch (err) {
-      console.error('Error fetching store settings:', err);
-    }
-  };
-
-  useEffect(() => {
-    fetchOrders();
-    fetchSettings();
-  }, []);
-
-  const handleStartEdit = () => {
-    setIsEditing(true);
-    setDeliveryCharge('');
-    setVatRate('');
-  };
-
-  const handleSaveSettings = async () => {
-    setIsSaving(true);
-    try {
-      const targetId = settingId ?? 1;
-      const finalDc = deliveryCharge === '' ? initialDeliveryCharge : deliveryCharge;
-      const finalVat = vatRate === '' ? initialVatRate : vatRate;
-
-      const { data, error } = await supabase
-        .from('store_settings')
-        .update({
-          delivery_charge: Number(finalDc),
-          vat_rate: Number(finalVat),
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', targetId)
-        .select();
-
-      if (error) throw error;
-
-      if (!data || data.length === 0) {
-        alert('Update failed in Supabase!');
-        handleCancel();
-        return;
-      }
-
-      setInitialDeliveryCharge(finalDc);
-      setInitialVatRate(finalVat);
-      setDeliveryCharge(finalDc);
-      setVatRate(finalVat);
-      setIsEditing(false);
-    } catch (err: any) {
-      alert('Failed to save settings: ' + err.message);
-      handleCancel();
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleCancel = () => {
-    setDeliveryCharge(initialDeliveryCharge);
-    setVatRate(initialVatRate);
-    setIsEditing(false);
-  };
-
-  const toggleExpand = (id: string) => {
-    setExpandedOrderId(expandedOrderId === id ? null : id);
-  };
-
-  const handleSelectStatus = (orderId: string, status: string) => {
-    setSelectedStatuses((prev) => ({
-      ...prev,
-      [orderId]: status,
-    }));
-  };
-
-  const handleStatusUpdate = async (orderId: string, newStatus: string) => {
-    setSavingOrderId(orderId);
-    try {
-      const { data: freshOrderData, error: freshOrderErr } = await supabase
-        .from('orders')
-        .select('id, return_status')
-        .eq('id', orderId)
-        .maybeSingle();
-
-      if (freshOrderErr || !freshOrderData) throw new Error('Order not found');
-
-      const currentReturnStatus = freshOrderData.return_status || 'Pending';
-      if (currentReturnStatus === newStatus) {
-        setSavingOrderId(null);
-        return;
-      }
-
-      const { data: currentOrderItems, error: itemsFetchError } = await supabase
-        .from('order_items')
-        .select('*')
-        .eq('order_id', orderId);
-
-      if (itemsFetchError) throw itemsFetchError;
-      const itemsToProcess = currentOrderItems || [];
-
-      if (newStatus === 'Received' && currentReturnStatus !== 'Received') {
-        for (const item of itemsToProcess) {
-          const qty = Number(item.quantity) || 0;
-          if (item.product_id && qty > 0) {
-            const { data: prodData, error: prodErr } = await supabase
-              .from('products')
-              .select('id, stock_quantity')
-              .eq('id', item.product_id)
-              .maybeSingle();
-
-            if (!prodErr && prodData) {
-              const currentStock = Number(prodData.stock_quantity) || 0;
-              const updatedStock = currentStock + qty;
-
-              await supabase
-                .from('products')
-                .update({ stock_quantity: updatedStock })
-                .eq('id', item.product_id);
-            }
-          }
-        }
-      } else if (currentReturnStatus === 'Received' && newStatus !== 'Received') {
-        for (const item of itemsToProcess) {
-          const qty = Number(item.quantity) || 0;
-          if (item.product_id && qty > 0) {
-            const { data: prodData, error: prodErr } = await supabase
-              .from('products')
-              .select('id, stock_quantity')
-              .eq('id', item.product_id)
-              .maybeSingle();
-
-            if (!prodErr && prodData) {
-              const currentStock = Number(prodData.stock_quantity) || 0;
-              const updatedStock = Math.max(0, currentStock - qty);
-
-              await supabase
-                .from('products')
-                .update({ stock_quantity: updatedStock })
-                .eq('id', item.product_id);
-            }
-          }
-        }
-      }
-
-      const { error: updateOrderError } = await supabase
-        .from('orders')
-        .update({ return_status: newStatus })
-        .eq('id', orderId);
-
-      if (updateOrderError) throw updateOrderError;
-
-      setOrders((prevOrders) =>
-        prevOrders.map((order) =>
-          order.id === orderId ? { ...order, return_status: newStatus } : order
-        )
-      );
-
-      setSelectedStatuses((prev) => {
-        const updated = { ...prev };
-        delete updated[orderId];
-        return updated;
-      });
-    } catch (err: any) {
-      alert('Failed to update return status: ' + err.message);
-    } finally {
-      setSavingOrderId(null);
-    }
-  };
+  const {
+    orders,
+    loading,
+    expandedOrderId,
+    selectedStatuses,
+    savingOrderId,
+    deliveryCharge,
+    vatRate,
+    isEditing,
+    isSaving,
+    setDeliveryCharge,
+    setVatRate,
+    handleStartEdit,
+    handleSaveSettings,
+    handleCancel,
+    toggleExpand,
+    handleSelectStatus,
+    handleStatusUpdate,
+  } = useAdminLogistics();
 
   return (
     <div style={{ color: '#fff', width: '100%' }}>
-      <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'flex-start', width: '100%' }}>
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'row',
-            flexWrap: 'nowrap',
-            gap: '8px',
-            backgroundColor: '#060606',
-            padding: '8px 10px',
-            border: '1px solid #1a1a1a',
-            alignItems: 'center',
-            maxWidth: '100%',
-            boxSizing: 'border-box',
-          }}
-        >
-          <div style={{ flexShrink: 1, minWidth: 0 }}>
-            <span
-              style={{
-                fontSize: '8px',
-                color: '#888',
-                display: 'block',
-                letterSpacing: '0.5px',
-                marginBottom: '2px',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              DELIVERY CHARGE
-            </span>
-            <input
-              type="number"
-              value={isEditing ? deliveryCharge : initialDeliveryCharge}
-              onChange={(e) => setDeliveryCharge(e.target.value)}
-              disabled={!isEditing}
-              placeholder={String(initialDeliveryCharge)}
-              style={{
-                backgroundColor: 'transparent',
-                color: '#fff',
-                border: 'none',
-                outline: 'none',
-                fontSize: '12px',
-                fontWeight: 'bold',
-                width: '100%',
-                maxWidth: '60px',
-                padding: '0',
-                fontFamily: 'monospace',
-                cursor: isEditing ? 'text' : 'default',
-                boxSizing: 'border-box',
-              }}
-            />
-          </div>
-
-          <div style={{ borderLeft: '1px solid #1a1a1a', paddingLeft: '8px', flexShrink: 1, minWidth: 0 }}>
-            <span
-              style={{
-                fontSize: '8px',
-                color: '#888',
-                display: 'block',
-                letterSpacing: '0.5px',
-                marginBottom: '2px',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              VAT RATE
-            </span>
-            <input
-              type="number"
-              step="0.01"
-              value={isEditing ? vatRate : initialVatRate}
-              onChange={(e) => setVatRate(e.target.value)}
-              disabled={!isEditing}
-              placeholder={String(initialVatRate)}
-              style={{
-                backgroundColor: 'transparent',
-                color: '#fff',
-                border: 'none',
-                outline: 'none',
-                fontSize: '12px',
-                fontWeight: 'bold',
-                width: '100%',
-                maxWidth: '50px',
-                padding: '0',
-                fontFamily: 'monospace',
-                cursor: isEditing ? 'text' : 'default',
-                boxSizing: 'border-box',
-              }}
-            />
-          </div>
-
-          <div style={{ borderLeft: '1px solid #1a1a1a', paddingLeft: '8px', display: 'flex', gap: '4px', alignItems: 'center', flexShrink: 0 }}>
-            {!isEditing ? (
-              <button
-                onClick={handleStartEdit}
-                title="Edit Settings"
-                style={{
-                  backgroundColor: 'transparent',
-                  color: '#888',
-                  border: 'none',
-                  padding: '4px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                }}
-              >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                </svg>
-              </button>
-            ) : (
-              <>
-                <button
-                  onClick={handleSaveSettings}
-                  disabled={isSaving}
-                  title="Save Settings"
-                  style={{
-                    backgroundColor: 'transparent',
-                    color: '#888',
-                    border: '1px solid #333',
-                    padding: '5px 6px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                    borderRadius: '2px',
-                  }}
-                >
-                  {isSaving ? (
-                    <span style={{ fontSize: '10px', fontFamily: 'monospace', color: '#888' }}>...</span>
-                  ) : (
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                  )}
-                </button>
-
-                <button
-                  onClick={handleCancel}
-                  disabled={isSaving}
-                  title="Cancel"
-                  style={{
-                    backgroundColor: 'transparent',
-                    color: '#888',
-                    border: '1px solid #333',
-                    padding: '5px 6px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                    borderRadius: '2px',
-                  }}
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18" />
-                    <line x1="6" y1="6" x2="18" y2="18" />
-                  </svg>
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-      </div>
+      <LogisticsSettingsBar
+        deliveryCharge={deliveryCharge}
+        vatRate={vatRate}
+        initialDeliveryCharge={deliveryCharge}
+        initialVatRate={vatRate}
+        isEditing={isEditing}
+        isSaving={isSaving}
+        onDeliveryChange={setDeliveryCharge}
+        onVatChange={setVatRate}
+        onStartEdit={handleStartEdit}
+        onSaveSettings={handleSaveSettings}
+        onCancel={handleCancel}
+      />
 
       {loading ? (
         <div style={{ fontSize: '11px', color: '#888', padding: '20px 0' }}>LOADING DATA...</div>
@@ -442,120 +53,19 @@ export default function AdminLogistics() {
             const isSavingThis = savingOrderId === item.id;
 
             return (
-              <div key={item.id} style={{ borderBottom: '1px solid #1a1a1a' }}>
-                <div style={{ padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px' }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div
-                      onClick={() => toggleExpand(item.id)}
-                      style={{
-                        cursor: 'pointer',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        marginBottom: '4px',
-                      }}
-                    >
-                      <span style={{ fontWeight: 'bold', color: '#fff', fontSize: '13px' }}>
-                        #{item.id.substring(0, 8)} ...
-                      </span>
-                      <span style={{ fontSize: '10px', color: '#888' }}>
-                        {isExpanded ? '▲' : '▼'}
-                      </span>
-                    </div>
-
-                    <div style={{ fontSize: '10px', color: '#666', fontFamily: 'monospace' }}>
-                      {new Date(item.created_at).toLocaleString()}
-                    </div>
-                  </div>
-
-                  <div style={{ flexShrink: 0 }}>
-                    {hasChange ? (
-                      <button
-                        onClick={() => handleStatusUpdate(item.id, pendingStatus)}
-                        disabled={isSavingThis}
-                        style={{
-                          backgroundColor: '#2ecc71',
-                          color: '#060606',
-                          border: 'none',
-                          padding: '4px 10px',
-                          fontSize: '10px',
-                          fontWeight: 'bold',
-                          borderRadius: '3px',
-                          cursor: 'pointer',
-                          letterSpacing: '0.5px',
-                        }}
-                      >
-                        {isSavingThis ? 'SAVING...' : 'SAVE'}
-                      </button>
-                    ) : (
-                      <div
-                        style={{
-                          backgroundColor: '#111',
-                          color: currentStatus === 'Received' ? '#2ecc71' : '#f39c12',
-                          border: '1px solid #222',
-                          padding: '4px 8px',
-                          fontSize: '10px',
-                          borderRadius: '3px',
-                        }}
-                      >
-                        {currentStatus}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {isExpanded && (
-                  <div style={{ backgroundColor: '#0a0a0a', borderTop: '1px solid #141414', padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px' }}>
-                    <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                      <div style={{ fontWeight: '600', color: '#fff', fontSize: '12px' }}>
-                        {item.courier_name || '—'}
-                      </div>
-
-                      {item.order_items && item.order_items.length > 0 ? (
-                        item.order_items.map((prod) => (
-                          <div key={prod.id} style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                            <div style={{ color: '#ddd', fontSize: '11px', fontWeight: '500' }}>
-                              {prod.product_name || 'Product'}
-                            </div>
-                            <div style={{ color: '#888', fontSize: '10px' }}>
-                              {[prod.size, prod.color, `Qty: ${prod.quantity}`].filter(Boolean).join(' • ')}
-                            </div>
-                          </div>
-                        ))
-                      ) : (
-                        <div style={{ color: '#555', fontSize: '10px' }}>No products found</div>
-                      )}
-
-                      {item.return_reason && (
-                        <div style={{ color: '#e74c3c', fontSize: '10px', marginTop: '2px' }}>
-                          Reason: {item.return_reason}
-                        </div>
-                      )}
-                    </div>
-
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flexShrink: 0, paddingTop: '2px' }}>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '11px', color: '#f39c12' }}>
-                        <input
-                          type="checkbox"
-                          checked={activeStatus === 'Pending'}
-                          onChange={() => handleSelectStatus(item.id, 'Pending')}
-                          style={{ accentColor: '#f39c12', cursor: 'pointer' }}
-                        />
-                        Pending
-                      </label>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '11px', color: '#2ecc71' }}>
-                        <input
-                          type="checkbox"
-                          checked={activeStatus === 'Received'}
-                          onChange={() => handleSelectStatus(item.id, 'Received')}
-                          style={{ accentColor: '#2ecc71', cursor: 'pointer' }}
-                        />
-                        Received
-                      </label>
-                    </div>
-                  </div>
-                )}
-              </div>
+              <LogisticsOrderCard
+                key={item.id}
+                item={item}
+                isExpanded={isExpanded}
+                currentStatus={currentStatus}
+                pendingStatus={pendingStatus}
+                activeStatus={activeStatus}
+                hasChange={hasChange}
+                isSavingThis={isSavingThis}
+                onToggleExpand={toggleExpand}
+                onSelectStatus={handleSelectStatus}
+                onStatusUpdate={handleStatusUpdate}
+              />
             );
           })}
         </div>
