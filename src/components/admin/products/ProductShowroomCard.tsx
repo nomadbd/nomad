@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Product } from './products.types';
 import { ProductMediaViewer } from './ProductMediaViewer';
 import { ProductActionToolbar } from './ProductActionToolbar';
-import { ChevronDownIcon } from './icons'; // আপনার আইকন ফোল্ডারের পাথ ঠিক আছে কি না দেখে নেবেন
 
 interface ProductShowroomCardProps {
   product: Product;
@@ -153,43 +152,16 @@ export const ProductShowroomCard: React.FC<ProductShowroomCardProps> = ({
           </div>
         </div>
 
-        {/* টুলবার ও একশন বাটন (স্টক আপডেট, এডিট, শেয়ার এবং ডিটেইলস আইকন) */}
+        {/* টুলবার কম্পোনেন্ট (এডিট, শেয়ার এবং ড্রপডাউন আইকনসহ সব এক জায়গায়) */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
           <ProductActionToolbar
             product={product}
             onUpdateStock={onUpdateStock}
             onEdit={onEdit}
             onUnhide={onUnhide}
+            isExpanded={isExpanded}
+            onToggleExpand={() => setIsExpanded(!isExpanded)}
           />
-
-          <button
-            type="button"
-            onClick={() => setIsExpanded(!isExpanded)}
-            title={isExpanded ? 'Hide Details' : 'Show Details'}
-            className="smooth-transition"
-            style={{
-              background: 'none',
-              border: '1px solid #262626',
-              borderRadius: '4px',
-              color: '#aaa',
-              width: '32px',
-              height: '32px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              padding: 0,
-            }}
-          >
-            <ChevronDownIcon
-              size={14}
-              color="#aaa"
-              style={{
-                transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
-                transition: 'transform 0.2s ease',
-              }}
-            />
-          </button>
         </div>
       </div>
 
