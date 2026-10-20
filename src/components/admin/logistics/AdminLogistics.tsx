@@ -40,7 +40,6 @@ export default function AdminLogistics() {
   const fetchOrders = async () => {
     setLoading(true);
     try {
-      // Fetch cancelled orders that have courier assigned
       const { data: orderData, error: orderError } = await supabase
         .from('orders')
         .select('*')
@@ -58,7 +57,6 @@ export default function AdminLogistics() {
 
       const orderIds = orderData.map((o) => o.id);
 
-      // Fetch items for these orders
       const { data: itemsData, error: itemsError } = await supabase
         .from('order_items')
         .select('*')
@@ -175,35 +173,31 @@ export default function AdminLogistics() {
   const handleStatusUpdate = async (orderId: string, newStatus: string) => {
     setSavingOrderId(orderId);
     try {
-      const targetOrder = orders.find((o) => o.id === orderId);
-      if (!targetOrder) return;
-
-      const currentReturnStatus = targetOrder.return_status || 'Pending';
-      if (currentReturnStatus === newStatus) return;
-
-      // 1. Update return_status in orders table for ONLY this orderId
-      const { error: updateOrderError } = await supabase
+      const { data: freshOrderData, error: freshOrderErr } = await supabase
         .from('orders')
-        .update({ return_status: newStatus })
-        .eq('id', orderId);
+        .select('id, return_status')
+        .eq('id', orderId)
+        .maybeSingle();
 
-      if (updateOrderError) throw updateOrderError;
+      if (freshOrderErr || !freshOrderData) throw new Error('Order not found');
 
-      // 2. Query fresh items ONLY for this specific orderId directly from Supabase
+      const currentReturnStatus = freshOrderData.return_status || 'Pending';
+      if (currentReturnStatus === newStatus) {
+        setSavingOrderId(null);
+        return;
+      }
+
       const { data: currentOrderItems, error: itemsFetchError } = await supabase
         .from('order_items')
         .select('*')
         .eq('order_id', orderId);
 
       if (itemsFetchError) throw itemsFetchError;
-
       const itemsToProcess = currentOrderItems || [];
 
-      // 3. If changed from Pending to Received -> Add stock ONLY for this order's items
       if (newStatus === 'Received' && currentReturnStatus !== 'Received') {
         for (const item of itemsToProcess) {
           const qty = Number(item.quantity) || 0;
-
           if (item.product_id && qty > 0) {
             const { data: prodData, error: prodErr } = await supabase
               .from('products')
@@ -222,12 +216,9 @@ export default function AdminLogistics() {
             }
           }
         }
-      } 
-      // 4. If reverted from Received to Pending -> Subtract stock ONLY for this order's items
-      else if (currentReturnStatus === 'Received' && newStatus !== 'Received') {
+      } else if (currentReturnStatus === 'Received' && newStatus !== 'Received') {
         for (const item of itemsToProcess) {
           const qty = Number(item.quantity) || 0;
-
           if (item.product_id && qty > 0) {
             const { data: prodData, error: prodErr } = await supabase
               .from('products')
@@ -248,7 +239,13 @@ export default function AdminLogistics() {
         }
       }
 
-      // Update state locally
+      const { error: updateOrderError } = await supabase
+        .from('orders')
+        .update({ return_status: newStatus })
+        .eq('id', orderId);
+
+      if (updateOrderError) throw updateOrderError;
+
       setOrders((prevOrders) =>
         prevOrders.map((order) =>
           order.id === orderId ? { ...order, return_status: newStatus } : order
@@ -546,7 +543,7 @@ export default function AdminLogistics() {
                         />
                         Pending
                       </label>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '11px', color: '#2ecc71' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '11px', color: '#2ecc71'}}}}
                         <input
                           type="checkbox"
                           checked={activeStatus === 'Received'}
