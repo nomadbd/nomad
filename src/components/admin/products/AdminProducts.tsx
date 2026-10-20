@@ -17,7 +17,7 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
   onCloseAdd
 }) => {
   const {
-    filteredProducts, loading, showAddPage, setShowAddPage,
+    products, filteredProducts, loading, showAddPage, setShowAddPage,
     submitting, editingProduct, setEditingProduct,
     setRemovedMediaUrls, editName, setEditName, editPrice, setEditPrice,
     editStock, setEditStock, editCategory, setEditCategory, editDescription, setEditDescription,
@@ -54,6 +54,11 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
       onCloseAdd();
     }
   };
+
+  // 📊 সামারি কাউন্টার ক্যালকুলেশন
+  const totalCount = products.length;
+  const lowStockCount = products.filter(p => p.stock_quantity > 0 && p.stock_quantity <= 5).length;
+  const soldOutCount = products.filter(p => p.stock_quantity <= 0).length;
 
   if (showAddPage) {
     return (
@@ -255,10 +260,30 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
         </div>
       )}
 
+      {/* 📊 অ্যাডমিন সামারি বার (Total, Low Stock, Sold Out) */}
+      {!loading && (
+        <div style={{ display: 'flex', gap: '8px', margin: '12px 0 16px 0', overflowX: 'auto', scrollbarWidth: 'none' }}>
+          <div style={{ backgroundColor: '#080808', border: '1px solid #1a1a1a', padding: '6px 12px', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+            <span style={{ fontSize: '10px', color: '#666', fontFamily: 'monospace', letterSpacing: '0.5px' }}>PRODUCTS</span>
+            <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#fff', fontFamily: 'monospace' }}>{totalCount}</span>
+          </div>
+
+          <div style={{ backgroundColor: lowStockCount > 0 ? 'rgba(234, 179, 8, 0.08)' : '#080808', border: `1px solid ${lowStockCount > 0 ? 'rgba(234, 179, 8, 0.25)' : '#1a1a1a'}`, padding: '6px 12px', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+            <span style={{ fontSize: '10px', color: lowStockCount > 0 ? '#eab308' : '#666', fontFamily: 'monospace', letterSpacing: '0.5px' }}>LOW STOCK</span>
+            <span style={{ fontSize: '11px', fontWeight: 'bold', color: lowStockCount > 0 ? '#eab308' : '#fff', fontFamily: 'monospace' }}>{lowStockCount}</span>
+          </div>
+
+          <div style={{ backgroundColor: soldOutCount > 0 ? 'rgba(239, 68, 68, 0.08)' : '#080808', border: `1px solid ${soldOutCount > 0 ? 'rgba(239, 68, 68, 0.25)' : '#1a1a1a'}`, padding: '6px 12px', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+            <span style={{ fontSize: '10px', color: soldOutCount > 0 ? '#ef4444' : '#666', fontFamily: 'monospace', letterSpacing: '0.5px' }}>SOLD OUT</span>
+            <span style={{ fontSize: '11px', fontWeight: 'bold', color: soldOutCount > 0 ? '#ef4444' : '#fff', fontFamily: 'monospace' }}>{soldOutCount}</span>
+          </div>
+        </div>
+      )}
+
       {loading ? (
         <div style={{ textAlign: 'center', padding: '60px 0', color: '#666', fontSize: '11px' }}>LOADING PRODUCTS...</div>
       ) : (
-        <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <div style={{ marginTop: '4px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {filteredProducts.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '50px 0', color: '#555', fontSize: '11px', fontFamily: 'monospace' }}>NO PRODUCTS FOUND</div>
           ) : (
