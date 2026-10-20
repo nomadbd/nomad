@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Product } from './products.types';
-import { StockIcon, EditIcon, ShareIcon, VisibilityIcon } from '../../icons';
+import { StockIcon, EditIcon, ShareIcon } from '../../icons';
 
 interface ProductActionToolbarProps {
   product: Product;
@@ -122,15 +122,19 @@ export const ProductActionToolbar: React.FC<ProductActionToolbarProps> = ({
               title="Unhide Product"
               style={{
                 background: 'none',
-                border: 'none',
-                color: '#aaa',
+                border: '1px solid #22c55e',
+                borderRadius: '4px',
+                color: '#22c55e',
                 cursor: 'pointer',
-                padding: 0,
+                padding: '4px 8px',
+                fontSize: '11px',
+                fontWeight: 'bold',
+                fontFamily: 'monospace',
                 display: 'flex',
                 alignItems: 'center',
               }}
             >
-              <VisibilityIcon size={16} color="currentColor" visible={false} />
+              UNHIDE
             </button>
           ) : (
             <>
