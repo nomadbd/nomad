@@ -543,7 +543,7 @@ export default function AdminLogistics() {
                         />
                         Pending
                       </label>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '11px', color: '#2ecc71'}}}}
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '11px', color: '#2ecc71' }}>
                         <input
                           type="checkbox"
                           checked={activeStatus === 'Received'}
