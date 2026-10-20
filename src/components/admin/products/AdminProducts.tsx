@@ -17,8 +17,8 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
   onCloseAdd
 }) => {
   const {
-    filteredProducts, filteredCategories, loading, showAddPage, setShowAddPage,
-    submitting, expandedCategories, setExpandedCategories, editingProduct, setEditingProduct,
+    filteredProducts, loading, showAddPage, setShowAddPage,
+    submitting, editingProduct, setEditingProduct,
     setRemovedMediaUrls, editName, setEditName, editPrice, setEditPrice,
     editStock, setEditStock, editCategory, setEditCategory, editDescription, setEditDescription,
     editFit, setEditFit, editGsm, setEditGsm, editMadeIn, setEditMadeIn, editMaterial, setEditMaterial,
@@ -258,58 +258,19 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
       {loading ? (
         <div style={{ textAlign: 'center', padding: '60px 0', color: '#666', fontSize: '11px' }}>LOADING PRODUCTS...</div>
       ) : (
-        <div style={{ marginTop: '10px' }}>
-          {filteredCategories.length === 0 ? (
+        <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {filteredProducts.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '50px 0', color: '#555', fontSize: '11px', fontFamily: 'monospace' }}>NO PRODUCTS FOUND</div>
           ) : (
-            filteredCategories.map((category) => {
-              const categoryProducts = filteredProducts.filter(p => p.category === category);
-              const isExpanded = !!expandedCategories[category];
-
-              return (
-                <div key={category} className="showroom-section animate-fade-in" style={{ marginBottom: '22px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 15px 10px 15px', borderBottom: '1px solid #141414' }}>
-                    <h3 style={{ margin: 0, fontSize: '13px', letterSpacing: '3px', color: '#b3b3b3', textTransform: 'uppercase' }}>{category}</h3>
-                    <button
-                      onClick={() => setExpandedCategories(prev => ({ ...prev, [category]: !isExpanded }))}
-                      className="smooth-transition"
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        color: '#fff',
-                        fontSize: '11px',
-                        letterSpacing: '2px',
-                        cursor: 'pointer',
-                        opacity: 0.7,
-                        display: 'flex',
-                        padding: 0,
-                        alignItems: 'center',
-                        minWidth: '85px',
-                        justifyContent: 'flex-end',
-                        whiteSpace: 'nowrap'
-                      }}
-                    >
-                      <span>SEE&nbsp;</span>
-                      <span style={{ display: 'inline-block', width: '35px', textAlign: 'left' }}>
-                        {isExpanded ? 'LESS' : 'MORE'}
-                      </span>
-                    </button>
-                  </div>
-
-                  <div className="showroom-row-container" style={{ display: 'flex', flexWrap: isExpanded ? 'wrap' : 'nowrap', width: '100%', scrollSnapType: 'x mandatory', overflowX: 'auto', scrollBehavior: 'smooth' }}>
-                    {categoryProducts.map((product) => (
-                      <ProductShowroomCard
-                        key={product.id}
-                        product={product}
-                        onUpdateStock={handleStockUpdate}
-                        onEdit={handleOpenEdit}
-                        onUnhide={handleUnhideProduct}
-                      />
-                    ))}
-                  </div>
-                </div>
-              );
-            })
+            filteredProducts.map((product) => (
+              <ProductShowroomCard
+                key={product.id}
+                product={product}
+                onUpdateStock={handleStockUpdate}
+                onEdit={handleOpenEdit}
+                onUnhide={handleUnhideProduct}
+              />
+            ))
           )}
         </div>
       )}
@@ -358,40 +319,10 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
           opacity: 1;
           transform: translateY(0);
         }
-        .showroom-row-container::-webkit-scrollbar {
-          display: none;
-        }
-        .showroom-row-container {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
         @media (max-width: 767px) {
           .admin-products-container {
             padding-left: 0 !important;
             padding-right: 0 !important;
-          }
-          .showroom-section {
-            width: 100%;
-          }
-          .showroom-card-item {
-            width: 100% !important;
-            min-width: 100% !important;
-            padding: 0 0 15px 0 !important;
-            border-left: none !important;
-            border-right: none !important;
-            border-radius: 0 !important;
-          }
-        }
-        @media (min-width: 768px) {
-          .showroom-section {
-            padding: 0;
-          }
-          .showroom-card-item {
-            width: 300px;
-            min-width: 300px;
-            padding: 12px;
-            margin-right: 15px;
-            margin-bottom: 20px;
           }
         }
       `}</style>
