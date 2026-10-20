@@ -194,14 +194,15 @@ export default function AdminStaff({
 
   const handleOpenChat = (staff: StaffMember, e: React.MouseEvent) => {
     e.stopPropagation();
-    const targetKey = staff.email || staff.id;
+    // চ্যাট ওপেন করার জন্য ইমেইলের পরিবর্তে ইউনিক আইডি (staff.id) ব্যবহার করা হয়েছে
+    const recipientId = staff.id;
 
     if (onNavigateToTab) {
-      onNavigateToTab('messages', { userId: targetKey });
+      onNavigateToTab('messages', { userId: recipientId, recipientId: recipientId, email: staff.email || '' });
     } else {
       const currentUrl = new URL(window.location.href);
       currentUrl.searchParams.set('tab', 'messages');
-      currentUrl.searchParams.set('userId', targetKey);
+      currentUrl.searchParams.set('userId', recipientId);
       window.location.href = currentUrl.toString();
     }
   };
