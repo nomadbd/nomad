@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Product } from './products.types';
-import { StockIcon, EditIcon, ShareIcon, EyeIcon } from '../../icons';
+import { StockIcon, EditIcon, ShareIcon } from '../../icons';
+import { VisibilityIcon } from '../../icons/VisibilityIcon';
 
 interface ProductActionToolbarProps {
   product: Product;
@@ -130,7 +131,7 @@ export const ProductActionToolbar: React.FC<ProductActionToolbarProps> = ({
                 alignItems: 'center',
               }}
             >
-              <EyeIcon size={16} color="currentColor" />
+              <VisibilityIcon size={16} color="currentColor" visible={false} />
             </button>
           ) : (
             <>
