@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Product } from './products.types';
-import { StockIcon, EditIcon, ShareIcon } from '../../icons';
-import { VisibilityIcon } from '../../icons/VisibilityIcon';
+import { StockIcon, EditIcon, ShareIcon, VisibilityIcon } from '../../icons';
 
 interface ProductActionToolbarProps {
   product: Product;
