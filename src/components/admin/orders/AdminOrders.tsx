@@ -7,7 +7,7 @@ import OrderStatusModal from './OrderStatusModal';
 import OrderFiltersBar from './OrderFiltersBar';
 
 import { AdminOrdersProps } from './adminOrders.types';
-import { useAdminOrders } from './useAdminOrders';
+import { useAdminOrders } from '@/hooks/useAdminOrders';
 
 const STATUS_OPTIONS = ['Pending', 'Received', 'Processing', 'Shipped', 'Delivered', 'Cancelled'];
 const PAYMENT_STATUS_OPTIONS = ['ALL', 'Paid', 'Unpaid / COD', 'Partial Paid'];
