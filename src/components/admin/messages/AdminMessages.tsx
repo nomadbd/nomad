@@ -148,16 +148,22 @@ export const AdminMessages: React.FC<ExtendedAdminMessagesProps> = ({
     };
   }, [activeThreadId]);
 
+  // পারফেক্ট ওয়ান-ট্যাপ ব্যাক নেভিগেশন লজিক
   useEffect(() => {
-    if (activeThreadId) {
-      window.history.pushState({ threadOpen: true }, '');
-      const handlePopState = () => {
-        clearUserIdParam();
-        handleSelectThread(null);
-      };
-      window.addEventListener('popstate', handlePopState);
-      return () => window.removeEventListener('popstate', handlePopState);
-    }
+    if (!activeThreadId) return;
+
+    // চ্যাট ওপেন হলে হিস্ট্রি স্ট্যাকে মাত্র ১টি স্টেট পুশ করা
+    window.history.pushState({ chatThreadActive: true, threadId: activeThreadId }, '');
+
+    const handlePopState = () => {
+      clearUserIdParam();
+      handleSelectThread(null);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
   }, [activeThreadId, handleSelectThread]);
 
   const scrollToBottom = () => {
@@ -282,7 +288,7 @@ export const AdminMessages: React.FC<ExtendedAdminMessagesProps> = ({
 
             <div style={{ flex: 1, padding: '20px 0', display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div className="skeleton-pulse" style={{ alignSelf: 'flex-start', width: '55%', height: '40px', backgroundColor: '#18181b', borderRadius: '12px' }} />
-              <div className="skeleton-pulse" style={{ alignSelf: 'flex-end', width: '65%', height: '52px', backgroundColor: '#27272a', borderRadius: '12px' }} />
+              <div className="skeleton-pulse" style={{ alignSelf: 'end', width: '65%', height: '52px', backgroundColor: '#27272a', borderRadius: '12px' }} />
               <div className="skeleton-pulse" style={{ alignSelf: 'flex-start', width: '45%', height: '36px', backgroundColor: '#18181b', borderRadius: '12px' }} />
             </div>
 
@@ -353,7 +359,11 @@ export const AdminMessages: React.FC<ExtendedAdminMessagesProps> = ({
             headerSubtitle={headerSubtitle}
             onBack={() => {
               clearUserIdParam();
-              handleSelectThread(null);
+              if (window.history.state?.chatThreadActive) {
+                window.history.back();
+              } else {
+                handleSelectThread(null);
+              }
             }}
             openDrawer={openDrawer}
           />
