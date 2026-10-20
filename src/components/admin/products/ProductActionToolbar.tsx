@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Product } from './products.types';
 import { ShareIcon, EditIcon, BoxIcon } from '../../icons';
 
@@ -16,12 +16,30 @@ export const ProductActionToolbar: React.FC<ProductActionToolbarProps> = ({
   onUnhide,
 }) => {
   const [step, setStep] = useState<'idle' | 'manage'>('idle');
+  const [stockInput, setStockInput] = useState<string | number>(product.stock_quantity);
   const isHidden = product.status === 'archived' || product.status === 'hidden';
 
+  // প্রডাক্টের স্টক প্রপ পরিবর্তন হলে লোকাল স্টেট সিংক রাখা
+  useEffect(() => {
+    setStockInput(product.stock_quantity);
+  }, [product.stock_quantity]);
+
+  const handleSaveStock = () => {
+    const newStock = Number(stockInput);
+    if (!isNaN(newStock) && newStock >= 0) {
+      // এখানে সরাসরি নতুন সংখ্যা বা ডিফারেন্স পাঠানোর ব্যবস্থা করতে পারেন
+      const diff = newStock - product.stock_quantity;
+      if (diff !== 0) {
+        onUpdateStock(product.id, product.stock_quantity, diff);
+      }
+    }
+    setStep('idle');
+  };
+
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
       {step === 'idle' && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           {isHidden ? (
             <button
               onClick={() => onUnhide(product.id)}
@@ -44,7 +62,10 @@ export const ProductActionToolbar: React.FC<ProductActionToolbarProps> = ({
             </button>
           ) : (
             <button
-              onClick={() => setStep('manage')}
+              onClick={() => {
+                setStockInput(product.stock_quantity);
+                setStep('manage');
+              }}
               title={`Stock: ${product.stock_quantity}`}
               style={{
                 height: '28px',
@@ -114,11 +135,39 @@ export const ProductActionToolbar: React.FC<ProductActionToolbarProps> = ({
       )}
 
       {step === 'manage' && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: '#111', padding: '2px 8px', borderRadius: '4px' }}>
-          <span style={{ fontSize: '10px', color: '#aaa', fontFamily: 'monospace' }}>{product.stock_quantity}</span>
-          <button onClick={() => onUpdateStock(product.id, product.stock_quantity, -1)} style={{ width: '20px', height: '20px', background: '#222', color: '#fff', border: 'none', borderRadius: '3px', cursor: 'pointer' }}>-</button>
-          <button onClick={() => onUpdateStock(product.id, product.stock_quantity, 1)} style={{ width: '20px', height: '20px', background: '#222', color: '#fff', border: 'none', borderRadius: '3px', cursor: 'pointer' }}>+</button>
-          <button onClick={() => setStep('idle')} style={{ background: 'none', border: 'none', color: '#888', fontSize: '9px', cursor: 'pointer', marginLeft: '2px' }}>DONE</button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: '#111', padding: '2px 6px', borderRadius: '4px', border: '1px solid #222' }}>
+          <input
+            type="number"
+            value={stockInput}
+            onChange={(e) => setStockInput(e.target.value)}
+            autoFocus
+            style={{
+              width: '42px',
+              height: '22px',
+              background: '#000',
+              color: '#fff',
+              border: '1px solid #333',
+              borderRadius: '3px',
+              textAlign: 'center',
+              fontSize: '11px',
+              fontFamily: 'monospace',
+              outline: 'none',
+            }}
+          />
+          <button
+            onClick={handleSaveStock}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: '#22c55e',
+              fontSize: '10px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              padding: '0 4px',
+            }}
+          >
+            DONE
+          </button>
         </div>
       )}
     </div>
