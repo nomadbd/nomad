@@ -1,12 +1,13 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import { Product } from './products.types';
-import { ShareIcon, EditIcon, BoxIcon, CloseIcon } from '../../icons';
+import { StockIcon, EditIcon, ShareIcon, EyeIcon } from '../../icons';
 
 interface ProductActionToolbarProps {
   product: Product;
   onUpdateStock: (id: string | number, currentStock: number, change: number) => void;
   onEdit: (product: Product) => void;
   onUnhide: (id: string | number) => void;
+  setIsStockEditing?: (editing: boolean) => void;
 }
 
 export const ProductActionToolbar: React.FC<ProductActionToolbarProps> = ({
@@ -14,216 +15,189 @@ export const ProductActionToolbar: React.FC<ProductActionToolbarProps> = ({
   onUpdateStock,
   onEdit,
   onUnhide,
+  setIsStockEditing,
 }) => {
-  const [step, setStep] = useState<'idle' | 'manage'>('idle');
-  const [stockInput, setStockInput] = useState<string | number>('');
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [showStockInput, setShowStockInput] = useState(false);
+  const [inputVal, setInputVal] = useState(String(product.stock_quantity ?? 0));
+
   const isHidden = product.status === 'archived' || product.status === 'hidden';
 
-  // ম্যানেজ মোডে যাওয়ার সাথে সাথে ইনপুট অটো-ফোকাস করা
-  useEffect(() => {
-    if (step === 'manage' && inputRef.current) {
-      inputRef.current.focus();
+  const toggleStockInput = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const nextState = !showStockInput;
+    setShowStockInput(nextState);
+    if (setIsStockEditing) {
+      setIsStockEditing(nextState);
     }
-  }, [step]);
-
-  const handleSaveStock = () => {
-    if (stockInput === '' || stockInput === null || stockInput === undefined) {
-      setStep('idle');
-      return;
+    if (nextState) {
+      setInputVal(String(product.stock_quantity ?? 0));
     }
-    const newStock = Number(stockInput);
-    if (!isNaN(newStock) && newStock >= 0) {
-      const diff = newStock - product.stock_quantity;
-      if (diff !== 0) {
-        onUpdateStock(product.id, product.stock_quantity, diff);
-      }
-    }
-    setStep('idle');
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      handleSaveStock();
-    } else if (e.key === 'Escape') {
-      setStep('idle');
+  const handleStockSubmit = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const parsed = parseInt(inputVal, 10);
+    if (!isNaN(parsed)) {
+      const diff = parsed - (product.stock_quantity ?? 0);
+      onUpdateStock(product.id, product.stock_quantity ?? 0, diff);
+    }
+    setShowStockInput(false);
+    if (setIsStockEditing) {
+      setIsStockEditing(false);
+    }
+  };
+
+  const handleCancel = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowStockInput(false);
+    if (setIsStockEditing) {
+      setIsStockEditing(false);
     }
   };
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-      {step === 'idle' && (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+      {showStockInput ? (
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          {isHidden ? (
-            <button
-              onClick={() => onUnhide(product.id)}
-              style={{
-                height: '28px',
-                padding: '0 8px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: 'rgba(34, 197, 94, 0.15)',
-                border: '1px solid rgba(34, 197, 94, 0.3)',
-                borderRadius: '4px',
-                color: '#22c55e',
-                fontSize: '10px',
-                cursor: 'pointer',
-                fontWeight: '600',
-              }}
-            >
-              UNHIDE
-            </button>
-          ) : (
-            <button
-              onClick={() => {
-                setStockInput('');
-                setStep('manage');
-              }}
-              title={`Stock: ${product.stock_quantity}`}
-              style={{
-                height: '28px',
-                width: '28px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: 'transparent',
-                border: 'none',
-                color: '#aaa',
-                cursor: 'pointer',
-                padding: 0,
-              }}
-            >
-              <BoxIcon size={15} color="currentColor" strokeWidth={2.2} />
-            </button>
-          )}
-
-          <button
-            onClick={() => onEdit(product)}
-            style={{
-              height: '28px',
-              width: '28px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: 'transparent',
-              border: 'none',
-              color: '#aaa',
-              cursor: 'pointer',
-              padding: 0,
-            }}
-          >
-            <EditIcon size={15} color="currentColor" />
-          </button>
-
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              const shareData = {
-                title: product.name,
-                text: product.description,
-                url: window.location.href,
-              };
-              if (navigator.share) {
-                navigator.share(shareData).catch(() => {});
-              } else if (navigator.clipboard) {
-                navigator.clipboard.writeText(window.location.href);
-              }
-            }}
-            style={{
-              height: '28px',
-              width: '28px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: 'transparent',
-              border: 'none',
-              color: '#aaa',
-              cursor: 'pointer',
-              padding: 0,
-            }}
-          >
-            <ShareIcon size={15} color="currentColor" />
-          </button>
-        </div>
-      )}
-
-      {step === 'manage' && (
-        <div
-          className="animate-fade-in"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            backgroundColor: 'transparent',
-            padding: 0,
-            border: 'none',
-            boxSizing: 'border-box',
-          }}
-        >
-          {/* ইনপুট ফিল্ডের আকার বাড়িয়ে লক্ষ পর্যন্ত (৫-৬ অঙ্ক) সহজে লেখার ব্যবস্থা করা হলো */}
           <input
-            ref={inputRef}
             type="number"
-            value={stockInput}
-            placeholder={String(product.stock_quantity)}
-            onChange={(e) => setStockInput(e.target.value)}
-            onKeyDown={handleKeyDown}
+            value={inputVal}
+            onChange={(e) => setInputVal(e.target.value)}
+            onClick={(e) => e.stopPropagation()}
             style={{
-              width: '68px',
-              height: '28px',
-              background: 'transparent',
-              color: '#ffffff',
-              border: 'none',
-              borderBottom: '1px solid #444',
-              borderRadius: '0',
-              textAlign: 'center',
-              fontSize: '13px',
-              fontWeight: '600',
+              width: '55px',
+              backgroundColor: '#000',
+              border: '1px solid #333',
+              color: '#fff',
+              fontSize: '11px',
               fontFamily: 'monospace',
+              padding: '2px 6px',
+              borderRadius: '4px',
               outline: 'none',
-              padding: '0 2px',
+              textAlign: 'center',
             }}
           />
-
           <button
-            onClick={handleSaveStock}
+            type="button"
+            onClick={handleStockSubmit}
             style={{
-              background: 'transparent',
+              background: 'none',
               border: 'none',
               color: '#22c55e',
-              fontSize: '11px',
-              fontWeight: '700',
-              letterSpacing: '0.5px',
+              fontSize: '10px',
+              fontWeight: 'bold',
               cursor: 'pointer',
-              padding: '0 2px',
-              height: '28px',
-              display: 'flex',
-              alignItems: 'center',
+              padding: '0 4px',
+              fontFamily: 'monospace',
             }}
           >
             DONE
           </button>
-
           <button
-            onClick={() => setStep('idle')}
-            title="Cancel"
+            type="button"
+            onClick={handleCancel}
             style={{
-              background: 'transparent',
+              background: 'none',
               border: 'none',
-              color: '#888888',
+              color: '#ef4444',
+              fontSize: '10px',
+              fontWeight: 'bold',
               cursor: 'pointer',
-              padding: 0,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: '20px',
-              height: '20px',
+              padding: '0 4px',
+              fontFamily: 'monospace',
             }}
           >
-            <CloseIcon size={14} color="currentColor" />
+            ✕
           </button>
         </div>
+      ) : (
+        <>
+          {isHidden ? (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onUnhide(product.id);
+              }}
+              title="Unhide Product"
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#aaa',
+                cursor: 'pointer',
+                padding: 0,
+                display: 'flex',
+                alignItems: 'center',
+              }}
+            >
+              <EyeIcon size={16} color="currentColor" />
+            </button>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={toggleStockInput}
+                title="Update Stock"
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#aaa',
+                  cursor: 'pointer',
+                  padding: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
+              >
+                <StockIcon size={16} color="currentColor" />
+              </button>
+
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit(product);
+                }}
+                title="Edit Product"
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#aaa',
+                  cursor: 'pointer',
+                  padding: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
+              >
+                <EditIcon size={16} color="currentColor" />
+              </button>
+
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (navigator.share) {
+                    navigator.share({
+                      title: product.name,
+                      url: window.location.href,
+                    }).catch(() => {});
+                  }
+                }}
+                title="Share Product"
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#aaa',
+                  cursor: 'pointer',
+                  padding: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
+              >
+                <ShareIcon size={16} color="currentColor" />
+              </button>
+            </>
+          )}
+        </>
       )}
     </div>
   );
