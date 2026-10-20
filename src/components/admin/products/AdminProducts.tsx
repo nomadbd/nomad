@@ -267,8 +267,8 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
               const isExpanded = !!expandedCategories[category];
 
               return (
-                <div key={category} className="showroom-section animate-fade-in" style={{ marginBottom: '50px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 15px 12px 15px', borderBottom: '1px solid #141414' }}>
+                <div key={category} className="showroom-section animate-fade-in" style={{ marginBottom: '22px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 15px 10px 15px', borderBottom: '1px solid #141414' }}>
                     <h3 style={{ margin: 0, fontSize: '13px', letterSpacing: '3px', color: '#b3b3b3', textTransform: 'uppercase' }}>{category}</h3>
                     <button
                       onClick={() => setExpandedCategories(prev => ({ ...prev, [category]: !isExpanded }))}
