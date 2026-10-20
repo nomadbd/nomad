@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Product } from './products.types';
-import { ShareIcon, EditIcon, BoxIcon } from '../../icons';
+import { ShareIcon, EditIcon, BoxIcon, CloseIcon } from '../../icons';
 
 interface ProductActionToolbarProps {
   product: Product;
@@ -16,24 +16,38 @@ export const ProductActionToolbar: React.FC<ProductActionToolbarProps> = ({
   onUnhide,
 }) => {
   const [step, setStep] = useState<'idle' | 'manage'>('idle');
-  const [stockInput, setStockInput] = useState<string | number>(product.stock_quantity);
+  const [stockInput, setStockInput] = useState<string | number>('');
+  const inputRef = useRef<HTMLInputElement>(null);
   const isHidden = product.status === 'archived' || product.status === 'hidden';
 
-  // প্রডাক্টের স্টক প্রপ পরিবর্তন হলে লোকাল স্টেট সিংক রাখা
+  // ম্যানেজ মোডে যাওয়ার সাথে সাথে ইনপুট অটো-ফোকাস করা
   useEffect(() => {
-    setStockInput(product.stock_quantity);
-  }, [product.stock_quantity]);
+    if (step === 'manage' && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [step]);
 
   const handleSaveStock = () => {
+    if (stockInput === '' || stockInput === null || stockInput === undefined) {
+      setStep('idle');
+      return;
+    }
     const newStock = Number(stockInput);
     if (!isNaN(newStock) && newStock >= 0) {
-      // এখানে সরাসরি নতুন সংখ্যা বা ডিফারেন্স পাঠানোর ব্যবস্থা করতে পারেন
       const diff = newStock - product.stock_quantity;
       if (diff !== 0) {
         onUpdateStock(product.id, product.stock_quantity, diff);
       }
     }
     setStep('idle');
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleSaveStock();
+    } else if (e.key === 'Escape') {
+      setStep('idle');
+    }
   };
 
   return (
@@ -63,7 +77,7 @@ export const ProductActionToolbar: React.FC<ProductActionToolbarProps> = ({
           ) : (
             <button
               onClick={() => {
-                setStockInput(product.stock_quantity);
+                setStockInput('');
                 setStep('manage');
               }}
               title={`Stock: ${product.stock_quantity}`}
@@ -135,38 +149,78 @@ export const ProductActionToolbar: React.FC<ProductActionToolbarProps> = ({
       )}
 
       {step === 'manage' && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: '#111', padding: '2px 6px', borderRadius: '4px', border: '1px solid #222' }}>
+        <div
+          className="animate-fade-in"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            backgroundColor: '#0d0d0d',
+            padding: '2px 8px',
+            borderRadius: '6px',
+            border: '1px solid #262626',
+            boxSizing: 'border-box',
+          }}
+        >
           <input
+            ref={inputRef}
             type="number"
             value={stockInput}
+            placeholder={String(product.stock_quantity)}
             onChange={(e) => setStockInput(e.target.value)}
-            autoFocus
+            onKeyDown={handleKeyDown}
             style={{
-              width: '42px',
-              height: '22px',
-              background: '#000',
-              color: '#fff',
-              border: '1px solid #333',
-              borderRadius: '3px',
+              width: '50px',
+              height: '26px',
+              background: '#000000',
+              color: '#ffffff',
+              border: '1px solid #333333',
+              borderRadius: '4px',
               textAlign: 'center',
-              fontSize: '11px',
-              fontFamily: 'monospace',
+              fontSize: '12px',
+              fontWeight: '600',
+              fontFamily: 'system-ui, sans-serif',
               outline: 'none',
+              padding: '0 4px',
             }}
           />
+
           <button
             onClick={handleSaveStock}
             style={{
               background: 'transparent',
               border: 'none',
               color: '#22c55e',
-              fontSize: '10px',
-              fontWeight: '600',
+              fontSize: '11px',
+              fontWeight: '700',
+              letterSpacing: '0.5px',
               cursor: 'pointer',
               padding: '0 4px',
+              height: '26px',
+              display: 'flex',
+              alignItems: 'center',
             }}
           >
             DONE
+          </button>
+
+          <button
+            onClick={() => setStep('idle')}
+            title="Cancel"
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: '#888888',
+              cursor: 'pointer',
+              padding: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '20px',
+              height: '20px',
+            }}
+          >
+            <CloseIcon size={14} color="currentColor" />
           </button>
         </div>
       )}
