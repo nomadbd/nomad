@@ -161,7 +161,7 @@ export const ProductActionToolbar: React.FC<ProductActionToolbarProps> = ({
             boxSizing: 'border-box',
           }}
         >
-          {/* একদম বক্সমুক্ত, বর্ডারহীন মিনিমাল ইনপুট */}
+          {/* ইনপুট ফিল্ডের আকার বাড়িয়ে লক্ষ পর্যন্ত (৫-৬ অঙ্ক) সহজে লেখার ব্যবস্থা করা হলো */}
           <input
             ref={inputRef}
             type="number"
@@ -170,7 +170,7 @@ export const ProductActionToolbar: React.FC<ProductActionToolbarProps> = ({
             onChange={(e) => setStockInput(e.target.value)}
             onKeyDown={handleKeyDown}
             style={{
-              width: '38px',
+              width: '68px',
               height: '28px',
               background: 'transparent',
               color: '#ffffff',
