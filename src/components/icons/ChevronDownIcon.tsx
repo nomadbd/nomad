@@ -8,7 +8,7 @@ interface IconProps {
 }
 
 export const ChevronDownIcon: React.FC<IconProps> = ({
-  size = 14,
+  size = 16,
   color = 'currentColor',
   className = '',
   style = {}
@@ -20,7 +20,7 @@ export const ChevronDownIcon: React.FC<IconProps> = ({
       viewBox="0 0 24 24"
       fill="none"
       stroke={color}
-      strokeWidth="2"
+      strokeWidth="2.5"
       strokeLinecap="round"
       strokeLinejoin="round"
       className={className}
