@@ -21,3 +21,4 @@ export * from './ScheduleIcon';
 export * from './VisibilityIcon';
 export * from './GroupIcon';
 export * from './ChevronDownIcon';
+export * from './BoxIcon';
