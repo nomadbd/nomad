@@ -55,7 +55,6 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
     }
   };
 
-  // 📊 সামারি কাউন্টার ক্যালকুলেশন
   const totalCount = products.length;
   const lowStockCount = products.filter(p => p.stock_quantity > 0 && p.stock_quantity <= 5).length;
   const soldOutCount = products.filter(p => p.stock_quantity <= 0).length;
@@ -260,22 +259,21 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
         </div>
       )}
 
-      {/* 📊 অ্যাডমিন সামারি বার (Total, Low Stock, Sold Out) */}
       {!loading && (
         <div style={{ display: 'flex', gap: '8px', margin: '12px 0 16px 0', overflowX: 'auto', scrollbarWidth: 'none' }}>
-          <div style={{ backgroundColor: '#080808', border: '1px solid #1a1a1a', padding: '6px 12px', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-            <span style={{ fontSize: '10px', color: '#666', fontFamily: 'monospace', letterSpacing: '0.5px' }}>PRODUCTS</span>
-            <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#fff', fontFamily: 'monospace' }}>{totalCount}</span>
+          <div style={{ backgroundColor: '#0d0d0d', border: '1px solid #262626', padding: '6px 12px', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+            <span style={{ fontSize: '10px', color: '#aaaaaa', fontFamily: 'monospace', letterSpacing: '0.5px' }}>PRODUCTS</span>
+            <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#ffffff', fontFamily: 'monospace' }}>{totalCount}</span>
           </div>
 
-          <div style={{ backgroundColor: lowStockCount > 0 ? 'rgba(234, 179, 8, 0.08)' : '#080808', border: `1px solid ${lowStockCount > 0 ? 'rgba(234, 179, 8, 0.25)' : '#1a1a1a'}`, padding: '6px 12px', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-            <span style={{ fontSize: '10px', color: lowStockCount > 0 ? '#eab308' : '#666', fontFamily: 'monospace', letterSpacing: '0.5px' }}>LOW STOCK</span>
-            <span style={{ fontSize: '11px', fontWeight: 'bold', color: lowStockCount > 0 ? '#eab308' : '#fff', fontFamily: 'monospace' }}>{lowStockCount}</span>
+          <div style={{ backgroundColor: lowStockCount > 0 ? 'rgba(234, 179, 8, 0.12)' : '#0d0d0d', border: `1px solid ${lowStockCount > 0 ? 'rgba(234, 179, 8, 0.4)' : '#262626'}`, padding: '6px 12px', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+            <span style={{ fontSize: '10px', color: lowStockCount > 0 ? '#facc15' : '#aaaaaa', fontFamily: 'monospace', letterSpacing: '0.5px' }}>LOW STOCK</span>
+            <span style={{ fontSize: '11px', fontWeight: 'bold', color: lowStockCount > 0 ? '#facc15' : '#ffffff', fontFamily: 'monospace' }}>{lowStockCount}</span>
           </div>
 
-          <div style={{ backgroundColor: soldOutCount > 0 ? 'rgba(239, 68, 68, 0.08)' : '#080808', border: `1px solid ${soldOutCount > 0 ? 'rgba(239, 68, 68, 0.25)' : '#1a1a1a'}`, padding: '6px 12px', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-            <span style={{ fontSize: '10px', color: soldOutCount > 0 ? '#ef4444' : '#666', fontFamily: 'monospace', letterSpacing: '0.5px' }}>SOLD OUT</span>
-            <span style={{ fontSize: '11px', fontWeight: 'bold', color: soldOutCount > 0 ? '#ef4444' : '#fff', fontFamily: 'monospace' }}>{soldOutCount}</span>
+          <div style={{ backgroundColor: soldOutCount > 0 ? 'rgba(239, 68, 68, 0.12)' : '#0d0d0d', border: `1px solid ${soldOutCount > 0 ? 'rgba(239, 68, 68, 0.4)' : '#262626'}`, padding: '6px 12px', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+            <span style={{ fontSize: '10px', color: soldOutCount > 0 ? '#f87171' : '#aaaaaa', fontFamily: 'monospace', letterSpacing: '0.5px' }}>SOLD OUT</span>
+            <span style={{ fontSize: '11px', fontWeight: 'bold', color: soldOutCount > 0 ? '#f87171' : '#ffffff', fontFamily: 'monospace' }}>{soldOutCount}</span>
           </div>
         </div>
       )}
