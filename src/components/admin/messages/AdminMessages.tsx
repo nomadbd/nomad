@@ -53,7 +53,7 @@ export const AdminMessages: React.FC<ExtendedAdminMessagesProps> = ({
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // ইউআরএল থেকে userId প্যারামিটার পরিষ্কার করার ফাংশন (যাতে ব্যাক বা লুপ সমস্যা না হয়)
+  // ইউআরএল থেকে userId প্যারামিটার পরিষ্কার করার ফাংশন
   const clearUserIdParam = () => {
     const url = new URL(window.location.href);
     if (url.searchParams.has('userId') || url.searchParams.has('recipientId')) {
@@ -63,7 +63,7 @@ export const AdminMessages: React.FC<ExtendedAdminMessagesProps> = ({
     }
   };
 
-  // --- URL Search Params (userId) অটো-ডিটেক্ট করে চ্যাট ওপেন করার লজিক ---
+  // URL Search Params (userId) অটো-ডিটেক্ট করে চ্যাট ওপেন করার লজিক
   useEffect(() => {
     if (loading) return;
 
@@ -102,7 +102,7 @@ export const AdminMessages: React.FC<ExtendedAdminMessagesProps> = ({
       }
 
       if (matchingThread) {
-        clearUserIdParam(); // ইউআরএল পরিষ্কার করা যাতে ব্যাক বাটন কাজ করে
+        clearUserIdParam();
         handleSelectThread(matchingThread);
       }
     }
@@ -269,10 +269,31 @@ export const AdminMessages: React.FC<ExtendedAdminMessagesProps> = ({
     );
   });
 
+  // মানানসই ডার্ক স্কেলিটন লোডার UI
   if (loading && filteredThreads.length === 0) {
     return (
-      <div style={styles.statusContainerStyle}>
-        <span style={{ color: '#cccccc' }}>FETCHING CHATS...</span>
+      <div style={{ ...styles.containerStyle, padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        {[1, 2, 3, 4].map((item) => (
+          <div
+            key={item}
+            style={{
+              backgroundColor: '#09090b',
+              border: '1px solid #1f1f23',
+              borderRadius: '12px',
+              padding: '14px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              opacity: 0.6,
+            }}
+          >
+            <div style={{ width: '42px', height: '42px', borderRadius: '50%', backgroundColor: '#18181b', flexShrink: 0 }} />
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ width: '40%', height: '12px', backgroundColor: '#18181b', borderRadius: '4px' }} />
+              <div style={{ width: '65%', height: '10px', backgroundColor: '#18181b', borderRadius: '4px' }} />
+            </div>
+          </div>
+        ))}
       </div>
     );
   }
