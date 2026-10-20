@@ -152,7 +152,7 @@ export const ProductShowroomCard: React.FC<ProductShowroomCardProps> = ({
           </div>
         </div>
 
-        {/* ড্রপডাউন টগল আইকন */}
+        {/* ড্রপডাউন টগল আইকন (নামের প্রথম লাইনের সোজাসুজি সারিবদ্ধ) */}
         <button
           type="button"
           onClick={() => setIsExpanded(!isExpanded)}
@@ -169,6 +169,7 @@ export const ProductShowroomCard: React.FC<ProductShowroomCardProps> = ({
             cursor: 'pointer',
             padding: 0,
             flexShrink: 0,
+            marginTop: '-2px',
           }}
         >
           <ChevronDownIcon
