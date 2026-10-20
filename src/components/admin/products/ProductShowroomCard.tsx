@@ -38,24 +38,23 @@ export const ProductShowroomCard: React.FC<ProductShowroomCardProps> = ({
 
   const isHidden = product.status === 'archived' || product.status === 'hidden';
 
-  // Details অবজেক্ট থেকে 'details' এবং 'made in' ফিল্ড পৃথক করা
+  // Details অবজেক্ট থেকে সব তথ্য নিরাপদভাবে প্রসেস করা
   const detailsObj = (product.details || {}) as Record<string, any>;
   
-  // 1. Details ফিল্ড খোঁজা
-  const { details: extraDetailsText, DETAILS: extraDetailsTextCaps, ...remaining1 } = detailsObj;
-  const bottomDetailsValue = extraDetailsText || extraDetailsTextCaps;
+  // 1. Details ফিল্ড আলাদা করা (যাতে এটি সবার নিচে যায়)
+  const { details: extraText1, DETAILS: extraText2, ...specsMap } = detailsObj;
+  const bottomDetailsValue = extraText1 || extraText2;
 
-  // 2. Made In ফিল্ড খোঁজা
-  const madeInEntry = Object.entries(remaining1).find(
+  // 2. Made In ফিল্ড আলাদা করা (যাতে এটি ডিটেইলসের ঠিক উপরে থাকে)
+  const madeInEntry = Object.entries(specsMap).find(
     ([key]) => key.toLowerCase().replace(/_/g, ' ') === 'made in'
   );
-  
   const madeInKey = madeInEntry ? madeInEntry[0] : null;
   const madeInValue = madeInEntry ? madeInEntry[1] : null;
 
-  // 3. বাকি সাধারণ স্পেসিফিকেশনসমূহ
-  const otherDetails = Object.fromEntries(
-    Object.entries(remaining1).filter(([key]) => key !== madeInKey)
+  // 3. বাকি সব স্পেসিফিকেশন (সাইজ, কালার, ফিট, জিএসএম ইত্যাদি)
+  const standardSpecs = Object.fromEntries(
+    Object.entries(specsMap).filter(([key]) => key !== madeInKey)
   );
 
   return (
@@ -82,7 +81,7 @@ export const ProductShowroomCard: React.FC<ProductShowroomCardProps> = ({
         </span>
       </div>
 
-      {/* রো ১: ছবির পাশে নাম এবং তার পাশেই ড্রপডাউন অ্যারো */}
+      {/* রো ১: ছবির পাশে নাম এবং ড্রপডাউন অ্যারো */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '10px', width: '100%' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', flex: 1, minWidth: 0 }}>
           <div
@@ -170,7 +169,7 @@ export const ProductShowroomCard: React.FC<ProductShowroomCardProps> = ({
         </button>
       </div>
 
-      {/* রো ২: ছবির নিচে দাম, দাম বরাবর ডানে অ্যাকশন আইকনসমূহ */}
+      {/* রো ২: ছবির নিচে দাম ও অ্যাকশন আইকন */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', width: '100%', marginTop: '2px' }}>
         <div style={{ display: 'flex', alignItems: 'center' }}>
           <span style={{ fontSize: '13px', color: '#fff', fontWeight: 'bold', fontFamily: 'sans-serif' }}>৳{product.price}</span>
@@ -184,7 +183,7 @@ export const ProductShowroomCard: React.FC<ProductShowroomCardProps> = ({
         />
       </div>
 
-      {/* বিস্তারিত অংশ */}
+      {/* বিস্তারিত অংশ (পাশাপাশি ২ কলাম গ্রিড লেআউট) */}
       {isExpanded && (
         <div
           className="animate-fade-in"
@@ -222,8 +221,8 @@ export const ProductShowroomCard: React.FC<ProductShowroomCardProps> = ({
             </div>
           )}
 
-          {/* ৩. স্পেসিফিকেশন ও ডিটেইলস অংশ */}
-          {((otherDetails && Object.keys(otherDetails).length > 0) || madeInValue || bottomDetailsValue) && (
+          {/* ৩. স্পেসিফিকেশন ও ডিটেইলস (পাশাপাশি ২ কলাম বিন্যাস) */}
+          {((standardSpecs && Object.keys(standardSpecs).length > 0) || madeInValue || bottomDetailsValue) && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <span style={{ fontSize: '10px', color: '#666', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                 Specifications
@@ -240,33 +239,48 @@ export const ProductShowroomCard: React.FC<ProductShowroomCardProps> = ({
                   border: '1px solid #141414',
                 }}
               >
-                {/* সাধারণ কি-ভ্যালু স্পেসিফিকেশনসমূহ (FIT, GSM, CARE ইত্যাদি) */}
-                {Object.keys(otherDetails).length > 0 && (
+                {/* সাইজ, কালার, ফিট ইত্যাদি ফিল্ডগুলো পাশাপাশি ২ কলামের গ্রিডে */}
+                {Object.keys(standardSpecs).length > 0 && (
                   <div
                     style={{
                       display: 'grid',
-                      gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))',
+                      gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
                       gap: '10px 14px',
                     }}
                   >
-                    {Object.entries(otherDetails).map(([key, value]) => (
-                      <div key={key} style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                        <span style={{ color: '#666', fontSize: '10px', textTransform: 'uppercase' }}>{key}</span>
-                        <span style={{ color: '#ffffff', fontSize: '13px', fontWeight: '500' }}>{String(value)}</span>
-                      </div>
-                    ))}
+                    {Object.entries(standardSpecs).map(([key, value]) => {
+                      const valStr = String(value);
+                      // যদি লেখা অনেক বড় হয় (যেমন কমা দিয়ে অনেকগুলো কালার বা সাইজ), তবে তা যেন পুরো রো জুড়ে (২ কলাম মিলে) দেখায়
+                      const isLongText = valStr.length > 25;
+                      return (
+                        <div
+                          key={key}
+                          style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '2px',
+                            gridColumn: isLongText ? 'span 2' : 'auto',
+                          }}
+                        >
+                          <span style={{ color: '#666', fontSize: '10px', textTransform: 'uppercase' }}>{key}</span>
+                          <span style={{ color: '#ffffff', fontSize: '13px', fontWeight: '500', wordBreak: 'break-word' }}>
+                            {valStr}
+                          </span>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
 
-                {/* MADE IN ফিল্ডটি আলাদাভাবে নিচে */}
+                {/* MADE IN ফিল্ড */}
                 {madeInValue && (
                   <div
                     style={{
                       display: 'flex',
                       flexDirection: 'column',
                       gap: '2px',
-                      borderTop: Object.keys(otherDetails).length > 0 ? '1px solid #1a1a1a' : 'none',
-                      paddingTop: Object.keys(otherDetails).length > 0 ? '8px' : '0',
+                      borderTop: Object.keys(standardSpecs).length > 0 ? '1px solid #1a1a1a' : 'none',
+                      paddingTop: Object.keys(standardSpecs).length > 0 ? '8px' : '0',
                     }}
                   >
                     <span style={{ color: '#666', fontSize: '10px', textTransform: 'uppercase' }}>
@@ -278,19 +292,19 @@ export const ProductShowroomCard: React.FC<ProductShowroomCardProps> = ({
                   </div>
                 )}
 
-                {/* DETAILS ফিল্ডটি একদম নিচে সর্বশেষে */}
+                {/* DETAILS ফিল্ডটি সবার নিচে ফুল উইথ জুড়ে */}
                 {bottomDetailsValue && (
                   <div
                     style={{
                       display: 'flex',
                       flexDirection: 'column',
                       gap: '3px',
-                      borderTop: (Object.keys(otherDetails).length > 0 || madeInValue) ? '1px solid #1a1a1a' : 'none',
-                      paddingTop: (Object.keys(otherDetails).length > 0 || madeInValue) ? '8px' : '0',
+                      borderTop: (Object.keys(standardSpecs).length > 0 || madeInValue) ? '1px solid #1a1a1a' : 'none',
+                      paddingTop: (Object.keys(standardSpecs).length > 0 || madeInValue) ? '8px' : '0',
                     }}
                   >
                     <span style={{ color: '#666', fontSize: '10px', textTransform: 'uppercase' }}>DETAILS</span>
-                    <span style={{ color: '#ffffff', fontSize: '13px', lineHeight: '1.5' }}>
+                    <span style={{ color: '#ffffff', fontSize: '13px', lineHeight: '1.5', wordBreak: 'break-word' }}>
                       {String(bottomDetailsValue)}
                     </span>
                   </div>
