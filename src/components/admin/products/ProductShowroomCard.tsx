@@ -95,9 +95,9 @@ export const ProductShowroomCard: React.FC<ProductShowroomCardProps> = ({
         opacity: isHidden ? 0.6 : 1,
       }}
     >
-      {/* রো ০: তারিখ একাই একদম উপরে ডান পাশে */}
+      {/* রো ০: তারিখ একাই একদম উপরে ডান পাশে (উজ্জ্বল ধূসর রঙ) */}
       <div style={{ display: 'flex', justifyContent: 'flex-end', width: '100%' }}>
-        <span style={{ fontSize: '10px', color: '#555', fontFamily: 'sans-serif' }}>
+        <span style={{ fontSize: '10px', color: '#999', fontFamily: 'sans-serif' }}>
           {formatDate(product.created_at)}
         </span>
       </div>
@@ -168,7 +168,7 @@ export const ProductShowroomCard: React.FC<ProductShowroomCardProps> = ({
           style={{
             background: 'transparent',
             border: 'none',
-            color: '#888',
+            color: '#aaa',
             width: '28px',
             height: '28px',
             display: 'flex',
@@ -210,7 +210,7 @@ export const ProductShowroomCard: React.FC<ProductShowroomCardProps> = ({
         <div
           className="animate-fade-in"
           style={{
-            borderTop: '1px solid #161616',
+            borderTop: '1px solid #1f1f1f',
             paddingTop: '12px',
             marginTop: '6px',
             fontSize: '13px',
@@ -223,7 +223,7 @@ export const ProductShowroomCard: React.FC<ProductShowroomCardProps> = ({
         >
           {/* ১. পূর্ণাঙ্গ নাম */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-            <span style={{ fontSize: '10px', color: '#666', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            <span style={{ fontSize: '10px', color: '#999', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
               Full Name
             </span>
             <span style={{ color: '#ffffff', fontSize: '13px', lineHeight: '1.4' }}>
@@ -234,7 +234,7 @@ export const ProductShowroomCard: React.FC<ProductShowroomCardProps> = ({
           {/* ২. ডিসক্রিপশন */}
           {product.description && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-              <span style={{ fontSize: '10px', color: '#666', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              <span style={{ fontSize: '10px', color: '#999', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                 Description
               </span>
               <p style={{ margin: 0, lineHeight: '1.5', color: '#eeeeee', fontSize: '13px' }}>
@@ -246,7 +246,7 @@ export const ProductShowroomCard: React.FC<ProductShowroomCardProps> = ({
           {/* ৩. স্পেসিফিকেশন ও ডিটেইলস */}
           {((standardSpecs && Object.keys(standardSpecs).length > 0) || madeInValue || bottomDetailsValue) && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <span style={{ fontSize: '10px', color: '#666', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              <span style={{ fontSize: '10px', color: '#999', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                 Specifications
               </span>
 
@@ -258,7 +258,7 @@ export const ProductShowroomCard: React.FC<ProductShowroomCardProps> = ({
                   backgroundColor: '#040404',
                   padding: '12px',
                   borderRadius: '6px',
-                  border: '1px solid #141414',
+                  border: '1px solid #1a1a1a',
                 }}
               >
                 {/* সাইজ, কালার, ফিট ইত্যাদি ফিল্ডগুলো পাশাপাশি ২ কলামের গ্রিডে */}
@@ -283,7 +283,7 @@ export const ProductShowroomCard: React.FC<ProductShowroomCardProps> = ({
                             gridColumn: isLongText ? 'span 2' : 'auto',
                           }}
                         >
-                          <span style={{ color: '#666', fontSize: '10px', textTransform: 'uppercase' }}>
+                          <span style={{ color: '#999', fontSize: '10px', textTransform: 'uppercase' }}>
                             {key.replace(/_/g, ' ')}
                           </span>
                           <span style={{ color: '#ffffff', fontSize: '13px', fontWeight: '500', wordBreak: 'break-word' }}>
@@ -302,11 +302,11 @@ export const ProductShowroomCard: React.FC<ProductShowroomCardProps> = ({
                       display: 'flex',
                       flexDirection: 'column',
                       gap: '2px',
-                      borderTop: Object.keys(standardSpecs).length > 0 ? '1px solid #1a1a1a' : 'none',
+                      borderTop: Object.keys(standardSpecs).length > 0 ? '1px solid #222222' : 'none',
                       paddingTop: Object.keys(standardSpecs).length > 0 ? '8px' : '0',
                     }}
                   >
-                    <span style={{ color: '#666', fontSize: '10px', textTransform: 'uppercase' }}>
+                    <span style={{ color: '#999', fontSize: '10px', textTransform: 'uppercase' }}>
                       {madeInKey ? madeInKey.replace(/_/g, ' ') : 'MADE IN'}
                     </span>
                     <span style={{ color: '#ffffff', fontSize: '13px', fontWeight: '500' }}>
@@ -322,11 +322,11 @@ export const ProductShowroomCard: React.FC<ProductShowroomCardProps> = ({
                       display: 'flex',
                       flexDirection: 'column',
                       gap: '3px',
-                      borderTop: (Object.keys(standardSpecs).length > 0 || madeInValue) ? '1px solid #1a1a1a' : 'none',
+                      borderTop: (Object.keys(standardSpecs).length > 0 || madeInValue) ? '1px solid #222222' : 'none',
                       paddingTop: (Object.keys(standardSpecs).length > 0 || madeInValue) ? '8px' : '0',
                     }}
                   >
-                    <span style={{ color: '#666', fontSize: '10px', textTransform: 'uppercase' }}>DETAILS</span>
+                    <span style={{ color: '#999', fontSize: '10px', textTransform: 'uppercase' }}>DETAILS</span>
                     <span style={{ color: '#ffffff', fontSize: '13px', lineHeight: '1.5', wordBreak: 'break-word' }}>
                       {Array.isArray(bottomDetailsValue) ? bottomDetailsValue.join(', ') : String(bottomDetailsValue)}
                     </span>
