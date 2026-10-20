@@ -57,13 +57,14 @@ export const AdminMessages: React.FC<ExtendedAdminMessagesProps> = ({
   const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
   const targetUserIdFromUrl = searchParams.get('userId') || searchParams.get('recipientId');
 
+  // ইউআরএল থেকে সাইড-ইফেক্ট ছাড়া সেফলি প্যারামিটার রিমুভ করা
   const clearUserIdParam = () => {
     if (typeof window === 'undefined') return;
     const url = new URL(window.location.href);
     if (url.searchParams.has('userId') || url.searchParams.has('recipientId')) {
       url.searchParams.delete('userId');
       url.searchParams.delete('recipientId');
-      window.history.replaceState(window.history.state, '', url.toString());
+      window.history.replaceState(window.history.state, '', url.pathname + url.search);
     }
   };
 
@@ -144,16 +145,17 @@ export const AdminMessages: React.FC<ExtendedAdminMessagesProps> = ({
     };
   }, [activeThreadId]);
 
-  // ১-ট্যাপ ব্যাক নেভিগেশন (একবার ব্যাকেই আগের পেজে ফেরা)
+  // পারফেক্ট ব্যাক বাটন কন্ট্রোল (ফ্লিকারিং ও ডাবল রেন্ডারিং প্রতিরোধক)
   useEffect(() => {
     if (!activeThreadId) return;
 
-    // শুধুমাত্র যদি আগে থেকে হিস্ট্রি পুশ না করা থাকে তবেই একটি স্টেট যুক্ত করা
-    if (!window.history.state?.chatThreadActive) {
-      window.history.pushState({ chatThreadActive: true, threadId: activeThreadId }, '');
+    // চ্যাট ওপেন থাকার সময়ে কেবল একবার হিস্ট্রি পুশ
+    if (!window.history.state?.chatOpenState) {
+      window.history.pushState({ chatOpenState: true, threadId: activeThreadId }, '');
     }
 
-    const handlePopState = () => {
+    const handlePopState = (e: PopStateEvent) => {
+      e.stopImmediatePropagation();
       clearUserIdParam();
       handleSelectThread(null);
     };
@@ -162,7 +164,7 @@ export const AdminMessages: React.FC<ExtendedAdminMessagesProps> = ({
     return () => {
       window.removeEventListener('popstate', handlePopState);
     };
-  }, [activeThreadId]);
+  }, [activeThreadId, handleSelectThread]);
 
   const scrollToBottom = () => {
     if (chatContainerRef.current) {
@@ -236,10 +238,9 @@ export const AdminMessages: React.FC<ExtendedAdminMessagesProps> = ({
     );
   });
 
-  // সরাসরি চ্যাট ওপেন হওয়ার ফিল্টার
   const isOpeningDirectChat = Boolean(activeThreadId || targetUserIdFromUrl || propActiveThreadId);
 
-  // উন্নত পালসিং স্কেলিটন ಲೋഡর UI
+  // চ্যাট ওপেন থাকা অবস্থা বা ফেচ চলাকালে ফ্ল্যাশমুক্ত স্কেলিটন লোডার UI
   if (loading || (isOpeningDirectChat && !activeThread)) {
     return (
       <div
@@ -265,9 +266,7 @@ export const AdminMessages: React.FC<ExtendedAdminMessagesProps> = ({
         `}</style>
 
         {isOpeningDirectChat ? (
-          // স্টাফ বা অন্য জায়গা থেকে চ্যাট ওপেন করার সময় সরাসরি চ্যাট উইন্ডোর স্কেলিটন
           <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-            {/* চ্যাট হেডার স্কেলিটন */}
             <div
               className="skeleton-pulse"
               style={{
@@ -286,18 +285,15 @@ export const AdminMessages: React.FC<ExtendedAdminMessagesProps> = ({
               </div>
             </div>
 
-            {/* চ্যাট মেসেজ বাবল স্কেলিটন */}
             <div style={{ flex: 1, padding: '20px 0', display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div className="skeleton-pulse" style={{ alignSelf: 'flex-start', width: '55%', height: '40px', backgroundColor: '#18181b', borderRadius: '12px' }} />
               <div className="skeleton-pulse" style={{ alignSelf: 'flex-end', width: '65%', height: '52px', backgroundColor: '#27272a', borderRadius: '12px' }} />
               <div className="skeleton-pulse" style={{ alignSelf: 'flex-start', width: '45%', height: '36px', backgroundColor: '#18181b', borderRadius: '12px' }} />
             </div>
 
-            {/* ইনপুট বক্স স্কেলিটন */}
             <div className="skeleton-pulse" style={{ height: '48px', backgroundColor: '#18181b', borderRadius: '24px', border: '1px solid #27272a' }} />
           </div>
         ) : (
-          // সাধারণ মেসেজ ট্যাবে চ্যাট লিস্টের স্কেলিটন
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             {[1, 2, 3, 4, 5].map((item) => (
               <div
@@ -361,7 +357,7 @@ export const AdminMessages: React.FC<ExtendedAdminMessagesProps> = ({
             headerSubtitle={headerSubtitle}
             onBack={() => {
               clearUserIdParam();
-              if (window.history.state?.chatThreadActive) {
+              if (window.history.state?.chatOpenState) {
                 window.history.back();
               } else {
                 handleSelectThread(null);
