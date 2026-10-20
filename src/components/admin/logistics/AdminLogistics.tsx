@@ -49,7 +49,7 @@ export default function AdminLogistics() {
           return_status,
           status,
           created_at,
-          order_items:order_items (
+          order_items (
             id,
             product_id,
             quantity,
@@ -169,6 +169,7 @@ export default function AdminLogistics() {
       const currentReturnStatus = targetOrder.return_status || 'Pending';
       if (currentReturnStatus === newStatus) return;
 
+      // Update return_status in orders table
       const { error } = await supabase
         .from('orders')
         .update({ return_status: newStatus })
@@ -180,7 +181,8 @@ export default function AdminLogistics() {
       if (newStatus === 'Received' && currentReturnStatus !== 'Received') {
         if (targetOrder.order_items && targetOrder.order_items.length > 0) {
           for (const item of targetOrder.order_items) {
-            const qty = item.quantity || 1;
+            const qty = Number(item.quantity) || 1;
+
             if (item.product_id) {
               const { data: prodData } = await supabase
                 .from('products')
@@ -217,7 +219,8 @@ export default function AdminLogistics() {
       else if (currentReturnStatus === 'Received' && newStatus !== 'Received') {
         if (targetOrder.order_items && targetOrder.order_items.length > 0) {
           for (const item of targetOrder.order_items) {
-            const qty = item.quantity || 1;
+            const qty = Number(item.quantity) || 1;
+
             if (item.product_id) {
               const { data: prodData } = await supabase
                 .from('products')
