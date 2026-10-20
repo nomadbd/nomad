@@ -55,11 +55,16 @@ export const useAdminMessages = (
     const threadId = thread ? thread.id : null;
     setInternalActiveThreadId(threadId);
 
+    // যদি ইউজারটি আগে তৈরি হওয়া থ্রেডের তালিকায় না থাকে, তবে তাকে থ্রেডের তালিকায় যুক্ত করা
+    if (thread && !threads.some((t) => t.id === thread.id)) {
+      setThreads((prev) => [thread, ...prev]);
+    }
+
     if (thread && thread.unreadCount > 0) {
       markThreadAsRead(thread);
     }
 
-    if (thread && adminEmail) {
+    if (thread && adminEmail && thread.messages) {
       const unreadMsgs = thread.messages.filter((m) => {
         const readBy = Array.isArray(m.read_by) ? m.read_by : [];
         return !readBy.some((r) => r.user_email?.trim().toLowerCase() === adminEmail);
@@ -130,6 +135,7 @@ export const useAdminMessages = (
             masterUserMap[profileObj.id] = {
               id: profileObj.id,
               userName: profileObj.name || profileObj.email || 'User',
+              displayName: profileObj.name || profileObj.email,
               userEmail: profileObj.email,
               userPhone: '',
               role: profileObj.role,
@@ -179,6 +185,7 @@ export const useAdminMessages = (
             masterUserMap[ambKey] = {
               id: ambKey,
               userName: a.display_name || a.assigned_slug || a.token || 'Ambassador',
+              displayName: a.display_name || a.assigned_slug,
               userEmail: a.email ? a.email.trim().toLowerCase() : '',
               userPhone: a.phone || '',
               role: 'INVITED AMBASSADOR',
@@ -198,6 +205,7 @@ export const useAdminMessages = (
         all_staff: {
           id: 'all_staff',
           userName: 'Management Team',
+          displayName: 'Management Team',
           userEmail: '',
           userPhone: '',
           role: 'GROUP',
@@ -291,6 +299,7 @@ export const useAdminMessages = (
             threadMap[threadId] = {
               id: threadId,
               userName: displayName,
+              displayName: displayName,
               userEmail: userEmail,
               userPhone: userPhone,
               role: userRole,
@@ -315,6 +324,7 @@ export const useAdminMessages = (
             }
             if (displayName && threadMap[threadId].userName === threadId) {
               threadMap[threadId].userName = displayName;
+              threadMap[threadId].displayName = displayName;
             }
           }
 
@@ -453,7 +463,12 @@ export const useAdminMessages = (
     return matchesRole && matchesSearch;
   });
 
-  const activeThread = threads.find((t) => t.id === activeThreadId) || null;
+  // ১. প্রথমে থ্রেড লিস্ট থেকে এক্টিভ থ্রেড খোঁজা
+  // ২. না পাওয়া গেলে allUsers তালিকা থেকে খুঁজে থ্রেডের ফরম্যাটে রিটার্ন করা (নতুন ইউজার চ্যাটের জন্য)
+  const activeThread =
+    threads.find((t) => t.id === activeThreadId) ||
+    allUsers.find((u) => u.id === activeThreadId) ||
+    null;
 
   const handleSendMessage = async (e?: React.FormEvent, textareaRef?: React.RefObject<HTMLTextAreaElement>) => {
     if (e) e.preventDefault();
@@ -474,17 +489,30 @@ export const useAdminMessages = (
     };
 
     setThreads((prevThreads) => {
-      const updated = prevThreads.map((t) => {
-        if (t.id === activeThread.id) {
-          return {
-            ...t,
-            lastMessage: messageText,
-            lastMessageTime: nowIso,
-            messages: [...t.messages, newMsg],
-          };
-        }
-        return t;
-      });
+      const exists = prevThreads.some((t) => t.id === activeThread.id);
+      let updated: Thread[];
+
+      if (exists) {
+        updated = prevThreads.map((t) => {
+          if (t.id === activeThread.id) {
+            return {
+              ...t,
+              lastMessage: messageText,
+              lastMessageTime: nowIso,
+              messages: [...(t.messages || []), newMsg],
+            };
+          }
+          return t;
+        });
+      } else {
+        const newThreadObj: Thread = {
+          ...activeThread,
+          lastMessage: messageText,
+          lastMessageTime: nowIso,
+          messages: [newMsg],
+        };
+        updated = [newThreadObj, ...prevThreads];
+      }
 
       return updated.sort((a, b) => new Date(b.lastMessageTime).getTime() - new Date(a.lastMessageTime).getTime());
     });
