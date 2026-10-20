@@ -38,21 +38,34 @@ export const ProductShowroomCard: React.FC<ProductShowroomCardProps> = ({
 
   const isHidden = product.status === 'archived' || product.status === 'hidden';
 
-  // Details অবজেক্ট থেকে সব তথ্য নিরাপদভাবে প্রসেস করা
-  const detailsObj = (product.details || {}) as Record<string, any>;
-  
-  // 1. Details ফিল্ড আলাদা করা (যাতে এটি সবার নিচে যায়)
-  const { details: extraText1, DETAILS: extraText2, ...specsMap } = detailsObj;
+  // product.details এবং মূল product অবজেক্ট থেকে সাইজ ও কালারসহ সমস্ত ফিল্ড একত্রিত করা
+  const rawDetails = (product.details || {}) as Record<string, any>;
+  const mergedSpecs: Record<string, any> = { ...rawDetails };
+
+  // ১. সাইজ প্রপার্টি চেক ও মার্জ
+  const sizesData = (product as any).sizes || (product as any).available_sizes || rawDetails.sizes || rawDetails.SIZE || rawDetails.SIZES;
+  if (sizesData && !mergedSpecs.SIZE && !mergedSpecs.SIZES && !mergedSpecs.sizes) {
+    mergedSpecs['SIZES'] = Array.isArray(sizesData) ? sizesData.join(', ') : sizesData;
+  }
+
+  // ২. কালার প্রপার্টি চেক ও মার্জ
+  const colorsData = (product as any).colors || (product as any).available_colors || rawDetails.colors || rawDetails.COLOR || rawDetails.COLORS;
+  if (colorsData && !mergedSpecs.COLOR && !mergedSpecs.COLORS && !mergedSpecs.colors) {
+    mergedSpecs['COLORS'] = Array.isArray(colorsData) ? colorsData.join(', ') : colorsData;
+  }
+
+  // ৩. Details ফিল্ড আলাদা করা
+  const { details: extraText1, DETAILS: extraText2, ...specsMap } = mergedSpecs;
   const bottomDetailsValue = extraText1 || extraText2;
 
-  // 2. Made In ফিল্ড আলাদা করা (যাতে এটি ডিটেইলসের ঠিক উপরে থাকে)
+  // ৪. Made In ফিল্ড আলাদা করা
   const madeInEntry = Object.entries(specsMap).find(
     ([key]) => key.toLowerCase().replace(/_/g, ' ') === 'made in'
   );
   const madeInKey = madeInEntry ? madeInEntry[0] : null;
   const madeInValue = madeInEntry ? madeInEntry[1] : null;
 
-  // 3. বাকি সব স্পেসিফিকেশন (সাইজ, কালার, ফিট, জিএসএম ইত্যাদি)
+  // ৫. বাকি সব স্ট্যান্ডার্ড স্পেসিফিকেশনসমূহ
   const standardSpecs = Object.fromEntries(
     Object.entries(specsMap).filter(([key]) => key !== madeInKey)
   );
@@ -221,7 +234,7 @@ export const ProductShowroomCard: React.FC<ProductShowroomCardProps> = ({
             </div>
           )}
 
-          {/* ৩. স্পেসিফিকেশন ও ডিটেইলস (পাশাপাশি ২ কলাম বিন্যাস) */}
+          {/* ৩. স্পেসিফিকেশন ও ডিটেইলস */}
           {((standardSpecs && Object.keys(standardSpecs).length > 0) || madeInValue || bottomDetailsValue) && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <span style={{ fontSize: '10px', color: '#666', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
@@ -249,9 +262,8 @@ export const ProductShowroomCard: React.FC<ProductShowroomCardProps> = ({
                     }}
                   >
                     {Object.entries(standardSpecs).map(([key, value]) => {
-                      const valStr = String(value);
-                      // যদি লেখা অনেক বড় হয় (যেমন কমা দিয়ে অনেকগুলো কালার বা সাইজ), তবে তা যেন পুরো রো জুড়ে (২ কলাম মিলে) দেখায়
-                      const isLongText = valStr.length > 25;
+                      const valStr = Array.isArray(value) ? value.join(', ') : String(value ?? '');
+                      const isLongText = valStr.length > 20;
                       return (
                         <div
                           key={key}
@@ -262,7 +274,9 @@ export const ProductShowroomCard: React.FC<ProductShowroomCardProps> = ({
                             gridColumn: isLongText ? 'span 2' : 'auto',
                           }}
                         >
-                          <span style={{ color: '#666', fontSize: '10px', textTransform: 'uppercase' }}>{key}</span>
+                          <span style={{ color: '#666', fontSize: '10px', textTransform: 'uppercase' }}>
+                            {key.replace(/_/g, ' ')}
+                          </span>
                           <span style={{ color: '#ffffff', fontSize: '13px', fontWeight: '500', wordBreak: 'break-word' }}>
                             {valStr}
                           </span>
@@ -287,7 +301,7 @@ export const ProductShowroomCard: React.FC<ProductShowroomCardProps> = ({
                       {madeInKey ? madeInKey.replace(/_/g, ' ') : 'MADE IN'}
                     </span>
                     <span style={{ color: '#ffffff', fontSize: '13px', fontWeight: '500' }}>
-                      {String(madeInValue)}
+                      {Array.isArray(madeInValue) ? madeInValue.join(', ') : String(madeInValue)}
                     </span>
                   </div>
                 )}
@@ -305,7 +319,7 @@ export const ProductShowroomCard: React.FC<ProductShowroomCardProps> = ({
                   >
                     <span style={{ color: '#666', fontSize: '10px', textTransform: 'uppercase' }}>DETAILS</span>
                     <span style={{ color: '#ffffff', fontSize: '13px', lineHeight: '1.5', wordBreak: 'break-word' }}>
-                      {String(bottomDetailsValue)}
+                      {Array.isArray(bottomDetailsValue) ? bottomDetailsValue.join(', ') : String(bottomDetailsValue)}
                     </span>
                   </div>
                 )}
