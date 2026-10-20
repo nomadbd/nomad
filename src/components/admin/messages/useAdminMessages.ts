@@ -7,9 +7,19 @@ export const useAdminMessages = (
   propActiveThreadId: string | null,
   onSelectThread?: (id: string | null, thread?: Thread | null) => void
 ) => {
+  // URL থেকে সরাসরি প্রাথমিক activeThreadId বের করে নেওয়া (Zero-Flash এর জন্য)
+  const getInitialThreadId = () => {
+    if (propActiveThreadId) return propActiveThreadId;
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('userId') || params.get('recipientId') || null;
+    }
+    return null;
+  };
+
   const [threads, setThreads] = useState<Thread[]>([]);
   const [allUsers, setAllUsers] = useState<any[]>([]);
-  const [internalActiveThreadId, setInternalActiveThreadId] = useState<string | null>(propActiveThreadId);
+  const [internalActiveThreadId, setInternalActiveThreadId] = useState<string | null>(getInitialThreadId());
   const [roleFilter, setRoleFilter] = useState<string>('ALL');
   const [inputText, setInputText] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
@@ -18,7 +28,9 @@ export const useAdminMessages = (
   const [adminEmail, setAdminEmail] = useState<string>('');
 
   useEffect(() => {
-    setInternalActiveThreadId(propActiveThreadId);
+    if (propActiveThreadId !== undefined && propActiveThreadId !== null) {
+      setInternalActiveThreadId(propActiveThreadId);
+    }
   }, [propActiveThreadId]);
 
   useEffect(() => {
@@ -55,7 +67,6 @@ export const useAdminMessages = (
     const threadId = thread ? thread.id : null;
     setInternalActiveThreadId(threadId);
 
-    // যদি ইউজারটি আগে তৈরি হওয়া থ্রেডের তালিকায় না থাকে, তবে তাকে থ্রেডের তালিকায় যুক্ত করা
     if (thread && !threads.some((t) => t.id === thread.id)) {
       setThreads((prev) => [thread, ...prev]);
     }
@@ -157,9 +168,7 @@ export const useAdminMessages = (
       if (ambRes.data) {
         ambRes.data.forEach((a: any) => {
           const isExpired = a.expires_at && new Date(a.expires_at) < now;
-          if (!a.is_registered && isExpired) {
-            return;
-          }
+          if (!a.is_registered && isExpired) return;
 
           const ambObj = {
             id: a.id,
@@ -342,28 +351,39 @@ export const useAdminMessages = (
           threadMap[threadId].lastMessage = item.message || '';
           threadMap[threadId].lastMessageTime = rawCreatedAt;
         });
-
-        const updatedThreads = Object.values(threadMap).sort((a, b) => {
-          const timeA = new Date(a.lastMessageTime).getTime();
-          const timeB = new Date(b.lastMessageTime).getTime();
-          return timeB - timeA;
-        });
-
-        setThreads(updatedThreads);
-
-        updatedThreads.forEach((t) => {
-          if (t.id !== 'all_staff') {
-            masterUserMap[t.id] = { ...masterUserMap[t.id], ...t };
-          }
-        });
-
-        const allUsersList = [
-          threadMap['all_staff'],
-          ...Object.values(masterUserMap),
-        ];
-
-        setAllUsers(allUsersList);
       }
+
+      // ব্যাকএন্ডে মেসেজ না থাকা ইউজারদেরও masterUserMap থেকে threads-এ যুক্ত করা (Unified Model)
+      Object.values(masterUserMap).forEach((userObj: any) => {
+        if (!threadMap[userObj.id]) {
+          threadMap[userObj.id] = {
+            id: userObj.id,
+            userName: userObj.userName,
+            displayName: userObj.displayName,
+            userEmail: userObj.userEmail,
+            userPhone: userObj.userPhone,
+            role: userObj.role,
+            designation: userObj.designation,
+            avatarUrl: userObj.avatarUrl,
+            createdAt: userObj.createdAt,
+            inviteSentAt: '',
+            unreadCount: 0,
+            lastMessage: '',
+            lastMessageTime: '',
+            messages: [],
+          };
+        }
+      });
+
+      const updatedThreads = Object.values(threadMap).sort((a, b) => {
+        const timeA = new Date(a.lastMessageTime || 0).getTime();
+        const timeB = new Date(b.lastMessageTime || 0).getTime();
+        return timeB - timeA;
+      });
+
+      setThreads(updatedThreads);
+      setAllUsers(Object.values(masterUserMap));
+
     } catch (err: any) {
       console.error('Fetch error:', err);
       setErrorMsg(err.message || 'FAILED TO LOAD COMMUNICATIONS');
@@ -416,7 +436,7 @@ export const useAdminMessages = (
                   };
                 }
                 return t;
-              }).sort((a, b) => new Date(b.lastMessageTime).getTime() - new Date(a.lastMessageTime).getTime());
+              }).sort((a, b) => new Date(b.lastMessageTime || 0).getTime() - new Date(a.lastMessageTime || 0).getTime());
             });
           } else {
             fetchCommunicationsAndUsers(true);
@@ -463,8 +483,6 @@ export const useAdminMessages = (
     return matchesRole && matchesSearch;
   });
 
-  // ১. প্রথমে থ্রেড লিস্ট থেকে এক্টিভ থ্রেড খোঁজা
-  // ২. না পাওয়া গেলে allUsers তালিকা থেকে খুঁজে থ্রেডের ফরম্যাটে রিটার্ন করা (নতুন ইউজার চ্যাটের জন্য)
   const activeThread =
     threads.find((t) => t.id === activeThreadId) ||
     allUsers.find((u) => u.id === activeThreadId) ||
@@ -510,11 +528,12 @@ export const useAdminMessages = (
           lastMessage: messageText,
           lastMessageTime: nowIso,
           messages: [newMsg],
+          unreadCount: 0,
         };
         updated = [newThreadObj, ...prevThreads];
       }
 
-      return updated.sort((a, b) => new Date(b.lastMessageTime).getTime() - new Date(a.lastMessageTime).getTime());
+      return updated.sort((a, b) => new Date(b.lastMessageTime || 0).getTime() - new Date(a.lastMessageTime || 0).getTime());
     });
 
     setInputText('');
