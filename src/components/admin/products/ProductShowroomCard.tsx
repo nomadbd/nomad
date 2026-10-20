@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Product } from './products.types';
 import { ProductMediaViewer } from './ProductMediaViewer';
 import { ProductActionToolbar } from './ProductActionToolbar';
+import { ChevronDownIcon } from '../../icons';
 
 interface ProductShowroomCardProps {
   product: Product;
@@ -46,30 +47,21 @@ export const ProductShowroomCard: React.FC<ProductShowroomCardProps> = ({
         border: '1px solid #1a1a1a',
         borderRadius: '6px',
         marginBottom: '8px',
-        padding: '12px 14px',
+        padding: '10px 12px',
         boxSizing: 'border-box',
         display: 'flex',
         flexDirection: 'column',
-        gap: '10px',
+        gap: '8px',
         opacity: isHidden ? 0.6 : 1,
       }}
     >
-      {/* মূল রো কন্ট্রোল - এক নজরে সব তথ্য */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '12px',
-          width: '100%',
-        }}
-      >
-        {/* প্রডাক্ট থাম্বনেইল ছবি ও ইনফো (বাম পাশ) */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
+      {/* রো ১: ছবি + নাম + ড্রপডাউন অ্যারো */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', width: '100%' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 }}>
           <div
             style={{
-              width: '52px',
-              height: '52px',
+              width: '44px',
+              height: '44px',
               borderRadius: '6px',
               overflow: 'hidden',
               flexShrink: 0,
@@ -80,84 +72,94 @@ export const ProductShowroomCard: React.FC<ProductShowroomCardProps> = ({
             <ProductMediaViewer media={mediaList} productName={product.name} />
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 }}>
-            {/* প্রডাক্ট নাম ও হিডেন স্ট্যাটাস */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
-              <h4
-                style={{
-                  fontSize: '13px',
-                  color: '#fff',
-                  margin: 0,
-                  fontWeight: '600',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  flex: 1,
-                  minWidth: 0,
-                }}
-                title={product.name}
-              >
-                {product.name}
-              </h4>
-              {isHidden && (
-                <span
-                  style={{
-                    fontSize: '9px',
-                    fontFamily: 'monospace',
-                    backgroundColor: 'rgba(239, 68, 68, 0.15)',
-                    color: '#ef4444',
-                    padding: '2px 6px',
-                    borderRadius: '4px',
-                    flexShrink: 0,
-                  }}
-                >
-                  HIDDEN
-                </span>
-              )}
-            </div>
-
-            {/* নামের নিচে দাম এবং দাম বরাবর ডানে তারিখ */}
-            <div
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, minWidth: 0 }}>
+            <h4
               style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                marginTop: '4px',
-                fontFamily: 'monospace',
-                width: '100%',
+                fontSize: '13px',
+                color: '#fff',
+                margin: 0,
+                fontWeight: '600',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                flex: 1,
+                minWidth: 0,
               }}
+              title={product.name}
             >
-              <span style={{ fontSize: '13px', color: '#fff', fontWeight: 'bold' }}>
-                ৳{product.price}
+              {product.name}
+            </h4>
+            {isHidden && (
+              <span
+                style={{
+                  fontSize: '9px',
+                  fontFamily: 'monospace',
+                  backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                  color: '#ef4444',
+                  padding: '2px 6px',
+                  borderRadius: '4px',
+                  flexShrink: 0,
+                }}
+              >
+                HIDDEN
               </span>
-              <span style={{ fontSize: '10px', color: '#666' }}>
-                {formatDate(product.created_at)}
-              </span>
-            </div>
+            )}
           </div>
         </div>
 
-        {/* অ্যাকশন টুলবার (বক্স আইকন, এডিট, শেয়ার এবং ড্রপডাউন) */}
-        <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
-          <ProductActionToolbar
-            product={product}
-            onUpdateStock={onUpdateStock}
-            onEdit={onEdit}
-            onUnhide={onUnhide}
-            isExpanded={isExpanded}
-            onToggleExpand={() => setIsExpanded(!isExpanded)}
+        {/* প্রিমিয়াম ড্রপডাউন টগল আইকন */}
+        <button
+          type="button"
+          onClick={() => setIsExpanded(!isExpanded)}
+          title={isExpanded ? 'Hide Details' : 'Show Details'}
+          style={{
+            background: 'transparent',
+            border: 'none',
+            color: '#888',
+            width: '28px',
+            height: '28px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            padding: 0,
+            flexShrink: 0,
+          }}
+        >
+          <ChevronDownIcon
+            size={16}
+            color="currentColor"
+            style={{
+              transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+              transition: 'transform 0.2s ease',
+            }}
           />
-        </div>
+        </button>
       </div>
 
-      {/* প্রসারিত ভিউ (যদি ডেসক্রিপশন বা ডিটেইলস দেখতে চায়) */}
+      {/* রো ২: বামে দাম ও তারিখ, ডানে অ্যাকশন আইকনসমূহ */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', width: '100%', marginTop: '2px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontFamily: 'monospace' }}>
+          <span style={{ fontSize: '13px', color: '#fff', fontWeight: 'bold' }}>৳{product.price}</span>
+          <span style={{ fontSize: '10px', color: '#555' }}>{formatDate(product.created_at)}</span>
+        </div>
+
+        <ProductActionToolbar
+          product={product}
+          onUpdateStock={onUpdateStock}
+          onEdit={onEdit}
+          onUnhide={onUnhide}
+        />
+      </div>
+
+      {/* বিস্তারিত অংশ (এক্সপ্যান্ড করলে আসবে) */}
       {isExpanded && (
         <div
           className="animate-fade-in"
           style={{
             borderTop: '1px solid #161616',
             paddingTop: '10px',
-            marginTop: '2px',
+            marginTop: '4px',
             fontSize: '12px',
             color: '#aaa',
           }}
