@@ -38,6 +38,11 @@ export const ProductShowroomCard: React.FC<ProductShowroomCardProps> = ({
 
   const isHidden = product.status === 'archived' || product.status === 'hidden';
 
+  // Details অবজেক্ট থেকে 'details' কি এবং অন্যান্য স্পেসিফিকেশন পৃথক করা
+  const detailsObj = product.details || {};
+  const { details: extraDetailsText, DETAILS: extraDetailsTextCaps, ...otherDetails } = detailsObj as Record<string, any>;
+  const bottomDetailsValue = extraDetailsText || extraDetailsTextCaps;
+
   return (
     <div
       className="admin-product-row smooth-transition"
@@ -164,7 +169,7 @@ export const ProductShowroomCard: React.FC<ProductShowroomCardProps> = ({
         />
       </div>
 
-      {/* বিস্তারিত অংশ - ধারাবাহিক সাজানো ও সাধারণ রেগুলার ফন্ট */}
+      {/* বিস্তারিত অংশ */}
       {isExpanded && (
         <div
           className="animate-fade-in"
@@ -172,8 +177,8 @@ export const ProductShowroomCard: React.FC<ProductShowroomCardProps> = ({
             borderTop: '1px solid #161616',
             paddingTop: '12px',
             marginTop: '6px',
-            fontSize: '12px',
-            color: '#ccc',
+            fontSize: '13px',
+            color: '#eee',
             fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
             display: 'flex',
             flexDirection: 'column',
@@ -181,50 +186,80 @@ export const ProductShowroomCard: React.FC<ProductShowroomCardProps> = ({
           }}
         >
           {/* ১. পূর্ণাঙ্গ নাম */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
             <span style={{ fontSize: '10px', color: '#666', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
               Full Name
             </span>
-            <span style={{ color: '#fff', fontSize: '13px', lineHeight: '1.4' }}>
+            <span style={{ color: '#ffffff', fontSize: '13px', lineHeight: '1.4' }}>
               {product.name}
             </span>
           </div>
 
-          {/* ২. শর্ট ডেসক্রিপশন */}
+          {/* ২. ডিসক্রিপশন (স্পষ্ট ও উজ্জ্বল সাদা ফন্টে) */}
           {product.description && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
               <span style={{ fontSize: '10px', color: '#666', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                 Description
               </span>
-              <p style={{ margin: 0, lineHeight: '1.5', color: '#bbb', fontSize: '12px' }}>
+              <p style={{ margin: 0, lineHeight: '1.5', color: '#eeeeee', fontSize: '13px' }}>
                 {product.description}
               </p>
             </div>
           )}
 
-          {/* ৩. স্পেসিফিকেশন/ডিটেইলস (সবার নিচে) */}
-          {product.details && Object.keys(product.details).length > 0 && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          {/* ৩. স্পেসিফিকেশন এবং ডিটেইলস অংশ */}
+          {((otherDetails && Object.keys(otherDetails).length > 0) || bottomDetailsValue) && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <span style={{ fontSize: '10px', color: '#666', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                 Specifications
               </span>
+
               <div
                 style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))',
-                  gap: '8px 12px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '10px',
                   backgroundColor: '#040404',
-                  padding: '10px 12px',
+                  padding: '12px',
                   borderRadius: '6px',
                   border: '1px solid #141414',
                 }}
               >
-                {Object.entries(product.details).map(([key, value]) => (
-                  <div key={key} style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
-                    <span style={{ color: '#666', fontSize: '10px', textTransform: 'uppercase' }}>{key}</span>
-                    <span style={{ color: '#ddd', fontSize: '12px', fontWeight: '500' }}>{String(value)}</span>
+                {/* সাধারণ কি-ভ্যালু স্পেসিফিকেশনসমূহ */}
+                {Object.keys(otherDetails).length > 0 && (
+                  <div
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))',
+                      gap: '10px 14px',
+                    }}
+                  >
+                    {Object.entries(otherDetails).map(([key, value]) => (
+                      <div key={key} style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                        <span style={{ color: '#666', fontSize: '10px', textTransform: 'uppercase' }}>{key}</span>
+                        <span style={{ color: '#ffffff', fontSize: '13px', fontWeight: '500' }}>{String(value)}</span>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                )}
+
+                {/* DETAILS ফিল্ডটি একদম নিচে পৃথকভাবে দেখানো হলো */}
+                {bottomDetailsValue && (
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '3px',
+                      borderTop: Object.keys(otherDetails).length > 0 ? '1px solid #1a1a1a' : 'none',
+                      paddingTop: Object.keys(otherDetails).length > 0 ? '8px' : '0',
+                    }}
+                  >
+                    <span style={{ color: '#666', fontSize: '10px', textTransform: 'uppercase' }}>DETAILS</span>
+                    <span style={{ color: '#ffffff', fontSize: '13px', lineHeight: '1.5' }}>
+                      {String(bottomDetailsValue)}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           )}
