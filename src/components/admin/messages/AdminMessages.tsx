@@ -53,6 +53,52 @@ export const AdminMessages: React.FC<ExtendedAdminMessagesProps> = ({
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  // --- URL Search Params (userId) অটো-ডিটেক্ট করে চ্যাট ওপেন করার লজিক ---
+  useEffect(() => {
+    if (loading) return;
+
+    const searchParams = new URLSearchParams(window.location.search);
+    const targetUserId = searchParams.get('userId') || searchParams.get('recipientId');
+
+    if (targetUserId && !activeThreadId) {
+      // প্রথমে থ্রেডের ভেতর আইডি দিয়ে খোঁজা
+      let matchingThread = filteredThreads.find(
+        (t: any) =>
+          t.id === targetUserId ||
+          t.userId === targetUserId ||
+          t.user_id === targetUserId ||
+          t.email?.toLowerCase() === targetUserId.toLowerCase() ||
+          t.userEmail?.toLowerCase() === targetUserId.toLowerCase()
+      );
+
+      // থ্রেডে না পাওয়া গেলে allUsers তালিকা থেকে ইউজার খোঁজা
+      if (!matchingThread && allUsers && allUsers.length > 0) {
+        const foundUser = allUsers.find(
+          (u: any) =>
+            u.id === targetUserId ||
+            u.email?.toLowerCase() === targetUserId.toLowerCase()
+        );
+
+        if (foundUser) {
+          matchingThread = {
+            id: foundUser.id,
+            userId: foundUser.id,
+            userName: foundUser.name || foundUser.userName || foundUser.email,
+            displayName: foundUser.name || foundUser.displayName,
+            userEmail: foundUser.email,
+            role: foundUser.role,
+            designation: foundUser.designation,
+            messages: [],
+          };
+        }
+      }
+
+      if (matchingThread) {
+        handleSelectThread(matchingThread);
+      }
+    }
+  }, [loading, filteredThreads, allUsers, activeThreadId, handleSelectThread]);
+
   const formatThreadTime = (dateInput?: string | number | Date) => {
     if (!dateInput) return '';
     const date = new Date(dateInput);
@@ -137,7 +183,7 @@ export const AdminMessages: React.FC<ExtendedAdminMessagesProps> = ({
       window.addEventListener('popstate', handlePopState);
       return () => window.removeEventListener('popstate', handlePopState);
     }
-  }, [activeThreadId]);
+  }, [activeThreadId, handleSelectThread]);
 
   const scrollToBottom = () => {
     if (chatContainerRef.current) {
@@ -155,7 +201,7 @@ export const AdminMessages: React.FC<ExtendedAdminMessagesProps> = ({
         clearTimeout(t2);
       };
     }
-  }, [activeThreadId, activeThread?.messages.length, viewportHeight]);
+  }, [activeThreadId, activeThread?.messages?.length, viewportHeight]);
 
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return 'N/A';
