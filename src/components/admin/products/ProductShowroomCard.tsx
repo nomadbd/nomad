@@ -35,11 +35,6 @@ export const ProductShowroomCard: React.FC<ProductShowroomCardProps> = ({
     return `${y}-${m}-${day}`;
   };
 
-  const formatId = (id: string | number) => {
-    const s = String(id);
-    return s.length > 8 ? s.slice(0, 8) + '...' : s;
-  };
-
   const isHidden = product.status === 'archived' || product.status === 'hidden';
 
   return (
@@ -51,7 +46,7 @@ export const ProductShowroomCard: React.FC<ProductShowroomCardProps> = ({
         border: '1px solid #1a1a1a',
         borderRadius: '6px',
         marginBottom: '8px',
-        padding: '10px 14px',
+        padding: '12px 14px',
         boxSizing: 'border-box',
         display: 'flex',
         flexDirection: 'column',
@@ -64,13 +59,13 @@ export const ProductShowroomCard: React.FC<ProductShowroomCardProps> = ({
         style={{
           display: 'flex',
           alignItems: 'center',
-          justify: 'space-between',
+          justifyContent: 'space-between',
           gap: '12px',
-          flexWrap: 'wrap',
+          width: '100%',
         }}
       >
-        {/* প্রোডাক্ট থাম্বনেইল ছবি ও প্রাথমিক তথ্য */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: '1 1 240px', minWidth: '0' }}>
+        {/* প্রডাক্ট থাম্বনেইল ছবি ও ইনফো (বাম পাশ) */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
           <div
             style={{
               width: '52px',
@@ -85,8 +80,9 @@ export const ProductShowroomCard: React.FC<ProductShowroomCardProps> = ({
             <ProductMediaViewer media={mediaList} productName={product.name} />
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', minWidth: '0' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 }}>
+            {/* প্রডাক্ট নাম ও হিডেন স্ট্যাটাস */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
               <h4
                 style={{
                   fontSize: '13px',
@@ -96,7 +92,10 @@ export const ProductShowroomCard: React.FC<ProductShowroomCardProps> = ({
                   whiteSpace: 'nowrap',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
+                  flex: 1,
+                  minWidth: 0,
                 }}
+                title={product.name}
               >
                 {product.name}
               </h4>
@@ -109,6 +108,7 @@ export const ProductShowroomCard: React.FC<ProductShowroomCardProps> = ({
                     color: '#ef4444',
                     padding: '2px 6px',
                     borderRadius: '4px',
+                    flexShrink: 0,
                   }}
                 >
                   HIDDEN
@@ -116,44 +116,29 @@ export const ProductShowroomCard: React.FC<ProductShowroomCardProps> = ({
               )}
             </div>
 
+            {/* নামের নিচে দাম এবং দাম বরাবর ডানে তারিখ */}
             <div
               style={{
-                fontSize: '10px',
-                color: '#666',
-                fontFamily: 'monospace',
-                marginTop: '3px',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '8px',
+                justifyContent: 'space-between',
+                marginTop: '4px',
+                fontFamily: 'monospace',
+                width: '100%',
               }}
             >
-              <span>ID: {formatId(product.id)}</span>
-              <span>•</span>
-              <span>{formatDate(product.created_at)}</span>
+              <span style={{ fontSize: '13px', color: '#fff', fontWeight: 'bold' }}>
+                ৳{product.price}
+              </span>
+              <span style={{ fontSize: '10px', color: '#666' }}>
+                {formatDate(product.created_at)}
+              </span>
             </div>
           </div>
         </div>
 
-        {/* প্রাইস ও ক্যাটাগরি পিল */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '15px',
-            flexShrink: 0,
-            fontFamily: 'monospace',
-          }}
-        >
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: '13px', color: '#fff', fontWeight: 'bold' }}>৳{product.price}</div>
-            <div style={{ fontSize: '9px', color: '#555', textTransform: 'uppercase' }}>
-              {product.category || 'GENERAL'}
-            </div>
-          </div>
-        </div>
-
-        {/* টুলবার কম্পোনেন্ট (এডিট, শেয়ার এবং ড্রপডাউন আইকনসহ সব এক জায়গায়) */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+        {/* অ্যাকশন টুলবার (বক্স আইকন, এডিট, শেয়ার এবং ড্রপডাউন) */}
+        <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
           <ProductActionToolbar
             product={product}
             onUpdateStock={onUpdateStock}
@@ -172,7 +157,7 @@ export const ProductShowroomCard: React.FC<ProductShowroomCardProps> = ({
           style={{
             borderTop: '1px solid #161616',
             paddingTop: '10px',
-            marginTop: '4px',
+            marginTop: '2px',
             fontSize: '12px',
             color: '#aaa',
           }}
