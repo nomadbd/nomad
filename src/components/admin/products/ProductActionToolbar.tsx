@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Product } from './products.types';
-import { ShareIcon, EditIcon, ChevronDownIcon } from './icons'; // আপনার সেন্ট্রাল আইকন ফাইল থেকে ইম্পোর্ট করা হলো
+import { ShareIcon, EditIcon, ChevronDownIcon } from '../../icons'; 
 
 interface ProductActionToolbarProps {
   product: Product;
