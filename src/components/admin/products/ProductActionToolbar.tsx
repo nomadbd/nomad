@@ -155,13 +155,13 @@ export const ProductActionToolbar: React.FC<ProductActionToolbarProps> = ({
             display: 'flex',
             alignItems: 'center',
             gap: '8px',
-            backgroundColor: '#0d0d0d',
-            padding: '2px 8px',
-            borderRadius: '6px',
-            border: '1px solid #262626',
+            backgroundColor: 'transparent',
+            padding: 0,
+            border: 'none',
             boxSizing: 'border-box',
           }}
         >
+          {/* একদম বক্সমুক্ত, বর্ডারহীন মিনিমাল ইনপুট */}
           <input
             ref={inputRef}
             type="number"
@@ -170,18 +170,19 @@ export const ProductActionToolbar: React.FC<ProductActionToolbarProps> = ({
             onChange={(e) => setStockInput(e.target.value)}
             onKeyDown={handleKeyDown}
             style={{
-              width: '50px',
-              height: '26px',
-              background: '#000000',
+              width: '38px',
+              height: '28px',
+              background: 'transparent',
               color: '#ffffff',
-              border: '1px solid #333333',
-              borderRadius: '4px',
+              border: 'none',
+              borderBottom: '1px solid #444',
+              borderRadius: '0',
               textAlign: 'center',
-              fontSize: '12px',
+              fontSize: '13px',
               fontWeight: '600',
-              fontFamily: 'system-ui, sans-serif',
+              fontFamily: 'monospace',
               outline: 'none',
-              padding: '0 4px',
+              padding: '0 2px',
             }}
           />
 
@@ -195,8 +196,8 @@ export const ProductActionToolbar: React.FC<ProductActionToolbarProps> = ({
               fontWeight: '700',
               letterSpacing: '0.5px',
               cursor: 'pointer',
-              padding: '0 4px',
-              height: '26px',
+              padding: '0 2px',
+              height: '28px',
               display: 'flex',
               alignItems: 'center',
             }}
