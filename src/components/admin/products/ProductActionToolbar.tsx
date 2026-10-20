@@ -64,7 +64,7 @@ export const ProductActionToolbar: React.FC<ProductActionToolbarProps> = ({
                   padding: '0 4px',
                   display: 'flex',
                   alignItems: 'center',
-                  justify: 'center',
+                  justifyContent: 'center',
                   boxSizing: 'border-box',
                   background: 'transparent',
                   border: 'none',
@@ -171,7 +171,7 @@ export const ProductActionToolbar: React.FC<ProductActionToolbarProps> = ({
                 onMouseLeave={(e) => { e.currentTarget.style.color = '#aaa'; }}
               >
                 <ChevronDownIcon
-                  size={14}
+                  size={16}
                   color="currentColor"
                   style={{
                     transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
