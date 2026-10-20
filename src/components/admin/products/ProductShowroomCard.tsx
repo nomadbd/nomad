@@ -38,11 +38,9 @@ export const ProductShowroomCard: React.FC<ProductShowroomCardProps> = ({
 
   const isHidden = product.status === 'archived' || product.status === 'hidden';
 
-  // product.details এবং মূল product অবজেক্ট থেকে সাইজ ও কালারসহ সমস্ত ফিল্ড একত্রিত করা
   const rawDetails = (product.details || {}) as Record<string, any>;
   const mergedSpecs: Record<string, any> = { ...rawDetails };
 
-  // হেলপার ফাংশন: ভ্যালু টি খালি/ফাঁকা কি না তা নিখুঁতভাবে চেক করার জন্য
   const hasValidValue = (val: any) => {
     if (val === null || val === undefined) return false;
     if (typeof val === 'string' && val.trim() === '') return false;
@@ -50,30 +48,25 @@ export const ProductShowroomCard: React.FC<ProductShowroomCardProps> = ({
     return true;
   };
 
-  // ১. সাইজ প্রপার্টি চেক ও মার্জ (কেবল ভ্যালু থাকলে যুক্ত হবে)
   const sizesData = (product as any).sizes || (product as any).available_sizes || rawDetails.sizes || rawDetails.SIZE || rawDetails.SIZES;
   if (hasValidValue(sizesData) && !mergedSpecs.SIZE && !mergedSpecs.SIZES && !mergedSpecs.sizes) {
     mergedSpecs['SIZES'] = Array.isArray(sizesData) ? sizesData.join(', ') : sizesData;
   }
 
-  // ২. কালার প্রপার্টি চেক ও মার্জ (কেবল ভ্যালু থাকলে যুক্ত হবে)
   const colorsData = (product as any).colors || (product as any).available_colors || rawDetails.colors || rawDetails.COLOR || rawDetails.COLORS;
   if (hasValidValue(colorsData) && !mergedSpecs.COLOR && !mergedSpecs.COLORS && !mergedSpecs.colors) {
     mergedSpecs['COLORS'] = Array.isArray(colorsData) ? colorsData.join(', ') : colorsData;
   }
 
-  // ৩. Details ফিল্ড আলাদা করা
   const { details: extraText1, DETAILS: extraText2, ...specsMap } = mergedSpecs;
   const bottomDetailsValue = hasValidValue(extraText1) ? extraText1 : hasValidValue(extraText2) ? extraText2 : null;
 
-  // ৪. Made In ফিল্ড আলাদা করা
   const madeInEntry = Object.entries(specsMap).find(
     ([key, val]) => key.toLowerCase().replace(/_/g, ' ') === 'made in' && hasValidValue(val)
   );
   const madeInKey = madeInEntry ? madeInEntry[0] : null;
   const madeInValue = madeInEntry ? madeInEntry[1] : null;
 
-  // ৫. বাকি সব বৈধ স্ট্যান্ডার্ড স্পেসিফিকেশনসমূহ (যেগুলোর ভ্যালু ফাঁকা নয়)
   const standardSpecs = Object.fromEntries(
     Object.entries(specsMap).filter(([key, value]) => key !== madeInKey && hasValidValue(value))
   );
@@ -95,14 +88,12 @@ export const ProductShowroomCard: React.FC<ProductShowroomCardProps> = ({
         opacity: isHidden ? 0.6 : 1,
       }}
     >
-      {/* রো ০: তারিখ একাই একদম উপরে ডান পাশে (উজ্জ্বল ধূসর রঙ) */}
       <div style={{ display: 'flex', justifyContent: 'flex-end', width: '100%' }}>
         <span style={{ fontSize: '10px', color: '#999', fontFamily: 'sans-serif' }}>
           {formatDate(product.created_at)}
         </span>
       </div>
 
-      {/* রো ১: ছবির পাশে নাম এবং ড্রপডাউন অ্যারো */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '10px', width: '100%' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', flex: 1, minWidth: 0 }}>
           <div
@@ -160,7 +151,6 @@ export const ProductShowroomCard: React.FC<ProductShowroomCardProps> = ({
           </div>
         </div>
 
-        {/* ড্রপডাউন টগল আইকন (নামের প্রথম লাইনের সোজাসুজি সারিবদ্ধ) */}
         <button
           type="button"
           onClick={() => setIsExpanded(!isExpanded)}
@@ -191,10 +181,23 @@ export const ProductShowroomCard: React.FC<ProductShowroomCardProps> = ({
         </button>
       </div>
 
-      {/* রো ২: ছবির নিচে দাম ও অ্যাকশন আইকন */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', width: '100%', marginTop: '2px' }}>
-        <div style={{ display: 'flex', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span style={{ fontSize: '13px', color: '#fff', fontWeight: 'bold', fontFamily: 'sans-serif' }}>৳{product.price}</span>
+          <span
+            style={{
+              fontSize: '10px',
+              fontWeight: '600',
+              padding: '2px 6px',
+              borderRadius: '4px',
+              fontFamily: 'monospace',
+              backgroundColor: product.stock_quantity > 0 ? 'rgba(255, 255, 255, 0.08)' : 'rgba(239, 68, 68, 0.15)',
+              color: product.stock_quantity > 0 ? '#aaa' : '#ef4444',
+              border: `1px solid ${product.stock_quantity > 0 ? '#222' : 'rgba(239, 68, 68, 0.3)'}`,
+            }}
+          >
+            {product.stock_quantity > 0 ? `STK: ${product.stock_quantity}` : 'OUT OF STOCK'}
+          </span>
         </div>
 
         <ProductActionToolbar
@@ -205,7 +208,6 @@ export const ProductShowroomCard: React.FC<ProductShowroomCardProps> = ({
         />
       </div>
 
-      {/* বিস্তারিত অংশ (পাশাপাশি ২ কলাম গ্রিড লেআউট) */}
       {isExpanded && (
         <div
           className="animate-fade-in"
@@ -221,7 +223,6 @@ export const ProductShowroomCard: React.FC<ProductShowroomCardProps> = ({
             gap: '12px',
           }}
         >
-          {/* ১. পূর্ণাঙ্গ নাম */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
             <span style={{ fontSize: '10px', color: '#999', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
               Full Name
@@ -231,7 +232,6 @@ export const ProductShowroomCard: React.FC<ProductShowroomCardProps> = ({
             </span>
           </div>
 
-          {/* ২. ডিসক্রিপশন */}
           {product.description && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
               <span style={{ fontSize: '10px', color: '#999', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
@@ -243,7 +243,6 @@ export const ProductShowroomCard: React.FC<ProductShowroomCardProps> = ({
             </div>
           )}
 
-          {/* ৩. স্পেসিফিকেশন ও ডিটেইলস */}
           {((standardSpecs && Object.keys(standardSpecs).length > 0) || madeInValue || bottomDetailsValue) && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <span style={{ fontSize: '10px', color: '#999', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
@@ -261,7 +260,6 @@ export const ProductShowroomCard: React.FC<ProductShowroomCardProps> = ({
                   border: '1px solid #1a1a1a',
                 }}
               >
-                {/* সাইজ, কালার, ফিট ইত্যাদি ফিল্ডগুলো পাশাপাশি ২ কলামের গ্রিডে */}
                 {Object.keys(standardSpecs).length > 0 && (
                   <div
                     style={{
@@ -295,7 +293,6 @@ export const ProductShowroomCard: React.FC<ProductShowroomCardProps> = ({
                   </div>
                 )}
 
-                {/* MADE IN ফিল্ড */}
                 {madeInValue && (
                   <div
                     style={{
@@ -315,7 +312,6 @@ export const ProductShowroomCard: React.FC<ProductShowroomCardProps> = ({
                   </div>
                 )}
 
-                {/* DETAILS ফিল্ডটি সবার নিচে ফুল উইথ জুড়ে */}
                 {bottomDetailsValue && (
                   <div
                     style={{
