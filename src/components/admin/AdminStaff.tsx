@@ -192,9 +192,9 @@ export default function AdminStaff({
     }
   };
 
+  // --- আপডেট করা চ্যাট ওপেন করার লজিক (ফুল পেজ রিলোড বন্ধ করার জন্য) ---
   const handleOpenChat = (staff: StaffMember, e: React.MouseEvent) => {
     e.stopPropagation();
-    // চ্যাট ওপেন করার জন্য ইমেইলের পরিবর্তে ইউনিক আইডি (staff.id) ব্যবহার করা হয়েছে
     const recipientId = staff.id;
 
     if (onNavigateToTab) {
@@ -203,7 +203,8 @@ export default function AdminStaff({
       const currentUrl = new URL(window.location.href);
       currentUrl.searchParams.set('tab', 'messages');
       currentUrl.searchParams.set('userId', recipientId);
-      window.location.href = currentUrl.toString();
+      window.history.pushState({}, '', currentUrl.toString());
+      window.dispatchEvent(new Event('popstate'));
     }
   };
 
