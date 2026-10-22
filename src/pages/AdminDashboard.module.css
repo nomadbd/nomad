@@ -42,6 +42,7 @@
   border-bottom: 1px solid #1a1a1a;
   transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   flex-shrink: 0;
+  box-sizing: border-box;
 }
 
 .headerHidden {
@@ -110,6 +111,7 @@
   transition: color 0.15s ease, opacity 0.15s ease;
   opacity: 0.75;
   -webkit-tap-highlight-color: transparent;
+  flex-shrink: 0;
 }
 
 .nomadActionBtn:hover:not(.nomadActionBtnActive),
@@ -207,8 +209,15 @@
 /* ডেক্সটপ ভিউ (Min-width: 768px) */
 @media screen and (min-width: 768px) {
   .nomadHeader {
-    padding: 0 28px;
+    padding: 0 20px; /* আইকনগুলোর জন্য স্পেস সুষম করা হলো */
     height: 60px;
+  }
+
+  /* হেডারের ডানপাশের আইকন কন্টেইনারকে ফ্লেক্স এবং গ্যাপ কন্ট্রোল দেওয়া হলো */
+  .nomadHeader > div {
+    display: flex;
+    align-items: center;
+    gap: 2px;
   }
 
   .nomadLayout {
