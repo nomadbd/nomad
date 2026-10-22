@@ -31,9 +31,9 @@ export function useAdminLogistics() {
 
   const [deliveryCharge, setDeliveryCharge] = useState<number | string>('');
   const [vatRate, setVatRate] = useState<number | string>('');
-  const [initialDeliveryCharge, setInitialDeliveryCharge] = useState<number | string>('');
-  const [initialVatRate, setInitialVatRate] = useState<number | string>('');
-  const [settingId, setSettingId] = useState<number | null>(null);
+  const [initialDeliveryCharge, setInitialDeliveryCharge] = useState<number | string>('100');
+  const [initialVatRate, setInitialVatRate] = useState<number | string>('0.05');
+  const [settingId, setSettingId] = useState<number | null>(1);
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
 
@@ -93,7 +93,7 @@ export function useAdminLogistics() {
       if (!error && data) {
         const dc = data.delivery_charge ?? 100;
         const vat = data.vat_rate ?? 0.05;
-        setSettingId(data.id);
+        setSettingId(data.id ?? 1);
         setDeliveryCharge(dc);
         setVatRate(vat);
         setInitialDeliveryCharge(dc);
@@ -111,8 +111,6 @@ export function useAdminLogistics() {
 
   const handleStartEdit = () => {
     setIsEditing(true);
-    setDeliveryCharge('');
-    setVatRate('');
   };
 
   const handleSaveSettings = async () => {
@@ -124,12 +122,12 @@ export function useAdminLogistics() {
 
       const { data, error } = await supabase
         .from('store_settings')
-        .update({
+        .upsert({
+          id: targetId,
           delivery_charge: Number(finalDc),
           vat_rate: Number(finalVat),
           updated_at: new Date().toISOString(),
         })
-        .eq('id', targetId)
         .select();
 
       if (error) throw error;
@@ -145,6 +143,7 @@ export function useAdminLogistics() {
       setDeliveryCharge(finalDc);
       setVatRate(finalVat);
       setIsEditing(false);
+      alert('Settings saved successfully!');
     } catch (err: any) {
       alert('Failed to save settings: ' + err.message);
       handleCancel();
