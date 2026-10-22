@@ -28,7 +28,6 @@ export default function LogisticsOrderCard({
   onToggleExpand,
   onSelectStatus,
   onStatusUpdate,
-  pendingStatus,
 }: LogisticsOrderCardProps) {
   const totalItemCount = item.order_items
     ? item.order_items.reduce((sum, prod) => sum + (Number(prod.quantity) || 0), 0)
@@ -37,6 +36,18 @@ export default function LogisticsOrderCard({
   const initialNote = item.admin_notes || '';
   const isNoteChanged = noteValue !== initialNote;
   const canSave = hasChange || isNoteChanged;
+
+  const isAlreadyReceived = currentStatus === 'Received';
+
+  const handleConfirmSave = () => {
+    if (activeStatus === 'Received' && !isAlreadyReceived) {
+      const confirmAction = window.confirm(
+        'Are you sure you want to mark this item as RECEIVED? Once received, the stock will be updated and this action cannot be undone.'
+      );
+      if (!confirmAction) return;
+    }
+    onStatusUpdate(item.id, activeStatus);
+  };
 
   return (
     <div style={{ borderBottom: '1px solid #141414' }}>
@@ -61,7 +72,7 @@ export default function LogisticsOrderCard({
             </span>
           </div>
 
-          {/* Date & Time */}
+          {/* Created Date & Time */}
           <div style={{ fontSize: '10px', color: '#888', fontFamily: 'monospace' }}>
             {new Date(item.created_at).toLocaleString()}
           </div>
@@ -76,7 +87,7 @@ export default function LogisticsOrderCard({
         <div style={{ flexShrink: 0 }}>
           {canSave ? (
             <button
-              onClick={() => onStatusUpdate(item.id, activeStatus)}
+              onClick={handleConfirmSave}
               disabled={isSavingThis}
               style={{
                 backgroundColor: 'transparent',
@@ -97,7 +108,7 @@ export default function LogisticsOrderCard({
             <div
               style={{
                 backgroundColor: '#0d0d0d',
-                color: currentStatus === 'Received' ? '#27ae60' : '#e67e22',
+                color: isAlreadyReceived ? '#27ae60' : '#e67e22',
                 border: '1px solid #1c1c1c',
                 padding: '4px 10px',
                 fontSize: '10px',
@@ -147,40 +158,58 @@ export default function LogisticsOrderCard({
                 <div style={{ color: '#555', fontSize: '10px' }}>No products found</div>
               )}
 
-              {/* Cancel Reason from Order Management */}
+              {/* Cancel Reason (Separate Header & Content) */}
               {item.return_reason && (
-                <div style={{ color: '#d9534f', fontSize: '10.5px', marginTop: '2px', fontFamily: 'sans-serif' }}>
-                  Cancel Reason: {item.return_reason}
+                <div style={{ marginTop: '4px', display: 'flex', flexDirection: 'column', gap: '2px', fontFamily: 'sans-serif' }}>
+                  <div style={{ color: '#777', fontSize: '10px', fontWeight: '500' }}>
+                    Cancel Reason:
+                  </div>
+                  <div style={{ color: '#e67e22', fontSize: '11px', fontWeight: '500' }}>
+                    {item.return_reason}
+                  </div>
                 </div>
               )}
             </div>
 
-            {/* Radio Selector */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flexShrink: 0 }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '11px', color: activeStatus === 'Pending' ? '#e67e22' : '#666', fontWeight: '500' }}>
-                <input
-                  type="radio"
-                  name={`status-${item.id}`}
-                  checked={activeStatus === 'Pending'}
-                  onChange={() => onSelectStatus(item.id, 'Pending')}
-                  style={{ accentColor: '#e67e22', cursor: 'pointer', width: '12px', height: '12px' }}
-                />
-                Pending
-              </label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '11px', color: activeStatus === 'Received' ? '#27ae60' : '#666', fontWeight: '500' }}>
-                <input
-                  type="radio"
-                  name={`status-${item.id}`}
-                  checked={activeStatus === 'Received'}
-                  onChange={() => onSelectStatus(item.id, 'Received')}
-                  style={{ accentColor: '#27ae60', cursor: 'pointer', width: '12px', height: '12px' }}
-                />
-                Received
-              </label>
+            {/* Custom Radio Selector (Hides Radio Buttons when Already Received) */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flexShrink: 0, alignItems: 'flex-end' }}>
+              {isAlreadyReceived ? (
+                <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <div style={{ color: '#27ae60', fontSize: '11px', fontWeight: '600' }}>
+                    ✓ Received
+                  </div>
+                  <div style={{ fontSize: '9px', color: '#555', fontFamily: 'monospace' }}>
+                    {new Date().toLocaleDateString()}
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '11px', color: activeStatus === 'Pending' ? '#e67e22' : '#666', fontWeight: '500' }}>
+                    <input
+                      type="radio"
+                      name={`status-${item.id}`}
+                      checked={activeStatus === 'Pending'}
+                      onChange={() => onSelectStatus(item.id, 'Pending')}
+                      style={{ accentColor: '#e67e22', cursor: 'pointer', width: '12px', height: '12px' }}
+                    />
+                    Pending
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '11px', color: activeStatus === 'Received' ? '#27ae60' : '#666', fontWeight: '500' }}>
+                    <input
+                      type="radio"
+                      name={`status-${item.id}`}
+                      checked={activeStatus === 'Received'}
+                      onChange={() => onSelectStatus(item.id, 'Received')}
+                      style={{ accentColor: '#27ae60', cursor: 'pointer', width: '12px', height: '12px' }}
+                    />
+                    Received
+                  </label>
+                </>
+              )}
             </div>
           </div>
 
-          {/* Logistics Note Section (LOCKED AFTER SAVE) */}
+          {/* Logistics Note Section */}
           <div style={{ marginTop: '6px', borderTop: '1px solid #141414', paddingTop: '8px' }}>
             {initialNote ? (
               /* PERMANENT LOCKED NOTE DISPLAY */
@@ -200,6 +229,7 @@ export default function LogisticsOrderCard({
                 value={noteValue}
                 onChange={(e) => onNoteChange(item.id, e.target.value)}
                 placeholder="Write a note here..."
+                disabled={isAlreadyReceived}
                 style={{
                   width: '100%',
                   backgroundColor: 'transparent',
@@ -211,6 +241,7 @@ export default function LogisticsOrderCard({
                   fontSize: '11px',
                   outline: 'none',
                   fontFamily: 'sans-serif',
+                  opacity: isAlreadyReceived ? 0.5 : 1,
                 }}
               />
             )}
