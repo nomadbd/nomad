@@ -9,6 +9,8 @@ interface LogisticsOrderCardProps {
   activeStatus: string;
   hasChange: boolean;
   isSavingThis: boolean;
+  isSelected: boolean;
+  onToggleSelect: (id: string) => void;
   onToggleExpand: (id: string) => void;
   onSelectStatus: (orderId: string, status: string) => void;
   onStatusUpdate: (orderId: string, newStatus: string) => void;
@@ -21,12 +23,13 @@ export default function LogisticsOrderCard({
   activeStatus,
   hasChange,
   isSavingThis,
+  isSelected,
+  onToggleSelect,
   onToggleExpand,
   onSelectStatus,
   onStatusUpdate,
   pendingStatus,
 }: LogisticsOrderCardProps) {
-  // WhatsApp Link Helper
   const getWhatsAppLink = (phone?: string | null) => {
     if (!phone) return '#';
     const cleaned = phone.replace(/[^\d+]/g, '');
@@ -50,71 +53,82 @@ export default function LogisticsOrderCard({
   };
 
   return (
-    <div style={{ borderBottom: '1px solid #1a1a1a' }}>
+    <div style={{ borderBottom: '1px solid #1a1a1a', backgroundColor: isSelected ? '#0d1117' : 'transparent' }}>
       {/* MAIN UNEXPANDED CARD */}
-      <div style={{ padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px' }}>
-        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          {/* Header ID & Arrow */}
-          <div
-            onClick={() => onToggleExpand(item.id)}
-            style={{
-              cursor: 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-            }}
-          >
-            <span style={{ fontWeight: 'bold', color: '#fff', fontSize: '13px' }}>
-              #{item.id.substring(0, 8)} ...
-            </span>
-            <span style={{ fontSize: '10px', color: '#888' }}>
-              {isExpanded ? '▲' : '▼'}
-            </span>
-          </div>
+      <div style={{ padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
+        
+        {/* Selection Checkbox & Details */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', flex: 1, minWidth: 0 }}>
+          <input
+            type="checkbox"
+            checked={isSelected}
+            onChange={() => onToggleSelect(item.id)}
+            style={{ accentColor: '#2ecc71', cursor: 'pointer', marginTop: '3px' }}
+          />
 
-          <div style={{ fontSize: '10px', color: '#666', fontFamily: 'monospace' }}>
-            {new Date(item.created_at).toLocaleString()}
-          </div>
-
-          {/* Customer Main Info */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginTop: '4px' }}>
-            <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#fff' }}>
-              {item.customer_name || 'No Name'}
+          <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            {/* Header ID & Arrow */}
+            <div
+              onClick={() => onToggleExpand(item.id)}
+              style={{
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+              }}
+            >
+              <span style={{ fontWeight: 'bold', color: '#fff', fontSize: '13px' }}>
+                #{item.id.substring(0, 8)} ...
+              </span>
+              <span style={{ fontSize: '10px', color: '#888' }}>
+                {isExpanded ? '▲' : '▼'}
+              </span>
             </div>
-            {item.customer_phone && (
-              <div style={{ fontSize: '11px', color: '#aaa', fontFamily: 'monospace' }}>
-                {item.customer_phone}
-              </div>
-            )}
-            {item.customer_email && (
-              <div style={{ fontSize: '10px', color: '#777' }}>
-                {item.customer_email}
-              </div>
-            )}
-          </div>
 
-          {/* Quick Action Buttons (Same Line) */}
-          <div style={{ display: 'flex', gap: '4px', marginTop: '6px', flexWrap: 'nowrap' }}>
-            {item.customer_phone && (
-              <>
-                <a href={`tel:${item.customer_phone}`} style={actionButtonStyle}>
-                  Call
+            <div style={{ fontSize: '10px', color: '#666', fontFamily: 'monospace' }}>
+              {new Date(item.created_at).toLocaleString()}
+            </div>
+
+            {/* Customer Main Info */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginTop: '4px' }}>
+              <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#fff' }}>
+                {item.customer_name || 'No Name'}
+              </div>
+              {item.customer_phone && (
+                <div style={{ fontSize: '11px', color: '#aaa', fontFamily: 'monospace' }}>
+                  {item.customer_phone}
+                </div>
+              )}
+              {item.customer_email && (
+                <div style={{ fontSize: '10px', color: '#777' }}>
+                  {item.customer_email}
+                </div>
+              )}
+            </div>
+
+            {/* Quick Action Buttons (Same Line) */}
+            <div style={{ display: 'flex', gap: '4px', marginTop: '6px', flexWrap: 'nowrap' }}>
+              {item.customer_phone && (
+                <>
+                  <a href={`tel:${item.customer_phone}`} style={actionButtonStyle}>
+                    Call
+                  </a>
+                  <a
+                    href={getWhatsAppLink(item.customer_phone)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={actionButtonStyle}
+                  >
+                    WhatsApp
+                  </a>
+                </>
+              )}
+              {item.customer_email && (
+                <a href={`mailto:${item.customer_email}`} style={actionButtonStyle}>
+                  Email
                 </a>
-                <a
-                  href={getWhatsAppLink(item.customer_phone)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={actionButtonStyle}
-                >
-                  WhatsApp
-                </a>
-              </>
-            )}
-            {item.customer_email && (
-              <a href={`mailto:${item.customer_email}`} style={actionButtonStyle}>
-                Email
-              </a>
-            )}
+              )}
+            </div>
           </div>
         </div>
 
