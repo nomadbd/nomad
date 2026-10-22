@@ -328,7 +328,7 @@ const AdminDashboard: React.FC = () => {
                   </button>
                 )}
 
-                {showSearchFilter && activeTab !== 'overview' && activeTab !== 'logistics' && (
+                {showSearchFilter && activeTab !== 'overview' && (
                   <button
                     className={`${styles.nomadActionBtn} ${isSearchOpen ? styles.nomadActionBtnActive : ''}`}
                     onClick={() => setIsSearchOpen(!isSearchOpen)}
@@ -336,6 +336,17 @@ const AdminDashboard: React.FC = () => {
                     title="Search"
                   >
                     <SearchIcon width={18} height={18} />
+                  </button>
+                )}
+
+                {showSearchFilter && (
+                  <button
+                    className={`${styles.nomadActionBtn} ${isFilterOpen ? styles.nomadActionBtnActive : ''}`}
+                    onClick={() => setIsFilterOpen(!isFilterOpen)}
+                    aria-label="Filter"
+                    title="Toggle Filter Panel"
+                  >
+                    <FilterIcon width={18} height={18} />
                   </button>
                 )}
 
@@ -347,17 +358,6 @@ const AdminDashboard: React.FC = () => {
                     title="Toggle Logistics Settings"
                   >
                     <SettingsIcon width={18} height={18} />
-                  </button>
-                )}
-
-                {showSearchFilter && activeTab !== 'logistics' && (
-                  <button
-                    className={`${styles.nomadActionBtn} ${isFilterOpen ? styles.nomadActionBtnActive : ''}`}
-                    onClick={() => setIsFilterOpen(!isFilterOpen)}
-                    aria-label="Filter"
-                    title="Toggle Filter Panel"
-                  >
-                    <FilterIcon width={18} height={18} />
                   </button>
                 )}
 
