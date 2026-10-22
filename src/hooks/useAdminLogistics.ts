@@ -33,7 +33,7 @@ export function useAdminLogistics() {
   const [vatRate, setVatRate] = useState<number | string>('');
   const [initialDeliveryCharge, setInitialDeliveryCharge] = useState<number | string>('100');
   const [initialVatRate, setInitialVatRate] = useState<number | string>('0.05');
-  const [settingId, setSettingId] = useState<number | null>(1);
+  const [settingId, setSettingId] = useState<number | null>(null);
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
 
@@ -93,7 +93,7 @@ export function useAdminLogistics() {
       if (!error && data) {
         const dc = data.delivery_charge ?? 100;
         const vat = data.vat_rate ?? 0.05;
-        setSettingId(data.id ?? 1);
+        setSettingId(data.id);
         setDeliveryCharge(dc);
         setVatRate(vat);
         setInitialDeliveryCharge(dc);
@@ -116,27 +116,51 @@ export function useAdminLogistics() {
   const handleSaveSettings = async () => {
     setIsSaving(true);
     try {
-      const targetId = settingId ?? 1;
       const finalDc = deliveryCharge === '' ? initialDeliveryCharge : deliveryCharge;
       const finalVat = vatRate === '' ? initialVatRate : vatRate;
 
-      const { data, error } = await supabase
-        .from('store_settings')
-        .upsert({
-          id: targetId,
-          delivery_charge: Number(finalDc),
-          vat_rate: Number(finalVat),
-          updated_at: new Date().toISOString(),
-        })
-        .select();
+      let error;
+      if (settingId) {
+        const res = await supabase
+          .from('store_settings')
+          .update({
+            delivery_charge: Number(finalDc),
+            vat_rate: Number(finalVat),
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', settingId)
+          .select();
+        error = res.error;
+        if (!error && (!res.data || res.data.length === 0)) {
+          const insertRes = await supabase
+            .from('store_settings')
+            .insert({
+              delivery_charge: Number(finalDc),
+              vat_rate: Number(finalVat),
+              updated_at: new Date().toISOString(),
+            })
+            .select();
+          error = insertRes.error;
+          if (!error && insertRes.data && insertRes.data.length > 0) {
+            setSettingId(insertRes.data[0].id);
+          }
+        }
+      } else {
+        const res = await supabase
+          .from('store_settings')
+          .insert({
+            delivery_charge: Number(finalDc),
+            vat_rate: Number(finalVat),
+            updated_at: new Date().toISOString(),
+          })
+          .select();
+        error = res.error;
+        if (!error && res.data && res.data.length > 0) {
+          setSettingId(res.data[0].id);
+        }
+      }
 
       if (error) throw error;
-
-      if (!data || data.length === 0) {
-        alert('Update failed in Supabase!');
-        handleCancel();
-        return;
-      }
 
       setInitialDeliveryCharge(finalDc);
       setInitialVatRate(finalVat);
