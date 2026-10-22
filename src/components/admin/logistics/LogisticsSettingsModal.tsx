@@ -1,15 +1,13 @@
 import React from 'react';
 
-interface LogisticsSettingsModalProps {
+interface LogisticsSettingsProps {
   deliveryCharge: number | string;
   vatRate: number | string;
   initialDeliveryCharge: number | string;
   initialVatRate: number | string;
-  isEditing: boolean;
   isSaving: boolean;
   onDeliveryChange: (val: string) => void;
   onVatChange: (val: string) => void;
-  onStartEdit: () => void;
   onSaveSettings: () => void;
   onCancel: () => void;
 }
@@ -19,14 +17,14 @@ export default function LogisticsSettingsModal({
   vatRate,
   initialDeliveryCharge,
   initialVatRate,
-  isEditing,
   isSaving,
   onDeliveryChange,
   onVatChange,
-  onStartEdit,
   onSaveSettings,
   onCancel,
-}: LogisticsSettingsModalProps) {
+}: LogisticsSettingsProps) {
+  const hasChanges = String(deliveryCharge) !== String(initialDeliveryCharge) || String(vatRate) !== String(initialVatRate);
+
   return (
     <div style={{ padding: '16px 0', maxWidth: '100%', boxSizing: 'border-box' }}>
       <div
@@ -41,28 +39,11 @@ export default function LogisticsSettingsModal({
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
           <h3 style={{ margin: 0, fontSize: '11px', fontWeight: '700', color: '#888', letterSpacing: '1px', textTransform: 'uppercase' }}>
-            STORE CHARGES & TAXES
+            DELIVERY CHARGES & TAXES
           </h3>
-          {!isEditing && (
-            <button
-              onClick={onStartEdit}
-              style={{
-                backgroundColor: '#161616',
-                color: '#ccc',
-                border: '1px solid #282828',
-                borderRadius: '4px',
-                padding: '6px 14px',
-                fontSize: '11px',
-                fontWeight: '600',
-                cursor: 'pointer',
-              }}
-            >
-              EDIT
-            </button>
-          )}
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: hasChanges ? '20px' : '0' }}>
           <div
             style={{
               backgroundColor: '#050505',
@@ -78,9 +59,9 @@ export default function LogisticsSettingsModal({
               <span style={{ fontSize: '15px', color: '#aaa', fontWeight: 'bold' }}>৳</span>
               <input
                 type="number"
-                value={isEditing ? deliveryCharge : initialDeliveryCharge}
+                value={deliveryCharge}
+                placeholder={String(initialDeliveryCharge)}
                 onChange={(e) => onDeliveryChange(e.target.value)}
-                disabled={!isEditing}
                 style={{
                   backgroundColor: 'transparent',
                   color: '#fff',
@@ -90,7 +71,7 @@ export default function LogisticsSettingsModal({
                   fontWeight: 'bold',
                   width: '100%',
                   fontFamily: 'monospace',
-                  cursor: isEditing ? 'text' : 'default',
+                  cursor: 'text',
                 }}
               />
             </div>
@@ -111,9 +92,9 @@ export default function LogisticsSettingsModal({
               <input
                 type="number"
                 step="0.01"
-                value={isEditing ? vatRate : initialVatRate}
+                value={vatRate}
+                placeholder={String(initialVatRate)}
                 onChange={(e) => onVatChange(e.target.value)}
-                disabled={!isEditing}
                 style={{
                   backgroundColor: 'transparent',
                   color: '#fff',
@@ -123,7 +104,7 @@ export default function LogisticsSettingsModal({
                   fontWeight: 'bold',
                   width: '100%',
                   fontFamily: 'monospace',
-                  cursor: isEditing ? 'text' : 'default',
+                  cursor: 'text',
                 }}
               />
               <span style={{ fontSize: '15px', color: '#aaa', fontWeight: 'bold' }}>%</span>
@@ -131,7 +112,7 @@ export default function LogisticsSettingsModal({
           </div>
         </div>
 
-        {isEditing && (
+        {hasChanges && (
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
             <button
               onClick={onCancel}
@@ -170,4 +151,4 @@ export default function LogisticsSettingsModal({
       </div>
     </div>
   );
-} 
+}
