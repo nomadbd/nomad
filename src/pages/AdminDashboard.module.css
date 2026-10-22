@@ -53,6 +53,7 @@
   text-decoration: none;
   color: inherit;
   display: block;
+  flex-shrink: 0;
 }
 
 .nomadMain {
@@ -102,8 +103,8 @@
   border: none !important;
   outline: none !important;
   color: #888888 !important;
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -209,15 +210,9 @@
 /* ডেক্সটপ ভিউ (Min-width: 768px) */
 @media screen and (min-width: 768px) {
   .nomadHeader {
-    padding: 0 20px; /* আইকনগুলোর জন্য স্পেস সুষম করা হলো */
+    padding: 0 16px;
     height: 60px;
-  }
-
-  /* হেডারের ডানপাশের আইকন কন্টেইনারকে ফ্লেক্স এবং গ্যাপ কন্ট্রোল দেওয়া হলো */
-  .nomadHeader > div {
-    display: flex;
-    align-items: center;
-    gap: 2px;
+    overflow: hidden;
   }
 
   .nomadLayout {
