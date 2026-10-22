@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import styles from './AdminDashboard.module.css';
-import { supabase } from '@/supabaseClient';
+import { supabase } from '../../supabaseClient';
 
 import {
   AdminOverview,
@@ -12,8 +12,8 @@ import {
   StaffProfile,
   AdminMessages,
   AdminNotifications
-} from '@/components/admin';
-import { SendInvite, AmbassadorList } from '@/components/admin/ambassadors';
+} from '../../components/admin';
+import { SendInvite, AmbassadorList } from '../../components/admin/ambassadors';
 
 import { AdminHeader } from './components/AdminHeader';
 import { AdminSidebar } from './components/AdminSidebar';
