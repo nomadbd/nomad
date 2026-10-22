@@ -14,6 +14,10 @@ export interface OrderItemDetail {
 export interface OrderItem {
   id: string;
   user_id?: string | null;
+  customer_name?: string | null;
+  customer_phone?: string | null;
+  customer_email?: string | null;
+  shipping_address?: string | null;
   courier_name?: string | null;
   return_reason?: string | null;
   return_status?: string | null;
