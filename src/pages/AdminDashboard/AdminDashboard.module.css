@@ -1,0 +1,348 @@
+:global(*), :global(*::before), :global(*::after) { 
+  box-sizing: border-box !important; 
+  margin: 0; 
+  padding: 0; 
+}
+
+:global(html) {
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow-x: hidden !important;
+  -webkit-text-size-adjust: 100% !important;
+  text-size-adjust: 100% !important;
+  background-color: #030303;
+}
+
+:global(body) {
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow-x: hidden !important;
+  overscroll-behavior-x: none;
+  touch-action: pan-y;
+  background-color: #030303;
+  position: relative;
+}
+
+/* ফুল-উইডথ টপ হেডার স্টাইল (সাইডবার ও মেইন কন্টেন্টের উপরে) */
+.nomadHeader {
+  position: sticky;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  height: 60px;
+  padding: 0 16px;
+  background-color: rgba(3, 3, 3, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid #1a1a1a;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  flex-shrink: 0;
+  box-sizing: border-box;
+  overflow: visible !important;
+}
+
+.nomadHeader > div {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+  min-width: 0;
+}
+
+.headerHidden {
+  transform: translateY(-100%);
+}
+
+.nomadBrandLink {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  flex-shrink: 1;
+  min-width: 0;
+}
+
+.nomadMain {
+  flex: 1;
+  background-color: #030303;
+  box-sizing: border-box;
+  overflow-x: hidden !important;
+}
+
+.navBtn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: none !important;
+  border-left: 2px solid transparent !important;
+  font-weight: bold;
+  font-size: 11px;
+  text-align: left;
+  cursor: pointer;
+  letter-spacing: 1px;
+  background: transparent;
+  color: #888888;
+  border-radius: 0 !important;
+  transition: all 0.2s ease;
+  width: 100%;
+  max-width: 100%;
+}
+
+.navBtnActive {
+  background-color: transparent !important;
+  color: #ffffff !important;
+  border-left: 2px solid #ffffff !important;
+  box-shadow: none !important;
+}
+
+.userTextContainer {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nomadActionBtn,
+.nomadMenuToggleBtn {
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  color: #888888 !important;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s ease, opacity 0.15s ease;
+  opacity: 0.75;
+  -webkit-tap-highlight-color: transparent;
+  flex-shrink: 0;
+}
+
+.nomadActionBtn:hover:not(.nomadActionBtnActive),
+.nomadMenuToggleBtn:hover:not(.nomadMenuToggleBtnActive) {
+  color: #aaaaaa !important;
+  opacity: 0.9 !important;
+}
+
+.nomadActionBtnActive,
+.nomadMenuToggleBtnActive {
+  color: #ffffff !important;
+  opacity: 1 !important;
+}
+
+.nomadLayout,
+.nomadSidebar,
+.nomadMain,
+.nomadNav,
+.userFooterBlock {
+  max-width: 100% !important;
+}
+
+/* মোবাইল ভিউ (Max-width: 767px) */
+@media screen and (max-width: 767px) {
+  .nomadHeader {
+    padding: 0 16px;
+    position: fixed;
+  }
+
+  .nomadLayout {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: calc(100dvh - 60px);
+    overflow-x: hidden !important;
+  }
+
+  .nomadSidebar {
+    width: 100% !important;
+    max-width: 100% !important;
+    position: fixed !important;
+    top: 60px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 999;
+    background-color: rgba(6, 6, 6, 0.98);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    padding: 16px 16px calc(30px + env(safe-area-inset-bottom, 20px)) 16px !important;
+    box-sizing: border-box;
+    display: none !important;
+    flex-direction: column !important;
+    justify-content: flex-start !important; /* ওভারল্যাপ রোধ করতে flex-start দেওয়া হলো */
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .menuOpen {
+    display: flex !important;
+  }
+
+  .nomadMenuToggle {
+    display: flex !important;
+  }
+
+  .nomadNav {
+    display: flex !important;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 10px;
+    margin-bottom: 24px; /* ফুটার ও কাস্টমার ট্যাবের মাঝে নিরাপদ দূরত্ব */
+    width: 100%;
+    flex: 0 0 auto;
+  }
+
+  .userFooterBlock {
+    display: block !important;
+    margin-top: 10px !important;
+    padding-top: 16px;
+    padding-bottom: calc(20px + env(safe-area-inset-bottom, 16px)) !important;
+    border-top: 1px solid #141414;
+    width: 100%;
+    flex-shrink: 0;
+  }
+
+  .nomadMain {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 75px 12px 40px 12px !important;
+    overflow-x: hidden !important;
+    box-sizing: border-box;
+  }
+}
+
+/* ডেক্সটপ ভিউ (Min-width: 768px) ও মোবাইল ব্রাউজারের ডেস্কটপ মোড */
+@media screen and (min-width: 768px) {
+  .nomadHeader {
+    padding: 0 20px;
+    height: 60px;
+  }
+
+  .nomadLayout {
+    display: flex !important;
+    min-height: calc(100dvh - 60px);
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden !important;
+  }
+
+  .nomadSidebar {
+    width: 220px !important;
+    min-width: 220px !important;
+    max-width: 220px !important;
+    height: calc(100dvh - 60px) !important;
+    max-height: calc(100dvh - 60px) !important;
+    position: fixed !important;
+    top: 60px;
+    left: 0;
+    bottom: 0;
+    z-index: 100;
+    border-right: 1px solid #1a1a1a;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    overflow-y: auto;
+    overflow-x: hidden !important;
+    background-color: #060606;
+    box-sizing: border-box !important;
+  }
+
+  .nomadMenuToggle {
+    display: none !important;
+  }
+
+  .nomadNav {
+    display: flex !important;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 15px;
+    overflow-y: auto;
+    flex: 1 1 auto;
+  }
+
+  .userFooterBlock {
+    display: block !important;
+    margin-top: auto !important;
+    padding-top: 16px;
+    padding-bottom: 12px;
+    border-top: 1px solid #1a1a1a;
+    width: 100%;
+    max-width: 100%;
+    flex-shrink: 0 !important;
+  }
+
+  .nomadMain {
+    margin-left: 220px !important;
+    width: auto !important;
+    flex: 1 1 auto !important;
+    max-width: none !important;
+    padding: 24px 28px !important;
+    min-height: calc(100dvh - 60px);
+    overflow-x: hidden !important;
+    box-sizing: border-box;
+  }
+}
+
+/* পিসি ও ল্যাপটপের জন্য (Mouse / Trackpad) */
+@media screen and (min-width: 768px) and (pointer: fine) {
+  .nomadSidebar {
+    padding: 20px 14px calc(20px + env(safe-area-inset-bottom, 0px)) 14px !important;
+  }
+  .nomadNav {
+    max-height: calc(100dvh - 180px);
+  }
+}
+
+/* মোবাইলে ডেক্সটপ সাইট মোডের জন্য (Touch Screen) */
+@media screen and (min-width: 768px) and (pointer: coarse) {
+  .nomadSidebar {
+    padding: 20px 14px calc(90px + env(safe-area-inset-bottom, 0px)) 14px !important;
+  }
+  .nomadNav {
+    max-height: calc(100dvh - 250px);
+  }
+}
+
+:global(body.nomad-menu-lock) {
+  position: fixed;
+  left: 0;
+  right: 0;
+  width: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+  touch-action: none;
+}
+
+.sidebarStack {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  max-width: 100%;
+  flex: 1 1 auto;
+}
+
+.menuLocked .nomadMain {
+  pointer-events: none;
+}
+
+.menuBackdrop {
+  display: none;
+}
+
+.menuLocked .menuBackdrop {
+  display: block;
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  border: 0;
+  padding: 0;
+  background: transparent;
+}
