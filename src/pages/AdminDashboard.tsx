@@ -14,7 +14,7 @@ import {
   AdminNotifications
 } from '../components/admin';
 import { SendInvite, AmbassadorList } from '../components/admin/ambassadors';
-import { PlusIcon, SearchIcon, FilterIcon, MenuIcon, CloseIcon } from '../components/icons';
+import { PlusIcon, SearchIcon, FilterIcon, MenuIcon, CloseIcon, SettingsIcon } from '../components/icons';
 
 type TabType = 'overview' | 'orders' | 'products' | 'logistics' | 'messages' | 'notifications' | 'ambassadors' | 'staff' | 'customers';
 
@@ -32,6 +32,7 @@ const AdminDashboard: React.FC = () => {
   const [isSearchOpen, setIsSearchOpen] = useState<boolean>(false);
   const [isFilterOpen, setIsFilterOpen] = useState<boolean>(false);
   const [isAddOpen, setIsAddOpen] = useState<boolean>(false);
+  const [isLogisticsSettingsOpen, setIsLogisticsSettingsOpen] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   const [activeChat, setActiveChat] = useState<{
@@ -57,6 +58,7 @@ const AdminDashboard: React.FC = () => {
     setMenuOpen(false);
     setIsSearchOpen(false);
     setIsAddOpen(false);
+    setIsLogisticsSettingsOpen(false);
     setSearchQuery('');
     setActiveChat(null);
 
@@ -326,7 +328,7 @@ const AdminDashboard: React.FC = () => {
                   </button>
                 )}
 
-                {showSearchFilter && activeTab !== 'overview' && (
+                {showSearchFilter && activeTab !== 'overview' && activeTab !== 'logistics' && (
                   <button
                     className={`${styles.nomadActionBtn} ${isSearchOpen ? styles.nomadActionBtnActive : ''}`}
                     onClick={() => setIsSearchOpen(!isSearchOpen)}
@@ -337,7 +339,18 @@ const AdminDashboard: React.FC = () => {
                   </button>
                 )}
 
-                {showSearchFilter && (
+                {activeTab === 'logistics' && (
+                  <button
+                    className={`${styles.nomadActionBtn} ${isLogisticsSettingsOpen ? styles.nomadActionBtnActive : ''}`}
+                    onClick={() => setIsLogisticsSettingsOpen(!isLogisticsSettingsOpen)}
+                    aria-label="Logistics Settings"
+                    title="Toggle Logistics Settings"
+                  >
+                    <SettingsIcon width={18} height={18} />
+                  </button>
+                )}
+
+                {showSearchFilter && activeTab !== 'logistics' && (
                   <button
                     className={`${styles.nomadActionBtn} ${isFilterOpen ? styles.nomadActionBtnActive : ''}`}
                     onClick={() => setIsFilterOpen(!isFilterOpen)}
@@ -520,6 +533,7 @@ const AdminDashboard: React.FC = () => {
               key="logistics"
               searchQuery={searchQuery}
               isFilterOpen={isFilterOpen}
+              isSettingsOpen={isLogisticsSettingsOpen}
             />
           )}
           {activeTab === 'messages' && (
