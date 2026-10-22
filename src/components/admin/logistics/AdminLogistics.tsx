@@ -1,12 +1,15 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useAdminLogistics } from '@/hooks/useAdminLogistics';
-import LogisticsSettingsBar from './LogisticsSettingsBar';
-import LogisticsSettingsModal from './LogisticSettings';
+import LogisticSettings from './LogisticSettings';
 import LogisticsOrderCard from './LogisticsOrderCard';
 
-export default function AdminLogistics() {
-  const [activeTab, setActiveTab] = useState<'returns' | 'settings'>('returns');
+interface AdminLogisticsProps {
+  searchQuery?: string;
+  isFilterOpen?: boolean;
+  isSettingsOpen: boolean;
+}
 
+export default function AdminLogistics({ searchQuery, isFilterOpen, isSettingsOpen }: AdminLogisticsProps) {
   const {
     orders,
     loading,
@@ -15,11 +18,9 @@ export default function AdminLogistics() {
     savingOrderId,
     deliveryCharge,
     vatRate,
-    isEditing,
     isSaving,
     setDeliveryCharge,
     setVatRate,
-    handleStartEdit,
     handleSaveSettings,
     handleCancel,
     toggleExpand,
@@ -29,13 +30,19 @@ export default function AdminLogistics() {
 
   return (
     <div style={{ color: '#fff', width: '100%' }}>
-      <LogisticsSettingsBar
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        returnsCount={orders.length}
-      />
-
-      {activeTab === 'returns' ? (
+      {isSettingsOpen ? (
+        <LogisticSettings
+          deliveryCharge={deliveryCharge}
+          vatRate={vatRate}
+          initialDeliveryCharge={deliveryCharge}
+          initialVatRate={vatRate}
+          isSaving={isSaving}
+          onDeliveryChange={setDeliveryCharge}
+          onVatChange={setVatRate}
+          onSaveSettings={handleSaveSettings}
+          onCancel={handleCancel}
+        />
+      ) : (
         loading ? (
           <div style={{ fontSize: '11px', color: '#888', padding: '20px 0' }}>LOADING DATA...</div>
         ) : (
@@ -72,20 +79,6 @@ export default function AdminLogistics() {
             )}
           </div>
         )
-      ) : (
-        <LogisticsSettingsModal
-          deliveryCharge={deliveryCharge}
-          vatRate={vatRate}
-          initialDeliveryCharge={deliveryCharge}
-          initialVatRate={vatRate}
-          isEditing={isEditing}
-          isSaving={isSaving}
-          onDeliveryChange={setDeliveryCharge}
-          onVatChange={setVatRate}
-          onStartEdit={handleStartEdit}
-          onSaveSettings={handleSaveSettings}
-          onCancel={handleCancel}
-        />
       )}
     </div>
   );
