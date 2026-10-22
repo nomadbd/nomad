@@ -201,7 +201,6 @@ const AdminDashboard: React.FC = () => {
   }
 
   const isChatOpen = activeTab === 'messages' && !!activeChat;
-  const showSearchFilter = !menuOpen;
 
   return (
     <div style={{
@@ -301,64 +300,67 @@ const AdminDashboard: React.FC = () => {
               </a>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                {(activeTab === 'products' || activeTab === 'ambassadors' || activeTab === 'messages' || activeTab === 'staff') && (
-                  <button
-                    className={`${styles.nomadActionBtn} ${isAddOpen ? styles.nomadActionBtnActive : ''}`}
-                    onClick={() => setIsAddOpen(!isAddOpen)}
-                    aria-label={
-                      activeTab === 'messages'
-                        ? 'Start New Chat'
-                        : activeTab === 'products'
-                        ? 'Add Product'
-                        : activeTab === 'staff'
-                        ? 'Add Staff'
-                        : 'Add Ambassador'
-                    }
-                    title={
-                      activeTab === 'messages'
-                        ? 'Start New Chat'
-                        : activeTab === 'products'
-                        ? 'Add Product'
-                        : activeTab === 'staff'
-                        ? 'Add Staff'
-                        : 'Add Ambassador'
-                    }
-                  >
-                    <PlusIcon width={18} height={18} />
-                  </button>
-                )}
+                {/* কেবল মেনু বন্ধ থাকলে (!menuOpen) অ্যাকশন আইকনগুলো প্রদর্শিত হবে */}
+                {!menuOpen && (
+                  <>
+                    {(activeTab === 'products' || activeTab === 'ambassadors' || activeTab === 'messages' || activeTab === 'staff') && (
+                      <button
+                        className={`${styles.nomadActionBtn} ${isAddOpen ? styles.nomadActionBtnActive : ''}`}
+                        onClick={() => setIsAddOpen(!isAddOpen)}
+                        aria-label={
+                          activeTab === 'messages'
+                            ? 'Start New Chat'
+                            : activeTab === 'products'
+                            ? 'Add Product'
+                            : activeTab === 'staff'
+                            ? 'Add Staff'
+                            : 'Add Ambassador'
+                        }
+                        title={
+                          activeTab === 'messages'
+                            ? 'Start New Chat'
+                            : activeTab === 'products'
+                            ? 'Add Product'
+                            : activeTab === 'staff'
+                            ? 'Add Staff'
+                            : 'Add Ambassador'
+                        }
+                      >
+                        <PlusIcon width={18} height={18} />
+                      </button>
+                    )}
 
-                {showSearchFilter && activeTab !== 'overview' && (
-                  <button
-                    className={`${styles.nomadActionBtn} ${isSearchOpen ? styles.nomadActionBtnActive : ''}`}
-                    onClick={() => setIsSearchOpen(!isSearchOpen)}
-                    aria-label="Search"
-                    title="Search"
-                  >
-                    <SearchIcon width={18} height={18} />
-                  </button>
-                )}
+                    {activeTab !== 'overview' && (
+                      <button
+                        className={`${styles.nomadActionBtn} ${isSearchOpen ? styles.nomadActionBtnActive : ''}`}
+                        onClick={() => setIsSearchOpen(!isSearchOpen)}
+                        aria-label="Search"
+                        title="Search"
+                      >
+                        <SearchIcon width={18} height={18} />
+                      </button>
+                    )}
 
-                {showSearchFilter && (
-                  <button
-                    className={`${styles.nomadActionBtn} ${isFilterOpen ? styles.nomadActionBtnActive : ''}`}
-                    onClick={() => setIsFilterOpen(!isFilterOpen)}
-                    aria-label="Filter"
-                    title="Toggle Filter Panel"
-                  >
-                    <FilterIcon width={18} height={18} />
-                  </button>
-                )}
+                    <button
+                      className={`${styles.nomadActionBtn} ${isFilterOpen ? styles.nomadActionBtnActive : ''}`}
+                      onClick={() => setIsFilterOpen(!isFilterOpen)}
+                      aria-label="Filter"
+                      title="Toggle Filter Panel"
+                    >
+                      <FilterIcon width={18} height={18} />
+                    </button>
 
-                {activeTab === 'logistics' && (
-                  <button
-                    className={`${styles.nomadActionBtn} ${isLogisticsSettingsOpen ? styles.nomadActionBtnActive : ''}`}
-                    onClick={() => setIsLogisticsSettingsOpen(!isLogisticsSettingsOpen)}
-                    aria-label="Logistics Settings"
-                    title="Toggle Logistics Settings"
-                  >
-                    <SettingsIcon width={18} height={18} />
-                  </button>
+                    {activeTab === 'logistics' && (
+                      <button
+                        className={`${styles.nomadActionBtn} ${isLogisticsSettingsOpen ? styles.nomadActionBtnActive : ''}`}
+                        onClick={() => setIsLogisticsSettingsOpen(!isLogisticsSettingsOpen)}
+                        aria-label="Logistics Settings"
+                        title="Toggle Logistics Settings"
+                      >
+                        <SettingsIcon width={18} height={18} />
+                      </button>
+                    )}
+                  </>
                 )}
 
                 <button
