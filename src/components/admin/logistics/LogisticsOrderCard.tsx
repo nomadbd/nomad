@@ -38,14 +38,15 @@ export default function LogisticsOrderCard({
     backgroundColor: '#111',
     color: '#ccc',
     border: '1px solid #222',
-    padding: '4px 10px',
-    fontSize: '10px',
+    padding: '4px 8px',
+    fontSize: '9.5px',
     borderRadius: '3px',
     cursor: 'pointer',
     textDecoration: 'none',
     display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',
+    whiteSpace: 'nowrap',
   };
 
   return (
@@ -92,8 +93,8 @@ export default function LogisticsOrderCard({
             )}
           </div>
 
-          {/* Quick Action Buttons */}
-          <div style={{ display: 'flex', gap: '6px', marginTop: '6px', flexWrap: 'wrap' }}>
+          {/* Quick Action Buttons (Same Line) */}
+          <div style={{ display: 'flex', gap: '4px', marginTop: '6px', flexWrap: 'nowrap' }}>
             {item.customer_phone && (
               <>
                 <a href={`tel:${item.customer_phone}`} style={actionButtonStyle}>
@@ -162,7 +163,7 @@ export default function LogisticsOrderCard({
             borderTop: '1px solid #141414',
             padding: '14px 16px',
             display: 'flex',
-            justify: 'space-between',
+            justifyContent: 'space-between',
             alignItems: 'flex-start',
             gap: '16px',
           }}
