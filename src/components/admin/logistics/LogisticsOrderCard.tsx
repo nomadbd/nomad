@@ -73,12 +73,12 @@ export default function LogisticsOrderCard({
             <span style={{ fontWeight: '700', color: '#e5e5e5', fontSize: '13px', fontFamily: 'monospace' }}>
               #{item.id.substring(0, 8)} ...
             </span>
-            <span style={{ fontSize: '9px', color: '#888' }}>
+            <span style={{ fontSize: '9px', color: '#666' }}>
               {isExpanded ? '▲' : '▼'}
             </span>
           </div>
 
-          {/* Creation Date & Time (Ujjwal Gray) */}
+          {/* Creation Date & Time */}
           <div style={{ fontSize: '10px', color: '#aaa', fontFamily: 'monospace' }}>
             {new Date(item.created_at).toLocaleString()}
           </div>
@@ -89,7 +89,7 @@ export default function LogisticsOrderCard({
           </div>
         </div>
 
-        {/* Status Badge & Received Timestamp (Ujjwal Gray) */}
+        {/* Status Badge & Received Timestamp */}
         <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '3px' }}>
           {canSave ? (
             <button
@@ -125,7 +125,6 @@ export default function LogisticsOrderCard({
               >
                 {currentStatus}
               </div>
-              {/* Received Time display right below the Badge */}
               {isAlreadyReceived && (
                 <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', marginTop: '2px' }}>
                   <span style={{ fontSize: '9.5px', color: '#aaa', fontFamily: 'monospace', fontWeight: '500' }}>
@@ -141,19 +140,19 @@ export default function LogisticsOrderCard({
         </div>
       </div>
 
-      {/* EXPANDED SECTION */}
+      {/* EXPANDED SECTION (UNIFIED FLOW WITHOUT LINES) */}
       {isExpanded && (
         <div
           style={{
             backgroundColor: '#080808',
             borderTop: '1px solid #121212',
-            padding: '14px 16px',
+            padding: '16px',
             display: 'flex',
             flexDirection: 'column',
-            gap: '12px',
+            gap: '14px', // সুষম গ্যাপ যা প্রতিটি সেকশনকে সুন্দরভাবে আলাদা রাখবে কিন্তু কোনো দাগ লাগবে না
           }}
         >
-          {/* Detailed Product List (Full Width - Redundant Received text removed) */}
+          {/* Detailed Product List */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {item.order_items && item.order_items.length > 0 ? (
               item.order_items.map((prod) => (
@@ -179,55 +178,45 @@ export default function LogisticsOrderCard({
 
           {/* Cancel Reason Section */}
           {item.return_reason && (
-            <div style={{ marginTop: '2px', borderTop: '1px solid #141414', paddingTop: '8px' }}>
-              <div style={{ fontSize: '10px', color: '#888', fontWeight: '500', marginBottom: '2px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              <div style={{ fontSize: '10px', color: '#888', fontWeight: '500' }}>
                 Cancel Reason:
               </div>
-              <div style={{ fontSize: '11px', color: '#e67e22', borderBottom: '1px solid #1a1a1a', paddingBottom: '4px' }}>
+              <div style={{ fontSize: '11px', color: '#e67e22', fontFamily: 'sans-serif' }}>
                 {item.return_reason}
               </div>
             </div>
           )}
 
-          {/* Mandatory Logistics Note Section (Stacked Note Header & Content) */}
-          <div style={{ marginTop: '2px', borderTop: '1px solid #141414', paddingTop: '8px' }}>
+          {/* Mandatory Logistics Note Section */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <div style={{ fontSize: '10px', color: '#888', fontWeight: '500' }}>
+              Note:
+            </div>
             {initialNote ? (
-              /* PERMANENT LOCKED NOTE DISPLAY */
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                <div style={{ fontSize: '10px', color: '#888', fontWeight: '500' }}>
-                  Note:
-                </div>
-                <div style={{ fontSize: '11px', color: '#e0e0e0', fontFamily: 'sans-serif', borderBottom: '1px solid #1a1a1a', paddingBottom: '4px' }}>
-                  {initialNote}
-                </div>
+              <div style={{ fontSize: '11px', color: '#e0e0e0', fontFamily: 'sans-serif' }}>
+                {initialNote}
               </div>
             ) : (
-              /* INITIAL INPUT BEFORE FIRST SAVE (MANDATORY) */
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                <div style={{ fontSize: '10px', color: '#888', fontWeight: '500' }}>
-                  Note:
-                </div>
-                <input
-                  type="text"
-                  value={noteValue}
-                  onChange={(e) => onNoteChange(item.id, e.target.value)}
-                  placeholder="Write a note here (Required to receive)..."
-                  disabled={isAlreadyReceived}
-                  style={{
-                    width: '100%',
-                    backgroundColor: 'transparent',
-                    color: '#e0e0e0',
-                    border: 'none',
-                    borderBottom: '1px solid #333',
-                    borderRadius: '0',
-                    padding: '4px 0',
-                    fontSize: '11px',
-                    outline: 'none',
-                    fontFamily: 'sans-serif',
-                    opacity: isAlreadyReceived ? 0.5 : 1,
-                  }}
-                />
-              </div>
+              <input
+                type="text"
+                value={noteValue}
+                onChange={(e) => onNoteChange(item.id, e.target.value)}
+                placeholder="Write a note here (Required to receive)..."
+                disabled={isAlreadyReceived}
+                style={{
+                  width: '100%',
+                  backgroundColor: '#111',
+                  color: '#e0e0e0',
+                  border: '1px solid #222',
+                  borderRadius: '4px',
+                  padding: '6px 8px',
+                  fontSize: '11px',
+                  outline: 'none',
+                  fontFamily: 'sans-serif',
+                  opacity: isAlreadyReceived ? 0.5 : 1,
+                }}
+              />
             )}
           </div>
         </div>
