@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAdminLogistics } from '@/hooks/useAdminLogistics';
 import LogisticsSettingsBar from './LogisticsSettingsBar';
-import LogisticsSettingsModal from './LogisticsSettingsModal';
+import LogisticsSettingsModal from './LogisticSettings';
 import LogisticsOrderCard from './LogisticsOrderCard';
 
 export default function AdminLogistics() {
