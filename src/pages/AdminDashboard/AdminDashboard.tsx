@@ -12,8 +12,8 @@ import {
   StaffProfile,
   AdminMessages,
   AdminNotifications
-} from '../../admin';
-import { SendInvite, AmbassadorList } from '../../admin/ambassadors';
+} from '@/components/admin';
+import { SendInvite, AmbassadorList } from '@/components/admin/ambassadors';
 
 import { AdminHeader } from './components/AdminHeader';
 import { AdminSidebar } from './components/AdminSidebar';
