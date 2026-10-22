@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { OrderItem } from '@/hooks/useAdminLogistics';
 
 interface LogisticsOrderCardProps {
@@ -30,8 +30,6 @@ export default function LogisticsOrderCard({
   onStatusUpdate,
   pendingStatus,
 }: LogisticsOrderCardProps) {
-  const [isEditingNote, setIsEditingNote] = useState(false);
-
   const totalItemCount = item.order_items
     ? item.order_items.reduce((sum, prod) => sum + (Number(prod.quantity) || 0), 0)
     : 0;
@@ -39,11 +37,6 @@ export default function LogisticsOrderCard({
   const initialNote = item.admin_notes || '';
   const isNoteChanged = noteValue !== initialNote;
   const canSave = hasChange || isNoteChanged;
-
-  const handleSave = (statusToSave: string) => {
-    onStatusUpdate(item.id, statusToSave);
-    setIsEditingNote(false);
-  };
 
   return (
     <div style={{ borderBottom: '1px solid #141414' }}>
@@ -83,7 +76,7 @@ export default function LogisticsOrderCard({
         <div style={{ flexShrink: 0 }}>
           {canSave ? (
             <button
-              onClick={() => handleSave(activeStatus)}
+              onClick={() => onStatusUpdate(item.id, activeStatus)}
               disabled={isSavingThis}
               style={{
                 backgroundColor: 'transparent',
@@ -154,7 +147,7 @@ export default function LogisticsOrderCard({
                 <div style={{ color: '#555', fontSize: '10px' }}>No products found</div>
               )}
 
-              {/* Cancel Reason */}
+              {/* Cancel Reason from Order Management */}
               {item.return_reason && (
                 <div style={{ color: '#d9534f', fontSize: '10.5px', marginTop: '2px', fontFamily: 'sans-serif' }}>
                   Cancel Reason: {item.return_reason}
@@ -187,43 +180,26 @@ export default function LogisticsOrderCard({
             </div>
           </div>
 
-          {/* Logistics Note Section */}
+          {/* Logistics Note Section (LOCKED AFTER SAVE) */}
           <div style={{ marginTop: '6px', borderTop: '1px solid #141414', paddingTop: '8px' }}>
-            {initialNote && !isEditingNote ? (
-              /* SAVED NOTE VIEW */
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                  <div style={{ fontSize: '11px', color: '#d1d1d1', fontFamily: 'sans-serif' }}>
-                    <span style={{ color: '#888', fontWeight: '500' }}>Note: </span>
-                    {initialNote}
-                  </div>
-                  <div style={{ fontSize: '9px', color: '#666', fontFamily: 'monospace' }}>
-                    Updated: {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </div>
+            {initialNote ? (
+              /* PERMANENT LOCKED NOTE DISPLAY */
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                <div style={{ fontSize: '11px', color: '#d1d1d1', fontFamily: 'sans-serif' }}>
+                  <span style={{ color: '#888', fontWeight: '500' }}>Note: </span>
+                  {initialNote}
                 </div>
-                <button
-                  onClick={() => setIsEditingNote(true)}
-                  style={{
-                    backgroundColor: 'transparent',
-                    color: '#888',
-                    border: 'none',
-                    fontSize: '10px',
-                    cursor: 'pointer',
-                    textDecoration: 'underline',
-                    padding: '0',
-                  }}
-                >
-                  Edit
-                </button>
+                <div style={{ fontSize: '9px', color: '#555', fontFamily: 'monospace' }}>
+                  Saved on {new Date(item.created_at).toLocaleDateString()}
+                </div>
               </div>
             ) : (
-              /* EDIT / INPUT NOTE VIEW */
+              /* INITIAL INPUT BEFORE FIRST SAVE */
               <input
                 type="text"
                 value={noteValue}
                 onChange={(e) => onNoteChange(item.id, e.target.value)}
                 placeholder="Write a note here..."
-                autoFocus={isEditingNote}
                 style={{
                   width: '100%',
                   backgroundColor: 'transparent',
