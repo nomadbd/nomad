@@ -15,8 +15,8 @@ import {
 } from '../../components/admin';
 import { SendInvite, AmbassadorList } from '../../components/admin/ambassadors';
 
-import { AdminHeader } from './components/AdminHeader';
-import { AdminSidebar } from './components/AdminSidebar';
+import { AdminHeader } from './AdminHeader';
+import { AdminSidebar } from './AdminSidebar';
 
 export type TabType = 'overview' | 'orders' | 'products' | 'logistics' | 'messages' | 'notifications' | 'ambassadors' | 'staff' | 'customers';
 
