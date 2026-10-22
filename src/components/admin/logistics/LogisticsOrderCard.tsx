@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { OrderItem } from '@/hooks/useAdminLogistics';
 
 interface LogisticsOrderCardProps {
@@ -30,6 +30,8 @@ export default function LogisticsOrderCard({
   onStatusUpdate,
   pendingStatus,
 }: LogisticsOrderCardProps) {
+  const [isEditingNote, setIsEditingNote] = useState(false);
+
   const totalItemCount = item.order_items
     ? item.order_items.reduce((sum, prod) => sum + (Number(prod.quantity) || 0), 0)
     : 0;
@@ -37,6 +39,11 @@ export default function LogisticsOrderCard({
   const initialNote = item.admin_notes || '';
   const isNoteChanged = noteValue !== initialNote;
   const canSave = hasChange || isNoteChanged;
+
+  const handleSave = (statusToSave: string) => {
+    onStatusUpdate(item.id, statusToSave);
+    setIsEditingNote(false);
+  };
 
   return (
     <div style={{ borderBottom: '1px solid #141414' }}>
@@ -76,7 +83,7 @@ export default function LogisticsOrderCard({
         <div style={{ flexShrink: 0 }}>
           {canSave ? (
             <button
-              onClick={() => onStatusUpdate(item.id, activeStatus)}
+              onClick={() => handleSave(activeStatus)}
               disabled={isSavingThis}
               style={{
                 backgroundColor: 'transparent',
@@ -129,11 +136,9 @@ export default function LogisticsOrderCard({
               {item.order_items && item.order_items.length > 0 ? (
                 item.order_items.map((prod) => (
                   <div key={prod.id} style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                    {/* Product Name (Regular Normal Font, Bold) */}
                     <div style={{ color: '#e0e0e0', fontSize: '12px', fontWeight: '600', fontFamily: 'sans-serif' }}>
                       {prod.product_name || 'Product'}
                     </div>
-                    {/* Size, Color, Qty in One Single Line (Ujjwal Gray & Bold) */}
                     <div style={{ color: '#b0b0b0', fontSize: '10.5px', fontWeight: '600', fontFamily: 'sans-serif' }}>
                       {[
                         prod.size && `Size: ${prod.size}`,
@@ -157,7 +162,7 @@ export default function LogisticsOrderCard({
               )}
             </div>
 
-            {/* Custom Eye-Friendly Radio Selector */}
+            {/* Radio Selector */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flexShrink: 0 }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '11px', color: activeStatus === 'Pending' ? '#e67e22' : '#666', fontWeight: '500' }}>
                 <input
@@ -182,26 +187,57 @@ export default function LogisticsOrderCard({
             </div>
           </div>
 
-          {/* Minimal Underline Note Input */}
-          <div style={{ marginTop: '6px' }}>
-            <input
-              type="text"
-              value={noteValue}
-              onChange={(e) => onNoteChange(item.id, e.target.value)}
-              placeholder="Write a note here..."
-              style={{
-                width: '100%',
-                backgroundColor: 'transparent',
-                color: '#d1d1d1',
-                border: 'none',
-                borderBottom: '1px solid #262626',
-                borderRadius: '0',
-                padding: '4px 0',
-                fontSize: '11px',
-                outline: 'none',
-                fontFamily: 'sans-serif',
-              }}
-            />
+          {/* Logistics Note Section */}
+          <div style={{ marginTop: '6px', borderTop: '1px solid #141414', paddingTop: '8px' }}>
+            {initialNote && !isEditingNote ? (
+              /* SAVED NOTE VIEW */
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                  <div style={{ fontSize: '11px', color: '#d1d1d1', fontFamily: 'sans-serif' }}>
+                    <span style={{ color: '#888', fontWeight: '500' }}>Note: </span>
+                    {initialNote}
+                  </div>
+                  <div style={{ fontSize: '9px', color: '#666', fontFamily: 'monospace' }}>
+                    Updated: {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsEditingNote(true)}
+                  style={{
+                    backgroundColor: 'transparent',
+                    color: '#888',
+                    border: 'none',
+                    fontSize: '10px',
+                    cursor: 'pointer',
+                    textDecoration: 'underline',
+                    padding: '0',
+                  }}
+                >
+                  Edit
+                </button>
+              </div>
+            ) : (
+              /* EDIT / INPUT NOTE VIEW */
+              <input
+                type="text"
+                value={noteValue}
+                onChange={(e) => onNoteChange(item.id, e.target.value)}
+                placeholder="Write a note here..."
+                autoFocus={isEditingNote}
+                style={{
+                  width: '100%',
+                  backgroundColor: 'transparent',
+                  color: '#d1d1d1',
+                  border: 'none',
+                  borderBottom: '1px solid #262626',
+                  borderRadius: '0',
+                  padding: '4px 0',
+                  fontSize: '11px',
+                  outline: 'none',
+                  fontFamily: 'sans-serif',
+                }}
+              />
+            )}
           </div>
         </div>
       )}
