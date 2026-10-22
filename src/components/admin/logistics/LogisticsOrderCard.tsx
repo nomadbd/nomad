@@ -10,7 +10,7 @@ interface LogisticsOrderCardProps {
   hasChange: boolean;
   isSavingThis: boolean;
   onToggleExpand: (id: string) => void;
-  onSelectStatus: (orderId: string, status: status) => void;
+  onSelectStatus: (orderId: string, status: string) => void;
   onStatusUpdate: (orderId: string, newStatus: string) => void;
 }
 
@@ -54,14 +54,14 @@ export default function LogisticsOrderCard({
             </span>
           </div>
 
-          {/* Date & Time */}
-          <div style={{ fontSize: '10px', color: '#666', fontFamily: 'monospace' }}>
+          {/* Date & Time (উজ্জ্বল করা হয়েছে) */}
+          <div style={{ fontSize: '10px', color: '#aaa', fontFamily: 'monospace' }}>
             {new Date(item.created_at).toLocaleString()}
           </div>
 
-          {/* Courier Name & Total Items Count */}
-          <div style={{ fontSize: '11px', color: '#aaa', fontWeight: '500', marginTop: '2px' }}>
-            {item.courier_name || 'No Courier'} • <span style={{ color: '#2ecc71' }}>{totalItemCount} {totalItemCount > 1 ? 'Items' : 'Item'}</span>
+          {/* Courier Name & Total Items Count (বোল্ড ও উজ্জ্বল ধূসর) */}
+          <div style={{ fontSize: '11px', color: '#ccc', fontWeight: '600', marginTop: '2px' }}>
+            {item.courier_name || 'No Courier'} • {totalItemCount} {totalItemCount > 1 ? 'Items' : 'Item'}
           </div>
         </div>
 
@@ -167,4 +167,4 @@ export default function LogisticsOrderCard({
       )}
     </div>
   );
-} 
+}
