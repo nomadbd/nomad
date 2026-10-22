@@ -39,7 +39,7 @@ export default function LogisticsOrderCard({
   const canSave = hasChange || isNoteChanged;
 
   return (
-    <div style={{ borderBottom: '1px solid #1a1a1a' }}>
+    <div style={{ borderBottom: '1px solid #141414' }}>
       {/* MAIN UNEXPANDED CARD */}
       <div style={{ padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px' }}>
         <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -53,21 +53,21 @@ export default function LogisticsOrderCard({
               gap: '6px',
             }}
           >
-            <span style={{ fontWeight: 'bold', color: '#fff', fontSize: '13px' }}>
+            <span style={{ fontWeight: '700', color: '#e5e5e5', fontSize: '13px', fontFamily: 'monospace' }}>
               #{item.id.substring(0, 8)} ...
             </span>
-            <span style={{ fontSize: '10px', color: '#888' }}>
+            <span style={{ fontSize: '9px', color: '#666' }}>
               {isExpanded ? '▲' : '▼'}
             </span>
           </div>
 
           {/* Date & Time */}
-          <div style={{ fontSize: '10px', color: '#aaa', fontFamily: 'monospace' }}>
+          <div style={{ fontSize: '10px', color: '#888', fontFamily: 'monospace' }}>
             {new Date(item.created_at).toLocaleString()}
           </div>
 
           {/* Courier Name & Total Items Count */}
-          <div style={{ fontSize: '11px', color: '#ccc', fontWeight: '600', marginTop: '2px' }}>
+          <div style={{ fontSize: '11px', color: '#b0b0b0', fontWeight: '600', marginTop: '2px' }}>
             {item.courier_name || 'No Courier'} • {totalItemCount} {totalItemCount > 1 ? 'Items' : 'Item'}
           </div>
         </div>
@@ -79,16 +79,16 @@ export default function LogisticsOrderCard({
               onClick={() => onStatusUpdate(item.id, activeStatus)}
               disabled={isSavingThis}
               style={{
-                backgroundColor: '#111',
+                backgroundColor: 'transparent',
                 color: '#fff',
-                border: '1px solid #ffffff',
-                padding: '5px 16px',
+                border: '1px solid #e5e5e5',
+                padding: '4px 14px',
                 fontSize: '10px',
                 fontWeight: '600',
-                borderRadius: '20px', // ডিম্বাকার / Pill Shape
+                borderRadius: '20px',
                 cursor: 'pointer',
                 letterSpacing: '0.5px',
-                boxShadow: '0 0 5px rgba(255,255,255,0.2)',
+                transition: 'all 0.2s ease',
               }}
             >
               {isSavingThis ? 'SAVING...' : 'SAVE'}
@@ -96,11 +96,12 @@ export default function LogisticsOrderCard({
           ) : (
             <div
               style={{
-                backgroundColor: '#111',
-                color: currentStatus === 'Received' ? '#2ecc71' : '#f39c12',
-                border: '1px solid #222',
+                backgroundColor: '#0d0d0d',
+                color: currentStatus === 'Received' ? '#27ae60' : '#e67e22',
+                border: '1px solid #1c1c1c',
                 padding: '4px 10px',
                 fontSize: '10px',
+                fontWeight: '500',
                 borderRadius: '12px',
               }}
             >
@@ -114,8 +115,8 @@ export default function LogisticsOrderCard({
       {isExpanded && (
         <div
           style={{
-            backgroundColor: '#0a0a0a',
-            borderTop: '1px solid #141414',
+            backgroundColor: '#080808',
+            borderTop: '1px solid #121212',
             padding: '14px 16px',
             display: 'flex',
             flexDirection: 'column',
@@ -127,12 +128,18 @@ export default function LogisticsOrderCard({
             <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {item.order_items && item.order_items.length > 0 ? (
                 item.order_items.map((prod) => (
-                  <div key={prod.id} style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                    <div style={{ color: '#ddd', fontSize: '11px', fontWeight: '500' }}>
+                  <div key={prod.id} style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                    {/* Product Name (Regular Normal Font, Bold) */}
+                    <div style={{ color: '#e0e0e0', fontSize: '12px', fontWeight: '600', fontFamily: 'sans-serif' }}>
                       {prod.product_name || 'Product'}
                     </div>
-                    <div style={{ color: '#888', fontSize: '10px' }}>
-                      {[prod.size && `Size: ${prod.size}`, prod.color && `Color: ${prod.color}`, `Qty: ${prod.quantity}`]
+                    {/* Size, Color, Qty in One Single Line (Ujjwal Gray & Bold) */}
+                    <div style={{ color: '#b0b0b0', fontSize: '10.5px', fontWeight: '600', fontFamily: 'sans-serif' }}>
+                      {[
+                        prod.size && `Size: ${prod.size}`,
+                        prod.color && `Color: ${prod.color}`,
+                        `Qty: ${prod.quantity}`,
+                      ]
                         .filter(Boolean)
                         .join(' • ')}
                     </div>
@@ -142,59 +149,57 @@ export default function LogisticsOrderCard({
                 <div style={{ color: '#555', fontSize: '10px' }}>No products found</div>
               )}
 
-              {/* Reason from Order Management */}
+              {/* Cancel Reason */}
               {item.return_reason && (
-                <div style={{ color: '#e74c3c', fontSize: '10px', marginTop: '4px' }}>
+                <div style={{ color: '#d9534f', fontSize: '10.5px', marginTop: '2px', fontFamily: 'sans-serif' }}>
                   Cancel Reason: {item.return_reason}
                 </div>
               )}
             </div>
 
-            {/* Custom Styled Status Options */}
+            {/* Custom Eye-Friendly Radio Selector */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flexShrink: 0 }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '11px', color: activeStatus === 'Pending' ? '#f39c12' : '#777' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '11px', color: activeStatus === 'Pending' ? '#e67e22' : '#666', fontWeight: '500' }}>
                 <input
                   type="radio"
                   name={`status-${item.id}`}
                   checked={activeStatus === 'Pending'}
                   onChange={() => onSelectStatus(item.id, 'Pending')}
-                  style={{ accentColor: '#f39c12', cursor: 'pointer' }}
+                  style={{ accentColor: '#e67e22', cursor: 'pointer', width: '12px', height: '12px' }}
                 />
                 Pending
               </label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '11px', color: activeStatus === 'Received' ? '#2ecc71' : '#777' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '11px', color: activeStatus === 'Received' ? '#27ae60' : '#666', fontWeight: '500' }}>
                 <input
                   type="radio"
                   name={`status-${item.id}`}
                   checked={activeStatus === 'Received'}
                   onChange={() => onSelectStatus(item.id, 'Received')}
-                  style={{ accentColor: '#2ecc71', cursor: 'pointer' }}
+                  style={{ accentColor: '#27ae60', cursor: 'pointer', width: '12px', height: '12px' }}
                 />
                 Received
               </label>
             </div>
           </div>
 
-          {/* Logistics Note Input */}
-          <div style={{ marginTop: '4px' }}>
-            <label style={{ display: 'block', fontSize: '10px', color: '#888', marginBottom: '4px' }}>
-              Logistics Note (Optional):
-            </label>
-            <textarea
-              rows={2}
+          {/* Minimal Underline Note Input */}
+          <div style={{ marginTop: '6px' }}>
+            <input
+              type="text"
               value={noteValue}
               onChange={(e) => onNoteChange(item.id, e.target.value)}
-              placeholder="e.g. Received in good condition / Packaging damaged"
+              placeholder="Write a note here..."
               style={{
                 width: '100%',
-                backgroundColor: '#121212',
-                color: '#ccc',
-                border: '1px solid #222',
-                borderRadius: '4px',
-                padding: '6px 8px',
+                backgroundColor: 'transparent',
+                color: '#d1d1d1',
+                border: 'none',
+                borderBottom: '1px solid #262626',
+                borderRadius: '0',
+                padding: '4px 0',
                 fontSize: '11px',
-                resize: 'none',
                 outline: 'none',
+                fontFamily: 'sans-serif',
               }}
             />
           </div>
