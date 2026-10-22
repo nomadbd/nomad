@@ -33,6 +33,10 @@ export function useAdminLogistics() {
   const [selectedStatuses, setSelectedStatuses] = useState<{ [key: string]: string }>({});
   const [savingOrderId, setSavingOrderId] = useState<string | null>(null);
 
+  // Bulk Selection States
+  const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
+  const [statusFilter, setStatusFilter] = useState<string>('All'); // 'All', 'Pending', 'Received'
+
   const [deliveryCharge, setDeliveryCharge] = useState<number | string>('');
   const [vatRate, setVatRate] = useState<number | string>('');
   const [initialDeliveryCharge, setInitialDeliveryCharge] = useState<number | string>('100');
@@ -112,6 +116,30 @@ export function useAdminLogistics() {
     fetchOrders();
     fetchSettings();
   }, []);
+
+  // Filtered Orders logic
+  const filteredOrders = orders.filter((order) => {
+    const currentReturnStatus = order.return_status || 'Pending';
+    if (statusFilter === 'All') return true;
+    return currentReturnStatus === statusFilter;
+  });
+
+  // Toggle Single Order Selection
+  const toggleSelectOrder = (orderId: string) => {
+    setSelectedOrderIds((prev) =>
+      prev.includes(orderId) ? prev.filter((id) => id !== orderId) : [...prev, orderId]
+    );
+  };
+
+  // Toggle Select All (Filtered)
+  const toggleSelectAll = () => {
+    const filteredIds = filteredOrders.map((o) => o.id);
+    if (selectedOrderIds.length === filteredIds.length) {
+      setSelectedOrderIds([]);
+    } else {
+      setSelectedOrderIds(filteredIds);
+    }
+  };
 
   const handleStartEdit = () => {
     setIsEditing(true);
@@ -292,11 +320,17 @@ export function useAdminLogistics() {
   };
 
   return {
-    orders,
+    orders: filteredOrders,
+    allOrdersCount: orders.length,
     loading,
     expandedOrderId,
     selectedStatuses,
     savingOrderId,
+    selectedOrderIds,
+    statusFilter,
+    setStatusFilter,
+    toggleSelectOrder,
+    toggleSelectAll,
     deliveryCharge,
     vatRate,
     isEditing,
