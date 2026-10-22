@@ -1,5 +1,5 @@
 import React from 'react';
-import { PlusIcon, SearchIcon, FilterIcon, MenuIcon, CloseIcon, SettingsIcon } from '../../../components/icons';
+import { PlusIcon, SearchIcon, FilterIcon, MenuIcon, CloseIcon, SettingsIcon } from '../../components/icons';
 import type { TabType } from '../AdminDashboard';
 
 interface AdminHeaderProps {
