@@ -72,18 +72,18 @@ export default function LogisticsOrderCard({
             </span>
           </div>
 
-          {/* 1. Original Order Creation Date & Time */}
+          {/* Direct Creation Date & Time */}
           <div style={{ fontSize: '10px', color: '#777', fontFamily: 'monospace' }}>
-            Ordered: {new Date(item.created_at).toLocaleString()}
+            {new Date(item.created_at).toLocaleString()}
           </div>
 
-          {/* Courier Name & Total Items Count */}
+          {/* Courier Name & Quantity Only */}
           <div style={{ fontSize: '11px', color: '#b0b0b0', fontWeight: '600', marginTop: '2px' }}>
-            {item.courier_name || 'No Courier'} • {totalItemCount} {totalItemCount > 1 ? 'Items' : 'Item'}
+            {item.courier_name || 'No Courier'} • {totalItemCount}
           </div>
         </div>
 
-        {/* Status Badge / Received Time / SAVE Button */}
+        {/* Status Badge & Faded Received Timestamp */}
         <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '3px' }}>
           {canSave ? (
             <button
@@ -119,11 +119,16 @@ export default function LogisticsOrderCard({
               >
                 {currentStatus}
               </div>
-              {/* 2. Received Time Badge (If Received) */}
+              {/* Faded Time display right below the Received badge */}
               {isAlreadyReceived && (
-                <span style={{ fontSize: '9px', color: '#27ae60', fontFamily: 'monospace' }}>
-                  Received: {new Date().toLocaleDateString()}
-                </span>
+                <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                  <span style={{ fontSize: '9px', color: '#555', fontFamily: 'monospace' }}>
+                    {new Date().toLocaleDateString()}
+                  </span>
+                  <span style={{ fontSize: '8.5px', color: '#444', fontFamily: 'monospace' }}>
+                    {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </div>
               )}
             </>
           )}
@@ -148,7 +153,7 @@ export default function LogisticsOrderCard({
               {item.order_items && item.order_items.length > 0 ? (
                 item.order_items.map((prod) => (
                   <div key={prod.id} style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                    <div style={{ color: '#e0e0e0', fontSize: '12px', fontWeight: '600', fontFamily: 'sans-serif' }}>
+                    <div style={{ color: '#e0e0e0', fontSize: '12px', fontWeight: '600', fontFamily: 'sans-serif', wordBreak: 'break-word' }}>
                       {prod.product_name || 'Product'}
                     </div>
                     <div style={{ color: '#b0b0b0', fontSize: '10.5px', fontWeight: '600', fontFamily: 'sans-serif' }}>
@@ -167,21 +172,14 @@ export default function LogisticsOrderCard({
               )}
             </div>
 
-            {/* Custom Status Timeline / Selector */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flexShrink: 0, alignItems: 'flex-end' }}>
+            {/* Custom Radio Selector or Simple Received Text */}
+            <div style={{ flexShrink: 0, display: 'flex', justifyContent: 'flex-end' }}>
               {isAlreadyReceived ? (
-                <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  {/* Status 1: Pending Time */}
-                  <div style={{ fontSize: '9.5px', color: '#e67e22', fontFamily: 'monospace' }}>
-                    ● Pending since: {new Date(item.created_at).toLocaleDateString()}
-                  </div>
-                  {/* Status 2: Received Time */}
-                  <div style={{ fontSize: '9.5px', color: '#27ae60', fontFamily: 'monospace', fontWeight: '600' }}>
-                    ✓ Received: {new Date().toLocaleString()}
-                  </div>
+                <div style={{ color: '#27ae60', fontSize: '11px', fontWeight: '600' }}>
+                  Received
                 </div>
               ) : (
-                <>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'flex-end' }}>
                   <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '11px', color: activeStatus === 'Pending' ? '#e67e22' : '#666', fontWeight: '500' }}>
                     <input
                       type="radio"
@@ -202,7 +200,7 @@ export default function LogisticsOrderCard({
                     />
                     Received
                   </label>
-                </>
+                </div>
               )}
             </div>
           </div>
@@ -219,19 +217,13 @@ export default function LogisticsOrderCard({
             </div>
           )}
 
-          {/* Logistics Note Section with Saved Time */}
+          {/* Logistics Note Section */}
           <div style={{ marginTop: '2px', borderTop: '1px solid #141414', paddingTop: '8px' }}>
             {initialNote ? (
               /* PERMANENT LOCKED NOTE DISPLAY */
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                <div style={{ fontSize: '11px', color: '#d1d1d1', fontFamily: 'sans-serif' }}>
-                  <span style={{ color: '#888', fontWeight: '500' }}>Note: </span>
-                  {initialNote}
-                </div>
-                {/* 3. Note Saved Time */}
-                <div style={{ fontSize: '9px', color: '#555', fontFamily: 'monospace' }}>
-                  Note saved at: {new Date(item.created_at).toLocaleString()}
-                </div>
+              <div style={{ fontSize: '11px', color: '#d1d1d1', fontFamily: 'sans-serif' }}>
+                <span style={{ color: '#888', fontWeight: '500' }}>Note: </span>
+                {initialNote}
               </div>
             ) : (
               /* INITIAL INPUT BEFORE FIRST SAVE */
