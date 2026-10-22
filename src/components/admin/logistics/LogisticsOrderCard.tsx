@@ -9,6 +9,8 @@ interface LogisticsOrderCardProps {
   activeStatus: string;
   hasChange: boolean;
   isSavingThis: boolean;
+  noteValue: string;
+  onNoteChange: (orderId: string, note: string) => void;
   onToggleExpand: (id: string) => void;
   onSelectStatus: (orderId: string, status: string) => void;
   onStatusUpdate: (orderId: string, newStatus: string) => void;
@@ -21,15 +23,20 @@ export default function LogisticsOrderCard({
   activeStatus,
   hasChange,
   isSavingThis,
+  noteValue,
+  onNoteChange,
   onToggleExpand,
   onSelectStatus,
   onStatusUpdate,
   pendingStatus,
 }: LogisticsOrderCardProps) {
-  // মোট প্রোডাক্টের সংখ্যা হিসাব করা
   const totalItemCount = item.order_items
     ? item.order_items.reduce((sum, prod) => sum + (Number(prod.quantity) || 0), 0)
     : 0;
+
+  const initialNote = item.admin_notes || '';
+  const isNoteChanged = noteValue !== initialNote;
+  const canSave = hasChange || isNoteChanged;
 
   return (
     <div style={{ borderBottom: '1px solid #1a1a1a' }}>
@@ -54,33 +61,34 @@ export default function LogisticsOrderCard({
             </span>
           </div>
 
-          {/* Date & Time (উজ্জ্বল করা হয়েছে) */}
+          {/* Date & Time */}
           <div style={{ fontSize: '10px', color: '#aaa', fontFamily: 'monospace' }}>
             {new Date(item.created_at).toLocaleString()}
           </div>
 
-          {/* Courier Name & Total Items Count (বোল্ড ও উজ্জ্বল ধূসর) */}
+          {/* Courier Name & Total Items Count */}
           <div style={{ fontSize: '11px', color: '#ccc', fontWeight: '600', marginTop: '2px' }}>
             {item.courier_name || 'No Courier'} • {totalItemCount} {totalItemCount > 1 ? 'Items' : 'Item'}
           </div>
         </div>
 
-        {/* Status Badge / Save Button */}
+        {/* Status Badge / Pill-Shaped White SAVE Button */}
         <div style={{ flexShrink: 0 }}>
-          {hasChange ? (
+          {canSave ? (
             <button
-              onClick={() => pendingStatus && onStatusUpdate(item.id, pendingStatus)}
+              onClick={() => onStatusUpdate(item.id, activeStatus)}
               disabled={isSavingThis}
               style={{
-                backgroundColor: '#2ecc71',
-                color: '#060606',
-                border: 'none',
-                padding: '5px 12px',
+                backgroundColor: '#111',
+                color: '#fff',
+                border: '1px solid #ffffff',
+                padding: '5px 16px',
                 fontSize: '10px',
-                fontWeight: 'bold',
-                borderRadius: '3px',
+                fontWeight: '600',
+                borderRadius: '20px', // ডিম্বাকার / Pill Shape
                 cursor: 'pointer',
                 letterSpacing: '0.5px',
+                boxShadow: '0 0 5px rgba(255,255,255,0.2)',
               }}
             >
               {isSavingThis ? 'SAVING...' : 'SAVE'}
@@ -91,9 +99,9 @@ export default function LogisticsOrderCard({
                 backgroundColor: '#111',
                 color: currentStatus === 'Received' ? '#2ecc71' : '#f39c12',
                 border: '1px solid #222',
-                padding: '4px 8px',
+                padding: '4px 10px',
                 fontSize: '10px',
-                borderRadius: '3px',
+                borderRadius: '12px',
               }}
             >
               {currentStatus}
@@ -110,58 +118,85 @@ export default function LogisticsOrderCard({
             borderTop: '1px solid #141414',
             padding: '14px 16px',
             display: 'flex',
-            justify: 'space-between',
-            alignItems: 'flex-start',
-            gap: '16px',
+            flexDirection: 'column',
+            gap: '12px',
           }}
         >
-          {/* Detailed Product List */}
-          <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {item.order_items && item.order_items.length > 0 ? (
-              item.order_items.map((prod) => (
-                <div key={prod.id} style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                  <div style={{ color: '#ddd', fontSize: '11px', fontWeight: '500' }}>
-                    {prod.product_name || 'Product'}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px' }}>
+            {/* Detailed Product List */}
+            <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {item.order_items && item.order_items.length > 0 ? (
+                item.order_items.map((prod) => (
+                  <div key={prod.id} style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    <div style={{ color: '#ddd', fontSize: '11px', fontWeight: '500' }}>
+                      {prod.product_name || 'Product'}
+                    </div>
+                    <div style={{ color: '#888', fontSize: '10px' }}>
+                      {[prod.size && `Size: ${prod.size}`, prod.color && `Color: ${prod.color}`, `Qty: ${prod.quantity}`]
+                        .filter(Boolean)
+                        .join(' • ')}
+                    </div>
                   </div>
-                  <div style={{ color: '#888', fontSize: '10px' }}>
-                    {[prod.size && `Size: ${prod.size}`, prod.color && `Color: ${prod.color}`, `Qty: ${prod.quantity}`]
-                      .filter(Boolean)
-                      .join(' • ')}
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div style={{ color: '#555', fontSize: '10px' }}>No products found</div>
-            )}
+                ))
+              ) : (
+                <div style={{ color: '#555', fontSize: '10px' }}>No products found</div>
+              )}
 
-            {/* Return Reason */}
-            {item.return_reason && (
-              <div style={{ color: '#e74c3c', fontSize: '10px', marginTop: '4px' }}>
-                Reason: {item.return_reason}
-              </div>
-            )}
+              {/* Reason from Order Management */}
+              {item.return_reason && (
+                <div style={{ color: '#e74c3c', fontSize: '10px', marginTop: '4px' }}>
+                  Cancel Reason: {item.return_reason}
+                </div>
+              )}
+            </div>
+
+            {/* Custom Styled Status Options */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flexShrink: 0 }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '11px', color: activeStatus === 'Pending' ? '#f39c12' : '#777' }}>
+                <input
+                  type="radio"
+                  name={`status-${item.id}`}
+                  checked={activeStatus === 'Pending'}
+                  onChange={() => onSelectStatus(item.id, 'Pending')}
+                  style={{ accentColor: '#f39c12', cursor: 'pointer' }}
+                />
+                Pending
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '11px', color: activeStatus === 'Received' ? '#2ecc71' : '#777' }}>
+                <input
+                  type="radio"
+                  name={`status-${item.id}`}
+                  checked={activeStatus === 'Received'}
+                  onChange={() => onSelectStatus(item.id, 'Received')}
+                  style={{ accentColor: '#2ecc71', cursor: 'pointer' }}
+                />
+                Received
+              </label>
+            </div>
           </div>
 
-          {/* Status Checkboxes */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flexShrink: 0, paddingTop: '2px' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '11px', color: '#f39c12' }}>
-              <input
-                type="checkbox"
-                checked={activeStatus === 'Pending'}
-                onChange={() => onSelectStatus(item.id, 'Pending')}
-                style={{ accentColor: '#f39c12', cursor: 'pointer' }}
-              />
-              Pending
+          {/* Logistics Note Input */}
+          <div style={{ marginTop: '4px' }}>
+            <label style={{ display: 'block', fontSize: '10px', color: '#888', marginBottom: '4px' }}>
+              Logistics Note (Optional):
             </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '11px', color: '#2ecc71' }}>
-              <input
-                type="checkbox"
-                checked={activeStatus === 'Received'}
-                onChange={() => onSelectStatus(item.id, 'Received')}
-                style={{ accentColor: '#2ecc71', cursor: 'pointer' }}
-              />
-              Received
-            </label>
+            <textarea
+              rows={2}
+              value={noteValue}
+              onChange={(e) => onNoteChange(item.id, e.target.value)}
+              placeholder="e.g. Received in good condition / Packaging damaged"
+              style={{
+                width: '100%',
+                backgroundColor: '#121212',
+                color: '#ccc',
+                border: '1px solid #222',
+                borderRadius: '4px',
+                padding: '6px 8px',
+                fontSize: '11px',
+                resize: 'none',
+                outline: 'none',
+              }}
+            />
           </div>
         </div>
       )}
