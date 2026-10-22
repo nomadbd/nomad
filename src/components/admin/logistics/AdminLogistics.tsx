@@ -15,6 +15,7 @@ export default function AdminLogistics({ searchQuery, isFilterOpen, isSettingsOp
     loading,
     expandedOrderId,
     selectedStatuses,
+    logisticsNotes,
     savingOrderId,
     deliveryCharge,
     vatRate,
@@ -25,6 +26,7 @@ export default function AdminLogistics({ searchQuery, isFilterOpen, isSettingsOp
     handleCancel,
     toggleExpand,
     handleSelectStatus,
+    handleNoteChange,
     handleStatusUpdate,
   } = useAdminLogistics();
 
@@ -59,6 +61,7 @@ export default function AdminLogistics({ searchQuery, isFilterOpen, isSettingsOp
                 const activeStatus = pendingStatus || currentStatus;
                 const hasChange = pendingStatus && pendingStatus !== currentStatus;
                 const isSavingThis = savingOrderId === item.id;
+                const currentNote = logisticsNotes[item.id] !== undefined ? logisticsNotes[item.id] : (item.admin_notes || '');
 
                 return (
                   <LogisticsOrderCard
@@ -70,6 +73,8 @@ export default function AdminLogistics({ searchQuery, isFilterOpen, isSettingsOp
                     activeStatus={activeStatus}
                     hasChange={hasChange}
                     isSavingThis={isSavingThis}
+                    noteValue={currentNote}
+                    onNoteChange={handleNoteChange}
                     onToggleExpand={toggleExpand}
                     onSelectStatus={handleSelectStatus}
                     onStatusUpdate={handleStatusUpdate}
