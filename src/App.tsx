@@ -15,7 +15,7 @@ import CartOverlay from './components/CartOverlay';
 import AuthOverlay from './components/auth/AuthOverlay';
 import AuthForm from './components/auth/AuthForm';
 
-const AdminDashboard = lazy(() => import('./components/pages/AdminDashboard/AdminDashboard'));
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard/AdminDashboard'));
 const AmbassadorJoin = lazy(() => import('./components/ambassador/join/AmbassadorJoin'));
 const AmbassadorPortal = lazy(() => import('./components/ambassador/portal/AmbassadorPortal'));
 
