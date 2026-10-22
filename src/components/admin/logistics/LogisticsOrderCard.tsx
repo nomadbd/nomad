@@ -57,10 +57,12 @@ export default function LogisticsOrderCard({
 
   return (
     <div style={{ borderBottom: '1px solid #141414' }}>
-      {/* MAIN UNEXPANDED CARD */}
-      <div style={{ padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px' }}>
-        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-          {/* Header ID & Arrow */}
+      {/* MAIN UNEXPANDED CARD - PERFECT 3-LINE SYMMETRY */}
+      <div style={{ padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'stretch', gap: '16px' }}>
+        
+        {/* LEFT COLUMN (3 LINES) */}
+        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '4px' }}>
+          {/* Line 1: Header ID & Arrow */}
           <div
             onClick={() => onToggleExpand(item.id)}
             style={{
@@ -73,24 +75,24 @@ export default function LogisticsOrderCard({
             <span style={{ fontWeight: '700', color: '#e5e5e5', fontSize: '13px', fontFamily: 'monospace' }}>
               #{item.id.substring(0, 8)} ...
             </span>
-            <span style={{ fontSize: '9px', color: '#666' }}>
+            <span style={{ fontSize: '9px', color: '#aaa' }}>
               {isExpanded ? '▲' : '▼'}
             </span>
           </div>
 
-          {/* Creation Date & Time */}
+          {/* Line 2: Creation Date & Time */}
           <div style={{ fontSize: '10px', color: '#aaa', fontFamily: 'monospace' }}>
             {new Date(item.created_at).toLocaleString()}
           </div>
 
-          {/* Courier Name & Quantity Only */}
-          <div style={{ fontSize: '11px', color: '#ccc', fontWeight: '600', marginTop: '2px' }}>
+          {/* Line 3: Courier Name & Quantity */}
+          <div style={{ fontSize: '11px', color: '#ccc', fontWeight: '600', fontFamily: 'monospace' }}>
             {item.courier_name || 'No Courier'} • {totalItemCount}
           </div>
         </div>
 
-        {/* Status Badge & Received Timestamp */}
-        <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '3px' }}>
+        {/* RIGHT COLUMN (3 LINES - EXACTLY BALANCED WITH LEFT) */}
+        <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', alignItems: 'flex-end', gap: '4px' }}>
           {canSave ? (
             <button
               onClick={handleConfirmSave}
@@ -112,35 +114,45 @@ export default function LogisticsOrderCard({
             </button>
           ) : (
             <>
+              {/* Line 1: Status Badge */}
               <div
                 style={{
                   backgroundColor: '#0d0d0d',
                   color: isAlreadyReceived ? '#27ae60' : '#e67e22',
                   border: '1px solid #1c1c1c',
-                  padding: '4px 10px',
+                  padding: '3px 10px',
                   fontSize: '10px',
-                  fontWeight: '500',
+                  fontWeight: '600',
                   borderRadius: '12px',
+                  fontFamily: 'monospace',
                 }}
               >
                 {currentStatus}
               </div>
-              {isAlreadyReceived && (
-                <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', marginTop: '2px' }}>
-                  <span style={{ fontSize: '9.5px', color: '#aaa', fontFamily: 'monospace', fontWeight: '500' }}>
-                    {new Date().toLocaleDateString()}
-                  </span>
-                  <span style={{ fontSize: '9px', color: '#888', fontFamily: 'monospace' }}>
-                    {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </span>
+
+              {/* Line 2: Received Date (Matching Left Line 2 Font & Brightness) */}
+              {isAlreadyReceived ? (
+                <div style={{ fontSize: '10px', color: '#aaa', fontFamily: 'monospace' }}>
+                  {new Date().toLocaleDateString()}
                 </div>
+              ) : (
+                <div style={{ fontSize: '10px', color: '#aaa', fontFamily: 'monospace' }}>-</div>
+              )}
+
+              {/* Line 3: Received Time (Matching Left Line 3 Font & Alignment) */}
+              {isAlreadyReceived ? (
+                <div style={{ fontSize: '10px', color: '#aaa', fontFamily: 'monospace' }}>
+                  {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </div>
+              ) : (
+                <div style={{ fontSize: '10px', color: '#aaa', fontFamily: 'monospace' }}>-</div>
               )}
             </>
           )}
         </div>
       </div>
 
-      {/* EXPANDED SECTION (UNIFIED FLOW WITHOUT LINES) */}
+      {/* EXPANDED SECTION */}
       {isExpanded && (
         <div
           style={{
@@ -149,7 +161,7 @@ export default function LogisticsOrderCard({
             padding: '16px',
             display: 'flex',
             flexDirection: 'column',
-            gap: '14px', // সুষম গ্যাপ যা প্রতিটি সেকশনকে সুন্দরভাবে আলাদা রাখবে কিন্তু কোনো দাগ লাগবে না
+            gap: '14px',
           }}
         >
           {/* Detailed Product List */}
