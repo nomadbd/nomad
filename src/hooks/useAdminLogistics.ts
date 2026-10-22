@@ -16,6 +16,7 @@ export interface OrderItem {
   user_id?: string | null;
   courier_name?: string | null;
   return_reason?: string | null;
+  admin_notes?: string | null;
   return_status?: string | null;
   status?: string | null;
   created_at: string;
@@ -27,6 +28,7 @@ export function useAdminLogistics() {
   const [loading, setLoading] = useState<boolean>(true);
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
   const [selectedStatuses, setSelectedStatuses] = useState<{ [key: string]: string }>({});
+  const [logisticsNotes, setLogisticsNotes] = useState<{ [key: string]: string }>({});
   const [savingOrderId, setSavingOrderId] = useState<string | null>(null);
 
   const [deliveryCharge, setDeliveryCharge] = useState<number | string>('');
@@ -65,6 +67,12 @@ export function useAdminLogistics() {
       if (itemsError) {
         console.error('Error fetching order items:', itemsError);
       }
+
+      const initialNotes: { [key: string]: string } = {};
+      orderData.forEach((ord) => {
+        initialNotes[ord.id] = ord.admin_notes || '';
+      });
+      setLogisticsNotes(initialNotes);
 
       const combinedOrders: OrderItem[] = orderData.map((ord) => {
         const matchedItems = (itemsData || []).filter((item) => item.order_id === ord.id);
@@ -193,6 +201,13 @@ export function useAdminLogistics() {
     }));
   };
 
+  const handleNoteChange = (orderId: string, note: string) => {
+    setLogisticsNotes((prev) => ({
+      ...prev,
+      [orderId]: note,
+    }));
+  };
+
   const handleStatusUpdate = async (orderId: string, newStatus: string) => {
     setSavingOrderId(orderId);
     try {
@@ -205,10 +220,7 @@ export function useAdminLogistics() {
       if (freshOrderErr || !freshOrderData) throw new Error('Order not found');
 
       const currentReturnStatus = freshOrderData.return_status || 'Pending';
-      if (currentReturnStatus === newStatus) {
-        setSavingOrderId(null);
-        return;
-      }
+      const updatedNote = logisticsNotes[orderId] || '';
 
       const { data: currentOrderItems, error: itemsFetchError } = await supabase
         .from('order_items')
@@ -264,14 +276,19 @@ export function useAdminLogistics() {
 
       const { error: updateOrderError } = await supabase
         .from('orders')
-        .update({ return_status: newStatus })
+        .update({
+          return_status: newStatus,
+          admin_notes: updatedNote,
+        })
         .eq('id', orderId);
 
       if (updateOrderError) throw updateOrderError;
 
       setOrders((prevOrders) =>
         prevOrders.map((order) =>
-          order.id === orderId ? { ...order, return_status: newStatus } : order
+          order.id === orderId
+            ? { ...order, return_status: newStatus, admin_notes: updatedNote }
+            : order
         )
       );
 
@@ -292,6 +309,7 @@ export function useAdminLogistics() {
     loading,
     expandedOrderId,
     selectedStatuses,
+    logisticsNotes,
     savingOrderId,
     deliveryCharge,
     vatRate,
@@ -304,6 +322,7 @@ export function useAdminLogistics() {
     handleCancel,
     toggleExpand,
     handleSelectStatus,
+    handleNoteChange,
     handleStatusUpdate,
   };
 }
