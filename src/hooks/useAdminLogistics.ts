@@ -14,10 +14,6 @@ export interface OrderItemDetail {
 export interface OrderItem {
   id: string;
   user_id?: string | null;
-  customer_name?: string | null;
-  customer_phone?: string | null;
-  customer_email?: string | null;
-  shipping_address?: string | null;
   courier_name?: string | null;
   return_reason?: string | null;
   return_status?: string | null;
@@ -32,10 +28,6 @@ export function useAdminLogistics() {
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
   const [selectedStatuses, setSelectedStatuses] = useState<{ [key: string]: string }>({});
   const [savingOrderId, setSavingOrderId] = useState<string | null>(null);
-
-  // Bulk Selection States
-  const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
-  const [statusFilter, setStatusFilter] = useState<string>('All'); // 'All', 'Pending', 'Received'
 
   const [deliveryCharge, setDeliveryCharge] = useState<number | string>('');
   const [vatRate, setVatRate] = useState<number | string>('');
@@ -116,30 +108,6 @@ export function useAdminLogistics() {
     fetchOrders();
     fetchSettings();
   }, []);
-
-  // Filtered Orders logic
-  const filteredOrders = orders.filter((order) => {
-    const currentReturnStatus = order.return_status || 'Pending';
-    if (statusFilter === 'All') return true;
-    return currentReturnStatus === statusFilter;
-  });
-
-  // Toggle Single Order Selection
-  const toggleSelectOrder = (orderId: string) => {
-    setSelectedOrderIds((prev) =>
-      prev.includes(orderId) ? prev.filter((id) => id !== orderId) : [...prev, orderId]
-    );
-  };
-
-  // Toggle Select All (Filtered)
-  const toggleSelectAll = () => {
-    const filteredIds = filteredOrders.map((o) => o.id);
-    if (selectedOrderIds.length === filteredIds.length) {
-      setSelectedOrderIds([]);
-    } else {
-      setSelectedOrderIds(filteredIds);
-    }
-  };
 
   const handleStartEdit = () => {
     setIsEditing(true);
@@ -320,17 +288,11 @@ export function useAdminLogistics() {
   };
 
   return {
-    orders: filteredOrders,
-    allOrdersCount: orders.length,
+    orders,
     loading,
     expandedOrderId,
     selectedStatuses,
     savingOrderId,
-    selectedOrderIds,
-    statusFilter,
-    setStatusFilter,
-    toggleSelectOrder,
-    toggleSelectAll,
     deliveryCharge,
     vatRate,
     isEditing,
