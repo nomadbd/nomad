@@ -23,7 +23,11 @@ export default function LogisticsSettingsModal({
   onSaveSettings,
   onCancel,
 }: LogisticsSettingsProps) {
-  const hasChanges = String(deliveryCharge) !== String(initialDeliveryCharge) || String(vatRate) !== String(initialVatRate);
+  // Check if current value in input differs from saved initial value
+  const isDeliveryChanged = deliveryCharge !== '' && String(deliveryCharge) !== String(initialDeliveryCharge);
+  const isVatChanged = vatRate !== '' && String(vatRate) !== String(initialVatRate);
+  
+  const hasChanges = isDeliveryChanged || isVatChanged;
 
   return (
     <div style={{ padding: '16px 0', maxWidth: '100%', boxSizing: 'border-box' }}>
@@ -44,6 +48,7 @@ export default function LogisticsSettingsModal({
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: hasChanges ? '20px' : '0' }}>
+          {/* Delivery Charge Input Card */}
           <div
             style={{
               backgroundColor: '#050505',
@@ -77,6 +82,7 @@ export default function LogisticsSettingsModal({
             </div>
           </div>
 
+          {/* VAT Rate Input Card */}
           <div
             style={{
               backgroundColor: '#050505',
@@ -91,7 +97,7 @@ export default function LogisticsSettingsModal({
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <input
                 type="number"
-                step="0.01"
+                step="any"
                 value={vatRate}
                 placeholder={String(initialVatRate)}
                 onChange={(e) => onVatChange(e.target.value)}
@@ -112,9 +118,11 @@ export default function LogisticsSettingsModal({
           </div>
         </div>
 
+        {/* Action Buttons (Save / Cancel) trigger dynamically when input values change */}
         {hasChanges && (
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', paddingTop: '10px' }}>
             <button
+              type="button"
               onClick={onCancel}
               disabled={isSaving}
               style={{
@@ -131,6 +139,7 @@ export default function LogisticsSettingsModal({
               CANCEL
             </button>
             <button
+              type="button"
               onClick={onSaveSettings}
               disabled={isSaving}
               style={{
