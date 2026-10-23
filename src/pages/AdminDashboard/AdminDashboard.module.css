@@ -161,9 +161,7 @@
     right: 0;
     bottom: 0;
     z-index: 999;
-    background-color: rgba(6, 6, 6, 0.98);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    background-color: #060606; /* সলিড ব্যাকগ্রাউন্ড যা নিচের পেজকে পুরোপুরি ঢেকে রাখবে */
     padding: 16px 16px 80px 16px !important;
     box-sizing: border-box;
     display: flex !important;
@@ -171,22 +169,17 @@
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch;
 
-    /* আল্ট্রা-স্মুথ ও বাটার-ফ্রি ৩D ট্রান্সফর্ম */
-    opacity: 0;
+    /* বাম দিক থেকে আসা এবং বামে নিখুঁতভাবে চলে যাওয়ার স্লাইড অ্যানিমেশন */
     visibility: hidden;
-    transform: translate3d(0, -10px, 0);
-    transition: opacity 0.22s cubic-bezier(0.16, 1, 0.3, 1),
-                transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
-                visibility 0.22s ease;
-    pointer-events: none;
-    will-change: transform, opacity;
+    transform: translate3d(-100%, 0, 0);
+    transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+                visibility 0.28s ease;
+    will-change: transform;
   }
 
   .menuOpen {
-    opacity: 1 !important;
     visibility: visible !important;
     transform: translate3d(0, 0, 0) !important;
-    pointer-events: auto !important;
   }
 
   .nomadMenuToggle {
@@ -246,10 +239,8 @@
     background-color: #060606;
     box-sizing: border-box !important;
     padding: 16px 12px 40px 12px !important;
-    opacity: 1 !important;
     visibility: visible !important;
     transform: none !important;
-    pointer-events: auto !important;
   }
 
   .nomadMenuToggle {
