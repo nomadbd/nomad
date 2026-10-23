@@ -182,7 +182,7 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
-  // ফ্লিকারিং ছাড়া ৩ সেকেন্ডের মিনিমাম লোডিং লজিক
+  // ফ্লিকারিং ছাড়া গ্যারান্টিড ১০ সেকেন্ডের মিনিমাম লোডিং লজিক
   useEffect(() => {
     let isMounted = true;
 
@@ -191,7 +191,7 @@ const AdminDashboard: React.FC = () => {
       await fetchCurrentUserAndRole();
 
       const elapsedTime = Date.now() - startTime;
-      const minLoadingTime = 3000;
+      const minLoadingTime = 10000; // ঠিক ১০ সেকেন্ড (১০০০ millisecond = ১s)
       const remainingTime = Math.max(0, minLoadingTime - elapsedTime);
 
       setTimeout(() => {
@@ -217,9 +217,8 @@ const AdminDashboard: React.FC = () => {
     }
   }, [loading, hasAdminAccess]);
 
-  // কোনো লেবেল দেওয়া ছাড়াই রেন্ডার করা হলো
   if (loading) {
-    return <ReminderLoading label="" />;
+    return <ReminderLoading />;
   }
 
   if (!hasAdminAccess) {
@@ -229,16 +228,19 @@ const AdminDashboard: React.FC = () => {
   const isChatOpen = activeTab === 'messages' && !!activeChat;
 
   return (
-    <div style={{
-      backgroundColor: '#030303',
-      color: '#fff',
-      minHeight: '100dvh',
-      fontFamily: 'monospace, sans-serif',
-      width: '100%',
-      maxWidth: '100%',
-      overflowX: 'hidden',
-      position: 'relative'
-    }}>
+    <div 
+      className="animate-fade-in"
+      style={{
+        backgroundColor: '#030303',
+        color: '#fff',
+        minHeight: '100dvh',
+        fontFamily: 'monospace, sans-serif',
+        width: '100%',
+        maxWidth: '100%',
+        overflowX: 'hidden',
+        position: 'relative'
+      }}
+    >
       {!isChatOpen && (
         <AdminHeader
           styles={styles}
