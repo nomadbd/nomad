@@ -12,7 +12,6 @@ interface ReminderLoadingProps {
 }
 
 export const ReminderLoading: React.FC<ReminderLoadingProps> = ({ 
-  label = '', // ডিফল্ট ফাঁকা রাখা হলো যাতে কোনো টেক্সট বা ফ্লেশ না আসে
   position = 'center' 
 }) => {
   const [reminder, setReminder] = useState<Reminder | null>(null);
@@ -56,18 +55,10 @@ export const ReminderLoading: React.FC<ReminderLoadingProps> = ({
       position: 'relative',
       fontFamily: 'monospace, sans-serif'
     }}>
-      {/* শুধু লেবেল পাস করলেই দেখাবে, অন্যথায় একদমই রেন্ডার হবে না */}
-      {label && (
-        <div style={{
-          fontSize: '11px',
-          letterSpacing: '3px',
-          color: '#888888',
-          marginBottom: '24px',
-          textTransform: 'uppercase'
-        }}>
-          {label}
-        </div>
-      )}
+      {/* 
+        এখানে থাকা লেবেল অংশটি সম্পূর্ণ রিমুভ করে দেওয়া হলো। 
+        ফলে ১ মিলি-সেকেন্ডের জন্যও কোনো টেক্সট ডোমে আসবে না বা ফ্লিকার করবে না।
+      */}
 
       {/* কুরআনের আয়াত / নীতিবাক্য */}
       {reminder && (
