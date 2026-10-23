@@ -166,13 +166,29 @@ const AdminDashboard: React.FC = () => {
       }
     } catch (err) {
       console.error('Error fetching user profile:', err);
-    } finally {
-      setLoading(false);
     }
   };
 
+  // ইচ্ছাকৃতভাবে ৩ সেকেন্ড (3000ms) মিনিমাম ডিলে যোগ করা হলো
   useEffect(() => {
-    fetchCurrentUserAndRole();
+    const startTime = Date.now();
+
+    const initDashboard = async () => {
+      await fetchCurrentUserAndRole();
+
+      const elapsedTime = Date.now() - startTime;
+      const minLoadingTime = 3000; // ঠিক ৩ সেকেন্ড সময় নির্ধারণ করা হলো
+
+      if (elapsedTime < minLoadingTime) {
+        setTimeout(() => {
+          setLoading(false);
+        }, minLoadingTime - elapsedTime);
+      } else {
+        setLoading(false);
+      }
+    };
+
+    initDashboard();
   }, []);
 
   const normalizedRole = userRole.toUpperCase().trim();
@@ -184,7 +200,6 @@ const AdminDashboard: React.FC = () => {
     }
   }, [loading, hasAdminAccess]);
 
-  // প্লেইন টেক্সটের বদলে প্রিমিয়াম ReminderLoading কম্পোনেন্ট ব্যবহার করা হলো
   if (loading) {
     return <ReminderLoading label="VERIFYING ADMIN ACCESS..." />;
   }
