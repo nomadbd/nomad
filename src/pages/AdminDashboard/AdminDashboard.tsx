@@ -18,6 +18,7 @@ import { SendInvite, AmbassadorList } from '../../components/admin/ambassadors';
 
 import { AdminHeader } from './AdminHeader';
 import { AdminSidebar } from './AdminSidebar';
+import ReminderLoading from '../../components/ui/ReminderLoading';
 
 export type TabType = 'overview' | 'orders' | 'products' | 'logistics' | 'messages' | 'notifications' | 'ambassadors' | 'staff' | 'customers' | 'reminders';
 
@@ -50,6 +51,7 @@ const AdminDashboard: React.FC = () => {
   const [userEmail, setUserEmail] = useState<string>('');
   const [userRole, setUserRole] = useState<string>('');
   const [profileData, setProfileData] = useState<any>(null);
+  const [loading, setLoading] = useState<boolean>(true);
   const [isProfileOpen, setIsProfileOpen] = useState<boolean>(false);
 
   const [isHeaderVisible, setIsHeaderVisible] = useState<boolean>(true);
@@ -164,12 +166,32 @@ const AdminDashboard: React.FC = () => {
       }
     } catch (err) {
       console.error('Error fetching user profile:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
     fetchCurrentUserAndRole();
   }, []);
+
+  const normalizedRole = userRole.toUpperCase().trim();
+  const hasAdminAccess = ['SUPER_ADMIN', 'ADMIN', 'STAFF'].includes(normalizedRole);
+
+  useEffect(() => {
+    if (!loading && !hasAdminAccess) {
+      window.location.href = '/profile';
+    }
+  }, [loading, hasAdminAccess]);
+
+  // সাধারণ LOADING DASHBOARD টেক্সট বাদ দিয়ে সরাসরি ReminderLoading ব্যবহার করা হয়েছে
+  if (loading) {
+    return <ReminderLoading label="LOADING DASHBOARD..." />;
+  }
+
+  if (!hasAdminAccess) {
+    return null;
+  }
 
   const isChatOpen = activeTab === 'messages' && !!activeChat;
 
