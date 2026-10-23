@@ -8,7 +8,7 @@ interface AdminSidebarProps {
   onTabChange: (tab: TabType) => void;
   userName: string;
   userEmail: string;
-  userRole: string;
+  userDesignation: string;
   onOpenProfile: () => void;
 }
 
@@ -19,7 +19,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
   onTabChange,
   userName,
   userEmail,
-  userRole,
+  userDesignation,
   onOpenProfile,
 }) => {
   const tabs: { id: TabType; label: string }[] = [
@@ -39,10 +39,6 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
     <aside className={`${styles.nomadSidebar} ${menuOpen ? styles.menuOpen : ''}`}>
       <div className={styles.sidebarStack}>
         <nav className={styles.nomadNav} data-nomad-nav>
-          <span style={{ fontSize: '9px', color: '#888888', letterSpacing: '2px', marginBottom: '8px', fontWeight: 'bold', display: 'block', paddingLeft: '14px' }}>
-            MAIN MENU
-          </span>
-
           {tabs.map((tab) => (
             <button
               key={tab.id}
@@ -54,9 +50,6 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
           ))}
 
           <div style={{ marginTop: '16px', borderTop: '1px solid #1a1a1a', paddingTop: '12px' }}>
-            <span style={{ fontSize: '9px', color: '#888888', letterSpacing: '2px', marginBottom: '8px', fontWeight: 'bold', display: 'block', paddingLeft: '14px' }}>
-              OPERATOR
-            </span>
             <button
               className={styles.navBtn}
               onClick={onOpenProfile}
@@ -65,9 +58,9 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
               <span style={{ color: '#ffffff', fontWeight: 'bold', fontSize: '11px', textTransform: 'uppercase' }}>
                 {userName || userEmail || 'PROFILE'}
               </span>
-              {userRole && (
-                <span style={{ fontSize: '9px', color: '#888888', letterSpacing: '1px' }}>
-                  {userRole}
+              {userDesignation && (
+                <span style={{ fontSize: '9px', color: '#888888', letterSpacing: '1px', textTransform: 'uppercase' }}>
+                  {userDesignation}
                 </span>
               )}
             </button>
