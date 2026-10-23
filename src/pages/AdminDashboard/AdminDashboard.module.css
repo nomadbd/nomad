@@ -39,7 +39,7 @@
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid #1a1a1a;
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.3s ease;
   flex-shrink: 0;
   box-sizing: border-box;
   overflow: visible !important;
@@ -162,8 +162,8 @@
     bottom: 0;
     z-index: 999;
     background-color: rgba(6, 6, 6, 0.98);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     padding: 16px 16px 80px 16px !important;
     box-sizing: border-box;
     display: flex !important;
@@ -171,13 +171,13 @@
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch;
 
-    /* অ্যাপলের মতো সুপার স্মুথ ট্রানজিশন */
+    /* আল্ট্রা-স্মুথ ও বাটার-ফ্রি ৩D ট্রান্সফর্ম */
     opacity: 0;
     visibility: hidden;
-    transform: translateY(-12px);
-    transition: opacity 0.35s cubic-bezier(0.32, 0.72, 0, 1),
-                transform 0.35s cubic-bezier(0.32, 0.72, 0, 1),
-                visibility 0.35s ease;
+    transform: translate3d(0, -10px, 0);
+    transition: opacity 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+                visibility 0.22s ease;
     pointer-events: none;
     will-change: transform, opacity;
   }
@@ -185,7 +185,7 @@
   .menuOpen {
     opacity: 1 !important;
     visibility: visible !important;
-    transform: translateY(0) !important;
+    transform: translate3d(0, 0, 0) !important;
     pointer-events: auto !important;
   }
 
