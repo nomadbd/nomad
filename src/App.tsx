@@ -6,6 +6,7 @@ import { useSession } from './hooks/useSession';
 import { subscribeUserToPush } from './utils/pushManager';
 
 import ProfilePage from './pages/ProfilePage';
+import AdminDashboard from './pages/AdminDashboard/AdminDashboard'; // সরাসরি ইমপোর্ট করা হলো (ডাবল লোডিং এড়াতে)
 
 import Header from './components/ui/Header';
 import SearchOverlay from './components/SearchOverlay';
@@ -16,7 +17,6 @@ import AuthOverlay from './components/auth/AuthOverlay';
 import AuthForm from './components/auth/AuthForm';
 import ReminderLoading from './components/ui/ReminderLoading';
 
-const AdminDashboard = lazy(() => import('./pages/AdminDashboard/AdminDashboard'));
 const AmbassadorJoin = lazy(() => import('./components/ambassador/join/AmbassadorJoin'));
 const AmbassadorPortal = lazy(() => import('./components/ambassador/portal/AmbassadorPortal'));
 
@@ -81,16 +81,11 @@ const AppContent = ({ session, setIsSearchOpen, setIsAuthOpen }: any) => {
           } 
         />
 
+        {/* সরাসরি AdminDashboard রেন্ডার করা হলো, কোনো Suspense বা ডাবল লোডিং ছাড়াই */}
         <Route 
           path="/admin" 
           element={
-            session ? (
-              <Suspense fallback={<ReminderLoading label="LOADING ADMIN DASHBOARD..." />}>
-                <AdminDashboard />
-              </Suspense>
-            ) : (
-              <Navigate to="/" replace />
-            )
+            session ? <AdminDashboard /> : <Navigate to="/" replace />
           } 
         />
 
