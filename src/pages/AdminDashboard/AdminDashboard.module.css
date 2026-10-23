@@ -171,7 +171,7 @@
     background-color: rgba(6, 6, 6, 0.98);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    padding: 16px 16px 120px 16px !important;
+    padding: 16px 16px 100px 16px !important;
     box-sizing: border-box;
     display: none !important;
     flex-direction: column !important;
@@ -202,7 +202,7 @@
     display: block !important;
     margin-top: 10px !important;
     padding-top: 16px;
-    padding-bottom: calc(30px + env(safe-area-inset-bottom, 20px)) !important;
+    padding-bottom: calc(40px + env(safe-area-inset-bottom, 20px)) !important;
     border-top: 1px solid #141414;
     width: 100%;
     flex-shrink: 0;
@@ -236,7 +236,6 @@
     min-width: 220px !important;
     max-width: 220px !important;
     height: calc(100dvh - 60px) !important;
-    max-height: calc(100dvh - 60px) !important;
     position: fixed !important;
     top: 60px;
     left: 0;
@@ -245,12 +244,12 @@
     border-right: 1px solid #1a1a1a;
     display: flex !important;
     flex-direction: column !important;
-    justify-content: space-between !important;
+    justify-content: flex-start !important;
     overflow-y: auto !important;
     overflow-x: hidden !important;
     background-color: #060606;
     box-sizing: border-box !important;
-    padding: 16px 12px !important;
+    padding: 16px 12px 30px 12px !important;
   }
 
   .nomadMenuToggle {
@@ -262,13 +261,12 @@
     flex-direction: column;
     gap: 4px;
     margin-top: 10px;
-    flex: 1 1 auto;
-    overflow-y: visible !important;
+    width: 100%;
   }
 
   .userFooterBlock {
     display: block !important;
-    margin-top: auto !important;
+    margin-top: 24px !important;
     padding-top: 12px;
     padding-bottom: 12px;
     border-top: 1px solid #1a1a1a;
