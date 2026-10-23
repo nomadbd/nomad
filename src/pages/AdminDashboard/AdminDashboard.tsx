@@ -18,6 +18,7 @@ import { SendInvite, AmbassadorList } from '../../components/admin/ambassadors';
 
 import { AdminHeader } from './AdminHeader';
 import { AdminSidebar } from './AdminSidebar';
+import ReminderLoading from '../../components/ui/ReminderLoading';
 
 export type TabType = 'overview' | 'orders' | 'products' | 'logistics' | 'messages' | 'notifications' | 'ambassadors' | 'staff' | 'customers' | 'reminders';
 
@@ -183,12 +184,9 @@ const AdminDashboard: React.FC = () => {
     }
   }, [loading, hasAdminAccess]);
 
+  // সাধারণ LOADING DASHBOARD টেক্সট বাদ দিয়ে সরাসরি ReminderLoading ব্যবহার করা হয়েছে
   if (loading) {
-    return (
-      <div style={{ backgroundColor: '#030303', color: '#fff', minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'monospace' }}>
-        LOADING DASHBOARD...
-      </div>
-    );
+    return <ReminderLoading label="LOADING DASHBOARD..." />;
   }
 
   if (!hasAdminAccess) {
