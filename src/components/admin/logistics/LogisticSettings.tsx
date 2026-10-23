@@ -23,45 +23,81 @@ export default function LogisticSettings({
   onSaveSettings,
   onCancel,
 }: LogisticsSettingsProps) {
-  // Check if current value in input differs from saved initial value
   const isDeliveryChanged = deliveryCharge !== '' && String(deliveryCharge) !== String(initialDeliveryCharge);
   const isVatChanged = vatRate !== '' && String(vatRate) !== String(initialVatRate);
 
   const hasChanges = isDeliveryChanged || isVatChanged;
 
   return (
-    <div style={{ padding: '16px 0', maxWidth: '100%', boxSizing: 'border-box' }}>
+    <div style={{ width: '100%', boxSizing: 'border-box' }}>
       <div
         style={{
-          backgroundColor: '#0a0a0a',
-          border: '1px solid #1f1f1f',
-          borderRadius: '8px',
-          padding: '20px',
+          borderBottom: '1px solid #1a1a1a',
+          padding: '16px 0',
           width: '100%',
           boxSizing: 'border-box',
         }}
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <h3 style={{ margin: 0, fontSize: '11px', fontWeight: '700', color: '#888', letterSpacing: '1px', textTransform: 'uppercase' }}>
-            DELIVERY CHARGES & TAXES
-          </h3>
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: hasChanges ? '20px' : '0' }}>
-          {/* Delivery Charge Input Card */}
-          <div
+        <div
+          style={{
+            display: 'flex',
+            justify: 'space-between',
+            alignItems: 'center',
+            marginBottom: '16px',
+            minHeight: '28px',
+          }}
+        >
+          <span
             style={{
-              backgroundColor: '#050505',
-              border: '1px solid #141414',
-              borderRadius: '6px',
-              padding: '14px 16px',
+              fontSize: '11px',
+              fontWeight: '600',
+              color: '#666',
+              letterSpacing: '1.2px',
+              textTransform: 'uppercase',
             }}
           >
-            <span style={{ fontSize: '9px', color: '#888', letterSpacing: '0.8px', display: 'block', marginBottom: '6px', fontWeight: 'bold', textTransform: 'uppercase' }}>
-              Delivery Charge
+            Fulfillment & Checkout Config
+          </span>
+
+          {hasChanges && (
+            <button
+              type="button"
+              onClick={onSaveSettings}
+              disabled={isSaving}
+              style={{
+                backgroundColor: '#ffffff',
+                color: '#000000',
+                border: 'none',
+                borderRadius: '20px',
+                padding: '5px 14px',
+                fontSize: '10px',
+                fontWeight: '700',
+                letterSpacing: '0.5px',
+                cursor: isSaving ? 'not-allowed' : 'pointer',
+                opacity: isSaving ? 0.6 : 1,
+                transition: 'all 0.2s ease',
+              }}
+            >
+              {isSaving ? 'SAVING...' : 'SAVE'}
+            </button>
+          )}
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <div
+            style={{
+              display: 'flex',
+              justify: 'space-between',
+              alignItems: 'center',
+              padding: '12px 0',
+              borderTop: '1px solid #141414',
+            }}
+          >
+            <span style={{ fontSize: '13px', color: '#888', fontWeight: '500' }}>
+              Base Shipping Rate
             </span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ fontSize: '15px', color: '#aaa', fontWeight: 'bold' }}>৳</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <span style={{ fontSize: '13px', color: '#555', fontWeight: '600' }}>৳</span>
               <input
                 type="number"
                 value={deliveryCharge}
@@ -72,29 +108,29 @@ export default function LogisticSettings({
                   color: '#fff',
                   border: 'none',
                   outline: 'none',
-                  fontSize: '16px',
-                  fontWeight: 'bold',
-                  width: '100%',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  textAlign: 'right',
+                  width: '80px',
                   fontFamily: 'monospace',
-                  cursor: 'text',
                 }}
               />
             </div>
           </div>
 
-          {/* VAT Rate Input Card */}
           <div
             style={{
-              backgroundColor: '#050505',
-              border: '1px solid #141414',
-              borderRadius: '6px',
-              padding: '14px 16px',
+              display: 'flex',
+              justify: 'space-between',
+              alignItems: 'center',
+              padding: '12px 0',
+              borderTop: '1px solid #141414',
             }}
           >
-            <span style={{ fontSize: '9px', color: '#888', letterSpacing: '0.8px', display: 'block', marginBottom: '6px', fontWeight: 'bold', textTransform: 'uppercase' }}>
-              VAT Rate
+            <span style={{ fontSize: '13px', color: '#888', fontWeight: '500' }}>
+              Tax Rate (VAT)
             </span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
               <input
                 type="number"
                 step="any"
@@ -106,57 +142,17 @@ export default function LogisticSettings({
                   color: '#fff',
                   border: 'none',
                   outline: 'none',
-                  fontSize: '16px',
-                  fontWeight: 'bold',
-                  width: '100%',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  textAlign: 'right',
+                  width: '80px',
                   fontFamily: 'monospace',
-                  cursor: 'text',
                 }}
               />
-              <span style={{ fontSize: '15px', color: '#aaa', fontWeight: 'bold' }}>%</span>
+              <span style={{ fontSize: '13px', color: '#555', fontWeight: '600' }}>%</span>
             </div>
           </div>
         </div>
-
-        {/* Action Buttons (Save / Cancel) trigger dynamically when input values change */}
-        {hasChanges && (
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', paddingTop: '10px' }}>
-            <button
-              type="button"
-              onClick={onCancel}
-              disabled={isSaving}
-              style={{
-                backgroundColor: 'transparent',
-                color: '#888',
-                border: '1px solid #333',
-                borderRadius: '4px',
-                padding: '8px 16px',
-                fontSize: '11px',
-                fontWeight: 'bold',
-                cursor: 'pointer',
-              }}
-            >
-              CANCEL
-            </button>
-            <button
-              type="button"
-              onClick={onSaveSettings}
-              disabled={isSaving}
-              style={{
-                backgroundColor: '#2ecc71',
-                color: '#000',
-                border: 'none',
-                borderRadius: '4px',
-                padding: '8px 20px',
-                fontSize: '11px',
-                fontWeight: 'bold',
-                cursor: 'pointer',
-              }}
-            >
-              {isSaving ? 'SAVING...' : 'SAVE'}
-            </button>
-          </div>
-        )}
       </div>
     </div>
   );
