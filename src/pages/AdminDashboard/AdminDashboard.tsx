@@ -13,19 +13,20 @@ import {
   AdminMessages,
   AdminNotifications
 } from '../../components/admin';
+import AdminReminders from '../../components/admin/reminders/AdminReminders';
 import { SendInvite, AmbassadorList } from '../../components/admin/ambassadors';
 
 import { AdminHeader } from './AdminHeader';
 import { AdminSidebar } from './AdminSidebar';
 
-export type TabType = 'overview' | 'orders' | 'products' | 'logistics' | 'messages' | 'notifications' | 'ambassadors' | 'staff' | 'customers';
+export type TabType = 'overview' | 'orders' | 'products' | 'logistics' | 'messages' | 'notifications' | 'ambassadors' | 'staff' | 'customers' | 'reminders';
 
 const AdminDashboard: React.FC = () => {
   const getTabFromURL = (): TabType => {
     if (typeof window === 'undefined') return 'overview';
     const params = new URLSearchParams(window.location.search);
     const tab = params.get('tab') as TabType;
-    const validTabs: TabType[] = ['overview', 'orders', 'products', 'logistics', 'messages', 'notifications', 'ambassadors', 'staff', 'customers'];
+    const validTabs: TabType[] = ['overview', 'orders', 'products', 'logistics', 'messages', 'notifications', 'ambassadors', 'staff', 'customers', 'reminders'];
     return validTabs.includes(tab) ? tab : 'overview';
   };
 
@@ -315,6 +316,9 @@ const AdminDashboard: React.FC = () => {
           )}
           {activeTab === 'notifications' && (
             <AdminNotifications key="notifications" />
+          )}
+          {activeTab === 'reminders' && (
+            <AdminReminders key="reminders" />
           )}
           {activeTab === 'ambassadors' && (
             <>
