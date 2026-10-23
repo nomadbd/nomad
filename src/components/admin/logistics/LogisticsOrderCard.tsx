@@ -57,11 +57,11 @@ export default function LogisticsOrderCard({
 
   return (
     <div style={{ borderBottom: '1px solid #141414' }}>
-      {/* MAIN UNEXPANDED CARD - PERFECT 3-LINE SYMMETRY */}
-      <div style={{ padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'stretch', gap: '16px' }}>
+      {/* MAIN UNEXPANDED CARD - PERFECT GRID ALIGNMENT */}
+      <div style={{ padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px' }}>
         
-        {/* LEFT COLUMN (3 LINES) */}
-        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '4px' }}>
+        {/* LEFT COLUMN (3 EXACT ROWS) */}
+        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
           {/* Line 1: Header ID & Arrow */}
           <div
             onClick={() => onToggleExpand(item.id)}
@@ -70,83 +70,82 @@ export default function LogisticsOrderCard({
               display: 'inline-flex',
               alignItems: 'center',
               gap: '6px',
+              height: '20px', // Fixed Row Height for Exact Alignment
             }}
           >
-            <span style={{ fontWeight: '700', color: '#e5e5e5', fontSize: '13px', fontFamily: 'monospace' }}>
+            <span style={{ fontWeight: '700', color: '#e5e5e5', fontSize: '13px', fontFamily: 'monospace', lineHeight: '20px' }}>
               #{item.id.substring(0, 8)} ...
             </span>
-            <span style={{ fontSize: '9px', color: '#aaa' }}>
+            <span style={{ fontSize: '9px', color: '#aaa', lineHeight: '20px' }}>
               {isExpanded ? '▲' : '▼'}
             </span>
           </div>
 
           {/* Line 2: Creation Date & Time */}
-          <div style={{ fontSize: '10px', color: '#aaa', fontFamily: 'monospace' }}>
+          <div style={{ fontSize: '10px', color: '#aaa', fontFamily: 'monospace', height: '16px', lineHeight: '16px' }}>
             {new Date(item.created_at).toLocaleString()}
           </div>
 
           {/* Line 3: Courier Name & Quantity */}
-          <div style={{ fontSize: '11px', color: '#ccc', fontWeight: '600', fontFamily: 'monospace' }}>
+          <div style={{ fontSize: '11px', color: '#ccc', fontWeight: '600', fontFamily: 'monospace', height: '16px', lineHeight: '16px' }}>
             {item.courier_name || 'No Courier'} • {totalItemCount}
           </div>
         </div>
 
-        {/* RIGHT COLUMN (3 LINES - EXACTLY BALANCED WITH LEFT) */}
-        <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', alignItems: 'flex-end', gap: '4px' }}>
+        {/* RIGHT COLUMN (3 EXACT ROWS - MATCHES LEFT POSITIONS PERFECTLY) */}
+        <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'flex-end' }}>
           {canSave ? (
-            <button
-              onClick={handleConfirmSave}
-              disabled={isSavingThis}
-              style={{
-                backgroundColor: 'transparent',
-                color: '#fff',
-                border: '1px solid #e5e5e5',
-                padding: '4px 14px',
-                fontSize: '10px',
-                fontWeight: '600',
-                borderRadius: '20px',
-                cursor: 'pointer',
-                letterSpacing: '0.5px',
-                transition: 'all 0.2s ease',
-              }}
-            >
-              {isSavingThis ? 'SAVING...' : 'SAVE'}
-            </button>
-          ) : (
-            <>
-              {/* Line 1: Status Badge */}
-              <div
+            <div style={{ height: '20px', display: 'flex', alignItems: 'center' }}>
+              <button
+                onClick={handleConfirmSave}
+                disabled={isSavingThis}
                 style={{
-                  backgroundColor: '#0d0d0d',
-                  color: isAlreadyReceived ? '#27ae60' : '#e67e22',
-                  border: '1px solid #1c1c1c',
-                  padding: '3px 10px',
+                  backgroundColor: 'transparent',
+                  color: '#fff',
+                  border: '1px solid #e5e5e5',
+                  padding: '2px 12px',
                   fontSize: '10px',
                   fontWeight: '600',
-                  borderRadius: '12px',
-                  fontFamily: 'monospace',
+                  borderRadius: '20px',
+                  cursor: 'pointer',
+                  letterSpacing: '0.5px',
+                  height: '20px',
+                  lineHeight: '1',
                 }}
               >
-                {currentStatus}
+                {isSavingThis ? 'SAVING...' : 'SAVE'}
+              </button>
+            </div>
+          ) : (
+            <>
+              {/* Line 1: Status Badge Aligned with ID */}
+              <div style={{ height: '20px', display: 'flex', alignItems: 'center' }}>
+                <div
+                  style={{
+                    backgroundColor: '#0d0d0d',
+                    color: isAlreadyReceived ? '#27ae60' : '#e67e22',
+                    border: '1px solid #1c1c1c',
+                    padding: '2px 10px',
+                    fontSize: '10px',
+                    fontWeight: '600',
+                    borderRadius: '12px',
+                    fontFamily: 'monospace',
+                    lineHeight: '1',
+                  }}
+                >
+                  {currentStatus}
+                </div>
               </div>
 
-              {/* Line 2: Received Date (Matching Left Line 2 Font & Brightness) */}
-              {isAlreadyReceived ? (
-                <div style={{ fontSize: '10px', color: '#aaa', fontFamily: 'monospace' }}>
-                  {new Date().toLocaleDateString()}
-                </div>
-              ) : (
-                <div style={{ fontSize: '10px', color: '#aaa', fontFamily: 'monospace' }}>-</div>
-              )}
+              {/* Line 2: Received Date (Matches Left Line 2 Height & Position) */}
+              <div style={{ fontSize: '10px', color: '#aaa', fontFamily: 'monospace', height: '16px', lineHeight: '16px' }}>
+                {isAlreadyReceived ? new Date().toLocaleDateString() : '-'}
+              </div>
 
-              {/* Line 3: Received Time (Matching Left Line 3 Font & Alignment) */}
-              {isAlreadyReceived ? (
-                <div style={{ fontSize: '10px', color: '#aaa', fontFamily: 'monospace' }}>
-                  {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </div>
-              ) : (
-                <div style={{ fontSize: '10px', color: '#aaa', fontFamily: 'monospace' }}>-</div>
-              )}
+              {/* Line 3: Received Time (Matches Left Line 3 Height & Position) */}
+              <div style={{ fontSize: '10px', color: '#aaa', fontFamily: 'monospace', height: '16px', lineHeight: '16px' }}>
+                {isAlreadyReceived ? new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}
+              </div>
             </>
           )}
         </div>
