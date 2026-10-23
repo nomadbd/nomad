@@ -184,9 +184,9 @@ const AdminDashboard: React.FC = () => {
     }
   }, [loading, hasAdminAccess]);
 
-  // সাধারণ LOADING DASHBOARD টেক্সট বাদ দিয়ে সরাসরি ReminderLoading ব্যবহার করা হয়েছে
+  // প্লেইন টেক্সটের বদলে প্রিমিয়াম ReminderLoading কম্পোনেন্ট ব্যবহার করা হলো
   if (loading) {
-    return <ReminderLoading label="LOADING DASHBOARD..." />;
+    return <ReminderLoading label="VERIFYING ADMIN ACCESS..." />;
   }
 
   if (!hasAdminAccess) {
