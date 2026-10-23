@@ -15,6 +15,7 @@ export const ReminderLoading: React.FC<ReminderLoadingProps> = ({
   position = 'center' 
 }) => {
   const [reminder, setReminder] = useState<Reminder | null>(null);
+  const [isFadingOut, setIsFadingOut] = useState<boolean>(false);
 
   useEffect(() => {
     const fetchRandomReminder = async () => {
@@ -34,6 +35,13 @@ export const ReminderLoading: React.FC<ReminderLoadingProps> = ({
     };
 
     fetchRandomReminder();
+
+    // ৯.৪ সেকেন্ডের মাথায় Fade Out শুরু হবে
+    const fadeOutTimer = setTimeout(() => {
+      setIsFadingOut(true);
+    }, 9400);
+
+    return () => clearTimeout(fadeOutTimer);
   }, []);
 
   const getJustifyContent = () => {
@@ -55,20 +63,18 @@ export const ReminderLoading: React.FC<ReminderLoadingProps> = ({
       position: 'relative',
       fontFamily: 'monospace, sans-serif'
     }}>
-      {/* 
-        এখানে থাকা লেবেল অংশটি সম্পূর্ণ রিমুভ করে দেওয়া হলো। 
-        ফলে ১ মিলি-সেকেন্ডের জন্যও কোনো টেক্সট ডোমে আসবে না বা ফ্লিকার করবে না।
-      */}
-
       {/* কুরআনের আয়াত / নীতিবাক্য */}
       {reminder && (
-        <div style={{
-          maxWidth: '500px',
-          borderLeft: '2px solid #ffffff',
-          paddingLeft: '16px',
-          margin: '0 12px',
-          textAlign: 'left'
-        }}>
+        <div 
+          className={isFadingOut ? 'animate-fade-out' : 'animate-fade-in'}
+          style={{
+            maxWidth: '500px',
+            borderLeft: '2px solid #ffffff',
+            paddingLeft: '16px',
+            margin: '0 12px',
+            textAlign: 'left'
+          }}
+        >
           <p style={{
             fontSize: '15px',
             lineHeight: '1.6',
