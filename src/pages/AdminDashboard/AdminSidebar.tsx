@@ -37,6 +37,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
     { id: 'logistics', label: 'LOGISTICS' },
     { id: 'messages', label: 'MESSAGES' },
     { id: 'notifications', label: 'NOTIFICATIONS' },
+    { id: 'reminders', label: 'REMINDERS' },
     { id: 'ambassadors', label: 'AMBASSADORS' },
     { id: 'staff', label: 'STAFF' },
     { id: 'customers', label: 'CUSTOMERS' },
