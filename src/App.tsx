@@ -14,6 +14,7 @@ import ProductList from './components/ProductList';
 import CartOverlay from './components/CartOverlay';
 import AuthOverlay from './components/auth/AuthOverlay';
 import AuthForm from './components/auth/AuthForm';
+import ReminderLoading from './components/ui/ReminderLoading';
 
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard/AdminDashboard'));
 const AmbassadorJoin = lazy(() => import('./components/ambassador/join/AmbassadorJoin'));
@@ -65,7 +66,7 @@ const AppContent = ({ session, setIsSearchOpen, setIsAuthOpen }: any) => {
         <Route 
           path="/vip/:token" 
           element={
-            <Suspense fallback={null}>
+            <Suspense fallback={<ReminderLoading label="LOADING VIP PORTAL..." />}>
               <AmbassadorJoin />
             </Suspense>
           } 
@@ -74,7 +75,7 @@ const AppContent = ({ session, setIsSearchOpen, setIsAuthOpen }: any) => {
         <Route 
           path="/:slug" 
           element={
-            <Suspense fallback={null}>
+            <Suspense fallback={<ReminderLoading label="LOADING AMBASSADOR PAGE..." />}>
               <AmbassadorPortal />
             </Suspense>
           } 
@@ -84,11 +85,7 @@ const AppContent = ({ session, setIsSearchOpen, setIsAuthOpen }: any) => {
           path="/admin" 
           element={
             session ? (
-              <Suspense fallback={
-                <div style={{ backgroundColor: '#030303', color: '#fff', minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'monospace' }}>
-                  LOADING DASHBOARD...
-                </div>
-              }>
+              <Suspense fallback={<ReminderLoading label="LOADING ADMIN DASHBOARD..." />}>
                 <AdminDashboard />
               </Suspense>
             ) : (
@@ -115,7 +112,7 @@ const App: React.FC = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
 
-  if (loading) return null;
+  if (loading) return <ReminderLoading label="INITIALIZING SYSTEM..." />;
 
   return (
     <CartProvider>
