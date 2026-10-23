@@ -20,18 +20,17 @@ import { AdminHeader } from './AdminHeader';
 import { AdminSidebar } from './AdminSidebar';
 import ReminderLoading from '../../components/ui/ReminderLoading';
 
-// ব্যবহারের গুরুত্ব অনুযায়ী ট্যাবের ক্রম সাজানো হলো
 export type TabType = 
-  | 'overview'       // ১. প্রধান ড্যাশবোর্ড
-  | 'orders'         // ২. অর্ডার ম্যানেজমেন্ট
-  | 'products'       // ৩. প্রোডাক্ট ও ইনভেন্টরি
-  | 'logistics'      // ৪. শিপিং ও ডেলিভারি
-  | 'messages'       // ৫. মেসেজিং ও চ্যাট
-  | 'notifications'  // ৬. নোটিফিকেশন সিস্টেম
-  | 'customers'      // ৭. গ্রাহকদের তালিকা
-  | 'ambassadors'     // ৮. অ্যাম্বাসেডর পোর্টাল
-  | 'staff'          // ৯. স্টাফ ও অ্যাডমিন টিম
-  | 'reminders';     // ১০. নীতিবাক্য ও রিমাইন্ডার কন্টেন্ট
+  | 'overview'
+  | 'orders'
+  | 'products'
+  | 'logistics'
+  | 'messages'
+  | 'notifications'
+  | 'customers'
+  | 'ambassadors'
+  | 'staff'
+  | 'reminders';
 
 const AdminDashboard: React.FC = () => {
   const getTabFromURL = (): TabType => {
@@ -39,16 +38,8 @@ const AdminDashboard: React.FC = () => {
     const params = new URLSearchParams(window.location.search);
     const tab = params.get('tab') as TabType;
     const validTabs: TabType[] = [
-      'overview',
-      'orders',
-      'products',
-      'logistics',
-      'messages',
-      'notifications',
-      'customers',
-      'ambassadors',
-      'staff',
-      'reminders'
+      'overview', 'orders', 'products', 'logistics', 'messages', 
+      'notifications', 'customers', 'ambassadors', 'staff', 'reminders'
     ];
     return validTabs.includes(tab) ? tab : 'overview';
   };
@@ -191,26 +182,30 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
-  // নিশ্চিত ৩ সেকেন্ড মিনিমাম লোডিং টাইম বজায় রাখা হলো
+  // ফ্লিকারিং ছাড়া ৩ সেকেন্ডের মিনিমাম লোডিং লজিক
   useEffect(() => {
-    const startTime = Date.now();
+    let isMounted = true;
 
     const initDashboard = async () => {
+      const startTime = Date.now();
       await fetchCurrentUserAndRole();
 
       const elapsedTime = Date.now() - startTime;
       const minLoadingTime = 3000;
+      const remainingTime = Math.max(0, minLoadingTime - elapsedTime);
 
-      if (elapsedTime < minLoadingTime) {
-        setTimeout(() => {
+      setTimeout(() => {
+        if (isMounted) {
           setLoading(false);
-        }, minLoadingTime - elapsedTime);
-      } else {
-        setLoading(false);
-      }
+        }
+      }, remainingTime);
     };
 
     initDashboard();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const normalizedRole = userRole.toUpperCase().trim();
@@ -222,8 +217,7 @@ const AdminDashboard: React.FC = () => {
     }
   }, [loading, hasAdminAccess]);
 
-  // উপরের অতিরিক্ত টেক্সট সরানো হলো (label="" দেওয়ার মাধ্যমে)। 
-  // আপনি চাইলে এখানে label="CUSTOM TEXT..." লিখে যেকোনো কাস্টম লেখাও দিতে পারেন।
+  // কোনো লেবেল দেওয়া ছাড়াই রেন্ডার করা হলো
   if (loading) {
     return <ReminderLoading label="" />;
   }
