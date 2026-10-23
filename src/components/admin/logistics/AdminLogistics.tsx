@@ -2,7 +2,7 @@ import React from 'react';
 import { useAdminLogistics } from '@/hooks/useAdminLogistics';
 import LogisticSettings from './LogisticSettings';
 import LogisticsOrderCard from './LogisticsOrderCard';
-import LogisticsSkeleton from './LogisticsSkeleton'; // <--- ১. স্কেলিটন ইমপোর্ট করা হলো
+import LogisticsSkeleton from './LogisticsSkeleton';
 
 interface AdminLogisticsProps {
   searchQuery?: string;
@@ -47,11 +47,11 @@ export default function AdminLogistics({ searchQuery, isFilterOpen, isSettingsOp
         />
       ) : (
         loading ? (
-          // ২. টেক্সট ಲೋডিংয়ের বদলে এখন ডার্ক পাল্সিং স্কেলিটন দেখাবে (৩টি ফেক কার্ড)
+          // একসাথে ৫টি স্কেলিটন কার্ড রেন্ডার করা হলো যাতে পুরো পেজ জুড়ে লোডিং ফিল পাওয়া যায়
           <div style={{ border: '1px solid #1a1a1a', backgroundColor: '#060606' }}>
-            <LogisticsSkeleton />
-            <LogisticsSkeleton />
-            <LogisticsSkeleton />
+            {[1, 2, 3, 4, 5].map((n) => (
+              <LogisticsSkeleton key={n} />
+            ))}
           </div>
         ) : (
           <div style={{ border: '1px solid #1a1a1a', backgroundColor: '#060606' }}>
