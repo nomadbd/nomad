@@ -36,7 +36,6 @@ export const ReminderLoading: React.FC<ReminderLoadingProps> = ({
 
     fetchRandomReminder();
 
-    // ৯.৪ সেকেন্ডের মাথায় Fade Out শুরু হবে
     const fadeOutTimer = setTimeout(() => {
       setIsFadingOut(true);
     }, 9400);
@@ -54,25 +53,33 @@ export const ReminderLoading: React.FC<ReminderLoadingProps> = ({
     <div style={{
       backgroundColor: '#030303',
       color: '#ffffff',
-      minHeight: '100dvh',
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      width: '100vw',
+      height: '100dvh',
+      zIndex: 99999,
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
       justifyContent: getJustifyContent(),
       padding: '40px 24px',
-      position: 'relative',
+      boxSizing: 'border-box',
       fontFamily: 'monospace, sans-serif'
     }}>
-      {/* কুরআনের আয়াত / নীতিবাক্য */}
       {reminder && (
         <div 
           className={isFadingOut ? 'animate-fade-out' : 'animate-fade-in'}
           style={{
             maxWidth: '500px',
+            width: '100%',
             borderLeft: '2px solid #ffffff',
             paddingLeft: '16px',
-            margin: '0 12px',
-            textAlign: 'left'
+            margin: '0 auto',
+            textAlign: 'left',
+            boxSizing: 'border-box'
           }}
         >
           <p style={{
