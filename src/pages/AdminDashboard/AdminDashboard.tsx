@@ -63,6 +63,7 @@ const AdminDashboard: React.FC = () => {
   const [userName, setUserName] = useState<string>('');
   const [userEmail, setUserEmail] = useState<string>('');
   const [userRole, setUserRole] = useState<string>('');
+  const [userDesignation, setUserDesignation] = useState<string>('');
   const [profileData, setProfileData] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [isProfileOpen, setIsProfileOpen] = useState<boolean>(false);
@@ -170,6 +171,7 @@ const AdminDashboard: React.FC = () => {
         if (!error && profile) {
           setUserName(profile.name || '');
           setUserRole(profile.role || '');
+          setUserDesignation(profile.designation || '');
           setProfileData({ ...profile, email: user.email });
         } else {
           setProfileData({ email: user.email });
@@ -182,7 +184,6 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
-  // ফ্লিকারিং ছাড়া গ্যারান্টিড ১০ সেকেন্ডের মিনিমাম লোডিং লজিক
   useEffect(() => {
     let isMounted = true;
 
@@ -191,7 +192,7 @@ const AdminDashboard: React.FC = () => {
       await fetchCurrentUserAndRole();
 
       const elapsedTime = Date.now() - startTime;
-      const minLoadingTime = 10000; // ঠিক ১০ সেকেন্ড (১০০০ millisecond = ১s)
+      const minLoadingTime = 10000;
       const remainingTime = Math.max(0, minLoadingTime - elapsedTime);
 
       setTimeout(() => {
@@ -273,7 +274,7 @@ const AdminDashboard: React.FC = () => {
           onTabChange={handleTabChange}
           userName={userName}
           userEmail={userEmail}
-          userRole={userRole}
+          userDesignation={userDesignation}
           onOpenProfile={() => setIsProfileOpen(true)}
         />
 
