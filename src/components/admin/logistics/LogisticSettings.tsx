@@ -28,6 +28,9 @@ export default function LogisticSettings({
 
   const hasChanges = isDeliveryChanged || isVatChanged;
 
+  const deliveryInputValue = String(deliveryCharge) === String(initialDeliveryCharge) ? '' : deliveryCharge;
+  const vatInputValue = String(vatRate) === String(initialVatRate) ? '' : vatRate;
+
   return (
     <div style={{ width: '100%', boxSizing: 'border-box' }}>
       <div
@@ -41,7 +44,7 @@ export default function LogisticSettings({
         <div
           style={{
             display: 'flex',
-            justify: 'space-between',
+            justifyContent: 'space-between',
             alignItems: 'center',
             marginBottom: '16px',
             minHeight: '28px',
@@ -87,7 +90,7 @@ export default function LogisticSettings({
           <div
             style={{
               display: 'flex',
-              justify: 'space-between',
+              justifyContent: 'space-between',
               alignItems: 'center',
               padding: '12px 0',
               borderTop: '1px solid #141414',
@@ -100,7 +103,7 @@ export default function LogisticSettings({
               <span style={{ fontSize: '13px', color: '#555', fontWeight: '600' }}>৳</span>
               <input
                 type="number"
-                value={deliveryCharge}
+                value={deliveryInputValue}
                 placeholder={String(initialDeliveryCharge)}
                 onChange={(e) => onDeliveryChange(e.target.value)}
                 style={{
@@ -121,7 +124,7 @@ export default function LogisticSettings({
           <div
             style={{
               display: 'flex',
-              justify: 'space-between',
+              justifyContent: 'space-between',
               alignItems: 'center',
               padding: '12px 0',
               borderTop: '1px solid #141414',
@@ -134,7 +137,7 @@ export default function LogisticSettings({
               <input
                 type="number"
                 step="any"
-                value={vatRate}
+                value={vatInputValue}
                 placeholder={String(initialVatRate)}
                 onChange={(e) => onVatChange(e.target.value)}
                 style={{
