@@ -59,7 +59,7 @@ export const ReminderLoading: React.FC<ReminderLoadingProps> = ({
       right: 0,
       bottom: 0,
       width: '100vw',
-      height: '100dvh',
+      height: '100vh',
       zIndex: 99999,
       display: 'flex',
       flexDirection: 'column',
