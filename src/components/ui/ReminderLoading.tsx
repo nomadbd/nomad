@@ -8,9 +8,13 @@ interface Reminder {
 
 interface ReminderLoadingProps {
   label?: string;
+  position?: 'top' | 'center' | 'bottom';
 }
 
-export const ReminderLoading: React.FC<ReminderLoadingProps> = ({ label = 'LOADING SYSTEM...' }) => {
+export const ReminderLoading: React.FC<ReminderLoadingProps> = ({ 
+  label = '', // ডিফল্ট ফাঁকা রাখা হলো যাতে কোনো টেক্সট বা ফ্লেশ না আসে
+  position = 'center' 
+}) => {
   const [reminder, setReminder] = useState<Reminder | null>(null);
 
   useEffect(() => {
@@ -33,6 +37,12 @@ export const ReminderLoading: React.FC<ReminderLoadingProps> = ({ label = 'LOADI
     fetchRandomReminder();
   }, []);
 
+  const getJustifyContent = () => {
+    if (position === 'top') return 'flex-start';
+    if (position === 'bottom') return 'flex-end';
+    return 'center';
+  };
+
   return (
     <div style={{
       backgroundColor: '#030303',
@@ -41,23 +51,25 @@ export const ReminderLoading: React.FC<ReminderLoadingProps> = ({ label = 'LOADI
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
-      justifyContent: 'center',
-      padding: '24px',
-      textAlign: 'center',
+      justifyContent: getJustifyContent(),
+      padding: '40px 24px',
+      position: 'relative',
       fontFamily: 'monospace, sans-serif'
     }}>
-      {/* লোডিং টেক্সট */}
-      <div style={{
-        fontSize: '11px',
-        letterSpacing: '3px',
-        color: '#888888',
-        marginBottom: '24px',
-        textTransform: 'uppercase'
-      }}>
-        {label}
-      </div>
+      {/* শুধু লেবেল পাস করলেই দেখাবে, অন্যথায় একদমই রেন্ডার হবে না */}
+      {label && (
+        <div style={{
+          fontSize: '11px',
+          letterSpacing: '3px',
+          color: '#888888',
+          marginBottom: '24px',
+          textTransform: 'uppercase'
+        }}>
+          {label}
+        </div>
+      )}
 
-      {/* কুরআনিক আয়াত বা নীতিবাক্য */}
+      {/* কুরআনের আয়াত / নীতিবাক্য */}
       {reminder && (
         <div style={{
           maxWidth: '500px',
