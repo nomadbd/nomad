@@ -22,14 +22,6 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
   userRole,
   onOpenProfile,
 }) => {
-  const subTextStyle: React.CSSProperties = {
-    fontSize: '9px',
-    color: '#888888',
-    fontWeight: 600,
-    letterSpacing: '1px',
-    display: 'block',
-  };
-
   const tabs: { id: TabType; label: string }[] = [
     { id: 'overview', label: 'OVERVIEW' },
     { id: 'orders', label: 'ORDERS' },
@@ -47,7 +39,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
     <aside className={`${styles.nomadSidebar} ${menuOpen ? styles.menuOpen : ''}`}>
       <div className={styles.sidebarStack}>
         <nav className={styles.nomadNav} data-nomad-nav>
-          <span style={{ fontSize: '9px', color: '#888888', letterSpacing: '2px', marginBottom: '8px', fontWeight: 'bold' }}>
+          <span style={{ fontSize: '9px', color: '#888888', letterSpacing: '2px', marginBottom: '8px', fontWeight: 'bold', display: 'block', paddingLeft: '14px' }}>
             MAIN MENU
           </span>
 
@@ -60,47 +52,27 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
               {tab.label}
             </button>
           ))}
-        </nav>
-      </div>
 
-      <div className={styles.userFooterBlock} data-nomad-menu-footer>
-        <div
-          onClick={onOpenProfile}
-          style={{
-            backgroundColor: '#0a0a0a',
-            border: '1px solid #1f1f1f',
-            padding: '10px 12px',
-            borderRadius: '2px',
-            cursor: 'pointer',
-            transition: 'border-color 0.2s ease',
-            maxWidth: '100%',
-            width: '100%',
-            boxSizing: 'border-box',
-          }}
-          title="Click to view Staff Profile & Options"
-        >
-          <div style={{ width: '100%', overflow: 'hidden' }}>
-            <span
-              className={styles.userTextContainer}
-              style={{
-                color: '#ffffff',
-                display: 'block',
-                fontWeight: 'bold',
-                textTransform: userName ? 'uppercase' : 'none',
-                fontSize: '10px',
-                letterSpacing: '1px',
-              }}
-            >
-              {userName || userEmail || 'OPERATOR'}
+          <div style={{ marginTop: '16px', borderTop: '1px solid #1a1a1a', paddingTop: '12px' }}>
+            <span style={{ fontSize: '9px', color: '#888888', letterSpacing: '2px', marginBottom: '8px', fontWeight: 'bold', display: 'block', paddingLeft: '14px' }}>
+              OPERATOR
             </span>
-
-            {userRole && (
-              <span style={{ ...subTextStyle, marginTop: '2px', textTransform: 'uppercase', color: '#888888' }}>
-                {userRole}
+            <button
+              className={styles.navBtn}
+              onClick={onOpenProfile}
+              style={{ textAlign: 'left', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '2px' }}
+            >
+              <span style={{ color: '#ffffff', fontWeight: 'bold', fontSize: '11px', textTransform: 'uppercase' }}>
+                {userName || userEmail || 'PROFILE'}
               </span>
-            )}
+              {userRole && (
+                <span style={{ fontSize: '9px', color: '#888888', letterSpacing: '1px' }}>
+                  {userRole}
+                </span>
+              )}
+            </button>
           </div>
-        </div>
+        </nav>
       </div>
     </aside>
   );
