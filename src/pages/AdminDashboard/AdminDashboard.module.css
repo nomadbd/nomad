@@ -23,7 +23,6 @@
   position: relative;
 }
 
-/* ফুল-উইডথ টপ হেডার স্টাইল (সাইডবার ও মেইন কন্টেন্টের উপরে) */
 .nomadHeader {
   position: sticky;
   top: 0;
@@ -145,7 +144,6 @@
   max-width: 100% !important;
 }
 
-/* মোবাইল ভিউ (Max-width: 767px) */
 @media screen and (max-width: 767px) {
   .nomadHeader {
     padding: 0 16px;
@@ -173,11 +171,11 @@
     background-color: rgba(6, 6, 6, 0.98);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    padding: 16px 16px calc(30px + env(safe-area-inset-bottom, 20px)) 16px !important;
+    padding: 16px 16px 120px 16px !important;
     box-sizing: border-box;
     display: none !important;
     flex-direction: column !important;
-    justify-content: flex-start !important; /* ওভারল্যাপ রোধ করতে flex-start দেওয়া হলো */
+    justify-content: flex-start !important;
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch;
   }
@@ -195,7 +193,7 @@
     flex-direction: column;
     gap: 6px;
     margin-top: 10px;
-    margin-bottom: 24px; /* ফুটার ও কাস্টমার ট্যাবের মাঝে নিরাপদ দূরত্ব */
+    margin-bottom: 20px;
     width: 100%;
     flex: 0 0 auto;
   }
@@ -204,7 +202,7 @@
     display: block !important;
     margin-top: 10px !important;
     padding-top: 16px;
-    padding-bottom: calc(20px + env(safe-area-inset-bottom, 16px)) !important;
+    padding-bottom: calc(30px + env(safe-area-inset-bottom, 20px)) !important;
     border-top: 1px solid #141414;
     width: 100%;
     flex-shrink: 0;
@@ -219,7 +217,6 @@
   }
 }
 
-/* ডেক্সটপ ভিউ (Min-width: 768px) ও মোবাইল ব্রাউজারের ডেস্কটপ মোড */
 @media screen and (min-width: 768px) {
   .nomadHeader {
     padding: 0 20px;
@@ -249,10 +246,11 @@
     display: flex !important;
     flex-direction: column !important;
     justify-content: space-between !important;
-    overflow-y: auto;
+    overflow-y: auto !important;
     overflow-x: hidden !important;
     background-color: #060606;
     box-sizing: border-box !important;
+    padding: 16px 12px !important;
   }
 
   .nomadMenuToggle {
@@ -262,16 +260,16 @@
   .nomadNav {
     display: flex !important;
     flex-direction: column;
-    gap: 8px;
-    margin-top: 15px;
-    overflow-y: auto;
+    gap: 4px;
+    margin-top: 10px;
     flex: 1 1 auto;
+    overflow-y: visible !important;
   }
 
   .userFooterBlock {
     display: block !important;
     margin-top: auto !important;
-    padding-top: 16px;
+    padding-top: 12px;
     padding-bottom: 12px;
     border-top: 1px solid #1a1a1a;
     width: 100%;
@@ -281,33 +279,13 @@
 
   .nomadMain {
     margin-left: 220px !important;
-    width: auto !important;
+    width: calc(100% - 220px) !important;
     flex: 1 1 auto !important;
     max-width: none !important;
     padding: 24px 28px !important;
     min-height: calc(100dvh - 60px);
     overflow-x: hidden !important;
     box-sizing: border-box;
-  }
-}
-
-/* পিসি ও ল্যাপটপের জন্য (Mouse / Trackpad) */
-@media screen and (min-width: 768px) and (pointer: fine) {
-  .nomadSidebar {
-    padding: 20px 14px calc(20px + env(safe-area-inset-bottom, 0px)) 14px !important;
-  }
-  .nomadNav {
-    max-height: calc(100dvh - 180px);
-  }
-}
-
-/* মোবাইলে ডেক্সটপ সাইট মোডের জন্য (Touch Screen) */
-@media screen and (min-width: 768px) and (pointer: coarse) {
-  .nomadSidebar {
-    padding: 20px 14px calc(90px + env(safe-area-inset-bottom, 0px)) 14px !important;
-  }
-  .nomadNav {
-    max-height: calc(100dvh - 250px);
   }
 }
 
