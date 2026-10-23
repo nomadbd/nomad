@@ -37,7 +37,10 @@ const AppContent = ({ session, setIsSearchOpen, setIsAuthOpen }: any) => {
   const showHeader = location.pathname === '/';
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: 'black', color: '#fff' }}>
+    <div 
+      className="animate-fade-in"
+      style={{ minHeight: '100vh', backgroundColor: 'black', color: '#fff' }}
+    >
       {showHeader && (
         <Header 
           onSearchOpen={() => setIsSearchOpen(true)} 
@@ -66,7 +69,7 @@ const AppContent = ({ session, setIsSearchOpen, setIsAuthOpen }: any) => {
         <Route 
           path="/vip/:token" 
           element={
-            <Suspense fallback={<ReminderLoading label="LOADING VIP PORTAL..." />}>
+            <Suspense fallback={<ReminderLoading label="" />}>
               <AmbassadorJoin />
             </Suspense>
           } 
@@ -75,7 +78,7 @@ const AppContent = ({ session, setIsSearchOpen, setIsAuthOpen }: any) => {
         <Route 
           path="/:slug" 
           element={
-            <Suspense fallback={<ReminderLoading label="LOADING AMBASSADOR PAGE..." />}>
+            <Suspense fallback={<ReminderLoading label="" />}>
               <AmbassadorPortal />
             </Suspense>
           } 
@@ -107,7 +110,7 @@ const App: React.FC = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
 
-  if (loading) return <ReminderLoading label="INITIALIZING SYSTEM..." />;
+  if (loading) return <ReminderLoading label="" />;
 
   return (
     <CartProvider>
