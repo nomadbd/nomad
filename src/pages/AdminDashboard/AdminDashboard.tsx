@@ -127,25 +127,31 @@ const AdminDashboard: React.FC = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [lastScrollY, menuOpen]);
 
-  // মোবাইল ভিউতে মেনু বন্ধ হওয়ার সময় ঝাঁকুনি দূর করতে আপডেট করা স্মুথ লক
+  // পারফেক্ট অ্যানিমেশন শেষ হওয়া পর্যন্ত বডি লক বিলম্বিত রাখা (No Jitter Logic)
   useEffect(() => {
-    if (!menuOpen) return;
-
-    const scrollY = window.scrollY;
     const { body } = document;
 
-    body.style.position = 'fixed';
-    body.style.top = `-${scrollY}px`;
-    body.style.width = '100%';
-    body.style.overflow = 'hidden';
+    if (menuOpen) {
+      const scrollY = window.scrollY;
+      body.style.position = 'fixed';
+      body.style.top = `-${scrollY}px`;
+      body.style.width = '100%';
+      body.style.overflow = 'hidden';
+      body.dataset.savedScrollY = scrollY.toString();
+    } else {
+      const savedScrollY = parseInt(body.dataset.savedScrollY || '0', 10);
+      
+      // ট্রানজিশন (২৩০ms) শেষ হওয়ার পর বডির স্ক্রোল রিসেট করা হবে
+      const timer = setTimeout(() => {
+        body.style.position = '';
+        body.style.top = '';
+        body.style.width = '';
+        body.style.overflow = '';
+        window.scrollTo(0, savedScrollY);
+      }, 230);
 
-    return () => {
-      body.style.position = '';
-      body.style.top = '';
-      body.style.width = '';
-      body.style.overflow = '';
-      window.scrollTo({ top: scrollY, behavior: 'instant' });
-    };
+      return () => clearTimeout(timer);
+    }
   }, [menuOpen]);
 
   const fetchCurrentUserAndRole = async () => {
