@@ -127,31 +127,24 @@ const AdminDashboard: React.FC = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [lastScrollY, menuOpen]);
 
+  // মোবাইল ভিউতে মেনু বন্ধ হওয়ার সময় ঝাঁকুনি দূর করতে আপডেট করা স্মুথ লক
   useEffect(() => {
     if (!menuOpen) return;
 
     const scrollY = window.scrollY;
     const { body } = document;
-    body.classList.add('nomad-menu-lock');
+
+    body.style.position = 'fixed';
     body.style.top = `-${scrollY}px`;
-
-    const preventPageScroll = (event: TouchEvent) => {
-      const nav = document.querySelector('[data-nomad-nav]');
-      const footer = document.querySelector('[data-nomad-menu-footer]');
-      const target = event.target as Node | null;
-      if (target && ((nav && nav.contains(target)) || (footer && footer.contains(target)))) {
-        return;
-      }
-      event.preventDefault();
-    };
-
-    document.addEventListener('touchmove', preventPageScroll, { passive: false });
+    body.style.width = '100%';
+    body.style.overflow = 'hidden';
 
     return () => {
-      body.classList.remove('nomad-menu-lock');
+      body.style.position = '';
       body.style.top = '';
-      document.removeEventListener('touchmove', preventPageScroll);
-      window.scrollTo(0, scrollY);
+      body.style.width = '';
+      body.style.overflow = '';
+      window.scrollTo({ top: scrollY, behavior: 'instant' });
     };
   }, [menuOpen]);
 
