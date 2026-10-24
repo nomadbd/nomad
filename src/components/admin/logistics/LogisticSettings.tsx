@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 interface LogisticsSettingsProps {
   deliveryCharge: number | string;
   vatRate: number | string;
-  initialDeliveryCharge: number | string;
-  initialVatRate: number | string;
+  initialDeliveryCharge?: number | string;
+  initialVatRate?: number | string;
   isSaving: boolean;
   onDeliveryChange: (val: string) => void;
   onVatChange: (val: string) => void;
@@ -15,8 +15,6 @@ interface LogisticsSettingsProps {
 export default function LogisticSettings({
   deliveryCharge,
   vatRate,
-  initialDeliveryCharge,
-  initialVatRate,
   isSaving,
   onDeliveryChange,
   onVatChange,
@@ -26,17 +24,20 @@ export default function LogisticSettings({
   const [localDelivery, setLocalDelivery] = useState('');
   const [localVat, setLocalVat] = useState('');
 
-  useEffect(() => {
-    if (String(deliveryCharge) === String(initialDeliveryCharge)) {
-      setLocalDelivery('');
-    }
-  }, [deliveryCharge, initialDeliveryCharge]);
+  const baseDeliveryRef = useRef(deliveryCharge);
+  const baseVatRef = useRef(vatRate);
 
   useEffect(() => {
-    if (String(vatRate) === String(initialVatRate)) {
-      setLocalVat('');
+    if (deliveryCharge !== '' && baseDeliveryRef.current === '') {
+      baseDeliveryRef.current = deliveryCharge;
     }
-  }, [vatRate, initialVatRate]);
+  }, [deliveryCharge]);
+
+  useEffect(() => {
+    if (vatRate !== '' && baseVatRef.current === '') {
+      baseVatRef.current = vatRate;
+    }
+  }, [vatRate]);
 
   const handleDeliveryInput = (val: string) => {
     setLocalDelivery(val);
@@ -48,9 +49,20 @@ export default function LogisticSettings({
     onVatChange(val);
   };
 
-  const isDeliveryChanged = localDelivery !== '' && String(localDelivery) !== String(initialDeliveryCharge);
-  const isVatChanged = localVat !== '' && String(localVat) !== String(initialVatRate);
+  const currentInitialDelivery = baseDeliveryRef.current !== '' ? baseDeliveryRef.current : deliveryCharge;
+  const currentInitialVat = baseVatRef.current !== '' ? baseVatRef.current : vatRate;
+
+  const isDeliveryChanged = localDelivery !== '' && String(localDelivery) !== String(currentInitialDelivery);
+  const isVatChanged = localVat !== '' && String(localVat) !== String(currentInitialVat);
   const hasChanges = isDeliveryChanged || isVatChanged;
+
+  const handleCustomSave = () => {
+    baseDeliveryRef.current = localDelivery !== '' ? localDelivery : currentInitialDelivery;
+    baseVatRef.current = localVat !== '' ? localVat : currentInitialVat;
+    setLocalDelivery('');
+    setLocalVat('');
+    onSaveSettings();
+  };
 
   return (
     <div style={{ width: '100%', boxSizing: 'border-box' }}>
@@ -86,7 +98,7 @@ export default function LogisticSettings({
           {hasChanges && (
             <button
               type="button"
-              onClick={onSaveSettings}
+              onClick={handleCustomSave}
               disabled={isSaving}
               style={{
                 backgroundColor: '#ffffff',
@@ -125,7 +137,7 @@ export default function LogisticSettings({
               <input
                 type="number"
                 value={localDelivery}
-                placeholder={String(initialDeliveryCharge)}
+                placeholder={String(currentInitialDelivery)}
                 onChange={(e) => handleDeliveryInput(e.target.value)}
                 style={{
                   backgroundColor: 'transparent',
@@ -159,7 +171,7 @@ export default function LogisticSettings({
                 type="number"
                 step="any"
                 value={localVat}
-                placeholder={String(initialVatRate)}
+                placeholder={String(currentInitialVat)}
                 onChange={(e) => handleVatInput(e.target.value)}
                 style={{
                   backgroundColor: 'transparent',
