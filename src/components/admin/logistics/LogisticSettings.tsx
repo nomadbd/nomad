@@ -23,16 +23,20 @@ export default function LogisticSettings({
   onSaveSettings,
   onCancel,
 }: LogisticsSettingsProps) {
-  const [localDelivery, setLocalDelivery] = useState(deliveryCharge);
-  const [localVat, setLocalVat] = useState(vatRate);
+  const [localDelivery, setLocalDelivery] = useState('');
+  const [localVat, setLocalVat] = useState('');
 
   useEffect(() => {
-    setLocalDelivery(deliveryCharge);
-  }, [deliveryCharge]);
+    if (String(deliveryCharge) === String(initialDeliveryCharge)) {
+      setLocalDelivery('');
+    }
+  }, [deliveryCharge, initialDeliveryCharge]);
 
   useEffect(() => {
-    setLocalVat(vatRate);
-  }, [vatRate]);
+    if (String(vatRate) === String(initialVatRate)) {
+      setLocalVat('');
+    }
+  }, [vatRate, initialVatRate]);
 
   const handleDeliveryInput = (val: string) => {
     setLocalDelivery(val);
