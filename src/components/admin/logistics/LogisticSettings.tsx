@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'interface';
 
 interface LogisticsSettingsProps {
   deliveryCharge: number | string;
@@ -23,13 +23,30 @@ export default function LogisticSettings({
   onSaveSettings,
   onCancel,
 }: LogisticsSettingsProps) {
-  const isDeliveryChanged = deliveryCharge !== '' && String(deliveryCharge) !== String(initialDeliveryCharge);
-  const isVatChanged = vatRate !== '' && String(vatRate) !== String(initialVatRate);
+  const [localDelivery, setLocalDelivery] = useState(deliveryCharge);
+  const [localVat, setLocalVat] = useState(vatRate);
 
+  useEffect(() => {
+    setLocalDelivery(deliveryCharge);
+  }, [deliveryCharge]);
+
+  useEffect(() => {
+    setLocalVat(vatRate);
+  }, [vatRate]);
+
+  const handleDeliveryInput = (val: string) => {
+    setLocalDelivery(val);
+    onDeliveryChange(val);
+  };
+
+  const handleVatInput = (val: string) => {
+    setLocalVat(val);
+    onVatChange(val);
+  };
+
+  const isDeliveryChanged = localDelivery !== '' && String(localDelivery) !== String(initialDeliveryCharge);
+  const isVatChanged = localVat !== '' && String(localVat) !== String(initialVatRate);
   const hasChanges = isDeliveryChanged || isVatChanged;
-
-  const deliveryInputValue = String(deliveryCharge) === String(initialDeliveryCharge) ? '' : deliveryCharge;
-  const vatInputValue = String(vatRate) === String(initialVatRate) ? '' : vatRate;
 
   return (
     <div style={{ width: '100%', boxSizing: 'border-box' }}>
@@ -103,9 +120,9 @@ export default function LogisticSettings({
               <span style={{ fontSize: '13px', color: '#555', fontWeight: '600' }}>৳</span>
               <input
                 type="number"
-                value={deliveryInputValue}
+                value={localDelivery}
                 placeholder={String(initialDeliveryCharge)}
-                onChange={(e) => onDeliveryChange(e.target.value)}
+                onChange={(e) => handleDeliveryInput(e.target.value)}
                 style={{
                   backgroundColor: 'transparent',
                   color: '#fff',
@@ -114,7 +131,7 @@ export default function LogisticSettings({
                   fontSize: '14px',
                   fontWeight: '600',
                   textAlign: 'right',
-                  width: '80px',
+                  width: '100px',
                   fontFamily: 'monospace',
                 }}
               />
@@ -137,9 +154,9 @@ export default function LogisticSettings({
               <input
                 type="number"
                 step="any"
-                value={vatInputValue}
+                value={localVat}
                 placeholder={String(initialVatRate)}
-                onChange={(e) => onVatChange(e.target.value)}
+                onChange={(e) => handleVatInput(e.target.value)}
                 style={{
                   backgroundColor: 'transparent',
                   color: '#fff',
@@ -148,7 +165,7 @@ export default function LogisticSettings({
                   fontSize: '14px',
                   fontWeight: '600',
                   textAlign: 'right',
-                  width: '80px',
+                  width: '100px',
                   fontFamily: 'monospace',
                 }}
               />
