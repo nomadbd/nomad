@@ -16,12 +16,14 @@ interface AuditLogItem {
   new_value?: string;
   changes?: any;
   reason?: string;
-  metadata?: {
+  metadata?: any;
+  created_at: string;
+  user_id?: string;
+  profiles?: {
     name?: string;
     designation?: string;
     email?: string;
   };
-  created_at: string;
 }
 
 export default function LogisticsHistory({ 
@@ -36,14 +38,42 @@ export default function LogisticsHistory({
     const fetchAuditLogs = async () => {
       setLoading(true);
       try {
-        const { data, error } = await supabase
+        const { data: logsData, error: logsError } = await supabase
           .from('audit_logs')
           .select('*')
           .eq('entity_type', entityType)
           .order('created_at', { ascending: false });
 
-        if (!error && data) {
-          setLogs(data);
+        if (logsError) throw logsError;
+
+        if (logsData && logsData.length > 0) {
+          const userIds = Array.from(
+            new Set(logsData.map((log: any) => log.user_id).filter(Boolean))
+          );
+
+          let profilesMap: { [key: string]: any } = {};
+          
+          if (userIds.length > 0) {
+            const { data: profilesData } = await supabase
+              .from('profiles')
+              .select('id, name, designation, email')
+              .in('id', userIds);
+
+            if (profilesData) {
+              profilesData.forEach((profile: any) => {
+                profilesMap[profile.id] = profile;
+              });
+            }
+          }
+
+          const formattedLogs = logsData.map((log: any) => ({
+            ...log,
+            profiles: log.user_id ? profilesMap[log.user_id] : null,
+          }));
+
+          setLogs(formattedLogs);
+        } else {
+          setLogs([]);
         }
       } catch (err) {
         console.error('Error fetching audit logs:', err);
@@ -134,9 +164,9 @@ export default function LogisticsHistory({
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '420px', overflowY: 'auto', paddingRight: '4px' }}>
           {logs.map((log) => {
-            const userName = log.metadata?.name || 'System / Admin';
-            const userDesignation = log.metadata?.designation ? `(${log.metadata.designation})` : '';
-            const userEmail = log.metadata?.email || '';
+            const userName = log.profiles?.name || 'Admin / User';
+            const userDesignation = log.profiles?.designation ? `(${log.profiles.designation})` : '';
+            const userEmail = log.profiles?.email || '';
 
             return (
               <div
