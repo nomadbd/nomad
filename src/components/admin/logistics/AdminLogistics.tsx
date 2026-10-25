@@ -37,7 +37,11 @@ export default function AdminLogistics({ searchQuery, isFilterOpen, isSettingsOp
   return (
     <div style={{ color: '#fff', width: '100%' }}>
       {isHistoryOpen ? (
-        <LogisticsHistory onBack={() => setIsHistoryOpen(false)} />
+        <LogisticsHistory 
+          onBack={() => setIsHistoryOpen(false)} 
+          entityType="store_settings" 
+          title="Logistics Audit History" 
+        />
       ) : isSettingsOpen ? (
         <LogisticSettings
           deliveryCharge={deliveryCharge}
