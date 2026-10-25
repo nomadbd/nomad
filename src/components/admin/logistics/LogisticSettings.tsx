@@ -24,21 +24,28 @@ export default function LogisticSettings({
 }: LogisticsSettingsProps) {
   const [localDelivery, setLocalDelivery] = useState('');
   const [localVat, setLocalVat] = useState('');
+  const [showSaved, setShowSaved] = useState(false);
 
   const baseDelivery = initialDeliveryCharge !== undefined ? initialDeliveryCharge : deliveryCharge;
   const baseVat = initialVatRate !== undefined ? initialVatRate : vatRate;
 
-  // সেভ সফলভাবে সম্পন্ন হওয়ার পর ইনপুট রিসেট করা
+  // সেভ সফল হওয়ার পর সাময়িকভাবে 'SAVED' দেখানোর লজিক
   const prevIsSaving = useRef(isSaving);
   useEffect(() => {
     if (prevIsSaving.current && !isSaving) {
-      setLocalDelivery('');
-      setLocalVat('');
+      setShowSaved(true);
+      const timer = setTimeout(() => {
+        setShowSaved(false);
+        setLocalDelivery('');
+        setLocalVat('');
+      }, 1500); // ১.৫ সেকেন্ড পর রিসেট হবে
+      return () => clearTimeout(timer);
     }
     prevIsSaving.current = isSaving;
   }, [isSaving]);
 
   const hasChanges = localDelivery !== '' || localVat !== '';
+  const shouldShowButton = hasChanges || isSaving || showSaved;
 
   const handleDeliveryInput = (val: string) => {
     setLocalDelivery(val);
@@ -63,7 +70,7 @@ export default function LogisticSettings({
         fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
       }}
     >
-      {/* Header Section: LOGISTICS & Pill-shaped Save Button (Fixed Layout to Prevent Jitter) */}
+      {/* Header Section: LOGISTICS & Fixed-size Pill Button */}
       <div
         style={{
           display: 'flex',
@@ -86,28 +93,31 @@ export default function LogisticSettings({
           Logistics
         </span>
 
-        {/* বাটনটি সবসময় স্পেস ধরে রাখবে, তাই কোনো ঝাঁকুনি বা লেআউট শিফট হবে না */}
+        {/* ফিক্সড সাইজ এবং সুষম শব্দবিন্যাস (SAVE -> SAVING -> SAVED) */}
         <button
           type="button"
           onClick={onSaveSettings}
-          disabled={isSaving || !hasChanges}
+          disabled={isSaving || showSaved || !hasChanges}
           style={{
-            backgroundColor: '#ffffff',
-            color: '#000000',
+            backgroundColor: showSaved ? '#10b981' : '#ffffff', // সফল হলে সফট গ্রীন, অন্যথায় সাদা
+            color: showSaved ? '#ffffff' : '#000000',
             border: 'none',
             borderRadius: '20px',
-            padding: '5px 16px',
-            fontSize: '11px',
+            width: '88px', // নির্দিষ্ট ফিক্সড উইডথ
+            height: '26px', // নির্দিষ্ট ফিক্সড হাইট
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '10px',
             fontWeight: '700',
-            letterSpacing: '0.5px',
-            cursor: hasChanges && !isSaving ? 'pointer' : 'default',
-            opacity: isSaving ? 0.6 : (hasChanges ? 1 : 0),
-            visibility: hasChanges ? 'visible' : 'hidden',
-            pointerEvents: hasChanges ? 'auto' : 'none',
-            transition: 'opacity 0.2s ease',
+            letterSpacing: '0.8px', // অক্ষরগুলোর মধ্যে প্রিমিয়াম স্পেসিং
+            cursor: hasChanges && !isSaving && !showSaved ? 'pointer' : 'default',
+            visibility: shouldShowButton ? 'visible' : 'hidden',
+            opacity: shouldShowButton ? 1 : 0,
+            transition: 'background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease',
           }}
         >
-          {isSaving ? 'SAVING...' : 'SAVE'}
+          {isSaving ? 'SAVING' : showSaved ? 'SAVED' : 'SAVE'}
         </button>
       </div>
 
