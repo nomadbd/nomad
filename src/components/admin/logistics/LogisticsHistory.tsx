@@ -4,6 +4,8 @@ import { CloseIcon } from '@/components/icons';
 
 interface LogisticsHistoryProps {
   onBack: () => void;
+  entityType?: string; // নির্দিষ্ট কার্ড বা সেটিংস ফিল্টার করার জন্য প্রপস
+  title?: string;      // পেজের হেডার টাইটেল ডাইনামিক করার জন্য
 }
 
 interface AuditLogItem {
@@ -18,7 +20,11 @@ interface AuditLogItem {
   created_at: string;
 }
 
-export default function LogisticsHistory({ onBack }: LogisticsHistoryProps) {
+export default function LogisticsHistory({ 
+  onBack, 
+  entityType = 'store_settings', 
+  title = 'Logistics Audit History' 
+}: LogisticsHistoryProps) {
   const [logs, setLogs] = useState<AuditLogItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
@@ -26,11 +32,11 @@ export default function LogisticsHistory({ onBack }: LogisticsHistoryProps) {
     const fetchAuditLogs = async () => {
       setLoading(true);
       try {
-        // শুধু স্টোর সেটিংস বা লজিস্টিকস সম্পর্কিত লগ ফিল্টার করে ফেচ করা
+        // নির্দিষ্ট entity_type অনুযায়ী লগ ফিল্টার করে ফেচ করা
         const { data, error } = await supabase
           .from('audit_logs')
           .select('*')
-          .eq('entity_type', 'store_settings')
+          .eq('entity_type', entityType)
           .order('created_at', { ascending: false });
 
         if (!error && data) {
@@ -44,7 +50,7 @@ export default function LogisticsHistory({ onBack }: LogisticsHistoryProps) {
     };
 
     fetchAuditLogs();
-  }, []);
+  }, [entityType]);
 
   return (
     <div
@@ -79,7 +85,7 @@ export default function LogisticsHistory({ onBack }: LogisticsHistoryProps) {
             textTransform: 'uppercase',
           }}
         >
-          Logistics Audit History
+          {title}
         </span>
 
         {/* Back / Close Button */}
@@ -109,7 +115,7 @@ export default function LogisticsHistory({ onBack }: LogisticsHistoryProps) {
         </div>
       ) : logs.length === 0 ? (
         <div style={{ padding: '30px', textAlign: 'center', color: '#888888', fontSize: '11px', fontFamily: 'monospace' }}>
-          NO LOGISTICS HISTORY FOUND
+          NO HISTORY FOUND FOR THIS SECTION
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '400px', overflowY: 'auto' }}>
