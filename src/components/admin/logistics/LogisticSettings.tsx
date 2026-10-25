@@ -3,35 +3,35 @@ import React, { useState, useEffect } from 'react';
 interface LogisticsSettingsProps {
   deliveryCharge: number | string;
   vatRate: number | string;
-  initialDeliveryCharge?: number | string;
-  initialVatRate?: number | string;
   isSaving: boolean;
   onDeliveryChange: (val: string) => void;
   onVatChange: (val: string) => void;
   onSaveSettings: () => void;
-  onCancel: () => void;
 }
 
 export default function LogisticSettings({
   deliveryCharge,
   vatRate,
-  initialDeliveryCharge,
-  initialVatRate,
   isSaving,
   onDeliveryChange,
   onVatChange,
   onSaveSettings,
-  onCancel,
 }: LogisticsSettingsProps) {
-  const [localDelivery, setLocalDelivery] = useState('');
-  const [localVat, setLocalVat] = useState('');
+  const [localDelivery, setLocalDelivery] = useState(String(deliveryCharge ?? ''));
+  const [localVat, setLocalVat] = useState(String(vatRate ?? ''));
 
-  const baseDelivery = initialDeliveryCharge !== undefined ? initialDeliveryCharge : deliveryCharge;
-  const baseVat = initialVatRate !== undefined ? initialVatRate : vatRate;
+  // Sync state if props change from outside
+  useEffect(() => {
+    setLocalDelivery(String(deliveryCharge ?? ''));
+  }, [deliveryCharge]);
 
-  const isDeliveryChanged = localDelivery !== '' && String(localDelivery) !== String(baseDelivery);
-  const isVatChanged = localVat !== '' && String(localVat) !== String(baseVat);
-  const hasChanges = isDeliveryChanged || isVatChanged;
+  useEffect(() => {
+    setLocalVat(String(vatRate ?? ''));
+  }, [vatRate]);
+
+  const hasChanges =
+    String(localDelivery) !== String(deliveryCharge) ||
+    String(localVat) !== String(vatRate);
 
   const handleDeliveryInput = (val: string) => {
     setLocalDelivery(val);
@@ -44,132 +44,150 @@ export default function LogisticSettings({
   };
 
   return (
-    <div style={{ width: '100%', boxSizing: 'border-box' }}>
+    <div
+      style={{
+        width: '100%',
+        boxSizing: 'border-box',
+        backgroundColor: '#0a0a0a',
+        border: '1px solid #1f1f1f',
+        borderRadius: '8px',
+        padding: '12px 16px',
+        color: '#ededed',
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+      }}
+    >
+      {/* Header Section */}
       <div
         style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '10px',
+          paddingBottom: '8px',
           borderBottom: '1px solid #1a1a1a',
-          padding: '14px 0',
-          width: '100%',
-          boxSizing: 'border-box',
         }}
       >
+        <span
+          style={{
+            fontSize: '11px',
+            fontWeight: '600',
+            color: '#888888',
+            letterSpacing: '1px',
+            textTransform: 'uppercase',
+          }}
+        >
+          Logistics
+        </span>
+
+        {hasChanges && (
+          <button
+            type="button"
+            onClick={onSaveSettings}
+            disabled={isSaving}
+            style={{
+              backgroundColor: '#ffffff',
+              color: '#000000',
+              border: 'none',
+              borderRadius: '4px',
+              padding: '3px 10px',
+              fontSize: '11px',
+              fontWeight: '600',
+              cursor: isSaving ? 'not-allowed' : 'pointer',
+              opacity: isSaving ? 0.6 : 1,
+              transition: 'opacity 0.2s ease',
+            }}
+          >
+            {isSaving ? 'Saving...' : 'Save'}
+          </button>
+        )}
+      </div>
+
+      {/* Input Rows */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+        {/* Shipping Fee */}
         <div
           style={{
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            marginBottom: '12px',
-            minHeight: '24px',
+            padding: '4px 0',
           }}
         >
-          <span
+          <label style={{ fontSize: '13px', color: '#cccccc', fontWeight: '400' }}>
+            Shipping Fee
+          </label>
+          <div
             style={{
-              fontSize: '11px',
-              fontWeight: '600',
-              color: '#ffffff',
-              letterSpacing: '1.2px',
-              textTransform: 'uppercase',
+              display: 'flex',
+              alignItems: 'center',
+              backgroundColor: '#121212',
+              border: '1px solid #262626',
+              borderRadius: '4px',
+              padding: '2px 8px',
             }}
           >
-            FULFILLMENT & CHECKOUT CONFIG
-          </span>
-
-          {hasChanges && (
-            <button
-              type="button"
-              onClick={() => {
-                setLocalDelivery('');
-                setLocalVat('');
-                onSaveSettings();
-              }}
-              disabled={isSaving}
+            <span style={{ fontSize: '12px', color: '#666666', marginRight: '4px' }}>৳</span>
+            <input
+              type="number"
+              value={localDelivery}
+              onFocus={(e) => e.target.select()}
+              onChange={(e) => handleDeliveryInput(e.target.value)}
               style={{
-                backgroundColor: '#ffffff',
-                color: '#000000',
+                backgroundColor: 'transparent',
+                color: '#ffffff',
                 border: 'none',
-                borderRadius: '20px',
-                padding: '4px 12px',
-                fontSize: '10px',
-                fontWeight: '700',
-                letterSpacing: '0.5px',
-                cursor: isSaving ? 'not-allowed' : 'pointer',
-                opacity: isSaving ? 0.6 : 1,
-                transition: 'all 0.2s ease',
+                outline: 'none',
+                fontSize: '13px',
+                fontWeight: '500',
+                textAlign: 'right',
+                width: '70px',
+                fontFamily: 'monospace',
               }}
-            >
-              {isSaving ? 'SAVING...' : 'SAVE'}
-            </button>
-          )}
+            />
+          </div>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
+        {/* VAT Rate */}
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            padding: '4px 0',
+          }}
+        >
+          <label style={{ fontSize: '13px', color: '#cccccc', fontWeight: '400' }}>
+            VAT Rate
+          </label>
           <div
             style={{
               display: 'flex',
-              justifyContent: 'space-between',
               alignItems: 'center',
-              padding: '10px 0',
-              borderTop: '1px solid #141414',
+              backgroundColor: '#121212',
+              border: '1px solid #262626',
+              borderRadius: '4px',
+              padding: '2px 8px',
             }}
           >
-            <span style={{ fontSize: '13px', color: '#888', fontWeight: '500' }}>
-              Base Shipping Rate
-            </span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <span style={{ fontSize: '13px', color: '#555', fontWeight: '600' }}>৳</span>
-              <input
-                type="number"
-                value={localDelivery}
-                placeholder={String(baseDelivery)}
-                onChange={(e) => handleDeliveryInput(e.target.value)}
-                style={{
-                  backgroundColor: 'transparent',
-                  color: '#fff',
-                  border: 'none',
-                  outline: 'none',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  textAlign: 'right',
-                  width: '100px',
-                  fontFamily: 'monospace',
-                }}
-              />
-            </div>
-          </div>
-
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              padding: '10px 0',
-              borderTop: '1px solid #141414',
-            }}
-          >
-            <span style={{ fontSize: '13px', color: '#888', fontWeight: '500' }}>
-              Tax Rate (VAT)
-            </span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <input
-                type="number"
-                step="any"
-                value={localVat}
-                placeholder={String(baseVat)}
-                onChange={(e) => handleVatInput(e.target.value)}
-                style={{
-                  backgroundColor: 'transparent',
-                  color: '#fff',
-                  border: 'none',
-                  outline: 'none',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  textAlign: 'right',
-                  width: '100px',
-                  fontFamily: 'monospace',
-                }}
-              />
-              <span style={{ fontSize: '13px', color: '#555', fontWeight: '600' }}>%</span>
-            </div>
+            <input
+              type="number"
+              step="any"
+              value={localVat}
+              onFocus={(e) => e.target.select()}
+              onChange={(e) => handleVatInput(e.target.value)}
+              style={{
+                backgroundColor: 'transparent',
+                color: '#ffffff',
+                border: 'none',
+                outline: 'none',
+                fontSize: '13px',
+                fontWeight: '500',
+                textAlign: 'right',
+                width: '70px',
+                fontFamily: 'monospace',
+              }}
+            />
+            <span style={{ fontSize: '12px', color: '#666666', marginLeft: '4px' }}>%</span>
           </div>
         </div>
       </div>
