@@ -38,21 +38,46 @@ export default function LogisticsHistory({
     const fetchAuditLogs = async () => {
       setLoading(true);
       try {
-        const { data, error } = await supabase
+        // ১. প্রথমে নির্দিষ্ট entity_type এর সব audit logs ফেচ করা
+        const { data: logsData, error: logsError } = await supabase
           .from('audit_logs')
-          .select(`
-            *,
-            profiles:user_id (
-              name,
-              designation,
-              email
-            )
-          `)
+          .select('*')
           .eq('entity_type', entityType)
           .order('created_at', { ascending: false });
 
-        if (!error && data) {
-          setLogs(data);
+        if (logsError) throw logsError;
+
+        if (logsData && logsData.length > 0) {
+          // ২. লগগুলোতে থাকা ইউজার আইডিগুলো সংগ্রহ করা
+          const userIds = Array.from(
+            new Set(logsData.map((log: any) => log.user_id).filter(Boolean))
+          );
+
+          let profilesMap: { [key: string]: any } = {};
+          
+          if (userIds.length > 0) {
+            // ৩. profiles টেবيل থেকে ইউজারদের তথ্য ফেচ করা
+            const { data: profilesData } = await supabase
+              .from('profiles')
+              .select('id, name, designation, email')
+              .in('id', userIds);
+
+            if (profilesData) {
+              profilesData.forEach((profile: any) => {
+                profilesMap[profile.id] = profile;
+              });
+            }
+          }
+
+          // ৪. লগ এবং প্রোফাইল ডেটা একসাথে মার্চ করা
+          const formattedLogs = logsData.map((log: any) => ({
+            ...log,
+            profiles: log.user_id ? profilesMap[log.user_id] : null,
+          }));
+
+          setLogs(formattedLogs);
+        } else {
+          setLogs([]);
         }
       } catch (err) {
         console.error('Error fetching audit logs:', err);
@@ -143,9 +168,9 @@ export default function LogisticsHistory({
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '420px', overflowY: 'auto', paddingRight: '4px' }}>
           {logs.map((log) => {
-            const userName = log.profiles?.name || 'Unknown User';
+            const userName = log.profiles?.name || 'System / Admin';
             const userDesignation = log.profiles?.designation ? `(${log.profiles.designation})` : '';
-            const userEmail = log.profiles?.email ? log.profiles.email : '';
+            const userEmail = log.profiles?.email || '';
 
             return (
               <div
