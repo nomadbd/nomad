@@ -1,17 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface LogisticsSettingsProps {
   deliveryCharge: number | string;
   vatRate: number | string;
+  initialDeliveryCharge?: number | string;
+  initialVatRate?: number | string;
   isSaving: boolean;
   onDeliveryChange: (val: string) => void;
   onVatChange: (val: string) => void;
   onSaveSettings: () => void;
+  onCancel?: () => void;
 }
 
 export default function LogisticSettings({
   deliveryCharge,
   vatRate,
+  initialDeliveryCharge,
+  initialVatRate,
   isSaving,
   onDeliveryChange,
   onVatChange,
@@ -20,10 +25,23 @@ export default function LogisticSettings({
   const [localDelivery, setLocalDelivery] = useState(String(deliveryCharge ?? ''));
   const [localVat, setLocalVat] = useState(String(vatRate ?? ''));
 
-  // রিয়েল-টাইমে পরিবর্তন ট্র্যাক করা
+  // প্যারেন্ট থেকে আসা অরিজিনাল বা বেস মান (যা সেভ হওয়ার আগ পর্যন্ত অপরিবর্তিত থাকে)
+  const baseDelivery = initialDeliveryCharge !== undefined ? initialDeliveryCharge : deliveryCharge;
+  const baseVat = initialVatRate !== undefined ? initialVatRate : vatRate;
+
+  // বাইরে থেকে ডেটা সিঙ্ক হলে লোকাল স্টেট আপডেট করা
+  useEffect(() => {
+    setLocalDelivery(String(deliveryCharge ?? ''));
+  }, [deliveryCharge]);
+
+  useEffect(() => {
+    setLocalVat(String(vatRate ?? ''));
+  }, [vatRate]);
+
+  // অরিজিনাল মানের সাথে বর্তমান ইনপুটের মিল না থাকলেই সেভ বাটন দেখাবে
   const hasChanges =
-    localDelivery !== String(deliveryCharge ?? '') ||
-    localVat !== String(vatRate ?? '');
+    String(localDelivery) !== String(baseDelivery) ||
+    String(localVat) !== String(baseVat);
 
   const handleDeliveryInput = (val: string) => {
     setLocalDelivery(val);
@@ -80,7 +98,7 @@ export default function LogisticSettings({
               backgroundColor: '#ffffff',
               color: '#000000',
               border: 'none',
-              borderRadius: '20px', // ডিম্বাকার বাটন (Pill-shaped)
+              borderRadius: '20px', // নিখুঁত ডিম্বাকার (Pill-shaped) বাটন
               padding: '5px 14px',
               fontSize: '11px',
               fontWeight: '700',
@@ -125,7 +143,6 @@ export default function LogisticSettings({
             <input
               type="number"
               value={localDelivery}
-              placeholder={String(deliveryCharge ?? '')}
               onChange={(e) => handleDeliveryInput(e.target.value)}
               style={{
                 backgroundColor: 'transparent',
@@ -171,7 +188,6 @@ export default function LogisticSettings({
               type="number"
               step="any"
               value={localVat}
-              placeholder={String(vatRate ?? '')}
               onChange={(e) => handleVatInput(e.target.value)}
               style={{
                 backgroundColor: 'transparent',
