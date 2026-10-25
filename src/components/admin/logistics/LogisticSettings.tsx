@@ -3,8 +3,6 @@ import React, { useState, useEffect, useRef } from 'react';
 interface LogisticsSettingsProps {
   deliveryCharge: number | string;
   vatRate: number | string;
-  initialDeliveryCharge?: number | string;
-  initialVatRate?: number | string;
   isSaving: boolean;
   onDeliveryChange: (val: string) => void;
   onVatChange: (val: string) => void;
@@ -69,7 +67,7 @@ export default function LogisticSettings({
       <div
         style={{
           borderBottom: '1px solid #1a1a1a',
-          padding: '16px 0',
+          padding: '14px 0',
           width: '100%',
           boxSizing: 'border-box',
         }}
@@ -79,20 +77,20 @@ export default function LogisticSettings({
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            marginBottom: '16px',
-            minHeight: '28px',
+            marginBottom: '12px',
+            minHeight: '24px',
           }}
         >
           <span
             style={{
               fontSize: '11px',
               fontWeight: '600',
-              color: '#666',
+              color: '#ffffff',
               letterSpacing: '1.2px',
               textTransform: 'uppercase',
             }}
           >
-            Fulfillment & Checkout Config
+            FULFILLMENT & CHECKOUT CONFIG
           </span>
 
           {hasChanges && (
@@ -105,7 +103,7 @@ export default function LogisticSettings({
                 color: '#000000',
                 border: 'none',
                 borderRadius: '20px',
-                padding: '5px 14px',
+                padding: '4px 12px',
                 fontSize: '10px',
                 fontWeight: '700',
                 letterSpacing: '0.5px',
@@ -125,7 +123,7 @@ export default function LogisticSettings({
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
-              padding: '12px 0',
+              padding: '10px 0',
               borderTop: '1px solid #141414',
             }}
           >
@@ -159,7 +157,7 @@ export default function LogisticSettings({
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
-              padding: '12px 0',
+              padding: '10px 0',
               borderTop: '1px solid #141414',
             }}
           >
