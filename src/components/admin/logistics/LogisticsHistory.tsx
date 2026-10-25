@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/supabaseClient';
-import { CloseIcon } from '../../components/icons';
+import { CloseIcon } from '@/components/icons';
 
 interface LogisticsHistoryProps {
   onBack: () => void;
