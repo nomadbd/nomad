@@ -38,7 +38,7 @@ export default function LogisticSettings({
         setShowSaved(false);
         setLocalDelivery('');
         setLocalVat('');
-      }, 1500); // ১.৫ সেকেন্ড পর রিসেট হবে
+      }, 1500);
       return () => clearTimeout(timer);
     }
     prevIsSaving.current = isSaving;
@@ -70,6 +70,16 @@ export default function LogisticSettings({
         fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
       }}
     >
+      {/* CSS Animation Keyframes for Smooth Pulsing Dots */}
+      <style>
+        {`
+          @keyframes pulseDot {
+            0%, 100% { opacity: 0.2; transform: scale(0.8); }
+            50% { opacity: 1; transform: scale(1.2); }
+          }
+        `}
+      </style>
+
       {/* Header Section: LOGISTICS & Fixed-size Pill Button */}
       <div
         style={{
@@ -93,31 +103,41 @@ export default function LogisticSettings({
           Logistics
         </span>
 
-        {/* ফিক্সড সাইজ এবং সুষম শব্দবিন্যাস (SAVE -> SAVING -> SAVED) */}
+        {/* ফিক্সড সাইজ এবং স্মুথ অ্যানিমেটেড ডট বা সেভড স্ট্যাটাস */}
         <button
           type="button"
           onClick={onSaveSettings}
           disabled={isSaving || showSaved || !hasChanges}
           style={{
-            backgroundColor: showSaved ? '#10b981' : '#ffffff', // সফল হলে সফট গ্রীন, অন্যথায় সাদা
+            backgroundColor: showSaved ? '#10b981' : '#ffffff',
             color: showSaved ? '#ffffff' : '#000000',
             border: 'none',
             borderRadius: '20px',
-            width: '88px', // নির্দিষ্ট ফিক্সড উইডথ
-            height: '26px', // নির্দিষ্ট ফিক্সড হাইট
+            width: '88px',
+            height: '26px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             fontSize: '10px',
             fontWeight: '700',
-            letterSpacing: '0.8px', // অক্ষরগুলোর মধ্যে প্রিমিয়াম স্পেসিং
+            letterSpacing: '0.8px',
             cursor: hasChanges && !isSaving && !showSaved ? 'pointer' : 'default',
             visibility: shouldShowButton ? 'visible' : 'hidden',
             opacity: shouldShowButton ? 1 : 0,
             transition: 'background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease',
           }}
         >
-          {isSaving ? 'SAVING' : showSaved ? 'SAVED' : 'SAVE'}
+          {isSaving ? (
+            <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+              <span style={{ width: '5px', height: '5px', backgroundColor: '#000', borderRadius: '50%', animation: 'pulseDot 1.2s infinite ease-in-out' }}></span>
+              <span style={{ width: '5px', height: '5px', backgroundColor: '#000', borderRadius: '50%', animation: 'pulseDot 1.2s infinite ease-in-out 0.2s' }}></span>
+              <span style={{ width: '5px', height: '5px', backgroundColor: '#000', borderRadius: '50%', animation: 'pulseDot 1.2s infinite ease-in-out 0.4s' }}></span>
+            </div>
+          ) : showSaved ? (
+            'SAVED'
+          ) : (
+            'SAVE'
+          )}
         </button>
       </div>
 
