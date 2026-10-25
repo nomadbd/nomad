@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAdminLogistics } from '@/hooks/useAdminLogistics';
 import LogisticSettings from './LogisticSettings';
+import LogisticsHistory from './LogisticsHistory';
 import LogisticsOrderCard from './LogisticsOrderCard';
 import LogisticsSkeleton from './LogisticsSkeleton';
 
@@ -11,6 +12,8 @@ interface AdminLogisticsProps {
 }
 
 export default function AdminLogistics({ searchQuery, isFilterOpen, isSettingsOpen }: AdminLogisticsProps) {
+  const [isHistoryOpen, setIsHistoryOpen] = useState<boolean>(false);
+
   const {
     orders,
     loading,
@@ -33,7 +36,9 @@ export default function AdminLogistics({ searchQuery, isFilterOpen, isSettingsOp
 
   return (
     <div style={{ color: '#fff', width: '100%' }}>
-      {isSettingsOpen ? (
+      {isHistoryOpen ? (
+        <LogisticsHistory onBack={() => setIsHistoryOpen(false)} />
+      ) : isSettingsOpen ? (
         <LogisticSettings
           deliveryCharge={deliveryCharge}
           vatRate={vatRate}
@@ -44,6 +49,7 @@ export default function AdminLogistics({ searchQuery, isFilterOpen, isSettingsOp
           onVatChange={setVatRate}
           onSaveSettings={handleSaveSettings}
           onCancel={handleCancel}
+          onOpenHistory={() => setIsHistoryOpen(true)}
         />
       ) : (
         loading ? (
