@@ -19,6 +19,8 @@ interface AdminHeaderProps {
   onToggleLogisticsSettings: () => void;
   menuOpen: boolean;
   onToggleMenu: () => void;
+  // যদি হিস্ট্রি বা সাব-পেজ আলাদা কোনো স্টেটে রাখেন, তবে সেটি এখানে রিসিভ করা যেতে পারে
+  subPage?: string | null; 
 }
 
 export const AdminHeader: React.FC<AdminHeaderProps> = ({
@@ -38,7 +40,30 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
   onToggleLogisticsSettings,
   menuOpen,
   onToggleMenu,
+  subPage,
 }) => {
+  // ট্যাব বা সাব-পেজ অনুযায়ী ডাইনামিক হেডার টাইটেল নির্ধারণের ফাংশন
+  const getHeaderTitle = () => {
+    if (subPage === 'history') return 'HISTORY'; // ভবিষ্যতে হিস্ট্রি পেজে গেলে এটি দেখাবে
+    
+    switch (activeTab) {
+      case 'overview':
+        return 'OVERVIEW';
+      case 'products':
+        return 'PRODUCTS';
+      case 'logistics':
+        return 'LOGISTICS';
+      case 'ambassadors':
+        return 'AMBASSADORS';
+      case 'messages':
+        return 'MESSAGES';
+      case 'staff':
+        return 'STAFF';
+      default:
+        return 'NOMAD';
+    }
+  };
+
   return (
     <header className={`${styles.nomadHeader} ${!isHeaderVisible ? styles.headerHidden : ''}`}>
       {isSearchOpen ? (
@@ -116,11 +141,12 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
         </div>
       ) : (
         <>
-          <a href="/" className={styles.nomadBrandLink} title="Go to Store Homepage">
-            <h1 style={{ fontSize: '18px', fontWeight: '900', letterSpacing: '4px', margin: 0, color: '#fff' }}>
-              NOMAD
+          {/* ব্র্যান্ড লিঙ্কের জায়গায় এখন ডাইনামিক পেজ টাইটেল শো করবে */}
+          <div className={styles.nomadBrandLink} style={{ display: 'flex', alignItems: 'center' }}>
+            <h1 style={{ fontSize: '16px', fontWeight: '800', letterSpacing: '2.5px', margin: 0, color: '#fff', textTransform: 'uppercase' }}>
+              {getHeaderTitle()}
             </h1>
-          </a>
+          </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
             {!menuOpen && (
@@ -183,7 +209,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
               aria-expanded={menuOpen}
               title="Toggle Navigation"
             >
-              {menuOpen ? <CloseIcon width={18} height={18} /> : <MenuIcon width={20} height={20} />}
+              {menuOpen ? <CloseIcon width={18} height={18} /> : <MenuIcon width={20} height={18} />}
             </button>
           </div>
         </>
