@@ -16,15 +16,12 @@ interface AuditLogItem {
   new_value?: string;
   changes?: any;
   reason?: string;
-  metadata?: any;
-  created_at: string;
-  user_id?: string;
-  profiles?: {
+  metadata?: {
     name?: string;
-    full_name?: string;
     designation?: string;
     email?: string;
   };
+  created_at: string;
 }
 
 export default function LogisticsHistory({ 
@@ -39,43 +36,14 @@ export default function LogisticsHistory({
     const fetchAuditLogs = async () => {
       setLoading(true);
       try {
-        const { data: logsData, error: logsError } = await supabase
+        const { data, error } = await supabase
           .from('audit_logs')
           .select('*')
           .eq('entity_type', entityType)
           .order('created_at', { ascending: false });
 
-        if (logsError) throw logsError;
-
-        if (logsData && logsData.length > 0) {
-          const userIds = Array.from(
-            new Set(logsData.map((log: any) => log.user_id).filter(Boolean))
-          );
-
-          let profilesMap: { [key: string]: any } = {};
-          
-          if (userIds.length > 0) {
-            // profiles টেবিল থেকে নাম, পদবী ও ইমেইল ফেচ করা (সব সম্ভাব্য কলাম নাম সহ)
-            const { data: profilesData } = await supabase
-              .from('profiles')
-              .select('*')
-              .in('id', userIds);
-
-            if (profilesData) {
-              profilesData.forEach((profile: any) => {
-                profilesMap[profile.id] = profile;
-              });
-            }
-          }
-
-          const formattedLogs = logsData.map((log: any) => ({
-            ...log,
-            profiles: log.user_id ? profilesMap[log.user_id] : null,
-          }));
-
-          setLogs(formattedLogs);
-        } else {
-          setLogs([]);
+        if (!error && data) {
+          setLogs(data);
         }
       } catch (err) {
         console.error('Error fetching audit logs:', err);
@@ -166,10 +134,9 @@ export default function LogisticsHistory({
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '420px', overflowY: 'auto', paddingRight: '4px' }}>
           {logs.map((log) => {
-            // profiles টেবিল থেকে নাম, পদবী এবং ইমেইল ডাইনামিকালি পিক করা
-            const userName = log.profiles?.name || log.profiles?.full_name || log.user_id || 'Unknown User';
-            const userDesignation = log.profiles?.designation ? `(${log.profiles.designation})` : '';
-            const userEmail = log.profiles?.email || '';
+            const userName = log.metadata?.name || 'System / Admin';
+            const userDesignation = log.metadata?.designation ? `(${log.metadata.designation})` : '';
+            const userEmail = log.metadata?.email || '';
 
             return (
               <div
