@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+Import React, { useState, useEffect } from 'react';
 import styles from './AdminDashboard.module.css';
 import { supabase } from '../../supabaseClient';
 
@@ -15,6 +15,7 @@ import {
 } from '../../components/admin';
 import AdminReminders from '../../components/admin/reminders/AdminReminders';
 import { SendInvite, AmbassadorList } from '../../components/admin/ambassadors';
+import AdminActivityLog from '../../components/admin/history/AdminActivityLog'; // ১. অডিট লগ কম্পোনেন্ট ইমপোর্ট করা হলো
 
 import { AdminHeader } from './AdminHeader';
 import { AdminSidebar } from './AdminSidebar';
@@ -30,7 +31,8 @@ export type TabType =
   | 'customers'
   | 'ambassadors'
   | 'staff'
-  | 'reminders';
+  | 'reminders'
+  | 'history'; // ২. ট্যাব টাইপে 'history' যুক্ত করা হলো
 
 const AdminDashboard: React.FC = () => {
   const getTabFromURL = (): TabType => {
@@ -39,7 +41,7 @@ const AdminDashboard: React.FC = () => {
     const tab = params.get('tab') as TabType;
     const validTabs: TabType[] = [
       'overview', 'orders', 'products', 'logistics', 'messages', 
-      'notifications', 'customers', 'ambassadors', 'staff', 'reminders'
+      'notifications', 'customers', 'ambassadors', 'staff', 'reminders', 'history' // ৩. ভ্যালিড ট্যাবের লিস্টে 'history' রাখা হলো
     ];
     return validTabs.includes(tab) ? tab : 'overview';
   };
@@ -140,7 +142,7 @@ const AdminDashboard: React.FC = () => {
       body.dataset.savedScrollY = scrollY.toString();
     } else {
       const savedScrollY = parseInt(body.dataset.savedScrollY || '0', 10);
-      
+
       // ট্রানজিশন (২৩০ms) শেষ হওয়ার পর বডির স্ক্রোল রিসেট করা হবে
       const timer = setTimeout(() => {
         body.style.position = '';
@@ -394,6 +396,14 @@ const AdminDashboard: React.FC = () => {
           )}
           {activeTab === 'reminders' && (
             <AdminReminders key="reminders" />
+          )}
+
+          {/* ৪. নতুন অ্যাক্টিভিটি লগ ট্যাব রেন্ডারিং */}
+          {activeTab === 'history' && (
+            <AdminActivityLog 
+              key="history" 
+              onBack={() => handleTabChange('overview')} 
+            />
           )}
         </main>
       </div>
