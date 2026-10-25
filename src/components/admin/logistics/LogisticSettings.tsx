@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { HistoryIcon } from '../../components/icons'; // হিস্ট্রি আইকন ইম্পোর্ট করা হলো
+import { HistoryIcon } from '@/components/icons'; 
 
 interface LogisticsSettingsProps {
   deliveryCharge: number | string;
