@@ -22,26 +22,24 @@ export default function LogisticSettings({
   onVatChange,
   onSaveSettings,
 }: LogisticsSettingsProps) {
-  const [localDelivery, setLocalDelivery] = useState(String(deliveryCharge ?? ''));
-  const [localVat, setLocalVat] = useState(String(vatRate ?? ''));
+  // লোকাল স্টেট খালি রাখা হয়েছে যাতে বর্তমান মানগুলো প্লেসহোল্ডার হিসেবে কাজ করতে পারে
+  const [localDelivery, setLocalDelivery] = useState('');
+  const [localVat, setLocalVat] = useState('');
 
-  // প্যারেন্ট থেকে আসা অরিজিনাল বা বেস মান (যা সেভ হওয়ার আগ পর্যন্ত অপরিবর্তিত থাকে)
   const baseDelivery = initialDeliveryCharge !== undefined ? initialDeliveryCharge : deliveryCharge;
   const baseVat = initialVatRate !== undefined ? initialVatRate : vatRate;
 
-  // বাইরে থেকে ডেটা সিঙ্ক হলে লোকাল স্টেট আপডেট করা
+  // সফলভাবে সেভ হওয়ার পর ইনপুট ফিল্ড রিসেট করার জন্য
   useEffect(() => {
-    setLocalDelivery(String(deliveryCharge ?? ''));
+    setLocalDelivery('');
   }, [deliveryCharge]);
 
   useEffect(() => {
-    setLocalVat(String(vatRate ?? ''));
+    setLocalVat('');
   }, [vatRate]);
 
-  // অরিজিনাল মানের সাথে বর্তমান ইনপুটের মিল না থাকলেই সেভ বাটন দেখাবে
-  const hasChanges =
-    String(localDelivery) !== String(baseDelivery) ||
-    String(localVat) !== String(baseVat);
+  // ইনপুটে কিছু লেখা মাত্রই সেভ বাটন দেখানোর শর্ত
+  const hasChanges = localDelivery !== '' || localVat !== '';
 
   const handleDeliveryInput = (val: string) => {
     setLocalDelivery(val);
@@ -58,7 +56,7 @@ export default function LogisticSettings({
       style={{
         width: '100%',
         boxSizing: 'border-box',
-        backgroundColor: '#202026', // প্রিমিয়াম ধূসর ব্যাকগ্রাউন্ড
+        backgroundColor: '#202026', // প্রিমিয়াম ধূসর কার্ড ব্যাকগ্রাউন্ড
         border: '1px solid #32323d',
         borderRadius: '12px',
         padding: '16px',
@@ -99,7 +97,7 @@ export default function LogisticSettings({
               color: '#000000',
               border: 'none',
               borderRadius: '20px', // নিখুঁত ডিম্বাকার (Pill-shaped) বাটন
-              padding: '5px 14px',
+              padding: '5px 16px',
               fontSize: '11px',
               fontWeight: '700',
               letterSpacing: '0.5px',
@@ -143,6 +141,7 @@ export default function LogisticSettings({
             <input
               type="number"
               value={localDelivery}
+              placeholder={String(baseDelivery ?? '')}
               onChange={(e) => handleDeliveryInput(e.target.value)}
               style={{
                 backgroundColor: 'transparent',
@@ -188,6 +187,7 @@ export default function LogisticSettings({
               type="number"
               step="any"
               value={localVat}
+              placeholder={String(baseVat ?? '')}
               onChange={(e) => handleVatInput(e.target.value)}
               style={{
                 backgroundColor: 'transparent',
