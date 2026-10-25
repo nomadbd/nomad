@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/supabaseClient';
-import { BackIcon, HistoryIcon, ProfileIcon } from '@/components/icons';
 
 interface AuditLogItem {
   id: string;
@@ -193,7 +192,7 @@ export default function AdminActivityLog({ onBack }: AdminActivityLogProps) {
                 flexShrink: 0,
               }}
             >
-              <BackIcon style={{ width: '16px', height: '16px', color: '#ffffff' }} />
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
             </button>
           )}
           <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '700', color: '#ffffff', letterSpacing: '0.5px' }}>
@@ -269,7 +268,7 @@ export default function AdminActivityLog({ onBack }: AdminActivityLogProps) {
           </div>
         ) : filteredLogs.length === 0 ? (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '50px 0', color: '#71717a', fontSize: '12px', gap: '8px' }}>
-            <HistoryIcon style={{ width: '32px', height: '32px', opacity: 0.4 }} />
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" opacity="0.4"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             <span>NO ACTIVITY LOGS FOUND</span>
           </div>
         ) : (
@@ -314,7 +313,7 @@ export default function AdminActivityLog({ onBack }: AdminActivityLogProps) {
                     </span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: '#71717a', fontFamily: 'monospace' }}>
-                    <HistoryIcon style={{ width: '12px', height: '12px', color: '#71717a' }} />
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                     <span>{formatDateTime(log.created_at)}</span>
                   </div>
                 </div>
@@ -372,7 +371,7 @@ export default function AdminActivityLog({ onBack }: AdminActivityLogProps) {
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0, overflow: 'hidden' }}>
-                    <ProfileIcon style={{ width: '14px', height: '14px', color: '#a1a1aa', flexShrink: 0 }} />
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                     <span
                       style={{
                         fontFamily: 'monospace',
