@@ -37,7 +37,6 @@ export default function AdminActivityLog({ onBack }: AdminActivityLogProps) {
   useEffect(() => {
     fetchAuditLogs();
 
-    // Realtime subscription for live audit logs update
     const channel = supabase
       .channel('admin_audit_logs_global')
       .on(
@@ -162,7 +161,6 @@ export default function AdminActivityLog({ onBack }: AdminActivityLogProps) {
         fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
       }}
     >
-      {/* Header */}
       <div
         style={{
           display: 'flex',
@@ -207,7 +205,6 @@ export default function AdminActivityLog({ onBack }: AdminActivityLogProps) {
         </span>
       </div>
 
-      {/* Search & Filter Bar */}
       <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '12px', borderBottom: '1px solid #27272a', backgroundColor: '#0d0d10' }}>
         <input
           type="text"
@@ -255,7 +252,6 @@ export default function AdminActivityLog({ onBack }: AdminActivityLogProps) {
         </div>
       </div>
 
-      {/* Log List */}
       <div
         style={{
           flex: 1,
@@ -297,7 +293,6 @@ export default function AdminActivityLog({ onBack }: AdminActivityLogProps) {
                   gap: '10px',
                 }}
               >
-                {/* Top Row: Badge & Date */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span
@@ -324,7 +319,6 @@ export default function AdminActivityLog({ onBack }: AdminActivityLogProps) {
                   </div>
                 </div>
 
-                {/* Changes / Details Body */}
                 {log.changes && typeof log.changes === 'object' && Object.keys(log.changes).length > 0 && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     {Object.entries(log.changes).map(([key, val]: [string, any]) => (
@@ -359,7 +353,6 @@ export default function AdminActivityLog({ onBack }: AdminActivityLogProps) {
                   </div>
                 )}
 
-                {/* Fallback for single field or reason */}
                 {(!log.changes || Object.keys(log.changes).length === 0) && (log.field_name || log.reason) && (
                   <div style={{ fontSize: '11px', color: '#d4d4d8', fontFamily: 'monospace' }}>
                     {log.field_name && <strong>{log.field_name}: </strong>}
@@ -367,7 +360,6 @@ export default function AdminActivityLog({ onBack }: AdminActivityLogProps) {
                   </div>
                 )}
 
-                {/* Footer Admin / Performed By Info */}
                 <div
                   style={{
                     display: 'flex',
