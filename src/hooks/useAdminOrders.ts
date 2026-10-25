@@ -80,23 +80,6 @@ export const useAdminOrders = (showToast: (msg: string, type?: 'success' | 'erro
     fetchAdminOrders();
   }, []);
 
-  // Helper Function: audit_logs টেবিলে ইউজার আইডিসহ নিরাপদ লগ তৈরি করা
-  const logOrderAction = async (actionType: string, entityId: string, changes: any) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      await supabase.from('audit_logs').insert({
-        entity_type: 'orders',
-        action_type: actionType,
-        user_id: user?.id || null, // profiles টেবিল থেকে নাম, পদবী ও ইমেইল পাওয়ার জন্য user_id সেভ
-        changes: changes,
-        metadata: { order_id: entityId },
-        created_at: new Date().toISOString(),
-      });
-    } catch (auditErr) {
-      console.error('Audit log failed for order action:', auditErr);
-    }
-  };
-
   const handleUpdateDetails = async (
     orderId: string, 
     updatedFields: { 
@@ -109,8 +92,6 @@ export const useAdminOrders = (showToast: (msg: string, type?: 'success' | 'erro
     }
   ) => {
     try {
-      const currentOrder = orders.find(o => o.id === orderId);
-
       const { error } = await supabase
         .from('orders')
         .update({
@@ -124,14 +105,6 @@ export const useAdminOrders = (showToast: (msg: string, type?: 'success' | 'erro
         .eq('id', orderId);
 
       if (error) throw error;
-
-      // audit_logs টেবিলে অডিট হিস্ট্রি ইনসার্ট
-      await logOrderAction('UPDATE_ORDER_DETAILS', orderId, {
-        payment_status: { old: currentOrder?.payment_status, new: updatedFields.payment_status },
-        courier_name: { old: currentOrder?.courier_name, new: updatedFields.courier_name },
-        tracking_id: { old: currentOrder?.tracking_id, new: updatedFields.tracking_id },
-        admin_notes: { old: currentOrder?.admin_notes, new: updatedFields.admin_notes }
-      });
 
       setOrders(prev => prev.map(o => 
         o.id === orderId 
@@ -194,12 +167,6 @@ export const useAdminOrders = (showToast: (msg: string, type?: 'success' | 'erro
         }
       }
 
-      // audit_logs টেবিলে স্ট্যাটাস পরিবর্তনের হিস্ট্রি যুক্ত করা হলো
-      await logOrderAction('UPDATE_ORDER_STATUS', orderId, {
-        status: { old: oldStatus, new: newStatus },
-        return_reason: { old: currentOrder?.return_reason, new: cancelReason || null }
-      });
-
       setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus, return_reason: cancelReason || '' } : o));
       showToast(`Order marked as ${newStatus}`, 'success');
     } catch (err) {
@@ -218,14 +185,6 @@ export const useAdminOrders = (showToast: (msg: string, type?: 'success' | 'erro
         .in('id', selectedOrderIds);
 
       if (error) throw error;
-
-      // বাল্ক আপডেটের জন্য audit_logs সেভ
-      for (const id of selectedOrderIds) {
-        const oldStatus = orders.find(o => o.id === id)?.payment_status;
-        await logOrderAction('BULK_UPDATE_PAYMENT_STATUS', id, {
-          payment_status: { old: oldStatus, new: newPaymentStatus }
-        });
-      }
 
       setOrders(prev => prev.map(o =>
         selectedOrderIds.includes(o.id) ? { ...o, payment_status: newPaymentStatus } : o
@@ -250,14 +209,6 @@ export const useAdminOrders = (showToast: (msg: string, type?: 'success' | 'erro
         .in('id', selectedOrderIds);
 
       if (error) throw error;
-
-      // বাল্ক অর্ডার স্ট্যাটাস আপডেটের জন্য audit_logs সেভ
-      for (const id of selectedOrderIds) {
-        const oldStatus = orders.find(o => o.id === id)?.status;
-        await logOrderAction('BULK_UPDATE_ORDER_STATUS', id, {
-          status: { old: oldStatus, new: newStatus }
-        });
-      }
 
       setOrders(prev => prev.map(o =>
         selectedOrderIds.includes(o.id) ? { ...o, status: newStatus } : o
