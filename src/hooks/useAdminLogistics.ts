@@ -165,11 +165,21 @@ export function useAdminLogistics() {
 
       if (error) throw error;
 
+      // সুপাবেজ audit_logs টেবিলে হিস্ট্রি লগ এন্ট্রি করা হলো
+      await supabase.from('audit_logs').insert({
+        entity_type: 'store_settings',
+        action_type: 'UPDATE_LOGISTICS_SETTINGS',
+        changes: {
+          delivery_charge: { old: initialDeliveryCharge, new: finalDc },
+          vat_rate: { old: initialVatRate, new: finalVat },
+        },
+        created_at: new Date().toISOString(),
+      });
+
       setInitialDeliveryCharge(finalDc);
       setInitialVatRate(finalVat);
       setDeliveryCharge(finalDc);
       setVatRate(finalVat);
-      // সফল হলে আর কোনো alert() দেখানো হবে না, সরাসরি আমাদের গ্রিন 'SAVED' বাটন কাজ করবে
     } catch (err: any) {
       console.error('Failed to save settings: ', err.message);
       handleCancel();
