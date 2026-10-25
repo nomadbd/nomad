@@ -28,7 +28,7 @@ export default function LogisticSettings({
   const baseDelivery = initialDeliveryCharge !== undefined ? initialDeliveryCharge : deliveryCharge;
   const baseVat = initialVatRate !== undefined ? initialVatRate : vatRate;
 
-  // সেভ সফলভাবে সম্পন্ন হওয়ার পর (isSaving true থেকে false হলে) ইনপুট রিসেট করা
+  // সেভ সফলভাবে সম্পন্ন হওয়ার পর ইনপুট রিসেট করা
   const prevIsSaving = useRef(isSaving);
   useEffect(() => {
     if (prevIsSaving.current && !isSaving) {
@@ -38,7 +38,6 @@ export default function LogisticSettings({
     prevIsSaving.current = isSaving;
   }, [isSaving]);
 
-  // ইনপুটে কিছু লেখা মাত্রই সেভ বাটন স্থায়ীভাবে দৃশ্যমান হবে
   const hasChanges = localDelivery !== '' || localVat !== '';
 
   const handleDeliveryInput = (val: string) => {
@@ -56,7 +55,7 @@ export default function LogisticSettings({
       style={{
         width: '100%',
         boxSizing: 'border-box',
-        backgroundColor: '#222228', // আরও প্রিমিয়াম ও স্পষ্ট ধূসর ব্যাকগ্রাউন্ড
+        backgroundColor: '#222228',
         border: '1px solid #363642',
         borderRadius: '12px',
         padding: '16px',
@@ -64,7 +63,7 @@ export default function LogisticSettings({
         fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
       }}
     >
-      {/* Header Section: LOGISTICS & Pill-shaped Save Button */}
+      {/* Header Section: LOGISTICS & Pill-shaped Save Button (Fixed Layout to Prevent Jitter) */}
       <div
         style={{
           display: 'flex',
@@ -87,28 +86,29 @@ export default function LogisticSettings({
           Logistics
         </span>
 
-        {hasChanges && (
-          <button
-            type="button"
-            onClick={onSaveSettings}
-            disabled={isSaving}
-            style={{
-              backgroundColor: '#ffffff',
-              color: '#000000',
-              border: 'none',
-              borderRadius: '20px', // নিখুঁত ডিম্বাকার (Pill-shaped) বাটন
-              padding: '5px 16px',
-              fontSize: '11px',
-              fontWeight: '700',
-              letterSpacing: '0.5px',
-              cursor: isSaving ? 'not-allowed' : 'pointer',
-              opacity: isSaving ? 0.6 : 1,
-              transition: 'all 0.2s ease',
-            }}
-          >
-            {isSaving ? 'SAVING...' : 'SAVE'}
-          </button>
-        )}
+        {/* বাটনটি সবসময় স্পেস ধরে রাখবে, তাই কোনো ঝাঁকুনি বা লেআউট শিফট হবে না */}
+        <button
+          type="button"
+          onClick={onSaveSettings}
+          disabled={isSaving || !hasChanges}
+          style={{
+            backgroundColor: '#ffffff',
+            color: '#000000',
+            border: 'none',
+            borderRadius: '20px',
+            padding: '5px 16px',
+            fontSize: '11px',
+            fontWeight: '700',
+            letterSpacing: '0.5px',
+            cursor: hasChanges && !isSaving ? 'pointer' : 'default',
+            opacity: isSaving ? 0.6 : (hasChanges ? 1 : 0),
+            visibility: hasChanges ? 'visible' : 'hidden',
+            pointerEvents: hasChanges ? 'auto' : 'none',
+            transition: 'opacity 0.2s ease',
+          }}
+        >
+          {isSaving ? 'SAVING...' : 'SAVE'}
+        </button>
       </div>
 
       {/* Input Rows Container */}
