@@ -163,29 +163,46 @@ export function useAdminLogistics() {
         }
       }
 
-      if (error) {
-        alert('Settings Save Error: ' + error.message);
-        throw error;
-      }
+      if (error) throw error;
 
-      // বর্তমান লগইন করা ইউজারের তথ্য বের করা
-      const { data: { user } } = await supabase.auth.getUser();
+      // বর্তমান লগইন করা ইউজারের তথ্য এবং profiles টেবিল থেকে নাম ও পদবী বের করা
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        let profileInfo = { name: 'Admin', designation: 'Admin', email: user?.email || '' };
 
-      // audit_logs টেবিলে ইনসার্ট করা এবং মোবাইল স্ক্রিনেই এরর ধরা
-      const { error: auditError } = await supabase.from('audit_logs').insert({
-        entity_type: 'store_settings',
-        action_type: 'UPDATE_LOGISTICS_SETTINGS',
-        user_id: user?.id || null,
-        changes: {
-          delivery_charge: { old: initialDeliveryCharge, new: finalDc },
-          vat_rate: { old: initialVatRate, new: finalVat },
-        },
-        created_at: new Date().toISOString(),
-      });
+        if (user) {
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('name, designation, email')
+            .eq('id', user.id)
+            .maybeSingle();
 
-      if (auditError) {
-        // মোবাইল ব্রাউজারে পপ-আপ করে সুপাবেজের আসল এরর মেসেজ দেখিয়ে দেবে
-        alert('Audit Log Failed: ' + auditError.message);
+          if (profileData) {
+            profileInfo = {
+              name: profileData.name || user.email || 'Admin',
+              designation: profileData.designation || 'Admin',
+              email: profileData.email || user.email || ''
+            };
+          }
+        }
+
+        // audit_logs টেবিলে metadata-র মধ্যে ইউজারের তথ্য সেভ করা (user_id কলাম ছাড়া)
+        const { error: auditError } = await supabase.from('audit_logs').insert({
+          entity_type: 'store_settings',
+          action_type: 'UPDATE_LOGISTICS_SETTINGS',
+          changes: {
+            delivery_charge: { old: initialDeliveryCharge, new: finalDc },
+            vat_rate: { old: initialVatRate, new: finalVat },
+          },
+          metadata: profileInfo, // নাম, পদবী ও ইমেইল এখানে সেভ হচ্ছে
+          created_at: new Date().toISOString(),
+        });
+
+        if (auditError) {
+          console.error('Audit Log Error:', auditError.message);
+        }
+      } catch (auditErr: any) {
+        console.error('Audit log insert failed:', auditErr.message);
       }
 
       setInitialDeliveryCharge(finalDc);
