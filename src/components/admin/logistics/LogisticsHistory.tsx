@@ -32,7 +32,6 @@ export default function LogisticsHistory({
     const fetchAuditLogs = async () => {
       setLoading(true);
       try {
-        // নির্দিষ্ট entity_type অনুযায়ী লগ ফিল্টার করে ফেচ করা
         const { data, error } = await supabase
           .from('audit_logs')
           .select('*')
@@ -51,6 +50,28 @@ export default function LogisticsHistory({
 
     fetchAuditLogs();
   }, [entityType]);
+
+  // ফিল্ডের নামগুলোকে সুন্দর ও মানব-পাঠ্য (Human-readable) করার ফাংশন
+  const formatFieldName = (key: string) => {
+    switch (key) {
+      case 'delivery_charge':
+        return 'Shipping Fee';
+      case 'vat_rate':
+        return 'VAT Rate';
+      default:
+        return key.replace(/_/g, ' ').toUpperCase();
+    }
+  };
+
+  // অ্যাকশন টাইপ সুন্দর করার ফাংশন
+  const formatActionType = (action: string) => {
+    switch (action) {
+      case 'UPDATE_LOGISTICS_SETTINGS':
+        return 'Updated Logistics Settings';
+      default:
+        return action.replace(/_/g, ' ');
+    }
+  };
 
   return (
     <div
@@ -118,7 +139,7 @@ export default function LogisticsHistory({
           NO HISTORY FOUND FOR THIS SECTION
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '400px', overflowY: 'auto' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '420px', overflowY: 'auto', paddingRight: '4px' }}>
           {logs.map((log) => (
             <div
               key={log.id}
@@ -129,36 +150,63 @@ export default function LogisticsHistory({
                 padding: '12px',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '6px',
+                gap: '8px',
               }}
             >
+              {/* Top Row: Action & Timestamp */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '11px', fontWeight: '700', color: '#3498db', fontFamily: 'monospace' }}>
-                  {log.action_type || 'UPDATE'}
+                <span style={{ fontSize: '11px', fontWeight: '700', color: '#3498db', letterSpacing: '0.5px' }}>
+                  {formatActionType(log.action_type)}
                 </span>
-                <span style={{ fontSize: '10px', color: '#888888', fontFamily: 'monospace' }}>
+                <span style={{ fontSize: '10px', color: '#9999aa', fontFamily: 'monospace' }}>
                   {new Date(log.created_at).toLocaleString()}
                 </span>
               </div>
 
+              {/* Single Field Update (if applicable) */}
               {log.field_name && (
                 <div style={{ fontSize: '12px', color: '#e0e0e5' }}>
-                  Field: <strong style={{ color: '#fff' }}>{log.field_name}</strong>
+                  Field: <strong style={{ color: '#fff' }}>{formatFieldName(log.field_name)}</strong>
                 </div>
               )}
 
-              <div style={{ display: 'flex', gap: '15px', fontSize: '11px', fontFamily: 'monospace' }}>
-                {log.old_value !== undefined && log.old_value !== null && (
+              {log.old_value !== undefined && log.old_value !== null && (
+                <div style={{ display: 'flex', gap: '10px', fontSize: '11px', fontFamily: 'monospace' }}>
                   <span style={{ color: '#e74c3c' }}>Old: {String(log.old_value)}</span>
-                )}
-                {log.new_value !== undefined && log.new_value !== null && (
                   <span style={{ color: '#2ecc71' }}>New: {String(log.new_value)}</span>
-                )}
-              </div>
+                </div>
+              )}
 
-              {log.changes && (
-                <div style={{ fontSize: '10px', color: '#aaa', fontFamily: 'monospace', wordBreak: 'break-all' }}>
-                  Changes: {JSON.stringify(log.changes)}
+              {/* Structured Changes Object Rendering */}
+              {log.changes && typeof log.changes === 'object' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '2px' }}>
+                  {Object.entries(log.changes).map(([key, val]: [string, any]) => (
+                    <div
+                      key={key}
+                      style={{
+                        backgroundColor: '#141418',
+                        border: '1px solid #262630',
+                        borderRadius: '6px',
+                        padding: '8px 10px',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <span style={{ fontSize: '11px', fontWeight: '600', color: '#cfcfd9' }}>
+                        {formatFieldName(key)}
+                      </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '11px', fontFamily: 'monospace' }}>
+                        <span style={{ color: '#e74c3c', backgroundColor: 'rgba(231, 76, 60, 0.1)', padding: '2px 6px', borderRadius: '4px' }}>
+                          Old: <strong>{val?.old ?? 'N/A'}</strong>
+                        </span>
+                        <span style={{ color: '#666' }}>➔</span>
+                        <span style={{ color: '#2ecc71', backgroundColor: 'rgba(46, 204, 113, 0.1)', padding: '2px 6px', borderRadius: '4px' }}>
+                          New: <strong>{val?.new ?? 'N/A'}</strong>
+                        </span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
