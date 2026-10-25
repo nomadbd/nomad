@@ -25,23 +25,6 @@ export function useAmbassador(ambassadorData: any) {
     }
   }, [ambassadorData?.id]);
 
-  // Helper Function: audit_logs টেবিলে ইউজার আইডিসহ নিরাপদ লগ তৈরি করা
-  const logAmbassadorAction = async (actionType: string, changes: any) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      await supabase.from('audit_logs').insert({
-        entity_type: 'ambassador',
-        action_type: actionType,
-        user_id: user?.id || null, // profiles টেবিল থেকে নাম, পদবী ও ইমেইল পাওয়ার জন্য
-        changes: changes,
-        metadata: { ambassador_id: ambassadorData?.id },
-        created_at: new Date().toISOString(),
-      });
-    } catch (auditErr) {
-      console.error('Audit log failed for ambassador action:', auditErr);
-    }
-  };
-
   const fetchDashboardDetails = async () => {
     try {
       setLoadingData(true);
@@ -107,19 +90,12 @@ export function useAmbassador(ambassadorData: any) {
         return;
       }
 
-      const oldSlug = ambassadorData?.assigned_slug;
-
       const { error } = await supabase
         .from('ambassador')
         .update({ assigned_slug: formattedSlug })
         .eq('id', ambassadorData.id);
 
       if (error) throw error;
-
-      // স্লাগ পরিবর্তনের অডিট হিস্ট্রি সংরক্ষণ
-      await logAmbassadorAction('UPDATE_AMBASSADOR_SLUG', {
-        assigned_slug: { old: oldSlug, new: formattedSlug }
-      });
 
       setSlug(formattedSlug);
       setIsEditingSlug(false);
@@ -168,13 +144,6 @@ export function useAmbassador(ambassadorData: any) {
         .single();
 
       if (error) throw error;
-
-      // পেআউট রিকুয়েস্ট সাবমিটের অডিট হিস্ট্রি সংরক্ষণ
-      await logAmbassadorAction('REQUEST_PAYOUT', {
-        amount: amountNum,
-        payout_details: payoutDetails.trim(),
-        status: 'PENDING'
-      });
 
       setPayoutRequests([data, ...payoutRequests]);
       setPayoutAmount('');
