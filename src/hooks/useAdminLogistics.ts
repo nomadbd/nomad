@@ -163,24 +163,29 @@ export function useAdminLogistics() {
         }
       }
 
-      if (error) throw error;
+      if (error) {
+        alert('Settings Save Error: ' + error.message);
+        throw error;
+      }
 
-      // আলাদা try-catch দিয়ে audit_logs ইনসার্ট করা হলো যাতে মূল সেভ আটকে না যায়
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
+      // বর্তমান লগইন করা ইউজারের তথ্য বের করা
+      const { data: { user } } = await supabase.auth.getUser();
 
-        await supabase.from('audit_logs').insert({
-          entity_type: 'store_settings',
-          action_type: 'UPDATE_LOGISTICS_SETTINGS',
-          user_id: user?.id || null,
-          changes: {
-            delivery_charge: { old: initialDeliveryCharge, new: finalDc },
-            vat_rate: { old: initialVatRate, new: finalVat },
-          },
-          created_at: new Date().toISOString(),
-        });
-      } catch (auditErr: any) {
-        console.error('Audit log insert failed:', auditErr.message);
+      // audit_logs টেবিলে ইনসার্ট করা এবং মোবাইল স্ক্রিনেই এরর ধরা
+      const { error: auditError } = await supabase.from('audit_logs').insert({
+        entity_type: 'store_settings',
+        action_type: 'UPDATE_LOGISTICS_SETTINGS',
+        user_id: user?.id || null,
+        changes: {
+          delivery_charge: { old: initialDeliveryCharge, new: finalDc },
+          vat_rate: { old: initialVatRate, new: finalVat },
+        },
+        created_at: new Date().toISOString(),
+      });
+
+      if (auditError) {
+        // মোবাইল ব্রাউজারে পপ-আপ করে সুপাবেজের আসল এরর মেসেজ দেখিয়ে দেবে
+        alert('Audit Log Failed: ' + auditError.message);
       }
 
       setInitialDeliveryCharge(finalDc);
