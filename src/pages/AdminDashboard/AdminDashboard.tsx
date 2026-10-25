@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import styles from './AdminDashboard.module.css';
-import { supabase } from '@/supabaseClient';
+import { supabase } from '../../supabaseClient';
 
 import {
   AdminOverview,
@@ -15,8 +15,7 @@ import {
 } from '../../components/admin';
 import AdminReminders from '../../components/admin/reminders/AdminReminders';
 import { SendInvite, AmbassadorList } from '../../components/admin/ambassadors';
-import AdminActivityLog from '@/components/admin/history/AdminActivityLog';
-
+import AdminActivityLog from '../../components/admin/history/AdminActivityLog';
 
 import { AdminHeader } from './AdminHeader';
 import { AdminSidebar } from './AdminSidebar';
@@ -33,7 +32,7 @@ export type TabType =
   | 'ambassadors'
   | 'staff'
   | 'reminders'
-  | 'history'; // ২. ট্যাব টাইপে 'history' যুক্ত করা হলো
+  | 'history';
 
 const AdminDashboard: React.FC = () => {
   const getTabFromURL = (): TabType => {
@@ -42,7 +41,7 @@ const AdminDashboard: React.FC = () => {
     const tab = params.get('tab') as TabType;
     const validTabs: TabType[] = [
       'overview', 'orders', 'products', 'logistics', 'messages', 
-      'notifications', 'customers', 'ambassadors', 'staff', 'reminders', 'history' // ৩. ভ্যালিড ট্যাবের লিস্টে 'history' রাখা হলো
+      'notifications', 'customers', 'ambassadors', 'staff', 'reminders', 'history'
     ];
     return validTabs.includes(tab) ? tab : 'overview';
   };
@@ -130,7 +129,6 @@ const AdminDashboard: React.FC = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [lastScrollY, menuOpen]);
 
-  // পারফেক্ট অ্যানিমেশন শেষ হওয়া পর্যন্ত বডি লক বিলম্বিত রাখা (No Jitter Logic)
   useEffect(() => {
     const { body } = document;
 
@@ -144,7 +142,6 @@ const AdminDashboard: React.FC = () => {
     } else {
       const savedScrollY = parseInt(body.dataset.savedScrollY || '0', 10);
 
-      // ট্রানজিশন (২৩০ms) শেষ হওয়ার পর বডির স্ক্রোল রিসেট করা হবে
       const timer = setTimeout(() => {
         body.style.position = '';
         body.style.top = '';
@@ -194,7 +191,7 @@ const AdminDashboard: React.FC = () => {
       await fetchCurrentUserAndRole();
 
       const elapsedTime = Date.now() - startTime;
-      const minLoadingTime = 10000;
+      const minLoadingTime = 1000;
       const remainingTime = Math.max(0, minLoadingTime - elapsedTime);
 
       setTimeout(() => {
@@ -398,8 +395,6 @@ const AdminDashboard: React.FC = () => {
           {activeTab === 'reminders' && (
             <AdminReminders key="reminders" />
           )}
-
-          {/* ৪. নতুন অ্যাক্টিভিটি লগ ট্যাব রেন্ডারিং */}
           {activeTab === 'history' && (
             <AdminActivityLog 
               key="history" 
