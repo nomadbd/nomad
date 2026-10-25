@@ -36,7 +36,6 @@ export function useAdminLogistics() {
   const [initialDeliveryCharge, setInitialDeliveryCharge] = useState<number | string>('100');
   const [initialVatRate, setInitialVatRate] = useState<number | string>('0.05');
   const [settingId, setSettingId] = useState<number | null>(null);
-  const [isEditing, setIsEditing] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
 
   const fetchOrders = async () => {
@@ -117,10 +116,6 @@ export function useAdminLogistics() {
     fetchSettings();
   }, []);
 
-  const handleStartEdit = () => {
-    setIsEditing(true);
-  };
-
   const handleSaveSettings = async () => {
     setIsSaving(true);
     try {
@@ -174,10 +169,9 @@ export function useAdminLogistics() {
       setInitialVatRate(finalVat);
       setDeliveryCharge(finalDc);
       setVatRate(finalVat);
-      setIsEditing(false);
-      alert('Settings saved successfully!');
+      // সফল হলে আর কোনো alert() দেখানো হবে না, সরাসরি আমাদের গ্রিন 'SAVED' বাটন কাজ করবে
     } catch (err: any) {
-      alert('Failed to save settings: ' + err.message);
+      console.error('Failed to save settings: ', err.message);
       handleCancel();
     } finally {
       setIsSaving(false);
@@ -187,7 +181,6 @@ export function useAdminLogistics() {
   const handleCancel = () => {
     setDeliveryCharge(initialDeliveryCharge);
     setVatRate(initialVatRate);
-    setIsEditing(false);
   };
 
   const toggleExpand = (id: string) => {
@@ -313,11 +306,9 @@ export function useAdminLogistics() {
     savingOrderId,
     deliveryCharge,
     vatRate,
-    isEditing,
     isSaving,
     setDeliveryCharge,
     setVatRate,
-    handleStartEdit,
     handleSaveSettings,
     handleCancel,
     toggleExpand,
