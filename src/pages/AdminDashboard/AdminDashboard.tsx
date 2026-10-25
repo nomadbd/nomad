@@ -15,7 +15,7 @@ import {
 } from '../../components/admin';
 import AdminReminders from '../../components/admin/reminders/AdminReminders';
 import { SendInvite, AmbassadorList } from '../../components/admin/ambassadors';
-import AdminActivityLog from '../../admin/history/AdminActivityLog'; // সঠিক পাথ
+import AdminActivityLog from '../../components/admin/history/AdminActivityLog'; // সঠিক পাথ
 
 import { AdminHeader } from './AdminHeader';
 import { AdminSidebar } from './AdminSidebar';
