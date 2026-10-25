@@ -19,7 +19,6 @@ interface AdminHeaderProps {
   onToggleLogisticsSettings: () => void;
   menuOpen: boolean;
   onToggleMenu: () => void;
-  // যদি হিস্ট্রি বা সাব-পেজ আলাদা কোনো স্টেটে রাখেন, তবে সেটি এখানে রিসিভ করা যেতে পারে
   subPage?: string | null; 
 }
 
@@ -44,21 +43,29 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
 }) => {
   // ট্যাব বা সাব-পেজ অনুযায়ী ডাইনামিক হেডার টাইটেল নির্ধারণের ফাংশন
   const getHeaderTitle = () => {
-    if (subPage === 'history') return 'HISTORY'; // ভবিষ্যতে হিস্ট্রি পেজে গেলে এটি দেখাবে
+    if (subPage === 'history') return 'HISTORY';
     
     switch (activeTab) {
       case 'overview':
         return 'OVERVIEW';
+      case 'orders':
+        return 'ORDERS';
       case 'products':
         return 'PRODUCTS';
       case 'logistics':
         return 'LOGISTICS';
-      case 'ambassadors':
-        return 'AMBASSADORS';
       case 'messages':
         return 'MESSAGES';
+      case 'notifications':
+        return 'NOTIFICATIONS';
+      case 'reminders':
+        return 'REMINDERS';
+      case 'ambassadors':
+        return 'AMBASSADORS';
       case 'staff':
         return 'STAFF';
+      case 'customers':
+        return 'CUSTOMERS';
       default:
         return 'NOMAD';
     }
@@ -141,7 +148,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
         </div>
       ) : (
         <>
-          {/* ব্র্যান্ড লিঙ্কের জায়গায় এখন ডাইনামিক পেজ টাইটেল শো করবে */}
+          {/* ডাইনামিক পেজ টাইটেল */}
           <div className={styles.nomadBrandLink} style={{ display: 'flex', alignItems: 'center' }}>
             <h1 style={{ fontSize: '16px', fontWeight: '800', letterSpacing: '2.5px', margin: 0, color: '#fff', textTransform: 'uppercase' }}>
               {getHeaderTitle()}
