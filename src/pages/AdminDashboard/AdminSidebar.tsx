@@ -27,6 +27,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
     { id: 'orders', label: 'ORDERS' },
     { id: 'products', label: 'PRODUCTS' },
     { id: 'logistics', label: 'LOGISTICS' },
+    { id: 'history', label: 'ACTIVITY LOGS' }, // ← নতুন হিস্ট্রি/অ্যাক্টিভিটি লগ ট্যাব যুক্ত করা হলো
     { id: 'messages', label: 'MESSAGES' },
     { id: 'notifications', label: 'NOTIFICATIONS' },
     { id: 'reminders', label: 'REMINDERS' },
