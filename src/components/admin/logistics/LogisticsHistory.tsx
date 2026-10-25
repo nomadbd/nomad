@@ -21,6 +21,7 @@ interface AuditLogItem {
   user_id?: string;
   profiles?: {
     name?: string;
+    full_name?: string;
     designation?: string;
     email?: string;
   };
@@ -38,7 +39,6 @@ export default function LogisticsHistory({
     const fetchAuditLogs = async () => {
       setLoading(true);
       try {
-        // ১. প্রথমে নির্দিষ্ট entity_type এর সব audit logs ফেচ করা
         const { data: logsData, error: logsError } = await supabase
           .from('audit_logs')
           .select('*')
@@ -48,7 +48,6 @@ export default function LogisticsHistory({
         if (logsError) throw logsError;
 
         if (logsData && logsData.length > 0) {
-          // ২. লগগুলোতে থাকা ইউজার আইডিগুলো সংগ্রহ করা
           const userIds = Array.from(
             new Set(logsData.map((log: any) => log.user_id).filter(Boolean))
           );
@@ -56,10 +55,10 @@ export default function LogisticsHistory({
           let profilesMap: { [key: string]: any } = {};
           
           if (userIds.length > 0) {
-            // ৩. profiles টেবيل থেকে ইউজারদের তথ্য ফেচ করা
+            // profiles টেবিল থেকে নাম, পদবী ও ইমেইল ফেচ করা (সব সম্ভাব্য কলাম নাম সহ)
             const { data: profilesData } = await supabase
               .from('profiles')
-              .select('id, name, designation, email')
+              .select('*')
               .in('id', userIds);
 
             if (profilesData) {
@@ -69,7 +68,6 @@ export default function LogisticsHistory({
             }
           }
 
-          // ৪. লগ এবং প্রোফাইল ডেটা একসাথে মার্চ করা
           const formattedLogs = logsData.map((log: any) => ({
             ...log,
             profiles: log.user_id ? profilesMap[log.user_id] : null,
@@ -168,7 +166,8 @@ export default function LogisticsHistory({
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '420px', overflowY: 'auto', paddingRight: '4px' }}>
           {logs.map((log) => {
-            const userName = log.profiles?.name || 'System / Admin';
+            // profiles টেবিল থেকে নাম, পদবী এবং ইমেইল ডাইনামিকালি পিক করা
+            const userName = log.profiles?.name || log.profiles?.full_name || log.user_id || 'Unknown User';
             const userDesignation = log.profiles?.designation ? `(${log.profiles.designation})` : '';
             const userEmail = log.profiles?.email || '';
 
