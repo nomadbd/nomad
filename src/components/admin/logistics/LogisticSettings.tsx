@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { HistoryIcon } from '../../components/icons'; // হিস্ট্রি আইকন ইম্পোর্ট করা হলো
 
 interface LogisticsSettingsProps {
   deliveryCharge: number | string;
@@ -10,6 +11,7 @@ interface LogisticsSettingsProps {
   onVatChange: (val: string) => void;
   onSaveSettings: () => void;
   onCancel?: () => void;
+  onOpenHistory?: () => void; // হিস্ট্রি পেজ ওপেন করার জন্য প্রপস
 }
 
 export default function LogisticSettings({
@@ -21,6 +23,7 @@ export default function LogisticSettings({
   onDeliveryChange,
   onVatChange,
   onSaveSettings,
+  onOpenHistory,
 }: LogisticsSettingsProps) {
   const [localDelivery, setLocalDelivery] = useState('');
   const [localVat, setLocalVat] = useState('');
@@ -45,7 +48,8 @@ export default function LogisticSettings({
   }, [isSaving]);
 
   const hasChanges = localDelivery !== '' || localVat !== '';
-  const shouldShowButton = hasChanges || isSaving || showSaved;
+  // যখন পরিবর্তন থাকবে বা সেভ হবে, তখন সেভ বাটন দেখাবে; অন্যথায় হিস্ট্রি আইকন দেখাবে
+  const showSaveButton = hasChanges || isSaving || showSaved;
 
   const handleDeliveryInput = (val: string) => {
     setLocalDelivery(val);
@@ -70,7 +74,6 @@ export default function LogisticSettings({
         fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
       }}
     >
-      {/* CSS Animation Keyframes for Smooth Pulsing Dots */}
       <style>
         {`
           @keyframes pulseDot {
@@ -80,7 +83,7 @@ export default function LogisticSettings({
         `}
       </style>
 
-      {/* Header Section: LOGISTICS & Fixed-size Pill Button */}
+      {/* Header Section: LOGISTICS & Dynamic History Icon / Save Button */}
       <div
         style={{
           display: 'flex',
@@ -103,55 +106,66 @@ export default function LogisticSettings({
           Logistics
         </span>
 
-        {/* ফিক্সড সাইজ এবং স্মুথ অ্যানিমেটেড ডট বা সেভড স্ট্যাটাস */}
-        <button
-          type="button"
-          onClick={onSaveSettings}
-          disabled={isSaving || showSaved || !hasChanges}
-          style={{
-            backgroundColor: showSaved ? '#10b981' : '#ffffff',
-            color: showSaved ? '#ffffff' : '#000000',
-            border: 'none',
-            borderRadius: '20px',
-            width: '88px',
-            height: '26px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '10px',
-            fontWeight: '700',
-            letterSpacing: '0.8px',
-            cursor: hasChanges && !isSaving && !showSaved ? 'pointer' : 'default',
-            visibility: shouldShowButton ? 'visible' : 'hidden',
-            opacity: shouldShowButton ? 1 : 0,
-            transition: 'background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease',
-          }}
-        >
-          {isSaving ? (
-            <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-              <span style={{ width: '5px', height: '5px', backgroundColor: '#000', borderRadius: '50%', animation: 'pulseDot 1.2s infinite ease-in-out' }}></span>
-              <span style={{ width: '5px', height: '5px', backgroundColor: '#000', borderRadius: '50%', animation: 'pulseDot 1.2s infinite ease-in-out 0.2s' }}></span>
-              <span style={{ width: '5px', height: '5px', backgroundColor: '#000', borderRadius: '50%', animation: 'pulseDot 1.2s infinite ease-in-out 0.4s' }}></span>
-            </div>
-          ) : showSaved ? (
-            'SAVED'
-          ) : (
-            'SAVE'
-          )}
-        </button>
+        {showSaveButton ? (
+          /* সেভ বাটন বা লোডিং অ্যানিমেশন */
+          <button
+            type="button"
+            onClick={onSaveSettings}
+            disabled={isSaving || showSaved || !hasChanges}
+            style={{
+              backgroundColor: showSaved ? '#10b981' : '#ffffff',
+              color: showSaved ? '#ffffff' : '#000000',
+              border: 'none',
+              borderRadius: '20px',
+              width: '88px',
+              height: '26px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '10px',
+              fontWeight: '700',
+              letterSpacing: '0.8px',
+              cursor: hasChanges && !isSaving && !showSaved ? 'pointer' : 'default',
+              transition: 'background-color 0.2s ease, color 0.2s ease',
+            }}
+          >
+            {isSaving ? (
+              <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                <span style={{ width: '5px', height: '5px', backgroundColor: '#000', borderRadius: '50%', animation: 'pulseDot 1.2s infinite ease-in-out' }}></span>
+                <span style={{ width: '5px', height: '5px', backgroundColor: '#000', borderRadius: '50%', animation: 'pulseDot 1.2s infinite ease-in-out 0.2s' }}></span>
+                <span style={{ width: '5px', height: '5px', backgroundColor: '#000', borderRadius: '50%', animation: 'pulseDot 1.2s infinite ease-in-out 0.4s' }}></span>
+              </div>
+            ) : showSaved ? (
+              'SAVED'
+            ) : (
+              'SAVE'
+            )}
+          </button>
+        ) : (
+          /* স্বাভাবিক অবস্থায় হিস্ট্রি আইকন (ধূসর কালার, যা হোভার করলে সাদা হবে) */
+          <button
+            type="button"
+            onClick={onOpenHistory}
+            title="View Logistics History"
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              padding: '4px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <HistoryIcon width={18} height={18} stroke="#888888" />
+          </button>
+        )}
       </div>
 
       {/* Input Rows Container */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        
         {/* Shipping Fee */}
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-          }}
-        >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <label style={{ fontSize: '13px', color: '#f0f0f5', fontWeight: '500' }}>
             Shipping Fee
           </label>
@@ -190,13 +204,7 @@ export default function LogisticSettings({
         </div>
 
         {/* VAT Rate */}
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-          }}
-        >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <label style={{ fontSize: '13px', color: '#f0f0f5', fontWeight: '500' }}>
             VAT Rate
           </label>
@@ -234,7 +242,6 @@ export default function LogisticSettings({
             <span style={{ fontSize: '13px', color: '#c0c0cc', marginLeft: '6px', fontWeight: '600' }}>%</span>
           </div>
         </div>
-
       </div>
     </div>
   );
