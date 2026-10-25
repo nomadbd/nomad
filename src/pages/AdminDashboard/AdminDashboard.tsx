@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import styles from './AdminDashboard.module.css';
-import { supabase } from '../../supabaseClient';
+import { supabase } from '@/supabaseClient';
 
 import {
   AdminOverview,
@@ -15,7 +15,8 @@ import {
 } from '../../components/admin';
 import AdminReminders from '../../components/admin/reminders/AdminReminders';
 import { SendInvite, AmbassadorList } from '../../components/admin/ambassadors';
-import AdminActivityLog from '../../components/admin/history/AdminActivityLog'; // ১. অডিট লগ কম্পোনেন্ট ইমপোর্ট করা হলো
+import AdminActivityLog from '@/components/admin/history/AdminActivityLog';
+
 
 import { AdminHeader } from './AdminHeader';
 import { AdminSidebar } from './AdminSidebar';
