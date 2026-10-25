@@ -74,23 +74,6 @@ export function useAdminProducts(searchQuery: string = '', onCloseAdd?: () => vo
     }, 4000);
   };
 
-  // Helper Function: audit_logs টেবিলে প্রোডাক্ট অ্যাকশন সেভ করার জন্য
-  const logProductAction = async (actionType: string, productId: string | number, changes: any) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      await supabase.from('audit_logs').insert({
-        entity_type: 'products',
-        action_type: actionType,
-        user_id: user?.id || null, // profiles টেবিল থেকে নাম, পদবী ও ইমেইল পাওয়ার জন্য
-        changes: changes,
-        metadata: { product_id: productId },
-        created_at: new Date().toISOString(),
-      });
-    } catch (auditErr) {
-      console.error('Audit log failed for product action:', auditErr);
-    }
-  };
-
   const fetchProducts = async () => {
     try {
       setLoading(true);
@@ -255,13 +238,6 @@ export function useAdminProducts(searchQuery: string = '', onCloseAdd?: () => vo
         }
         setUploadingMedia(false);
       }
-
-      // অডিট লগ সংরক্ষণ
-      await logProductAction('CREATE_PRODUCT', newProd.id, {
-        name: { old: null, new: newName },
-        price: { old: null, new: parseFloat(newPrice) },
-        category: { old: null, new: newCategory || 'GENERAL' }
-      });
 
       setShowAddPage(false);
       if (setShowAddModalExternal) setShowAddModalExternal(false);
@@ -430,13 +406,6 @@ export function useAdminProducts(searchQuery: string = '', onCloseAdd?: () => vo
         setUploadingMedia(false);
       }
 
-      // অডিট লগ সংরক্ষণ
-      await logProductAction('UPDATE_PRODUCT', editingProduct.id, {
-        name: { old: editingProduct.name, new: editName },
-        price: { old: editingProduct.price, new: parseFloat(editPrice) },
-        stock_quantity: { old: editingProduct.stock_quantity, new: parseInt(editStock || '0', 10) }
-      });
-
       setEditingProduct(null);
       setRemovedMediaUrls([]);
       fetchProducts();
@@ -456,10 +425,6 @@ export function useAdminProducts(searchQuery: string = '', onCloseAdd?: () => vo
       setProducts(prev => prev.map(p => p.id === productId ? { ...p, stock_quantity: updated } : p));
       const { error } = await supabase.from('products').update({ stock_quantity: updated }).eq('id', productId);
       if (error) throw error;
-
-      await logProductAction('UPDATE_STOCK', productId, {
-        stock_quantity: { old: currentStock, new: updated }
-      });
     } catch (err) {
       console.error('Failed to update stock:', err);
       fetchProducts();
@@ -471,8 +436,6 @@ export function useAdminProducts(searchQuery: string = '', onCloseAdd?: () => vo
       setProducts(prev => prev.map(p => p.id === productId ? { ...p, status: 'active' } : p));
       const { error } = await supabase.from('products').update({ status: 'active' }).eq('id', productId);
       if (error) throw error;
-
-      await logProductAction('RESTORE_PRODUCT', productId, { status: { old: 'archived', new: 'active' } });
       showNotification('Product restored to catalog.');
     } catch (err) {
       console.error('Failed to unhide product:', err);
@@ -492,8 +455,6 @@ export function useAdminProducts(searchQuery: string = '', onCloseAdd?: () => vo
         setProducts(prev => prev.map(p => p.id === productId ? { ...p, status: 'archived' } : p));
         const { error } = await supabase.from('products').update({ status: 'archived' }).eq('id', productId);
         if (error) throw error;
-
-        await logProductAction('ARCHIVE_PRODUCT', productId, { status: { old: 'active', new: 'archived' } });
         showNotification('Product hidden from catalog.');
       } catch (err) {
         console.error('Failed to hide product:', err);
@@ -520,8 +481,6 @@ export function useAdminProducts(searchQuery: string = '', onCloseAdd?: () => vo
         await supabase.from('product_media').delete().eq('product_id', productId);
         const { error } = await supabase.from('products').delete().eq('id', productId);
         if (error) throw error;
-
-        await logProductAction('DELETE_PRODUCT_PERMANENTLY', productId, { name: prodToDel?.name });
         showNotification('Product removed permanently.');
       } catch (err) {
         console.error('Failed to delete product:', err);
