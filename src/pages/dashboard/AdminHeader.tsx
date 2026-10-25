@@ -42,7 +42,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
   subPage,
 }) => {
   const getHeaderTitle = () => {
-    if (subPage === 'history') return 'HISTORY';
+    if (subPage === 'history') return 'ACTIVITY LOGS';
 
     switch (activeTab) {
       case 'overview': return 'OVERVIEW';
@@ -55,6 +55,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
       case 'ambassadors': return 'AMBASSADORS';
       case 'staff': return 'STAFF';
       case 'customers': return 'CUSTOMERS';
+      case 'history': return 'ACTIVITY LOGS'; // ← নতুন যুক্ত হওয়া 'history' ট্যাবের টাইটেল
       default: return 'NOMAD';
     }
   };
@@ -186,4 +187,4 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
       )}
     </header>
   );
-}; 
+};
