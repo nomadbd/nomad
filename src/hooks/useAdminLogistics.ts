@@ -165,10 +165,14 @@ export function useAdminLogistics() {
 
       if (error) throw error;
 
-      // সুপাবেজ audit_logs টেবিলে হিস্ট্রি লগ এন্ট্রি করা হলো
+      // বর্তমান লগইন করা ইউজারের তথ্য বের করা
+      const { data: { user } } = await supabase.auth.getUser();
+
+      // সুপাবেজ audit_logs টেবিলে ইউজার আইডিসহ হিস্ট্রি লগ এন্ট্রি করা হলো
       await supabase.from('audit_logs').insert({
         entity_type: 'store_settings',
         action_type: 'UPDATE_LOGISTICS_SETTINGS',
+        user_id: user?.id || null,
         changes: {
           delivery_charge: { old: initialDeliveryCharge, new: finalDc },
           vat_rate: { old: initialVatRate, new: finalVat },
