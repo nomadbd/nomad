@@ -6,7 +6,7 @@ import { useSession } from './hooks/useSession';
 import { subscribeUserToPush } from './utils/pushManager';
 
 import ProfilePage from './pages/ProfilePage';
-import AdminDashboard from './pages/AdminDashboard/AdminDashboard'; // সরাসরি ইমপোর্ট করা হলো (ডাবল লোডিং এড়াতে)
+import AdminDashboard from './pages/dashboard/AdminDashboard'; 
 
 import Header from './components/ui/Header';
 import SearchOverlay from './components/SearchOverlay';
