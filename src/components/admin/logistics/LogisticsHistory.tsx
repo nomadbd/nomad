@@ -26,14 +26,14 @@ export default function LogisticsHistory({ onBack }: LogisticsHistoryProps) {
     const fetchAuditLogs = async () => {
       setLoading(true);
       try {
-        // audit_logs টেবিল থেকে স্টোর সেটিংস বা লজিস্টিকস সম্পর্কিত লগ ফেচ করা
+        // শুধু স্টোর সেটিংস বা লজিস্টিকস সম্পর্কিত লগ ফিল্টার করে ফেচ করা
         const { data, error } = await supabase
           .from('audit_logs')
           .select('*')
+          .eq('entity_type', 'store_settings')
           .order('created_at', { ascending: false });
 
         if (!error && data) {
-          // চাইলে এখানে নির্দিষ্ট entity_type বা field ফিল্টার করা যেতে পারে
           setLogs(data);
         }
       } catch (err) {
@@ -109,7 +109,7 @@ export default function LogisticsHistory({ onBack }: LogisticsHistoryProps) {
         </div>
       ) : logs.length === 0 ? (
         <div style={{ padding: '30px', textAlign: 'center', color: '#888888', fontSize: '11px', fontFamily: 'monospace' }}>
-          NO HISTORY FOUND
+          NO LOGISTICS HISTORY FOUND
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '400px', overflowY: 'auto' }}>
