@@ -163,46 +163,28 @@ export function useAdminLogistics() {
         }
       }
 
-      if (error) throw error;
+      if (error) {
+        alert('Settings Save Error: ' + error.message);
+        throw error;
+      }
 
-      // বর্তমান লগইন করা ইউজারের তথ্য এবং profiles টেবিল থেকে নাম ও পদবী বের করা
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        let profileInfo = { name: 'Admin', designation: 'Admin', email: user?.email || '' };
+      // বর্তমান লগইন করা ইউজারের ID বের করা
+      const { data: { user } } = await supabase.auth.getUser();
 
-        if (user) {
-          const { data: profileData } = await supabase
-            .from('profiles')
-            .select('name, designation, email')
-            .eq('id', user.id)
-            .maybeSingle();
+      // audit_logs টেবিলে সরাসরি user_id দিয়ে ইনসার্ট করা
+      const { error: auditError } = await supabase.from('audit_logs').insert({
+        entity_type: 'store_settings',
+        action_type: 'UPDATE_LOGISTICS_SETTINGS',
+        user_id: user?.id || null, // প্রফেশনাল উপায়ে user_id কলামে সেভ
+        changes: {
+          delivery_charge: { old: initialDeliveryCharge, new: finalDc },
+          vat_rate: { old: initialVatRate, new: finalVat },
+        },
+        created_at: new Date().toISOString(),
+      });
 
-          if (profileData) {
-            profileInfo = {
-              name: profileData.name || user.email || 'Admin',
-              designation: profileData.designation || 'Admin',
-              email: profileData.email || user.email || ''
-            };
-          }
-        }
-
-        // audit_logs টেবিলে metadata-র মধ্যে ইউজারের তথ্য সেভ করা (user_id কলাম ছাড়া)
-        const { error: auditError } = await supabase.from('audit_logs').insert({
-          entity_type: 'store_settings',
-          action_type: 'UPDATE_LOGISTICS_SETTINGS',
-          changes: {
-            delivery_charge: { old: initialDeliveryCharge, new: finalDc },
-            vat_rate: { old: initialVatRate, new: finalVat },
-          },
-          metadata: profileInfo, // নাম, পদবী ও ইমেইল এখানে সেভ হচ্ছে
-          created_at: new Date().toISOString(),
-        });
-
-        if (auditError) {
-          console.error('Audit Log Error:', auditError.message);
-        }
-      } catch (auditErr: any) {
-        console.error('Audit log insert failed:', auditErr.message);
+      if (auditError) {
+        alert('Audit Log Failed: ' + auditError.message);
       }
 
       setInitialDeliveryCharge(finalDc);
