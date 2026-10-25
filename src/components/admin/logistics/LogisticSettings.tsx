@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 
 interface LogisticsSettingsProps {
   deliveryCharge: number | string;
@@ -17,20 +17,13 @@ export default function LogisticSettings({
   onVatChange,
   onSaveSettings,
 }: LogisticsSettingsProps) {
-  const [localDelivery, setLocalDelivery] = useState('');
-  const [localVat, setLocalVat] = useState('');
+  const [localDelivery, setLocalDelivery] = useState(String(deliveryCharge ?? ''));
+  const [localVat, setLocalVat] = useState(String(vatRate ?? ''));
 
-  // প্রপস আপডেট হলে (যেমন সফলভাবে সেভ হওয়ার পর) লোকাল ইনপুট খালি করে নতুন মান প্লেসহোল্ডারে নিয়ে আসা
-  useEffect(() => {
-    setLocalDelivery('');
-  }, [deliveryCharge]);
-
-  useEffect(() => {
-    setLocalVat('');
-  }, [vatRate]);
-
-  // ইনপুটে কিছু লিখলেই সেভ বাটন দৃশ্যমান হবে
-  const hasChanges = localDelivery !== '' || localVat !== '';
+  // রিয়েল-টাইমে পরিবর্তন ট্র্যাক করা
+  const hasChanges =
+    localDelivery !== String(deliveryCharge ?? '') ||
+    localVat !== String(vatRate ?? '');
 
   const handleDeliveryInput = (val: string) => {
     setLocalDelivery(val);
@@ -47,15 +40,15 @@ export default function LogisticSettings({
       style={{
         width: '100%',
         boxSizing: 'border-box',
-        backgroundColor: '#282830', // আরও সুন্দর ও স্পষ্ট প্রিমিয়াম ধূসর ব্যাকগ্রাউন্ড
-        border: '1px solid #3d3d4a',
+        backgroundColor: '#202026', // প্রিমিয়াম ধূসর ব্যাকগ্রাউন্ড
+        border: '1px solid #32323d',
         borderRadius: '12px',
         padding: '16px',
         color: '#ffffff',
         fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
       }}
     >
-      {/* Header Section: LOGISTICS & Save Button */}
+      {/* Header Section: LOGISTICS & Pill-shaped Save Button */}
       <div
         style={{
           display: 'flex',
@@ -63,14 +56,14 @@ export default function LogisticSettings({
           alignItems: 'center',
           marginBottom: '14px',
           paddingBottom: '10px',
-          borderBottom: '1px solid #383844',
+          borderBottom: '1px solid #2e2e38',
         }}
       >
         <span
           style={{
             fontSize: '11px',
             fontWeight: '700',
-            color: '#b0b0bc',
+            color: '#a0a0ab',
             letterSpacing: '1.2px',
             textTransform: 'uppercase',
           }}
@@ -87,8 +80,8 @@ export default function LogisticSettings({
               backgroundColor: '#ffffff',
               color: '#000000',
               border: 'none',
-              borderRadius: '6px',
-              padding: '4px 12px',
+              borderRadius: '20px', // ডিম্বাকার বাটন (Pill-shaped)
+              padding: '5px 14px',
               fontSize: '11px',
               fontWeight: '700',
               letterSpacing: '0.5px',
@@ -113,15 +106,15 @@ export default function LogisticSettings({
             alignItems: 'center',
           }}
         >
-          <label style={{ fontSize: '13px', color: '#f0f0f5', fontWeight: '500' }}>
+          <label style={{ fontSize: '13px', color: '#e1e1e6', fontWeight: '500' }}>
             Shipping Fee
           </label>
           <div
             style={{
               display: 'flex',
               alignItems: 'center',
-              backgroundColor: '#32323d',
-              border: '1px solid #484858',
+              backgroundColor: '#292933',
+              border: '1px solid #3f3f4d',
               borderRadius: '6px',
               padding: '6px 10px',
               flex: '1',
@@ -146,7 +139,7 @@ export default function LogisticSettings({
                 fontFamily: 'monospace',
               }}
             />
-            <span style={{ fontSize: '13px', color: '#c0c0cc', marginLeft: '6px', fontWeight: '600' }}>৳</span>
+            <span style={{ fontSize: '13px', color: '#a0a0ab', marginLeft: '6px', fontWeight: '600' }}>৳</span>
           </div>
         </div>
 
@@ -158,15 +151,15 @@ export default function LogisticSettings({
             alignItems: 'center',
           }}
         >
-          <label style={{ fontSize: '13px', color: '#f0f0f5', fontWeight: '500' }}>
+          <label style={{ fontSize: '13px', color: '#e1e1e6', fontWeight: '500' }}>
             VAT Rate
           </label>
           <div
             style={{
               display: 'flex',
               alignItems: 'center',
-              backgroundColor: '#32323d',
-              border: '1px solid #484858',
+              backgroundColor: '#292933',
+              border: '1px solid #3f3f4d',
               borderRadius: '6px',
               padding: '6px 10px',
               flex: '1',
@@ -192,7 +185,7 @@ export default function LogisticSettings({
                 fontFamily: 'monospace',
               }}
             />
-            <span style={{ fontSize: '13px', color: '#c0c0cc', marginLeft: '6px', fontWeight: '600' }}>%</span>
+            <span style={{ fontSize: '13px', color: '#a0a0ab', marginLeft: '6px', fontWeight: '600' }}>%</span>
           </div>
         </div>
 
