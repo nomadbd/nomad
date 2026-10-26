@@ -30,7 +30,7 @@ interface AdminActivityLogProps {
 export default function AdminActivityLog({ onBack, searchQuery = '', selectedEntity = 'ALL' }: AdminActivityLogProps) {
   const [logs, setLogs] = useState<AuditLogItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [debugError, setDebugError] = useState<string | null>(null); // ← সমস্যা স্ক্রিনে দেখানোর জন্য ডিবাগ স্টেট
+  const [debugError, setDebugError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchAuditLogs();
@@ -55,6 +55,7 @@ export default function AdminActivityLog({ onBack, searchQuery = '', selectedEnt
     setLoading(true);
     setDebugError(null);
     try {
+      // প্রফেশনাল জয়েন কুয়েরি সহ ডাটা ফেচ করা হচ্ছে
       const { data, error } = await supabase
         .from('audit_logs')
         .select(`
@@ -70,8 +71,7 @@ export default function AdminActivityLog({ onBack, searchQuery = '', selectedEnt
         .limit(200);
 
       if (error) {
-        // যদি Supabase কোনো এরর দেয়, তা সরাসরি এখানে ধরে ফেলবে
-        throw new Error(`Supabase Error [${error.code}]: ${error.message} - ${error.details || ''}`);
+        throw new Error(`Supabase Error [${error.code}]: ${error.message}`);
       }
       
       setLogs((data as unknown as AuditLogItem[]) || []);
@@ -138,7 +138,6 @@ export default function AdminActivityLog({ onBack, searchQuery = '', selectedEnt
         padding: '12px 0',
       }}
     >
-      {/* 🔴 ডিবাগ এরর বক্স: যদি কোনো সমস্যা হয় তা স্ক্রিনে দেখাবে */}
       {debugError && (
         <div
           style={{
@@ -159,25 +158,20 @@ export default function AdminActivityLog({ onBack, searchQuery = '', selectedEnt
         </div>
       )}
 
-      {/* Logs List */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
         {loading ? (
           <div style={{ textAlign: 'center', padding: '30px 0', color: '#52525b', fontSize: '11px' }}>
             LOADING...
           </div>
         ) : filteredLogs.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '30px 0', color: '#71717a', fontSize: '11px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            <span>NO ACTIVITY FOUND</span>
-            {!debugError && (
-              <span style={{ fontSize: '9px', color: '#52525b' }}>
-                (কোড সফলভাবে কানেক্ট হয়েছে, তবে ডাটাবেজে কোনো লগ নেই অথবা পলিসি ব্লক করছে)
-              </span>
-            )}
+          <div style={{ textAlign: 'center', padding: '30px 0', color: '#71717a', fontSize: '11px' }}>
+            NO ACTIVITY FOUND
           </div>
         ) : (
           filteredLogs.map((log) => {
             const profileObj = Array.isArray(log.profiles) ? log.profiles[0] : log.profiles;
-            const adminName = profileObj?.name || profileObj?.email?.split('@')[0] || 'System';
+            const adminName = profileObj?.name || profileObj?.email?.split('@')[0] || 'System / Admin';
+            const adminRole = profileObj?.role || profileObj?.designation || 'Admin';
             const badge = getBadgeStyle(log.action_type);
 
             return (
@@ -249,9 +243,10 @@ export default function AdminActivityLog({ onBack, searchQuery = '', selectedEnt
                   </div>
                 )}
 
-                {/* Footer User */}
-                <div style={{ fontSize: '9px', color: '#52525b', display: 'flex', justifyContent: 'flex-end' }}>
-                  <span>BY: <strong style={{ color: '#71717a' }}>{adminName.toUpperCase()}</strong></span>
+                {/* Footer User Info */}
+                <div style={{ fontSize: '9px', color: '#52525b', display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '4px', borderTop: '1px solid #121215' }}>
+                  <span>ROLE: <strong style={{ color: '#71717a' }}>{adminRole.toUpperCase()}</strong></span>
+                  <span>BY: <strong style={{ color: '#a1a1aa' }}>{adminName.toUpperCase()}</strong></span>
                 </div>
               </div>
             );
