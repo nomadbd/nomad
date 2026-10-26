@@ -23,13 +23,14 @@ interface AuditLogItem {
 
 interface AdminActivityLogProps {
   onBack?: () => void;
-  searchQuery?: string;     // মূল হেডার থেকে আসা সার্চ প্রপস
-  selectedEntity?: string;  // মূল হেডার থেকে আসা ফিল্টার প্রপস (যদি প্রয়োজন হয়)
+  searchQuery?: string;
+  selectedEntity?: string;
 }
 
 export default function AdminActivityLog({ onBack, searchQuery = '', selectedEntity = 'ALL' }: AdminActivityLogProps) {
   const [logs, setLogs] = useState<AuditLogItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [debugError, setDebugError] = useState<string | null>(null); // ← সমস্যা স্ক্রিনে দেখানোর জন্য ডিবাগ স্টেট
 
   useEffect(() => {
     fetchAuditLogs();
@@ -52,6 +53,7 @@ export default function AdminActivityLog({ onBack, searchQuery = '', selectedEnt
 
   const fetchAuditLogs = async () => {
     setLoading(true);
+    setDebugError(null);
     try {
       const { data, error } = await supabase
         .from('audit_logs')
@@ -67,10 +69,15 @@ export default function AdminActivityLog({ onBack, searchQuery = '', selectedEnt
         .order('created_at', { ascending: false })
         .limit(200);
 
-      if (error) throw error;
+      if (error) {
+        // যদি Supabase কোনো এরর দেয়, তা সরাসরি এখানে ধরে ফেলবে
+        throw new Error(`Supabase Error [${error.code}]: ${error.message} - ${error.details || ''}`);
+      }
+      
       setLogs((data as unknown as AuditLogItem[]) || []);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error fetching admin activity logs:', err);
+      setDebugError(err.message || 'Unknown error occurred while fetching logs.');
     } finally {
       setLoading(false);
     }
@@ -131,6 +138,27 @@ export default function AdminActivityLog({ onBack, searchQuery = '', selectedEnt
         padding: '12px 0',
       }}
     >
+      {/* 🔴 ডিবাগ এরর বক্স: যদি কোনো সমস্যা হয় তা স্ক্রিনে দেখাবে */}
+      {debugError && (
+        <div
+          style={{
+            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+            border: '1px solid rgba(239, 68, 68, 0.4)',
+            borderRadius: '6px',
+            padding: '12px',
+            marginBottom: '12px',
+            color: '#f87171',
+            fontSize: '11px',
+            wordBreak: 'break-all',
+          }}
+        >
+          <strong style={{ display: 'block', marginBottom: '4px', textTransform: 'uppercase' }}>
+            ⚠️ Debug Error Detected:
+          </strong>
+          {debugError}
+        </div>
+      )}
+
       {/* Logs List */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
         {loading ? (
@@ -138,8 +166,13 @@ export default function AdminActivityLog({ onBack, searchQuery = '', selectedEnt
             LOADING...
           </div>
         ) : filteredLogs.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '30px 0', color: '#52525b', fontSize: '11px' }}>
-            NO ACTIVITY FOUND
+          <div style={{ textAlign: 'center', padding: '30px 0', color: '#71717a', fontSize: '11px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <span>NO ACTIVITY FOUND</span>
+            {!debugError && (
+              <span style={{ fontSize: '9px', color: '#52525b' }}>
+                (কোড সফলভাবে কানেক্ট হয়েছে, তবে ডাটাবেজে কোনো লগ নেই অথবা পলিসি ব্লক করছে)
+              </span>
+            )}
           </div>
         ) : (
           filteredLogs.map((log) => {
