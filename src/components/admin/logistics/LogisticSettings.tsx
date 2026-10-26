@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { HistoryIcon } from '@/components/icons'; 
 
 interface LogisticsSettingsProps {
   deliveryCharge: number | string;
@@ -11,7 +10,6 @@ interface LogisticsSettingsProps {
   onVatChange: (val: string) => void;
   onSaveSettings: () => void;
   onCancel?: () => void;
-  onOpenHistory?: () => void; // হিস্ট্রি পেজ ওপেন করার জন্য প্রপস
 }
 
 export default function LogisticSettings({
@@ -23,7 +21,6 @@ export default function LogisticSettings({
   onDeliveryChange,
   onVatChange,
   onSaveSettings,
-  onOpenHistory,
 }: LogisticsSettingsProps) {
   const [localDelivery, setLocalDelivery] = useState('');
   const [localVat, setLocalVat] = useState('');
@@ -48,8 +45,6 @@ export default function LogisticSettings({
   }, [isSaving]);
 
   const hasChanges = localDelivery !== '' || localVat !== '';
-  // যখন পরিবর্তন থাকবে বা সেভ হবে, তখন সেভ বাটন দেখাবে; অন্যথায় হিস্ট্রি আইকন দেখাবে
-  const showSaveButton = hasChanges || isSaving || showSaved;
 
   const handleDeliveryInput = (val: string) => {
     setLocalDelivery(val);
@@ -83,7 +78,7 @@ export default function LogisticSettings({
         `}
       </style>
 
-      {/* Header Section: LOGISTICS & Dynamic History Icon / Save Button */}
+      {/* Header Section: LOGISTICS & Save Button */}
       <div
         style={{
           display: 'flex',
@@ -106,60 +101,40 @@ export default function LogisticSettings({
           Logistics
         </span>
 
-        {showSaveButton ? (
-          /* সেভ বাটন বা লোডিং অ্যানিমেশন */
-          <button
-            type="button"
-            onClick={onSaveSettings}
-            disabled={isSaving || showSaved || !hasChanges}
-            style={{
-              backgroundColor: showSaved ? '#10b981' : '#ffffff',
-              color: showSaved ? '#ffffff' : '#000000',
-              border: 'none',
-              borderRadius: '20px',
-              width: '88px',
-              height: '26px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '10px',
-              fontWeight: '700',
-              letterSpacing: '0.8px',
-              cursor: hasChanges && !isSaving && !showSaved ? 'pointer' : 'default',
-              transition: 'background-color 0.2s ease, color 0.2s ease',
-            }}
-          >
-            {isSaving ? (
-              <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-                <span style={{ width: '5px', height: '5px', backgroundColor: '#000', borderRadius: '50%', animation: 'pulseDot 1.2s infinite ease-in-out' }}></span>
-                <span style={{ width: '5px', height: '5px', backgroundColor: '#000', borderRadius: '50%', animation: 'pulseDot 1.2s infinite ease-in-out 0.2s' }}></span>
-                <span style={{ width: '5px', height: '5px', backgroundColor: '#000', borderRadius: '50%', animation: 'pulseDot 1.2s infinite ease-in-out 0.4s' }}></span>
-              </div>
-            ) : showSaved ? (
-              'SAVED'
-            ) : (
-              'SAVE'
-            )}
-          </button>
-        ) : (
-          /* স্বাভাবিক অবস্থায় হিস্ট্রি আইকন (ধূসর কালার, যা হোভার করলে সাদা হবে) */
-          <button
-            type="button"
-            onClick={onOpenHistory}
-            title="View Logistics History"
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              padding: '4px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <HistoryIcon width={18} height={18} stroke="#888888" />
-          </button>
-        )}
+        {/* সেভ বাটন বা লোডিং অ্যানিমেশন */}
+        <button
+          type="button"
+          onClick={onSaveSettings}
+          disabled={isSaving || showSaved || !hasChanges}
+          style={{
+            backgroundColor: showSaved ? '#10b981' : hasChanges ? '#ffffff' : '#3a3a46',
+            color: showSaved ? '#ffffff' : hasChanges ? '#000000' : '#888898',
+            border: 'none',
+            borderRadius: '20px',
+            width: '88px',
+            height: '26px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '10px',
+            fontWeight: '700',
+            letterSpacing: '0.8px',
+            cursor: hasChanges && !isSaving && !showSaved ? 'pointer' : 'default',
+            transition: 'background-color 0.2s ease, color 0.2s ease',
+          }}
+        >
+          {isSaving ? (
+            <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+              <span style={{ width: '5px', height: '5px', backgroundColor: '#000', borderRadius: '50%', animation: 'pulseDot 1.2s infinite ease-in-out' }}></span>
+              <span style={{ width: '5px', height: '5px', backgroundColor: '#000', borderRadius: '50%', animation: 'pulseDot 1.2s infinite ease-in-out 0.2s' }}></span>
+              <span style={{ width: '5px', height: '5px', backgroundColor: '#000', borderRadius: '50%', animation: 'pulseDot 1.2s infinite ease-in-out 0.4s' }}></span>
+            </div>
+          ) : showSaved ? (
+            'SAVED'
+          ) : (
+            'SAVE'
+          )}
+        </button>
       </div>
 
       {/* Input Rows Container */}
