@@ -45,6 +45,9 @@ export default function LogisticSettings({
   }, [isSaving]);
 
   const hasChanges = localDelivery !== '' || localVat !== '';
+  
+  // ইনপুট দেওয়া হলে, সেভ হতে থাকলে, বা Saved মেসেজ দেখালে বাটন দৃশ্যমান হবে
+  const shouldShowButton = hasChanges || isSaving || showSaved;
 
   const handleDeliveryInput = (val: string) => {
     setLocalDelivery(val);
@@ -101,40 +104,42 @@ export default function LogisticSettings({
           Logistics
         </span>
 
-        {/* সেভ বাটন বা লোডিং অ্যানিমেশন */}
-        <button
-          type="button"
-          onClick={onSaveSettings}
-          disabled={isSaving || showSaved || !hasChanges}
-          style={{
-            backgroundColor: showSaved ? '#10b981' : hasChanges ? '#ffffff' : '#3a3a46',
-            color: showSaved ? '#ffffff' : hasChanges ? '#000000' : '#888898',
-            border: 'none',
-            borderRadius: '20px',
-            width: '88px',
-            height: '26px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '10px',
-            fontWeight: '700',
-            letterSpacing: '0.8px',
-            cursor: hasChanges && !isSaving && !showSaved ? 'pointer' : 'default',
-            transition: 'background-color 0.2s ease, color 0.2s ease',
-          }}
-        >
-          {isSaving ? (
-            <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-              <span style={{ width: '5px', height: '5px', backgroundColor: '#000', borderRadius: '50%', animation: 'pulseDot 1.2s infinite ease-in-out' }}></span>
-              <span style={{ width: '5px', height: '5px', backgroundColor: '#000', borderRadius: '50%', animation: 'pulseDot 1.2s infinite ease-in-out 0.2s' }}></span>
-              <span style={{ width: '5px', height: '5px', backgroundColor: '#000', borderRadius: '50%', animation: 'pulseDot 1.2s infinite ease-in-out 0.4s' }}></span>
-            </div>
-          ) : showSaved ? (
-            'SAVED'
-          ) : (
-            'SAVE'
-          )}
-        </button>
+        {/* শর্ত সাপেক্ষে সেভ বাটন দৃশ্যমান বা অদৃশ্য থাকবে */}
+        {shouldShowButton && (
+          <button
+            type="button"
+            onClick={onSaveSettings}
+            disabled={isSaving || showSaved || !hasChanges}
+            style={{
+              backgroundColor: showSaved ? '#10b981' : hasChanges ? '#ffffff' : '#3a3a46',
+              color: showSaved ? '#ffffff' : hasChanges ? '#000000' : '#888898',
+              border: 'none',
+              borderRadius: '20px',
+              width: '88px',
+              height: '26px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '10px',
+              fontWeight: '700',
+              letterSpacing: '0.8px',
+              cursor: hasChanges && !isSaving && !showSaved ? 'pointer' : 'default',
+              transition: 'background-color 0.2s ease, color 0.2s ease',
+            }}
+          >
+            {isSaving ? (
+              <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                <span style={{ width: '5px', height: '5px', backgroundColor: '#000', borderRadius: '50%', animation: 'pulseDot 1.2s infinite ease-in-out' }}></span>
+                <span style={{ width: '5px', height: '5px', backgroundColor: '#000', borderRadius: '50%', animation: 'pulseDot 1.2s infinite ease-in-out 0.2s' }}></span>
+                <span style={{ width: '5px', height: '5px', backgroundColor: '#000', borderRadius: '50%', animation: 'pulseDot 1.2s infinite ease-in-out 0.4s' }}></span>
+              </div>
+            ) : showSaved ? (
+              'SAVED'
+            ) : (
+              'SAVE'
+            )}
+          </button>
+        )}
       </div>
 
       {/* Input Rows Container */}
