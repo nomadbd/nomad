@@ -80,6 +80,37 @@ export const useAdminOrders = (showToast: (msg: string, type?: 'success' | 'erro
     fetchAdminOrders();
   }, []);
 
+  // হেল্পার ফাংশন: অডিট লগ এবং চেইনিং (parent_id) হ্যান্ডেল করার জন্য
+  const recordAuditLog = async (orderId: string, actionType: string, changes: Record<string, any>, reason?: string | null) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+
+      // এই অর্ডারের জন্য সর্বশেষ লগটি খুঁজে বের করা (চেইনিংয়ের জন্য parent_id পাওয়ার উদ্দেশ্যে)
+      const { data: lastLogs } = await supabase
+        .from('audit_logs')
+        .select('id')
+        .eq('entity_type', 'ORDERS')
+        .filter('metadata->>order_id', 'eq', orderId)
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      const parentId = lastLogs && lastLogs.length > 0 ? lastLogs[0].id : null;
+
+      // নতুন অডিট লগ ইনসার্ট করা
+      await supabase.from('audit_logs').insert({
+        entity_type: 'ORDERS',
+        action_type: actionType,
+        changes: changes,
+        reason: reason || null,
+        metadata: { order_id: orderId },
+        user_id: user?.id || null,
+        parent_id: parentId
+      });
+    } catch (logErr) {
+      console.error('Failed to record audit log:', logErr);
+    }
+  };
+
   const handleUpdateDetails = async (
     orderId: string, 
     updatedFields: { 
@@ -92,6 +123,8 @@ export const useAdminOrders = (showToast: (msg: string, type?: 'success' | 'erro
     }
   ) => {
     try {
+      const currentOrder = orders.find(o => o.id === orderId);
+      
       const { error } = await supabase
         .from('orders')
         .update({
@@ -105,6 +138,29 @@ export const useAdminOrders = (showToast: (msg: string, type?: 'success' | 'erro
         .eq('id', orderId);
 
       if (error) throw error;
+
+      // পরিবর্তনগুলোর তুলনামূলক অবজেক্ট তৈরি (Old vs New)
+      const changes: Record<string, { old: any; new: any }> = {};
+      if (currentOrder) {
+        if (currentOrder.payment_status !== updatedFields.payment_status) {
+          changes.payment_status = { old: currentOrder.payment_status, new: updatedFields.payment_status };
+        }
+        if (currentOrder.courier_name !== updatedFields.courier_name) {
+          changes.courier_name = { old: currentOrder.courier_name, new: updatedFields.courier_name };
+        }
+        if (currentOrder.tracking_id !== updatedFields.tracking_id) {
+          changes.tracking_id = { old: currentOrder.tracking_id, new: updatedFields.tracking_id };
+        }
+        if (currentOrder.admin_notes !== updatedFields.admin_notes) {
+          changes.admin_notes = { old: currentOrder.admin_notes, new: updatedFields.admin_notes };
+        }
+        if (currentOrder.return_reason !== (updatedFields.return_reason || '')) {
+          changes.return_reason = { old: currentOrder.return_reason, new: updatedFields.return_reason || 'None' };
+        }
+      }
+
+      // অডিট লগ রেকর্ড করা
+      await recordAuditLog(orderId, 'UPDATE_DETAILS', changes, updatedFields.return_reason);
 
       setOrders(prev => prev.map(o => 
         o.id === orderId 
@@ -126,7 +182,7 @@ export const useAdminOrders = (showToast: (msg: string, type?: 'success' | 'erro
   const handleStatusChange = async (orderId: string, newStatus: string, cancelReason?: string) => {
     try {
       const currentOrder = orders.find(o => o.id === orderId);
-      const oldStatus = currentOrder?.status;
+      const oldStatus = currentOrder?.status || 'Pending';
 
       const updateData: { status: string; return_reason?: string | null } = { status: newStatus };
       if (newStatus === 'Cancelled') {
@@ -142,6 +198,7 @@ export const useAdminOrders = (showToast: (msg: string, type?: 'success' | 'erro
 
       if (error) throw error;
 
+      // স্টক রিভার্সাল লজিক (যদি ক্যানসেল করা হয়)
       if (newStatus === 'Cancelled' && oldStatus !== 'Cancelled' && oldStatus !== 'Shipped' && oldStatus !== 'Delivered') {
         if (currentOrder && currentOrder.items) {
           for (const item of currentOrder.items) {
@@ -166,6 +223,17 @@ export const useAdminOrders = (showToast: (msg: string, type?: 'success' | 'erro
           }
         }
       }
+
+      // স্ট্যাটাস পরিবর্তনের অডিট লগ এবং চেইনিং রেকর্ড করা
+      const changes = {
+        status: { old: oldStatus, new: newStatus }
+      };
+      await recordAuditLog(
+        orderId, 
+        newStatus === 'Cancelled' ? 'CANCEL_ORDER' : 'UPDATE_STATUS', 
+        changes, 
+        cancelReason || null
+      );
 
       setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus, return_reason: cancelReason || '' } : o));
       showToast(`Order marked as ${newStatus}`, 'success');
