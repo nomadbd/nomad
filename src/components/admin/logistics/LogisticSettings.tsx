@@ -91,77 +91,77 @@ export default function LogisticSettings({
           borderBottom: '1px solid #30303b',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span
+        <span
+          style={{
+            fontSize: '11px',
+            fontWeight: '700',
+            color: '#b0b0bc',
+            letterSpacing: '1.2px',
+            textTransform: 'uppercase',
+          }}
+        >
+          Logistics
+        </span>
+
+        {shouldShowButton ? (
+          <button
+            type="button"
+            onClick={onSaveSettings}
+            disabled={isSaving || showSaved || !hasChanges}
             style={{
-              fontSize: '11px',
+              backgroundColor: showSaved ? '#10b981' : hasChanges ? '#ffffff' : '#3a3a46',
+              color: showSaved ? '#ffffff' : hasChanges ? '#000000' : '#888898',
+              border: 'none',
+              borderRadius: '20px',
+              width: '88px',
+              height: '26px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '10px',
               fontWeight: '700',
-              color: '#b0b0bc',
-              letterSpacing: '1.2px',
-              textTransform: 'uppercase',
+              letterSpacing: '0.8px',
+              cursor: hasChanges && !isSaving && !showSaved ? 'pointer' : 'default',
+              transition: 'background-color 0.2s ease, color 0.2s ease',
             }}
           >
-            Logistics
-          </span>
-
+            {isSaving ? (
+              <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                <span style={{ width: '5px', height: '5px', backgroundColor: '#000', borderRadius: '50%', animation: 'pulseDot 1.2s infinite ease-in-out' }}></span>
+                <span style={{ width: '5px', height: '5px', backgroundColor: '#000', borderRadius: '50%', animation: 'pulseDot 1.2s infinite ease-in-out 0.2s' }}></span>
+                <span style={{ width: '5px', height: '5px', backgroundColor: '#000', borderRadius: '50%', animation: 'pulseDot 1.2s infinite ease-in-out 0.4s' }}></span>
+              </div>
+            ) : showSaved ? (
+              'SAVED'
+            ) : (
+              'SAVE'
+            )}
+          </button>
+        ) : (
           <button
             type="button"
             onClick={() => setShowHistoryModal(true)}
             style={{
               background: 'transparent',
-              border: 'none',
+            border: 'none',
               cursor: 'pointer',
               color: '#9ca3af',
               display: 'flex',
               alignItems: 'center',
-              padding: '2px',
+              justifyContent: 'center',
+              width: '28px',
+              height: '26px',
+              padding: '0',
               transition: 'color 0.2s',
             }}
             title="View Logistics History"
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M12 8v4l3 3"></path>
               <circle cx="12" cy="12" r="9"></circle>
             </svg>
           </button>
-        </div>
-
-        <button
-          type="button"
-          onClick={onSaveSettings}
-          disabled={isSaving || showSaved || !hasChanges}
-          style={{
-            backgroundColor: showSaved ? '#10b981' : hasChanges ? '#ffffff' : '#3a3a46',
-            color: showSaved ? '#ffffff' : hasChanges ? '#000000' : '#888898',
-            border: 'none',
-            borderRadius: '20px',
-            width: '88px',
-            height: '26px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '10px',
-            fontWeight: '700',
-            letterSpacing: '0.8px',
-            cursor: hasChanges && !isSaving && !showSaved ? 'pointer' : 'default',
-            visibility: shouldShowButton ? 'visible' : 'hidden',
-            opacity: shouldShowButton ? 1 : 0,
-            pointerEvents: shouldShowButton ? 'auto' : 'none',
-            transition: 'opacity 0.2s ease, visibility 0.2s ease, background-color 0.2s ease, color 0.2s ease',
-          }}
-        >
-          {isSaving ? (
-            <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-              <span style={{ width: '5px', height: '5px', backgroundColor: '#000', borderRadius: '50%', animation: 'pulseDot 1.2s infinite ease-in-out' }}></span>
-              <span style={{ width: '5px', height: '5px', backgroundColor: '#000', borderRadius: '50%', animation: 'pulseDot 1.2s infinite ease-in-out 0.2s' }}></span>
-              <span style={{ width: '5px', height: '5px', backgroundColor: '#000', borderRadius: '50%', animation: 'pulseDot 1.2s infinite ease-in-out 0.4s' }}></span>
-            </div>
-          ) : showSaved ? (
-            'SAVED'
-          ) : (
-            'SAVE'
-          )}
-        </button>
+        )}
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
