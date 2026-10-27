@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/supabaseClient';
-import { CloseIcon } from '@/components/icons';
 
 interface LogisticsHistoryProps {
   onBack: () => void;
   entityType?: string;
-  title?: string;
 }
 
 interface AuditLogItem {
@@ -28,8 +26,7 @@ interface AuditLogItem {
 
 export default function LogisticsHistory({ 
   onBack, 
-  entityType = 'store_settings', 
-  title = 'Logistics Audit History' 
+  entityType = 'store_settings' 
 }: LogisticsHistoryProps) {
   const [logs, setLogs] = useState<AuditLogItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -97,62 +94,7 @@ export default function LogisticsHistory({
   };
 
   return (
-    <div
-      style={{
-        width: '100%',
-        boxSizing: 'border-box',
-        backgroundColor: '#222228',
-        border: '1px solid #363642',
-        borderRadius: '12px',
-        padding: '16px',
-        color: '#ffffff',
-        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-      }}
-    >
-      {/* Header Section */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '16px',
-          paddingBottom: '12px',
-          borderBottom: '1px solid #30303b',
-        }}
-      >
-        <span
-          style={{
-            fontSize: '11px',
-            fontWeight: '700',
-            color: '#b0b0bc',
-            letterSpacing: '1.2px',
-            textTransform: 'uppercase',
-          }}
-        >
-          {title}
-        </span>
-
-        {/* Back / Close Button */}
-        <button
-          type="button"
-          onClick={onBack}
-          title="Back to Settings"
-          style={{
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            padding: '4px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: '#ffffff',
-          }}
-        >
-          <CloseIcon width={16} height={16} stroke="#ffffff" />
-        </button>
-      </div>
-
-      {/* Logs Content List */}
+    <div>
       {loading ? (
         <div style={{ padding: '30px', textAlign: 'center', color: '#888888', fontSize: '11px', fontFamily: 'monospace' }}>
           LOADING HISTORY...
