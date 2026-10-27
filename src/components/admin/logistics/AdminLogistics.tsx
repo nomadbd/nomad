@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAdminLogistics } from '@/hooks/useAdminLogistics';
 import LogisticSettings from './LogisticSettings';
 import LogisticsOrderCard from './LogisticsOrderCard';
 import LogisticsSkeleton from './LogisticsSkeleton';
+import LogisticsHistory from './LogisticsHistory'; // হিস্ট্রি কম্পোনেন্ট ইম্পোর্ট করা হলো
 
 interface AdminLogisticsProps {
   searchQuery?: string;
@@ -11,6 +12,8 @@ interface AdminLogisticsProps {
 }
 
 export default function AdminLogistics({ searchQuery, isFilterOpen, isSettingsOpen }: AdminLogisticsProps) {
+  const [showHistoryModal, setShowHistoryModal] = useState<boolean>(false);
+
   const {
     orders,
     loading,
@@ -32,22 +35,31 @@ export default function AdminLogistics({ searchQuery, isFilterOpen, isSettingsOp
   } = useAdminLogistics();
 
   return (
-    <div style={{ color: '#fff', width: '100%' }}>
+    <div style={{ color: '#fff', width: '100%', position: 'relative' }}>
       {isSettingsOpen ? (
-        <LogisticSettings
-          deliveryCharge={deliveryCharge}
-          vatRate={vatRate}
-          initialDeliveryCharge={deliveryCharge}
-          initialVatRate={vatRate}
-          isSaving={isSaving}
-          onDeliveryChange={setDeliveryCharge}
-          onVatChange={setVatRate}
-          onSaveSettings={handleSaveSettings}
-          onCancel={handleCancel}
-        />
+        <>
+          <LogisticSettings
+            deliveryCharge={deliveryCharge}
+            vatRate={vatRate}
+            initialDeliveryCharge={deliveryCharge}
+            initialVatRate={vatRate}
+            isSaving={isSaving}
+            onDeliveryChange={setDeliveryCharge}
+            onVatChange={setVatRate}
+            onSaveSettings={handleSaveSettings}
+            onCancel={handleCancel}
+            onOpenHistory={() => setShowHistoryModal(true)} // যদি LogisticSettings এর ভেতরে হিস্ট্রি বাটন থাকে
+          />
+
+          {/* হিস্ট্রি মডাল বা পপআপ ভিউ */}
+          {showHistoryModal && (
+            <LogisticsHistory 
+              onClose={() => setShowHistoryModal(false)} 
+            />
+          )}
+        </>
       ) : (
         loading ? (
-          // একসাথে ৫টি স্কেলিটন কার্ড রেন্ডার করা হলো যাতে পুরো পেজ জুড়ে লোডিং ফিল পাওয়া যায়
           <div style={{ border: '1px solid #1a1a1a', backgroundColor: '#060606' }}>
             {[1, 2, 3, 4, 5].map((n) => (
               <LogisticsSkeleton key={n} />
