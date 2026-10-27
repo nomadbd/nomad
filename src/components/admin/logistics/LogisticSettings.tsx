@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import LogisticsHistory from './LogisticsHistory'; // ১. হিস্ট্রি কম্পোনেন্ট ইম্পোর্ট করা হলো
+import LogisticsHistory from './LogisticsHistory';
 
 interface LogisticsSettingsProps {
   deliveryCharge: number | string;
@@ -26,12 +26,11 @@ export default function LogisticSettings({
   const [localDelivery, setLocalDelivery] = useState('');
   const [localVat, setLocalVat] = useState('');
   const [showSaved, setShowSaved] = useState(false);
-  const [showHistoryModal, setShowHistoryModal] = useState(false); // ২. হিস্ট্রি মডাল ওপেন/ক্লোজ করার স্টেট
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
 
   const baseDelivery = initialDeliveryCharge !== undefined ? initialDeliveryCharge : deliveryCharge;
   const baseVat = initialVatRate !== undefined ? initialVatRate : vatRate;
 
-  // সেভ সফল হওয়ার পর সাময়িকভাবে 'SAVED' দেখানোর লজিক
   const prevIsSaving = useRef(isSaving);
   useEffect(() => {
     if (prevIsSaving.current && !isSaving) {
@@ -82,7 +81,6 @@ export default function LogisticSettings({
         `}
       </style>
 
-      {/* Header Section: LOGISTICS, History Icon & Save Button */}
       <div
         style={{
           display: 'flex',
@@ -106,7 +104,6 @@ export default function LogisticSettings({
             Logistics
           </span>
 
-          {/* ৩. হিস্ট্রি / ক্লক আইকন (যাতে ক্লিক করলে আগের মতো হিস্ট্রি পপআপ আসে) */}
           <button
             type="button"
             onClick={() => setShowHistoryModal(true)}
@@ -129,7 +126,6 @@ export default function LogisticSettings({
           </button>
         </div>
 
-        {/* Save Button */}
         <button
           type="button"
           onClick={onSaveSettings}
@@ -168,9 +164,7 @@ export default function LogisticSettings({
         </button>
       </div>
 
-      {/* Input Rows Container */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        {/* Shipping Fee */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <label style={{ fontSize: '13px', color: '#f0f0f5', fontWeight: '500' }}>
             Shipping Fee
@@ -209,7 +203,6 @@ export default function LogisticSettings({
           </div>
         </div>
 
-        {/* VAT Rate */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <label style={{ fontSize: '13px', color: '#f0f0f5', fontWeight: '500' }}>
             VAT Rate
@@ -250,9 +243,8 @@ export default function LogisticSettings({
         </div>
       </div>
 
-      {/* ৪. শর্ত সাপেক্ষে হিস্ট্রি মডাল রেন্ডার করা */}
       {showHistoryModal && (
-        <LogisticsHistory onClose={() => setShowHistoryModal(false)} />
+        <LogisticsHistory onBack={() => setShowHistoryModal(false)} />
       )}
     </div>
   );
