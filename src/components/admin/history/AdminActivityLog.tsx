@@ -13,6 +13,12 @@ interface AuditLogItem {
   metadata?: Record<string, any> | null;
   created_at: string;
   user_id?: string | null;
+  parent_id?: string | null;
+  parent_log?: {
+    id: string;
+    action_type: string;
+    created_at: string;
+  } | null;
   profiles?: {
     name?: string | null;
     designation?: string | null;
@@ -55,11 +61,16 @@ export default function AdminActivityLog({ onBack, searchQuery = '', selectedEnt
     setLoading(true);
     setDebugError(null);
     try {
-      // প্রফেশনাল জয়েন কুয়েরি সহ ডাটা ফেচ করা হচ্ছে
+      // সেলফ-রেফারেন্সিং parent_id এবং profiles জয়েন সহ কুয়েরি
       const { data, error } = await supabase
         .from('audit_logs')
         .select(`
           *,
+          parent_log:parent_id (
+            id,
+            action_type,
+            created_at
+          ),
           profiles:user_id (
             name,
             designation,
@@ -73,7 +84,7 @@ export default function AdminActivityLog({ onBack, searchQuery = '', selectedEnt
       if (error) {
         throw new Error(`Supabase Error [${error.code}]: ${error.message}`);
       }
-      
+
       setLogs((data as unknown as AuditLogItem[]) || []);
     } catch (err: any) {
       console.error('Error fetching admin activity logs:', err);
@@ -185,8 +196,33 @@ export default function AdminActivityLog({ onBack, searchQuery = '', selectedEnt
                   display: 'flex',
                   flexDirection: 'column',
                   gap: '6px',
+                  position: 'relative',
                 }}
               >
+                {/* Chained / Network Parent Link Indicator */}
+                {log.parent_log && (
+                  <div
+                    style={{
+                      fontSize: '9px',
+                      color: '#71717a',
+                      backgroundColor: '#121215',
+                      borderLeft: '2px solid #3f3f46',
+                      padding: '3px 6px',
+                      borderRadius: '2px',
+                      marginBottom: '4px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                    }}
+                  >
+                    <span style={{ color: '#52525b' }}>🔗 CHAINED TO:</span>
+                    <span style={{ color: '#a1a1aa', fontWeight: '600', textTransform: 'uppercase' }}>
+                      {log.parent_log.action_type}
+                    </span>
+                    <span style={{ color: '#52525b' }}>({formatDateTime(log.parent_log.created_at)})</span>
+                  </div>
+                )}
+
                 {/* Meta Row */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '10px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
