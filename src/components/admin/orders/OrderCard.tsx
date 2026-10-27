@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { CheckIcon, CloseIcon, EditIcon, ShareIcon } from '@/components/icons';
+import React, { useState, useEffect } from 'react';
+import { CheckIcon, CloseIcon, EditIcon, ShareIcon, HistoryIcon } from '@/components/icons';
 import { Order, TEMPLATE_PRESETS, formatWhatsAppNumber, renderPersonalizedText } from '@/utils/messageUtils';
+import { supabase } from '@/supabaseClient';
 
 const BD_COURIERS = [
   'Steadfast',
@@ -22,6 +23,23 @@ const CANCELLATION_REASONS = [
   'Delayed delivery',
   'Damaged product'
 ];
+
+export interface AuditLogItem {
+  id: string;
+  batch_id: string;
+  action_type: string;
+  field_name?: string;
+  old_value?: string;
+  new_value?: string;
+  changes?: Record<string, { old: string; new: string }>;
+  reason?: string;
+  created_at: string;
+  profiles?: {
+    name: string;
+    role: string;
+    email: string;
+  } | { name: string; role: string; email: string }[] | null;
+}
 
 export interface OrderCardProps {
   order: Order;
@@ -52,6 +70,8 @@ const OrderCard: React.FC<OrderCardProps> = ({
 }) => {
   const [isUpdating, setIsUpdating] = useState<boolean>(false);
   const [isEditing, setIsEditing] = useState<boolean>(false);
+  const [auditLogs, setAuditLogs] = useState<AuditLogItem[]>([]);
+  const [isLoadingLogs, setIsLoadingLogs] = useState<boolean>(false);
 
   const [editForm, setEditForm] = useState({
     payment_status: order.payment_status || 'Unpaid / COD',
@@ -61,6 +81,47 @@ const OrderCard: React.FC<OrderCardProps> = ({
     customer_notes: '',
     return_reason: ''
   });
+
+  const fetchAuditLogs = async () => {
+    if (!order.id) return;
+    setIsLoadingLogs(true);
+    try {
+      const { data, error } = await supabase
+        .from('audit_logs')
+        .select(`
+          id,
+          batch_id,
+          action_type,
+          field_name,
+          old_value,
+          new_value,
+          changes,
+          reason,
+          created_at,
+          profiles:performed_by (
+            name,
+            role,
+            email
+          )
+        `)
+        .eq('order_id', order.id)
+        .order('created_at', { ascending: false });
+
+      if (!error && data) {
+        setAuditLogs(data as unknown as AuditLogItem[]);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsLoadingLogs(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isExpanded) {
+      fetchAuditLogs();
+    }
+  }, [order, isExpanded]);
 
   const toggleEditMode = () => {
     setIsEditing((prev) => {
@@ -116,6 +177,8 @@ const OrderCard: React.FC<OrderCardProps> = ({
         customer_notes: order.customer_notes || '',
         return_reason: order.return_reason || ''
       });
+
+      await fetchAuditLogs();
     } catch (err) {
       console.error(err);
       alert('Unable to update due to a network issue. Please try again.');
@@ -140,6 +203,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
 
       await onUpdateDetails(order.id, payload);
       setIsEditing(false);
+      await fetchAuditLogs();
     } catch (err) {
       console.error(err);
       alert('Unable to save data due to a network issue. Please try again.');
@@ -201,6 +265,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
     alignItems: 'center'
   });
 
+  // Professional date formatter (DD MMM YY, 24-hour)
   const formatDateTime = (dateString: string) => {
     return new Date(dateString).toLocaleString('en-GB', {
       day: '2-digit',
@@ -552,6 +617,137 @@ const OrderCard: React.FC<OrderCardProps> = ({
                   </div>
                 </div>
               </div>
+
+              {!isEditing && (
+                <div style={{ borderTop: '1px solid #1c1c1c', paddingTop: '14px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <HistoryIcon width="13" height="13" stroke="#888" strokeWidth="2.2" />
+                      <h4 style={{ color: '#888', fontSize: '10px', letterSpacing: '1.5px', margin: 0, fontWeight: 'bold' }}>
+                        EDIT HISTORY & AUDIT LOGS
+                      </h4>
+                    </div>
+                    {isLoadingLogs && <span style={{ fontSize: '9px', color: '#666' }}>Loading...</span>}
+                  </div>
+
+                  {auditLogs.length > 0 ? (
+                    <div style={{ 
+                      display: 'flex', 
+                      flexDirection: 'row', 
+                      gap: '10px', 
+                      overflowX: 'auto', 
+                      scrollbarWidth: 'none', 
+                      paddingBottom: '8px' 
+                    }}>
+                      {auditLogs.map((log) => {
+                        const profileObj = Array.isArray(log.profiles) ? log.profiles[0] : log.profiles;
+                        const profileName = profileObj?.name || profileObj?.email || 'Admin';
+                        const profileRole = profileObj?.role;
+
+                        let validChanges = log.changes && typeof log.changes === 'object'
+                          ? Object.entries(log.changes).filter(([_, val]) => {
+                              if (!val) return false;
+                              const oldVal = val.old ?? '';
+                              const newVal = val.new ?? '';
+                              return String(oldVal).trim() !== String(newVal).trim();
+                            })
+                          : [];
+
+                        // Professional field order
+                        const fieldOrder = [
+                          'Courier Name',
+                          'Tracking ID',
+                          'Cancellation Reason',
+                          'Customer Notes',
+                          'Admin Notes'
+                        ];
+
+                        validChanges.sort((a, b) => {
+                          const indexA = fieldOrder.indexOf(a[0]);
+                          const indexB = fieldOrder.indexOf(b[0]);
+                          if (indexA === -1) return 1;
+                          if (indexB === -1) return -1;
+                          return indexA - indexB;
+                        });
+
+                        const hasSingleFieldChange = Boolean(
+                          log.field_name &&
+                          String(log.old_value ?? '').trim() !== String(log.new_value ?? '').trim()
+                        );
+
+                        if (validChanges.length === 0 && !hasSingleFieldChange) {
+                          return null;
+                        }
+
+                        return (
+                          <div
+                            key={log.id}
+                            className="animate-fade-in"
+                            style={{
+                              minWidth: '260px',
+                              maxWidth: '300px',
+                              flexShrink: 0,
+                              background: '#080808',
+                              border: '1px solid #1a1a1a',
+                              borderLeft: '3px solid #444',
+                              borderRadius: '3px',
+                              padding: '10px 12px'
+                            }}
+                          >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <span style={{ fontSize: '10px', fontWeight: 'bold', color: '#fff' }}>
+                                  {profileName}
+                                </span>
+                                {profileRole && (
+                                  <span style={{ fontSize: '8px', background: '#1c1c1c', color: '#888', padding: '1px 5px', borderRadius: '2px', textTransform: 'uppercase' }}>
+                                    {profileRole}
+                                  </span>
+                                )}
+                              </div>
+                              <span style={{ fontSize: '9px', color: '#666' }}>
+                                {formatDateTime(log.created_at)}
+                              </span>
+                            </div>
+
+                            {validChanges.length > 0 ? (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '4px' }}>
+                                {validChanges.map(([field, val]) => (
+                                  <div key={field} style={{ fontSize: '10px', color: '#ccc', lineHeight: '1.4', wordBreak: 'break-word' }}>
+                                    <span style={{ color: '#777', fontWeight: 'bold' }}>{field}: </span>
+                                    <span style={{ color: '#ff5252', textDecoration: 'line-through' }}>
+                                      {val.old || 'None'}
+                                    </span>
+                                    <span style={{ color: '#888', margin: '0 4px' }}>➔</span>
+                                    <span style={{ color: '#4cd964', fontWeight: 'bold' }}>
+                                      {val.new || 'N/A'}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : hasSingleFieldChange ? (
+                              <div style={{ fontSize: '10px', color: '#ccc', marginTop: '4px', wordBreak: 'break-word' }}>
+                                <span style={{ color: '#777', fontWeight: 'bold' }}>{log.field_name}: </span>
+                                <span style={{ color: '#ff5252', textDecoration: 'line-through' }}>
+                                  {log.old_value || 'None'}
+                                </span>
+                                <span style={{ color: '#888', margin: '0 4px' }}>➔</span>
+                                <span style={{ color: '#4cd964', fontWeight: 'bold' }}>
+                                  {log.new_value || 'N/A'}
+                                </span>
+                              </div>
+                            ) : null}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: '10px', color: '#555', fontStyle: 'italic', padding: '6px 0' }}>
+                      No edit history recorded for this order.
+                    </div>
+                  )}
+                </div>
+              )}
 
             </div>
           </div>
