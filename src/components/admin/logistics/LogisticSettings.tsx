@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import LogisticsHistory from './LogisticsHistory'; // ১. হিস্ট্রি কম্পোনেন্ট ইম্পোর্ট করা হলো
 
 interface LogisticsSettingsProps {
   deliveryCharge: number | string;
@@ -25,6 +26,7 @@ export default function LogisticSettings({
   const [localDelivery, setLocalDelivery] = useState('');
   const [localVat, setLocalVat] = useState('');
   const [showSaved, setShowSaved] = useState(false);
+  const [showHistoryModal, setShowHistoryModal] = useState(false); // ২. হিস্ট্রি মডাল ওপেন/ক্লোজ করার স্টেট
 
   const baseDelivery = initialDeliveryCharge !== undefined ? initialDeliveryCharge : deliveryCharge;
   const baseVat = initialVatRate !== undefined ? initialVatRate : vatRate;
@@ -45,8 +47,6 @@ export default function LogisticSettings({
   }, [isSaving]);
 
   const hasChanges = localDelivery !== '' || localVat !== '';
-  
-  // ইনপুট দেওয়া হলে, সেভ হতে থাকলে, বা Saved মেসেজ দেখালে বাটন দৃশ্যমান হবে
   const shouldShowButton = hasChanges || isSaving || showSaved;
 
   const handleDeliveryInput = (val: string) => {
@@ -70,6 +70,7 @@ export default function LogisticSettings({
         padding: '16px',
         color: '#ffffff',
         fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+        position: 'relative',
       }}
     >
       <style>
@@ -81,7 +82,7 @@ export default function LogisticSettings({
         `}
       </style>
 
-      {/* Header Section: LOGISTICS & Save Button */}
+      {/* Header Section: LOGISTICS, History Icon & Save Button */}
       <div
         style={{
           display: 'flex',
@@ -92,19 +93,43 @@ export default function LogisticSettings({
           borderBottom: '1px solid #30303b',
         }}
       >
-        <span
-          style={{
-            fontSize: '11px',
-            fontWeight: '700',
-            color: '#b0b0bc',
-            letterSpacing: '1.2px',
-            textTransform: 'uppercase',
-          }}
-        >
-          Logistics
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span
+            style={{
+              fontSize: '11px',
+              fontWeight: '700',
+              color: '#b0b0bc',
+              letterSpacing: '1.2px',
+              textTransform: 'uppercase',
+            }}
+          >
+            Logistics
+          </span>
 
-        {/* ঝাকুনি এড়াতে বাটনটি সবসময় ডমে রাখা হয়েছে, কেবল visibility এবং opacity পরিবর্তন করা হয়েছে */}
+          {/* ৩. হিস্ট্রি / ক্লক আইকন (যাতে ক্লিক করলে আগের মতো হিস্ট্রি পপআপ আসে) */}
+          <button
+            type="button"
+            onClick={() => setShowHistoryModal(true)}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              color: '#9ca3af',
+              display: 'flex',
+              alignItems: 'center',
+              padding: '2px',
+              transition: 'color 0.2s',
+            }}
+            title="View Logistics History"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 8v4l3 3"></path>
+              <circle cx="12" cy="12" r="9"></circle>
+            </svg>
+          </button>
+        </div>
+
+        {/* Save Button */}
         <button
           type="button"
           onClick={onSaveSettings}
@@ -224,6 +249,11 @@ export default function LogisticSettings({
           </div>
         </div>
       </div>
+
+      {/* ৪. শর্ত সাপেক্ষে হিস্ট্রি মডাল রেন্ডার করা */}
+      {showHistoryModal && (
+        <LogisticsHistory onClose={() => setShowHistoryModal(false)} />
+      )}
     </div>
   );
 }
