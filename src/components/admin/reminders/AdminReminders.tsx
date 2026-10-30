@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../../supabaseClient';
+import { EditIcon } from '../../../components/icons';
 
 interface Reminder {
   id: string;
@@ -11,7 +12,11 @@ interface Reminder {
   created_at: string;
 }
 
-export default function AdminReminders() {
+interface AdminRemindersProps {
+  searchQuery?: string;
+}
+
+export default function AdminReminders({ searchQuery = '' }: AdminRemindersProps) {
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -152,6 +157,15 @@ export default function AdminReminders() {
     }
   };
 
+  const filteredReminders = reminders.filter((item) => {
+    const query = searchQuery ? searchQuery.toLowerCase() : '';
+    return (
+      item.content.toLowerCase().includes(query) ||
+      (item.reference && item.reference.toLowerCase().includes(query)) ||
+      item.category.toLowerCase().includes(query)
+    );
+  });
+
   return (
     <div
       style={{
@@ -165,48 +179,6 @@ export default function AdminReminders() {
         fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
       }}
     >
-      {/* Header Section */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '16px',
-          paddingBottom: '12px',
-          borderBottom: '1px solid #30303b',
-        }}
-      >
-        <span
-          style={{
-            fontSize: '11px',
-            fontWeight: '700',
-            color: '#b0b0bc',
-            letterSpacing: '1.2px',
-            textTransform: 'uppercase',
-          }}
-        >
-          Ethical Reminders
-        </span>
-
-        <button
-          type="button"
-          onClick={() => { resetForm(); setShowForm(!showForm); }}
-          style={{
-            backgroundColor: showForm ? '#3a3a46' : '#ffffff',
-            color: showForm ? '#ffffff' : '#000000',
-            border: 'none',
-            borderRadius: '20px',
-            padding: '6px 14px',
-            fontSize: '10px',
-            fontWeight: '700',
-            letterSpacing: '0.8px',
-            cursor: 'pointer',
-          }}
-        >
-          {showForm ? 'CANCEL' : '+ ADD NEW'}
-        </button>
-      </div>
-
       {/* Inline Form */}
       {showForm && (
         <form
@@ -371,13 +343,13 @@ export default function AdminReminders() {
         <div style={{ padding: '30px', textAlign: 'center', color: '#888888', fontSize: '11px', fontFamily: 'monospace' }}>
           LOADING REMINDERS...
         </div>
-      ) : reminders.length === 0 ? (
+      ) : filteredReminders.length === 0 ? (
         <div style={{ padding: '30px', textAlign: 'center', color: '#888888', fontSize: '11px', fontFamily: 'monospace' }}>
           NO REMINDERS FOUND
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '500px', overflowY: 'auto', paddingRight: '4px' }}>
-          {reminders.map((item) => (
+          {filteredReminders.map((item) => (
             <div
               key={item.id}
               style={{
@@ -420,8 +392,12 @@ export default function AdminReminders() {
                       padding: '3px 8px',
                       fontSize: '10px',
                       cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
                     }}
                   >
+                    <EditIcon width={12} height={12} stroke="#ccc" />
                     Edit
                   </button>
                   <button
