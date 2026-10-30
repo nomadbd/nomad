@@ -55,7 +55,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
       case 'ambassadors': return 'AMBASSADORS';
       case 'staff': return 'STAFF';
       case 'customers': return 'CUSTOMERS';
-      case 'history': return 'ACTIVITY LOGS'; // ← নতুন যুক্ত হওয়া 'history' ট্যাবের টাইটেল
+      case 'history': return 'ACTIVITY LOGS';
       default: return 'NOMAD';
     }
   };
@@ -127,7 +127,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
             {!menuOpen && (
               <>
                 {/* Plus / Add Icon */}
-                {(activeTab === 'products' || activeTab === 'ambassadors' || activeTab === 'messages' || activeTab === 'staff') && (
+                {(activeTab === 'products' || activeTab === 'ambassadors' || activeTab === 'messages' || activeTab === 'staff' || activeTab === 'reminders') && (
                   <button
                     className={`${styles.nomadActionBtn} ${isAddOpen ? styles.nomadActionBtnActive : ''}`}
                     onClick={onToggleAdd}
@@ -149,13 +149,15 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
                 )}
 
                 {/* Filter Icon */}
-                <button
-                  className={`${styles.nomadActionBtn} ${isFilterOpen ? styles.nomadActionBtnActive : ''}`}
-                  onClick={onToggleFilter}
-                  title="Filter Panel"
-                >
-                  <FilterIcon width={18} height={18} stroke={isFilterOpen ? '#ffffff' : '#888888'} />
-                </button>
+                {activeTab !== 'reminders' && (
+                  <button
+                    className={`${styles.nomadActionBtn} ${isFilterOpen ? styles.nomadActionBtnActive : ''}`}
+                    onClick={onToggleFilter}
+                    title="Filter Panel"
+                  >
+                    <FilterIcon width={18} height={18} stroke={isFilterOpen ? '#ffffff' : '#888888'} />
+                  </button>
+                )}
 
                 {/* Settings Icon */}
                 {activeTab === 'logistics' && (
