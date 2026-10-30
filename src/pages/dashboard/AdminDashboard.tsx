@@ -394,7 +394,12 @@ const AdminDashboard: React.FC = () => {
             />
           )}
           {activeTab === 'reminders' && (
-            <AdminReminders key="reminders" />
+            <AdminReminders 
+              key="reminders" 
+              searchQuery={searchQuery}
+              isAddOpen={isAddOpen}
+              onCloseAdd={() => setIsAddOpen(false)}
+            />
           )}
           {activeTab === 'history' && (
             <AdminActivityLog 
