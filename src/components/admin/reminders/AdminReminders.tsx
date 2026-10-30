@@ -14,13 +14,15 @@ interface Reminder {
 
 interface AdminRemindersProps {
   searchQuery?: string;
+  isAddOpen?: boolean;
+  onCloseAdd?: () => void;
 }
 
-export default function AdminReminders({ searchQuery = '' }: AdminRemindersProps) {
+export default function AdminReminders({ searchQuery = '', isAddOpen = false, onCloseAdd }: AdminRemindersProps) {
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const [showForm, setShowForm] = useState(false);
+  const [internalShowForm, setInternalShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [content, setContent] = useState('');
   const [reference, setReference] = useState('');
@@ -28,6 +30,8 @@ export default function AdminReminders({ searchQuery = '' }: AdminRemindersProps
   const [isActive, setIsActive] = useState(true);
   const [priority, setPriority] = useState(1);
   const [saving, setSaving] = useState(false);
+
+  const showForm = isAddOpen || internalShowForm;
 
   useEffect(() => {
     fetchReminders();
@@ -55,7 +59,8 @@ export default function AdminReminders({ searchQuery = '' }: AdminRemindersProps
     setIsActive(true);
     setPriority(1);
     setEditingId(null);
-    setShowForm(false);
+    setInternalShowForm(false);
+    if (onCloseAdd) onCloseAdd();
   };
 
   const handleEditClick = (reminder: Reminder) => {
@@ -65,7 +70,7 @@ export default function AdminReminders({ searchQuery = '' }: AdminRemindersProps
     setCategory(reminder.category || 'global');
     setIsActive(reminder.is_active);
     setPriority(reminder.priority || 1);
-    setShowForm(true);
+    setInternalShowForm(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -158,12 +163,14 @@ export default function AdminReminders({ searchQuery = '' }: AdminRemindersProps
   };
 
   const filteredReminders = reminders.filter((item) => {
-    const query = searchQuery ? searchQuery.toLowerCase() : '';
-    return (
-      item.content.toLowerCase().includes(query) ||
-      (item.reference && item.reference.toLowerCase().includes(query)) ||
-      item.category.toLowerCase().includes(query)
-    );
+    const query = searchQuery ? searchQuery.trim().toLowerCase() : '';
+    if (!query) return true;
+
+    const contentMatch = item.content && item.content.toLowerCase().includes(query);
+    const referenceMatch = item.reference && item.reference.toLowerCase().includes(query);
+    const categoryMatch = item.category && item.category.toLowerCase().includes(query);
+
+    return contentMatch || referenceMatch || categoryMatch;
   });
 
   return (
@@ -179,7 +186,7 @@ export default function AdminReminders({ searchQuery = '' }: AdminRemindersProps
         fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
       }}
     >
-      {/* Inline Form */}
+      {/* Inline Form (Facebook Post Style Creation Card) */}
       {showForm && (
         <form
           onSubmit={handleSubmit}
@@ -194,19 +201,26 @@ export default function AdminReminders({ searchQuery = '' }: AdminRemindersProps
             gap: '12px',
           }}
         >
-          <span
-            style={{
-              fontSize: '10px',
-              fontWeight: '700',
-              color: '#b0b0bc',
-              letterSpacing: '1px',
-              textTransform: 'uppercase',
-              borderBottom: '1px solid #2d2d38',
-              paddingBottom: '8px',
-            }}
-          >
-            {editingId ? 'Edit Reminder' : 'Create New Reminder'}
-          </span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #2d2d38', paddingBottom: '8px' }}>
+            <span
+              style={{
+                fontSize: '10px',
+                fontWeight: '700',
+                color: '#b0b0bc',
+                letterSpacing: '1px',
+                textTransform: 'uppercase',
+              }}
+            >
+              {editingId ? 'Edit Reminder' : 'Create New Reminder'}
+            </span>
+            <button
+              type="button"
+              onClick={resetForm}
+              style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', fontSize: '12px' }}
+            >
+              ✕
+            </button>
+          </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
             <label style={{ fontSize: '11px', color: '#aaa', fontWeight: '500' }}>Content / Message *</label>
@@ -389,16 +403,16 @@ export default function AdminReminders({ searchQuery = '' }: AdminRemindersProps
                       border: '1px solid #444',
                       color: '#ccc',
                       borderRadius: '4px',
-                      padding: '3px 8px',
+                      padding: '4px 6px',
                       fontSize: '10px',
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '4px',
+                      justifyContent: 'center',
                     }}
+                    title="Edit Reminder"
                   >
-                    <EditIcon width={12} height={12} stroke="#ccc" />
-                    Edit
+                    <EditIcon width={13} height={13} stroke="#ccc" />
                   </button>
                   <button
                     type="button"
