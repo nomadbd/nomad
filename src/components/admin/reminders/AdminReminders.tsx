@@ -43,19 +43,36 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
 
   const fetchReminders = async () => {
     setLoading(true);
-    // profiles টেবিল থেকে ক্রিয়েটরের নাম ও পদবী জয়েন করে আনা হচ্ছে
+    // প্রথমে নিরাপদভাবে reminders টেবিল থেকে সব ডাটা ফেচ করা হচ্ছে
     const { data, error } = await supabase
       .from('reminders')
-      .select(`
-        *,
-        profiles:created_by (name, designation)
-      `)
+      .select('*')
       .order('created_at', { ascending: false });
 
     if (error) {
       console.error('Error fetching reminders:', error.message);
+      setReminders([]);
+    } else if (data && data.length > 0) {
+      // প্রতিটি রিমাইন্ডারের জন্য প্রোফাইল বা ক্রিয়েটরের তথ্য নিরাপদভাবে আলাদাভাবে ফেচ করে যুক্ত করা হচ্ছে
+      const enhancedReminders = await Promise.all(
+        data.map(async (item) => {
+          if (item.created_by) {
+            const { data: profileData } = await supabase
+              .from('profiles')
+              .select('name, designation')
+              .eq('id', item.created_by)
+              .single();
+            return {
+              ...item,
+              profiles: profileData || { name: 'Admin User', designation: item.category }
+            };
+          }
+          return { ...item, profiles: { name: 'Admin User', designation: item.category } };
+        })
+      );
+      setReminders(enhancedReminders);
     } else {
-      setReminders(data || []);
+      setReminders([]);
     }
     setLoading(false);
   };
@@ -133,7 +150,6 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
     const oldData = reminders.find(r => r.id === id);
     const { data: { user } } = await supabase.auth.getUser();
 
-    // ডেটাবেস থেকে রিমাইন্ডার ডিলিট করা হচ্ছে
     const { error } = await supabase.from('reminders').delete().eq('id', id);
 
     if (!error) {
