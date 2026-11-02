@@ -8,8 +8,13 @@ interface Reminder {
   reference: string;
   category: string;
   is_active: boolean;
-  priority: number;
   created_at: string;
+  updated_at: string;
+  created_by: string;
+  profiles?: {
+    name: string;
+    designation: string;
+  };
 }
 
 interface AdminRemindersProps {
@@ -28,7 +33,6 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
   const [reference, setReference] = useState('');
   const [category, setCategory] = useState('global');
   const [isActive, setIsActive] = useState(true);
-  const [priority, setPriority] = useState(1);
   const [saving, setSaving] = useState(false);
 
   const showForm = isAddOpen || internalShowForm;
@@ -39,9 +43,13 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
 
   const fetchReminders = async () => {
     setLoading(true);
+    // profiles টেবিল থেকে ক্রিয়েটরের নাম ও পদবী জয়েন করে আনা হচ্ছে
     const { data, error } = await supabase
       .from('reminders')
-      .select('*')
+      .select(`
+        *,
+        profiles:created_by (name, designation)
+      `)
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -57,7 +65,6 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
     setReference('');
     setCategory('global');
     setIsActive(true);
-    setPriority(1);
     setEditingId(null);
     setInternalShowForm(false);
     if (onCloseAdd) onCloseAdd();
@@ -69,7 +76,6 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
     setReference(reminder.reference || '');
     setCategory(reminder.category || 'global');
     setIsActive(reminder.is_active);
-    setPriority(reminder.priority || 1);
     setInternalShowForm(true);
   };
 
@@ -81,7 +87,6 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
     const { data: { user } } = await supabase.auth.getUser();
 
     if (editingId) {
-      const oldData = reminders.find(r => r.id === editingId);
       const { error } = await supabase
         .from('reminders')
         .update({
@@ -89,48 +94,30 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
           reference,
           category,
           is_active: isActive,
-          priority,
           updated_at: new Date().toISOString(),
           updated_by: user?.id
         })
         .eq('id', editingId);
 
       if (!error) {
-        await supabase.from('audit_logs').insert({
-          entity_type: 'reminders',
-          action_type: 'UPDATE_REMINDER',
-          performed_by: user?.id,
-          changes: { old: oldData, new: { content, reference, category, is_active: isActive } },
-          metadata: { category, reference }
-        });
         fetchReminders();
         resetForm();
       } else {
         alert('Error updating reminder: ' + error.message);
       }
     } else {
-      const { data: newReminder, error } = await supabase
+      const { error } = await supabase
         .from('reminders')
         .insert([{
           content,
           reference,
           category,
           is_active: isActive,
-          priority,
           created_by: user?.id,
           updated_by: user?.id
-        }])
-        .select()
-        .single();
+        }]);
 
       if (!error) {
-        await supabase.from('audit_logs').insert({
-          entity_type: 'reminders',
-          action_type: 'CREATE_REMINDER',
-          performed_by: user?.id,
-          changes: { new: newReminder },
-          metadata: { category, reference }
-        });
         fetchReminders();
         resetForm();
       } else {
@@ -146,15 +133,17 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
     const oldData = reminders.find(r => r.id === id);
     const { data: { user } } = await supabase.auth.getUser();
 
+    // ডেটাবেস থেকে রিমাইন্ডার ডিলিট করা হচ্ছে
     const { error } = await supabase.from('reminders').delete().eq('id', id);
 
     if (!error) {
+      // সেন্ট্রাল অডিট লগে ডিলিট ইনফো এন্ট্রি করা হচ্ছে যাতে অ্যাক্টিভিটি ট্যাবে দেখা যায়
       await supabase.from('audit_logs').insert({
         entity_type: 'reminders',
         action_type: 'DELETE_REMINDER',
         performed_by: user?.id,
         changes: { old: oldData },
-        metadata: { reminder_id: id }
+        metadata: { reminder_id: id, content: oldData?.content }
       });
       fetchReminders();
     } else {
@@ -173,6 +162,11 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
     return contentMatch || referenceMatch || categoryMatch;
   });
 
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ' at ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
   return (
     <div
       style={{
@@ -186,7 +180,7 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
         fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
       }}
     >
-      {/* Inline Form (Facebook Post Style Creation Card) */}
+      {/* Inline Form (Creation/Edit Card) */}
       {showForm && (
         <form
           onSubmit={handleSubmit}
@@ -285,24 +279,6 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
                 <option value="orders">Orders</option>
               </select>
             </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <label style={{ fontSize: '11px', color: '#aaa', fontWeight: '500' }}>Priority</label>
-              <input
-                type="number"
-                value={priority}
-                onChange={(e) => setPriority(Number(e.target.value))}
-                style={{
-                  backgroundColor: '#141418',
-                  color: '#ffffff',
-                  border: '1px solid #363642',
-                  borderRadius: '6px',
-                  padding: '6px 10px',
-                  fontSize: '12px',
-                  outline: 'none',
-                }}
-              />
-            </div>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -352,7 +328,7 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
         </form>
       )}
 
-      {/* Reminders List */}
+      {/* Reminders Feed (Facebook/X Style Cards) */}
       {loading ? (
         <div style={{ padding: '30px', textAlign: 'center', color: '#888888', fontSize: '11px', fontFamily: 'monospace' }}>
           LOADING REMINDERS...
@@ -362,77 +338,88 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
           NO REMINDERS FOUND
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '500px', overflowY: 'auto', paddingRight: '4px' }}>
-          {filteredReminders.map((item) => (
-            <div
-              key={item.id}
-              style={{
-                backgroundColor: '#1a1a20',
-                border: '1px solid #2d2d38',
-                borderRadius: '8px',
-                padding: '12px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '8px',
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', borderBottom: '1px solid #262630', paddingBottom: '6px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontWeight: '700', color: '#b0b0bc', textTransform: 'uppercase' }}>{item.category}</span>
-                  <span style={{ backgroundColor: item.is_active ? 'rgba(46, 204, 113, 0.1)' : 'rgba(231, 76, 60, 0.1)', color: item.is_active ? '#2ecc71' : '#e74c3c', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontFamily: 'monospace' }}>
-                    {item.is_active ? 'ACTIVE' : 'INACTIVE'}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '550px', overflowY: 'auto', paddingRight: '4px' }}>
+          {filteredReminders.map((item) => {
+            const isEdited = item.updated_at && item.created_at && new Date(item.updated_at).getTime() - new Date(item.created_at).getTime() > 1000;
+            return (
+              <div
+                key={item.id}
+                style={{
+                  backgroundColor: '#1a1a20',
+                  border: '1px solid #2d2d38',
+                  borderRadius: '10px',
+                  padding: '14px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '10px',
+                }}
+              >
+                {/* Facebook Post Style Header: Name & Designation on Left, Timestamp on Right */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid #262630', paddingBottom: '8px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    <span style={{ fontSize: '13px', fontWeight: '700', color: '#ffffff' }}>
+                      {item.profiles?.name || 'Admin User'}
+                    </span>
+                    <span style={{ fontSize: '10px', color: '#888892', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      {item.profiles?.designation || item.category}
+                    </span>
+                  </div>
+                  <div style={{ textAlign: 'right', fontSize: '10px', color: '#777782', fontFamily: 'monospace' }}>
+                    <div>{formatDate(item.created_at)}</div>
+                    {isEdited && <div style={{ color: '#3498db', fontSize: '9px', fontStyle: 'italic' }}>(Edited)</div>}
+                  </div>
+                </div>
+
+                {/* Main Content */}
+                <p style={{ fontSize: '14px', color: '#e0e0e6', margin: '4px 0', lineHeight: '1.5' }}>
+                  {item.content}
+                </p>
+
+                {/* Reference & Actions Footer */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '8px', borderTop: '1px solid #262630', fontSize: '11px' }}>
+                  <span style={{ color: '#3498db', fontStyle: 'italic', fontSize: '12px' }}>
+                    {item.reference ? `— ${item.reference}` : ''}
                   </span>
-                </div>
-                <span style={{ color: '#888', fontSize: '10px', fontFamily: 'monospace' }}>Priority: {item.priority}</span>
-              </div>
-
-              <p style={{ fontSize: '13px', color: '#e0e0e6', margin: '2px 0', lineHeight: '1.4' }}>
-                {item.content}
-              </p>
-
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '6px', borderTop: '1px solid #262630', fontSize: '11px' }}>
-                <span style={{ color: '#3498db', fontStyle: 'italic', fontSize: '11px' }}>
-                  {item.reference ? `— ${item.reference}` : ''}
-                </span>
-                <div style={{ display: 'flex', gap: '6px' }}>
-                  <button
-                    type="button"
-                    onClick={() => handleEditClick(item)}
-                    style={{
-                      background: 'transparent',
-                      border: '1px solid #444',
-                      color: '#ccc',
-                      borderRadius: '4px',
-                      padding: '4px 6px',
-                      fontSize: '10px',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                    title="Edit Reminder"
-                  >
-                    <EditIcon width={13} height={13} stroke="#ccc" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleDelete(item.id)}
-                    style={{
-                      background: 'transparent',
-                      border: '1px solid #7f1d1d',
-                      color: '#f87171',
-                      borderRadius: '4px',
-                      padding: '3px 8px',
-                      fontSize: '10px',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    Delete
-                  </button>
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    <button
+                      type="button"
+                      onClick={() => handleEditClick(item)}
+                      style={{
+                        background: 'transparent',
+                        border: '1px solid #444',
+                        color: '#ccc',
+                        borderRadius: '4px',
+                        padding: '4px 6px',
+                        fontSize: '10px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                      title="Edit Reminder"
+                    >
+                      <EditIcon width={13} height={13} stroke="#ccc" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(item.id)}
+                      style={{
+                        background: 'transparent',
+                        border: '1px solid #7f1d1d',
+                        color: '#f87171',
+                        borderRadius: '4px',
+                        padding: '3px 8px',
+                        fontSize: '10px',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
