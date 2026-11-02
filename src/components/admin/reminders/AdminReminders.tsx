@@ -43,7 +43,6 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
 
   const fetchReminders = async () => {
     setLoading(true);
-    // প্রথমে নিরাপদভাবে reminders টেবিল থেকে সব ডাটা ফেচ করা হচ্ছে
     const { data, error } = await supabase
       .from('reminders')
       .select('*')
@@ -53,7 +52,6 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
       console.error('Error fetching reminders:', error.message);
       setReminders([]);
     } else if (data && data.length > 0) {
-      // প্রতিটি রিমাইন্ডারের জন্য প্রোফাইল বা ক্রিয়েটরের তথ্য নিরাপদভাবে আলাদাভাবে ফেচ করে যুক্ত করা হচ্ছে
       const enhancedReminders = await Promise.all(
         data.map(async (item) => {
           if (item.created_by) {
@@ -153,7 +151,6 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
     const { error } = await supabase.from('reminders').delete().eq('id', id);
 
     if (!error) {
-      // সেন্ট্রাল অডিট লগে ডিলিট ইনফো এন্ট্রি করা হচ্ছে যাতে অ্যাক্টিভিটি ট্যাবে দেখা যায়
       await supabase.from('audit_logs').insert({
         entity_type: 'reminders',
         action_type: 'DELETE_REMINDER',
@@ -180,7 +177,12 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ' at ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  };
+
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
   return (
@@ -188,107 +190,64 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
       style={{
         width: '100%',
         boxSizing: 'border-box',
-        backgroundColor: '#222228',
-        border: '1px solid #363642',
-        borderRadius: '12px',
-        padding: '16px',
+        backgroundColor: 'transparent',
+        padding: '8px 0',
         color: '#ffffff',
         fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
       }}
     >
-      {/* Inline Form (Creation/Edit Card) */}
+      {/* Inline Form (Creation/Edit Box) */}
       {showForm && (
         <form
           onSubmit={handleSubmit}
           style={{
-            backgroundColor: '#1a1a20',
-            border: '1px solid #363642',
-            borderRadius: '10px',
-            padding: '16px',
-            marginBottom: '16px',
+            backgroundColor: '#16161a',
+            border: '1px solid #27272a',
+            borderRadius: '8px',
+            padding: '14px',
+            marginBottom: '20px',
             display: 'flex',
             flexDirection: 'column',
-            gap: '12px',
+            gap: '10px',
           }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #2d2d38', paddingBottom: '8px' }}>
-            <span
-              style={{
-                fontSize: '10px',
-                fontWeight: '700',
-                color: '#b0b0bc',
-                letterSpacing: '1px',
-                textTransform: 'uppercase',
-              }}
-            >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #27272a', paddingBottom: '6px' }}>
+            <span style={{ fontSize: '10px', fontWeight: '700', color: '#a1a1aa', letterSpacing: '1px', textTransform: 'uppercase' }}>
               {editingId ? 'Edit Reminder' : 'Create New Reminder'}
             </span>
-            <button
-              type="button"
-              onClick={resetForm}
-              style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', fontSize: '12px' }}
-            >
-              ✕
-            </button>
+            <button type="button" onClick={resetForm} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', fontSize: '12px' }}>✕</button>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            <label style={{ fontSize: '11px', color: '#aaa', fontWeight: '500' }}>Content / Message *</label>
+            <label style={{ fontSize: '11px', color: '#a1a1aa', fontWeight: '500' }}>Content / Message *</label>
             <textarea
               rows={3}
               value={content}
               onChange={(e) => setContent(e.target.value)}
               required
               placeholder="আয়াত বা নৈতিক বাণী লিখুন..."
-              style={{
-                backgroundColor: '#141418',
-                color: '#ffffff',
-                border: '1px solid #363642',
-                borderRadius: '6px',
-                padding: '8px 10px',
-                fontSize: '13px',
-                outline: 'none',
-                fontFamily: 'monospace',
-                resize: 'vertical',
-              }}
+              style={{ backgroundColor: '#09090b', color: '#ffffff', border: '1px solid #27272a', borderRadius: '6px', padding: '8px', fontSize: '13px', outline: 'none', resize: 'vertical' }}
             />
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '10px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <label style={{ fontSize: '11px', color: '#aaa', fontWeight: '500' }}>Reference</label>
+              <label style={{ fontSize: '11px', color: '#a1a1aa', fontWeight: '500' }}>Reference</label>
               <input
                 type="text"
                 value={reference}
                 onChange={(e) => setReference(e.target.value)}
                 placeholder="যেমন: সূরা আন-নিসা: ৫৮"
-                style={{
-                  backgroundColor: '#141418',
-                  color: '#ffffff',
-                  border: '1px solid #363642',
-                  borderRadius: '6px',
-                  padding: '6px 10px',
-                  fontSize: '12px',
-                  outline: 'none',
-                }}
+                style={{ backgroundColor: '#09090b', color: '#ffffff', border: '1px solid #27272a', borderRadius: '6px', padding: '6px 8px', fontSize: '12px', outline: 'none' }}
               />
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <label style={{ fontSize: '11px', color: '#aaa', fontWeight: '500' }}>Category</label>
+              <label style={{ fontSize: '11px', color: '#a1a1aa', fontWeight: '500' }}>Category</label>
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                style={{
-                  backgroundColor: '#141418',
-                  color: '#ffffff',
-                  border: '1px solid #363642',
-                  borderRadius: '6px',
-                  padding: '6px 10px',
-                  fontSize: '12px',
-                  outline: 'none',
-                  cursor: 'pointer',
-                }}
+                style={{ backgroundColor: '#09090b', color: '#ffffff', border: '1px solid #27272a', borderRadius: '6px', padding: '6px 8px', fontSize: '12px', outline: 'none', cursor: 'pointer' }}
               >
                 <option value="global">Global</option>
                 <option value="logistics">Logistics</option>
@@ -305,128 +264,101 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
               onChange={(e) => setIsActive(e.target.checked)}
               style={{ width: '14px', height: '14px', cursor: 'pointer' }}
             />
-            <label htmlFor="isActive" style={{ fontSize: '12px', color: '#ccc', cursor: 'pointer' }}>Active Status</label>
+            <label htmlFor="isActive" style={{ fontSize: '12px', color: '#d4d4d8', cursor: 'pointer' }}>Active Status</label>
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', borderTop: '1px solid #2d2d38', paddingTop: '10px' }}>
-            <button
-              type="button"
-              onClick={resetForm}
-              style={{
-                backgroundColor: 'transparent',
-                border: '1px solid #444452',
-                color: '#aaa',
-                borderRadius: '6px',
-                padding: '5px 12px',
-                fontSize: '11px',
-                cursor: 'pointer',
-              }}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={saving}
-              style={{
-                backgroundColor: '#ffffff',
-                color: '#000000',
-                border: 'none',
-                borderRadius: '6px',
-                padding: '5px 14px',
-                fontSize: '11px',
-                fontWeight: '700',
-                cursor: 'pointer',
-              }}
-            >
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', borderTop: '1px solid #27272a', paddingTop: '8px' }}>
+            <button type="button" onClick={resetForm} style={{ backgroundColor: 'transparent', border: '1px solid #3f3f46', color: '#a1a1aa', borderRadius: '6px', padding: '4px 10px', fontSize: '11px', cursor: 'pointer' }}>Cancel</button>
+            <button type="submit" disabled={saving} style={{ backgroundColor: '#ffffff', color: '#000000', border: 'none', borderRadius: '6px', padding: '4px 12px', fontSize: '11px', fontWeight: '700', cursor: 'pointer' }}>
               {saving ? 'SAVING...' : editingId ? 'UPDATE' : 'SAVE'}
             </button>
           </div>
         </form>
       )}
 
-      {/* Reminders Feed (Facebook/X Style Cards) */}
+      {/* Reminders Free Feed (No Containers/Cards, Clean Separated Items) */}
       {loading ? (
-        <div style={{ padding: '30px', textAlign: 'center', color: '#888888', fontSize: '11px', fontFamily: 'monospace' }}>
+        <div style={{ padding: '30px', textAlign: 'center', color: '#71717a', fontSize: '11px', fontFamily: 'monospace' }}>
           LOADING REMINDERS...
         </div>
       ) : filteredReminders.length === 0 ? (
-        <div style={{ padding: '30px', textAlign: 'center', color: '#888888', fontSize: '11px', fontFamily: 'monospace' }}>
+        <div style={{ padding: '30px', textAlign: 'center', color: '#71717a', fontSize: '11px', fontFamily: 'monospace' }}>
           NO REMINDERS FOUND
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '550px', overflowY: 'auto', paddingRight: '4px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxHeight: '600px', overflowY: 'auto', paddingRight: '4px' }}>
           {filteredReminders.map((item) => {
             const isEdited = item.updated_at && item.created_at && new Date(item.updated_at).getTime() - new Date(item.created_at).getTime() > 1000;
             return (
               <div
                 key={item.id}
                 style={{
-                  backgroundColor: '#1a1a20',
-                  border: '1px solid #2d2d38',
-                  borderRadius: '10px',
-                  padding: '14px',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: '10px',
+                  gap: '8px',
+                  paddingBottom: '16px',
+                  borderBottom: '1px solid #27272a', // রিমাইন্ডারগুলো আলাদা রাখতে শুধু নিচে হালকা ডিভাইডার লাইন
                 }}
               >
-                {/* Facebook Post Style Header: Name & Designation on Left, Timestamp on Right */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid #262630', paddingBottom: '8px' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                {/* Header Layout: Name on Left, Date on Right (Top Line); Designation on Left, Time on Right (Bottom Line) */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  {/* Left Column: Name & Designation */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
                     <span style={{ fontSize: '13px', fontWeight: '700', color: '#ffffff' }}>
                       {item.profiles?.name || 'Admin User'}
                     </span>
-                    <span style={{ fontSize: '10px', color: '#888892', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    <span style={{ fontSize: '10px', color: '#71717a', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                       {item.profiles?.designation || item.category}
                     </span>
                   </div>
-                  <div style={{ textAlign: 'right', fontSize: '10px', color: '#777782', fontFamily: 'monospace' }}>
-                    <div>{formatDate(item.created_at)}</div>
-                    {isEdited && <div style={{ color: '#3498db', fontSize: '9px', fontStyle: 'italic' }}>(Edited)</div>}
+
+                  {/* Right Column: Date & Time */}
+                  <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '1px', fontSize: '10px', color: '#71717a', fontFamily: 'monospace' }}>
+                    <span style={{ color: '#a1a1aa' }}>{formatDate(item.created_at)}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
+                      <span>{formatTime(item.created_at)}</span>
+                      {isEdited && <span style={{ color: '#3498db', fontSize: '9px', fontStyle: 'italic' }}>(Edited)</span>}
+                    </div>
                   </div>
                 </div>
 
                 {/* Main Content */}
-                <p style={{ fontSize: '14px', color: '#e0e0e6', margin: '4px 0', lineHeight: '1.5' }}>
+                <p style={{ fontSize: '14px', color: '#e4e4e7', margin: '4px 0', lineHeight: '1.5', whiteSpace: 'pre-wrap' }}>
                   {item.content}
                 </p>
 
-                {/* Reference & Actions Footer */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '8px', borderTop: '1px solid #262630', fontSize: '11px' }}>
+                {/* Reference & Actions Footer (Borderless Edit Icon) */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '4px', fontSize: '11px' }}>
                   <span style={{ color: '#3498db', fontStyle: 'italic', fontSize: '12px' }}>
-                    {item.reference ? `— ${item.reference}` : ''}
+                    {item.reference ? item.reference : ''}
                   </span>
-                  <div style={{ display: 'flex', gap: '6px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <button
                       type="button"
                       onClick={() => handleEditClick(item)}
                       style={{
                         background: 'transparent',
-                        border: '1px solid #444',
-                        color: '#ccc',
-                        borderRadius: '4px',
-                        padding: '4px 6px',
-                        fontSize: '10px',
+                        border: 'none', // কোনো বর্ডার নেই
                         cursor: 'pointer',
+                        padding: '2px',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                       }}
                       title="Edit Reminder"
                     >
-                      <EditIcon width={13} height={13} stroke="#ccc" />
+                      <EditIcon width={14} height={14} stroke="#a1a1aa" />
                     </button>
                     <button
                       type="button"
                       onClick={() => handleDelete(item.id)}
                       style={{
                         background: 'transparent',
-                        border: '1px solid #7f1d1d',
-                        color: '#f87171',
-                        borderRadius: '4px',
-                        padding: '3px 8px',
-                        fontSize: '10px',
+                        border: 'none',
+                        color: '#ef4444',
+                        fontSize: '11px',
                         cursor: 'pointer',
+                        padding: '2px',
                       }}
                     >
                       Delete
