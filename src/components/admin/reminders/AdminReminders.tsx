@@ -276,7 +276,7 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
         </form>
       )}
 
-      {/* Reminders Free Feed (No Containers/Cards, Clean Separated Items) */}
+      {/* Reminders Free Feed */}
       {loading ? (
         <div style={{ padding: '30px', textAlign: 'center', color: '#71717a', fontSize: '11px', fontFamily: 'monospace' }}>
           LOADING REMINDERS...
@@ -297,10 +297,10 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
                   flexDirection: 'column',
                   gap: '8px',
                   paddingBottom: '16px',
-                  borderBottom: '1px solid #27272a', // রিমাইন্ডারগুলো আলাদা রাখতে শুধু নিচে হালকা ডিভাইডার লাইন
+                  borderBottom: '1px solid #27272a',
                 }}
               >
-                {/* Header Layout: Name on Left, Date on Right (Top Line); Designation on Left, Time on Right (Bottom Line) */}
+                {/* Header Layout */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   {/* Left Column: Name & Designation */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
@@ -317,7 +317,7 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
                     <span style={{ color: '#a1a1aa' }}>{formatDate(item.created_at)}</span>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
                       <span>{formatTime(item.created_at)}</span>
-                      {isEdited && <span style={{ color: '#3498db', fontSize: '9px', fontStyle: 'italic' }}>(Edited)</span>}
+                      {isEdited && <span style={{ color: '#71717a', fontSize: '9px' }}>· Edited</span>}
                     </div>
                   </div>
                 </div>
@@ -327,18 +327,18 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
                   {item.content}
                 </p>
 
-                {/* Reference & Actions Footer (Borderless Edit Icon) */}
+                {/* Reference & Actions Footer (Visible Edit Icon & Delete) */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '4px', fontSize: '11px' }}>
                   <span style={{ color: '#3498db', fontStyle: 'italic', fontSize: '12px' }}>
                     {item.reference ? item.reference : ''}
                   </span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <button
                       type="button"
                       onClick={() => handleEditClick(item)}
                       style={{
                         background: 'transparent',
-                        border: 'none', // কোনো বর্ডার নেই
+                        border: 'none',
                         cursor: 'pointer',
                         padding: '2px',
                         display: 'flex',
@@ -347,7 +347,8 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
                       }}
                       title="Edit Reminder"
                     >
-                      <EditIcon width={14} height={14} stroke="#a1a1aa" />
+                      {/* stroke রঙ উজ্জ্বল সাদা করা হয়েছে যাতে ডার্ক মোডে স্পষ্টভাবে দেখা যায় */}
+                      <EditIcon width={14} height={14} stroke="#e4e4e7" />
                     </button>
                     <button
                       type="button"
