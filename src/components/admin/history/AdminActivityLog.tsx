@@ -5,20 +5,10 @@ interface AuditLogItem {
   id: string;
   entity_type: string;
   action_type: string;
-  field_name?: string | null;
-  old_value?: string | null;
-  new_value?: string | null;
   changes?: Record<string, { old: any; new: any }> | null;
-  reason?: string | null;
   metadata?: Record<string, any> | null;
   created_at: string;
   user_id?: string | null;
-  parent_id?: string | null;
-  parent_log?: {
-    id: string;
-    action_type: string;
-    created_at: string;
-  } | null;
   profiles?: {
     name?: string | null;
     designation?: string | null;
@@ -39,15 +29,18 @@ export default function AdminActivityLog({ onBack, searchQuery = '', selectedEnt
   const [debugError, setDebugError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchAuditLogs();
+    fetchDeletionLogs();
 
     const channel = supabase
-      .channel('admin_audit_logs_global')
+      .channel('admin_deletion_logs_global')
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'audit_logs' },
-        () => {
-          fetchAuditLogs();
+        (payload) => {
+          // নতুন কোনো লগ আসলে এবং সেটি ডিলিট সংক্রান্ত হলে লিস্টে যুক্ত করব
+          if (payload.new && payload.new.action_type && payload.new.action_type.toUpperCase().includes('DELETE')) {
+            fetchDeletionLogs();
+          }
         }
       )
       .subscribe();
@@ -57,20 +50,15 @@ export default function AdminActivityLog({ onBack, searchQuery = '', selectedEnt
     };
   }, []);
 
-  const fetchAuditLogs = async () => {
+  const fetchDeletionLogs = async () => {
     setLoading(true);
     setDebugError(null);
     try {
-      // সেলফ-রেফারেন্সিং parent_id এবং profiles জয়েন সহ কুয়েরি
+      // শুধুমাত্র ডিলিট সম্পর্কিত অ্যাকশনগুলো ফিল্টার করে আনা হচ্ছে (.ilike)
       const { data, error } = await supabase
         .from('audit_logs')
         .select(`
           *,
-          parent_log:parent_id (
-            id,
-            action_type,
-            created_at
-          ),
           profiles:user_id (
             name,
             designation,
@@ -78,8 +66,9 @@ export default function AdminActivityLog({ onBack, searchQuery = '', selectedEnt
             email
           )
         `)
+        .ilike('action_type', '%DELETE%')
         .order('created_at', { ascending: false })
-        .limit(200);
+        .limit(100);
 
       if (error) {
         throw new Error(`Supabase Error [${error.code}]: ${error.message}`);
@@ -87,25 +76,11 @@ export default function AdminActivityLog({ onBack, searchQuery = '', selectedEnt
 
       setLogs((data as unknown as AuditLogItem[]) || []);
     } catch (err: any) {
-      console.error('Error fetching admin activity logs:', err);
-      setDebugError(err.message || 'Unknown error occurred while fetching logs.');
+      console.error('Error fetching deletion logs:', err);
+      setDebugError(err.message || 'Unknown error occurred while fetching deletion logs.');
     } finally {
       setLoading(false);
     }
-  };
-
-  const getBadgeStyle = (actionType: string) => {
-    const type = (actionType || '').toUpperCase();
-    if (type.includes('CREATE') || type.includes('RESTORE') || type.includes('RECEIVED')) {
-      return { color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.2)', bg: 'rgba(16, 185, 129, 0.08)' };
-    }
-    if (type.includes('UPDATE') || type.includes('STATUS')) {
-      return { color: '#f59e0b', border: '1px solid rgba(245, 158, 11, 0.2)', bg: 'rgba(245, 158, 11, 0.08)' };
-    }
-    if (type.includes('DELETE') || type.includes('ARCHIVE') || type.includes('CANCEL')) {
-      return { color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.2)', bg: 'rgba(239, 68, 68, 0.08)' };
-    }
-    return { color: '#a1a1aa', border: '1px solid #27272a', bg: '#18181b' };
   };
 
   const formatDateTime = (dateStr: string) => {
@@ -113,6 +88,7 @@ export default function AdminActivityLog({ onBack, searchQuery = '', selectedEnt
     return d.toLocaleString('en-GB', {
       day: '2-digit',
       month: 'short',
+      year: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
       hour12: false,
@@ -123,14 +99,13 @@ export default function AdminActivityLog({ onBack, searchQuery = '', selectedEnt
     const q = searchQuery.toLowerCase().trim();
     const actionMatch = (log.action_type || '').toLowerCase().includes(q);
     const entityMatch = (log.entity_type || '').toLowerCase().includes(q);
-    const reasonMatch = (log.reason || '').toLowerCase().includes(q);
 
     const profileObj = Array.isArray(log.profiles) ? log.profiles[0] : log.profiles;
     const userName = (profileObj?.name || '').toLowerCase();
     const userEmail = (profileObj?.email || '').toLowerCase();
     const userMatch = userName.includes(q) || userEmail.includes(q);
 
-    const matchesSearch = !q || actionMatch || entityMatch || reasonMatch || userMatch;
+    const matchesSearch = !q || actionMatch || entityMatch || userMatch;
     const matchesEntity = selectedEntity === 'ALL' || log.entity_type === selectedEntity;
 
     return matchesSearch && matchesEntity;
@@ -149,22 +124,25 @@ export default function AdminActivityLog({ onBack, searchQuery = '', selectedEnt
         padding: '12px 0',
       }}
     >
+      {/* Header Info */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', borderBottom: '1px solid #27272a', paddingBottom: '8px' }}>
+        <span style={{ fontSize: '11px', fontWeight: '700', color: '#ef4444', letterSpacing: '1px', textTransform: 'uppercase' }}>
+          🗑️ System Deletion Logs ({filteredLogs.length})
+        </span>
+        {onBack && (
+          <button
+            type="button"
+            onClick={onBack}
+            style={{ backgroundColor: 'transparent', border: '1px solid #3f3f46', color: '#a1a1aa', borderRadius: '4px', padding: '4px 10px', fontSize: '10px', cursor: 'pointer' }}
+          >
+            ← Back
+          </button>
+        )}
+      </div>
+
       {debugError && (
-        <div
-          style={{
-            backgroundColor: 'rgba(239, 68, 68, 0.1)',
-            border: '1px solid rgba(239, 68, 68, 0.4)',
-            borderRadius: '6px',
-            padding: '12px',
-            marginBottom: '12px',
-            color: '#f87171',
-            fontSize: '11px',
-            wordBreak: 'break-all',
-          }}
-        >
-          <strong style={{ display: 'block', marginBottom: '4px', textTransform: 'uppercase' }}>
-            ⚠️ Debug Error Detected:
-          </strong>
+        <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.4)', borderRadius: '6px', padding: '12px', marginBottom: '12px', color: '#f87171', fontSize: '11px', wordBreak: 'break-all' }}>
+          <strong style={{ display: 'block', marginBottom: '4px', textTransform: 'uppercase' }}>⚠️ Debug Error:</strong>
           {debugError}
         </div>
       )}
@@ -172,117 +150,75 @@ export default function AdminActivityLog({ onBack, searchQuery = '', selectedEnt
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
         {loading ? (
           <div style={{ textAlign: 'center', padding: '30px 0', color: '#52525b', fontSize: '11px' }}>
-            LOADING...
+            LOADING DELETION LOGS...
           </div>
         ) : filteredLogs.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '30px 0', color: '#71717a', fontSize: '11px' }}>
-            NO ACTIVITY FOUND
+            NO DELETION RECORDS FOUND
           </div>
         ) : (
           filteredLogs.map((log) => {
             const profileObj = Array.isArray(log.profiles) ? log.profiles[0] : log.profiles;
-            const adminName = profileObj?.name || profileObj?.email?.split('@')[0] || 'System / Admin';
+            const adminName = profileObj?.name || profileObj?.email?.split('@')[0] || 'Admin User';
             const adminRole = profileObj?.role || profileObj?.designation || 'Admin';
-            const badge = getBadgeStyle(log.action_type);
+            
+            // ডিলিট হওয়া আইটেমের পূর্বের ডেটা (যদি changes.old এ থাকে)
+            const oldData = log.changes?.old || log.changes || {};
 
             return (
               <div
                 key={log.id}
                 style={{
                   backgroundColor: '#09090b',
-                  border: '1px solid #18181b',
+                  border: '1px solid rgba(239, 68, 68, 0.2)',
                   borderRadius: '6px',
-                  padding: '10px 12px',
+                  padding: '12px',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: '6px',
-                  position: 'relative',
+                  gap: '8px',
                 }}
               >
-                {/* Chained / Network Parent Link Indicator */}
-                {log.parent_log && (
-                  <div
-                    style={{
-                      fontSize: '9px',
-                      color: '#71717a',
-                      backgroundColor: '#121215',
-                      borderLeft: '2px solid #3f3f46',
-                      padding: '3px 6px',
-                      borderRadius: '2px',
-                      marginBottom: '4px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                    }}
-                  >
-                    <span style={{ color: '#52525b' }}>🔗 CHAINED TO:</span>
-                    <span style={{ color: '#a1a1aa', fontWeight: '600', textTransform: 'uppercase' }}>
-                      {log.parent_log.action_type}
-                    </span>
-                    <span style={{ color: '#52525b' }}>({formatDateTime(log.parent_log.created_at)})</span>
-                  </div>
-                )}
-
-                {/* Meta Row */}
+                {/* Top Badge & Entity */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '10px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <span
                       style={{
                         fontSize: '9px',
                         fontWeight: '700',
-                        padding: '1px 5px',
+                        padding: '2px 6px',
                         borderRadius: '3px',
-                        backgroundColor: badge.bg,
-                        color: badge.color,
-                        border: badge.border,
+                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                        color: '#ef4444',
+                        border: '1px solid rgba(239, 68, 68, 0.3)',
                         textTransform: 'uppercase',
                       }}
                     >
                       {log.action_type}
                     </span>
-                    <span style={{ color: '#71717a', textTransform: 'uppercase' }}>
-                      {log.entity_type}
+                    <span style={{ color: '#a1a1aa', fontWeight: '600', textTransform: 'uppercase' }}>
+                      Entity: {log.entity_type}
                     </span>
                   </div>
-                  <span style={{ color: '#52525b', fontSize: '10px' }}>
+                  <span style={{ color: '#71717a', fontSize: '10px' }}>
                     {formatDateTime(log.created_at)}
                   </span>
                 </div>
 
-                {/* Changes List */}
-                {log.changes && typeof log.changes === 'object' && Object.keys(log.changes).length > 0 && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', margin: '2px 0' }}>
-                    {Object.entries(log.changes).map(([key, val]: [string, any]) => (
-                      <div
-                        key={key}
-                        style={{
-                          fontSize: '10px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                          color: '#a1a1aa',
-                        }}
-                      >
-                        <span style={{ color: '#71717a', textTransform: 'uppercase' }}>{key.replace(/_/g, ' ')}:</span>
-                        <span style={{ color: '#ef4444', textDecoration: 'line-through' }}>{String(val?.old ?? 'null')}</span>
-                        <span style={{ color: '#52525b' }}>→</span>
-                        <span style={{ color: '#10b981', fontWeight: '600' }}>{String(val?.new ?? 'null')}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Direct Reason / Single Field */}
-                {(!log.changes || Object.keys(log.changes).length === 0) && (log.field_name || log.reason) && (
-                  <div style={{ fontSize: '10px', color: '#a1a1aa' }}>
-                    {log.reason || `${log.field_name}: ${log.old_value || 'null'} → ${log.new_value || 'null'}`}
+                {/* Deleted Content Preview (যদি রিমাইন্ডার বা অন্য কিছু হয়) */}
+                {oldData && typeof oldData === 'object' && (
+                  <div style={{ backgroundColor: '#121215', border: '1px solid #27272a', borderRadius: '4px', padding: '8px', fontSize: '11px', color: '#d4d4d8' }}>
+                    <div style={{ color: '#71717a', fontSize: '9px', textTransform: 'uppercase', marginBottom: '4px' }}>Deleted Item Data:</div>
+                    {oldData.content && <div><strong>Content:</strong> {oldData.content}</div>}
+                    {oldData.reference && <div style={{ color: '#3498db' }}><strong>Reference:</strong> {oldData.reference}</div>}
+                    {oldData.name && <div><strong>Name:</strong> {oldData.name}</div>}
+                    {oldData.category && <div style={{ color: '#a1a1aa' }}><strong>Category:</strong> {oldData.category}</div>}
                   </div>
                 )}
 
                 {/* Footer User Info */}
-                <div style={{ fontSize: '9px', color: '#52525b', display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '4px', borderTop: '1px solid #121215' }}>
-                  <span>ROLE: <strong style={{ color: '#71717a' }}>{adminRole.toUpperCase()}</strong></span>
-                  <span>BY: <strong style={{ color: '#a1a1aa' }}>{adminName.toUpperCase()}</strong></span>
+                <div style={{ fontSize: '9px', color: '#71717a', display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '6px', borderTop: '1px solid #18181b' }}>
+                  <span>ROLE: <strong style={{ color: '#a1a1aa' }}>{adminRole.toUpperCase()}</strong></span>
+                  <span>DELETED BY: <strong style={{ color: '#f87171' }}>{adminName.toUpperCase()}</strong></span>
                 </div>
               </div>
             );
