@@ -14,6 +14,7 @@ interface Reminder {
   profiles?: {
     name: string;
     designation: string;
+    avatar_url?: string | null;
   };
 }
 
@@ -57,15 +58,15 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
           if (item.created_by) {
             const { data: profileData } = await supabase
               .from('profiles')
-              .select('name, designation')
+              .select('name, designation, avatar_url')
               .eq('id', item.created_by)
               .single();
             return {
               ...item,
-              profiles: profileData || { name: 'Admin User', designation: item.category }
+              profiles: profileData || { name: 'Admin User', designation: item.category, avatar_url: null }
             };
           }
-          return { ...item, profiles: { name: 'Admin User', designation: item.category } };
+          return { ...item, profiles: { name: 'Admin User', designation: item.category, avatar_url: null } };
         })
       );
       setReminders(enhancedReminders);
@@ -289,6 +290,9 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxHeight: '600px', overflowY: 'auto', paddingRight: '4px' }}>
           {filteredReminders.map((item) => {
             const isEdited = item.updated_at && item.created_at && new Date(item.updated_at).getTime() - new Date(item.created_at).getTime() > 1000;
+            const userName = item.profiles?.name || 'Admin User';
+            const userAvatar = item.profiles?.avatar_url;
+
             return (
               <div
                 key={item.id}
@@ -302,14 +306,41 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
               >
                 {/* Header Layout */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  {/* Left Column: Name & Designation */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
-                    <span style={{ fontSize: '13px', fontWeight: '700', color: '#ffffff' }}>
-                      {item.profiles?.name || 'Admin User'}
-                    </span>
-                    <span style={{ fontSize: '10px', color: '#71717a', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                      {item.profiles?.designation || item.category}
-                    </span>
+                  {/* Left Column: Avatar + Name & Designation */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    {userAvatar ? (
+                      <img
+                        src={userAvatar}
+                        alt={userName}
+                        style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', border: '1px solid #3f3f46' }}
+                      />
+                    ) : (
+                      <div
+                        style={{
+                          width: '36px',
+                          height: '36px',
+                          borderRadius: '50%',
+                          backgroundColor: '#27272a',
+                          color: '#e4e4e7',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontWeight: '700',
+                          fontSize: '14px',
+                          border: '1px solid #3f3f46',
+                        }}
+                      >
+                        {userName.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+                      <span style={{ fontSize: '13px', fontWeight: '700', color: '#ffffff' }}>
+                        {userName}
+                      </span>
+                      <span style={{ fontSize: '10px', color: '#71717a', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                        {item.profiles?.designation || item.category}
+                      </span>
+                    </div>
                   </div>
 
                   {/* Right Column: Date & Time */}
@@ -327,7 +358,7 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
                   {item.content}
                 </p>
 
-                {/* Reference & Actions Footer (Using project's EditIcon) */}
+                {/* Reference & Actions Footer */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '4px', fontSize: '11px' }}>
                   <span style={{ color: '#3498db', fontStyle: 'italic', fontSize: '12px' }}>
                     {item.reference ? item.reference : ''}
