@@ -196,7 +196,7 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
         fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
       }}
     >
-      {/* Inline Form (Creation/Edit Box) */}
+      {/* Inline Form */}
       {showForm && (
         <form
           onSubmit={handleSubmit}
@@ -327,12 +327,12 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
                   {item.content}
                 </p>
 
-                {/* Reference & Actions Footer (Visible Edit Icon & Delete) */}
+                {/* Reference & Actions Footer (Using project's EditIcon) */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '4px', fontSize: '11px' }}>
                   <span style={{ color: '#3498db', fontStyle: 'italic', fontSize: '12px' }}>
                     {item.reference ? item.reference : ''}
                   </span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                     <button
                       type="button"
                       onClick={() => handleEditClick(item)}
@@ -347,8 +347,7 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
                       }}
                       title="Edit Reminder"
                     >
-                      {/* stroke রঙ উজ্জ্বল সাদা করা হয়েছে যাতে ডার্ক মোডে স্পষ্টভাবে দেখা যায় */}
-                      <EditIcon width={14} height={14} stroke="#e4e4e7" />
+                      <EditIcon size={14} color="#e4e4e7" />
                     </button>
                     <button
                       type="button"
