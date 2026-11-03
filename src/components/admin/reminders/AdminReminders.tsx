@@ -337,7 +337,7 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
                 {isInlineEditing ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     <span style={{ fontSize: '10px', fontWeight: '700', color: '#3498db', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                      ✏️ EDITING MODE
+                       EDITING MODE
                     </span>
                     {/* ডানে-বামে স্ক্রোলযোগ্য ক্যাটাগরি ট্যাব বার */}
                     <div
