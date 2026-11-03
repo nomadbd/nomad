@@ -50,6 +50,9 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
   const [isActive, setIsActive] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  // ডুপ্লিকেট চেকিংয়ের জন্য ওয়ার্নিং স্টেট
+  const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
+
   // ইনলাইন এডিটিং ট্র্যাক করার জন্য স্টেট
   const [inlineEditingId, setInlineEditingId] = useState<string | null>(null);
   const [inlineContent, setInlineContent] = useState('');
@@ -65,6 +68,29 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
   useEffect(() => {
     fetchReminders();
   }, []);
+
+  // নতুন কন্টেন্ট বা রেফারেন্স টাইপ করার সময় ডুপ্লিকেট চেক করা
+  useEffect(() => {
+    if (!content.trim() && !reference.trim()) {
+      setDuplicateWarning(null);
+      return;
+    }
+
+    const matchedContent = reminders.find(
+      r => content.trim() && r.content.toLowerCase().includes(content.trim().toLowerCase())
+    );
+    const matchedReference = reminders.find(
+      r => reference.trim() && r.reference && r.reference.toLowerCase() === reference.trim().toLowerCase()
+    );
+
+    if (matchedReference) {
+      setDuplicateWarning(`⚠️ এই রেফারেন্সটি ("${matchedReference.reference}") ইতিমধ্যে একটি পোস্টে রয়েছে!`);
+    } else if (matchedContent) {
+      setDuplicateWarning(`⚠️ এই কন্টেন্ট বা এর সাথে মিল আছে এমন একটি পোস্ট ইতিমধ্যে বিদ্যমান রয়েছে।`);
+    } else {
+      setDuplicateWarning(null);
+    }
+  }, [content, reference, reminders]);
 
   const fetchReminders = async () => {
     setLoading(true);
@@ -105,6 +131,7 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
     setReference('');
     setCategory('global');
     setIsActive(true);
+    setDuplicateWarning(null);
     setInternalShowForm(false);
     if (onCloseAdd) onCloseAdd();
   };
@@ -224,84 +251,151 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
         fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
       }}
     >
-      {/* Creation Inline Form (Top) */}
+      {/* ফেসবুক ও এক্স স্টাইল ফুল-স্ক্রিন ওভারলে মডাল (প্লাস আইকনে ক্লিক করলে নিচের পোস্ট আর দেখা যাবে না) */}
       {showForm && (
-        <form
-          onSubmit={handleCreateSubmit}
+        <div
           style={{
-            backgroundColor: '#16161a',
-            border: '1px solid #27272a',
-            borderRadius: '20px',
-            padding: '16px',
-            marginBottom: '20px',
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            backgroundColor: '#0f0f13',
+            zIndex: 9999,
             display: 'flex',
             flexDirection: 'column',
-            gap: '10px',
+            padding: '16px',
+            boxSizing: 'border-box',
+            overflowY: 'auto',
           }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #27272a', paddingBottom: '6px' }}>
-            <span style={{ fontSize: '10px', fontWeight: '700', color: '#a1a1aa', letterSpacing: '1px', textTransform: 'uppercase' }}>
-              Create New Reminder
-            </span>
-            <button type="button" onClick={resetForm} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', fontSize: '12px' }}>✕</button>
+          {/* টপ বার: ক্রস ও পোস্ট বাটন */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid #27272a', paddingBottom: '12px' }}>
+            <button
+              type="button"
+              onClick={resetForm}
+              style={{ background: 'none', border: 'none', color: '#ffffff', fontSize: '18px', cursor: 'pointer', padding: '4px' }}
+            >
+              ✕
+            </button>
+            <span style={{ fontSize: '14px', fontWeight: '700', letterSpacing: '0.5px' }}>New Reminder</span>
+            <button
+              type="button"
+              onClick={handleCreateSubmit}
+              disabled={saving || !content.trim()}
+              style={{
+                backgroundColor: content.trim() ? '#ffffff' : '#3f3f46',
+                color: content.trim() ? '#000000' : '#a1a1aa',
+                border: 'none',
+                borderRadius: '20px',
+                padding: '6px 16px',
+                fontSize: '12px',
+                fontWeight: '700',
+                cursor: content.trim() ? 'pointer' : 'not-allowed',
+              }}
+            >
+              {saving ? 'POSTING...' : 'Post'}
+            </button>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            <label style={{ fontSize: '11px', color: '#a1a1aa', fontWeight: '500' }}>Content / Message *</label>
-            <textarea
-              rows={3}
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              required
-              placeholder="আয়াত বা নৈতিক বাণী লিখুন..."
-              style={{ backgroundColor: '#09090b', color: '#ffffff', border: '1px solid #27272a', borderRadius: '16px', padding: '10px 14px', fontSize: '13px', outline: 'none', resize: 'vertical' }}
-            />
-          </div>
+          <form onSubmit={handleCreateSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxWidth: '600px', width: '100%', margin: '0 auto' }}>
+            {/* ক্যাটাগরি স্ক্রোলযোগ্য ট্যাব */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: '11px', color: '#a1a1aa', fontWeight: '500' }}>Select Category</label>
+              <div
+                style={{
+                  display: 'flex',
+                  gap: '6px',
+                  overflowX: 'auto',
+                  whiteSpace: 'nowrap',
+                  paddingBottom: '4px',
+                  scrollbarWidth: 'none',
+                }}
+              >
+                {CATEGORIES.map((cat) => {
+                  const isSelected = category === cat;
+                  return (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => setCategory(cat)}
+                      style={{
+                        backgroundColor: isSelected ? '#ffffff' : '#18181b',
+                        color: isSelected ? '#000000' : '#a1a1aa',
+                        border: '1px solid #27272a',
+                        borderRadius: '16px',
+                        padding: '6px 12px',
+                        fontSize: '11px',
+                        fontWeight: isSelected ? '700' : '500',
+                        cursor: 'pointer',
+                        textTransform: 'uppercase',
+                        flexShrink: 0,
+                      }}
+                    >
+                      {cat}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '10px' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <label style={{ fontSize: '11px', color: '#a1a1aa', fontWeight: '500' }}>Reference</label>
+            {/* মূল মেসেজ বা কন্টেন্ট ইনপুট */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <textarea
+                rows={5}
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                required
+                placeholder="What's on your mind? (আয়াত বা বাণী লিখুন...)"
+                style={{
+                  backgroundColor: 'transparent',
+                  color: '#ffffff',
+                  border: 'none',
+                  fontSize: '16px',
+                  outline: 'none',
+                  resize: 'none',
+                  lineHeight: '1.5',
+                }}
+              />
+            </div>
+
+            {/* রেফারেন্স ইনপুট */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', borderTop: '1px solid #27272a', paddingTop: '14px' }}>
               <input
                 type="text"
                 value={reference}
                 onChange={(e) => setReference(e.target.value)}
-                placeholder="যেমন: সূরা আন-নিসা: ৫৮"
-                style={{ backgroundColor: '#09090b', color: '#ffffff', border: '1px solid #27272a', borderRadius: '20px', padding: '8px 12px', fontSize: '12px', outline: 'none' }}
+                placeholder="Reference (যেমন: সূরা আন-নিসা: ৫৮)"
+                style={{
+                  backgroundColor: '#16161a',
+                  color: '#ffffff',
+                  border: '1px solid #27272a',
+                  borderRadius: '20px',
+                  padding: '10px 14px',
+                  fontSize: '13px',
+                  outline: 'none',
+                }}
               />
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <label style={{ fontSize: '11px', color: '#a1a1aa', fontWeight: '500' }}>Category</label>
-              <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                style={{ backgroundColor: '#09090b', color: '#ffffff', border: '1px solid #27272a', borderRadius: '20px', padding: '8px 12px', fontSize: '12px', outline: 'none', cursor: 'pointer' }}
+            {/* ডুপ্লিকেট বা মিলে যাওয়া পোস্টের ক্ষেত্রে ওয়ার্নিং মেসেজ */}
+            {duplicateWarning && (
+              <div
+                style={{
+                  backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                  border: '1px solid rgba(239, 68, 68, 0.3)',
+                  borderRadius: '10px',
+                  padding: '10px 14px',
+                  color: '#f87171',
+                  fontSize: '12px',
+                  lineHeight: '1.4',
+                }}
               >
-                {CATEGORIES.map((cat) => (
-                  <option key={cat} value={cat}>{cat.toUpperCase()}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <input
-              type="checkbox"
-              id="isActive"
-              checked={isActive}
-              onChange={(e) => setIsActive(e.target.checked)}
-              style={{ width: '14px', height: '14px', cursor: 'pointer' }}
-            />
-            <label htmlFor="isActive" style={{ fontSize: '12px', color: '#d4d4d8', cursor: 'pointer' }}>Active Status</label>
-          </div>
-
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', borderTop: '1px solid #27272a', paddingTop: '8px' }}>
-            <button type="button" onClick={resetForm} style={{ backgroundColor: 'transparent', border: '1px solid #3f3f46', color: '#a1a1aa', borderRadius: '20px', padding: '6px 14px', fontSize: '11px', cursor: 'pointer' }}>Cancel</button>
-            <button type="submit" disabled={saving} style={{ backgroundColor: '#ffffff', color: '#000000', border: 'none', borderRadius: '20px', padding: '6px 16px', fontSize: '11px', fontWeight: '700', cursor: 'pointer' }}>
-              {saving ? 'SAVING...' : 'SAVE'}
-            </button>
-          </div>
-        </form>
+                {duplicateWarning}
+              </div>
+            )}
+          </form>
+        </div>
       )}
 
       {/* Reminders Free Feed */}
@@ -337,9 +431,8 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
                 {isInlineEditing ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     <span style={{ fontSize: '10px', fontWeight: '700', color: '#3498db', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                       EDITING MODE
+                      ✏️ EDITING MODE
                     </span>
-                    {/* ডানে-বামে স্ক্রোলযোগ্য ক্যাটাগরি ট্যাব বার */}
                     <div
                       style={{
                         display: 'flex',
@@ -429,7 +522,7 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
                   </div>
                 )}
 
-                {/* Main Content / Inline Edit Form (মুক্ত লেআউট ও স্কেলিটন আন্ডারলাইন স্টাইল) */}
+                {/* Main Content / Inline Edit Form */}
                 {isInlineEditing ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', margin: '4px 0' }}>
                     <textarea
@@ -485,7 +578,7 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
                   </div>
                 )}
 
-                {/* Footer Actions (যেখানে সময় বা রেফারেন্স থাকে, ঠিক সেখানেই আপডেট/ক্যানসেল বাটন দৃশ্যমান হবে) */}
+                {/* Footer Actions */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '4px', fontSize: '11px' }}>
                   {isInlineEditing ? (
                     <span style={{ fontSize: '10px', color: '#71717a', fontStyle: 'italic' }}>
