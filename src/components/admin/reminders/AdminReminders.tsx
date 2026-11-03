@@ -50,17 +50,14 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
   const [isActive, setIsActive] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  // ডুপ্লিকেট চেকিংয়ের জন্য ওয়ার্নিং স্টেট
   const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
 
-  // ইনলাইন এডিটিং ট্র্যাক করার জন্য স্টেট
   const [inlineEditingId, setInlineEditingId] = useState<string | null>(null);
   const [inlineContent, setInlineContent] = useState('');
   const [inlineReference, setInlineReference] = useState('');
   const [inlineCategory, setInlineCategory] = useState('global');
   const [isModified, setIsModified] = useState(false);
 
-  // ডিলিট কনফার্মেশন ট্র্যাক করার জন্য স্টেট
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   const showForm = isAddOpen || internalShowForm;
@@ -68,6 +65,17 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
   useEffect(() => {
     fetchReminders();
   }, []);
+
+  // মডাল খোলা থাকলে বডি স্ক্রল বন্ধ রাখে (খুব গুরুত্বপূর্ণ)
+  useEffect(() => {
+    if (showForm) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = originalOverflow;
+      };
+    }
+  }, [showForm]);
 
   // ডুপ্লিকেট চেক করা
   useEffect(() => {
@@ -251,42 +259,45 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
         fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
       }}
     >
-      {/* ফুল-স্ক্রিন ফিক্সড ওভারলে মডাল (কিবোর্ড ওপেন হলে হেডার উপরে স্থির থাকবে) */}
+      {/* ফুল-স্ক্রিন ফিক্সড ওভারলে মডাল */}
       {showForm && (
         <div
           style={{
             position: 'fixed',
             top: 0,
             left: 0,
-            width: '100vw',
-            height: '100dvh',
+            right: 0,
+            bottom: 0,
+            width: '100%',
+            height: '100%',
             backgroundColor: '#0f0f13',
             zIndex: 9999,
             display: 'flex',
             flexDirection: 'column',
             boxSizing: 'border-box',
-            overflow: 'hidden', // মডাল বডি নিজে স্ক্রোল করবে না, ভেতরের কন্টেন্ট করবে
+            overflow: 'hidden',
           }}
         >
-          {/* স্থির হেডার (Fixed Header - কিবোর্ডের উপরে সবসময় আটকে থাকবে) */}
+          {/* স্থির হেডার - সব স্ক্রিন সাইজে উপরে থাকবে */}
           <div
             style={{
               flexShrink: 0,
+              position: 'sticky',
+              top: 0,
               backgroundColor: '#0f0f13',
-              zIndex: 10,
+              zIndex: 20,
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
-              padding: '16px',
+              padding: '14px 16px',
               borderBottom: '1px solid #27272a',
+              minHeight: '56px',
             }}
           >
-            {/* বামপাশে নিউ রিমাইন্ডার লেখা */}
             <span style={{ fontSize: '15px', fontWeight: '700', color: '#ffffff', letterSpacing: '0.3px' }}>
               New Reminder
             </span>
 
-            {/* ডানপাশে পোস্ট বাটন এবং ক্লোজ আইকন একসাথে */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <button
                 type="button"
@@ -297,10 +308,11 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
                   color: content.trim() ? '#000000' : '#a1a1aa',
                   border: 'none',
                   borderRadius: '20px',
-                  padding: '6px 16px',
+                  padding: '7px 16px',
                   fontSize: '12px',
                   fontWeight: '700',
                   cursor: content.trim() ? 'pointer' : 'not-allowed',
+                  whiteSpace: 'nowrap',
                 }}
               >
                 {saving ? 'POSTING...' : 'Post'}
@@ -309,7 +321,15 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
               <button
                 type="button"
                 onClick={resetForm}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: '4px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
                 title="Close"
               >
                 <CloseIcon size={18} color="#ffffff" />
@@ -317,11 +337,29 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
             </div>
           </div>
 
-          {/* স্ক্রোলযোগ্য ফর্ম বডি (কিবোর্ড ওপেন হলে শুধুমাত্র এই অংশটি স্ক্রোল হবে, হেডার উপরে ফিক্সড থাকবে) */}
-          <div style={{ flex: 1, overflowY: 'auto', padding: '16px', boxSizing: 'border-box' }}>
-            <div style={{ maxWidth: '600px', width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {/* স্ক্রোলযোগ্য ফর্ম বডি */}
+          <div
+            style={{
+              flex: 1,
+              overflowY: 'auto',
+              WebkitOverflowScrolling: 'touch',
+              padding: '16px',
+              paddingBottom: '160px', // কিবোর্ডের জন্য যথেষ্ট জায়গা
+              boxSizing: 'border-box',
+            }}
+          >
+            <div
+              style={{
+                maxWidth: '600px',
+                width: '100%',
+                margin: '0 auto',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '16px',
+              }}
+            >
               <form onSubmit={handleCreateSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                {/* ক্যাটাগরি স্ক্রোলযোগ্য ট্যাব */}
+                {/* ক্যাটাগরি ট্যাব */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   <label style={{ fontSize: '11px', color: '#a1a1aa', fontWeight: '500' }}>Select Category</label>
                   <div
@@ -361,7 +399,7 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
                   </div>
                 </div>
 
-                {/* সার্বজনীন প্লেসহোল্ডারযুক্ত মেসেজ ইনপুট */}
+                {/* মেসেজ ইনপুট */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   <textarea
                     rows={5}
@@ -377,12 +415,21 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
                       outline: 'none',
                       resize: 'none',
                       lineHeight: '1.5',
+                      width: '100%',
                     }}
                   />
                 </div>
 
-                {/* সার্বজনীন প্লেসহোল্ডারযুক্ত রেফারেন্স ইনপুট */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', borderTop: '1px solid #27272a', paddingTop: '14px' }}>
+                {/* রেফারেন্স ইনপুট */}
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '6px',
+                    borderTop: '1px solid #27272a',
+                    paddingTop: '14px',
+                  }}
+                >
                   <input
                     type="text"
                     value={reference}
@@ -396,11 +443,13 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
                       padding: '10px 14px',
                       fontSize: '13px',
                       outline: 'none',
+                      width: '100%',
+                      boxSizing: 'border-box',
                     }}
                   />
                 </div>
 
-                {/* ডুপ্লিকেট বা মিলে যাওয়া পোস্টের ক্ষেত্রে ওয়ার্নিং মেসেজ */}
+                {/* ডুপ্লিকেট ওয়ার্নিং */}
                 {duplicateWarning && (
                   <div
                     style={{
@@ -432,7 +481,16 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
           NO REMINDERS FOUND
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxHeight: '600px', overflowY: 'auto', paddingRight: '4px' }}>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px',
+            maxHeight: '600px',
+            overflowY: 'auto',
+            paddingRight: '4px',
+          }}
+        >
           {filteredReminders.map((item) => {
             const isEdited = item.updated_at && item.created_at && new Date(item.updated_at).getTime() - new Date(item.created_at).getTime() > 1000;
             const userName = item.profiles?.name || 'Admin User';
@@ -451,7 +509,6 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
                   borderBottom: '1px solid #27272a',
                 }}
               >
-                {/* Header Layout: Normal vs Editing Mode with Horizontal Scrolling Categories */}
                 {isInlineEditing ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     <span style={{ fontSize: '10px', fontWeight: '700', color: '#3498db', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
@@ -498,7 +555,6 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
                   </div>
                 ) : (
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    {/* Left Column: Avatar + Name & Designation */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                       {userAvatar ? (
                         <img
@@ -535,7 +591,6 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
                       </div>
                     </div>
 
-                    {/* Right Column: Date & Time */}
                     <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '1px', fontSize: '10px', color: '#71717a', fontFamily: 'monospace' }}>
                       <span style={{ color: '#a1a1aa' }}>{formatDate(item.created_at)}</span>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
@@ -546,7 +601,6 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
                   </div>
                 )}
 
-                {/* Main Content / Inline Edit Form */}
                 {isInlineEditing ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', margin: '4px 0' }}>
                     <textarea
@@ -566,6 +620,8 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
                         fontSize: '13px',
                         outline: 'none',
                         resize: 'vertical',
+                        width: '100%',
+                        boxSizing: 'border-box',
                       }}
                     />
                     <input
@@ -584,6 +640,8 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
                         padding: '8px 14px',
                         fontSize: '12px',
                         outline: 'none',
+                        width: '100%',
+                        boxSizing: 'border-box',
                       }}
                     />
                   </div>
@@ -602,7 +660,6 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
                   </div>
                 )}
 
-                {/* Footer Actions */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '4px', fontSize: '11px' }}>
                   {isInlineEditing ? (
                     <span style={{ fontSize: '10px', color: '#71717a', fontStyle: 'italic' }}>
@@ -651,7 +708,17 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
                         </button>
                       </div>
                     ) : isConfirmingDelete ? (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: 'rgba(239, 68, 68, 0.1)', padding: '4px 10px', borderRadius: '20px', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                          padding: '4px 10px',
+                          borderRadius: '20px',
+                          border: '1px solid rgba(239, 68, 68, 0.3)',
+                        }}
+                      >
                         <span style={{ fontSize: '10px', color: '#f87171', fontWeight: '600' }}>Delete?</span>
                         <button
                           type="button"
@@ -688,7 +755,7 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
                         </button>
                         <button
                           type="button"
-                          onClick={() => handleDeleteConfirmed(item.id)}
+                          onClick={() => setDeleteConfirmId(item.id)}
                           style={{
                             background: 'transparent',
                             border: 'none',
