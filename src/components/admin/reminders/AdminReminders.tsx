@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../../supabaseClient';
-import { EditIcon } from '../../../components/icons';
+import { EditIcon, CloseIcon } from '../../../components/icons';
 
 interface Reminder {
   id: string;
@@ -69,7 +69,7 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
     fetchReminders();
   }, []);
 
-  // নতুন কন্টেন্ট বা রেফারেন্স টাইপ করার সময় ডুপ্লিকেট চেক করা
+  // ডুপ্লিকেট চেক করা
   useEffect(() => {
     if (!content.trim() && !reference.trim()) {
       setDuplicateWarning(null);
@@ -84,9 +84,9 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
     );
 
     if (matchedReference) {
-      setDuplicateWarning(`⚠️ এই রেফারেন্সটি ("${matchedReference.reference}") ইতিমধ্যে একটি পোস্টে রয়েছে!`);
+      setDuplicateWarning(`⚠️ This reference already exists in another post!`);
     } else if (matchedContent) {
-      setDuplicateWarning(`⚠️ এই কন্টেন্ট বা এর সাথে মিল আছে এমন একটি পোস্ট ইতিমধ্যে বিদ্যমান রয়েছে।`);
+      setDuplicateWarning(`⚠️ A similar post or content already exists.`);
     } else {
       setDuplicateWarning(null);
     }
@@ -251,7 +251,7 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
         fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
       }}
     >
-      {/* ফেসবুক ও এক্স স্টাইল ফুল-স্ক্রিন ওভারলে মডাল (প্লাস আইকনে ক্লিক করলে নিচের পোস্ট আর দেখা যাবে না) */}
+      {/* ফুল-স্ক্রিন ওভারলে মডাল */}
       {showForm && (
         <div
           style={{
@@ -264,21 +264,40 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
             zIndex: 9999,
             display: 'flex',
             flexDirection: 'column',
-            padding: '16px',
             boxSizing: 'border-box',
             overflowY: 'auto',
           }}
         >
-          {/* টপ বার: ক্রস ও পোস্ট বাটন */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid #27272a', paddingBottom: '12px' }}>
-            <button
-              type="button"
-              onClick={resetForm}
-              style={{ background: 'none', border: 'none', color: '#ffffff', fontSize: '18px', cursor: 'pointer', padding: '4px' }}
-            >
-              ✕
-            </button>
-            <span style={{ fontSize: '14px', fontWeight: '700', letterSpacing: '0.5px' }}>New Reminder</span>
+          {/* স্থির হেডার (Sticky Header) */}
+          <div
+            style={{
+              position: 'sticky',
+              top: 0,
+              backgroundColor: '#0f0f13',
+              zIndex: 10,
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              padding: '16px',
+              borderBottom: '1px solid #27272a',
+            }}
+          >
+            {/* লেখা বামে এবং সাথে ক্লোজ আইকন */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <button
+                type="button"
+                onClick={resetForm}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center' }}
+                title="Close"
+              >
+                <CloseIcon size={18} color="#ffffff" />
+              </button>
+              <span style={{ fontSize: '15px', fontWeight: '700', color: '#ffffff', letterSpacing: '0.3px' }}>
+                New Reminder
+              </span>
+            </div>
+
+            {/* পোস্ট বাটন */}
             <button
               type="button"
               onClick={handleCreateSubmit}
@@ -298,103 +317,106 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
             </button>
           </div>
 
-          <form onSubmit={handleCreateSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxWidth: '600px', width: '100%', margin: '0 auto' }}>
-            {/* ক্যাটাগরি স্ক্রোলযোগ্য ট্যাব */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <label style={{ fontSize: '11px', color: '#a1a1aa', fontWeight: '500' }}>Select Category</label>
-              <div
-                style={{
-                  display: 'flex',
-                  gap: '6px',
-                  overflowX: 'auto',
-                  whiteSpace: 'nowrap',
-                  paddingBottom: '4px',
-                  scrollbarWidth: 'none',
-                }}
-              >
-                {CATEGORIES.map((cat) => {
-                  const isSelected = category === cat;
-                  return (
-                    <button
-                      key={cat}
-                      type="button"
-                      onClick={() => setCategory(cat)}
-                      style={{
-                        backgroundColor: isSelected ? '#ffffff' : '#18181b',
-                        color: isSelected ? '#000000' : '#a1a1aa',
-                        border: '1px solid #27272a',
-                        borderRadius: '16px',
-                        padding: '6px 12px',
-                        fontSize: '11px',
-                        fontWeight: isSelected ? '700' : '500',
-                        cursor: 'pointer',
-                        textTransform: 'uppercase',
-                        flexShrink: 0,
-                      }}
-                    >
-                      {cat}
-                    </button>
-                  );
-                })}
+          {/* ফর্ম বডি */}
+          <div style={{ padding: '16px', maxWidth: '600px', width: '100%', margin: '0 auto', boxSizing: 'border-box' }}>
+            <form onSubmit={handleCreateSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {/* ক্যাটাগরি স্ক্রোলযোগ্য ট্যাব */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '11px', color: '#a1a1aa', fontWeight: '500' }}>Select Category</label>
+                <div
+                  style={{
+                    display: 'flex',
+                    gap: '6px',
+                    overflowX: 'auto',
+                    whiteSpace: 'nowrap',
+                    paddingBottom: '4px',
+                    scrollbarWidth: 'none',
+                  }}
+                >
+                  {CATEGORIES.map((cat) => {
+                    const isSelected = category === cat;
+                    return (
+                      <button
+                        key={cat}
+                        type="button"
+                        onClick={() => setCategory(cat)}
+                        style={{
+                          backgroundColor: isSelected ? '#ffffff' : '#18181b',
+                          color: isSelected ? '#000000' : '#a1a1aa',
+                          border: '1px solid #27272a',
+                          borderRadius: '16px',
+                          padding: '6px 12px',
+                          fontSize: '11px',
+                          fontWeight: isSelected ? '700' : '500',
+                          cursor: 'pointer',
+                          textTransform: 'uppercase',
+                          flexShrink: 0,
+                        }}
+                      >
+                        {cat}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
 
-            {/* মূল মেসেজ বা কন্টেন্ট ইনপুট */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <textarea
-                rows={5}
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                required
-                placeholder="What's on your mind? (আয়াত বা বাণী লিখুন...)"
-                style={{
-                  backgroundColor: 'transparent',
-                  color: '#ffffff',
-                  border: 'none',
-                  fontSize: '16px',
-                  outline: 'none',
-                  resize: 'none',
-                  lineHeight: '1.5',
-                }}
-              />
-            </div>
-
-            {/* রেফারেন্স ইনপুট */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', borderTop: '1px solid #27272a', paddingTop: '14px' }}>
-              <input
-                type="text"
-                value={reference}
-                onChange={(e) => setReference(e.target.value)}
-                placeholder="Reference (যেমন: সূরা আন-নিসা: ৫৮)"
-                style={{
-                  backgroundColor: '#16161a',
-                  color: '#ffffff',
-                  border: '1px solid #27272a',
-                  borderRadius: '20px',
-                  padding: '10px 14px',
-                  fontSize: '13px',
-                  outline: 'none',
-                }}
-              />
-            </div>
-
-            {/* ডুপ্লিকেট বা মিলে যাওয়া পোস্টের ক্ষেত্রে ওয়ার্নিং মেসেজ */}
-            {duplicateWarning && (
-              <div
-                style={{
-                  backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                  border: '1px solid rgba(239, 68, 68, 0.3)',
-                  borderRadius: '10px',
-                  padding: '10px 14px',
-                  color: '#f87171',
-                  fontSize: '12px',
-                  lineHeight: '1.4',
-                }}
-              >
-                {duplicateWarning}
+              {/* সার্বজনীন প্লেসহোল্ডারযুক্ত মেসেজ ইনপুট */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <textarea
+                  rows={5}
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  required
+                  placeholder="What's on your mind? Write something..."
+                  style={{
+                    backgroundColor: 'transparent',
+                    color: '#ffffff',
+                    border: 'none',
+                    fontSize: '15px',
+                    outline: 'none',
+                    resize: 'none',
+                    lineHeight: '1.5',
+                  }}
+                />
               </div>
-            )}
-          </form>
+
+              {/* সার্বজনীন প্লেসহোল্ডারযুক্ত রেফারেন্স ইনপুট */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', borderTop: '1px solid #27272a', paddingTop: '14px' }}>
+                <input
+                  type="text"
+                  value={reference}
+                  onChange={(e) => setReference(e.target.value)}
+                  placeholder="Add source / reference (optional)"
+                  style={{
+                    backgroundColor: '#16161a',
+                    color: '#ffffff',
+                    border: '1px solid #27272a',
+                    borderRadius: '20px',
+                    padding: '10px 14px',
+                    fontSize: '13px',
+                    outline: 'none',
+                  }}
+                />
+              </div>
+
+              {/* ডুপ্লিকেট বা মিলে যাওয়া পোস্টের ক্ষেত্রে ওয়ার্নিং মেসেজ */}
+              {duplicateWarning && (
+                <div
+                  style={{
+                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                    border: '1px solid rgba(239, 68, 68, 0.3)',
+                    borderRadius: '10px',
+                    padding: '10px 14px',
+                    color: '#f87171',
+                    fontSize: '12px',
+                    lineHeight: '1.4',
+                  }}
+                >
+                  {duplicateWarning}
+                </div>
+              )}
+            </form>
+          </div>
         </div>
       )}
 
@@ -532,7 +554,7 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
                         setInlineContent(e.target.value);
                         setIsModified(true);
                       }}
-                      placeholder="আয়াত বা বাণী লিখুন..."
+                      placeholder="Write something..."
                       style={{
                         backgroundColor: '#09090b',
                         color: '#ffffff',
@@ -551,7 +573,7 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
                         setInlineReference(e.target.value);
                         setIsModified(true);
                       }}
-                      placeholder="Reference (যেমন: সূরা আন-নিসা: ৫৮)"
+                      placeholder="Reference (optional)"
                       style={{
                         backgroundColor: '#09090b',
                         color: '#ffffff',
