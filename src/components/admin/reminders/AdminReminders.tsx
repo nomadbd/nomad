@@ -251,15 +251,14 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
         fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
       }}
     >
-      {/* ফুল-স্ক্রিন ওভারলে মডাল */}
+      {/* ফুল-স্ক্রিন ফিক্সড ওভারলে মডাল (কিবোর্ড বা স্ক্রোলে কোনো ঝাঁকুনি বা হেডার লিক করবে না) */}
       {showForm && (
         <div
           style={{
             position: 'fixed',
-            top: 0,
-            left: 0,
-            width: '100vw',
-            height: '100vh',
+            inset: 0,
+            width: '100%',
+            height: '100dvh',
             backgroundColor: '#0f0f13',
             zIndex: 9999,
             display: 'flex',
@@ -268,7 +267,7 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
             overflowY: 'auto',
           }}
         >
-          {/* স্থির হেডার (Sticky Header) */}
+          {/* স্থির হেডার (Fixed Header) যেখানে বামে New Reminder এবং ডানে Post ও CloseIcon পাশাপাশি থাকবে */}
           <div
             style={{
               position: 'sticky',
@@ -282,39 +281,40 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
               borderBottom: '1px solid #27272a',
             }}
           >
-            {/* লেখা বামে এবং সাথে ক্লোজ আইকন */}
+            {/* বামপাশে নিউ রিমাইন্ডার লেখা */}
+            <span style={{ fontSize: '15px', fontWeight: '700', color: '#ffffff', letterSpacing: '0.3px' }}>
+              New Reminder
+            </span>
+
+            {/* ডানপাশে পোস্ট বাটন এবং ক্লোজ আইকন একসাথে */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <button
                 type="button"
+                onClick={handleCreateSubmit}
+                disabled={saving || !content.trim()}
+                style={{
+                  backgroundColor: content.trim() ? '#ffffff' : '#3f3f46',
+                  color: content.trim() ? '#000000' : '#a1a1aa',
+                  border: 'none',
+                  borderRadius: '20px',
+                  padding: '6px 16px',
+                  fontSize: '12px',
+                  fontWeight: '700',
+                  cursor: content.trim() ? 'pointer' : 'not-allowed',
+                }}
+              >
+                {saving ? 'POSTING...' : 'Post'}
+              </button>
+
+              <button
+                type="button"
                 onClick={resetForm}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center' }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                 title="Close"
               >
                 <CloseIcon size={18} color="#ffffff" />
               </button>
-              <span style={{ fontSize: '15px', fontWeight: '700', color: '#ffffff', letterSpacing: '0.3px' }}>
-                New Reminder
-              </span>
             </div>
-
-            {/* পোস্ট বাটন */}
-            <button
-              type="button"
-              onClick={handleCreateSubmit}
-              disabled={saving || !content.trim()}
-              style={{
-                backgroundColor: content.trim() ? '#ffffff' : '#3f3f46',
-                color: content.trim() ? '#000000' : '#a1a1aa',
-                border: 'none',
-                borderRadius: '20px',
-                padding: '6px 16px',
-                fontSize: '12px',
-                fontWeight: '700',
-                cursor: content.trim() ? 'pointer' : 'not-allowed',
-              }}
-            >
-              {saving ? 'POSTING...' : 'Post'}
-            </button>
           </div>
 
           {/* ফর্ম বডি */}
@@ -686,7 +686,7 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
                         </button>
                         <button
                           type="button"
-                          onClick={() => setDeleteConfirmId(item.id)}
+                          onClick={() => handleDeleteConfirmed(item.id)}
                           style={{
                             background: 'transparent',
                             border: 'none',
