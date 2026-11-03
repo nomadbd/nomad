@@ -24,6 +24,21 @@ interface AdminRemindersProps {
   onCloseAdd?: () => void;
 }
 
+const CATEGORIES = [
+  'global',
+  'overview',
+  'orders',
+  'products',
+  'logistics',
+  'messages',
+  'notifications',
+  'reminders',
+  'ambassadors',
+  'staff',
+  'customers',
+  'activity logs'
+];
+
 export default function AdminReminders({ searchQuery = '', isAddOpen = false, onCloseAdd }: AdminRemindersProps) {
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [loading, setLoading] = useState(true);
@@ -40,7 +55,7 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
   const [inlineContent, setInlineContent] = useState('');
   const [inlineReference, setInlineReference] = useState('');
   const [inlineCategory, setInlineCategory] = useState('global');
-  const [isModified, setIsModified] = useState(false); // ইনপুট শুরু হলে সেভ বাটন দেখানোর জন্য
+  const [isModified, setIsModified] = useState(false);
 
   // ডিলিট কনফার্মেশন ট্র্যাক করার জন্য স্টেট
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
@@ -126,7 +141,7 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
     setInlineContent(reminder.content);
     setInlineReference(reminder.reference || '');
     setInlineCategory(reminder.category || 'global');
-    setIsModified(false); // প্রথমে মোডিফাইড ফলস থাকবে
+    setIsModified(false);
     setDeleteConfirmId(null);
   };
 
@@ -262,9 +277,9 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
                 onChange={(e) => setCategory(e.target.value)}
                 style={{ backgroundColor: '#09090b', color: '#ffffff', border: '1px solid #27272a', borderRadius: '20px', padding: '8px 12px', fontSize: '12px', outline: 'none', cursor: 'pointer' }}
               >
-                <option value="global">Global</option>
-                <option value="logistics">Logistics</option>
-                <option value="orders">Orders</option>
+                {CATEGORIES.map((cat) => (
+                  <option key={cat} value={cat}>{cat.toUpperCase()}</option>
+                ))}
               </select>
             </div>
           </div>
@@ -318,33 +333,51 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
                   borderBottom: '1px solid #27272a',
                 }}
               >
-                {/* Header Layout: Normal vs Editing Mode */}
+                {/* Header Layout: Normal vs Editing Mode with Horizontal Scrolling Categories */}
                 {isInlineEditing ? (
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '11px', fontWeight: '700', color: '#3498db', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <span style={{ fontSize: '10px', fontWeight: '700', color: '#3498db', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                       ✏️ EDITING MODE
                     </span>
-                    <select
-                      value={inlineCategory}
-                      onChange={(e) => {
-                        setInlineCategory(e.target.value);
-                        setIsModified(true);
-                      }}
+                    {/* ডানে-বামে স্ক্রোলযোগ্য ক্যাটাগরি ট্যাব বার */}
+                    <div
                       style={{
-                        backgroundColor: '#09090b',
-                        color: '#ffffff',
-                        border: '1px solid #3f3f46',
-                        borderRadius: '16px',
-                        padding: '4px 12px',
-                        fontSize: '11px',
-                        outline: 'none',
-                        cursor: 'pointer',
+                        display: 'flex',
+                        gap: '6px',
+                        overflowX: 'auto',
+                        whiteSpace: 'nowrap',
+                        paddingBottom: '4px',
+                        scrollbarWidth: 'none',
                       }}
                     >
-                      <option value="global">Global</option>
-                      <option value="logistics">Logistics</option>
-                      <option value="orders">Orders</option>
-                    </select>
+                      {CATEGORIES.map((cat) => {
+                        const isSelected = inlineCategory === cat;
+                        return (
+                          <button
+                            key={cat}
+                            type="button"
+                            onClick={() => {
+                              setInlineCategory(cat);
+                              setIsModified(true);
+                            }}
+                            style={{
+                              backgroundColor: isSelected ? '#ffffff' : '#18181b',
+                              color: isSelected ? '#000000' : '#a1a1aa',
+                              border: '1px solid #27272a',
+                              borderRadius: '16px',
+                              padding: '4px 10px',
+                              fontSize: '10px',
+                              fontWeight: isSelected ? '700' : '500',
+                              cursor: 'pointer',
+                              textTransform: 'uppercase',
+                              flexShrink: 0,
+                            }}
+                          >
+                            {cat}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                 ) : (
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -396,7 +429,7 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
                   </div>
                 )}
 
-                {/* Main Content / Inline Edit Form */}
+                {/* Main Content / Inline Edit Form (মুক্ত লেআউট ও স্কেলিটন আন্ডারলাইন স্টাইল) */}
                 {isInlineEditing ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', margin: '4px 0' }}>
                     <textarea
@@ -410,7 +443,7 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
                       style={{
                         backgroundColor: '#09090b',
                         color: '#ffffff',
-                        border: '1px solid #3f3f46',
+                        border: '1px solid #27272a',
                         borderRadius: '16px',
                         padding: '10px 14px',
                         fontSize: '13px',
@@ -429,7 +462,7 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
                       style={{
                         backgroundColor: '#09090b',
                         color: '#ffffff',
-                        border: '1px solid #3f3f46',
+                        border: '1px solid #27272a',
                         borderRadius: '20px',
                         padding: '8px 14px',
                         fontSize: '12px',
@@ -438,20 +471,29 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
                     />
                   </div>
                 ) : (
-                  <p style={{ fontSize: '14px', color: '#e4e4e7', margin: '4px 0', lineHeight: '1.5', whiteSpace: 'pre-wrap' }}>
-                    {item.content}
-                  </p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <p style={{ fontSize: '14px', color: '#e4e4e7', margin: '4px 0', lineHeight: '1.5', whiteSpace: 'pre-wrap' }}>
+                      {item.content}
+                    </p>
+                    {item.reference && (
+                      <div style={{ borderTop: '1px solid #222226', paddingTop: '4px', width: 'fit-content' }}>
+                        <span style={{ color: '#a1a1aa', fontWeight: '600', fontSize: '12px' }}>
+                          {item.reference}
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 )}
 
-                {/* Reference & Actions Footer (যেখানে সময় থাকে, সেখানে ইনপুট শুরু হলে সেভ/আপডেট বাটন আসবে) */}
+                {/* Footer Actions (যেখানে সময় বা রেফারেন্স থাকে, ঠিক সেখানেই আপডেট/ক্যানসেল বাটন দৃশ্যমান হবে) */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '4px', fontSize: '11px' }}>
                   {isInlineEditing ? (
                     <span style={{ fontSize: '10px', color: '#71717a', fontStyle: 'italic' }}>
-                      {isModified ? 'Changes detected...' : 'Type above to modify...'}
+                      {isModified ? 'Unsaved changes...' : 'Ready to edit...'}
                     </span>
                   ) : (
-                    <span style={{ color: '#a1a1aa', fontWeight: '600', fontSize: '12px' }}>
-                      {item.reference ? item.reference : ''}
+                    <span style={{ fontSize: '10px', color: '#71717a', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      Category: {item.category}
                     </span>
                   )}
 
@@ -473,25 +515,23 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
                         >
                           Cancel
                         </button>
-                        {isModified && (
-                          <button
-                            type="button"
-                            onClick={() => handleInlineSubmit(item.id)}
-                            disabled={saving}
-                            style={{
-                              backgroundColor: '#ffffff',
-                              color: '#000000',
-                              border: 'none',
-                              padding: '6px 16px',
-                              borderRadius: '20px',
-                              fontSize: '11px',
-                              fontWeight: 'bold',
-                              cursor: 'pointer',
-                            }}
-                          >
-                            {saving ? '...' : 'UPDATE'}
-                          </button>
-                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleInlineSubmit(item.id)}
+                          disabled={saving}
+                          style={{
+                            backgroundColor: '#ffffff',
+                            color: '#000000',
+                            border: 'none',
+                            padding: '6px 16px',
+                            borderRadius: '20px',
+                            fontSize: '11px',
+                            fontWeight: 'bold',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          {saving ? '...' : 'Update'}
+                        </button>
                       </div>
                     ) : isConfirmingDelete ? (
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: 'rgba(239, 68, 68, 0.1)', padding: '4px 10px', borderRadius: '20px', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
