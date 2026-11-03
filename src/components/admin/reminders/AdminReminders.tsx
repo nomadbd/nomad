@@ -36,6 +36,9 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
   const [isActive, setIsActive] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  // কোন রিমাইন্ডারটিতে ডিলিট কনফার্মেশন প্রম্পট ওপেন আছে তা ট্র্যাক করার জন্য
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+
   const showForm = isAddOpen || internalShowForm;
 
   useEffect(() => {
@@ -143,9 +146,7 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
     setSaving(false);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this reminder?')) return;
-
+  const handleDeleteConfirmed = async (id: string) => {
     const oldData = reminders.find(r => r.id === id);
     const { data: { user } } = await supabase.auth.getUser();
 
@@ -159,6 +160,7 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
         changes: { old: oldData },
         metadata: { reminder_id: id, content: oldData?.content }
       });
+      setDeleteConfirmId(null);
       fetchReminders();
     } else {
       alert('Error deleting reminder: ' + error.message);
@@ -292,6 +294,7 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
             const isEdited = item.updated_at && item.created_at && new Date(item.updated_at).getTime() - new Date(item.created_at).getTime() > 1000;
             const userName = item.profiles?.name || 'Admin User';
             const userAvatar = item.profiles?.avatar_url;
+            const isConfirmingDelete = deleteConfirmId === item.id;
 
             return (
               <div
@@ -358,42 +361,65 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
                   {item.content}
                 </p>
 
-                {/* Reference & Actions Footer */}
+                {/* Reference & Actions Footer (With Gray Bold Reference & Inline Delete Confirmation) */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '4px', fontSize: '11px' }}>
-                  <span style={{ color: '#3498db', fontStyle: 'italic', fontSize: '12px' }}>
+                  <span style={{ color: '#a1a1aa', fontWeight: '600', fontSize: '12px' }}>
                     {item.reference ? item.reference : ''}
                   </span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                    <button
-                      type="button"
-                      onClick={() => handleEditClick(item)}
-                      style={{
-                        background: 'transparent',
-                        border: 'none',
-                        cursor: 'pointer',
-                        padding: '2px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
-                      title="Edit Reminder"
-                    >
-                      <EditIcon size={14} color="#e4e4e7" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleDelete(item.id)}
-                      style={{
-                        background: 'transparent',
-                        border: 'none',
-                        color: '#ef4444',
-                        fontSize: '11px',
-                        cursor: 'pointer',
-                        padding: '2px',
-                      }}
-                    >
-                      Delete
-                    </button>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    {isConfirmingDelete ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: 'rgba(239, 68, 68, 0.1)', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
+                        <span style={{ fontSize: '10px', color: '#f87171', fontWeight: '600' }}>Delete?</span>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteConfirmed(item.id)}
+                          style={{ background: 'none', border: 'none', color: '#22c55e', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', padding: 0 }}
+                        >
+                          Yes
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDeleteConfirmId(null)}
+                          style={{ background: 'none', border: 'none', color: '#a1a1aa', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', padding: 0 }}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => handleEditClick(item)}
+                          style={{
+                            background: 'transparent',
+                            border: 'none',
+                            cursor: 'pointer',
+                            padding: '2px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                          title="Edit Reminder"
+                        >
+                          <EditIcon size={14} color="#e4e4e7" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDeleteConfirmId(item.id)}
+                          style={{
+                            background: 'transparent',
+                            border: 'none',
+                            color: '#ef4444',
+                            fontSize: '11px',
+                            cursor: 'pointer',
+                            padding: '2px',
+                          }}
+                        >
+                          Delete
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
