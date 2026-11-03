@@ -60,13 +60,19 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
 
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
+  // visualViewport এর জন্য স্টেট (কিবোর্ড হ্যান্ডলিং)
+  const [viewport, setViewport] = useState({
+    height: typeof window !== 'undefined' ? window.innerHeight : 0,
+    offsetTop: 0,
+  });
+
   const showForm = isAddOpen || internalShowForm;
 
   useEffect(() => {
     fetchReminders();
   }, []);
 
-  // মডাল খোলা থাকলে বডি স্ক্রল বন্ধ রাখে (খুব গুরুত্বপূর্ণ)
+  // মডাল খোলা থাকলে বডি স্ক্রল লক
   useEffect(() => {
     if (showForm) {
       const originalOverflow = document.body.style.overflow;
@@ -77,7 +83,31 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
     }
   }, [showForm]);
 
-  // ডুপ্লিকেট চেক করা
+  // visualViewport লিসেনার — কিবোর্ড ওপেন/ক্লোজ হলে মডালের উচ্চতা ঠিক রাখে
+  useEffect(() => {
+    if (!showForm) return;
+
+    const vv = window.visualViewport;
+    if (!vv) return;
+
+    const updateViewport = () => {
+      setViewport({
+        height: vv.height,
+        offsetTop: vv.offsetTop,
+      });
+    };
+
+    updateViewport();
+    vv.addEventListener('resize', updateViewport);
+    vv.addEventListener('scroll', updateViewport);
+
+    return () => {
+      vv.removeEventListener('resize', updateViewport);
+      vv.removeEventListener('scroll', updateViewport);
+    };
+  }, [showForm]);
+
+  // ডুপ্লিকেট চেক
   useEffect(() => {
     if (!content.trim() && !reference.trim()) {
       setDuplicateWarning(null);
@@ -259,17 +289,15 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
         fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
       }}
     >
-      {/* ফুল-স্ক্রিন ফিক্সড ওভারলে মডাল */}
+      {/* ফুল-স্ক্রিন মডাল — visualViewport দিয়ে কন্ট্রোল করা */}
       {showForm && (
         <div
           style={{
             position: 'fixed',
-            top: 0,
+            top: viewport.offsetTop,
             left: 0,
-            right: 0,
-            bottom: 0,
             width: '100%',
-            height: '100%',
+            height: viewport.height,
             backgroundColor: '#0f0f13',
             zIndex: 9999,
             display: 'flex',
@@ -278,14 +306,12 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
             overflow: 'hidden',
           }}
         >
-          {/* স্থির হেডার - সব স্ক্রিন সাইজে উপরে থাকবে */}
+          {/* স্থির হেডার */}
           <div
             style={{
               flexShrink: 0,
-              position: 'sticky',
-              top: 0,
               backgroundColor: '#0f0f13',
-              zIndex: 20,
+              zIndex: 30,
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
@@ -337,14 +363,14 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
             </div>
           </div>
 
-          {/* স্ক্রোলযোগ্য ফর্ম বডি */}
+          {/* স্ক্রোলযোগ্য বডি */}
           <div
             style={{
               flex: 1,
               overflowY: 'auto',
               WebkitOverflowScrolling: 'touch',
               padding: '16px',
-              paddingBottom: '160px', // কিবোর্ডের জন্য যথেষ্ট জায়গা
+              paddingBottom: '40px',
               boxSizing: 'border-box',
             }}
           >
@@ -359,7 +385,7 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
               }}
             >
               <form onSubmit={handleCreateSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                {/* ক্যাটাগরি ট্যাব */}
+                {/* ক্যাটাগরি */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   <label style={{ fontSize: '11px', color: '#a1a1aa', fontWeight: '500' }}>Select Category</label>
                   <div
@@ -399,7 +425,7 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
                   </div>
                 </div>
 
-                {/* মেসেজ ইনপুট */}
+                {/* কনটেন্ট */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   <textarea
                     rows={5}
@@ -420,7 +446,7 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
                   />
                 </div>
 
-                {/* রেফারেন্স ইনপুট */}
+                {/* রেফারেন্স */}
                 <div
                   style={{
                     display: 'flex',
@@ -449,7 +475,6 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
                   />
                 </div>
 
-                {/* ডুপ্লিকেট ওয়ার্নিং */}
                 {duplicateWarning && (
                   <div
                     style={{
@@ -471,7 +496,7 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
         </div>
       )}
 
-      {/* Reminders Free Feed */}
+      {/* Reminders Feed */}
       {loading ? (
         <div style={{ padding: '30px', textAlign: 'center', color: '#71717a', fontSize: '11px', fontFamily: 'monospace' }}>
           LOADING REMINDERS...
