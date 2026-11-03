@@ -251,27 +251,27 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
         fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
       }}
     >
-      {/* ফুল-স্ক্রিন ফিক্সড ওভারলে মডাল (কিবোর্ড বা স্ক্রোলে কোনো ঝাঁকুনি বা হেডার লিক করবে না) */}
+      {/* ফুল-স্ক্রিন ফিক্সড ওভারলে মডাল (কিবোর্ড ওপেন হলে হেডার উপরে স্থির থাকবে) */}
       {showForm && (
         <div
           style={{
             position: 'fixed',
-            inset: 0,
-            width: '100%',
+            top: 0,
+            left: 0,
+            width: '100vw',
             height: '100dvh',
             backgroundColor: '#0f0f13',
             zIndex: 9999,
             display: 'flex',
             flexDirection: 'column',
             boxSizing: 'border-box',
-            overflowY: 'auto',
+            overflow: 'hidden', // মডাল বডি নিজে স্ক্রোল করবে না, ভেতরের কন্টেন্ট করবে
           }}
         >
-          {/* স্থির হেডার (Fixed Header) যেখানে বামে New Reminder এবং ডানে Post ও CloseIcon পাশাপাশি থাকবে */}
+          {/* স্থির হেডার (Fixed Header - কিবোর্ডের উপরে সবসময় আটকে থাকবে) */}
           <div
             style={{
-              position: 'sticky',
-              top: 0,
+              flexShrink: 0,
               backgroundColor: '#0f0f13',
               zIndex: 10,
               display: 'flex',
@@ -317,105 +317,107 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
             </div>
           </div>
 
-          {/* ফর্ম বডি */}
-          <div style={{ padding: '16px', maxWidth: '600px', width: '100%', margin: '0 auto', boxSizing: 'border-box' }}>
-            <form onSubmit={handleCreateSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {/* ক্যাটাগরি স্ক্রোলযোগ্য ট্যাব */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '11px', color: '#a1a1aa', fontWeight: '500' }}>Select Category</label>
-                <div
-                  style={{
-                    display: 'flex',
-                    gap: '6px',
-                    overflowX: 'auto',
-                    whiteSpace: 'nowrap',
-                    paddingBottom: '4px',
-                    scrollbarWidth: 'none',
-                  }}
-                >
-                  {CATEGORIES.map((cat) => {
-                    const isSelected = category === cat;
-                    return (
-                      <button
-                        key={cat}
-                        type="button"
-                        onClick={() => setCategory(cat)}
-                        style={{
-                          backgroundColor: isSelected ? '#ffffff' : '#18181b',
-                          color: isSelected ? '#000000' : '#a1a1aa',
-                          border: '1px solid #27272a',
-                          borderRadius: '16px',
-                          padding: '6px 12px',
-                          fontSize: '11px',
-                          fontWeight: isSelected ? '700' : '500',
-                          cursor: 'pointer',
-                          textTransform: 'uppercase',
-                          flexShrink: 0,
-                        }}
-                      >
-                        {cat}
-                      </button>
-                    );
-                  })}
+          {/* স্ক্রোলযোগ্য ফর্ম বডি (কিবোর্ড ওপেন হলে শুধুমাত্র এই অংশটি স্ক্রোল হবে, হেডার উপরে ফিক্সড থাকবে) */}
+          <div style={{ flex: 1, overflowY: 'auto', padding: '16px', boxSizing: 'border-box' }}>
+            <div style={{ maxWidth: '600px', width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <form onSubmit={handleCreateSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {/* ক্যাটাগরি স্ক্রোলযোগ্য ট্যাব */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label style={{ fontSize: '11px', color: '#a1a1aa', fontWeight: '500' }}>Select Category</label>
+                  <div
+                    style={{
+                      display: 'flex',
+                      gap: '6px',
+                      overflowX: 'auto',
+                      whiteSpace: 'nowrap',
+                      paddingBottom: '4px',
+                      scrollbarWidth: 'none',
+                    }}
+                  >
+                    {CATEGORIES.map((cat) => {
+                      const isSelected = category === cat;
+                      return (
+                        <button
+                          key={cat}
+                          type="button"
+                          onClick={() => setCategory(cat)}
+                          style={{
+                            backgroundColor: isSelected ? '#ffffff' : '#18181b',
+                            color: isSelected ? '#000000' : '#a1a1aa',
+                            border: '1px solid #27272a',
+                            borderRadius: '16px',
+                            padding: '6px 12px',
+                            fontSize: '11px',
+                            fontWeight: isSelected ? '700' : '500',
+                            cursor: 'pointer',
+                            textTransform: 'uppercase',
+                            flexShrink: 0,
+                          }}
+                        >
+                          {cat}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
 
-              {/* সার্বজনীন প্লেসহোল্ডারযুক্ত মেসেজ ইনপুট */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <textarea
-                  rows={5}
-                  value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                  required
-                  placeholder="What's on your mind? Write something..."
-                  style={{
-                    backgroundColor: 'transparent',
-                    color: '#ffffff',
-                    border: 'none',
-                    fontSize: '15px',
-                    outline: 'none',
-                    resize: 'none',
-                    lineHeight: '1.5',
-                  }}
-                />
-              </div>
-
-              {/* সার্বজনীন প্লেসহোল্ডারযুক্ত রেফারেন্স ইনপুট */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', borderTop: '1px solid #27272a', paddingTop: '14px' }}>
-                <input
-                  type="text"
-                  value={reference}
-                  onChange={(e) => setReference(e.target.value)}
-                  placeholder="Add source / reference (optional)"
-                  style={{
-                    backgroundColor: '#16161a',
-                    color: '#ffffff',
-                    border: '1px solid #27272a',
-                    borderRadius: '20px',
-                    padding: '10px 14px',
-                    fontSize: '13px',
-                    outline: 'none',
-                  }}
-                />
-              </div>
-
-              {/* ডুপ্লিকেট বা মিলে যাওয়া পোস্টের ক্ষেত্রে ওয়ার্নিং মেসেজ */}
-              {duplicateWarning && (
-                <div
-                  style={{
-                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                    border: '1px solid rgba(239, 68, 68, 0.3)',
-                    borderRadius: '10px',
-                    padding: '10px 14px',
-                    color: '#f87171',
-                    fontSize: '12px',
-                    lineHeight: '1.4',
-                  }}
-                >
-                  {duplicateWarning}
+                {/* সার্বজনীন প্লেসহোল্ডারযুক্ত মেসেজ ইনপুট */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <textarea
+                    rows={5}
+                    value={content}
+                    onChange={(e) => setContent(e.target.value)}
+                    required
+                    placeholder="What's on your mind? Write something..."
+                    style={{
+                      backgroundColor: 'transparent',
+                      color: '#ffffff',
+                      border: 'none',
+                      fontSize: '15px',
+                      outline: 'none',
+                      resize: 'none',
+                      lineHeight: '1.5',
+                    }}
+                  />
                 </div>
-              )}
-            </form>
+
+                {/* সার্বজনীন প্লেসহোল্ডারযুক্ত রেফারেন্স ইনপুট */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', borderTop: '1px solid #27272a', paddingTop: '14px' }}>
+                  <input
+                    type="text"
+                    value={reference}
+                    onChange={(e) => setReference(e.target.value)}
+                    placeholder="Add source / reference (optional)"
+                    style={{
+                      backgroundColor: '#16161a',
+                      color: '#ffffff',
+                      border: '1px solid #27272a',
+                      borderRadius: '20px',
+                      padding: '10px 14px',
+                      fontSize: '13px',
+                      outline: 'none',
+                    }}
+                  />
+                </div>
+
+                {/* ডুপ্লিকেট বা মিলে যাওয়া পোস্টের ক্ষেত্রে ওয়ার্নিং মেসেজ */}
+                {duplicateWarning && (
+                  <div
+                    style={{
+                      backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                      border: '1px solid rgba(239, 68, 68, 0.3)',
+                      borderRadius: '10px',
+                      padding: '10px 14px',
+                      color: '#f87171',
+                      fontSize: '12px',
+                      lineHeight: '1.4',
+                    }}
+                  >
+                    {duplicateWarning}
+                  </div>
+                )}
+              </form>
+            </div>
           </div>
         </div>
       )}
