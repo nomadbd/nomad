@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+ import React, { useState, useEffect } from 'react';
 import { supabase } from '../../../supabaseClient';
 import { EditIcon, CloseIcon } from '../../../components/icons';
 
@@ -60,7 +60,7 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
 
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
-  // visualViewport এর জন্য স্টেট (কিবোর্ড হ্যান্ডলিং)
+  // visualViewport স্টেট (কিবোর্ড হ্যান্ডলিং)
   const [viewport, setViewport] = useState({
     height: typeof window !== 'undefined' ? window.innerHeight : 0,
     offsetTop: 0,
@@ -83,7 +83,7 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
     }
   }, [showForm]);
 
-  // visualViewport লিসেনার — কিবোর্ড ওপেন/ক্লোজ হলে মডালের উচ্চতা ঠিক রাখে
+  // visualViewport লিসেনার
   useEffect(() => {
     if (!showForm) return;
 
@@ -289,7 +289,7 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
         fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
       }}
     >
-      {/* ফুল-স্ক্রিন মডাল — visualViewport দিয়ে কন্ট্রোল করা */}
+      {/* ফুল-স্ক্রিন মডাল */}
       {showForm && (
         <div
           style={{
@@ -304,6 +304,7 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
             flexDirection: 'column',
             boxSizing: 'border-box',
             overflow: 'hidden',
+            overscrollBehavior: 'none', // ঝাকুনি বন্ধ
           }}
         >
           {/* স্থির হেডার */}
@@ -369,6 +370,7 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
               flex: 1,
               overflowY: 'auto',
               WebkitOverflowScrolling: 'touch',
+              overscrollBehavior: 'none', // ঝাকুনি বন্ধ
               padding: '16px',
               paddingBottom: '40px',
               boxSizing: 'border-box',
@@ -514,6 +516,7 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
             maxHeight: '600px',
             overflowY: 'auto',
             paddingRight: '4px',
+            overscrollBehavior: 'none',
           }}
         >
           {filteredReminders.map((item) => {
