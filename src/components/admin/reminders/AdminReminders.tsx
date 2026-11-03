@@ -29,14 +29,20 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
   const [loading, setLoading] = useState(true);
 
   const [internalShowForm, setInternalShowForm] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
   const [content, setContent] = useState('');
   const [reference, setReference] = useState('');
   const [category, setCategory] = useState('global');
   const [isActive, setIsActive] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  // কোন রিমাইন্ডারটিতে ডিলিট কনফার্মেশন প্রম্পট ওপেন আছে তা ট্র্যাক করার জন্য
+  // ইনলাইন এডিটিং ট্র্যাক করার জন্য স্টেট
+  const [inlineEditingId, setInlineEditingId] = useState<string | null>(null);
+  const [inlineContent, setInlineContent] = useState('');
+  const [inlineReference, setInlineReference] = useState('');
+  const [inlineCategory, setInlineCategory] = useState('global');
+  const [isModified, setIsModified] = useState(false); // ইনপুট শুরু হলে সেভ বাটন দেখানোর জন্য
+
+  // ডিলিট কনফার্মেশন ট্র্যাক করার জন্য স্টেট
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   const showForm = isAddOpen || internalShowForm;
@@ -84,64 +90,68 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
     setReference('');
     setCategory('global');
     setIsActive(true);
-    setEditingId(null);
     setInternalShowForm(false);
     if (onCloseAdd) onCloseAdd();
   };
 
-  const handleEditClick = (reminder: Reminder) => {
-    setEditingId(reminder.id);
-    setContent(reminder.content);
-    setReference(reminder.reference || '');
-    setCategory(reminder.category || 'global');
-    setIsActive(reminder.is_active);
-    setInternalShowForm(true);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!content.trim()) return;
 
     setSaving(true);
     const { data: { user } } = await supabase.auth.getUser();
 
-    if (editingId) {
-      const { error } = await supabase
-        .from('reminders')
-        .update({
-          content,
-          reference,
-          category,
-          is_active: isActive,
-          updated_at: new Date().toISOString(),
-          updated_by: user?.id
-        })
-        .eq('id', editingId);
+    const { error } = await supabase
+      .from('reminders')
+      .insert([{
+        content,
+        reference,
+        category,
+        is_active: isActive,
+        created_by: user?.id,
+        updated_by: user?.id
+      }]);
 
-      if (!error) {
-        fetchReminders();
-        resetForm();
-      } else {
-        alert('Error updating reminder: ' + error.message);
-      }
+    if (!error) {
+      fetchReminders();
+      resetForm();
     } else {
-      const { error } = await supabase
-        .from('reminders')
-        .insert([{
-          content,
-          reference,
-          category,
-          is_active: isActive,
-          created_by: user?.id,
-          updated_by: user?.id
-        }]);
+      alert('Error creating reminder: ' + error.message);
+    }
+    setSaving(false);
+  };
 
-      if (!error) {
-        fetchReminders();
-        resetForm();
-      } else {
-        alert('Error creating reminder: ' + error.message);
-      }
+  const handleStartInlineEdit = (reminder: Reminder) => {
+    setInlineEditingId(reminder.id);
+    setInlineContent(reminder.content);
+    setInlineReference(reminder.reference || '');
+    setInlineCategory(reminder.category || 'global');
+    setIsModified(false); // প্রথমে মোডিফাইড ফলস থাকবে
+    setDeleteConfirmId(null);
+  };
+
+  const handleInlineSubmit = async (id: string) => {
+    if (!inlineContent.trim()) return;
+
+    setSaving(true);
+    const { data: { user } } = await supabase.auth.getUser();
+
+    const { error } = await supabase
+      .from('reminders')
+      .update({
+        content: inlineContent,
+        reference: inlineReference,
+        category: inlineCategory,
+        updated_at: new Date().toISOString(),
+        updated_by: user?.id
+      })
+      .eq('id', id);
+
+    if (!error) {
+      setInlineEditingId(null);
+      fetchReminders();
+    } else {
+      alert('Error updating reminder: ' + error.message);
     }
     setSaving(false);
   };
@@ -199,15 +209,15 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
         fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
       }}
     >
-      {/* Inline Form */}
+      {/* Creation Inline Form (Top) */}
       {showForm && (
         <form
-          onSubmit={handleSubmit}
+          onSubmit={handleCreateSubmit}
           style={{
             backgroundColor: '#16161a',
             border: '1px solid #27272a',
-            borderRadius: '8px',
-            padding: '14px',
+            borderRadius: '20px',
+            padding: '16px',
             marginBottom: '20px',
             display: 'flex',
             flexDirection: 'column',
@@ -216,7 +226,7 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #27272a', paddingBottom: '6px' }}>
             <span style={{ fontSize: '10px', fontWeight: '700', color: '#a1a1aa', letterSpacing: '1px', textTransform: 'uppercase' }}>
-              {editingId ? 'Edit Reminder' : 'Create New Reminder'}
+              Create New Reminder
             </span>
             <button type="button" onClick={resetForm} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', fontSize: '12px' }}>✕</button>
           </div>
@@ -229,7 +239,7 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
               onChange={(e) => setContent(e.target.value)}
               required
               placeholder="আয়াত বা নৈতিক বাণী লিখুন..."
-              style={{ backgroundColor: '#09090b', color: '#ffffff', border: '1px solid #27272a', borderRadius: '6px', padding: '8px', fontSize: '13px', outline: 'none', resize: 'vertical' }}
+              style={{ backgroundColor: '#09090b', color: '#ffffff', border: '1px solid #27272a', borderRadius: '16px', padding: '10px 14px', fontSize: '13px', outline: 'none', resize: 'vertical' }}
             />
           </div>
 
@@ -241,7 +251,7 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
                 value={reference}
                 onChange={(e) => setReference(e.target.value)}
                 placeholder="যেমন: সূরা আন-নিসা: ৫৮"
-                style={{ backgroundColor: '#09090b', color: '#ffffff', border: '1px solid #27272a', borderRadius: '6px', padding: '6px 8px', fontSize: '12px', outline: 'none' }}
+                style={{ backgroundColor: '#09090b', color: '#ffffff', border: '1px solid #27272a', borderRadius: '20px', padding: '8px 12px', fontSize: '12px', outline: 'none' }}
               />
             </div>
 
@@ -250,7 +260,7 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                style={{ backgroundColor: '#09090b', color: '#ffffff', border: '1px solid #27272a', borderRadius: '6px', padding: '6px 8px', fontSize: '12px', outline: 'none', cursor: 'pointer' }}
+                style={{ backgroundColor: '#09090b', color: '#ffffff', border: '1px solid #27272a', borderRadius: '20px', padding: '8px 12px', fontSize: '12px', outline: 'none', cursor: 'pointer' }}
               >
                 <option value="global">Global</option>
                 <option value="logistics">Logistics</option>
@@ -271,9 +281,9 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', borderTop: '1px solid #27272a', paddingTop: '8px' }}>
-            <button type="button" onClick={resetForm} style={{ backgroundColor: 'transparent', border: '1px solid #3f3f46', color: '#a1a1aa', borderRadius: '6px', padding: '4px 10px', fontSize: '11px', cursor: 'pointer' }}>Cancel</button>
-            <button type="submit" disabled={saving} style={{ backgroundColor: '#ffffff', color: '#000000', border: 'none', borderRadius: '6px', padding: '4px 12px', fontSize: '11px', fontWeight: '700', cursor: 'pointer' }}>
-              {saving ? 'SAVING...' : editingId ? 'UPDATE' : 'SAVE'}
+            <button type="button" onClick={resetForm} style={{ backgroundColor: 'transparent', border: '1px solid #3f3f46', color: '#a1a1aa', borderRadius: '20px', padding: '6px 14px', fontSize: '11px', cursor: 'pointer' }}>Cancel</button>
+            <button type="submit" disabled={saving} style={{ backgroundColor: '#ffffff', color: '#000000', border: 'none', borderRadius: '20px', padding: '6px 16px', fontSize: '11px', fontWeight: '700', cursor: 'pointer' }}>
+              {saving ? 'SAVING...' : 'SAVE'}
             </button>
           </div>
         </form>
@@ -294,6 +304,7 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
             const isEdited = item.updated_at && item.created_at && new Date(item.updated_at).getTime() - new Date(item.created_at).getTime() > 1000;
             const userName = item.profiles?.name || 'Admin User';
             const userAvatar = item.profiles?.avatar_url;
+            const isInlineEditing = inlineEditingId === item.id;
             const isConfirmingDelete = deleteConfirmId === item.id;
 
             return (
@@ -307,69 +318,183 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
                   borderBottom: '1px solid #27272a',
                 }}
               >
-                {/* Header Layout */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  {/* Left Column: Avatar + Name & Designation */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    {userAvatar ? (
-                      <img
-                        src={userAvatar}
-                        alt={userName}
-                        style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', border: '1px solid #3f3f46' }}
-                      />
-                    ) : (
-                      <div
-                        style={{
-                          width: '36px',
-                          height: '36px',
-                          borderRadius: '50%',
-                          backgroundColor: '#27272a',
-                          color: '#e4e4e7',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontWeight: '700',
-                          fontSize: '14px',
-                          border: '1px solid #3f3f46',
-                        }}
-                      >
-                        {userName.charAt(0).toUpperCase()}
+                {/* Header Layout: Normal vs Editing Mode */}
+                {isInlineEditing ? (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '11px', fontWeight: '700', color: '#3498db', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      ✏️ EDITING MODE
+                    </span>
+                    <select
+                      value={inlineCategory}
+                      onChange={(e) => {
+                        setInlineCategory(e.target.value);
+                        setIsModified(true);
+                      }}
+                      style={{
+                        backgroundColor: '#09090b',
+                        color: '#ffffff',
+                        border: '1px solid #3f3f46',
+                        borderRadius: '16px',
+                        padding: '4px 12px',
+                        fontSize: '11px',
+                        outline: 'none',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <option value="global">Global</option>
+                      <option value="logistics">Logistics</option>
+                      <option value="orders">Orders</option>
+                    </select>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    {/* Left Column: Avatar + Name & Designation */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      {userAvatar ? (
+                        <img
+                          src={userAvatar}
+                          alt={userName}
+                          style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', border: '1px solid #3f3f46' }}
+                        />
+                      ) : (
+                        <div
+                          style={{
+                            width: '36px',
+                            height: '36px',
+                            borderRadius: '50%',
+                            backgroundColor: '#27272a',
+                            color: '#e4e4e7',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontWeight: '700',
+                            fontSize: '14px',
+                            border: '1px solid #3f3f46',
+                          }}
+                        >
+                          {userName.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+                        <span style={{ fontSize: '13px', fontWeight: '700', color: '#ffffff' }}>
+                          {userName}
+                        </span>
+                        <span style={{ fontSize: '10px', color: '#71717a', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                          {item.profiles?.designation || item.category}
+                        </span>
                       </div>
-                    )}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
-                      <span style={{ fontSize: '13px', fontWeight: '700', color: '#ffffff' }}>
-                        {userName}
-                      </span>
-                      <span style={{ fontSize: '10px', color: '#71717a', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                        {item.profiles?.designation || item.category}
-                      </span>
+                    </div>
+
+                    {/* Right Column: Date & Time */}
+                    <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '1px', fontSize: '10px', color: '#71717a', fontFamily: 'monospace' }}>
+                      <span style={{ color: '#a1a1aa' }}>{formatDate(item.created_at)}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
+                        <span>{formatTime(item.created_at)}</span>
+                        {isEdited && <span style={{ color: '#71717a', fontSize: '9px' }}>· Edited</span>}
+                      </div>
                     </div>
                   </div>
+                )}
 
-                  {/* Right Column: Date & Time */}
-                  <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '1px', fontSize: '10px', color: '#71717a', fontFamily: 'monospace' }}>
-                    <span style={{ color: '#a1a1aa' }}>{formatDate(item.created_at)}</span>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
-                      <span>{formatTime(item.created_at)}</span>
-                      {isEdited && <span style={{ color: '#71717a', fontSize: '9px' }}>· Edited</span>}
-                    </div>
+                {/* Main Content / Inline Edit Form */}
+                {isInlineEditing ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', margin: '4px 0' }}>
+                    <textarea
+                      rows={3}
+                      value={inlineContent}
+                      onChange={(e) => {
+                        setInlineContent(e.target.value);
+                        setIsModified(true);
+                      }}
+                      placeholder="আয়াত বা বাণী লিখুন..."
+                      style={{
+                        backgroundColor: '#09090b',
+                        color: '#ffffff',
+                        border: '1px solid #3f3f46',
+                        borderRadius: '16px',
+                        padding: '10px 14px',
+                        fontSize: '13px',
+                        outline: 'none',
+                        resize: 'vertical',
+                      }}
+                    />
+                    <input
+                      type="text"
+                      value={inlineReference}
+                      onChange={(e) => {
+                        setInlineReference(e.target.value);
+                        setIsModified(true);
+                      }}
+                      placeholder="Reference (যেমন: সূরা আন-নিসা: ৫৮)"
+                      style={{
+                        backgroundColor: '#09090b',
+                        color: '#ffffff',
+                        border: '1px solid #3f3f46',
+                        borderRadius: '20px',
+                        padding: '8px 14px',
+                        fontSize: '12px',
+                        outline: 'none',
+                      }}
+                    />
                   </div>
-                </div>
+                ) : (
+                  <p style={{ fontSize: '14px', color: '#e4e4e7', margin: '4px 0', lineHeight: '1.5', whiteSpace: 'pre-wrap' }}>
+                    {item.content}
+                  </p>
+                )}
 
-                {/* Main Content */}
-                <p style={{ fontSize: '14px', color: '#e4e4e7', margin: '4px 0', lineHeight: '1.5', whiteSpace: 'pre-wrap' }}>
-                  {item.content}
-                </p>
-
-                {/* Reference & Actions Footer (With Gray Bold Reference & Inline Delete Confirmation) */}
+                {/* Reference & Actions Footer (যেখানে সময় থাকে, সেখানে ইনপুট শুরু হলে সেভ/আপডেট বাটন আসবে) */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '4px', fontSize: '11px' }}>
-                  <span style={{ color: '#a1a1aa', fontWeight: '600', fontSize: '12px' }}>
-                    {item.reference ? item.reference : ''}
-                  </span>
+                  {isInlineEditing ? (
+                    <span style={{ fontSize: '10px', color: '#71717a', fontStyle: 'italic' }}>
+                      {isModified ? 'Changes detected...' : 'Type above to modify...'}
+                    </span>
+                  ) : (
+                    <span style={{ color: '#a1a1aa', fontWeight: '600', fontSize: '12px' }}>
+                      {item.reference ? item.reference : ''}
+                    </span>
+                  )}
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    {isConfirmingDelete ? (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: 'rgba(239, 68, 68, 0.1)', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    {isInlineEditing ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <button
+                          type="button"
+                          onClick={() => setInlineEditingId(null)}
+                          style={{
+                            background: 'transparent',
+                            border: '1px solid #3f3f46',
+                            color: '#a1a1aa',
+                            padding: '6px 14px',
+                            borderRadius: '20px',
+                            fontSize: '11px',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          Cancel
+                        </button>
+                        {isModified && (
+                          <button
+                            type="button"
+                            onClick={() => handleInlineSubmit(item.id)}
+                            disabled={saving}
+                            style={{
+                              backgroundColor: '#ffffff',
+                              color: '#000000',
+                              border: 'none',
+                              padding: '6px 16px',
+                              borderRadius: '20px',
+                              fontSize: '11px',
+                              fontWeight: 'bold',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            {saving ? '...' : 'UPDATE'}
+                          </button>
+                        )}
+                      </div>
+                    ) : isConfirmingDelete ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: 'rgba(239, 68, 68, 0.1)', padding: '4px 10px', borderRadius: '20px', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
                         <span style={{ fontSize: '10px', color: '#f87171', fontWeight: '600' }}>Delete?</span>
                         <button
                           type="button"
@@ -390,7 +515,7 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
                       <>
                         <button
                           type="button"
-                          onClick={() => handleEditClick(item)}
+                          onClick={() => handleStartInlineEdit(item)}
                           style={{
                             background: 'transparent',
                             border: 'none',
