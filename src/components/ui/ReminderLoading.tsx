@@ -49,9 +49,14 @@ export const ReminderLoading: React.FC<ReminderLoadingProps> = ({
     return 'center';
   };
 
+  // টেক্সটের শুরু বা শেষে যদি কোনো কোটেশন বা স্পেস থাকে, তা স্বয়ংক্রিয়ভাবে ক্লিন করে নেওয়া
+  const cleanContent = reminder?.content
+    ? reminder.content.replace(/^["“”'‘’\s]+|["“”'‘’\s]+$/g, '')
+    : '';
+
   return (
     <div style={{
-      backgroundColor: '#0f0f12', // সম্পূর্ণ কুচকুচে কালো না হয়ে চোখের জন্য অত্যন্ত আরামদায়ক সফট ডার্ক গ্রে/চারকোল
+      backgroundColor: '#0f0f12', // চোখের জন্য আরামদায়ক সফট চারকোল ব্যাকগ্রাউন্ড
       color: '#e2e8f0',
       position: 'fixed',
       top: 0,
@@ -73,34 +78,65 @@ export const ReminderLoading: React.FC<ReminderLoadingProps> = ({
         <div 
           className={isFadingOut ? 'animate-fade-out' : 'animate-fade-in'}
           style={{
-            maxWidth: '520px',
+            maxWidth: '560px',
             width: '100%',
-            borderLeft: '2px solid rgba(226, 232, 240, 0.25)', // মার্জিত ও হালকা সফট সাইড বর্ডার
-            paddingLeft: '18px',
-            margin: '0 auto',
-            textAlign: 'left',
-            boxSizing: 'border-box'
+            position: 'relative',
+            padding: '24px 36px',
+            boxSizing: 'border-box',
+            textAlign: 'center'
           }}
         >
-          <p style={{
-            fontSize: '16px',
-            lineHeight: '1.7',
-            color: '#f1f5f9', // একদম কড়া সাদা নয়, চোখের শান্তি রক্ষার্থে সফট প্রিমিয়াম অফ-হোয়াইট
-            margin: '0 0 10px 0',
-            fontWeight: 500, // সামান্য বোল্ড ও জোরালো ফন্ট বিন্যাস
-            letterSpacing: '0.2px'
+          {/* ওপরের বড় ওপেনিং কোটেশন মার্ক */}
+          <div style={{
+            position: 'absolute',
+            top: '-15px',
+            left: '10px',
+            fontSize: '60px',
+            color: 'rgba(226, 232, 240, 0.12)',
+            fontFamily: 'Georgia, serif',
+            lineHeight: 1,
+            pointerEvents: 'none',
+            userSelect: 'none'
           }}>
-            "{reminder.content}"
+            “
+          </div>
+
+          <p style={{
+            fontSize: '17px',
+            lineHeight: '1.75',
+            color: '#f1f5f9', // প্রিমিয়াম সফট অফ-হোয়াইট কালার
+            margin: '0 0 16px 0',
+            fontWeight: 500,
+            letterSpacing: '0.3px'
+          }}>
+            {cleanContent}
           </p>
+
+          {/* নিচের বড় ক্লোজিং কোটেশন মার্ক */}
+          <div style={{
+            position: 'absolute',
+            bottom: '-35px',
+            right: '10px',
+            fontSize: '60px',
+            color: 'rgba(226, 232, 240, 0.12)',
+            fontFamily: 'Georgia, serif',
+            lineHeight: 1,
+            pointerEvents: 'none',
+            userSelect: 'none'
+          }}>
+            ”
+          </div>
+
           {reminder.reference && (
-            <span style={{
+            <div style={{
+              marginTop: '14px',
               fontSize: '12px',
-              color: '#94a3b8', // চোখের আরামদায়ক মিউটেড গ্রে কালার (কোনো ফিক্সড হাইফেন ছাড়াই)
+              color: '#94a3b8', // চোখের আরামদায়ক মিউটেড গ্রে
               letterSpacing: '0.5px',
               fontWeight: 400
             }}>
               {reminder.reference}
-            </span>
+            </div>
           )}
         </div>
       )}
