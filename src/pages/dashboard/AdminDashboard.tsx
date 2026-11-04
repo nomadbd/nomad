@@ -17,8 +17,10 @@ import AdminReminders from '../../components/admin/reminders/AdminReminders';
 import { SendInvite, AmbassadorList } from '../../components/admin/ambassadors';
 import AdminActivityLog from '../../components/admin/history/AdminActivityLog';
 
+
 import { AdminHeader } from './AdminHeader';
 import { AdminSidebar } from './AdminSidebar';
+import ReminderLoading from '../../components/ui/ReminderLoading';
 
 export type TabType = 
   | 'overview'
@@ -66,6 +68,7 @@ const AdminDashboard: React.FC = () => {
   const [userRole, setUserRole] = useState<string>('');
   const [userDesignation, setUserDesignation] = useState<string>('');
   const [profileData, setProfileData] = useState<any>(null);
+  const [loading, setLoading] = useState<boolean>(true);
   const [isProfileOpen, setIsProfileOpen] = useState<boolean>(false);
 
   const [isHeaderVisible, setIsHeaderVisible] = useState<boolean>(true);
@@ -182,14 +185,46 @@ const AdminDashboard: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchCurrentUserAndRole();
+    let isMounted = true;
+
+    const initDashboard = async () => {
+      const startTime = Date.now();
+      await fetchCurrentUserAndRole();
+
+      const elapsedTime = Date.now() - startTime;
+      const minLoadingTime = 1000;
+      const remainingTime = Math.max(0, minLoadingTime - elapsedTime);
+
+      setTimeout(() => {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }, remainingTime);
+    };
+
+    initDashboard();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const normalizedRole = userRole.toUpperCase().trim();
   const hasAdminAccess = ['SUPER_ADMIN', 'ADMIN', 'STAFF'].includes(normalizedRole);
 
-  // লোডিং কন্ডিশন এবং ReminderLoading কম্পোনেন্ট এখান থেকে সম্পূর্ণ বাদ দেওয়া হয়েছে
-  // ফলে পেজে ঢোকার সাথেই সরাসরি কন্টেন্ট রেন্ডার হবে
+  useEffect(() => {
+    if (!loading && !hasAdminAccess) {
+      window.location.href = '/profile';
+    }
+  }, [loading, hasAdminAccess]);
+
+  if (loading) {
+    return <ReminderLoading />;
+  }
+
+  if (!hasAdminAccess) {
+    return null;
+  }
 
   const isChatOpen = activeTab === 'messages' && !!activeChat;
 
