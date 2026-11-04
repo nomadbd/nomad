@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../../supabaseClient';
-import { Reminder, AdminRemindersProps } from './admin/reminders/types';
-import CreateReminderModal from './admin/reminders/CreateReminderModal';
-import ReminderItem from './admin/reminders/ReminderItem';
+import { supabase } from '@/supabaseClient';
+import { Reminder, AdminRemindersProps } from './types';
+import CreateReminderModal from './CreateReminderModal';
+import ReminderItem from './ReminderItem';
 
 export default function AdminReminders({ searchQuery = '', isAddOpen = false, onCloseAdd }: AdminRemindersProps) {
   const [reminders, setReminders] = useState<Reminder[]>([]);
