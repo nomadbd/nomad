@@ -1,4 +1,4 @@
- import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../../../supabaseClient';
 import { EditIcon, CloseIcon } from '../../../components/icons';
 
@@ -60,75 +60,28 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
 
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
-  // visualViewport স্টেট (কিবোর্ড হ্যান্ডলিং)
-  const [viewport, setViewport] = useState({
-    height: typeof window !== 'undefined' ? window.innerHeight : 0,
-    offsetTop: 0,
-  });
-
   const showForm = isAddOpen || internalShowForm;
 
   useEffect(() => {
     fetchReminders();
   }, []);
 
-  // মডাল খোলা থাকলে বডি স্ক্রল লক
   useEffect(() => {
-    if (showForm) {
-      const originalOverflow = document.body.style.overflow;
-      document.body.style.overflow = 'hidden';
-      return () => {
-        document.body.style.overflow = originalOverflow;
-      };
-    }
-  }, [showForm]);
-
-  // visualViewport লিসেনার
-  useEffect(() => {
-    if (!showForm) return;
-
-    const vv = window.visualViewport;
-    if (!vv) return;
-
-    const updateViewport = () => {
-      setViewport({
-        height: vv.height,
-        offsetTop: vv.offsetTop,
-      });
-    };
-
-    updateViewport();
-    vv.addEventListener('resize', updateViewport);
-    vv.addEventListener('scroll', updateViewport);
-
-    return () => {
-      vv.removeEventListener('resize', updateViewport);
-      vv.removeEventListener('scroll', updateViewport);
-    };
-  }, [showForm]);
-
-  // ডুপ্লিকেট চেক
-  useEffect(() => {
-    if (!content.trim() && !reference.trim()) {
+    if (!content.trim()) {
       setDuplicateWarning(null);
       return;
     }
 
-    const matchedContent = reminders.find(
-      r => content.trim() && r.content.toLowerCase().includes(content.trim().toLowerCase())
-    );
-    const matchedReference = reminders.find(
-      r => reference.trim() && r.reference && r.reference.toLowerCase() === reference.trim().toLowerCase()
+    const exactMatch = reminders.find(
+      r => r.content.trim().toLowerCase() === content.trim().toLowerCase()
     );
 
-    if (matchedReference) {
-      setDuplicateWarning(`This reference already exists in another post!`);
-    } else if (matchedContent) {
-      setDuplicateWarning(`A similar post or content already exists.`);
+    if (exactMatch) {
+      setDuplicateWarning('Already exists!');
     } else {
       setDuplicateWarning(null);
     }
-  }, [content, reference, reminders]);
+  }, [content, reminders]);
 
   const fetchReminders = async () => {
     setLoading(true);
@@ -176,7 +129,7 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!content.trim()) return;
+    if (!content.trim() || duplicateWarning) return;
 
     setSaving(true);
     const { data: { user } } = await supabase.auth.getUser();
@@ -289,36 +242,32 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
         fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
       }}
     >
-      {/* ফুল-স্ক্রিন মডাল */}
       {showForm && (
         <div
           style={{
             position: 'fixed',
-            top: viewport.offsetTop,
+            top: 0,
             left: 0,
-            width: '100%',
-            height: viewport.height,
+            width: '100vw',
+            height: '100dvh',
             backgroundColor: '#0f0f13',
             zIndex: 9999,
             display: 'flex',
             flexDirection: 'column',
             boxSizing: 'border-box',
             overflow: 'hidden',
-            overscrollBehavior: 'none', // ঝাকুনি বন্ধ
           }}
         >
-          {/* স্থির হেডার */}
           <div
             style={{
               flexShrink: 0,
               backgroundColor: '#0f0f13',
-              zIndex: 30,
+              zIndex: 10,
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
-              padding: '14px 16px',
+              padding: '16px',
               borderBottom: '1px solid #27272a',
-              minHeight: '56px',
             }}
           >
             <span style={{ fontSize: '15px', fontWeight: '700', color: '#ffffff', letterSpacing: '0.3px' }}>
@@ -326,37 +275,44 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
             </span>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <button
-                type="button"
-                onClick={handleCreateSubmit}
-                disabled={saving || !content.trim()}
-                style={{
-                  backgroundColor: content.trim() ? '#ffffff' : '#3f3f46',
-                  color: content.trim() ? '#000000' : '#a1a1aa',
-                  border: 'none',
-                  borderRadius: '20px',
-                  padding: '7px 16px',
-                  fontSize: '12px',
-                  fontWeight: '700',
-                  cursor: content.trim() ? 'pointer' : 'not-allowed',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {saving ? 'POSTING...' : 'Post'}
-              </button>
+              {duplicateWarning ? (
+                <div
+                  style={{
+                    backgroundColor: '#7f1d1d',
+                    color: '#fca5a5',
+                    padding: '6px 14px',
+                    borderRadius: '20px',
+                    fontSize: '11px',
+                    fontWeight: '700',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {duplicateWarning}
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleCreateSubmit}
+                  disabled={saving || !content.trim()}
+                  style={{
+                    backgroundColor: content.trim() ? '#ffffff' : '#3f3f46',
+                    color: content.trim() ? '#000000' : '#a1a1aa',
+                    border: 'none',
+                    borderRadius: '20px',
+                    padding: '6px 16px',
+                    fontSize: '12px',
+                    fontWeight: '700',
+                    cursor: content.trim() ? 'pointer' : 'not-allowed',
+                  }}
+                >
+                  {saving ? 'POSTING...' : 'Post'}
+                </button>
+              )}
 
               <button
                 type="button"
                 onClick={resetForm}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  padding: '4px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                 title="Close"
               >
                 <CloseIcon size={18} color="#ffffff" />
@@ -364,30 +320,9 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
             </div>
           </div>
 
-          {/* স্ক্রোলযোগ্য বডি */}
-          <div
-            style={{
-              flex: 1,
-              overflowY: 'auto',
-              WebkitOverflowScrolling: 'touch',
-              overscrollBehavior: 'none', // ঝাকুনি বন্ধ
-              padding: '16px',
-              paddingBottom: '40px',
-              boxSizing: 'border-box',
-            }}
-          >
-            <div
-              style={{
-                maxWidth: '600px',
-                width: '100%',
-                margin: '0 auto',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '16px',
-              }}
-            >
+          <div style={{ flex: 1, overflowY: 'auto', padding: '16px', boxSizing: 'border-box' }}>
+            <div style={{ maxWidth: '600px', width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <form onSubmit={handleCreateSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                {/* ক্যাটাগরি */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   <label style={{ fontSize: '11px', color: '#a1a1aa', fontWeight: '500' }}>Select Category</label>
                   <div
@@ -427,7 +362,6 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
                   </div>
                 </div>
 
-                {/* কনটেন্ট */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   <textarea
                     rows={5}
@@ -443,21 +377,11 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
                       outline: 'none',
                       resize: 'none',
                       lineHeight: '1.5',
-                      width: '100%',
                     }}
                   />
                 </div>
 
-                {/* রেফারেন্স */}
-                <div
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '6px',
-                    borderTop: '1px solid #27272a',
-                    paddingTop: '14px',
-                  }}
-                >
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', borderTop: '1px solid #27272a', paddingTop: '14px' }}>
                   <input
                     type="text"
                     value={reference}
@@ -471,34 +395,15 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
                       padding: '10px 14px',
                       fontSize: '13px',
                       outline: 'none',
-                      width: '100%',
-                      boxSizing: 'border-box',
                     }}
                   />
                 </div>
-
-                {duplicateWarning && (
-                  <div
-                    style={{
-                      backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                      border: '1px solid rgba(239, 68, 68, 0.3)',
-                      borderRadius: '10px',
-                      padding: '10px 14px',
-                      color: '#f87171',
-                      fontSize: '12px',
-                      lineHeight: '1.4',
-                    }}
-                  >
-                    {duplicateWarning}
-                  </div>
-                )}
               </form>
             </div>
           </div>
         </div>
       )}
 
-      {/* Reminders Feed */}
       {loading ? (
         <div style={{ padding: '30px', textAlign: 'center', color: '#71717a', fontSize: '11px', fontFamily: 'monospace' }}>
           LOADING REMINDERS...
@@ -508,17 +413,7 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
           NO REMINDERS FOUND
         </div>
       ) : (
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '16px',
-            maxHeight: '600px',
-            overflowY: 'auto',
-            paddingRight: '4px',
-            overscrollBehavior: 'none',
-          }}
-        >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxHeight: '600px', overflowY: 'auto', paddingRight: '4px' }}>
           {filteredReminders.map((item) => {
             const isEdited = item.updated_at && item.created_at && new Date(item.updated_at).getTime() - new Date(item.created_at).getTime() > 1000;
             const userName = item.profiles?.name || 'Admin User';
@@ -648,8 +543,6 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
                         fontSize: '13px',
                         outline: 'none',
                         resize: 'vertical',
-                        width: '100%',
-                        boxSizing: 'border-box',
                       }}
                     />
                     <input
@@ -668,8 +561,6 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
                         padding: '8px 14px',
                         fontSize: '12px',
                         outline: 'none',
-                        width: '100%',
-                        boxSizing: 'border-box',
                       }}
                     />
                   </div>
@@ -736,17 +627,7 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
                         </button>
                       </div>
                     ) : isConfirmingDelete ? (
-                      <div
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '8px',
-                          backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                          padding: '4px 10px',
-                          borderRadius: '20px',
-                          border: '1px solid rgba(239, 68, 68, 0.3)',
-                        }}
-                      >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: 'rgba(239, 68, 68, 0.1)', padding: '4px 10px', borderRadius: '20px', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
                         <span style={{ fontSize: '10px', color: '#f87171', fontWeight: '600' }}>Delete?</span>
                         <button
                           type="button"
@@ -783,7 +664,7 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
                         </button>
                         <button
                           type="button"
-                          onClick={() => setDeleteConfirmId(item.id)}
+                          onClick={() => handleDeleteConfirmed(item.id)}
                           style={{
                             background: 'transparent',
                             border: 'none',
