@@ -56,7 +56,7 @@ export const ReminderLoading: React.FC<ReminderLoadingProps> = ({
 
   return (
     <div style={{
-      backgroundColor: '#0a0a0c', // চোখের প্রশান্তির জন্য আরও ডিপ এবং প্রিমিয়াম ডার্ক টোন
+      backgroundColor: '#0c0c0e', // চোখের প্রশান্তির জন্য হালকা ধূসর-ঘেঁষা সফট ডার্ক ব্যাকগ্রাউন্ড
       color: '#f1f5f9',
       position: 'fixed',
       top: 0,
@@ -70,7 +70,7 @@ export const ReminderLoading: React.FC<ReminderLoadingProps> = ({
       flexDirection: 'column',
       alignItems: 'center',
       justifyContent: getJustifyContent(),
-      padding: '40px 24px',
+      padding: '40px 32px',
       boxSizing: 'border-box',
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
     }}>
@@ -78,55 +78,61 @@ export const ReminderLoading: React.FC<ReminderLoadingProps> = ({
         <div 
           className={isFadingOut ? 'animate-fade-out' : 'animate-fade-in'}
           style={{
-            maxWidth: '600px',
+            maxWidth: '540px',
             width: '100%',
             position: 'relative',
-            padding: '40px 44px',
+            padding: '20px 10px',
             boxSizing: 'border-box',
-            backgroundColor: 'rgba(255, 255, 255, 0.015)', // সফট গ্লাস মরফিজম কার্ড ফিল
-            borderRadius: '16px',
-            border: '1px solid rgba(255, 255, 255, 0.04)',
-            boxShadow: '0 24px 48px rgba(0, 0, 0, 0.5)',
             textAlign: 'center'
           }}
         >
-          {/* ওপরের বামে একটি প্রিমিয়াম ওয়াটারমার্ক কোটেশন */}
+          {/* ওপরে বড় ধূসর ওপেনিং কোটেশন মার্ক */}
           <div style={{
-            position: 'absolute',
-            top: '20px',
-            left: '28px',
-            fontSize: '52px',
-            color: 'rgba(255, 255, 255, 0.05)',
+            textAlign: 'left',
+            fontSize: '72px',
+            color: '#64748b', // প্রিমিয়াম ধূসর কালার
             fontFamily: 'Georgia, serif',
-            lineHeight: 1,
-            pointerEvents: 'none',
-            userSelect: 'none'
+            lineHeight: '0.6',
+            marginBottom: '10px',
+            userSelect: 'none',
+            pointerEvents: 'none'
           }}>
             “
           </div>
 
           <p style={{
-            fontSize: '18px',
-            lineHeight: '1.85',
-            color: '#f8fafc', // অত্যন্ত পরিষ্কার ও আরামদায়ক অফ-হোয়াইট ফন্ট
-            margin: '12px 0 24px 0',
-            fontWeight: 400,
-            letterSpacing: '0.4px',
-            wordSpacing: '1px'
+            fontSize: '19px',
+            lineHeight: '1.8',
+            color: '#f8fafc', // সফট সাদা ফন্ট
+            margin: '0 0 24px 0',
+            fontWeight: 600, // বোল্ড ফন্ট বিন্যাস
+            letterSpacing: '0.4px'
           }}>
             {cleanContent}
           </p>
 
+          {/* নিচে বড় ধূসর ক্লোজিং কোটেশন মার্ক */}
+          <div style={{
+            textAlign: 'right',
+            fontSize: '72px',
+            color: '#64748b', // প্রিমিয়াম ধূসর কালার
+            fontFamily: 'Georgia, serif',
+            lineHeight: '0.6',
+            marginTop: '10px',
+            marginBottom: '20px',
+            userSelect: 'none',
+            pointerEvents: 'none'
+          }}>
+            ”
+          </div>
+
           {reminder.reference && (
             <div style={{
-              display: 'inline-block',
-              marginTop: '4px',
-              paddingTop: '14px',
-              borderTop: '1px solid rgba(255, 255, 255, 0.06)',
-              fontSize: '13px',
+              fontSize: '12px',
               color: '#94a3b8',
               letterSpacing: '0.8px',
-              fontWeight: 500
+              fontWeight: 700, // পোস্টের চেয়ে ছোট কিন্তু বোল্ড রেফারেন্স
+              textTransform: 'uppercase'
             }}>
               {reminder.reference}
             </div>
