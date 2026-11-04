@@ -122,9 +122,9 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
     );
 
     if (matchedReference) {
-      setDuplicateWarning(`⚠️ This reference already exists in another post!`);
+      setDuplicateWarning(`This reference already exists in another post!`);
     } else if (matchedContent) {
-      setDuplicateWarning(`⚠️ A similar post or content already exists.`);
+      setDuplicateWarning(`A similar post or content already exists.`);
     } else {
       setDuplicateWarning(null);
     }
@@ -540,7 +540,7 @@ export default function AdminReminders({ searchQuery = '', isAddOpen = false, on
                 {isInlineEditing ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     <span style={{ fontSize: '10px', fontWeight: '700', color: '#3498db', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                      ✏️ EDITING MODE
+                      EDITING MODE
                     </span>
                     <div
                       style={{
