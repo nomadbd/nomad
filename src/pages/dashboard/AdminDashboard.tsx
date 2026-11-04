@@ -17,7 +17,6 @@ import AdminReminders from '../../components/admin/reminders/AdminReminders';
 import { SendInvite, AmbassadorList } from '../../components/admin/ambassadors';
 import AdminActivityLog from '../../components/admin/history/AdminActivityLog';
 
-
 import { AdminHeader } from './AdminHeader';
 import { AdminSidebar } from './AdminSidebar';
 import ReminderLoading from '../../components/ui/ReminderLoading';
@@ -184,6 +183,7 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
+  // পেজ রিফ্রেশ বা প্রথম এন্ট্রির সময় ১০ সেকেন্ড (১০০০০ মি.সে.) রিমাইন্ডার/লোডিং দেখানোর লজিক
   useEffect(() => {
     let isMounted = true;
 
@@ -192,7 +192,7 @@ const AdminDashboard: React.FC = () => {
       await fetchCurrentUserAndRole();
 
       const elapsedTime = Date.now() - startTime;
-      const minLoadingTime = 1000;
+      const minLoadingTime = 10000; // ১০ সেকেন্ড সময় নির্ধারণ করা হলো
       const remainingTime = Math.max(0, minLoadingTime - elapsedTime);
 
       setTimeout(() => {
@@ -218,6 +218,7 @@ const AdminDashboard: React.FC = () => {
     }
   }, [loading, hasAdminAccess]);
 
+  // পেজ রিফ্রেশ বা ইনিশিয়াল লোডিংয়ের সময় রিমাইন্ডার স্ক্রিন দেখাবে
   if (loading) {
     return <ReminderLoading />;
   }
