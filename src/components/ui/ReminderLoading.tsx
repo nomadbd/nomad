@@ -85,14 +85,14 @@ export const ReminderLoading: React.FC<ReminderLoadingProps> = ({
             boxSizing: 'border-box',
             display: 'flex',
             flexDirection: 'column',
-            alignItems: 'flex-start', // পুরো ব্লকটি বাম দিক থেকে শুরু হবে
+            alignItems: 'flex-start',
             margin: '0 auto'
           }}
         >
           {/* ওপরে বড় ধূসর ওপেনিং কোটেশন মার্ক */}
           <div style={{
             fontSize: '64px',
-            color: '#64748b', // প্রিমিয়াম ধূসর কালার
+            color: '#64748b',
             fontFamily: 'Georgia, serif',
             lineHeight: '0.5',
             marginBottom: '12px',
@@ -106,11 +106,11 @@ export const ReminderLoading: React.FC<ReminderLoadingProps> = ({
           <p style={{
             fontSize: '18px',
             lineHeight: '1.8',
-            color: '#f8fafc', // সফট সাদা ফন্ট
+            color: '#f8fafc',
             margin: '0 0 20px 0',
-            fontWeight: 600, // বোল্ড ফন্ট বিন্যাস
+            fontWeight: 600,
             letterSpacing: '0.3px',
-            textAlign: 'left', // টেক্সট এক লাইন থেকে শুরু হয়ে নিচে নামবে
+            textAlign: 'left',
             width: '100%'
           }}>
             {cleanContent}
@@ -119,26 +119,27 @@ export const ReminderLoading: React.FC<ReminderLoadingProps> = ({
           {/* নিচে বড় ধূসর ক্লোজিং কোটেশন মার্ক */}
           <div style={{
             fontSize: '64px',
-            color: '#64748b', // প্রিমিয়াম ধূসর কালার
+            color: '#64748b',
             fontFamily: 'Georgia, serif',
             lineHeight: '0.5',
             marginTop: '4px',
             marginBottom: '20px',
             userSelect: 'none',
             pointerEvents: 'none',
-            alignSelf: 'flex-end' // ডান কোণায় ক্লোজিং কোটেশন
+            alignSelf: 'flex-end'
           }}>
             ”
           </div>
 
+          {/* রেফারেন্স ডান পাশে সোজাসুজি প্রদর্শনের জন্য */}
           {reminder.reference && (
             <div style={{
               fontSize: '12px',
               color: '#94a3b8',
               letterSpacing: '0.8px',
-              fontWeight: 700, // পোস্টের চেয়ে ছোট কিন্তু বোল্ড রেফারেন্স
+              fontWeight: 700,
               textTransform: 'uppercase',
-              textAlign: 'left', // বাম দিক বরাবর সোজা নিচে থাকবে
+              textAlign: 'right',
               width: '100%'
             }}>
               {reminder.reference}
