@@ -49,15 +49,15 @@ export const ReminderLoading: React.FC<ReminderLoadingProps> = ({
     return 'center';
   };
 
-  // টেক্সটের শুরু বা শেষে যদি কোনো কোটেশন বা স্পেস থাকে, তা স্বয়ংক্রিয়ভাবে ক্লিন করে নেওয়া
+  // টেক্সটের শুরু বা শেষের কোটেশন স্বয়ংক্রিয়ভাবে ক্লিন করার লজিক
   const cleanContent = reminder?.content
     ? reminder.content.replace(/^["“”'‘’\s]+|["“”'‘’\s]+$/g, '')
     : '';
 
   return (
     <div style={{
-      backgroundColor: '#0f0f12', // চোখের জন্য আরামদায়ক সফট চারকোল ব্যাকগ্রাউন্ড
-      color: '#e2e8f0',
+      backgroundColor: '#0a0a0c', // চোখের প্রশান্তির জন্য আরও ডিপ এবং প্রিমিয়াম ডার্ক টোন
+      color: '#f1f5f9',
       position: 'fixed',
       top: 0,
       left: 0,
@@ -70,7 +70,7 @@ export const ReminderLoading: React.FC<ReminderLoadingProps> = ({
       flexDirection: 'column',
       alignItems: 'center',
       justifyContent: getJustifyContent(),
-      padding: '40px 28px',
+      padding: '40px 24px',
       boxSizing: 'border-box',
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
     }}>
@@ -78,21 +78,25 @@ export const ReminderLoading: React.FC<ReminderLoadingProps> = ({
         <div 
           className={isFadingOut ? 'animate-fade-out' : 'animate-fade-in'}
           style={{
-            maxWidth: '560px',
+            maxWidth: '600px',
             width: '100%',
             position: 'relative',
-            padding: '24px 36px',
+            padding: '40px 44px',
             boxSizing: 'border-box',
+            backgroundColor: 'rgba(255, 255, 255, 0.015)', // সফট গ্লাস মরফিজম কার্ড ফিল
+            borderRadius: '16px',
+            border: '1px solid rgba(255, 255, 255, 0.04)',
+            boxShadow: '0 24px 48px rgba(0, 0, 0, 0.5)',
             textAlign: 'center'
           }}
         >
-          {/* ওপরের বড় ওপেনিং কোটেশন মার্ক */}
+          {/* ওপরের বামে একটি প্রিমিয়াম ওয়াটারমার্ক কোটেশন */}
           <div style={{
             position: 'absolute',
-            top: '-15px',
-            left: '10px',
-            fontSize: '60px',
-            color: 'rgba(226, 232, 240, 0.12)',
+            top: '20px',
+            left: '28px',
+            fontSize: '52px',
+            color: 'rgba(255, 255, 255, 0.05)',
             fontFamily: 'Georgia, serif',
             lineHeight: 1,
             pointerEvents: 'none',
@@ -102,38 +106,27 @@ export const ReminderLoading: React.FC<ReminderLoadingProps> = ({
           </div>
 
           <p style={{
-            fontSize: '17px',
-            lineHeight: '1.75',
-            color: '#f1f5f9', // প্রিমিয়াম সফট অফ-হোয়াইট কালার
-            margin: '0 0 16px 0',
-            fontWeight: 500,
-            letterSpacing: '0.3px'
+            fontSize: '18px',
+            lineHeight: '1.85',
+            color: '#f8fafc', // অত্যন্ত পরিষ্কার ও আরামদায়ক অফ-হোয়াইট ফন্ট
+            margin: '12px 0 24px 0',
+            fontWeight: 400,
+            letterSpacing: '0.4px',
+            wordSpacing: '1px'
           }}>
             {cleanContent}
           </p>
 
-          {/* নিচের বড় ক্লোজিং কোটেশন মার্ক */}
-          <div style={{
-            position: 'absolute',
-            bottom: '-35px',
-            right: '10px',
-            fontSize: '60px',
-            color: 'rgba(226, 232, 240, 0.12)',
-            fontFamily: 'Georgia, serif',
-            lineHeight: 1,
-            pointerEvents: 'none',
-            userSelect: 'none'
-          }}>
-            ”
-          </div>
-
           {reminder.reference && (
             <div style={{
-              marginTop: '14px',
-              fontSize: '12px',
-              color: '#94a3b8', // চোখের আরামদায়ক মিউটেড গ্রে
-              letterSpacing: '0.5px',
-              fontWeight: 400
+              display: 'inline-block',
+              marginTop: '4px',
+              paddingTop: '14px',
+              borderTop: '1px solid rgba(255, 255, 255, 0.06)',
+              fontSize: '13px',
+              color: '#94a3b8',
+              letterSpacing: '0.8px',
+              fontWeight: 500
             }}>
               {reminder.reference}
             </div>
