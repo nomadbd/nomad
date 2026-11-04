@@ -56,7 +56,7 @@ export const ReminderLoading: React.FC<ReminderLoadingProps> = ({
 
   return (
     <div style={{
-      backgroundColor: '#0c0c0e', // চোখের প্রশান্তির জন্য হালকা ধূসর-ঘেঁষা সফট ডার্ক ব্যাকগ্রাউন্ড
+      backgroundColor: '#0c0c0e', // চোখের প্রশান্তির জন্য সফট ডার্ক ব্যাকগ্রাউন্ড
       color: '#f1f5f9',
       position: 'fixed',
       top: 0,
@@ -78,50 +78,55 @@ export const ReminderLoading: React.FC<ReminderLoadingProps> = ({
         <div 
           className={isFadingOut ? 'animate-fade-out' : 'animate-fade-in'}
           style={{
-            maxWidth: '540px',
+            maxWidth: '480px',
             width: '100%',
             position: 'relative',
-            padding: '20px 10px',
+            padding: '20px 0',
             boxSizing: 'border-box',
-            textAlign: 'center'
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-start', // পুরো ব্লকটি বাম দিক থেকে শুরু হবে
+            margin: '0 auto'
           }}
         >
           {/* ওপরে বড় ধূসর ওপেনিং কোটেশন মার্ক */}
           <div style={{
-            textAlign: 'left',
-            fontSize: '72px',
+            fontSize: '64px',
             color: '#64748b', // প্রিমিয়াম ধূসর কালার
             fontFamily: 'Georgia, serif',
-            lineHeight: '0.6',
-            marginBottom: '10px',
+            lineHeight: '0.5',
+            marginBottom: '12px',
             userSelect: 'none',
-            pointerEvents: 'none'
+            pointerEvents: 'none',
+            alignSelf: 'flex-start'
           }}>
             “
           </div>
 
           <p style={{
-            fontSize: '19px',
+            fontSize: '18px',
             lineHeight: '1.8',
             color: '#f8fafc', // সফট সাদা ফন্ট
-            margin: '0 0 24px 0',
+            margin: '0 0 20px 0',
             fontWeight: 600, // বোল্ড ফন্ট বিন্যাস
-            letterSpacing: '0.4px'
+            letterSpacing: '0.3px',
+            textAlign: 'left', // টেক্সট এক লাইন থেকে শুরু হয়ে নিচে নামবে
+            width: '100%'
           }}>
             {cleanContent}
           </p>
 
           {/* নিচে বড় ধূসর ক্লোজিং কোটেশন মার্ক */}
           <div style={{
-            textAlign: 'right',
-            fontSize: '72px',
+            fontSize: '64px',
             color: '#64748b', // প্রিমিয়াম ধূসর কালার
             fontFamily: 'Georgia, serif',
-            lineHeight: '0.6',
-            marginTop: '10px',
+            lineHeight: '0.5',
+            marginTop: '4px',
             marginBottom: '20px',
             userSelect: 'none',
-            pointerEvents: 'none'
+            pointerEvents: 'none',
+            alignSelf: 'flex-end' // ডান কোণায় ক্লোজিং কোটেশন
           }}>
             ”
           </div>
@@ -132,7 +137,9 @@ export const ReminderLoading: React.FC<ReminderLoadingProps> = ({
               color: '#94a3b8',
               letterSpacing: '0.8px',
               fontWeight: 700, // পোস্টের চেয়ে ছোট কিন্তু বোল্ড রেফারেন্স
-              textTransform: 'uppercase'
+              textTransform: 'uppercase',
+              textAlign: 'left', // বাম দিক বরাবর সোজা নিচে থাকবে
+              width: '100%'
             }}>
               {reminder.reference}
             </div>
