@@ -74,8 +74,9 @@ export default function AdminCustomers({ searchQuery = '', isFilterOpen }: Admin
       width: '100%', 
       maxWidth: '1200px', 
       margin: '0 auto', 
-      padding: '16px 20px', 
+      padding: '16px 12px', 
       boxSizing: 'border-box',
+      overflowX: 'hidden',
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' 
     }}>
       {/* Filter Bar */}
@@ -84,14 +85,17 @@ export default function AdminCustomers({ searchQuery = '', isFilterOpen }: Admin
           backgroundColor: '#0c0c0e', 
           border: '1px solid rgba(255, 255, 255, 0.06)', 
           borderRadius: '12px',
-          padding: '16px', 
+          padding: '14px', 
           marginBottom: '20px',
-          boxShadow: '0 10px 30px rgba(0,0,0,0.3)'
+          boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
+          boxSizing: 'border-box',
+          width: '100%'
         }}>
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
             style={{ 
+              width: '100%',
               backgroundColor: '#141417', 
               color: '#f1f5f9', 
               border: '1px solid rgba(255, 255, 255, 0.1)', 
@@ -100,7 +104,8 @@ export default function AdminCustomers({ searchQuery = '', isFilterOpen }: Admin
               fontSize: '12px',
               outline: 'none',
               cursor: 'pointer',
-              fontWeight: 500
+              fontWeight: 500,
+              boxSizing: 'border-box'
             }}
           >
             <option value="ALL">ALL STATUS</option>
@@ -122,8 +127,10 @@ export default function AdminCustomers({ searchQuery = '', isFilterOpen }: Admin
       ) : (
         <div style={{ 
           display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', 
-          gap: '16px' 
+          gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))', 
+          gap: '16px',
+          width: '100%',
+          boxSizing: 'border-box'
         }}>
           {filteredCustomers.map((cust) => {
             const isBlocked = cust.status === 'blocked';
@@ -134,18 +141,22 @@ export default function AdminCustomers({ searchQuery = '', isFilterOpen }: Admin
                   backgroundColor: '#0c0c0e',
                   border: '1px solid rgba(255, 255, 255, 0.05)',
                   borderRadius: '14px',
-                  padding: '20px',
+                  padding: '16px',
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
-                  boxShadow: '0 12px 32px rgba(0, 0, 0, 0.4)'
+                  boxShadow: '0 12px 32px rgba(0, 0, 0, 0.4)',
+                  boxSizing: 'border-box',
+                  width: '100%',
+                  maxWidth: '100%',
+                  overflow: 'hidden'
                 }}
               >
                 <div>
                   {/* Top info: Name and Status Badge */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-                    <div>
-                      <div style={{ fontSize: '15px', fontWeight: 600, color: '#f8fafc', marginBottom: '4px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px', marginBottom: '12px' }}>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={{ fontSize: '15px', fontWeight: 600, color: '#f8fafc', marginBottom: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {cust.name || 'GUEST USER'}
                       </div>
                       <div style={{ fontSize: '12px', color: '#94a3b8', wordBreak: 'break-all' }}>
@@ -161,7 +172,9 @@ export default function AdminCustomers({ searchQuery = '', isFilterOpen }: Admin
                         letterSpacing: '0.5px',
                         backgroundColor: isBlocked ? 'rgba(239, 68, 68, 0.1)' : 'rgba(34, 197, 94, 0.1)',
                         color: isBlocked ? '#f87171' : '#4ade80',
-                        border: `1px solid ${isBlocked ? 'rgba(239, 68, 68, 0.2)' : 'rgba(34, 197, 94, 0.2)'}`
+                        border: `1px solid ${isBlocked ? 'rgba(239, 68, 68, 0.2)' : 'rgba(34, 197, 94, 0.2)'}`,
+                        whiteSpace: 'nowrap',
+                        flexShrink: 0
                       }}
                     >
                       {(cust.status || 'ACTIVE').toUpperCase()}
@@ -178,10 +191,15 @@ export default function AdminCustomers({ searchQuery = '', isFilterOpen }: Admin
                     paddingTop: '12px',
                     borderTop: '1px solid rgba(255, 255, 255, 0.04)',
                     marginTop: '12px',
-                    marginBottom: '16px'
+                    marginBottom: '16px',
+                    gap: '8px'
                   }}>
-                    <span>Phone: <strong style={{ color: '#cbd5e1' }}>{cust.phone || 'N/A'}</strong></span>
-                    <span>Joined: <strong style={{ color: '#cbd5e1' }}>{new Date(cust.created_at).toLocaleDateString()}</strong></span>
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      Phone: <strong style={{ color: '#cbd5e1' }}>{cust.phone || 'N/A'}</strong>
+                    </span>
+                    <span style={{ flexShrink: 0 }}>
+                      Joined: <strong style={{ color: '#cbd5e1' }}>{new Date(cust.created_at).toLocaleDateString()}</strong>
+                    </span>
                   </div>
                 </div>
 
