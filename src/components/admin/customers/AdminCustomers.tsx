@@ -11,16 +11,17 @@ interface Customer {
   id: string;
   name: string;
   email: string;
-  phone?: string;
   status: 'active' | 'blocked';
   created_at: string;
-  total_orders?: number;
 }
 
 export default function AdminCustomers({ searchQuery = '', isFilterOpen }: AdminCustomersProps) {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
+  
+  // ভুল এড়াতে কনফার্মেশন স্টেট (কোন ইউজারের বিপরীতে কনফার্মেশন চলছে)
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
 
   const fetchCustomers = async () => {
     setLoading(true);
@@ -44,7 +45,14 @@ export default function AdminCustomers({ searchQuery = '', isFilterOpen }: Admin
     fetchCustomers();
   }, []);
 
-  const toggleCustomerStatus = async (id: string, currentStatus: string) => {
+  const handleStatusAction = async (id: string, currentStatus: string) => {
+    if (confirmingId !== id) {
+      // প্রথম ক্লিক: কনফার্মেশনের জন্য প্রস্তুত করা
+      setConfirmingId(id);
+      return;
+    }
+
+    // দ্বিতীয় ক্লিক: কার্যকর করা
     const newStatus = currentStatus === 'blocked' ? 'active' : 'blocked';
     try {
       const { error } = await supabase
@@ -53,17 +61,18 @@ export default function AdminCustomers({ searchQuery = '', isFilterOpen }: Admin
         .eq('id', id);
 
       if (error) throw error;
+      setConfirmingId(null);
       fetchCustomers();
     } catch (err: any) {
       alert('Failed to change status: ' + err.message);
+      setConfirmingId(null);
     }
   };
 
   const filteredCustomers = customers.filter((cust) => {
     const matchesSearch =
       cust.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      cust.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      cust.phone?.includes(searchQuery);
+      cust.email?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === 'ALL' || cust.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -79,39 +88,42 @@ export default function AdminCustomers({ searchQuery = '', isFilterOpen }: Admin
       overflowX: 'hidden',
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' 
     }}>
-      {/* Filter Bar */}
+      {/* ডিম্বাকার ফিল্টার সিলেক্ট ডিজাইন (মডাল ছাড়া) */}
       {isFilterOpen && (
         <div style={{ 
-          backgroundColor: '#0c0c0e', 
-          border: '1px solid rgba(255, 255, 255, 0.06)', 
-          borderRadius: '12px',
-          padding: '14px', 
+          display: 'flex', 
+          gap: '8px', 
           marginBottom: '20px',
-          boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
-          boxSizing: 'border-box',
-          width: '100%'
+          flexWrap: 'wrap'
         }}>
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            style={{ 
-              width: '100%',
-              backgroundColor: '#141417', 
-              color: '#f1f5f9', 
-              border: '1px solid rgba(255, 255, 255, 0.1)', 
-              borderRadius: '8px',
-              padding: '10px 14px', 
-              fontSize: '12px',
-              outline: 'none',
-              cursor: 'pointer',
-              fontWeight: 500,
-              boxSizing: 'border-box'
-            }}
-          >
-            <option value="ALL">ALL STATUS</option>
-            <option value="active">ACTIVE ONLY</option>
-            <option value="blocked">BLOCKED ONLY</option>
-          </select>
+          {[
+            { label: 'ALL STATUS', value: 'ALL' },
+            { label: 'ACTIVE', value: 'active' },
+            { label: 'BLOCKED', value: 'blocked' }
+          ].map((tab) => {
+            const isActive = statusFilter === tab.value;
+            return (
+              <button
+                key={tab.value}
+                onClick={() => setStatusFilter(tab.value)}
+                style={{
+                  backgroundColor: isActive ? 'rgba(255, 255, 255, 0.1)' : '#0c0c0e',
+                  color: isActive ? '#f8fafc' : '#94a3b8',
+                  border: `1px solid ${isActive ? 'rgba(255, 255, 255, 0.2)' : 'rgba(255, 255, 255, 0.06'}`,
+                  borderRadius: '20px',
+                  padding: '6px 16px',
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  letterSpacing: '0.5px',
+                  transition: 'all 0.2s ease',
+                  outline: 'none'
+                }}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
         </div>
       )}
 
@@ -134,6 +146,8 @@ export default function AdminCustomers({ searchQuery = '', isFilterOpen }: Admin
         }}>
           {filteredCustomers.map((cust) => {
             const isBlocked = cust.status === 'blocked';
+            const isConfirming = confirmingId === cust.id;
+
             return (
               <div
                 key={cust.id}
@@ -141,7 +155,7 @@ export default function AdminCustomers({ searchQuery = '', isFilterOpen }: Admin
                   backgroundColor: '#0c0c0e',
                   border: '1px solid rgba(255, 255, 255, 0.05)',
                   borderRadius: '14px',
-                  padding: '16px',
+                  padding: '18px',
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
@@ -153,73 +167,78 @@ export default function AdminCustomers({ searchQuery = '', isFilterOpen }: Admin
                 }}
               >
                 <div>
-                  {/* Top info: Name and Status Badge */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px', marginBottom: '12px' }}>
+                  {/* ওপরে নাম, নিচে ইমেইল এবং ডানপাশে স্ট্যাটাস ডট */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px', marginBottom: '14px' }}>
                     <div style={{ minWidth: 0, flex: 1 }}>
-                      <div style={{ fontSize: '15px', fontWeight: 600, color: '#f8fafc', marginBottom: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <div style={{ fontSize: '15px', fontWeight: 600, color: '#f8fafc', marginBottom: '3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {cust.name || 'GUEST USER'}
                       </div>
                       <div style={{ fontSize: '12px', color: '#94a3b8', wordBreak: 'break-all' }}>
                         {cust.email}
                       </div>
                     </div>
-                    <span
+                    {/* লাল বা সবুজ ডট স্ট্যাটাস */}
+                    <div 
+                      title={isBlocked ? 'Blocked' : 'Active'}
                       style={{
-                        fontSize: '9px',
-                        padding: '4px 8px',
-                        borderRadius: '6px',
-                        fontWeight: 700,
-                        letterSpacing: '0.5px',
-                        backgroundColor: isBlocked ? 'rgba(239, 68, 68, 0.1)' : 'rgba(34, 197, 94, 0.1)',
-                        color: isBlocked ? '#f87171' : '#4ade80',
-                        border: `1px solid ${isBlocked ? 'rgba(239, 68, 68, 0.2)' : 'rgba(34, 197, 94, 0.2)'}`,
-                        whiteSpace: 'nowrap',
-                        flexShrink: 0
+                        width: '8px',
+                        height: '8px',
+                        borderRadius: '50%',
+                        backgroundColor: isBlocked ? '#ef4444' : '#22c55e',
+                        boxShadow: `0 0 8px ${isBlocked ? '#ef4444' : '#22c55e'}`,
+                        flexShrink: 0,
+                        marginTop: '6px'
                       }}
-                    >
-                      {(cust.status || 'ACTIVE').toUpperCase()}
-                    </span>
+                    />
                   </div>
 
-                  {/* Secondary info: Phone & Joined Date */}
+                  {/* Joined Date */}
                   <div style={{ 
-                    display: 'flex', 
-                    justifyContent: 'space-between', 
-                    alignItems: 'center', 
                     fontSize: '11px', 
                     color: '#64748b',
-                    paddingTop: '12px',
+                    paddingTop: '10px',
                     borderTop: '1px solid rgba(255, 255, 255, 0.04)',
-                    marginTop: '12px',
-                    marginBottom: '16px',
-                    gap: '8px'
+                    marginBottom: '16px'
                   }}>
-                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      Phone: <strong style={{ color: '#cbd5e1' }}>{cust.phone || 'N/A'}</strong>
-                    </span>
-                    <span style={{ flexShrink: 0 }}>
-                      Joined: <strong style={{ color: '#cbd5e1' }}>{new Date(cust.created_at).toLocaleDateString()}</strong>
-                    </span>
+                    Joined: <strong style={{ color: '#cbd5e1' }}>{new Date(cust.created_at).toLocaleDateString()}</strong>
                   </div>
                 </div>
 
-                {/* Action Button */}
-                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                {/* কমপ্যাক্ট কনফার্মেশন সহ অ্যাকশন বাটন */}
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                  {isConfirming && (
+                    <button
+                      onClick={() => setConfirmingId(null)}
+                      style={{
+                        backgroundColor: 'transparent',
+                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        color: '#94a3b8',
+                        padding: '6px 10px',
+                        fontSize: '10px',
+                        borderRadius: '8px',
+                        fontWeight: 600,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      CANCEL
+                    </button>
+                  )}
                   <button
-                    onClick={() => toggleCustomerStatus(cust.id, cust.status)}
+                    onClick={() => handleStatusAction(cust.id, cust.status)}
                     style={{
-                      backgroundColor: 'transparent',
+                      backgroundColor: isConfirming ? (isBlocked ? '#22c55e' : '#ef4444') : 'transparent',
                       border: `1px solid ${isBlocked ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
-                      color: isBlocked ? '#4ade80' : '#f87171',
+                      color: isConfirming ? '#fff' : (isBlocked ? '#4ade80' : '#f87171'),
                       padding: '6px 14px',
                       fontSize: '11px',
                       borderRadius: '8px',
                       fontWeight: 600,
                       cursor: 'pointer',
-                      letterSpacing: '0.5px'
+                      letterSpacing: '0.5px',
+                      transition: 'all 0.2s ease'
                     }}
                   >
-                    {isBlocked ? 'UNBLOCK' : 'BLOCK CUSTOMER'}
+                    {isConfirming ? 'CONFIRM?' : (isBlocked ? 'UNBLOCK' : 'BLOCK CUSTOMER')}
                   </button>
                 </div>
               </div>
