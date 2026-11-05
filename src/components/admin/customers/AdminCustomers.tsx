@@ -74,22 +74,10 @@ export default function AdminCustomers({ searchQuery = '', isFilterOpen }: Admin
       width: '100%', 
       maxWidth: '1200px', 
       margin: '0 auto', 
-      padding: '24px 20px', 
+      padding: '16px 20px', 
       boxSizing: 'border-box',
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' 
     }}>
-      {/* Header */}
-      <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-        <div>
-          <h2 style={{ fontSize: '15px', letterSpacing: '1.5px', margin: '0 0 6px 0', fontWeight: 600, color: '#f8fafc' }}>
-            CUSTOMER DIRECTORY
-          </h2>
-          <span style={{ fontSize: '11px', color: '#94a3b8', letterSpacing: '0.5px' }}>
-            TOTAL REGISTERED: {filteredCustomers.length}
-          </span>
-        </div>
-      </div>
-
       {/* Filter Bar */}
       {isFilterOpen && (
         <div style={{ 
@@ -97,7 +85,7 @@ export default function AdminCustomers({ searchQuery = '', isFilterOpen }: Admin
           border: '1px solid rgba(255, 255, 255, 0.06)', 
           borderRadius: '12px',
           padding: '16px', 
-          marginBottom: '24px',
+          marginBottom: '20px',
           boxShadow: '0 10px 30px rgba(0,0,0,0.3)'
         }}>
           <select
@@ -150,8 +138,7 @@ export default function AdminCustomers({ searchQuery = '', isFilterOpen }: Admin
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
-                  boxShadow: '0 12px 32px rgba(0, 0, 0, 0.4)',
-                  transition: 'border-color 0.2s ease'
+                  boxShadow: '0 12px 32px rgba(0, 0, 0, 0.4)'
                 }}
               >
                 <div>
@@ -204,15 +191,14 @@ export default function AdminCustomers({ searchQuery = '', isFilterOpen }: Admin
                     onClick={() => toggleCustomerStatus(cust.id, cust.status)}
                     style={{
                       backgroundColor: 'transparent',
-                      border: `1px solid ${isBlocked ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.3'}`,
+                      border: `1px solid ${isBlocked ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
                       color: isBlocked ? '#4ade80' : '#f87171',
                       padding: '6px 14px',
                       fontSize: '11px',
                       borderRadius: '8px',
                       fontWeight: 600,
                       cursor: 'pointer',
-                      letterSpacing: '0.5px',
-                      transition: 'all 0.2s ease'
+                      letterSpacing: '0.5px'
                     }}
                   >
                     {isBlocked ? 'UNBLOCK' : 'BLOCK CUSTOMER'}
