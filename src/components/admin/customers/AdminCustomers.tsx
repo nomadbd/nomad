@@ -19,8 +19,6 @@ export default function AdminCustomers({ searchQuery = '', isFilterOpen }: Admin
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
-  
-  // ভুল এড়াতে কনফার্মেশন স্টেট (কোন ইউজারের বিপরীতে কনফার্মেশন চলছে)
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
 
   const fetchCustomers = async () => {
@@ -47,12 +45,10 @@ export default function AdminCustomers({ searchQuery = '', isFilterOpen }: Admin
 
   const handleStatusAction = async (id: string, currentStatus: string) => {
     if (confirmingId !== id) {
-      // প্রথম ক্লিক: কনফার্মেশনের জন্য প্রস্তুত করা
       setConfirmingId(id);
       return;
     }
 
-    // দ্বিতীয় ক্লিক: কার্যকর করা
     const newStatus = currentStatus === 'blocked' ? 'active' : 'blocked';
     try {
       const { error } = await supabase
@@ -81,20 +77,23 @@ export default function AdminCustomers({ searchQuery = '', isFilterOpen }: Admin
     <div style={{ 
       color: '#f1f5f9', 
       width: '100%', 
-      maxWidth: '1200px', 
+      maxWidth: '100%', 
       margin: '0 auto', 
-      padding: '16px 12px', 
+      padding: '16px', 
       boxSizing: 'border-box',
       overflowX: 'hidden',
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' 
     }}>
-      {/* ডিম্বাকার ফিল্টার সিলেক্ট ডিজাইন (মডাল ছাড়া) */}
+      {/* ফিল্টার বার: এক লাইনে এবং স্ক্রিন ছোট হলে ডানে-বামে স্ক্রোলযোগ্য */}
       {isFilterOpen && (
         <div style={{ 
           display: 'flex', 
           gap: '8px', 
           marginBottom: '20px',
-          flexWrap: 'wrap'
+          overflowX: 'auto',
+          whiteSpace: 'nowrap',
+          paddingBottom: '4px',
+          scrollbarWidth: 'none' // Firefox-এ স্ক্রলবার হাইড করার জন্য
         }}>
           {[
             { label: 'ALL STATUS', value: 'ALL' },
@@ -109,13 +108,14 @@ export default function AdminCustomers({ searchQuery = '', isFilterOpen }: Admin
                 style={{
                   backgroundColor: isActive ? 'rgba(255, 255, 255, 0.1)' : '#0c0c0e',
                   color: isActive ? '#f8fafc' : '#94a3b8',
-                  border: `1px solid ${isActive ? 'rgba(255, 255, 255, 0.2)' : 'rgba(255, 255, 255, 0.06'}`,
+                  border: `1px solid ${isActive ? 'rgba(255, 255, 255, 0.2)' : 'rgba(255, 255, 255, 0.06)'}`,
                   borderRadius: '20px',
                   padding: '6px 16px',
                   fontSize: '11px',
                   fontWeight: 600,
                   cursor: 'pointer',
                   letterSpacing: '0.5px',
+                  flexShrink: 0,
                   transition: 'all 0.2s ease',
                   outline: 'none'
                 }}
@@ -138,9 +138,9 @@ export default function AdminCustomers({ searchQuery = '', isFilterOpen }: Admin
         </div>
       ) : (
         <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))', 
-          gap: '16px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '14px',
           width: '100%',
           boxSizing: 'border-box'
         }}>
@@ -155,22 +155,21 @@ export default function AdminCustomers({ searchQuery = '', isFilterOpen }: Admin
                   backgroundColor: '#0c0c0e',
                   border: '1px solid rgba(255, 255, 255, 0.05)',
                   borderRadius: '14px',
-                  padding: '18px',
+                  padding: '20px',
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
                   boxShadow: '0 12px 32px rgba(0, 0, 0, 0.4)',
                   boxSizing: 'border-box',
                   width: '100%',
-                  maxWidth: '100%',
                   overflow: 'hidden'
                 }}
               >
                 <div>
                   {/* ওপরে নাম, নিচে ইমেইল এবং ডানপাশে স্ট্যাটাস ডট */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px', marginBottom: '14px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', marginBottom: '14px' }}>
                     <div style={{ minWidth: 0, flex: 1 }}>
-                      <div style={{ fontSize: '15px', fontWeight: 600, color: '#f8fafc', marginBottom: '3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <div style={{ fontSize: '15px', fontWeight: 600, color: '#f8fafc', marginBottom: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {cust.name || 'GUEST USER'}
                       </div>
                       <div style={{ fontSize: '12px', color: '#94a3b8', wordBreak: 'break-all' }}>
@@ -196,7 +195,7 @@ export default function AdminCustomers({ searchQuery = '', isFilterOpen }: Admin
                   <div style={{ 
                     fontSize: '11px', 
                     color: '#64748b',
-                    paddingTop: '10px',
+                    paddingTop: '12px',
                     borderTop: '1px solid rgba(255, 255, 255, 0.04)',
                     marginBottom: '16px'
                   }}>
@@ -204,7 +203,7 @@ export default function AdminCustomers({ searchQuery = '', isFilterOpen }: Admin
                   </div>
                 </div>
 
-                {/* কমপ্যাক্ট কনফার্মেশন সহ অ্যাকশন বাটন */}
+                {/* সংক্ষিপ্ত ও প্রিমিয়াম অ্যাকশন বাটন */}
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
                   {isConfirming && (
                     <button
@@ -213,8 +212,8 @@ export default function AdminCustomers({ searchQuery = '', isFilterOpen }: Admin
                         backgroundColor: 'transparent',
                         border: '1px solid rgba(255, 255, 255, 0.1)',
                         color: '#94a3b8',
-                        padding: '6px 10px',
-                        fontSize: '10px',
+                        padding: '6px 12px',
+                        fontSize: '11px',
                         borderRadius: '8px',
                         fontWeight: 600,
                         cursor: 'pointer'
@@ -229,7 +228,7 @@ export default function AdminCustomers({ searchQuery = '', isFilterOpen }: Admin
                       backgroundColor: isConfirming ? (isBlocked ? '#22c55e' : '#ef4444') : 'transparent',
                       border: `1px solid ${isBlocked ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
                       color: isConfirming ? '#fff' : (isBlocked ? '#4ade80' : '#f87171'),
-                      padding: '6px 14px',
+                      padding: '6px 16px',
                       fontSize: '11px',
                       borderRadius: '8px',
                       fontWeight: 600,
@@ -238,7 +237,7 @@ export default function AdminCustomers({ searchQuery = '', isFilterOpen }: Admin
                       transition: 'all 0.2s ease'
                     }}
                   >
-                    {isConfirming ? 'CONFIRM?' : (isBlocked ? 'UNBLOCK' : 'BLOCK CUSTOMER')}
+                    {isConfirming ? 'CONFIRM?' : (isBlocked ? 'UNBLOCK' : 'BLOCK')}
                   </button>
                 </div>
               </div>
