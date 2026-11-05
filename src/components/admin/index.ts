@@ -1,4 +1,4 @@
-export { default as AdminCustomers } from './AdminCustomers';
+export { default as AdminCustomers } from './customers/AdminCustomers';
 export { default as AdminLogistics } from './logistics/AdminLogistics';
 export { default as AdminMessages } from './messages/AdminMessages';
 export { default as AdminNotifications } from './notifications/AdminNotifications';
