@@ -67,12 +67,8 @@ export default function AdminActivityLog({ searchQuery = '', selectedEntity = 'A
         throw new Error(`Supabase Error [${error.code}]: ${error.message}`);
       }
 
-      // ডিবাগ করার জন্য কনসোলে পুরো ডেটা প্রিন্ট করে দেখুন
-      console.log('Fetched Audit Logs:', data);
-
       setLogs((data as unknown as AuditLogItem[]) || []);
     } catch (err: any) {
-      console.error('Error fetching deletion logs:', err);
       setDebugError(err.message || 'Unknown error occurred while fetching deletion logs.');
     } finally {
       setLoading(false);
@@ -138,10 +134,8 @@ export default function AdminActivityLog({ searchQuery = '', selectedEntity = 'A
         ) : (
           filteredLogs.map((log) => {
             const profileObj = Array.isArray(log.profiles) ? log.profiles[0] : log.profiles;
-            
-            // যদি profiles জয়েন্ট কাজ না করে, তবে মেটাডাটা বা সরাসরি নাম চেক করবে
-            const adminName = profileObj?.name || log.metadata?.name || log.metadata?.user_name || `USER ID: ${log.user_id ? log.user_id.slice(0, 8) : 'NOT RECORDED'}`;
-            const adminDesignation = profileObj?.designation || log.metadata?.designation || 'ADMIN';
+            const adminName = profileObj?.name || 'UNKNOWN USER';
+            const adminDesignation = profileObj?.designation || 'N/A';
 
             const oldData = log.changes?.old || log.changes || {};
 
@@ -161,7 +155,6 @@ export default function AdminActivityLog({ searchQuery = '', selectedEntity = 'A
                   width: '100%',
                 }}
               >
-                {/* Top Badge & Entity */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11px', flexWrap: 'wrap', gap: '8px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span
@@ -188,7 +181,6 @@ export default function AdminActivityLog({ searchQuery = '', selectedEntity = 'A
                   </span>
                 </div>
 
-                {/* Deleted Content Preview */}
                 {oldData && typeof oldData === 'object' && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '12px', color: '#cbd5e1', padding: '4px 0' }}>
                     <div style={{ color: '#64748b', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600, marginBottom: '2px' }}>Deleted Item Data:</div>
@@ -199,7 +191,6 @@ export default function AdminActivityLog({ searchQuery = '', selectedEntity = 'A
                   </div>
                 )}
 
-                {/* Footer User Info */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', paddingTop: '12px', borderTop: '1px solid rgba(255, 255, 255, 0.04)' }}>
                   <div style={{ fontSize: '13px', fontWeight: 600, color: '#f8fafc', textTransform: 'uppercase' }}>
                     {adminName}
