@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/supabaseClient';
 import { useCart } from '@/context/CartContext';
 import ProductGallery from './ProductGallery';
@@ -313,6 +313,7 @@ export default function ProductList() {
   const [categories, setCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
+  const [activeCategory, setActiveCategory] = useState<string>('ALL');
 
   const fetchProducts = async () => {
     setLoading(true);
@@ -360,41 +361,119 @@ export default function ProductList() {
     }
   }, [loading, products]);
 
-  if (loading) return <p style={{ color: '#555', padding: '40px', letterSpacing: '2px', fontSize: '11px' }}>LOADING PRODUCTS...</p>;
+  const scrollToCategory = (category: string) => {
+    setActiveCategory(category);
+    if (category === 'ALL') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      const el = document.getElementById(`section-${category}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+  };
+
+  if (loading) return <p style={{ color: '#555', padding: '40px', letterSpacing: '2px', fontSize: '11px', textAlign: 'center' }}>LOADING PRODUCTS...</p>;
 
   return (
     <div style={{ backgroundColor: '#000', width: '100%', boxSizing: 'border-box' }}>
-      {categories.map((category) => {
-        const categoryProducts = products.filter(p => p.category === category);
-        const isExpanded = !!expandedCategories[category];
+      
+      {/* Sticky Horizontal Category Filter Bar */}
+      <div 
+        className="variant-scroll-container" 
+        style={{ 
+          position: 'sticky', 
+          top: 0, 
+          zIndex: 50, 
+          backgroundColor: '#0c0c0e', 
+          borderBottom: '1px solid #1a1a1a', 
+          display: 'flex', 
+          gap: '20px', 
+          overflowX: 'auto', 
+          padding: '12px 16px', 
+          whiteSpace: 'nowrap',
+          backdropFilter: 'blur(10px)'
+        }}
+      >
+        <button
+          onClick={() => scrollToCategory('ALL')}
+          style={{
+            background: 'none',
+            border: 'none',
+            color: activeCategory === 'ALL' ? '#fff' : '#666',
+            fontSize: '11px',
+            letterSpacing: '2px',
+            cursor: 'pointer',
+            textTransform: 'uppercase',
+            fontWeight: activeCategory === 'ALL' ? '700' : '400',
+            padding: 0,
+            transition: 'color 0.2s'
+          }}
+        >
+          ALL
+        </button>
+        {categories.map((cat) => (
+          <button
+            key={cat}
+            onClick={() => scrollToCategory(cat)}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: activeCategory === cat ? '#fff' : '#666',
+              fontSize: '11px',
+              letterSpacing: '2px',
+              cursor: 'pointer',
+              textTransform: 'uppercase',
+              fontWeight: activeCategory === cat ? '700' : '400',
+              padding: 0,
+              transition: 'color 0.2s'
+            }}
+          >
+            {cat}
+          </button>
+        ))}
+      </div>
 
-        return (
-          <div key={category} className="showroom-section" style={{ marginBottom: '25px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 15px 12px 15px', borderBottom: '1px solid #141414' }}>
-              <h3 style={{ margin: 0, fontSize: '13px', letterSpacing: '3px', color: '#b3b3b3', textTransform: 'uppercase' }}>{category}</h3>
+      {/* Categories & Products Sections */}
+      <div style={{ marginTop: '20px' }}>
+        {categories.map((category) => {
+          const categoryProducts = products.filter(p => p.category === category);
+          const isExpanded = !!expandedCategories[category];
+          
+          // হোমপেজে প্রিভিউ হিসেবে সীমিত সংখ্যক (যেমন: ৪টি) প্রডাক্ট দেখাবে, এক্সপান্ড করলে সব দেখাবে
+          const displayLimit = 4;
+          const visibleProducts = isExpanded ? categoryProducts : categoryProducts.slice(0, displayLimit);
 
-              <button 
-                onClick={() => setExpandedCategories(prev => ({ ...prev, [category]: !isExpanded }))} 
-                style={{ 
-                  background: 'none', border: 'none', color: '#fff', fontSize: '11px', letterSpacing: '2px', cursor: 'pointer', opacity: 0.7,
-                  display: 'flex', padding: 0, alignItems: 'center', width: '85px', justifyContent: 'flex-end'
-                }}
-              >
-                <span>SEE&nbsp;</span>
-                <span style={{ display: 'inline-block', width: '35px', textAlign: 'left' }}>
-                  {isExpanded ? 'LESS' : 'MORE'}
-                </span>
-              </button>
+          return (
+            <div key={category} id={`section-${category}`} className="showroom-section" style={{ marginBottom: '35px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 15px 12px 15px', borderBottom: '1px solid #141414' }}>
+                <h3 style={{ margin: 0, fontSize: '13px', letterSpacing: '3px', color: '#b3b3b3', textTransform: 'uppercase' }}>{category}</h3>
+
+                {categoryProducts.length > displayLimit && (
+                  <button 
+                    onClick={() => setExpandedCategories(prev => ({ ...prev, [category]: !isExpanded }))} 
+                    style={{ 
+                      background: 'none', border: 'none', color: '#fff', fontSize: '11px', letterSpacing: '2px', cursor: 'pointer', opacity: 0.7,
+                      display: 'flex', padding: 0, alignItems: 'center', width: '85px', justifyContent: 'flex-end'
+                    }}
+                  >
+                    <span>SEE&nbsp;</span>
+                    <span style={{ display: 'inline-block', width: '35px', textAlign: 'left' }}>
+                      {isExpanded ? 'LESS' : 'MORE'}
+                    </span>
+                  </button>
+                )}
+              </div>
+
+              <div className="showroom-row-container" style={{ display: 'flex', alignItems: 'flex-start', flexWrap: isExpanded ? 'wrap' : 'nowrap', width: '100%', scrollSnapType: 'x mandatory', overflowX: isExpanded ? 'visible' : 'auto', scrollBehavior: 'smooth' }}>
+                {visibleProducts.map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
             </div>
-
-            <div className="showroom-row-container" style={{ display: 'flex', alignItems: 'flex-start', flexWrap: isExpanded ? 'wrap' : 'nowrap', width: '100%', scrollSnapType: 'x mandatory', overflowX: 'auto', scrollBehavior: 'smooth' }}>
-              {categoryProducts.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
 
       <style>{`
         @keyframes swapFadeIn {
