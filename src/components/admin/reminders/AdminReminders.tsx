@@ -1,152 +1,166 @@
-import os
-import time
-import re
-import logging
-import google.generativeai as genai
-import requests
+import React, { useState, useEffect } from 'react';
+import { supabase } from '@/supabaseClient';
+import { Reminder, AdminRemindersProps } from './types';
+import CreateReminderModal from './CreateReminderModal';
+import ReminderItem from './ReminderItem';
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    handlers=[logging.StreamHandler()]
-)
+export default function AdminReminders({ searchQuery = '', isAddOpen = false, onCloseAdd }: AdminRemindersProps) {
+  const [reminders, setReminders] = useState<Reminder[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [internalShowForm, setInternalShowForm] = useState(false);
 
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
-THREADS_TOKEN = os.environ.get("THREADS_TOKEN")
+  const showForm = isAddOpen || internalShowForm;
 
-if not GEMINI_API_KEY or not THREADS_TOKEN:
-    logging.error("CRITICAL: GEMINI_API_KEY or THREADS_TOKEN environment variable is missing!")
-    exit(1)
+  useEffect(() => {
+    fetchReminders();
+  }, []);
 
-genai.configure(api_key=GEMINI_API_KEY)
+  const fetchReminders = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('reminders')
+      .select('*')
+      .order('created_at', { ascending: false });
 
-def extract_version(name):
-    match = re.search(r'(\d+)\.(\d+)', name)
-    if match:
-        return float(f"{match.group(1)}.{match.group(2)}")
-    match_single = re.search(r'(\d+)', name)
-    if match_single:
-        return float(match_single.group(1))
-    return 0.0
+    if (error) {
+      console.error('Error fetching reminders:', error.message);
+      setReminders([]);
+    } else if (data && data.length > 0) {
+      const enhancedReminders = await Promise.all(
+        data.map(async (item) => {
+          if (item.created_by) {
+            const { data: profileData } = await supabase
+              .from('profiles')
+              .select('name, designation, avatar_url')
+              .eq('id', item.created_by)
+              .single();
+            return {
+              ...item,
+              profiles: profileData || { name: 'Admin User', designation: item.category, avatar_url: null }
+            };
+          }
+          return { ...item, profiles: { name: 'Admin User', designation: item.category, avatar_url: null } };
+        })
+      );
+      setReminders(enhancedReminders);
+    } else {
+      setReminders([]);
+    }
+    setLoading(false);
+  };
 
-def generate_content_with_fallback(prompt_text):
-    try:
-        available_models = []
-        for m in genai.list_models():
-            if 'generateContent' in m.supported_generation_methods and 'gemini' in m.name:
-                clean_name = m.name.replace("models/", "")
-                exclude_keywords = ['tts', 'image', 'audio', 'computer-use', 'vision-only', 'banana']
-                if any(kw in clean_name.lower() for kw in exclude_keywords):
-                    continue
-                available_models.append(clean_name)
+  const handleCreate = async ({ content, reference, category, is_active }: { content: string; reference: string; category: string; is_active: boolean }) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    const { error } = await supabase
+      .from('reminders')
+      .insert([{
+        content,
+        reference,
+        category,
+        is_active,
+        created_by: user?.id,
+        updated_by: user?.id
+      }]);
 
-        if not available_models:
-            raise Exception("No active Gemini text models discovered via API.")
+    if (!error) {
+      fetchReminders();
+      if (onCloseAdd) onCloseAdd();
+      setInternalShowForm(false);
+    } else {
+      alert('Error creating reminder: ' + error.message);
+    }
+  };
 
-        def score_model(name):
-            version = extract_version(name)
-            score = version * 100
-            if 'flash' in name.lower():
-                score += 50
-            elif 'pro' in name.lower():
-                score += 30
-            return score
+  const handleUpdate = async (id: string, content: string, reference: string, category: string) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    const { error } = await supabase
+      .from('reminders')
+      .update({
+        content,
+        reference,
+        category,
+        updated_at: new Date().toISOString(),
+        updated_by: user?.id
+      })
+      .eq('id', id);
 
-        available_models.sort(key=score_model, reverse=True)
-        logging.info(f"Sorted available models for fallback: {available_models}")
+    if (!error) {
+      fetchReminders();
+    } else {
+      alert('Error updating reminder: ' + error.message);
+    }
+  };
 
-        for model_name in available_models:
-            retries = 2
-            for attempt in range(retries):
-                try:
-                    logging.info(f"Attempting generation with {model_name} (Attempt {attempt+1}/{retries})")
-                    model = genai.GenerativeModel(model_name)
-                    response = model.generate_content(prompt_text)
-                    
-                    # রেসপন্স টেক্সট নিরাপদে রিড করার ব্যবস্থা
-                    if response:
-                        try:
-                            text_output = response.text
-                            if text_output:
-                                logging.info(f"Successfully generated content using: {model_name}")
-                                return text_output.strip()
-                        except ValueError:
-                            # যদি সেফটি ফিল্টার বা অন্য কারণে টেক্সট ব্লOCKED থাকে
-                            logging.warning(f"Model {model_name} response text blocked or empty.")
-                except Exception as e:
-                    logging.warning(f"Model {model_name} failed on attempt {attempt+1}: {e}")
-                    if attempt < retries - 1:
-                        time.sleep(2)
-                    continue
+  const handleDelete = async (id: string) => {
+    const oldData = reminders.find(r => r.id === id);
+    const { data: { user } } = await supabase.auth.getUser();
+    const { error } = await supabase.from('reminders').delete().eq('id', id);
 
-        raise Exception("All dynamically discovered Gemini models failed to generate content.")
+    if (!error) {
+      // সুপাবেজের audit_logs টেবিলে সঠিক user_id পাঠানো হলো যাতে অ্যাক্টিভিটি লগে নাম ও পদবী আসে
+      await supabase.from('audit_logs').insert({
+        entity_type: 'reminders',
+        action_type: 'DELETE_REMINDER',
+        user_id: user?.id, 
+        changes: { old: oldData },
+        metadata: { reminder_id: id, content: oldData?.content }
+      });
+      fetchReminders();
+    } else {
+      alert('Error deleting reminder: ' + error.message);
+    }
+  };
 
-    except Exception as e:
-    
-        logging.error(f"Critical error during dynamic model generation: {e}")
-        raise e
+  const filteredReminders = reminders.filter((item) => {
+    const query = searchQuery ? searchQuery.trim().toLowerCase() : '';
+    if (!query) return true;
+    const contentMatch = item.content && item.content.toLowerCase().includes(query);
+    const referenceMatch = item.reference && item.reference.toLowerCase().includes(query);
+    const categoryMatch = item.category && item.category.toLowerCase().includes(query);
+    return contentMatch || referenceMatch || categoryMatch;
+  });
 
-prompt_path = "prompt.txt"
-if not os.path.exists(prompt_path):
-    logging.error(f"Error: {prompt_path} not found!")
-    exit(1)
+  return (
+    <div
+      style={{
+        width: '100%',
+        boxSizing: 'border-box',
+        backgroundColor: 'transparent',
+        padding: '8px 0',
+        color: '#ffffff',
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+      }}
+    >
+      <CreateReminderModal
+        isOpen={showForm}
+        onClose={() => {
+          if (onCloseAdd) onCloseAdd();
+          setInternalShowForm(false);
+        }}
+        onSave={handleCreate}
+        reminders={reminders}
+      />
 
-with open(prompt_path, "r", encoding="utf-8") as file:
-    prompt_content = file.read().strip()
-
-if not prompt_content:
-    logging.error("Error: prompt.txt is empty!")
-    exit(1)
-
-logging.info("Generating content with smart dynamic fallback...")
-post_text = generate_content_with_fallback(prompt_content)
-
-if len(post_text) > 500:
-    logging.warning(f"Post length ({len(post_text)} chars) exceeds 500-limit. Truncating...")
-    post_text = post_text[:497] + "..."
-
-logging.info(f"Generated Post Preview: {post_text[:100]}... (Total Length: {len(post_text)})")
-
-THREADS_URL_ME = "https://graph.threads.net/v1.0/me"
-headers = {"Authorization": f"Bearer {THREADS_TOKEN}"}
-
-try:
-    user_res = requests.get(THREADS_URL_ME, headers=headers, timeout=10)
-    user_data = user_res.json()
-    user_id = user_data.get("id")
-
-    if not user_id:
-        raise Exception(f"Invalid response structure: {user_data}")
-
-    logging.info(f"Fetched Threads User ID: {user_id}")
-except Exception as e:
-    logging.error(f"Failed to fetch Threads User ID: {e}")
-    exit(1)
-
-container_url = f"https://graph.threads.net/v1.0/{user_id}/threads"
-payload = {"media_type": "TEXT", "text": post_text}
-
-container_res = requests.post(container_url, headers=headers, data=payload, timeout=15)
-container_data = container_res.json()
-container_id = container_data.get("id")
-
-if not container_id:
-    logging.error(f"Failed to create media container: {container_data}")
-    exit(1)
-
-logging.info(f"Created Media Container ID: {container_id}")
-
-logging.info("Waiting 5 seconds before publishing...")
-time.sleep(5)
-
-publish_url = f"https://graph.threads.net/v1.0/{user_id}/threads_publish"
-publish_payload = {"creation_id": container_id}
-
-publish_res = requests.post(publish_url, headers=headers, data=publish_payload, timeout=15)
-publish_data = publish_res.json()
-
-if "id" in publish_data:
-    logging.info(f"Successfully posted to Threads! Post ID: {publish_data['id']}")
-else:
-    logging.error(f"Failed to publish post: {publish_data}")
-    exit(1)
+      {loading ? (
+        <div style={{ padding: '30px', textAlign: 'center', color: '#71717a', fontSize: '11px', fontFamily: 'monospace' }}>
+          LOADING REMINDERS...
+        </div>
+      ) : filteredReminders.length === 0 ? (
+        <div style={{ padding: '30px', textAlign: 'center', color: '#71717a', fontSize: '11px', fontFamily: 'monospace' }}>
+          NO REMINDERS FOUND
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxHeight: '600px', overflowY: 'auto', paddingRight: '4px' }}>
+          {filteredReminders.map((item) => (
+            <ReminderItem
+              key={item.id}
+              item={item}
+              onUpdate={handleUpdate}
+              onDelete={handleDelete}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
