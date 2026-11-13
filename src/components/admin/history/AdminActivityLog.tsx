@@ -113,19 +113,19 @@ export default function AdminActivityLog({ onBack, searchQuery = '', selectedEnt
     <div
       style={{
         width: '100%',
-        maxWidth: '1200px',
+        maxWidth: '100%',
         margin: '0 auto',
         color: '#f1f5f9',
         fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
         boxSizing: 'border-box',
-        padding: '16px 12px',
+        padding: '16px',
         overflowX: 'hidden',
       }}
     >
-      {/* Header Info */}
+      {/* Header Info - ইমোজি মুক্ত পরিচ্ছন্ন হেডার */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid rgba(255, 255, 255, 0.06)', paddingBottom: '12px' }}>
         <span style={{ fontSize: '11px', fontWeight: 700, color: '#f87171', letterSpacing: '1px', textTransform: 'uppercase' }}>
-          🗑️ SYSTEM DELETION LOGS ({filteredLogs.length})
+          SYSTEM DELETION LOGS ({filteredLogs.length})
         </span>
         {onBack && (
           <button
@@ -157,8 +157,8 @@ export default function AdminActivityLog({ onBack, searchQuery = '', selectedEnt
         ) : (
           filteredLogs.map((log) => {
             const profileObj = Array.isArray(log.profiles) ? log.profiles[0] : log.profiles;
-            const adminName = profileObj?.name || profileObj?.email?.split('@')[0] || 'Admin User';
-            const adminRole = profileObj?.role || profileObj?.designation || 'Admin';
+            const adminName = profileObj?.name || profileObj?.email?.split('@')[0] || 'Unknown User';
+            const adminDesignation = profileObj?.designation || profileObj?.role || 'N/A';
 
             const oldData = log.changes?.old || log.changes || {};
 
@@ -169,7 +169,7 @@ export default function AdminActivityLog({ onBack, searchQuery = '', selectedEnt
                   backgroundColor: '#0c0c0e',
                   border: '1px solid rgba(239, 68, 68, 0.15)',
                   borderRadius: '14px',
-                  padding: '18px',
+                  padding: '20px',
                   display: 'flex',
                   flexDirection: 'column',
                   gap: '12px',
@@ -216,10 +216,10 @@ export default function AdminActivityLog({ onBack, searchQuery = '', selectedEnt
                   </div>
                 )}
 
-                {/* Footer User Info */}
+                {/* Footer User Info: Designation & Name */}
                 <div style={{ fontSize: '10px', color: '#64748b', display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '10px', borderTop: '1px solid rgba(255, 255, 255, 0.04)', flexWrap: 'wrap', gap: '6px' }}>
-                  <span>ROLE: <strong style={{ color: '#cbd5e1' }}>{adminRole.toUpperCase()}</strong></span>
-                  <span>DELETED BY: <strong style={{ color: '#f87171' }}>{adminName.toUpperCase()}</strong></span>
+                  <span>DESIGNATION: <strong style={{ color: '#cbd5e1' }}>{adminDesignation.toUpperCase()}</strong></span>
+                  <span>NAME: <strong style={{ color: '#f87171' }}>{adminName.toUpperCase()}</strong></span>
                 </div>
               </div>
             );
