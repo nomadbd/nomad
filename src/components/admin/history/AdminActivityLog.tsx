@@ -37,7 +37,6 @@ export default function AdminActivityLog({ onBack, searchQuery = '', selectedEnt
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'audit_logs' },
         (payload) => {
-          // নতুন কোনো লগ আসলে এবং সেটি ডিলিট সংক্রান্ত হলে লিস্টে যুক্ত করব
           if (payload.new && payload.new.action_type && payload.new.action_type.toUpperCase().includes('DELETE')) {
             fetchDeletionLogs();
           }
@@ -54,7 +53,6 @@ export default function AdminActivityLog({ onBack, searchQuery = '', selectedEnt
     setLoading(true);
     setDebugError(null);
     try {
-      // শুধুমাত্র ডিলিট সম্পর্কিত অ্যাকশনগুলো ফিল্টার করে আনা হচ্ছে (.ilike)
       const { data, error } = await supabase
         .from('audit_logs')
         .select(`
@@ -115,25 +113,25 @@ export default function AdminActivityLog({ onBack, searchQuery = '', selectedEnt
     <div
       style={{
         width: '100%',
-        maxWidth: '850px',
+        maxWidth: '1200px',
         margin: '0 auto',
-        backgroundColor: '#000000',
-        color: '#e4e4e7',
-        fontFamily: 'monospace, sans-serif',
+        color: '#f1f5f9',
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
         boxSizing: 'border-box',
-        padding: '12px 0',
+        padding: '16px 12px',
+        overflowX: 'hidden',
       }}
     >
       {/* Header Info */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', borderBottom: '1px solid #27272a', paddingBottom: '8px' }}>
-        <span style={{ fontSize: '11px', fontWeight: '700', color: '#ef4444', letterSpacing: '1px', textTransform: 'uppercase' }}>
-          🗑️ System Deletion Logs ({filteredLogs.length})
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid rgba(255, 255, 255, 0.06)', paddingBottom: '12px' }}>
+        <span style={{ fontSize: '11px', fontWeight: 700, color: '#f87171', letterSpacing: '1px', textTransform: 'uppercase' }}>
+          🗑️ SYSTEM DELETION LOGS ({filteredLogs.length})
         </span>
         {onBack && (
           <button
             type="button"
             onClick={onBack}
-            style={{ backgroundColor: 'transparent', border: '1px solid #3f3f46', color: '#a1a1aa', borderRadius: '4px', padding: '4px 10px', fontSize: '10px', cursor: 'pointer' }}
+            style={{ backgroundColor: 'transparent', border: '1px solid rgba(255, 255, 255, 0.1)', color: '#94a3b8', borderRadius: '8px', padding: '6px 12px', fontSize: '11px', cursor: 'pointer', fontWeight: 600 }}
           >
             ← Back
           </button>
@@ -141,83 +139,86 @@ export default function AdminActivityLog({ onBack, searchQuery = '', selectedEnt
       </div>
 
       {debugError && (
-        <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.4)', borderRadius: '6px', padding: '12px', marginBottom: '12px', color: '#f87171', fontSize: '11px', wordBreak: 'break-all' }}>
+        <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '10px', padding: '14px', marginBottom: '16px', color: '#f87171', fontSize: '11px', wordBreak: 'break-all' }}>
           <strong style={{ display: 'block', marginBottom: '4px', textTransform: 'uppercase' }}>⚠️ Debug Error:</strong>
           {debugError}
         </div>
       )}
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', width: '100%', boxSizing: 'border-box' }}>
         {loading ? (
-          <div style={{ textAlign: 'center', padding: '30px 0', color: '#52525b', fontSize: '11px' }}>
+          <div style={{ textAlign: 'center', padding: '40px 0', color: '#94a3b8', fontSize: '12px', letterSpacing: '1px' }}>
             LOADING DELETION LOGS...
           </div>
         ) : filteredLogs.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '30px 0', color: '#71717a', fontSize: '11px' }}>
-            NO DELETION RECORDS FOUND
+          <div style={{ textAlign: 'center', padding: '40px 0', color: '#64748b', fontSize: '12px', letterSpacing: '0.5px' }}>
+            NO DELETION RECORDS FOUND.
           </div>
         ) : (
           filteredLogs.map((log) => {
             const profileObj = Array.isArray(log.profiles) ? log.profiles[0] : log.profiles;
             const adminName = profileObj?.name || profileObj?.email?.split('@')[0] || 'Admin User';
             const adminRole = profileObj?.role || profileObj?.designation || 'Admin';
-            
-            // ডিলিট হওয়া আইটেমের পূর্বের ডেটা (যদি changes.old এ থাকে)
+
             const oldData = log.changes?.old || log.changes || {};
 
             return (
               <div
                 key={log.id}
                 style={{
-                  backgroundColor: '#09090b',
-                  border: '1px solid rgba(239, 68, 68, 0.2)',
-                  borderRadius: '6px',
-                  padding: '12px',
+                  backgroundColor: '#0c0c0e',
+                  border: '1px solid rgba(239, 68, 68, 0.15)',
+                  borderRadius: '14px',
+                  padding: '18px',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: '8px',
+                  gap: '12px',
+                  boxShadow: '0 12px 32px rgba(0, 0, 0, 0.4)',
+                  boxSizing: 'border-box',
+                  width: '100%',
                 }}
               >
                 {/* Top Badge & Entity */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '10px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11px', flexWrap: 'wrap', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span
                       style={{
                         fontSize: '9px',
-                        fontWeight: '700',
-                        padding: '2px 6px',
-                        borderRadius: '3px',
+                        fontWeight: 700,
+                        padding: '3px 8px',
+                        borderRadius: '6px',
                         backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                        color: '#ef4444',
-                        border: '1px solid rgba(239, 68, 68, 0.3)',
+                        color: '#f87171',
+                        border: '1px solid rgba(239, 68, 68, 0.25)',
                         textTransform: 'uppercase',
+                        letterSpacing: '0.5px'
                       }}
                     >
                       {log.action_type}
                     </span>
-                    <span style={{ color: '#a1a1aa', fontWeight: '600', textTransform: 'uppercase' }}>
-                      Entity: {log.entity_type}
+                    <span style={{ color: '#cbd5e1', fontWeight: 600, textTransform: 'uppercase', fontSize: '12px' }}>
+                      {log.entity_type}
                     </span>
                   </div>
-                  <span style={{ color: '#71717a', fontSize: '10px' }}>
+                  <span style={{ color: '#64748b', fontSize: '11px' }}>
                     {formatDateTime(log.created_at)}
                   </span>
                 </div>
 
-                {/* Deleted Content Preview (যদি রিমাইন্ডার বা অন্য কিছু হয়) */}
+                {/* Deleted Content Preview */}
                 {oldData && typeof oldData === 'object' && (
-                  <div style={{ backgroundColor: '#121215', border: '1px solid #27272a', borderRadius: '4px', padding: '8px', fontSize: '11px', color: '#d4d4d8' }}>
-                    <div style={{ color: '#71717a', fontSize: '9px', textTransform: 'uppercase', marginBottom: '4px' }}>Deleted Item Data:</div>
-                    {oldData.content && <div><strong>Content:</strong> {oldData.content}</div>}
-                    {oldData.reference && <div style={{ color: '#3498db' }}><strong>Reference:</strong> {oldData.reference}</div>}
-                    {oldData.name && <div><strong>Name:</strong> {oldData.name}</div>}
-                    {oldData.category && <div style={{ color: '#a1a1aa' }}><strong>Category:</strong> {oldData.category}</div>}
+                  <div style={{ backgroundColor: '#141417', border: '1px solid rgba(255, 255, 255, 0.05)', borderRadius: '10px', padding: '12px', fontSize: '12px', color: '#e2e8f0' }}>
+                    <div style={{ color: '#64748b', fontSize: '10px', textTransform: 'uppercase', marginBottom: '6px', letterSpacing: '0.5px', fontWeight: 600 }}>Deleted Item Data:</div>
+                    {oldData.content && <div style={{ marginBottom: '4px' }}><strong>Content:</strong> {oldData.content}</div>}
+                    {oldData.reference && <div style={{ color: '#38bdf8', marginBottom: '4px' }}><strong>Reference:</strong> {oldData.reference}</div>}
+                    {oldData.name && <div style={{ marginBottom: '4px' }}><strong>Name:</strong> {oldData.name}</div>}
+                    {oldData.category && <div style={{ color: '#94a3b8' }}><strong>Category:</strong> {oldData.category}</div>}
                   </div>
                 )}
 
                 {/* Footer User Info */}
-                <div style={{ fontSize: '9px', color: '#71717a', display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '6px', borderTop: '1px solid #18181b' }}>
-                  <span>ROLE: <strong style={{ color: '#a1a1aa' }}>{adminRole.toUpperCase()}</strong></span>
+                <div style={{ fontSize: '10px', color: '#64748b', display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '10px', borderTop: '1px solid rgba(255, 255, 255, 0.04)', flexWrap: 'wrap', gap: '6px' }}>
+                  <span>ROLE: <strong style={{ color: '#cbd5e1' }}>{adminRole.toUpperCase()}</strong></span>
                   <span>DELETED BY: <strong style={{ color: '#f87171' }}>{adminName.toUpperCase()}</strong></span>
                 </div>
               </div>
