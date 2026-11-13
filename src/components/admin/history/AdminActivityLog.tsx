@@ -12,18 +12,15 @@ interface AuditLogItem {
   profiles?: {
     name?: string | null;
     designation?: string | null;
-    role?: string | null;
-    email?: string | null;
-  } | { name?: string | null; designation?: string | null; role?: string | null; email?: string | null }[] | null;
+  } | { name?: string | null; designation?: string | null }[] | null;
 }
 
 interface AdminActivityLogProps {
-  onBack?: () => void;
   searchQuery?: string;
   selectedEntity?: string;
 }
 
-export default function AdminActivityLog({ onBack, searchQuery = '', selectedEntity = 'ALL' }: AdminActivityLogProps) {
+export default function AdminActivityLog({ searchQuery = '', selectedEntity = 'ALL' }: AdminActivityLogProps) {
   const [logs, setLogs] = useState<AuditLogItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [debugError, setDebugError] = useState<string | null>(null);
@@ -59,9 +56,7 @@ export default function AdminActivityLog({ onBack, searchQuery = '', selectedEnt
           *,
           profiles:user_id (
             name,
-            designation,
-            role,
-            email
+            designation
           )
         `)
         .ilike('action_type', '%DELETE%')
@@ -100,8 +95,7 @@ export default function AdminActivityLog({ onBack, searchQuery = '', selectedEnt
 
     const profileObj = Array.isArray(log.profiles) ? log.profiles[0] : log.profiles;
     const userName = (profileObj?.name || '').toLowerCase();
-    const userEmail = (profileObj?.email || '').toLowerCase();
-    const userMatch = userName.includes(q) || userEmail.includes(q);
+    const userMatch = userName.includes(q);
 
     const matchesSearch = !q || actionMatch || entityMatch || userMatch;
     const matchesEntity = selectedEntity === 'ALL' || log.entity_type === selectedEntity;
@@ -118,26 +112,10 @@ export default function AdminActivityLog({ onBack, searchQuery = '', selectedEnt
         color: '#f1f5f9',
         fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
         boxSizing: 'border-box',
-        padding: '16px',
+        padding: '12px 16px',
         overflowX: 'hidden',
       }}
     >
-      {/* Header Info - ইমোজি মুক্ত পরিচ্ছন্ন হেডার */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid rgba(255, 255, 255, 0.06)', paddingBottom: '12px' }}>
-        <span style={{ fontSize: '11px', fontWeight: 700, color: '#f87171', letterSpacing: '1px', textTransform: 'uppercase' }}>
-          SYSTEM DELETION LOGS ({filteredLogs.length})
-        </span>
-        {onBack && (
-          <button
-            type="button"
-            onClick={onBack}
-            style={{ backgroundColor: 'transparent', border: '1px solid rgba(255, 255, 255, 0.1)', color: '#94a3b8', borderRadius: '8px', padding: '6px 12px', fontSize: '11px', cursor: 'pointer', fontWeight: 600 }}
-          >
-            ← Back
-          </button>
-        )}
-      </div>
-
       {debugError && (
         <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '10px', padding: '14px', marginBottom: '16px', color: '#f87171', fontSize: '11px', wordBreak: 'break-all' }}>
           <strong style={{ display: 'block', marginBottom: '4px', textTransform: 'uppercase' }}>⚠️ Debug Error:</strong>
@@ -145,7 +123,7 @@ export default function AdminActivityLog({ onBack, searchQuery = '', selectedEnt
         </div>
       )}
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', width: '100%', boxSizing: 'border-box' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%', boxSizing: 'border-box' }}>
         {loading ? (
           <div style={{ textAlign: 'center', padding: '40px 0', color: '#94a3b8', fontSize: '12px', letterSpacing: '1px' }}>
             LOADING DELETION LOGS...
@@ -157,8 +135,8 @@ export default function AdminActivityLog({ onBack, searchQuery = '', selectedEnt
         ) : (
           filteredLogs.map((log) => {
             const profileObj = Array.isArray(log.profiles) ? log.profiles[0] : log.profiles;
-            const adminName = profileObj?.name || profileObj?.email?.split('@')[0] || 'Unknown User';
-            const adminDesignation = profileObj?.designation || profileObj?.role || 'N/A';
+            const adminName = profileObj?.name || 'UNKNOWN USER';
+            const adminDesignation = profileObj?.designation || 'N/A';
 
             const oldData = log.changes?.old || log.changes || {};
 
@@ -168,11 +146,11 @@ export default function AdminActivityLog({ onBack, searchQuery = '', selectedEnt
                 style={{
                   backgroundColor: '#0c0c0e',
                   border: '1px solid rgba(239, 68, 68, 0.15)',
-                  borderRadius: '14px',
-                  padding: '20px',
+                  borderRadius: '16px',
+                  padding: '20px 24px',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: '12px',
+                  gap: '14px',
                   boxShadow: '0 12px 32px rgba(0, 0, 0, 0.4)',
                   boxSizing: 'border-box',
                   width: '100%',
@@ -207,8 +185,8 @@ export default function AdminActivityLog({ onBack, searchQuery = '', selectedEnt
 
                 {/* Deleted Content Preview */}
                 {oldData && typeof oldData === 'object' && (
-                  <div style={{ backgroundColor: '#141417', border: '1px solid rgba(255, 255, 255, 0.05)', borderRadius: '10px', padding: '12px', fontSize: '12px', color: '#e2e8f0' }}>
-                    <div style={{ color: '#64748b', fontSize: '10px', textTransform: 'uppercase', marginBottom: '6px', letterSpacing: '0.5px', fontWeight: 600 }}>Deleted Item Data:</div>
+                  <div style={{ backgroundColor: '#141417', border: '1px solid rgba(255, 255, 255, 0.05)', borderRadius: '12px', padding: '14px 16px', fontSize: '12px', color: '#e2e8f0', width: '100%', boxSizing: 'border-box' }}>
+                    <div style={{ color: '#64748b', fontSize: '10px', textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '0.5px', fontWeight: 600 }}>Deleted Item Data:</div>
                     {oldData.content && <div style={{ marginBottom: '4px' }}><strong>Content:</strong> {oldData.content}</div>}
                     {oldData.reference && <div style={{ color: '#38bdf8', marginBottom: '4px' }}><strong>Reference:</strong> {oldData.reference}</div>}
                     {oldData.name && <div style={{ marginBottom: '4px' }}><strong>Name:</strong> {oldData.name}</div>}
@@ -216,10 +194,14 @@ export default function AdminActivityLog({ onBack, searchQuery = '', selectedEnt
                   </div>
                 )}
 
-                {/* Footer User Info: Designation & Name */}
-                <div style={{ fontSize: '10px', color: '#64748b', display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '10px', borderTop: '1px solid rgba(255, 255, 255, 0.04)', flexWrap: 'wrap', gap: '6px' }}>
-                  <span>DESIGNATION: <strong style={{ color: '#cbd5e1' }}>{adminDesignation.toUpperCase()}</strong></span>
-                  <span>NAME: <strong style={{ color: '#f87171' }}>{adminName.toUpperCase()}</strong></span>
+                {/* Footer User Info: প্রথমে নাম, নামের নিচে পদবী */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', paddingTop: '12px', borderTop: '1px solid rgba(255, 255, 255, 0.04)' }}>
+                  <div style={{ fontSize: '13px', fontWeight: 600, color: '#f8fafc', textTransform: 'uppercase' }}>
+                    {adminName}
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    {adminDesignation}
+                  </div>
                 </div>
               </div>
             );
