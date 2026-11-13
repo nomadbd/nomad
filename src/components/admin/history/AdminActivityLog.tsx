@@ -94,7 +94,7 @@ export default function AdminActivityLog({ searchQuery = '', selectedEntity = 'A
     const entityMatch = (log.entity_type || '').toLowerCase().includes(q);
 
     const profileObj = Array.isArray(log.profiles) ? log.profiles[0] : log.profiles;
-    const userName = (profileObj?.name || '').toLowerCase();
+    const userName = (profileObj?.name || log.metadata?.name || '').toLowerCase();
     const userMatch = userName.includes(q);
 
     const matchesSearch = !q || actionMatch || entityMatch || userMatch;
@@ -135,8 +135,9 @@ export default function AdminActivityLog({ searchQuery = '', selectedEntity = 'A
         ) : (
           filteredLogs.map((log) => {
             const profileObj = Array.isArray(log.profiles) ? log.profiles[0] : log.profiles;
-            const adminName = profileObj?.name || 'UNKNOWN USER';
-            const adminDesignation = profileObj?.designation || 'N/A';
+            // সঠিক তথ্য না থাকলে বা ইউআইডি নাল হলে স্মার্ট ফলব্যাক প্রদর্শন
+            const adminName = profileObj?.name || log.metadata?.name || log.metadata?.user_name || 'SYSTEM ADMIN';
+            const adminDesignation = profileObj?.designation || log.metadata?.designation || 'ADMINISTRATOR';
 
             const oldData = log.changes?.old || log.changes || {};
 
@@ -183,13 +184,13 @@ export default function AdminActivityLog({ searchQuery = '', selectedEntity = 'A
                   </span>
                 </div>
 
-                {/* Deleted Content Preview */}
+                {/* Deleted Content Preview (মুক্ত ও খোলামেলা লেআউট, কোনো ভেতরের কার্ড নেই) */}
                 {oldData && typeof oldData === 'object' && (
-                  <div style={{ backgroundColor: '#141417', border: '1px solid rgba(255, 255, 255, 0.05)', borderRadius: '12px', padding: '14px 16px', fontSize: '12px', color: '#e2e8f0', width: '100%', boxSizing: 'border-box' }}>
-                    <div style={{ color: '#64748b', fontSize: '10px', textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '0.5px', fontWeight: 600 }}>Deleted Item Data:</div>
-                    {oldData.content && <div style={{ marginBottom: '4px' }}><strong>Content:</strong> {oldData.content}</div>}
-                    {oldData.reference && <div style={{ color: '#38bdf8', marginBottom: '4px' }}><strong>Reference:</strong> {oldData.reference}</div>}
-                    {oldData.name && <div style={{ marginBottom: '4px' }}><strong>Name:</strong> {oldData.name}</div>}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '12px', color: '#cbd5e1', padding: '4px 0' }}>
+                    <div style={{ color: '#64748b', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600, marginBottom: '2px' }}>Deleted Item Data:</div>
+                    {oldData.content && <div><strong>Content:</strong> {oldData.content}</div>}
+                    {oldData.reference && <div style={{ color: '#38bdf8' }}><strong>Reference:</strong> {oldData.reference}</div>}
+                    {oldData.name && <div><strong>Name:</strong> {oldData.name}</div>}
                     {oldData.category && <div style={{ color: '#94a3b8' }}><strong>Category:</strong> {oldData.category}</div>}
                   </div>
                 )}
