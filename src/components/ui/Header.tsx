@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useCart } from '@/context/CartContext'; 
 import { SearchIcon, CartIcon, UserIcon } from '@/components/icons';
 
@@ -8,30 +8,7 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ onSearchOpen, onAuthOpen }) => {
-  const [show, setShow] = useState(true);
-  const [lastScrollY, setLastScrollY] = useState(0);
-
   const { setIsCartOpen, cartItems } = useCart();
-
-  const controlHeader = () => {
-    if (typeof window !== 'undefined') {
-      if (window.scrollY > lastScrollY && window.scrollY > 100) {
-        setShow(false);
-      } else {
-        setShow(true);
-      }
-      setLastScrollY(window.scrollY);
-    }
-  };
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      window.addEventListener('scroll', controlHeader);
-      return () => {
-        window.removeEventListener('scroll', controlHeader);
-      };
-    }
-  }, [lastScrollY]);
 
   return (
     <header 
@@ -39,7 +16,7 @@ const Header: React.FC<HeaderProps> = ({ onSearchOpen, onAuthOpen }) => {
         display: 'flex', justifyContent: 'space-between', alignItems: 'center', 
         padding: '16px 20px', backgroundColor: 'black', 
         borderBottom: '1px solid rgba(255, 255, 255, 0.1)', width: '100%', boxSizing: 'border-box',
-        position: 'fixed', top: show ? '0' : '-80px', transition: 'top 0.3s ease', zIndex: 1000
+        position: 'fixed', top: '0', left: '0', zIndex: 1000
       }}
     >
       <div style={{ fontSize: '24px', fontWeight: '900', color: 'white', textTransform: 'uppercase' }}>
@@ -47,7 +24,6 @@ const Header: React.FC<HeaderProps> = ({ onSearchOpen, onAuthOpen }) => {
       </div>
 
       <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
-        {/* সার্চ আইকন */}
         <button 
           onClick={onSearchOpen} 
           style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
@@ -56,7 +32,6 @@ const Header: React.FC<HeaderProps> = ({ onSearchOpen, onAuthOpen }) => {
           <SearchIcon stroke="white" />
         </button>
 
-        {/* কার্ট আইকন */}
         <button 
           onClick={() => setIsCartOpen(true)} 
           style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'block', lineHeight: 0, position: 'relative' }} 
@@ -77,7 +52,6 @@ const Header: React.FC<HeaderProps> = ({ onSearchOpen, onAuthOpen }) => {
           )}
         </button>
 
-        {/* প্রোফাইল আইকন */}
         <button 
           onClick={onAuthOpen} 
           style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'block', lineHeight: 0 }}
