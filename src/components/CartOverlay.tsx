@@ -20,19 +20,16 @@ const CartOverlay = () => {
     };
   }, [isCartOpen]);
 
-  // ভ্যারিয়েন্টসহ ইউনিক আইডি ট্র্যাকিং (ID + Color + Size)
   useEffect(() => {
     setSelectedIds(cartItems.map(item => `${item.id}-${item.color || ''}-${item.size || ''}`)); 
   }, [cartItems]);
 
   if (!isCartOpen) return null;
 
-  // সিলেক্টেড ভ্যারিয়েন্টের ওপর ভিত্তি করে সাবটোটাল হিসাব
   const subtotal = cartItems
     .filter(item => selectedIds.includes(`${item.id}-${item.color || ''}-${item.size || ''}`))
     .reduce((acc, item) => acc + item.price * item.quantity, 0);
 
-  // শুধুমাত্র সিলেক্টেড প্রোডাক্টগুলো ফিল্টার করে চেকআউটে পাঠানোর জন্য অ্যারে
   const selectedItemsForCheckout = cartItems.filter(item => 
     selectedIds.includes(`${item.id}-${item.color || ''}-${item.size || ''}`)
   );
@@ -54,8 +51,9 @@ const CartOverlay = () => {
         right: 0, 
         bottom: 0, 
         width: '100vw', 
-        height: '100dvh', /* ⚡ 100vh এর বদলে Dynamic Viewport Height যা মোবাইল ব্রাউজার বারকে চিনে নেয় */
-        backgroundColor: 'rgba(0, 0, 0, 0.98)', 
+        height: '100vh',
+        height: '100dvh',
+        backgroundColor: '#000', 
         zIndex: 9999, 
         overflow: 'hidden', 
         display: 'flex',
@@ -63,10 +61,8 @@ const CartOverlay = () => {
         boxSizing: 'border-box'
       }}
     >
-      {/* 📦 মেইন ফ্লেক্স কন্টেইনার (প্যাডিং ভেতরে নিয়ে আসা হয়েছে যাতে কন্টেন্ট নিচে পুশ না হয়) */}
       <div style={{ maxWidth: '500px', width: '100%', height: '100%', position: 'relative', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', padding: '30px 20px 0 20px' }}>
 
-        {/* ✖️ ক্লোজ বাটন (⚡ হেডিং লেখার সাথে একই লাইনে অ্যালাইন করা হয়েছে) */}
         <button 
           onClick={() => { setIsCartOpen(false); setIsCheckingOut(false); }} 
           style={{ 
@@ -115,7 +111,6 @@ const CartOverlay = () => {
               <p style={{ textAlign: 'center', color: '#666', padding: '60px 0', fontSize: '13px', letterSpacing: '1.5px', flex: 1 }}>YOUR BAG IS EMPTY</p>
             ) : (
               <>
-                {/* 📜 স্ক্রলযোগ্য প্রোডাক্ট লিস্ট এরিয়া */}
                 <div className="cart-items-scroll-area" style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '30px', paddingRight: '5px', paddingBottom: '20px' }}>
                   {cartItems.map((item) => {
                     const itemKey = `${item.id}-${item.color || ''}-${item.size || ''}`;
@@ -179,11 +174,10 @@ const CartOverlay = () => {
                   })}
                 </div>
 
-                {/* 🔒 ফিক্সড বটম এরিয়া (বাটন ও টেক্সটকে উপরে তোলার জন্য প্যাডিং বৃদ্ধি করা হয়েছে) */}
                 <div style={{ 
                   marginTop: 'auto', 
-                  padding: '15px 0 calc(35px + env(safe-area-inset-bottom)) 0', /* 🛠️ ৩৫ পিক্সেল প্যাডিং বাটন ও টেক্সটকে মোবাইল ব্রাউজার বারের উপরে দৃশ্যমান রাখবে */
-                  backgroundColor: 'rgba(0, 0, 0, 0.98)', 
+                  padding: '15px 0 calc(35px + env(safe-area-inset-bottom)) 0', 
+                  backgroundColor: '#000', 
                   borderTop: '1px solid rgba(255,255,255,0.04)',
                   flexShrink: 0 
                 }}>
@@ -207,7 +201,6 @@ const CartOverlay = () => {
                     PROCEED TO CHECKOUT ({selectedIds.length})
                   </button>
 
-                  {/* 🪙 মিনিমালিস্ট লাক্সারি মেসেজ (এখন এটি নিশ্চিতভাবে বাটনের নিচে শো করবে) */}
                   <div style={{ textAlign: 'center', marginTop: '15px', fontSize: '9px', color: '#444', letterSpacing: '2px', fontFamily: 'monospace', textTransform: 'uppercase' }}>
                     Secure Checkout • Nomad Concepts
                   </div>
