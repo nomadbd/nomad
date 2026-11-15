@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React from 'react';
 import { useCart } from '@/context/CartContext'; 
 import { SearchIcon, CartIcon, UserIcon } from '@/components/icons';
 
@@ -8,29 +8,7 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ onSearchOpen, onAuthOpen }) => {
-  const [show, setShow] = useState(true);
-  const lastScrollY = useRef(0);
   const { setIsCartOpen, cartItems } = useCart();
-
-  useEffect(() => {
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-
-      // ডিবাগ করার জন্য কনসোলে প্রিন্ট করুন
-      console.log('Debug - Current ScrollY:', currentScrollY, 'Last ScrollY:', lastScrollY.current);
-
-      if (currentScrollY > lastScrollY.current && currentScrollY > 80) {
-        setShow(false);
-      } else {
-        setShow(true);
-      }
-      
-      lastScrollY.current = currentScrollY;
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
   return (
     <header 
@@ -38,7 +16,7 @@ const Header: React.FC<HeaderProps> = ({ onSearchOpen, onAuthOpen }) => {
         display: 'flex', justifyContent: 'space-between', alignItems: 'center', 
         padding: '16px 20px', backgroundColor: 'black', 
         borderBottom: '1px solid rgba(255, 255, 255, 0.1)', width: '100%', boxSizing: 'border-box',
-        position: 'fixed', top: show ? '0' : '-80px', transition: 'top 0.3s ease', zIndex: 1000
+        position: 'fixed', top: 0, left: 0, zIndex: 1000
       }}
     >
       <div style={{ fontSize: '24px', fontWeight: '900', color: 'white', textTransform: 'uppercase' }}>
