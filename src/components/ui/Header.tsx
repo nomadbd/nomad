@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useCart } from '@/context/CartContext'; 
 import { SearchIcon, CartIcon, UserIcon } from '@/components/icons';
 
@@ -9,29 +9,34 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ onSearchOpen, onAuthOpen }) => {
   const [show, setShow] = useState(true);
-  const [lastScrollY, setLastScrollY] = useState(0);
+  const lastScrollYRef = useRef(0);
 
   const { setIsCartOpen, cartItems } = useCart();
 
-  const controlHeader = () => {
-    if (typeof window !== 'undefined') {
-      if (window.scrollY > lastScrollY && window.scrollY > 100) {
-        setShow(false);
-      } else {
-        setShow(true);
-      }
-      setLastScrollY(window.scrollY);
-    }
-  };
-
   useEffect(() => {
+    const controlHeader = () => {
+      if (typeof window !== 'undefined') {
+        const currentScrollY = window.scrollY;
+
+        if (currentScrollY > lastScrollYRef.current && currentScrollY > 100) {
+          // নিচে স্ক্রল করলে হেডার লুকিয়ে যাবে
+          setShow(false);
+        } else {
+          // ওপরে স্ক্রল করলে হেডার ভেসে উঠবে
+          setShow(true);
+        }
+
+        lastScrollYRef.current = currentScrollY;
+      }
+    };
+
     if (typeof window !== 'undefined') {
-      window.addEventListener('scroll', controlHeader);
+      window.addEventListener('scroll', controlHeader, { passive: true });
       return () => {
         window.removeEventListener('scroll', controlHeader);
       };
     }
-  }, [lastScrollY]);
+  }, []);
 
   return (
     <header 
