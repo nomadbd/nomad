@@ -20,7 +20,7 @@ import ReminderLoading from './components/ui/ReminderLoading';
 const AmbassadorJoin = lazy(() => import('./components/ambassador/join/AmbassadorJoin'));
 const AmbassadorPortal = lazy(() => import('./components/ambassador/portal/AmbassadorPortal'));
 
-const AppContent = ({ session, setIsSearchOpen, setIsAuthOpen }: any) => {
+const AppContent = ({ session, setIsSearchOpen, isSearchOpen, setIsAuthOpen, isAuthOpen }: any) => {
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -48,6 +48,9 @@ const AppContent = ({ session, setIsSearchOpen, setIsAuthOpen }: any) => {
               setIsAuthOpen(true);
             }
           }}
+          isSearchOpen={isSearchOpen}
+          isAuthOpen={isAuthOpen}
+          isProfileActive={location.pathname === '/profile'}
         />
       )}
 
@@ -119,7 +122,9 @@ const App: React.FC = () => {
         <AppContent 
           session={session} 
           setIsSearchOpen={setIsSearchOpen} 
+          isSearchOpen={isSearchOpen}
           setIsAuthOpen={setIsAuthOpen} 
+          isAuthOpen={isAuthOpen}
         />
 
         <SearchOverlay 
