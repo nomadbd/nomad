@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useCart } from '@/context/CartContext'; 
 import { SearchIcon, CartIcon, UserIcon } from '@/components/icons';
 
@@ -9,29 +9,25 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ onSearchOpen, onAuthOpen }) => {
   const [show, setShow] = useState(true);
-  const [lastScrollY, setLastScrollY] = useState(0);
-
+  const lastScrollY = useRef(0);
   const { setIsCartOpen, cartItems } = useCart();
 
-  const controlHeader = () => {
-    if (typeof window !== 'undefined') {
-      if (window.scrollY > lastScrollY && window.scrollY > 100) {
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+
+      if (currentScrollY > lastScrollY.current && currentScrollY > 80) {
         setShow(false);
       } else {
         setShow(true);
       }
-      setLastScrollY(window.scrollY);
-    }
-  };
+      
+      lastScrollY.current = currentScrollY;
+    };
 
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      window.addEventListener('scroll', controlHeader);
-      return () => {
-        window.removeEventListener('scroll', controlHeader);
-      };
-    }
-  }, [lastScrollY]);
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   return (
     <header 
