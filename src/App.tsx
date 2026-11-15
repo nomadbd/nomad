@@ -34,14 +34,10 @@ const AppContent = ({ session, setIsSearchOpen, setIsAuthOpen }: any) => {
     }
   }, [session, location.pathname]);
 
-  // অ্যাডমিন পেজ ছাড়া সব পেজেই হেডার দেখানোর জন্য এই আপডেট
   const showHeader = !location.pathname.startsWith('/admin');
 
   return (
-    <div 
-      className="animate-fade-in"
-      style={{ minHeight: '100vh', backgroundColor: 'black', color: '#fff', paddingTop: showHeader ? '70px' : '0' }}
-    >
+    <>
       {showHeader && (
         <Header 
           onSearchOpen={() => setIsSearchOpen(true)} 
@@ -55,53 +51,58 @@ const AppContent = ({ session, setIsSearchOpen, setIsAuthOpen }: any) => {
         />
       )}
 
-      <Routes>
-        <Route path="/" element={
-          <>
-            <Hero />
-            <main style={{ padding: '32px' }}>
-              <ProductList />
-            </main>
-          </>
-        } />
+      <div 
+        className="animate-fade-in"
+        style={{ minHeight: '100vh', backgroundColor: 'black', color: '#fff', paddingTop: showHeader ? '70px' : '0' }}
+      >
+        <Routes>
+          <Route path="/" element={
+            <>
+              <Hero />
+              <main style={{ padding: '32px' }}>
+                <ProductList />
+              </main>
+            </>
+          } />
 
-        <Route path="/profile" element={session ? <ProfilePage /> : <Navigate to="/" replace />} />
+          <Route path="/profile" element={session ? <ProfilePage /> : <Navigate to="/" replace />} />
 
-        <Route 
-          path="/vip/:token" 
-          element={
-            <Suspense fallback={<ReminderLoading label="" />}>
-              <AmbassadorJoin />
-            </Suspense>
-          } 
-        />
+          <Route 
+            path="/vip/:token" 
+            element={
+              <Suspense fallback={<ReminderLoading label="" />}>
+                <AmbassadorJoin />
+              </Suspense>
+            } 
+          />
 
-        <Route 
-          path="/:slug" 
-          element={
-            <Suspense fallback={<ReminderLoading label="" />}>
-              <AmbassadorPortal />
-            </Suspense>
-          } 
-        />
+          <Route 
+            path="/:slug" 
+            element={
+              <Suspense fallback={<ReminderLoading label="" />}>
+                <AmbassadorPortal />
+              </Suspense>
+            } 
+          />
 
-        <Route 
-          path="/admin" 
-          element={
-            session ? <AdminDashboard /> : <Navigate to="/" replace />
-          } 
-        />
+          <Route 
+            path="/admin" 
+            element={
+              session ? <AdminDashboard /> : <Navigate to="/" replace />
+            } 
+          />
 
-        <Route 
-          path="/update-password" 
-          element={<AuthForm isRecoveryPage={true} />} 
-        />
+          <Route 
+            path="/update-password" 
+            element={<AuthForm isRecoveryPage={true} />} 
+          />
 
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
 
-      <CartOverlay session={session} />
-    </div>
+        <CartOverlay session={session} />
+      </div>
+    </>
   );
 };
 
