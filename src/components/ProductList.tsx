@@ -333,7 +333,7 @@ export default function ProductList() {
       const uniqueCategories = Array.from(new Set(shuffledProducts.map(p => p.category)))
         .sort(() => Math.random() - 0.5);
 
-      setProducts(shuffledProducts as Product[] );
+      setProducts(shuffledProducts as Product[]);
       setCategories(uniqueCategories);
     }
     setLoading(false);
@@ -365,11 +365,8 @@ export default function ProductList() {
   return (
     <div style={{ backgroundColor: '#000', width: '100%', boxSizing: 'border-box' }}>
       {categories.map((category) => {
-        const allCategoryProducts = products.filter(p => p.category === category);
+        const categoryProducts = products.filter(p => p.category === category);
         const isExpanded = !!expandedCategories[category];
-
-        // যদি expand না করা থাকে, তবে শুধু প্রথম প্রোডাক্টটি দেখাবে (slice(0, 1))
-        const displayedProducts = isExpanded ? allCategoryProducts : allCategoryProducts.slice(0, 1);
 
         return (
           <div key={category} className="showroom-section" style={{ marginBottom: '25px' }}>
@@ -390,20 +387,8 @@ export default function ProductList() {
               </button>
             </div>
 
-            <div 
-              className="showroom-row-container" 
-              style={{ 
-                display: 'flex', 
-                alignItems: 'flex-start', 
-                flexWrap: isExpanded ? 'wrap' : 'nowrap', 
-                width: '100%', 
-                scrollSnapType: isExpanded ? 'none' : 'x mandatory', 
-                overflowX: isExpanded ? 'unset' : 'auto', 
-                scrollBehavior: 'smooth',
-                gap: isExpanded ? '15px' : '0'
-              }}
-            >
-              {displayedProducts.map((product) => (
+            <div className="showroom-row-container" style={{ display: 'flex', alignItems: 'flex-start', flexWrap: isExpanded ? 'wrap' : 'nowrap', width: '100%', scrollSnapType: 'x mandatory', overflowX: 'auto', scrollBehavior: 'smooth' }}>
+              {categoryProducts.map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}
             </div>
