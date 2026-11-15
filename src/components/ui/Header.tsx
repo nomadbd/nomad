@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React from 'react';
 import { useCart } from '@/context/CartContext'; 
 import { SearchIcon, CartIcon, UserIcon } from '@/components/icons';
 
@@ -8,43 +8,24 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ onSearchOpen, onAuthOpen }) => {
-  const [show, setShow] = useState(true);
-  const lastScrollYRef = useRef(0);
-
   const { setIsCartOpen, cartItems } = useCart();
-
-  useEffect(() => {
-    const controlHeader = () => {
-      if (typeof window !== 'undefined') {
-        const currentScrollY = window.scrollY;
-
-        if (currentScrollY > lastScrollYRef.current && currentScrollY > 100) {
-          // নিচে স্ক্রল করলে হেডার লুকিয়ে যাবে
-          setShow(false);
-        } else {
-          // ওপরে স্ক্রল করলে হেডার ভেসে উঠবে
-          setShow(true);
-        }
-
-        lastScrollYRef.current = currentScrollY;
-      }
-    };
-
-    if (typeof window !== 'undefined') {
-      window.addEventListener('scroll', controlHeader, { passive: true });
-      return () => {
-        window.removeEventListener('scroll', controlHeader);
-      };
-    }
-  }, []);
 
   return (
     <header 
       style={{ 
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center', 
-        padding: '16px 20px', backgroundColor: 'black', 
-        borderBottom: '1px solid rgba(255, 255, 255, 0.1)', width: '100%', boxSizing: 'border-box',
-        position: 'fixed', top: show ? '0' : '-80px', transition: 'top 0.3s ease', zIndex: 1000
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        padding: '16px 20px', 
+        backgroundColor: 'rgba(0, 0, 0, 0.9)', 
+        backdropFilter: 'blur(8px)',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.1)', 
+        width: '100%', 
+        boxSizing: 'border-box',
+        position: 'fixed', 
+        top: 0, 
+        left: 0,
+        zIndex: 1000
       }}
     >
       <div style={{ fontSize: '24px', fontWeight: '900', color: 'white', textTransform: 'uppercase' }}>
