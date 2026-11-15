@@ -11,7 +11,7 @@ const Header: React.FC<HeaderProps> = ({ onSearchOpen, onAuthOpen }) => {
   const [show, setShow] = useState(true);
   const [hoveredIcon, setHoveredIcon] = useState<string | null>(null);
   const lastScrollY = useRef(0);
-  const { setIsCartOpen, cartItems } = useCart();
+  const { isCartOpen, setIsCartOpen, cartItems } = useCart();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -55,13 +55,13 @@ const Header: React.FC<HeaderProps> = ({ onSearchOpen, onAuthOpen }) => {
         </button>
 
         <button 
-          onClick={() => setIsCartOpen(true)} 
+          onClick={() => setIsCartOpen((prev: boolean) => !prev)} 
           onMouseEnter={() => setHoveredIcon('cart')}
           onMouseLeave={() => setHoveredIcon(null)}
           style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'block', lineHeight: 0, position: 'relative' }} 
           aria-label="Cart"
         >
-          <CartIcon stroke={hoveredIcon === 'cart' ? 'white' : '#b3b3b3'} />
+          <CartIcon stroke={isCartOpen || hoveredIcon === 'cart' ? 'white' : '#b3b3b3'} />
 
           {cartItems.length > 0 && (
             <span style={{
