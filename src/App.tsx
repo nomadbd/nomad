@@ -34,12 +34,13 @@ const AppContent = ({ session, setIsSearchOpen, setIsAuthOpen }: any) => {
     }
   }, [session, location.pathname]);
 
-  const showHeader = location.pathname === '/';
+  // অ্যাডমিন পেজ ছাড়া সব পেজেই হেডার দেখানোর জন্য এই আপডেট
+  const showHeader = !location.pathname.startsWith('/admin');
 
   return (
     <div 
       className="animate-fade-in"
-      style={{ minHeight: '100vh', backgroundColor: 'black', color: '#fff' }}
+      style={{ minHeight: '100vh', backgroundColor: 'black', color: '#fff', paddingTop: showHeader ? '70px' : '0' }}
     >
       {showHeader && (
         <Header 
@@ -84,7 +85,6 @@ const AppContent = ({ session, setIsSearchOpen, setIsAuthOpen }: any) => {
           } 
         />
 
-        {/* সরাসরি AdminDashboard রেন্ডার করা হলো, কোনো Suspense বা ডাবল লোডিং ছাড়াই */}
         <Route 
           path="/admin" 
           element={
