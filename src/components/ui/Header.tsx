@@ -47,7 +47,6 @@ const Header: React.FC<HeaderProps> = ({ onSearchOpen, onAuthOpen }) => {
       </div>
 
       <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
-        {/* সার্চ আইকন */}
         <button 
           onClick={onSearchOpen} 
           style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
@@ -56,7 +55,6 @@ const Header: React.FC<HeaderProps> = ({ onSearchOpen, onAuthOpen }) => {
           <SearchIcon stroke="white" />
         </button>
 
-        {/* কার্ট আইকন */}
         <button 
           onClick={() => setIsCartOpen(true)} 
           style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'block', lineHeight: 0, position: 'relative' }} 
@@ -77,7 +75,6 @@ const Header: React.FC<HeaderProps> = ({ onSearchOpen, onAuthOpen }) => {
           )}
         </button>
 
-        {/* প্রোফাইল আইকন */}
         <button 
           onClick={onAuthOpen} 
           style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'block', lineHeight: 0 }}
