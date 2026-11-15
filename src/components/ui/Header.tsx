@@ -9,6 +9,7 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ onSearchOpen, onAuthOpen }) => {
   const [show, setShow] = useState(true);
+  const [hoveredIcon, setHoveredIcon] = useState<string | null>(null);
   const lastScrollY = useRef(0);
   const { setIsCartOpen, cartItems } = useCart();
 
@@ -21,7 +22,7 @@ const Header: React.FC<HeaderProps> = ({ onSearchOpen, onAuthOpen }) => {
       } else {
         setShow(true);
       }
-      
+
       lastScrollY.current = currentScrollY;
     };
 
@@ -45,18 +46,22 @@ const Header: React.FC<HeaderProps> = ({ onSearchOpen, onAuthOpen }) => {
       <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
         <button 
           onClick={onSearchOpen} 
+          onMouseEnter={() => setHoveredIcon('search')}
+          onMouseLeave={() => setHoveredIcon(null)}
           style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
           aria-label="Search"
         >
-          <SearchIcon stroke="white" />
+          <SearchIcon stroke={hoveredIcon === 'search' ? 'white' : '#b3b3b3'} />
         </button>
 
         <button 
           onClick={() => setIsCartOpen(true)} 
+          onMouseEnter={() => setHoveredIcon('cart')}
+          onMouseLeave={() => setHoveredIcon(null)}
           style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'block', lineHeight: 0, position: 'relative' }} 
           aria-label="Cart"
         >
-          <CartIcon stroke="white" />
+          <CartIcon stroke={hoveredIcon === 'cart' ? 'white' : '#b3b3b3'} />
 
           {cartItems.length > 0 && (
             <span style={{
@@ -73,10 +78,12 @@ const Header: React.FC<HeaderProps> = ({ onSearchOpen, onAuthOpen }) => {
 
         <button 
           onClick={onAuthOpen} 
+          onMouseEnter={() => setHoveredIcon('profile')}
+          onMouseLeave={() => setHoveredIcon(null)}
           style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'block', lineHeight: 0 }}
           aria-label="Profile"
         >
-          <UserIcon stroke="white" />
+          <UserIcon stroke={hoveredIcon === 'profile' ? 'white' : '#b3b3b3'} />
         </button>
       </div>
     </header>
