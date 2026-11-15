@@ -16,6 +16,9 @@ const Header: React.FC<HeaderProps> = ({ onSearchOpen, onAuthOpen }) => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
 
+      // ডিবাগ করার জন্য কনসোলে প্রিন্ট করুন
+      console.log('Debug - Current ScrollY:', currentScrollY, 'Last ScrollY:', lastScrollY.current);
+
       if (currentScrollY > lastScrollY.current && currentScrollY > 80) {
         setShow(false);
       } else {
