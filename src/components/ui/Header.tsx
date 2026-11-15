@@ -55,7 +55,7 @@ const Header: React.FC<HeaderProps> = ({ onSearchOpen, onAuthOpen }) => {
         </button>
 
         <button 
-          onClick={() => setIsCartOpen((prev: boolean) => !prev)} 
+          onClick={() => setIsCartOpen(!isCartOpen)} 
           onMouseEnter={() => setHoveredIcon('cart')}
           onMouseLeave={() => setHoveredIcon(null)}
           style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'block', lineHeight: 0, position: 'relative' }} 
