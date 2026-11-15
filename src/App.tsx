@@ -102,8 +102,6 @@ const AppContent = ({ session, setIsSearchOpen, isSearchOpen, setIsAuthOpen, isA
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-
-        <CartOverlay session={session} />
       </div>
     </>
   );
@@ -126,6 +124,8 @@ const App: React.FC = () => {
           setIsAuthOpen={setIsAuthOpen} 
           isAuthOpen={isAuthOpen}
         />
+
+        <CartOverlay session={session} />
 
         <SearchOverlay 
           isOpen={isSearchOpen} 
