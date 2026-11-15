@@ -5,11 +5,13 @@ import { SearchIcon, CartIcon, UserIcon } from '@/components/icons';
 interface HeaderProps {
   onSearchOpen: () => void;
   onAuthOpen: () => void;
+  isSearchOpen: boolean;
+  isAuthOpen: boolean;
+  isProfileActive: boolean;
 }
 
-const Header: React.FC<HeaderProps> = ({ onSearchOpen, onAuthOpen }) => {
+const Header: React.FC<HeaderProps> = ({ onSearchOpen, onAuthOpen, isSearchOpen, isAuthOpen, isProfileActive }) => {
   const [show, setShow] = useState(true);
-  const [activeIcon, setActiveIcon] = useState<string | null>(null);
   const lastScrollY = useRef(0);
   const { isCartOpen, setIsCartOpen, cartItems } = useCart();
 
@@ -45,14 +47,11 @@ const Header: React.FC<HeaderProps> = ({ onSearchOpen, onAuthOpen }) => {
 
       <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
         <button 
-          onClick={() => {
-            setActiveIcon('search');
-            onSearchOpen();
-          }} 
+          onClick={onSearchOpen} 
           style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
           aria-label="Search"
         >
-          <SearchIcon stroke={activeIcon === 'search' ? 'white' : '#b3b3b3'} />
+          <SearchIcon stroke={isSearchOpen ? 'white' : '#b3b3b3'} />
         </button>
 
         <button 
@@ -76,14 +75,11 @@ const Header: React.FC<HeaderProps> = ({ onSearchOpen, onAuthOpen }) => {
         </button>
 
         <button 
-          onClick={() => {
-            setActiveIcon('profile');
-            onAuthOpen();
-          }} 
+          onClick={onAuthOpen} 
           style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'block', lineHeight: 0 }}
           aria-label="Profile"
         >
-          <UserIcon stroke={activeIcon === 'profile' ? 'white' : '#b3b3b3'} />
+          <UserIcon stroke={isAuthOpen || isProfileActive ? 'white' : '#b3b3b3'} />
         </button>
       </div>
     </header>
