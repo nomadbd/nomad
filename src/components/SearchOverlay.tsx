@@ -23,7 +23,6 @@ interface Product {
   details?: Record<string, string> | null; 
 }
 
-
 const ProductGallery = ({ images, productName }: { images: string[], productName: string }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -70,7 +69,6 @@ const ProductGallery = ({ images, productName }: { images: string[], productName
     </div>
   );
 };
-
 
 const ProductActionRow = ({ product }: { product: Product }) => {
   const { addToCart } = useCart();
@@ -214,7 +212,6 @@ const ProductActionRow = ({ product }: { product: Product }) => {
   );
 };
 
-
 const ProductCard = ({ product }: { product: Product }) => {
   const [isDescExpanded, setIsDescExpanded] = useState(false);
   const mediaUrls = product.product_media?.map(m => m.media_url) || [];
@@ -288,7 +285,6 @@ const ProductCard = ({ product }: { product: Product }) => {
     </div>
   );
 };
-
 
 export default function SearchOverlay({ isOpen, onClose }: Props) {
   const [searchQuery, setSearchQuery] = useState('');
