@@ -442,3 +442,4 @@ export default function SearchOverlay({ isOpen, onClose }: Props) {
     </div>
   );
 }
+
