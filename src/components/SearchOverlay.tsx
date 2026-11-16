@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/supabaseClient'; 
 import { useCart } from '@/context/CartContext'; 
+import { CloseIcon } from '@/components/icons';
 
 interface Props {
   isOpen: boolean;
@@ -220,8 +221,7 @@ const ProductCard = ({ product }: { product: Product }) => {
 
   return (
     <div className="showroom-card-item search-card-item" style={{ boxSizing: 'border-box', display: 'flex', flexDirection: 'column' }}>
-      
-      {/* Category header */}
+
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', padding: '0 5px' }}>
         <span style={{ textTransform: 'uppercase', fontSize: '13px', letterSpacing: '3px', fontWeight: 'bold', color: '#b3b3b3' }}>
           {product.category || 'PRODUCT'}
@@ -236,7 +236,6 @@ const ProductCard = ({ product }: { product: Product }) => {
       <div style={{ marginTop: '15px', padding: '0 5px', display: 'flex', flexDirection: 'column', flex: 1 }}>
         <h3 style={{ fontSize: '14px', color: '#fff', margin: '0 0 6px 0', fontWeight: '600' }}>{product.name}</h3>
 
-        
         <div style={{ margin: '0 0 15px 0' }}>
           {(() => {
             const characterLimit = 75; 
@@ -261,7 +260,6 @@ const ProductCard = ({ product }: { product: Product }) => {
                   {product.description}
                 </p>
 
-                
                 {product.details && Object.keys(product.details).length > 0 && (
                   <div style={{ borderTop: '1px solid #1a1a1a', marginTop: '12px', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px', fontFamily: 'monospace', fontSize: '12px' }}>
                     {Object.entries(product.details).map(([key, value]) => (
@@ -325,7 +323,6 @@ export default function SearchOverlay({ isOpen, onClose }: Props) {
         .or(`name.ilike.${query},description.ilike.${query},category.ilike.${query},sizes.cat.${query},colors.cat.${query}`); 
 
       if (error) {
-        
         const { data: fallbackData, error: fallbackError } = await supabase
           .from('products')
           .select(`
@@ -356,14 +353,14 @@ export default function SearchOverlay({ isOpen, onClose }: Props) {
       backgroundColor: 'black', zIndex: 1000, boxSizing: 'border-box',
       overflowY: 'auto', fontFamily: 'sans-serif'
     }}>
-      
+
       <div style={{ 
         display: 'flex', justifyContent: 'space-between', alignItems: 'center', 
         margin: '24px 24px 40px 24px', borderBottom: '1px solid rgba(255, 255, 255, 0.2)', paddingBottom: '15px'
       }}>
         <input 
           type="text" 
-          placeholder="Search nomad products..." 
+          placeholder="Search..." 
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           style={{
@@ -376,16 +373,13 @@ export default function SearchOverlay({ isOpen, onClose }: Props) {
 
         <button 
           onClick={onClose} 
-          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}
           aria-label="Close search"
         >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5">
-            <path d="M18 6 6 18M6 6l12 12"/>
-          </svg>
+          <CloseIcon stroke="white" />
         </button>
       </div>
 
-      
       <div style={{ color: 'white', width: '100%', boxSizing: 'border-box' }}>
         {results.length > 0 && (
           <div className="search-results-container">
@@ -408,7 +402,6 @@ export default function SearchOverlay({ isOpen, onClose }: Props) {
         )}
       </div>
 
-      
       <style>{`
         @keyframes swapFadeIn {
           from { opacity: 0; transform: translateY(1px); }
@@ -421,7 +414,6 @@ export default function SearchOverlay({ isOpen, onClose }: Props) {
           -ms-overflow-style: none;
           scrollbar-width: none;
         }
-        
         
         @media (max-width: 767px) {
           .search-results-container {
@@ -437,7 +429,6 @@ export default function SearchOverlay({ isOpen, onClose }: Props) {
           }
         }
 
-        
         @media (min-width: 768px) {
           .search-results-container {
             display: flex;
