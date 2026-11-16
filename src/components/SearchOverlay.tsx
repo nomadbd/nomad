@@ -372,7 +372,7 @@ export default function SearchOverlay({ isOpen, onClose }: Props) {
           style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}
           aria-label="Close search"
         >
-          <CloseIcon stroke="white" />
+          <CloseIcon color="white" size={22} />
         </button>
       </div>
 
@@ -442,4 +442,3 @@ export default function SearchOverlay({ isOpen, onClose }: Props) {
     </div>
   );
 }
-
