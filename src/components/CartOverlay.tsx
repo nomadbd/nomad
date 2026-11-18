@@ -75,14 +75,15 @@ const CartOverlay = () => {
         boxSizing: 'border-box'
       }}
     >
-      <div style={{ maxWidth: '500px', width: '100%', height: '100%', position: 'relative', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', padding: '30px 20px 0 20px' }}>
+      <div style={{ maxWidth: '500px', width: '100%', height: '100%', position: 'relative', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', padding: '35px 24px 0 24px' }}>
 
+        {/* Close Button */}
         <button 
           onClick={() => { setIsCartOpen(false); setIsCheckingOut(false); }} 
           style={{ 
             position: 'absolute', 
-            top: '28px', 
-            right: '20px', 
+            top: '32px', 
+            right: '24px', 
             background: 'none', 
             border: 'none', 
             color: 'white', 
@@ -100,7 +101,8 @@ const CartOverlay = () => {
           </svg>
         </button>
 
-        <h2 style={{ fontSize: '18px', fontWeight: '400', letterSpacing: '3px', textAlign: 'center', marginBottom: '35px', fontFamily: 'monospace', color: 'white', flexShrink: 0 }}>
+        {/* Premium Left-aligned Header */}
+        <h2 style={{ fontSize: '15px', fontWeight: '500', letterSpacing: '4px', textAlign: 'left', marginBottom: '30px', fontFamily: 'monospace', color: 'white', flexShrink: 0, textTransform: 'uppercase' }}>
           {isCheckingOut ? 'CHECKOUT' : `NOMAD BAG (${cartItems.length})`}
         </h2>
 
@@ -118,10 +120,10 @@ const CartOverlay = () => {
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
             {cartItems.length === 0 ? (
-              <p style={{ textAlign: 'center', color: '#666', padding: '60px 0', fontSize: '13px', letterSpacing: '1.5px', flex: 1 }}>YOUR BAG IS EMPTY</p>
+              <p style={{ textAlign: 'left', color: '#555', padding: '40px 0', fontSize: '12px', letterSpacing: '2px', flex: 1, textTransform: 'uppercase', fontWeight: '500' }}>YOUR BAG IS EMPTY</p>
             ) : (
               <>
-                <div className="cart-items-scroll-area" style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '30px', paddingRight: '5px', paddingBottom: '20px' }}>
+                <div className="cart-items-scroll-area" style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '24px', paddingRight: '5px', paddingBottom: '20px' }}>
                   {cartItems.map((item) => {
                     const itemKey = `${item.id}-${item.color || ''}-${item.size || ''}`;
                     const isSelected = selectedIds.includes(itemKey);
@@ -131,22 +133,22 @@ const CartOverlay = () => {
                       item.product_media?.[0]?.media_url;
 
                     return (
-                      <div key={itemKey} style={{ display: 'flex', gap: '20px', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '25px' }}>
+                      <div key={itemKey} style={{ display: 'flex', gap: '18px', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '20px' }}>
 
                         <img 
                           src={itemImage} 
                           alt={item.name} 
-                          style={{ width: '75px', height: '95px', objectFit: 'cover', border: '1px solid rgba(255,255,255,0.05)', backgroundColor: '#111' }} 
+                          style={{ width: '70px', height: '90px', objectFit: 'cover', border: '1px solid rgba(255,255,255,0.06)', backgroundColor: '#111' }} 
                         />
 
-                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '18px' }}>
+                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '14px' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                              <h4 style={{ margin: 0, fontSize: '14px', fontWeight: '400', color: '#efefef', letterSpacing: '0.5px', paddingRight: '15px', lineHeight: '1.4', wordBreak: 'break-word' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                              <h4 style={{ margin: 0, fontSize: '13px', fontWeight: '400', color: '#f5f5f5', letterSpacing: '0.5px', paddingRight: '15px', lineHeight: '1.4', wordBreak: 'break-word' }}>
                                 {item.name}
                               </h4>
                               {(item.color || item.size) && (
-                                <div style={{ fontSize: '10px', color: '#666', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                <div style={{ fontSize: '10px', color: '#777', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '1px' }}>
                                   {item.color}{item.color && item.size ? ' / ' : ''}{item.size}
                                 </div>
                               )}
@@ -154,29 +156,29 @@ const CartOverlay = () => {
 
                             <div 
                               onClick={() => toggleSelect(itemKey)}
-                              style={{ width: '16px', height: '16px', borderRadius: '50%', border: isSelected ? '1px solid #fff' : '1px solid #333', backgroundColor: isSelected ? '#fff' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s ease', userSelect: 'none', flexShrink: 0 }}
+                              style={{ width: '16px', height: '16px', borderRadius: '50%', border: isSelected ? '1px solid #fff' : '1px solid #444', backgroundColor: isSelected ? '#fff' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s ease', userSelect: 'none', flexShrink: 0 }}
                             >
                               {isSelected && <span style={{ color: '#000', fontSize: '9px', fontWeight: 'bold' }}>✓</span>}
                             </div>
                           </div>
 
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', backgroundColor: '#0a0a0a', border: '1px solid rgba(255,255,255,0.04)', borderRadius: '2px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', backgroundColor: '#0a0a0a', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '2px' }}>
                               <button 
                                 onClick={() => decrementQuantity(item.id, item.color, item.size)} 
-                                style={{ background: 'none', border: 'none', color: '#777', cursor: 'pointer', fontSize: '12px', width: '32px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', outline: 'none' }}
+                                style={{ background: 'none', border: 'none', color: '#777', cursor: 'pointer', fontSize: '12px', width: '30px', height: '26px', display: 'flex', alignItems: 'center', justifyContent: 'center', outline: 'none' }}
                               >
                                 —
                               </button>
-                              <span style={{ color: 'white', fontSize: '13px', fontFamily: 'monospace', minWidth: '24px', textAlign: 'center', userSelect: 'none' }}>{item.quantity}</span>
+                              <span style={{ color: 'white', fontSize: '12px', fontFamily: 'monospace', minWidth: '22px', textAlign: 'center', userSelect: 'none' }}>{item.quantity}</span>
                               <button 
                                 onClick={() => incrementQuantity(item.id, item.color, item.size)} 
-                                style={{ background: 'none', border: 'none', color: '#777', cursor: 'pointer', fontSize: '12px', width: '32px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', outline: 'none' }}
+                                style={{ background: 'none', border: 'none', color: '#777', cursor: 'pointer', fontSize: '12px', width: '30px', height: '26px', display: 'flex', alignItems: 'center', justifyContent: 'center', outline: 'none' }}
                               >
                                 +
                               </button>
                             </div>
-                            <div style={{ color: 'white', fontSize: '14px', fontFamily: 'monospace', fontWeight: '400' }}>৳{item.price * item.quantity}</div>
+                            <div style={{ color: 'white', fontSize: '13px', fontFamily: 'monospace', fontWeight: '400' }}>৳{item.price * item.quantity}</div>
                           </div>
                         </div>
                       </div>
@@ -188,19 +190,19 @@ const CartOverlay = () => {
                   marginTop: 'auto', 
                   padding: '15px 0 calc(35px + env(safe-area-inset-bottom)) 0', 
                   backgroundColor: '#000', 
-                  borderTop: '1px solid rgba(255,255,255,0.04)',
+                  borderTop: '1px solid rgba(255,255,255,0.06)',
                   flexShrink: 0 
                 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '25px', fontSize: '14px', letterSpacing: '0.5px' }}>
-                    <span style={{ color: '#666' }}>Subtotal</span>
-                    <span style={{ color: 'white', fontWeight: '500', fontFamily: 'monospace', fontSize: '16px' }}>৳{subtotal}</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', fontSize: '13px', letterSpacing: '1px' }}>
+                    <span style={{ color: '#777', textTransform: 'uppercase' }}>Subtotal</span>
+                    <span style={{ color: 'white', fontWeight: '500', fontFamily: 'monospace', fontSize: '15px' }}>৳{subtotal}</span>
                   </div>
 
                   <button 
                     disabled={selectedIds.length === 0}
                     onClick={() => setIsCheckingOut(true)} 
                     style={{ 
-                      width: '100%', padding: '16px', background: 'transparent', 
+                      width: '100%', padding: '15px', background: 'transparent', 
                       color: selectedIds.length > 0 ? 'white' : '#444', 
                       border: selectedIds.length > 0 ? '1px solid rgba(255, 255, 255, 0.9)' : '1px solid #222', 
                       fontWeight: '600', letterSpacing: '3px', cursor: selectedIds.length > 0 ? 'pointer' : 'not-allowed', 
