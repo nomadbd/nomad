@@ -1,4 +1,4 @@
- import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useCart } from '@/context/CartContext';
 import Checkout from './Checkout'; 
 
@@ -101,7 +101,7 @@ const CartOverlay = () => {
           </svg>
         </button>
 
-        {/* Balanced & Bold Header */}
+        {/* Header */}
         <h2 style={{ fontSize: '15px', fontWeight: '600', letterSpacing: '1.5px', textAlign: 'left', marginBottom: '30px', fontFamily: 'monospace', color: 'white', flexShrink: 0, textTransform: 'uppercase' }}>
           {isCheckingOut ? 'CHECKOUT' : `NOMAD BAG (${cartItems.length})`}
         </h2>
@@ -120,7 +120,29 @@ const CartOverlay = () => {
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
             {cartItems.length === 0 ? (
-              <p style={{ textAlign: 'left', color: '#555', padding: '40px 0', fontSize: '12px', letterSpacing: '1px', flex: 1, textTransform: 'uppercase', fontWeight: '600' }}>YOUR BAG IS EMPTY</p>
+              <div style={{ 
+                flex: 1, 
+                display: 'flex', 
+                flexDirection: 'column', 
+                justifyContent: 'center', 
+                alignItems: 'flex-start', 
+                paddingBottom: '80px' 
+              }}>
+                <h3 style={{ 
+                  margin: 0, 
+                  fontSize: 'clamp(36px, 10vw, 52px)', 
+                  fontWeight: '800', 
+                  lineHeight: '1.05', 
+                  letterSpacing: '-1px', 
+                  color: '#222', 
+                  textTransform: 'uppercase', 
+                  fontFamily: 'sans-serif' 
+                }}>
+                  YOUR<br />
+                  BAG IS<br />
+                  EMPTY
+                </h3>
+              </div>
             ) : (
               <>
                 <div className="cart-items-scroll-area" style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '24px', paddingRight: '5px', paddingBottom: '20px' }}>
