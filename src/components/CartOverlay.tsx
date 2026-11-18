@@ -71,40 +71,56 @@ const CartOverlay = () => {
         zIndex: 9999, 
         overflow: 'hidden', 
         display: 'flex',
-        justifyContent: 'center',
+        justifyContent: 'flex-end', // ডেমো বা ড্রয়ারের ক্ষেত্রে ডান দিক থেকে আসার জন্য অথবা ফুল উইথ
         boxSizing: 'border-box'
       }}
     >
-      <div style={{ maxWidth: '500px', width: '100%', height: '100%', position: 'relative', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', padding: '35px 24px 0 24px' }}>
+      <div style={{ 
+        width: '100%', 
+        maxWidth: '500px', 
+        height: '100%', 
+        position: 'relative', 
+        display: 'flex', 
+        flexDirection: 'column', 
+        boxSizing: 'border-box', 
+        padding: '35px 24px 0 24px',
+        marginLeft: 'auto', // বড় স্ক্রিনে ডানপাশে রাখতে
+        backgroundColor: '#000',
+        borderLeft: '1px solid rgba(255,255,255,0.08)'
+      }}>
 
-        {/* Close Button */}
-        <button 
-          onClick={() => { setIsCartOpen(false); setIsCheckingOut(false); }} 
-          style={{ 
-            position: 'absolute', 
-            top: '32px', 
-            right: '24px', 
-            background: 'none', 
-            border: 'none', 
-            color: 'white', 
-            cursor: 'pointer', 
-            padding: '5px', 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center', 
-            zIndex: 10 
-          }}
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-        </button>
+        {/* Top Header Row: Title on Left, Close Button on Right */}
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center', 
+          width: '100%', 
+          marginBottom: '30px',
+          flexShrink: 0 
+        }}>
+          <h2 style={{ fontSize: '15px', fontWeight: '600', letterSpacing: '1.5px', margin: 0, fontFamily: 'monospace', color: 'white', textTransform: 'uppercase' }}>
+            {isCheckingOut ? 'CHECKOUT' : `NOMAD BAG (${cartItems.length})`}
+          </h2>
 
-        {/* Header */}
-        <h2 style={{ fontSize: '15px', fontWeight: '600', letterSpacing: '1.5px', textAlign: 'left', marginBottom: '30px', fontFamily: 'monospace', color: 'white', flexShrink: 0, textTransform: 'uppercase' }}>
-          {isCheckingOut ? 'CHECKOUT' : `NOMAD BAG (${cartItems.length})`}
-        </h2>
+          <button 
+            onClick={() => { setIsCartOpen(false); setIsCheckingOut(false); }} 
+            style={{ 
+              background: 'none', 
+              border: 'none', 
+              color: 'white', 
+              cursor: 'pointer', 
+              padding: '5px', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center'
+            }}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
 
         {isCheckingOut ? (
           <div style={{ flex: 1, overflowY: 'auto', paddingBottom: '40px' }}>
