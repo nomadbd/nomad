@@ -66,7 +66,6 @@ const CartOverlay = () => {
         right: 0, 
         bottom: 0, 
         width: '100vw', 
-        height: '100vh',
         height: '100dvh',
         backgroundColor: '#000', 
         zIndex: 9999, 
@@ -102,7 +101,7 @@ const CartOverlay = () => {
         </button>
 
         <h2 style={{ fontSize: '18px', fontWeight: '400', letterSpacing: '3px', textAlign: 'center', marginBottom: '35px', fontFamily: 'monospace', color: 'white', flexShrink: 0 }}>
-          {isCheckingOut ? 'CHECKOUT' : 'NOMAD BAG'}
+          {isCheckingOut ? 'CHECKOUT' : `NOMAD BAG (${cartItems.length})`}
         </h2>
 
         {isCheckingOut ? (
@@ -117,10 +116,6 @@ const CartOverlay = () => {
           </div>
         ) : (
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-
-            <h3 style={{ fontSize: '11px', letterSpacing: '1.5px', color: '#666', marginBottom: '25px', textTransform: 'uppercase', fontWeight: '500', flexShrink: 0 }}>
-              Cart Items ({cartItems.length})
-            </h3>
 
             {cartItems.length === 0 ? (
               <p style={{ textAlign: 'center', color: '#666', padding: '60px 0', fontSize: '13px', letterSpacing: '1.5px', flex: 1 }}>YOUR BAG IS EMPTY</p>
