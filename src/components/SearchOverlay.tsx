@@ -5,6 +5,7 @@ import { useCart } from '@/context/CartContext';
 interface Props {
   isOpen: boolean;
   onClose: () => void;
+  searchQuery?: string;
 }
 
 interface Product {
@@ -486,8 +487,7 @@ const ProductCard = ({ product }: { product: Product }) => {
   );
 };
 
-export default function SearchOverlay({ isOpen, onClose }: Props) {
-  const [searchQuery, setSearchQuery] = useState('');
+export default function SearchOverlay({ isOpen, onClose, searchQuery = '' }: Props) {
   const [results, setResults] = useState<Product[]>([]);
 
   useEffect(() => {
@@ -580,56 +580,6 @@ export default function SearchOverlay({ isOpen, onClose }: Props) {
         paddingBottom: '40px',
       }}
     >
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          margin: '16px 24px 32px 24px',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.2)',
-          paddingBottom: '12px',
-          gap: '12px',
-        }}
-      >
-        <input
-          type="text"
-          placeholder="Search..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          style={{
-            width: '100%',
-            background: 'none',
-            border: 'none',
-            color: 'white',
-            fontSize: '20px',
-            outline: 'none',
-            letterSpacing: '1px',
-          }}
-          autoFocus
-        />
-
-        {searchQuery.length > 0 && (
-          <button
-            type="button"
-            onClick={() => setSearchQuery('')}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: '#888',
-              cursor: 'pointer',
-              fontSize: '11px',
-              fontFamily: 'monospace',
-              letterSpacing: '1px',
-              textTransform: 'uppercase',
-              padding: '4px',
-              flexShrink: 0,
-            }}
-          >
-            CLEAR
-          </button>
-        )}
-      </div>
-
       <div style={{ color: 'white', width: '100%', boxSizing: 'border-box' }}>
         {results.length > 0 && (
           <div className="search-results-container">
