@@ -281,13 +281,14 @@ export default function Checkout({
   const styles = {
     container: {
       width: '100%',
-      maxWidth: '1200px',
+      maxWidth: '100%',
       margin: '0 auto',
-      padding: isMobile ? '12px 15px 120px 15px' : '24px 20px 80px 20px',
+      padding: isMobile ? '14px 18px 100px 18px' : '24px 36px 80px 36px',
       color: '#fff',
       backgroundColor: '#000',
       fontFamily: baseFontFamily,
       minHeight: isMobile ? '100vh' : 'auto',
+      overflowX: 'hidden' as const,
       boxSizing: 'border-box' as const,
     },
     successOverlay: {
@@ -308,33 +309,40 @@ export default function Checkout({
     layoutGrid: {
       display: 'flex',
       flexDirection: isMobile ? 'column-reverse' as const : 'row' as const,
-      gap: isMobile ? '30px' : '60px',
+      gap: isMobile ? '28px' : '56px',
       alignItems: 'flex-start',
+      width: '100%',
+      maxWidth: '100%',
+      boxSizing: 'border-box' as const,
     },
     leftColumn: {
-      flex: '1 1 58%',
+      flex: '1 1 56%',
       width: '100%',
+      minWidth: 0,
+      boxSizing: 'border-box' as const,
     },
     rightColumn: {
-      flex: '1 1 42%',
+      flex: '1 1 44%',
       width: '100%',
+      minWidth: 0,
       position: isMobile ? 'relative' as const : 'sticky' as const,
-      top: '24px',
+      top: '16px',
       background: '#000',
-      padding: isMobile ? '10px 0' : '20px',
+      padding: '0px',
       boxSizing: 'border-box' as const,
     },
     sectionHeading: {
       fontSize: '11px',
-      letterSpacing: '2.5px',
+      letterSpacing: '2px',
       color: '#fff',
       textTransform: 'uppercase' as const,
-      marginBottom: '20px',
+      marginBottom: '16px',
       marginTop: '0px',
       fontWeight: 600,
     },
     input: {
       width: '100%',
+      maxWidth: '100%',
       boxSizing: 'border-box' as const,
       background: 'transparent',
       border: 'none',
@@ -351,17 +359,20 @@ export default function Checkout({
     phoneContainer: {
       display: 'flex',
       alignItems: 'center',
+      width: '100%',
+      maxWidth: '100%',
       borderBottom: '1px solid #262626',
       marginBottom: '12px',
       gap: '12px',
       position: 'relative' as const,
+      boxSizing: 'border-box' as const,
     },
     countryBtn: {
       background: 'transparent',
       border: 'none',
       color: '#cccccc',
       fontSize: '11px',
-      letterSpacing: '0.8px',
+      letterSpacing: '0.6px',
       padding: '12px 0',
       cursor: 'pointer',
       display: 'flex',
@@ -369,18 +380,22 @@ export default function Checkout({
       gap: '6px',
       outline: 'none',
       whiteSpace: 'nowrap' as const,
+      flexShrink: 0,
       fontFamily: baseFontFamily,
     },
     phoneInput: {
       flex: 1,
+      minWidth: 0,
+      width: '100%',
       background: 'transparent',
       border: 'none',
       padding: '12px 0',
       color: '#fff',
       fontSize: '12px',
-      letterSpacing: '0.8px',
+      letterSpacing: '0.6px',
       outline: 'none',
       borderRadius: 0,
+      boxSizing: 'border-box' as const,
       fontFamily: baseFontFamily,
     },
     pickerModal: {
@@ -407,6 +422,7 @@ export default function Checkout({
       maxHeight: '450px',
       display: 'flex',
       flexDirection: 'column' as const,
+      boxSizing: 'border-box' as const,
     },
     searchInput: {
       width: '100%',
@@ -415,7 +431,7 @@ export default function Checkout({
       padding: '10px 12px',
       color: '#fff',
       fontSize: '11px',
-      letterSpacing: '0.8px',
+      letterSpacing: '0.6px',
       outline: 'none',
       marginBottom: '15px',
       boxSizing: 'border-box' as const,
@@ -434,7 +450,7 @@ export default function Checkout({
       border: '1px solid #1b1b1b',
       color: '#cccccc',
       fontSize: '11px',
-      letterSpacing: '0.6px',
+      letterSpacing: '0.5px',
       cursor: 'pointer',
       display: 'flex',
       justifyContent: 'space-between',
@@ -443,6 +459,7 @@ export default function Checkout({
     },
     textarea: {
       width: '100%',
+      maxWidth: '100%',
       boxSizing: 'border-box' as const,
       background: 'transparent',
       border: 'none',
@@ -465,16 +482,17 @@ export default function Checkout({
       justifyContent: 'space-between',
       borderBottom: '1px solid #262626',
       padding: '14px 0', 
-      marginTop: '24px',
-      marginBottom: '25px',
+      marginTop: '20px',
+      marginBottom: '22px',
       cursor: 'default',
       userSelect: 'none' as const,
       width: '100%',
+      maxWidth: '100%',
       boxSizing: 'border-box' as const,
     },
     paymentText: {
       fontSize: '11px',
-      letterSpacing: '2px',
+      letterSpacing: '1.8px',
       color: '#fff',
       fontWeight: 500,
       textTransform: 'uppercase' as const,
@@ -495,30 +513,35 @@ export default function Checkout({
     },
     productRow: {
       display: 'flex',
-      gap: '20px',
+      gap: '16px',
       alignItems: 'center',
-      paddingBottom: '20px',
-      marginBottom: '20px',
+      paddingBottom: '16px',
+      marginBottom: '16px',
       borderBottom: '1px solid #1c1c1c',
+      width: '100%',
+      maxWidth: '100%',
+      boxSizing: 'border-box' as const,
     },
     productImg: {
-      width: '65px',
-      height: '80px',
+      width: '62px',
+      height: '78px',
       objectFit: 'cover' as const,
       background: '#0a0a0a',
+      flexShrink: 0,
     },
     submitBtn: {
       width: '100%',
-      height: '52px', 
+      maxWidth: '100%',
+      height: '50px', 
       background: 'transparent', 
       border: '1.5px solid #fff',  
       color: '#fff',             
       cursor: 'pointer',
-      letterSpacing: '3.5px',
+      letterSpacing: '3px',
       fontSize: '11px',
       fontWeight: 500,
       textTransform: 'uppercase' as const,
-      marginTop: '30px',
+      marginTop: '24px',
       borderRadius: 0,
       outline: 'none',
       display: 'flex',
@@ -558,11 +581,11 @@ export default function Checkout({
         <div style={styles.successWrapper}>
           <div style={{ fontSize: '32px', marginBottom: '15px', color: '#fff', lineHeight: 1 }}>✓</div>
 
-          <h2 style={{ fontSize: '13px', letterSpacing: '3.5px', fontWeight: 600, marginBottom: '20px', color: '#fff' }}>
+          <h2 style={{ fontSize: '13px', letterSpacing: '3px', fontWeight: 600, marginBottom: '20px', color: '#fff' }}>
             ORDER PLACED SUCCESSFULLY
           </h2>
 
-          <p style={{ fontSize: '10px', letterSpacing: '1.5px', color: '#bbbbbb', lineHeight: '2', marginBottom: '40px', textTransform: 'uppercase' as const, padding: '0 10px' }}>
+          <p style={{ fontSize: '10px', letterSpacing: '1.2px', color: '#bbbbbb', lineHeight: '2', marginBottom: '40px', textTransform: 'uppercase' as const, padding: '0 10px' }}>
             Thank you for your purchase. Your order has been received and is currently being processed. Registered users can also track this in their profile.
           </p>
 
@@ -591,7 +614,7 @@ export default function Checkout({
         <div style={styles.pickerModal} onClick={() => setIsPickerOpen(false)}>
           <div style={styles.pickerBox} onClick={(e) => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-              <span style={{ fontSize: '10px', letterSpacing: '2px', color: '#cccccc' }}>SELECT COUNTRY</span>
+              <span style={{ fontSize: '10px', letterSpacing: '1.8px', color: '#cccccc' }}>SELECT COUNTRY</span>
               <button 
                 type="button"
                 onClick={() => setIsPickerOpen(false)} 
@@ -634,7 +657,7 @@ export default function Checkout({
         </div>
       )}
 
-      <form onSubmit={handleSubmit} noValidate style={{ width: '100%' }}>
+      <form onSubmit={handleSubmit} noValidate style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
         <div style={styles.layoutGrid}>
           <div style={styles.leftColumn}>
             <input
@@ -701,32 +724,33 @@ export default function Checkout({
               <span style={styles.paymentText}>CASH ON DELIVERY</span>
               <div style={styles.customCircleCheckbox}>✓</div>
             </div>
-            {errorMessage && <div style={{ color: '#ff6666', fontSize: '10px', letterSpacing: '1.2px', marginTop: '20px', textTransform: 'uppercase', lineHeight: '1.6' }}>{errorMessage}</div>}
+            {errorMessage && <div style={{ color: '#ff6666', fontSize: '10px', letterSpacing: '1px', marginTop: '16px', textTransform: 'uppercase', lineHeight: '1.6' }}>{errorMessage}</div>}
             <button type="submit" disabled={loading} style={styles.submitBtn}>{loading ? 'PROCESSING...' : 'PLACE ORDER'}</button>
           </div>
+
           <div style={styles.rightColumn}>
-            <h2 style={{ ...styles.sectionHeading, borderBottom: '1px solid #262626', paddingBottom: '15px' }}>ORDER SUMMARY</h2>
+            <h2 style={{ ...styles.sectionHeading, borderBottom: '1px solid #262626', paddingBottom: '12px' }}>ORDER SUMMARY</h2>
             <div>
               {selectedItems.map((item: CartItem) => (
                 <div key={item.id} style={styles.productRow}>
                   <img src={item.image_url || 'https://via.placeholder.com/65x80'} alt={item.name} style={styles.productImg} />
-                  <div style={{ flexGrow: 1 }}> 
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
-                      <span style={{ fontSize: '11px', letterSpacing: '0.8px', fontWeight: 500, color: '#fff' }}>{item.name}</span>
-                      <span style={{ fontSize: '11px', fontFamily: 'monospace', color: '#cccccc' }}>৳{item.price * item.quantity}</span>
+                  <div style={{ flexGrow: 1, minWidth: 0 }}> 
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px', marginBottom: '5px' }}>
+                      <span style={{ fontSize: '11px', letterSpacing: '0.5px', fontWeight: 500, color: '#fff', wordBreak: 'break-word' }}>{item.name}</span>
+                      <span style={{ fontSize: '11px', fontFamily: 'monospace', color: '#cccccc', whiteSpace: 'nowrap' }}>৳{item.price * item.quantity}</span>
                     </div>
-                    <div style={{ fontSize: '10px', color: '#bbbbbb', letterSpacing: '0.6px' }}>
+                    <div style={{ fontSize: '10px', color: '#bbbbbb', letterSpacing: '0.4px' }}>
                       QTY: {item.quantity} {item.color && ` • ${item.color}`} {item.size && ` / ${item.size}`}
                     </div>
                   </div>
                 </div>
               ))}
             </div>
-            <div style={{ marginTop: '30px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', letterSpacing: '1.5px', marginBottom: '15px', color: '#bbbbbb' }}><span>SUBTOTAL</span><span style={{ fontFamily: 'monospace', color: '#cccccc' }}>৳{subtotal}</span></div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', letterSpacing: '1.5px', marginBottom: '15px', color: '#bbbbbb' }}><span>SHIPPING</span><span style={{ fontFamily: 'monospace', color: deliveryCharge === 0 ? '#fff' : '#cccccc' }}>{deliveryCharge === 0 ? 'COMPLIMENTARY' : `৳${deliveryCharge}`}</span></div>
-              {vatRate > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', letterSpacing: '1.5px', marginBottom: '15px', color: '#bbbbbb' }}><span>VAT ({vatRate}%)</span><span style={{ fontFamily: 'monospace', color: '#cccccc' }}>৳{vatAmount}</span></div>}
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', letterSpacing: '2px', paddingTop: '20px', borderTop: '1px dotted #333333', color: '#fff', fontWeight: 600, marginTop: '25px' }}><span>TOTAL</span><span style={{ fontFamily: 'monospace', fontSize: '14px' }}>৳{grandTotal}</span></div>
+            <div style={{ marginTop: '20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', letterSpacing: '1px', marginBottom: '12px', color: '#bbbbbb' }}><span>SUBTOTAL</span><span style={{ fontFamily: 'monospace', color: '#cccccc' }}>৳{subtotal}</span></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', letterSpacing: '1px', marginBottom: '12px', color: '#bbbbbb' }}><span>SHIPPING</span><span style={{ fontFamily: 'monospace', color: deliveryCharge === 0 ? '#fff' : '#cccccc' }}>{deliveryCharge === 0 ? 'COMPLIMENTARY' : `৳${deliveryCharge}`}</span></div>
+              {vatRate > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', letterSpacing: '1px', marginBottom: '12px', color: '#bbbbbb' }}><span>VAT ({vatRate}%)</span><span style={{ fontFamily: 'monospace', color: '#cccccc' }}>৳{vatAmount}</span></div>}
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', letterSpacing: '1.5px', paddingTop: '16px', borderTop: '1px dotted #333333', color: '#fff', fontWeight: 600, marginTop: '18px' }}><span>TOTAL</span><span style={{ fontFamily: 'monospace', fontSize: '14px' }}>৳{grandTotal}</span></div>
             </div>
           </div>
         </div>
