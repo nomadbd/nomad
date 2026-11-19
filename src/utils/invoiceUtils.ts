@@ -40,7 +40,7 @@ export const printInvoice = (placedOrderDetails: any) => {
 
   printContainer.innerHTML = `
     <div class="header">NOMAD</div>
-    <div class="sub-header">Proforma Invoice / Order Memorandum</div>
+    <div class="sub-header">Order Confirmation &bull; Awaiting Dispatch</div>
     
     <table class="info-table">
       <tr>
@@ -98,7 +98,7 @@ export const printInvoice = (placedOrderDetails: any) => {
     </table>
 
     <div class="disclaimer">
-      <strong>LEGAL NOTICE:</strong> This is a computer-generated order memorandum for Cash on Delivery (COD) transactions.
+      <strong>ORDER NOTICE:</strong> Your order has been received and is awaiting dispatch. This document confirms order placement prior to shipping.
     </div>
   `;
 
@@ -106,7 +106,7 @@ export const printInvoice = (placedOrderDetails: any) => {
   styleSheet.id = 'nomad-universal-print-style';
   styleSheet.innerHTML = `
     @media print {
-      @page { margin: 12mm; }
+      @page { margin: 0; }
       html, body {
         position: static !important;
         top: auto !important;
@@ -128,7 +128,7 @@ export const printInvoice = (placedOrderDetails: any) => {
         width: 100% !important;
         background: #fff !important;
         color: #000 !important;
-        padding: 28px 24px 24px 24px !important;
+        padding: 44px 36px 36px 36px !important;
         box-sizing: border-box !important;
         font-family: sans-serif !important;
       }
@@ -270,7 +270,7 @@ export const handlePrintInvoice = (
     <body>
       <div class="header">
         <h1>N O M A D</h1>
-        <h2>PROFORMA INVOICE / ORDER MEMORANDUM</h2>
+        <h2>ORDER CONFIRMATION &bull; AWAITING DISPATCH</h2>
       </div>
       <div class="top-section">
         <div class="shipping-info">
@@ -318,7 +318,7 @@ export const handlePrintInvoice = (
           </div>
         </div>
       </div>
-      <div class="footer"><span class="bold">LEGAL NOTICE:</span> This is a computer-generated order memorandum.</div>
+      <div class="footer"><span class="bold">ORDER NOTICE:</span> Your order has been received and is awaiting dispatch.</div>
       <script>
         window.onload = function() {
           setTimeout(function() { window.print(); }, 200);
@@ -365,7 +365,7 @@ export const handlePrintBulkInvoices = (
       <div class="invoice-page">
         <div class="header">
           <h1>N O M A D</h1>
-          <h2>PROFORMA INVOICE / ORDER MEMORANDUM</h2>
+          <h2>ORDER CONFIRMATION &bull; AWAITING DISPATCH</h2>
         </div>
 
         <div class="top-section">
@@ -418,7 +418,7 @@ export const handlePrintBulkInvoices = (
           </div>
         </div>
 
-        <div class="footer"><span class="bold">LEGAL NOTICE:</span> This is a computer-generated order memorandum.</div>
+        <div class="footer"><span class="bold">ORDER NOTICE:</span> Your order has been received and is awaiting dispatch.</div>
       </div>
     `;
   }).join('');
@@ -455,7 +455,7 @@ export const handlePrintBulkInvoices = (
         .totals-border { border-top: 1px solid #000; margin: 10px 0; }
         .grand-total { font-weight: 700; font-size: 12px; }
         .footer { margin-top: 50px; text-align: center; font-size: 9px; color: #333; line-height: 1.5; }
-        @media print { @page { margin: 0; } body { width: 100% !important; max-width: 100% !important; padding: 1cm !important; margin: 0 !important; } .invoice-page { padding: 1cm !important; } }
+        @media print { @page { margin: 0; } body { width: 100% !important; max-width: 100% !important; padding: 0 !important; margin: 0 !important; } .invoice-page { padding: 1cm !important; } }
       </style>
     </head>
     <body>
