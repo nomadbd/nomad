@@ -22,6 +22,12 @@ const CartOverlay: React.FC<CartOverlayProps> = ({
   const [checkoutSnapshot, setCheckoutSnapshot] = useState<typeof cartItems>([]);
 
   useEffect(() => {
+    if (!isCheckingOut) {
+      setCheckoutSnapshot([]);
+    }
+  }, [isCheckingOut]);
+
+  useEffect(() => {
     if (isCartOpen) {
       const scrollY = window.scrollY;
       document.body.style.position = 'fixed';
@@ -103,29 +109,6 @@ const CartOverlay: React.FC<CartOverlayProps> = ({
       >
         {isCheckingOut ? (
           <div style={{ flex: 1, overflowY: 'auto', paddingBottom: '40px' }}>
-            <div style={{ marginBottom: '20px' }}>
-              <button
-                type="button"
-                onClick={() => {
-                  setCheckoutSnapshot([]);
-                  setIsCheckingOut(false);
-                }}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: '#888',
-                  fontSize: '11px',
-                  fontFamily: 'monospace',
-                  letterSpacing: '1.2px',
-                  textTransform: 'uppercase',
-                  cursor: 'pointer',
-                  padding: 0,
-                }}
-              >
-                ← Back to Bag
-              </button>
-            </div>
-
             <Checkout
               selectedItems={checkoutSnapshot.length > 0 ? checkoutSnapshot : selectedItemsForCheckout}
               onSuccess={() => {
@@ -234,7 +217,7 @@ const CartOverlay: React.FC<CartOverlayProps> = ({
                                 <div
                                   style={{
                                     fontSize: '10px',
-                                    color: '#888',
+                                    color: '#b5b5b5',
                                     fontFamily: 'monospace',
                                     textTransform: 'uppercase',
                                     letterSpacing: '0.8px',
@@ -254,7 +237,7 @@ const CartOverlay: React.FC<CartOverlayProps> = ({
                                 width: '16px',
                                 height: '16px',
                                 borderRadius: '50%',
-                                border: isSelected ? '1px solid #fff' : '1px solid #444',
+                                border: isSelected ? '1px solid #fff' : '1px solid #666',
                                 backgroundColor: isSelected ? '#fff' : 'transparent',
                                 display: 'flex',
                                 alignItems: 'center',
@@ -277,7 +260,7 @@ const CartOverlay: React.FC<CartOverlayProps> = ({
                                 display: 'flex',
                                 alignItems: 'center',
                                 backgroundColor: '#0a0a0a',
-                                border: '1px solid rgba(255,255,255,0.06)',
+                                border: '1px solid rgba(255,255,255,0.08)',
                                 borderRadius: '2px',
                               }}
                             >
@@ -286,7 +269,7 @@ const CartOverlay: React.FC<CartOverlayProps> = ({
                                 style={{
                                   background: 'none',
                                   border: 'none',
-                                  color: '#777',
+                                  color: '#b5b5b5',
                                   cursor: 'pointer',
                                   fontSize: '12px',
                                   width: '30px',
@@ -317,7 +300,7 @@ const CartOverlay: React.FC<CartOverlayProps> = ({
                                 style={{
                                   background: 'none',
                                   border: 'none',
-                                  color: '#777',
+                                  color: '#b5b5b5',
                                   cursor: 'pointer',
                                   fontSize: '12px',
                                   width: '30px',
@@ -346,7 +329,7 @@ const CartOverlay: React.FC<CartOverlayProps> = ({
                     marginTop: 'auto',
                     padding: '15px 0 calc(35px + env(safe-area-inset-bottom)) 0',
                     backgroundColor: '#000',
-                    borderTop: '1px solid rgba(255,255,255,0.06)',
+                    borderTop: '1px solid rgba(255,255,255,0.08)',
                     flexShrink: 0,
                   }}
                 >
@@ -359,7 +342,7 @@ const CartOverlay: React.FC<CartOverlayProps> = ({
                       letterSpacing: '0.5px',
                     }}
                   >
-                    <span style={{ color: '#888', textTransform: 'uppercase', fontWeight: '500' }}>Subtotal</span>
+                    <span style={{ color: '#b5b5b5', textTransform: 'uppercase', fontWeight: '500' }}>Subtotal</span>
                     <span style={{ color: 'white', fontWeight: '600', fontFamily: 'monospace', fontSize: '15px' }}>
                       ৳{subtotal}
                     </span>
@@ -375,11 +358,11 @@ const CartOverlay: React.FC<CartOverlayProps> = ({
                       width: '100%',
                       padding: '15px',
                       background: 'transparent',
-                      color: selectedIds.length > 0 ? 'white' : '#444',
+                      color: selectedIds.length > 0 ? 'white' : '#666',
                       border:
                         selectedIds.length > 0
                           ? '1px solid rgba(255, 255, 255, 0.9)'
-                          : '1px solid #222',
+                          : '1px solid #333',
                       fontWeight: '600',
                       letterSpacing: '2px',
                       cursor: selectedIds.length > 0 ? 'pointer' : 'not-allowed',
@@ -387,7 +370,7 @@ const CartOverlay: React.FC<CartOverlayProps> = ({
                       textTransform: 'uppercase',
                       transition: 'all 0.2s ease',
                       outline: 'none',
-                      opacity: selectedIds.length > 0 ? 1 : 0.3,
+                      opacity: selectedIds.length > 0 ? 1 : 0.4,
                     }}
                   >
                     PROCEED TO CHECKOUT ({selectedIds.length})
@@ -398,7 +381,7 @@ const CartOverlay: React.FC<CartOverlayProps> = ({
                       textAlign: 'center',
                       marginTop: '15px',
                       fontSize: '9px',
-                      color: '#555',
+                      color: '#b5b5b5',
                       letterSpacing: '1px',
                       fontFamily: 'monospace',
                       textTransform: 'uppercase',
