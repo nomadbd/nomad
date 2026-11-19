@@ -6,7 +6,7 @@ import { useSession } from './hooks/useSession';
 import { subscribeUserToPush } from './utils/pushManager';
 
 import ProfilePage from './pages/ProfilePage';
-import AdminDashboard from './pages/dashboard/AdminDashboard'; 
+import AdminDashboard from './pages/dashboard/AdminDashboard';
 
 import Header from './components/ui/Header';
 import SearchOverlay from './components/SearchOverlay';
@@ -20,7 +20,29 @@ import ReminderLoading from './components/ui/ReminderLoading';
 const AmbassadorJoin = lazy(() => import('./components/ambassador/join/AmbassadorJoin'));
 const AmbassadorPortal = lazy(() => import('./components/ambassador/portal/AmbassadorPortal'));
 
-const AppContent = ({ session, setIsSearchOpen, isSearchOpen, setIsAuthOpen, isAuthOpen }: any) => {
+interface AppContentProps {
+  session: any;
+  isSearchOpen: boolean;
+  setIsSearchOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  searchQuery: string;
+  setSearchQuery: React.Dispatch<React.SetStateAction<string>>;
+  isAuthOpen: boolean;
+  setIsAuthOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  isCheckingOut: boolean;
+  setIsCheckingOut: React.Dispatch<React.SetStateAction<boolean>>;
+}
+
+const AppContent: React.FC<AppContentProps> = ({
+  session,
+  isSearchOpen,
+  setIsSearchOpen,
+  searchQuery,
+  setSearchQuery,
+  isAuthOpen,
+  setIsAuthOpen,
+  isCheckingOut,
+  setIsCheckingOut,
+}) => {
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -36,11 +58,19 @@ const AppContent = ({ session, setIsSearchOpen, isSearchOpen, setIsAuthOpen, isA
 
   const showHeader = !location.pathname.startsWith('/admin');
 
+  const handleCloseSearch = () => {
+    setIsSearchOpen(false);
+    setSearchQuery('');
+  };
+
   return (
     <>
       {showHeader && (
-        <Header 
-          onSearchOpen={() => setIsSearchOpen(true)} 
+        <Header
+          onSearchOpen={() => setIsSearchOpen(true)}
+          onSearchClose={handleCloseSearch}
+          searchQuery={searchQuery}
+          onSearchQueryChange={setSearchQuery}
           onAuthOpen={() => {
             if (session) {
               navigate('/profile');
@@ -51,54 +81,56 @@ const AppContent = ({ session, setIsSearchOpen, isSearchOpen, setIsAuthOpen, isA
           isSearchOpen={isSearchOpen}
           isAuthOpen={isAuthOpen}
           isProfileActive={location.pathname === '/profile'}
+          isCheckingOut={isCheckingOut}
+          onCheckoutBack={() => setIsCheckingOut(false)}
         />
       )}
 
-      <div 
+      <div
         className="animate-fade-in"
-        style={{ minHeight: '100vh', backgroundColor: 'black', color: '#fff', paddingTop: showHeader ? '70px' : '0' }}
+        style={{
+          minHeight: '100vh',
+          backgroundColor: 'black',
+          color: '#fff',
+          paddingTop: showHeader ? '70px' : '0',
+        }}
       >
         <Routes>
-          <Route path="/" element={
-            <>
-              <Hero />
-              <main style={{ padding: '32px' }}>
-                <ProductList />
-              </main>
-            </>
-          } />
+          <Route
+            path="/"
+            element={
+              <>
+                <Hero />
+                <main style={{ padding: '32px' }}>
+                  <ProductList />
+                </main>
+              </>
+            }
+          />
 
           <Route path="/profile" element={session ? <ProfilePage /> : <Navigate to="/" replace />} />
 
-          <Route 
-            path="/vip/:token" 
+          <Route
+            path="/vip/:token"
             element={
               <Suspense fallback={<ReminderLoading label="" />}>
                 <AmbassadorJoin />
               </Suspense>
-            } 
+            }
           />
 
-          <Route 
-            path="/:slug" 
+          <Route
+            path="/:slug"
             element={
               <Suspense fallback={<ReminderLoading label="" />}>
                 <AmbassadorPortal />
               </Suspense>
-            } 
+            }
           />
 
-          <Route 
-            path="/admin" 
-            element={
-              session ? <AdminDashboard /> : <Navigate to="/" replace />
-            } 
-          />
+          <Route path="/admin" element={session ? <AdminDashboard /> : <Navigate to="/" replace />} />
 
-          <Route 
-            path="/update-password" 
-            element={<AuthForm isRecoveryPage={true} />} 
-          />
+          <Route path="/update-password" element={<AuthForm isRecoveryPage={true} />} />
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
@@ -110,32 +142,45 @@ const AppContent = ({ session, setIsSearchOpen, isSearchOpen, setIsAuthOpen, isA
 const App: React.FC = () => {
   const { session, loading } = useSession();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
 
   if (loading) return <ReminderLoading label="" />;
+
+  const handleCloseSearch = () => {
+    setIsSearchOpen(false);
+    setSearchQuery('');
+  };
 
   return (
     <CartProvider>
       <Router>
-        <AppContent 
-          session={session} 
-          setIsSearchOpen={setIsSearchOpen} 
+        <AppContent
+          session={session}
           isSearchOpen={isSearchOpen}
-          setIsAuthOpen={setIsAuthOpen} 
+          setIsSearchOpen={setIsSearchOpen}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
           isAuthOpen={isAuthOpen}
+          setIsAuthOpen={setIsAuthOpen}
+          isCheckingOut={isCheckingOut}
+          setIsCheckingOut={setIsCheckingOut}
         />
 
-        <CartOverlay session={session} />
-
-        <SearchOverlay 
-          isOpen={isSearchOpen} 
-          onClose={() => setIsSearchOpen(false)} 
+        <CartOverlay
+          session={session}
+          isCheckingOut={isCheckingOut}
+          setIsCheckingOut={setIsCheckingOut}
         />
 
-        <AuthOverlay 
-          isOpen={isAuthOpen} 
-          onClose={() => setIsAuthOpen(false)} 
+        <SearchOverlay
+          isOpen={isSearchOpen}
+          onClose={handleCloseSearch}
+          searchQuery={searchQuery}
         />
+
+        <AuthOverlay isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
       </Router>
     </CartProvider>
   );
