@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/supabaseClient';
 import { useCart } from '@/context/CartContext';
 
@@ -22,6 +22,177 @@ interface Product {
   product_media: { media_url: string; media_type: string }[];
   details?: Record<string, string> | null;
 }
+
+const BENGALI_TO_ENGLISH_ALIASES: Record<string, string[]> = {
+  'টি-শার্ট': ['t-shirt', 'tshirt', 'tee'],
+  'টিশার্ট': ['t-shirt', 'tshirt', 'tee'],
+  'শার্ট': ['shirt'],
+  'প্যান্ট': ['pant', 'pants', 'trouser', 'trousers'],
+  'জিন্স': ['jeans', 'denim'],
+  'হুডি': ['hoodie'],
+  'জ্যাকেট': ['jacket'],
+  'পোলো': ['polo'],
+  'কালো': ['black'],
+  'সাদা': ['white'],
+  'নীল': ['blue', 'navy'],
+  'লাল': ['red'],
+  'সবুজ': ['green', 'olive'],
+  'ধূসর': ['grey', 'gray'],
+};
+
+const normalizeText = (text: string): string =>
+  text
+    .toLowerCase()
+    .replace(/[-_]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+const expandQueryTokens = (rawQuery: string): string[] => {
+  const normalized = normalizeText(rawQuery);
+  if (!normalized) return [];
+
+  const tokens = normalized.split(' ').filter(Boolean);
+  const expanded = new Set<string>([normalized, ...tokens]);
+
+  Object.entries(BENGALI_TO_ENGLISH_ALIASES).forEach(([bn, enList]) => {
+    if (normalized.includes(bn)) {
+      enList.forEach((en) => expanded.add(normalizeText(en)));
+    }
+  });
+
+  tokens.forEach((token) => {
+    if (token === 'tshirt') {
+      expanded.add('t shirt');
+      expanded.add('t-shirt');
+    }
+    if (token === 't-shirt' || token === 't') {
+      expanded.add('tshirt');
+    }
+  });
+
+  return Array.from(expanded);
+};
+
+const scoreProduct = (product: Product, rawQuery: string): number => {
+  const query = normalizeText(rawQuery);
+  if (!query) return 0;
+
+  let score = 0;
+
+  const name = normalizeText(product.name || '');
+  const category = normalizeText(product.category || '');
+  const description = normalizeText(product.description || '');
+  const sizes = (product.sizes || []).map((s) => normalizeText(String(s)));
+  const colors = (product.colors || []).map((c) => normalizeText(String(c)));
+  const detailsText = product.details
+    ? normalizeText(
+        Object.entries(product.details)
+          .map(([k, v]) => `${k} ${v}`)
+          .join(' ')
+      )
+    : '';
+
+  const expandedTerms = expandQueryTokens(rawQuery);
+  const queryTokens = query.split(' ').filter(Boolean);
+
+  // ১. প্রোডাক্টের নাম (সর্বোচ্চ অগ্রাধিকার)
+  if (name === query) {
+    score += 140;
+  } else if (name.startsWith(query)) {
+    score += 110;
+  } else if (name.includes(query)) {
+    score += 85;
+  }
+
+  // ২. ক্যাটাগরি ম্যাচ (বাংলা ও ইংরেজি সমার্থকসহ)
+  expandedTerms.forEach((term) => {
+    if (!term) return;
+    if (category === term) {
+      score += 95;
+    } else if (category.startsWith(term)) {
+      score += 75;
+    } else if (category.includes(term)) {
+      score += 60;
+    }
+  });
+
+  // ৩. মাল্টি-ওয়ার্ড টোকেন ম্যাচ (নাম ও ক্যাটাগরিতে)
+  let matchedNameTokens = 0;
+  queryTokens.forEach((token) => {
+    const tokenAliases = expandQueryTokens(token);
+    const inName = tokenAliases.some((alias) => name.includes(alias));
+    const inCategory = tokenAliases.some((alias) => category.includes(alias));
+
+    if (inName) {
+      matchedNameTokens += 1;
+      score += name.split(' ').some((w) => w.startsWith(token)) ? 32 : 22;
+    }
+    if (inCategory) {
+      score += 24;
+    }
+  });
+
+  if (queryTokens.length > 1 && matchedNameTokens === queryTokens.length) {
+    score += 40;
+  }
+
+  // ৪. সাইজ এবং কালার ম্যাচ
+  queryTokens.forEach((token) => {
+    const tokenAliases = expandQueryTokens(token);
+
+    if (sizes.some((s) => s === token)) {
+      score += 75;
+    } else if (sizes.some((s) => s.includes(token) && token.length >= 2)) {
+      score += 40;
+    }
+
+    if (colors.some((c) => tokenAliases.includes(c))) {
+      score += 70;
+    } else if (colors.some((c) => tokenAliases.some((alias) => alias.length >= 3 && c.includes(alias)))) {
+      score += 45;
+    }
+  });
+
+  // ৫. দাম (Price) ম্যাচ
+  const numericMatches = rawQuery.replace(/,/g, '').match(/\d+(\.\d+)?/g);
+  if (numericMatches && numericMatches.length > 0) {
+    const targetPrice = parseFloat(numericMatches[0]);
+    if (!Number.isNaN(targetPrice) && targetPrice > 0) {
+      const diff = Math.abs(product.price - targetPrice);
+      if (diff === 0) {
+        score += 85;
+      } else if (diff <= targetPrice * 0.1) {
+        score += 50;
+      } else if (diff <= targetPrice * 0.25) {
+        score += 25;
+      } else if (String(product.price).startsWith(String(Math.floor(targetPrice)))) {
+        score += 30;
+      }
+    }
+  }
+
+  // ৬. ডেসক্রিপশন এবং অতিরিক্ত ডিটেইলস
+  if (description.includes(query)) {
+    score += 25;
+  } else {
+    queryTokens.forEach((token) => {
+      if (token.length >= 2 && description.includes(token)) {
+        score += 10;
+      }
+    });
+  }
+
+  if (detailsText && detailsText.includes(query)) {
+    score += 20;
+  }
+
+  // ইন-স্টক প্রোডাক্টকে সামান্য অগ্রাধিকার
+  if (score > 0 && product.status === 'active' && product.stock_quantity > 0) {
+    score += 5;
+  }
+
+  return score;
+};
 
 const ProductGallery = ({ images, productName }: { images: string[]; productName: string }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -355,6 +526,7 @@ const ProductActionRow = ({ product }: { product: Product }) => {
 const ProductCard = ({ product }: { product: Product }) => {
   const [isDescExpanded, setIsDescExpanded] = useState(false);
   const mediaUrls = product.product_media?.map((m) => m.media_url) || [];
+  const description = product.description || '';
 
   return (
     <div
@@ -391,33 +563,31 @@ const ProductCard = ({ product }: { product: Product }) => {
         <div style={{ margin: '0 0 15px 0' }}>
           {(() => {
             const characterLimit = 75;
-            const isLongText = product.description.length > characterLimit;
-            const displayedText = isLongText
-              ? product.description.slice(0, characterLimit) + '...'
-              : product.description;
+            const isLongText = description.length > characterLimit;
+            const displayedText = isLongText ? description.slice(0, characterLimit) + '...' : description;
 
             return !isDescExpanded ? (
               <p style={{ fontSize: '13px', color: '#fff', margin: 0, lineHeight: '1.4' }}>
                 {displayedText}
-                <span
-                  onClick={() => setIsDescExpanded(true)}
-                  style={{
-                    fontSize: '12px',
-                    color: '#aaa',
-                    cursor: 'pointer',
-                    marginLeft: '6px',
-                    fontWeight: '500',
-                    display: 'inline',
-                  }}
-                >
-                  see more
-                </span>
+                {isLongText && (
+                  <span
+                    onClick={() => setIsDescExpanded(true)}
+                    style={{
+                      fontSize: '12px',
+                      color: '#aaa',
+                      cursor: 'pointer',
+                      marginLeft: '6px',
+                      fontWeight: '500',
+                      display: 'inline',
+                    }}
+                  >
+                    see more
+                  </span>
+                )}
               </p>
             ) : (
               <div style={{ animation: 'swapFadeIn 0.3s ease-in-out' }}>
-                <p style={{ fontSize: '13px', color: '#fff', margin: 0, lineHeight: '1.4' }}>
-                  {product.description}
-                </p>
+                <p style={{ fontSize: '13px', color: '#fff', margin: 0, lineHeight: '1.4' }}>{description}</p>
 
                 {product.details && Object.keys(product.details).length > 0 && (
                   <div
@@ -488,13 +658,11 @@ const ProductCard = ({ product }: { product: Product }) => {
 };
 
 export default function SearchOverlay({ isOpen, onClose, searchQuery }: Props) {
-  const [results, setResults] = useState<Product[]>([]);
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    if (!isOpen) {
-      setResults([]);
-      return;
-    }
+    if (!isOpen) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -511,37 +679,12 @@ export default function SearchOverlay({ isOpen, onClose, searchQuery }: Props) {
   useEffect(() => {
     if (!isOpen) return;
 
-    const delayDebounceFn = setTimeout(() => {
-      if (searchQuery.trim().length > 0) {
-        searchProducts(searchQuery);
-      } else {
-        setResults([]);
-      }
-    }, 300);
+    let isMounted = true;
 
-    return () => clearTimeout(delayDebounceFn);
-  }, [searchQuery, isOpen]);
-
-  const searchProducts = async (term: string) => {
-    try {
-      const query = `%${term}%`;
-
-      const { data, error } = await supabase
-        .from('products')
-        .select(`
-          *,
-          product_media (
-            media_url,
-            media_type
-          )
-        `)
-        .eq('status', 'active')
-        .or(
-          `name.ilike.${query},description.ilike.${query},category.ilike.${query},sizes.cat.${query},colors.cat.${query}`
-        );
-
-      if (error) {
-        const { data: fallbackData, error: fallbackError } = await supabase
+    const fetchCatalog = async () => {
+      try {
+        setIsLoading(true);
+        const { data, error } = await supabase
           .from('products')
           .select(`
             *,
@@ -550,20 +693,46 @@ export default function SearchOverlay({ isOpen, onClose, searchQuery }: Props) {
               media_type
             )
           `)
-          .eq('status', 'active')
-          .or(`name.ilike.${query},description.ilike.${query},category.ilike.${query}`);
+          .order('created_at', { ascending: false });
 
-        if (fallbackError) throw fallbackError;
-        setResults((fallbackData as Product[]) || []);
-      } else {
-        setResults((data as Product[]) || []);
+        if (error) throw error;
+        if (isMounted && data) {
+          setAllProducts(data as Product[]);
+        }
+      } catch (err) {
+        console.error('Error loading search catalog:', err);
+      } finally {
+        if (isMounted) setIsLoading(false);
       }
-    } catch (err) {
-      console.error('Error searching products:', err);
-    }
-  };
+    };
+
+    fetchCatalog();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isOpen]);
+
+  const rankedResults = useMemo(() => {
+    const trimmed = searchQuery.trim();
+    if (!trimmed) return [];
+
+    return allProducts
+      .map((product) => ({
+        product,
+        score: scoreProduct(product, trimmed),
+      }))
+      .filter((entry) => entry.score > 0)
+      .sort((a, b) => {
+        if (b.score !== a.score) return b.score - a.score;
+        return new Date(b.product.created_at).getTime() - new Date(a.product.created_at).getTime();
+      })
+      .map((entry) => entry.product);
+  }, [allProducts, searchQuery]);
 
   if (!isOpen) return null;
+
+  const hasQuery = searchQuery.trim().length > 0;
 
   return (
     <div
@@ -583,15 +752,62 @@ export default function SearchOverlay({ isOpen, onClose, searchQuery }: Props) {
       }}
     >
       <div style={{ color: 'white', width: '100%', boxSizing: 'border-box' }}>
-        {results.length > 0 && (
-          <div className="search-results-container">
-            {results.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
+        {!hasQuery && (
+          <div style={{ padding: '24px 24px 0 24px' }}>
+            <p
+              style={{
+                fontSize: '11px',
+                letterSpacing: '2px',
+                color: '#666',
+                textTransform: 'uppercase',
+                fontFamily: 'monospace',
+                margin: 0,
+              }}
+            >
+              Search by name, category, size, color, or price
+            </p>
           </div>
         )}
 
-        {searchQuery.trim().length > 0 && results.length === 0 && (
+        {hasQuery && isLoading && rankedResults.length === 0 && (
+          <p
+            style={{
+              fontSize: '11px',
+              letterSpacing: '2px',
+              color: '#777',
+              padding: '0 24px',
+              textTransform: 'uppercase',
+              fontFamily: 'monospace',
+            }}
+          >
+            Searching...
+          </p>
+        )}
+
+        {hasQuery && rankedResults.length > 0 && (
+          <>
+            <div
+              style={{
+                padding: '0 24px 18px 24px',
+                fontSize: '10px',
+                letterSpacing: '2px',
+                color: '#666',
+                textTransform: 'uppercase',
+                fontFamily: 'monospace',
+              }}
+            >
+              {rankedResults.length} {rankedResults.length === 1 ? 'Result' : 'Results'}
+            </div>
+
+            <div className="search-results-container">
+              {rankedResults.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          </>
+        )}
+
+        {hasQuery && !isLoading && rankedResults.length === 0 && (
           <p
             style={{
               fontSize: '11px',
