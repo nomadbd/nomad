@@ -74,7 +74,9 @@ export const printInvoice = (placedOrderDetails: any) => {
         <td style="padding: 4px 0; vertical-align: top; color: #000 !important; font-size: 11px; letter-spacing: 0.5px;">
           ${customerEmail}
         </td>
-        <td style="text-align: right; padding: 4px 0; vertical-align: top; color: #000 !important; font-size: 11px; letter-spacing: 0.5px;"></td>
+        <td style="text-align: right; padding: 4px 0; vertical-align: top; color: #000 !important; font-size: 11px; letter-spacing: 0.5px;">
+          <strong style="color: #ff0000; letter-spacing: 1px;">STATUS: UNPAID / DUE</strong>
+        </td>
       </tr>
       ` : ''}
       <tr>
@@ -82,7 +84,7 @@ export const printInvoice = (placedOrderDetails: any) => {
           ${placedOrderDetails.shippingAddress ? String(placedOrderDetails.shippingAddress).toUpperCase() : ''}
         </td>
         <td style="text-align: right; padding: 4px 0; vertical-align: top; color: #000 !important; font-size: 11px; letter-spacing: 0.5px;">
-          <strong style="color: #ff0000; letter-spacing: 1px;">STATUS: UNPAID / DUE</strong>
+          ${!customerEmail ? `<strong style="color: #ff0000; letter-spacing: 1px;">STATUS: UNPAID / DUE</strong>` : ''}
         </td>
       </tr>
     </table>
@@ -465,7 +467,7 @@ export const handlePrintBulkInvoices = (
         .totals-border { border-top: 1px solid #000; margin: 10px 0; }
         .grand-total { font-weight: 700; font-size: 12px; }
         .footer { margin-top: 50px; text-align: center; font-size: 9px; color: #333; line-height: 1.5; }
-        @media print { @page { margin: 0; } body { width: 100% !important; max-width: 100% !important; padding: 1cm !important; margin: 0 !important; } .invoice-page { padding: 1cm !important; } }
+        @media print { @page { margin: 0; } body { width: 100% !important; max-width: 100% !important; padding: 0 !important; margin: 0 !important; } .invoice-page { padding: 1cm !important; } }
       </style>
     </head>
     <body>
