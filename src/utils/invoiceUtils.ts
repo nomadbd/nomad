@@ -13,16 +13,16 @@ export const printInvoice = (placedOrderDetails: any) => {
   const formattedDate = `${year}-${month}-${date}`;
   const formattedTime = `${hours}:${minutes}`;
 
-  const itemsHtml = placedOrderDetails.items.map((item: any) => {
+  const itemsHtml = (placedOrderDetails.items || []).map((item: any) => {
     const detailsArray = [];
-    if (item.size) detailsArray.push(`SIZE: ${item.size.toUpperCase()}`);
-    if (item.color) detailsArray.push(`COLOR: ${item.color.toUpperCase()}`);
+    if (item.size) detailsArray.push(`SIZE: ${String(item.size).toUpperCase()}`);
+    if (item.color) detailsArray.push(`COLOR: ${String(item.color).toUpperCase()}`);
     detailsArray.push(`QTY: ${item.quantity}`);
 
     return `
       <tr>
         <td style="padding: 14px 0; border-bottom: 1px solid #eee; font-size: 11px; letter-spacing: 1px; line-height: 1.6; color: #000 !important;">
-          <strong style="color: #000 !important; display: block; margin-bottom: 4px;">${item.name ? item.name.toUpperCase() : ''}</strong>
+          <strong style="color: #000 !important; display: block; margin-bottom: 4px;">${item.name ? String(item.name).toUpperCase() : ''}</strong>
           <div style="color: #555; font-size: 10px; letter-spacing: 0.5px; text-transform: uppercase;">
             ${detailsArray.join(' &nbsp;|&nbsp; ')} &nbsp;&bull;&nbsp; ৳${item.price}
           </div>
@@ -31,6 +31,20 @@ export const printInvoice = (placedOrderDetails: any) => {
       </tr>
     `;
   }).join('');
+
+  const existingContainer = document.getElementById('nomad-universal-print-area');
+  if (existingContainer) existingContainer.remove();
+
+  const existingStyle = document.getElementById('nomad-universal-print-style');
+  if (existingStyle) existingStyle.remove();
+
+  const prevBodyPosition = document.body.style.position;
+  const prevBodyTop = document.body.style.top;
+  const prevBodyWidth = document.body.style.width;
+
+  document.body.style.position = 'static';
+  document.body.style.top = '';
+  document.body.style.width = 'auto';
 
   const printContainer = document.createElement('div');
   printContainer.id = 'nomad-universal-print-area';
@@ -50,7 +64,7 @@ export const printInvoice = (placedOrderDetails: any) => {
       </tr>
       <tr>
         <td style="padding: 4px 0; vertical-align: top; color: #000 !important; font-size: 11px; font-weight: bold; letter-spacing: 0.5px;">
-          ${placedOrderDetails.customerName ? placedOrderDetails.customerName.toUpperCase() : 'GUEST'}
+          ${placedOrderDetails.customerName ? String(placedOrderDetails.customerName).toUpperCase() : 'GUEST'}
         </td>
         <td style="text-align: right; padding: 4px 0; vertical-align: top; color: #000 !important; font-size: 11px; letter-spacing: 0.5px;">
           <strong style="color: #000 !important;">DATE:</strong> ${formattedDate} &nbsp;&nbsp; <strong style="color: #000 !important;">TIME:</strong> ${formattedTime}
@@ -66,7 +80,7 @@ export const printInvoice = (placedOrderDetails: any) => {
       </tr>
       <tr>
         <td style="padding: 4px 0; vertical-align: top; color: #000 !important; font-size: 11px; letter-spacing: 0.5px; line-height: 1.4; max-width: 300px;">
-          ${placedOrderDetails.shippingAddress ? placedOrderDetails.shippingAddress.toUpperCase() : ''}
+          ${placedOrderDetails.shippingAddress ? String(placedOrderDetails.shippingAddress).toUpperCase() : ''}
         </td>
         <td style="text-align: right; padding: 4px 0; vertical-align: top; color: #000 !important; font-size: 11px; letter-spacing: 0.5px;">
           <strong style="color: #ff0000; letter-spacing: 1px;">STATUS: UNPAID / DUE</strong>
@@ -100,17 +114,18 @@ export const printInvoice = (placedOrderDetails: any) => {
   `;
 
   const styleSheet = document.createElement('style');
+  styleSheet.id = 'nomad-universal-print-style';
   styleSheet.innerHTML = `
     @media print {
-      @page { margin: 0mm; }
-      body { background: #fff !important; color: #000 !important; margin: 0 !important; padding: 0 !important; }
-      body > *:not(#nomad-universal-print-area) { display: none !important; }
-      #nomad-universal-print-area { display: block !important; position: absolute; left: 0; top: 0; width: 100%; background: #fff !important; color: #000 !important; padding: 50px 40px !important; box-sizing: border-box; font-family: sans-serif; }
+      @page { margin: 10mm; }
+      html, body { position: static !important; top: auto !important; left: auto !important; width: auto !important; height: auto !important; overflow: visible !important; background: #fff !important; color: #000 !important; margin: 0 !important; padding: 0 !important; }
+      body > *:not(#nomad-universal-print-area):not(#nomad-universal-print-style) { display: none !important; }
+      #nomad-universal-print-area { display: block !important; position: static !important; width: 100% !important; background: #fff !important; color: #000 !important; padding: 20px 24px !important; box-sizing: border-box; font-family: sans-serif; }
       .header { text-align: center; margin-bottom: 10px; letter-spacing: 6px; font-weight: bold; font-size: 22px; color: #000 !important; }
-      .sub-header { text-align: center; font-size: 10px; letter-spacing: 3px; color: #666 !important; margin-bottom: 50px; text-transform: uppercase; }
-      .info-table { width: 100%; margin-bottom: 40px; font-size: 11px; letter-spacing: 0.5px; border-collapse: collapse; }
-      .items-table { width: 100%; border-collapse: collapse; margin-bottom: 40px; }
-      .summary-table { width: 40%; margin-left: auto; font-size: 11px; line-height: 2; letter-spacing: 0.5px; margin-bottom: 60px; page-break-inside: avoid !important; }
+      .sub-header { text-align: center; font-size: 10px; letter-spacing: 3px; color: #666 !important; margin-bottom: 40px; text-transform: uppercase; }
+      .info-table { width: 100%; margin-bottom: 35px; font-size: 11px; letter-spacing: 0.5px; border-collapse: collapse; }
+      .items-table { width: 100%; border-collapse: collapse; margin-bottom: 35px; }
+      .summary-table { width: 40%; margin-left: auto; font-size: 11px; line-height: 2; letter-spacing: 0.5px; margin-bottom: 50px; page-break-inside: avoid !important; }
       .disclaimer { font-size: 9px; color: #777 !important; line-height: 1.6; text-align: center; border-top: 1px solid #eee; padding-top: 20px; letter-spacing: 0.5px; page-break-inside: avoid; }
     }
     @media screen { #nomad-universal-print-area { display: none !important; } }
@@ -119,17 +134,21 @@ export const printInvoice = (placedOrderDetails: any) => {
   document.body.appendChild(printContainer);
   document.head.appendChild(styleSheet);
 
+  const restoreAndCleanup = () => {
+    window.removeEventListener('afterprint', restoreAndCleanup);
+    document.getElementById('nomad-universal-print-area')?.remove();
+    document.getElementById('nomad-universal-print-style')?.remove();
+    document.body.style.position = prevBodyPosition;
+    document.body.style.top = prevBodyTop;
+    document.body.style.width = prevBodyWidth;
+  };
+
+  window.addEventListener('afterprint', restoreAndCleanup);
+
   setTimeout(() => {
     window.print();
-    setTimeout(() => {
-      if (document.getElementById('nomad-universal-print-area')) {
-        document.body.removeChild(printContainer);
-      }
-      if (styleSheet.parentNode) {
-        document.head.removeChild(styleSheet);
-      }
-    }, 10000);
-  }, 1000);
+    setTimeout(restoreAndCleanup, 15000);
+  }, 500);
 };
 
 export const handlePrintInvoice = (
@@ -373,7 +392,7 @@ export const handlePrintBulkInvoices = (
         .totals-border { border-top: 1px solid #000; margin: 10px 0; }
         .grand-total { font-weight: 700; font-size: 12px; }
         .footer { margin-top: 50px; text-align: center; font-size: 9px; color: #333; line-height: 1.5; }
-        @media print { @page { margin: 0; } body { width: 100% !important; max-width: 100% !important; padding: 0 !important; margin: 0 !important; } .invoice-page { padding: 1cm !important; } }
+        @media print { @page { margin: 0; } body { width: 100% !important; max-width: 100% !important; padding: 1cm !important; margin: 0 !important; } .invoice-page { padding: 1cm !important; } }
       </style>
     </head>
     <body>
