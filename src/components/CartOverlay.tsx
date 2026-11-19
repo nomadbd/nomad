@@ -1,11 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { useCart } from '@/context/CartContext';
-import Checkout from './Checkout'; 
+import Checkout from './Checkout';
 
-const CartOverlay = () => {
+interface CartOverlayProps {
+  isCheckingOut?: boolean;
+  setIsCheckingOut?: React.Dispatch<React.SetStateAction<boolean>>;
+}
+
+const CartOverlay: React.FC<CartOverlayProps> = ({
+  isCheckingOut: externalIsCheckingOut,
+  setIsCheckingOut: externalSetIsCheckingOut,
+}) => {
   const { cartItems, isCartOpen, setIsCartOpen, incrementQuantity, decrementQuantity } = useCart();
 
-  const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [internalIsCheckingOut, setInternalIsCheckingOut] = useState(false);
+  const isCheckingOut = externalIsCheckingOut ?? internalIsCheckingOut;
+  const setIsCheckingOut = externalSetIsCheckingOut ?? setInternalIsCheckingOut;
+
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   useEffect(() => {
@@ -22,7 +33,7 @@ const CartOverlay = () => {
       if (scrollY) {
         window.scrollTo(0, parseInt(scrollY || '0') * -1);
       }
-      setIsCheckingOut(false); 
+      setIsCheckingOut(false);
     }
     return () => {
       const scrollY = document.body.style.top;
@@ -33,10 +44,10 @@ const CartOverlay = () => {
         window.scrollTo(0, parseInt(scrollY || '0') * -1);
       }
     };
-  }, [isCartOpen]);
+  }, [isCartOpen, setIsCheckingOut]);
 
   useEffect(() => {
-    setSelectedIds(cartItems.map(item => `${item.id}-${item.color || ''}-${item.size || ''}`)); 
+    setSelectedIds(cartItems.map(item => `${item.id}-${item.color || ''}-${item.size || ''}`));
   }, [cartItems]);
 
   if (!isCartOpen) return null;
@@ -45,7 +56,7 @@ const CartOverlay = () => {
     .filter(item => selectedIds.includes(`${item.id}-${item.color || ''}-${item.size || ''}`))
     .reduce((acc, item) => acc + item.price * item.quantity, 0);
 
-  const selectedItemsForCheckout = cartItems.filter(item => 
+  const selectedItemsForCheckout = cartItems.filter(item =>
     selectedIds.includes(`${item.id}-${item.color || ''}-${item.size || ''}`)
   );
 
@@ -58,153 +69,264 @@ const CartOverlay = () => {
   };
 
   return (
-    <div 
-      style={{ 
-        position: 'fixed', 
-        top: 0, 
-        left: 0, 
-        right: 0, 
-        bottom: 0, 
-        width: '100vw', 
+    <div
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        width: '100vw',
         height: '100dvh',
-        backgroundColor: '#000', 
-        zIndex: 9999, 
-        overflow: 'hidden', 
+        backgroundColor: '#000',
+        zIndex: 900,
+        overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column',
         boxSizing: 'border-box',
-        padding: '35px 24px 0 24px'
+        padding: '88px 24px 0 24px',
       }}
     >
-      {/* Header Row: Title strictly on absolute/flex left, Close Button on extreme right */}
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center', 
-        width: '100%', 
-        marginBottom: '30px',
-        flexShrink: 0 
-      }}>
-        <h2 style={{ fontSize: '15px', fontWeight: '600', letterSpacing: '1.5px', margin: 0, fontFamily: 'monospace', color: 'white', textTransform: 'uppercase' }}>
-          {isCheckingOut ? 'CHECKOUT' : `NOMAD BAG (${cartItems.length})`}
-        </h2>
-
-        <button 
-          onClick={() => { setIsCartOpen(false); setIsCheckingOut(false); }} 
-          style={{ 
-            background: 'none', 
-            border: 'none', 
-            color: 'white', 
-            cursor: 'pointer', 
-            padding: '5px', 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center'
-          }}
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-        </button>
-      </div>
-
-      <div style={{ width: '100%', maxWidth: '500px', margin: '0 auto', height: 'calc(100% - 70px)', display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
+      <div
+        style={{
+          width: '100%',
+          maxWidth: '500px',
+          margin: '0 auto',
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          boxSizing: 'border-box',
+        }}
+      >
         {isCheckingOut ? (
           <div style={{ flex: 1, overflowY: 'auto', paddingBottom: '40px' }}>
-            <Checkout 
-              selectedItems={selectedItemsForCheckout} 
+            <div style={{ marginBottom: '20px' }}>
+              <button
+                type="button"
+                onClick={() => setIsCheckingOut(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#888',
+                  fontSize: '11px',
+                  fontFamily: 'monospace',
+                  letterSpacing: '1.2px',
+                  textTransform: 'uppercase',
+                  cursor: 'pointer',
+                  padding: 0,
+                }}
+              >
+                ← Back to Bag
+              </button>
+            </div>
+
+            <Checkout
+              selectedItems={selectedItemsForCheckout}
               onSuccess={() => {
                 setIsCheckingOut(false);
                 setIsCartOpen(false);
-              }} 
+              }}
             />
           </div>
         ) : (
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-
             {cartItems.length === 0 ? (
-              <div style={{ 
-                flex: 1, 
-                display: 'flex', 
-                flexDirection: 'column', 
-                justifyContent: 'center', 
-                alignItems: 'flex-start', 
-                paddingBottom: '80px' 
-              }}>
-                <h3 style={{ 
-                  margin: 0, 
-                  fontSize: 'clamp(36px, 10vw, 52px)', 
-                  fontWeight: '800', 
-                  lineHeight: '1.05', 
-                  letterSpacing: '-1px', 
-                  color: '#222', 
-                  textTransform: 'uppercase', 
-                  fontFamily: 'sans-serif' 
-                }}>
-                  YOUR<br />
-                  BAG IS<br />
+              <div
+                style={{
+                  flex: 1,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center',
+                  alignItems: 'flex-start',
+                  paddingBottom: '80px',
+                }}
+              >
+                <h3
+                  style={{
+                    margin: 0,
+                    fontSize: 'clamp(36px, 10vw, 52px)',
+                    fontWeight: '800',
+                    lineHeight: '1.05',
+                    letterSpacing: '-1px',
+                    color: '#3a3a3a',
+                    textTransform: 'uppercase',
+                    fontFamily: 'sans-serif',
+                  }}
+                >
+                  YOUR
+                  <br />
+                  BAG IS
+                  <br />
                   EMPTY
                 </h3>
               </div>
             ) : (
               <>
-                <div className="cart-items-scroll-area" style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '24px', paddingRight: '5px', paddingBottom: '20px' }}>
+                <div
+                  className="cart-items-scroll-area"
+                  style={{
+                    flex: 1,
+                    overflowY: 'auto',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '24px',
+                    paddingRight: '5px',
+                    paddingBottom: '20px',
+                  }}
+                >
                   {cartItems.map((item) => {
                     const itemKey = `${item.id}-${item.color || ''}-${item.size || ''}`;
                     const isSelected = selectedIds.includes(itemKey);
 
-                    const itemImage = item.image_url || 
-                      item.product_media?.find((m: any) => m.media_type === 'image')?.media_url || 
+                    const itemImage =
+                      item.image_url ||
+                      item.product_media?.find((m: any) => m.media_type === 'image')?.media_url ||
                       item.product_media?.[0]?.media_url;
 
                     return (
-                      <div key={itemKey} style={{ display: 'flex', gap: '18px', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '20px' }}>
-
-                        <img 
-                          src={itemImage} 
-                          alt={item.name} 
-                          style={{ width: '70px', height: '90px', objectFit: 'cover', border: '1px solid rgba(255,255,255,0.06)', backgroundColor: '#111' }} 
+                      <div
+                        key={itemKey}
+                        style={{
+                          display: 'flex',
+                          gap: '18px',
+                          alignItems: 'center',
+                          borderBottom: '1px solid rgba(255,255,255,0.06)',
+                          paddingBottom: '20px',
+                        }}
+                      >
+                        <img
+                          src={itemImage}
+                          alt={item.name}
+                          style={{
+                            width: '70px',
+                            height: '90px',
+                            objectFit: 'cover',
+                            border: '1px solid rgba(255,255,255,0.06)',
+                            backgroundColor: '#111',
+                          }}
                         />
 
                         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '14px' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                              <h4 style={{ margin: 0, fontSize: '13px', fontWeight: '500', color: '#f5f5f5', letterSpacing: '0.3px', paddingRight: '15px', lineHeight: '1.4', wordBreak: 'break-word' }}>
+                              <h4
+                                style={{
+                                  margin: 0,
+                                  fontSize: '13px',
+                                  fontWeight: '500',
+                                  color: '#f5f5f5',
+                                  letterSpacing: '0.3px',
+                                  paddingRight: '15px',
+                                  lineHeight: '1.4',
+                                  wordBreak: 'break-word',
+                                }}
+                              >
                                 {item.name}
                               </h4>
                               {(item.color || item.size) && (
-                                <div style={{ fontSize: '10px', color: '#888', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: '500' }}>
-                                  {item.color}{item.color && item.size ? ' / ' : ''}{item.size}
+                                <div
+                                  style={{
+                                    fontSize: '10px',
+                                    color: '#888',
+                                    fontFamily: 'monospace',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.8px',
+                                    fontWeight: '500',
+                                  }}
+                                >
+                                  {item.color}
+                                  {item.color && item.size ? ' / ' : ''}
+                                  {item.size}
                                 </div>
                               )}
                             </div>
 
-                            <div 
+                            <div
                               onClick={() => toggleSelect(itemKey)}
-                              style={{ width: '16px', height: '16px', borderRadius: '50%', border: isSelected ? '1px solid #fff' : '1px solid #444', backgroundColor: isSelected ? '#fff' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s ease', userSelect: 'none', flexShrink: 0 }}
+                              style={{
+                                width: '16px',
+                                height: '16px',
+                                borderRadius: '50%',
+                                border: isSelected ? '1px solid #fff' : '1px solid #444',
+                                backgroundColor: isSelected ? '#fff' : 'transparent',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease',
+                                userSelect: 'none',
+                                flexShrink: 0,
+                              }}
                             >
-                              {isSelected && <span style={{ color: '#000', fontSize: '9px', fontWeight: 'bold' }}>✓</span>}
+                              {isSelected && (
+                                <span style={{ color: '#000', fontSize: '9px', fontWeight: 'bold' }}>✓</span>
+                              )}
                             </div>
                           </div>
 
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', backgroundColor: '#0a0a0a', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '2px' }}>
-                              <button 
-                                onClick={() => decrementQuantity(item.id, item.color, item.size)} 
-                                style={{ background: 'none', border: 'none', color: '#777', cursor: 'pointer', fontSize: '12px', width: '30px', height: '26px', display: 'flex', alignItems: 'center', justifyContent: 'center', outline: 'none' }}
+                            <div
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                backgroundColor: '#0a0a0a',
+                                border: '1px solid rgba(255,255,255,0.06)',
+                                borderRadius: '2px',
+                              }}
+                            >
+                              <button
+                                onClick={() => decrementQuantity(item.id, item.color, item.size)}
+                                style={{
+                                  background: 'none',
+                                  border: 'none',
+                                  color: '#777',
+                                  cursor: 'pointer',
+                                  fontSize: '12px',
+                                  width: '30px',
+                                  height: '26px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  outline: 'none',
+                                }}
                               >
                                 —
                               </button>
-                              <span style={{ color: 'white', fontSize: '12px', fontFamily: 'monospace', minWidth: '22px', textAlign: 'center', userSelect: 'none', fontWeight: '500' }}>{item.quantity}</span>
-                              <button 
-                                onClick={() => incrementQuantity(item.id, item.color, item.size)} 
-                                style={{ background: 'none', border: 'none', color: '#777', cursor: 'pointer', fontSize: '12px', width: '30px', height: '26px', display: 'flex', alignItems: 'center', justifyContent: 'center', outline: 'none' }}
+                              <span
+                                style={{
+                                  color: 'white',
+                                  fontSize: '12px',
+                                  fontFamily: 'monospace',
+                                  minWidth: '22px',
+                                  textAlign: 'center',
+                                  userSelect: 'none',
+                                  fontWeight: '500',
+                                }}
+                              >
+                                {item.quantity}
+                              </span>
+                              <button
+                                onClick={() => incrementQuantity(item.id, item.color, item.size)}
+                                style={{
+                                  background: 'none',
+                                  border: 'none',
+                                  color: '#777',
+                                  cursor: 'pointer',
+                                  fontSize: '12px',
+                                  width: '30px',
+                                  height: '26px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  outline: 'none',
+                                }}
                               >
                                 +
                               </button>
                             </div>
-                            <div style={{ color: 'white', fontSize: '13px', fontFamily: 'monospace', fontWeight: '500' }}>৳{item.price * item.quantity}</div>
+                            <div style={{ color: 'white', fontSize: '13px', fontFamily: 'monospace', fontWeight: '500' }}>
+                              ৳{item.price * item.quantity}
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -212,34 +334,67 @@ const CartOverlay = () => {
                   })}
                 </div>
 
-                <div style={{ 
-                  marginTop: 'auto', 
-                  padding: '15px 0 calc(35px + env(safe-area-inset-bottom)) 0', 
-                  backgroundColor: '#000', 
-                  borderTop: '1px solid rgba(255,255,255,0.06)',
-                  flexShrink: 0 
-                }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', fontSize: '13px', letterSpacing: '0.5px' }}>
+                <div
+                  style={{
+                    marginTop: 'auto',
+                    padding: '15px 0 calc(35px + env(safe-area-inset-bottom)) 0',
+                    backgroundColor: '#000',
+                    borderTop: '1px solid rgba(255,255,255,0.06)',
+                    flexShrink: 0,
+                  }}
+                >
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      marginBottom: '20px',
+                      fontSize: '13px',
+                      letterSpacing: '0.5px',
+                    }}
+                  >
                     <span style={{ color: '#888', textTransform: 'uppercase', fontWeight: '500' }}>Subtotal</span>
-                    <span style={{ color: 'white', fontWeight: '600', fontFamily: 'monospace', fontSize: '15px' }}>৳{subtotal}</span>
+                    <span style={{ color: 'white', fontWeight: '600', fontFamily: 'monospace', fontSize: '15px' }}>
+                      ৳{subtotal}
+                    </span>
                   </div>
 
-                  <button 
+                  <button
                     disabled={selectedIds.length === 0}
-                    onClick={() => setIsCheckingOut(true)} 
-                    style={{ 
-                      width: '100%', padding: '15px', background: 'transparent', 
-                      color: selectedIds.length > 0 ? 'white' : '#444', 
-                      border: selectedIds.length > 0 ? '1px solid rgba(255, 255, 255, 0.9)' : '1px solid #222', 
-                      fontWeight: '600', letterSpacing: '2px', cursor: selectedIds.length > 0 ? 'pointer' : 'not-allowed', 
-                      fontSize: '11px', textTransform: 'uppercase', transition: 'all 0.2s ease',
-                      outline: 'none', opacity: selectedIds.length > 0 ? 1 : 0.3
+                    onClick={() => setIsCheckingOut(true)}
+                    style={{
+                      width: '100%',
+                      padding: '15px',
+                      background: 'transparent',
+                      color: selectedIds.length > 0 ? 'white' : '#444',
+                      border:
+                        selectedIds.length > 0
+                          ? '1px solid rgba(255, 255, 255, 0.9)'
+                          : '1px solid #222',
+                      fontWeight: '600',
+                      letterSpacing: '2px',
+                      cursor: selectedIds.length > 0 ? 'pointer' : 'not-allowed',
+                      fontSize: '11px',
+                      textTransform: 'uppercase',
+                      transition: 'all 0.2s ease',
+                      outline: 'none',
+                      opacity: selectedIds.length > 0 ? 1 : 0.3,
                     }}
                   >
                     PROCEED TO CHECKOUT ({selectedIds.length})
                   </button>
 
-                  <div style={{ textAlign: 'center', marginTop: '15px', fontSize: '9px', color: '#555', letterSpacing: '1px', fontFamily: 'monospace', textTransform: 'uppercase', fontWeight: '500' }}>
+                  <div
+                    style={{
+                      textAlign: 'center',
+                      marginTop: '15px',
+                      fontSize: '9px',
+                      color: '#555',
+                      letterSpacing: '1px',
+                      fontFamily: 'monospace',
+                      textTransform: 'uppercase',
+                      fontWeight: '500',
+                    }}
+                  >
                     Secure Checkout • Nomad Concepts
                   </div>
                 </div>
