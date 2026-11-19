@@ -4,6 +4,9 @@ import { SearchIcon, CartIcon, UserIcon } from '@/components/icons';
 
 interface HeaderProps {
   onSearchOpen: () => void;
+  onSearchClose?: () => void;
+  searchQuery?: string;
+  onSearchQueryChange?: (value: string) => void;
   onAuthOpen: () => void;
   isSearchOpen: boolean;
   isAuthOpen: boolean;
@@ -14,6 +17,9 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({
   onSearchOpen,
+  onSearchClose,
+  searchQuery = '',
+  onSearchQueryChange,
   onAuthOpen,
   isSearchOpen,
   isAuthOpen,
@@ -49,10 +55,20 @@ const Header: React.FC<HeaderProps> = ({
     return () => window.removeEventListener('scroll', handleScroll);
   }, [isOverlayActive]);
 
-  const handleCloseActiveOverlay = () => {
-    if (isSearchOpen) {
-      onSearchOpen();
+  const handleCloseActiveOverlay = (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
     }
+
+    if (isSearchOpen) {
+      if (onSearchClose) {
+        onSearchClose();
+      } else {
+        onSearchOpen();
+      }
+    }
+
     if (isCartOpen) {
       if (isCheckingOut && onCheckoutBack) {
         onCheckoutBack();
@@ -61,7 +77,7 @@ const Header: React.FC<HeaderProps> = ({
     }
   };
 
-  const renderLeftTitle = () => {
+  const renderLeftContent = () => {
     if (isCartOpen && isCheckingOut) {
       return (
         <span
@@ -72,7 +88,6 @@ const Header: React.FC<HeaderProps> = ({
             color: 'white',
             textTransform: 'uppercase',
             fontFamily: 'monospace',
-            transition: 'all 0.25s ease',
             whiteSpace: 'nowrap',
           }}
         >
@@ -91,7 +106,6 @@ const Header: React.FC<HeaderProps> = ({
             color: 'white',
             textTransform: 'uppercase',
             fontFamily: 'monospace',
-            transition: 'all 0.25s ease',
             whiteSpace: 'nowrap',
           }}
         >
@@ -102,20 +116,25 @@ const Header: React.FC<HeaderProps> = ({
 
     if (isSearchOpen) {
       return (
-        <span
+        <input
+          type="text"
+          placeholder="Search..."
+          value={searchQuery}
+          onChange={(e) => onSearchQueryChange && onSearchQueryChange(e.target.value)}
+          autoFocus
           style={{
-            fontSize: '14px',
-            fontWeight: '600',
-            letterSpacing: '0.18em',
+            width: '100%',
+            background: 'transparent',
+            border: 'none',
+            outline: 'none',
             color: 'white',
-            textTransform: 'uppercase',
-            fontFamily: 'monospace',
-            transition: 'all 0.25s ease',
-            whiteSpace: 'nowrap',
+            fontSize: '16px',
+            fontWeight: '500',
+            letterSpacing: '0.08em',
+            padding: 0,
+            margin: 0,
           }}
-        >
-          SEARCH
-        </span>
+        />
       );
     }
 
@@ -127,7 +146,6 @@ const Header: React.FC<HeaderProps> = ({
           letterSpacing: '0.08em',
           color: 'white',
           textTransform: 'uppercase',
-          transition: 'all 0.25s ease',
           whiteSpace: 'nowrap',
         }}
       >
@@ -149,28 +167,29 @@ const Header: React.FC<HeaderProps> = ({
         boxSizing: 'border-box',
         position: 'fixed',
         top: show ? '0' : '-80px',
-        transition: 'top 0.3s ease, background-color 0.3s ease',
+        transition: 'top 0.3s ease',
         zIndex: 1000,
+        gap: '12px',
       }}
     >
       <div
         onClick={() => {
+          if (isSearchOpen) return;
           if (isCartOpen && isCheckingOut && onCheckoutBack) {
             onCheckoutBack();
-          } else if (isOverlayActive) {
-            handleCloseActiveOverlay();
-          } else {
+          } else if (!isOverlayActive) {
             window.scrollTo({ top: 0, behavior: 'smooth' });
           }
         }}
         style={{
-          cursor: 'pointer',
+          cursor: isSearchOpen ? 'text' : 'pointer',
           display: 'flex',
           alignItems: 'center',
           minHeight: '32px',
+          flex: isSearchOpen ? 1 : 'initial',
         }}
       >
-        {renderLeftTitle()}
+        {renderLeftContent()}
       </div>
 
       {isOverlayActive ? (
@@ -187,6 +206,7 @@ const Header: React.FC<HeaderProps> = ({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
+            flexShrink: 0,
           }}
         >
           <svg
@@ -195,7 +215,7 @@ const Header: React.FC<HeaderProps> = ({
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
-            strokeWidth="1.2"
+            strokeWidth="1.4"
             strokeLinecap="round"
             strokeLinejoin="round"
           >
