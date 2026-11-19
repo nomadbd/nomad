@@ -86,29 +86,44 @@ const CartOverlay: React.FC<CartOverlayProps> = ({
         right: 0,
         bottom: 0,
         width: '100vw',
+        maxWidth: '100vw',
         height: '100dvh',
         backgroundColor: '#000',
         zIndex: 900,
         overflow: 'hidden',
+        overflowX: 'hidden',
         display: 'flex',
         flexDirection: 'column',
         boxSizing: 'border-box',
-        padding: '88px 24px 0 24px',
+        paddingTop: '64px',
+        paddingLeft: isCheckingOut ? '0px' : '20px',
+        paddingRight: isCheckingOut ? '0px' : '20px',
+        paddingBottom: '0px',
       }}
     >
       <div
         style={{
           width: '100%',
-          maxWidth: '500px',
+          maxWidth: isCheckingOut ? '100%' : '500px',
           margin: '0 auto',
           height: '100%',
           display: 'flex',
           flexDirection: 'column',
+          overflowX: 'hidden',
           boxSizing: 'border-box',
         }}
       >
         {isCheckingOut ? (
-          <div style={{ flex: 1, overflowY: 'auto', paddingBottom: '40px' }}>
+          <div
+            style={{
+              flex: 1,
+              width: '100%',
+              overflowY: 'auto',
+              overflowX: 'hidden',
+              paddingBottom: '40px',
+              boxSizing: 'border-box',
+            }}
+          >
             <Checkout
               selectedItems={checkoutSnapshot.length > 0 ? checkoutSnapshot : selectedItemsForCheckout}
               onSuccess={() => {
@@ -157,6 +172,7 @@ const CartOverlay: React.FC<CartOverlayProps> = ({
                   style={{
                     flex: 1,
                     overflowY: 'auto',
+                    overflowX: 'hidden',
                     display: 'flex',
                     flexDirection: 'column',
                     gap: '24px',
@@ -193,12 +209,13 @@ const CartOverlay: React.FC<CartOverlayProps> = ({
                             objectFit: 'cover',
                             border: '1px solid rgba(255,255,255,0.06)',
                             backgroundColor: '#111',
+                            flexShrink: 0,
                           }}
                         />
 
-                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '14px' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: 0 }}>
                               <h4
                                 style={{
                                   margin: 0,
