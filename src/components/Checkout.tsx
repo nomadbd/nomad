@@ -13,35 +13,116 @@ interface CartItem {
   image_url?: string;
 }
 
-const ALL_COUNTRIES = [
-  { name: 'Bangladesh', code: '+880', flag: '🇧🇩' },
-  { name: 'United States', code: '+1', flag: '🇺🇸' },
-  { name: 'United Kingdom', code: '+44', flag: '🇬🇧' },
-  { name: 'United Arab Emirates', code: '+971', flag: '🇦🇪' },
-  { name: 'Saudi Arabia', code: '+966', flag: '🇸🇦' },
-  { name: 'Canada', code: '+1', flag: '🇨🇦' },
-  { name: 'Australia', code: '+61', flag: '🇦🇺' },
-  { name: 'India', code: '+91', flag: '🇮🇳' },
-  { name: 'Malaysia', code: '+60', flag: '🇲🇾' },
-  { name: 'Singapore', code: '+65', flag: '🇸🇬' },
-  { name: 'Germany', code: '+49', flag: '🇩🇪' },
-  { name: 'France', code: '+33', flag: '🇫🇷' },
-  { name: 'Italy', code: '+39', flag: '🇮🇹' },
-  { name: 'Japan', code: '+81', flag: '🇯🇵' },
-  { name: 'South Korea', code: '+82', flag: '🇰🇷' },
-  { name: 'Qatar', code: '+974', flag: '🇶🇦' },
-  { name: 'Kuwait', code: '+965', flag: '🇰🇼' },
-  { name: 'Oman', code: '+968', flag: '🇴🇲' },
-  { name: 'Bahrain', code: '+973', flag: '🇧🇭' },
-  { name: 'Turkey', code: '+90', flag: '🇹🇷' },
-  { name: 'Pakistan', code: '+92', flag: '🇵🇰' },
-  { name: 'Netherlands', code: '+31', flag: '🇳🇱' },
-  { name: 'Spain', code: '+34', flag: '🇪🇸' },
-  { name: 'Switzerland', code: '+41', flag: '🇨🇭' },
-  { name: 'Sweden', code: '+46', flag: '🇸🇪' },
-  { name: 'China', code: '+86', flag: '🇨🇳' },
-  { name: 'South Africa', code: '+27', flag: '🇿🇦' },
+interface CountryInfo {
+  name: string;
+  code: string;
+  flag: string;
+  minDigits: number;
+  maxDigits: number;
+  bdMobileCheck?: boolean;
+}
+
+const ALL_COUNTRIES: CountryInfo[] = [
+  { name: 'Bangladesh', code: '+880', flag: '🇧🇩', minDigits: 10, maxDigits: 10, bdMobileCheck: true },
+  { name: 'United States', code: '+1', flag: '🇺🇸', minDigits: 10, maxDigits: 10 },
+  { name: 'United Kingdom', code: '+44', flag: '🇬🇧', minDigits: 10, maxDigits: 11 },
+  { name: 'United Arab Emirates', code: '+971', flag: '🇦🇪', minDigits: 9, maxDigits: 9 },
+  { name: 'Saudi Arabia', code: '+966', flag: '🇸🇦', minDigits: 9, maxDigits: 9 },
+  { name: 'Canada', code: '+1', flag: '🇨🇦', minDigits: 10, maxDigits: 10 },
+  { name: 'Australia', code: '+61', flag: '🇦🇺', minDigits: 9, maxDigits: 9 },
+  { name: 'India', code: '+91', flag: '🇮🇳', minDigits: 10, maxDigits: 10 },
+  { name: 'Malaysia', code: '+60', flag: '🇲🇾', minDigits: 9, maxDigits: 10 },
+  { name: 'Singapore', code: '+65', flag: '🇸🇬', minDigits: 8, maxDigits: 8 },
+  { name: 'Germany', code: '+49', flag: '🇩🇪', minDigits: 10, maxDigits: 11 },
+  { name: 'France', code: '+33', flag: '🇫🇷', minDigits: 9, maxDigits: 9 },
+  { name: 'Italy', code: '+39', flag: '🇮🇹', minDigits: 9, maxDigits: 10 },
+  { name: 'Japan', code: '+81', flag: '🇯🇵', minDigits: 10, maxDigits: 10 },
+  { name: 'South Korea', code: '+82', flag: '🇰🇷', minDigits: 9, maxDigits: 10 },
+  { name: 'Qatar', code: '+974', flag: '🇶🇦', minDigits: 8, maxDigits: 8 },
+  { name: 'Kuwait', code: '+965', flag: '🇰🇼', minDigits: 8, maxDigits: 8 },
+  { name: 'Oman', code: '+968', flag: '🇴🇲', minDigits: 8, maxDigits: 8 },
+  { name: 'Bahrain', code: '+973', flag: '🇧🇭', minDigits: 8, maxDigits: 8 },
+  { name: 'Turkey', code: '+90', flag: '🇹🇷', minDigits: 10, maxDigits: 10 },
+  { name: 'Pakistan', code: '+92', flag: '🇵🇰', minDigits: 10, maxDigits: 10 },
+  { name: 'Netherlands', code: '+31', flag: '🇳🇱', minDigits: 9, maxDigits: 9 },
+  { name: 'Spain', code: '+34', flag: '🇪🇸', minDigits: 9, maxDigits: 9 },
+  { name: 'Switzerland', code: '+41', flag: '🇨🇭', minDigits: 9, maxDigits: 9 },
+  { name: 'Sweden', code: '+46', flag: '🇸🇪', minDigits: 9, maxDigits: 9 },
+  { name: 'China', code: '+86', flag: '🇨🇳', minDigits: 11, maxDigits: 11 },
+  { name: 'South Africa', code: '+27', flag: '🇿🇦', minDigits: 9, maxDigits: 9 },
 ];
+
+const validateEmailAddress = (rawEmail: string): { valid: boolean; message?: string } => {
+  const email = rawEmail.trim();
+  if (!email) {
+    return { valid: false, message: 'PLEASE ENTER YOUR EMAIL ADDRESS.' };
+  }
+  if (/\s/.test(email) || email.includes('..')) {
+    return { valid: false, message: 'INVALID EMAIL FORMAT. PLEASE REMOVE SPACES OR EXTRA DOTS.' };
+  }
+  const strictEmailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  if (!strictEmailRegex.test(email)) {
+    return { valid: false, message: 'INVALID EMAIL ADDRESS. PLEASE ENTER A VALID EMAIL (E.G. NAME@DOMAIN.COM).' };
+  }
+  return { valid: true };
+};
+
+const validatePhoneByCountry = (
+  rawPhone: string,
+  country: CountryInfo
+): { valid: boolean; normalizedDigits: string; fullPhone: string; message?: string } => {
+  const trimmed = rawPhone.trim();
+  if (!trimmed) {
+    return { valid: false, normalizedDigits: '', fullPhone: '', message: 'PLEASE ENTER YOUR PHONE NUMBER.' };
+  }
+
+  // বাংলা সংখ্যার ডিজিট থাকলে ইংরেজি ডিজিটে রূপান্তর
+  const bnToEnDigits = trimmed.replace(/[০-৯]/g, (d) => String('০১২৩৪৫৬৭৮৯'.indexOf(d)));
+  const digitsOnly = bnToEnDigits.replace(/\D/g, '');
+
+  // ইউজার দেশের কোড লিখে ফেললে সেটি বাদ দেওয়া
+  const codeDigits = country.code.replace(/\D/g, '');
+  let subscriberDigits = digitsOnly;
+  if (subscriberDigits.startsWith(codeDigits) && subscriberDigits.length > country.maxDigits) {
+    subscriberDigits = subscriberDigits.slice(codeDigits.length);
+  }
+
+  // শুরুতে 0 থাকলে বাদ দেওয়া (যেমন 01712345678 -> 1712345678)
+  if (subscriberDigits.startsWith('0')) {
+    subscriberDigits = subscriberDigits.slice(1);
+  }
+
+  if (country.bdMobileCheck) {
+    // বাংলাদেশ মোবাইল নম্বর: দেশের কোড (+880) এর পর 1[3-9] দিয়ে শুরু মোট ১০ ডিজিট (স্থানীয়ভাবে 01[3-9] + ৮ ডিজিট)
+    if (!/^1[3-9]\d{8}$/.test(subscriberDigits)) {
+      return {
+        valid: false,
+        normalizedDigits: subscriberDigits,
+        fullPhone: `${country.code}${subscriberDigits}`,
+        message: `INVALID BANGLADESH MOBILE NUMBER FOR ${country.code}. ENTER A VALID 11-DIGIT NUMBER (E.G. 017XXXXXXXX).`
+      };
+    }
+  } else {
+    if (subscriberDigits.length < country.minDigits || subscriberDigits.length > country.maxDigits) {
+      const expectedText =
+        country.minDigits === country.maxDigits
+          ? `${country.minDigits} DIGITS`
+          : `${country.minDigits} TO ${country.maxDigits} DIGITS`;
+      return {
+        valid: false,
+        normalizedDigits: subscriberDigits,
+        fullPhone: `${country.code}${subscriberDigits}`,
+        message: `INVALID PHONE NUMBER FOR ${country.name.toUpperCase()} (${country.code}). EXPECTED ${expectedText}.`
+      };
+    }
+  }
+
+  return {
+    valid: true,
+    normalizedDigits: subscriberDigits,
+    fullPhone: `${country.code}${subscriberDigits}`
+  };
+};
 
 export default function Checkout({ 
   selectedItems, 
@@ -57,7 +138,7 @@ export default function Checkout({
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const [selectedCountry, setSelectedCountry] = useState(ALL_COUNTRIES[0]);
+  const [selectedCountry, setSelectedCountry] = useState<CountryInfo>(ALL_COUNTRIES[0]);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [countrySearch, setCountrySearch] = useState('');
 
@@ -116,23 +197,22 @@ export default function Checkout({
     e.preventDefault();
     setErrorMessage(null);
 
-    if (!formData.name.trim() || !formData.email.trim() || !formData.phone.trim() || !formData.address.trim()) {
-      return setErrorMessage('PLEASE FILL IN ALL REQUIRED SHIPPING FIELDS.');
+    if (!formData.name.trim() || !formData.address.trim()) {
+      return setErrorMessage('PLEASE FILL IN YOUR FULL NAME AND COMPLETE SHIPPING ADDRESS.');
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const emailCheck = validateEmailAddress(formData.email);
+    if (!emailCheck.valid) {
+      return setErrorMessage(emailCheck.message || 'INVALID EMAIL ADDRESS.');
+    }
+
+    const phoneCheck = validatePhoneByCountry(formData.phone, selectedCountry);
+    if (!phoneCheck.valid) {
+      return setErrorMessage(phoneCheck.message || 'INVALID PHONE NUMBER FOR SELECTED COUNTRY.');
+    }
+
     const cleanEmail = formData.email.trim();
-    if (!emailRegex.test(cleanEmail)) {
-      return setErrorMessage('INVALID EMAIL ADDRESS. PLEASE ENTER A VALID EMAIL.');
-    }
-
-    const rawDigits = formData.phone.replace(/[^0-9]/g, '');
-    const cleanDigits = rawDigits.startsWith('0') ? rawDigits.substring(1) : rawDigits;
-    const fullPhone = `${selectedCountry.code}${cleanDigits}`;
-
-    if (cleanDigits.length < 6 || cleanDigits.length > 13) {
-      return setErrorMessage('PLEASE ENTER A VALID PHONE NUMBER.');
-    }
+    const fullPhone = phoneCheck.fullPhone;
 
     setLoading(true);
     try {
@@ -142,10 +222,10 @@ export default function Checkout({
         .from('orders')
         .insert([{
           user_id: user?.id || null, 
-          customer_name: formData.name,
+          customer_name: formData.name.trim(),
           customer_email: cleanEmail,
           customer_phone: fullPhone,
-          shipping_address: formData.address, 
+          shipping_address: formData.address.trim(), 
           payment_method: 'cod',
           delivery_charge: deliveryCharge, 
           vat_amount: vatAmount,           
@@ -172,10 +252,10 @@ export default function Checkout({
 
       setPlacedOrderDetails({
         orderId: order.id,
-        customerName: formData.name,
+        customerName: formData.name.trim(),
         customerEmail: cleanEmail,
         customerPhone: fullPhone,
-        shippingAddress: formData.address,
+        shippingAddress: formData.address.trim(),
         items: [...selectedItems],
         subtotal,
         deliveryCharge,
@@ -200,6 +280,8 @@ export default function Checkout({
     printInvoice(placedOrderDetails);
   };
 
+  const baseFontFamily = "'Inter', 'Noto Sans Bengali', 'Hind Siliguri', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+
   const styles = {
     container: {
       width: '100%',
@@ -208,7 +290,7 @@ export default function Checkout({
       padding: isMobile ? '10px 15px 120px 15px' : '50px 20px 80px 20px',
       color: '#fff',
       backgroundColor: '#000',
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+      fontFamily: baseFontFamily,
       minHeight: isMobile ? '100vh' : 'auto',
       boxSizing: 'border-box' as const,
     },
@@ -225,6 +307,7 @@ export default function Checkout({
       justifyContent: 'center',
       boxSizing: 'border-box' as const,
       padding: '20px',
+      fontFamily: baseFontFamily,
     },
     layoutGrid: {
       display: 'flex',
@@ -247,7 +330,7 @@ export default function Checkout({
     },
     sectionHeading: {
       fontSize: '11px',
-      letterSpacing: '3px',
+      letterSpacing: '2.5px',
       color: '#fff',
       textTransform: 'uppercase' as const,
       marginBottom: '20px',
@@ -262,11 +345,12 @@ export default function Checkout({
       borderBottom: '1px solid #161616',
       padding: '12px 0', 
       color: '#fff',
-      fontSize: '11px',
-      letterSpacing: '2px',
+      fontSize: '12px',
+      letterSpacing: '0.3px',
       marginBottom: '10px', 
       outline: 'none',
       borderRadius: 0,
+      fontFamily: baseFontFamily,
     },
     phoneContainer: {
       display: 'flex',
@@ -281,7 +365,7 @@ export default function Checkout({
       border: 'none',
       color: '#fff',
       fontSize: '11px',
-      letterSpacing: '1px',
+      letterSpacing: '0.8px',
       padding: '12px 0',
       cursor: 'pointer',
       display: 'flex',
@@ -289,6 +373,7 @@ export default function Checkout({
       gap: '6px',
       outline: 'none',
       whiteSpace: 'nowrap' as const,
+      fontFamily: baseFontFamily,
     },
     phoneInput: {
       flex: 1,
@@ -296,10 +381,11 @@ export default function Checkout({
       border: 'none',
       padding: '12px 0',
       color: '#fff',
-      fontSize: '11px',
-      letterSpacing: '2px',
+      fontSize: '12px',
+      letterSpacing: '0.8px',
       outline: 'none',
       borderRadius: 0,
+      fontFamily: baseFontFamily,
     },
     pickerModal: {
       position: 'fixed' as const,
@@ -333,10 +419,11 @@ export default function Checkout({
       padding: '10px 12px',
       color: '#fff',
       fontSize: '11px',
-      letterSpacing: '1px',
+      letterSpacing: '0.8px',
       outline: 'none',
       marginBottom: '15px',
       boxSizing: 'border-box' as const,
+      fontFamily: baseFontFamily,
     },
     countryList: {
       overflowY: 'auto' as const,
@@ -351,7 +438,7 @@ export default function Checkout({
       border: '1px solid #111',
       color: '#ddd',
       fontSize: '11px',
-      letterSpacing: '1px',
+      letterSpacing: '0.6px',
       cursor: 'pointer',
       display: 'flex',
       justifyContent: 'space-between',
@@ -366,14 +453,15 @@ export default function Checkout({
       borderBottom: '1px solid #161616',
       padding: '12px 0', 
       color: '#fff',
-      fontSize: '11px',
-      letterSpacing: '2px',
+      fontSize: '12px',
+      letterSpacing: '0.3px',
       marginBottom: '10px', 
       outline: 'none',
       borderRadius: 0,
       resize: 'none' as const,
-      height: '45px',
-      fontFamily: 'inherit',
+      height: '52px',
+      lineHeight: '1.5',
+      fontFamily: baseFontFamily,
     },
     paymentRow: {
       display: 'flex',
@@ -430,7 +518,7 @@ export default function Checkout({
       border: '1.5px solid #fff',  
       color: '#fff',             
       cursor: 'pointer',
-      letterSpacing: '4px',
+      letterSpacing: '3.5px',
       fontSize: '11px',
       fontWeight: 500,
       textTransform: 'uppercase' as const,
@@ -441,6 +529,7 @@ export default function Checkout({
       alignItems: 'center',
       justifyContent: 'center',
       boxSizing: 'border-box' as const,
+      fontFamily: baseFontFamily,
     },
     successWrapper: {
       display: 'flex',
@@ -463,6 +552,7 @@ export default function Checkout({
       border: 'none',
       outline: 'none',
       padding: '5px 10px',
+      fontFamily: baseFontFamily,
     }
   };
 
@@ -472,11 +562,11 @@ export default function Checkout({
         <div style={styles.successWrapper}>
           <div style={{ fontSize: '32px', marginBottom: '15px', color: '#fff', lineHeight: 1 }}>✓</div>
 
-          <h2 style={{ fontSize: '13px', letterSpacing: '4px', fontWeight: 600, marginBottom: '20px', color: '#fff' }}>
+          <h2 style={{ fontSize: '13px', letterSpacing: '3.5px', fontWeight: 600, marginBottom: '20px', color: '#fff' }}>
             ORDER PLACED SUCCESSFULLY
           </h2>
 
-          <p style={{ fontSize: '10px', letterSpacing: '2px', color: '#888', lineHeight: '2', marginBottom: '40px', textTransform: 'uppercase' as const, padding: '0 10px' }}>
+          <p style={{ fontSize: '10px', letterSpacing: '1.5px', color: '#888', lineHeight: '2', marginBottom: '40px', textTransform: 'uppercase' as const, padding: '0 10px' }}>
             Thank you for your purchase. Your order has been received and is currently being processed. Registered users can also track this in their profile.
           </p>
 
@@ -522,6 +612,7 @@ export default function Checkout({
                     setSelectedCountry(c);
                     setIsPickerOpen(false);
                     setCountrySearch('');
+                    setErrorMessage(null);
                   }}
                 >
                   <span>{c.flag} {c.name}</span>
@@ -542,8 +633,27 @@ export default function Checkout({
         <div style={styles.layoutGrid}>
           <div style={styles.leftColumn}>
             <h2 style={styles.sectionHeading}>SHIPPING ADDRESS</h2>
-            <input style={styles.input} placeholder="FULL NAME" required value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
-            <input style={styles.input} placeholder="EMAIL ADDRESS" required type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
+            <input
+              style={styles.input}
+              placeholder="FULL NAME"
+              required
+              value={formData.name}
+              onChange={(e) => {
+                setFormData({ ...formData, name: e.target.value });
+                if (errorMessage) setErrorMessage(null);
+              }}
+            />
+            <input
+              style={styles.input}
+              placeholder="EMAIL ADDRESS"
+              required
+              type="email"
+              value={formData.email}
+              onChange={(e) => {
+                setFormData({ ...formData, email: e.target.value });
+                if (errorMessage) setErrorMessage(null);
+              }}
+            />
 
             <div style={styles.phoneContainer}>
               <button 
@@ -558,20 +668,32 @@ export default function Checkout({
 
               <input 
                 style={styles.phoneInput} 
-                placeholder="PHONE NUMBER" 
+                placeholder={selectedCountry.bdMobileCheck ? "PHONE NUMBER (E.G. 017XXXXXXXX)" : "PHONE NUMBER"} 
                 required 
                 type="tel" 
                 value={formData.phone} 
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })} 
+                onChange={(e) => {
+                  setFormData({ ...formData, phone: e.target.value });
+                  if (errorMessage) setErrorMessage(null);
+                }} 
               />
             </div>
 
-            <textarea style={styles.textarea} placeholder="COMPLETE SHIPPING ADDRESS" required value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} />
+            <textarea
+              style={styles.textarea}
+              placeholder="COMPLETE SHIPPING ADDRESS"
+              required
+              value={formData.address}
+              onChange={(e) => {
+                setFormData({ ...formData, address: e.target.value });
+                if (errorMessage) setErrorMessage(null);
+              }}
+            />
             <div style={styles.paymentRow}>
               <span style={styles.paymentText}>CASH ON DELIVERY</span>
               <div style={styles.customCircleCheckbox}>✓</div>
             </div>
-            {errorMessage && <div style={{ color: '#ff4d4d', fontSize: '10px', letterSpacing: '2px', marginTop: '20px', textTransform: 'uppercase', lineHeight: '1.6' }}>{errorMessage}</div>}
+            {errorMessage && <div style={{ color: '#ff4d4d', fontSize: '10px', letterSpacing: '1.2px', marginTop: '20px', textTransform: 'uppercase', lineHeight: '1.6' }}>{errorMessage}</div>}
             <button type="submit" disabled={loading} style={styles.submitBtn}>{loading ? 'PROCESSING...' : 'PLACE ORDER'}</button>
           </div>
           <div style={styles.rightColumn}>
@@ -582,11 +704,11 @@ export default function Checkout({
                   <img src={item.image_url || 'https://via.placeholder.com/65x80'} alt={item.name} style={styles.productImg} />
                   <div style={{ flexGrow: 1 }}> 
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
-                      <span style={{ fontSize: '11px', letterSpacing: '1.5px', fontWeight: 500 }}>{item.name.toUpperCase()}</span>
+                      <span style={{ fontSize: '11px', letterSpacing: '0.8px', fontWeight: 500 }}>{item.name}</span>
                       <span style={{ fontSize: '11px', fontFamily: 'monospace' }}>৳{item.price * item.quantity}</span>
                     </div>
-                    <div style={{ fontSize: '10px', color: '#444', letterSpacing: '1px' }}>
-                      QTY: {item.quantity} {item.color && ` • ${item.color.toUpperCase()}`} {item.size && ` / ${item.size.toUpperCase()}`}
+                    <div style={{ fontSize: '10px', color: '#666', letterSpacing: '0.6px' }}>
+                      QTY: {item.quantity} {item.color && ` • ${item.color}`} {item.size && ` / ${item.size}`}
                     </div>
                   </div>
                 </div>
