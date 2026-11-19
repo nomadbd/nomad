@@ -32,19 +32,8 @@ export const printInvoice = (placedOrderDetails: any) => {
     `;
   }).join('');
 
-  const existingContainer = document.getElementById('nomad-universal-print-area');
-  if (existingContainer) existingContainer.remove();
-
-  const existingStyle = document.getElementById('nomad-universal-print-style');
-  if (existingStyle) existingStyle.remove();
-
-  const prevBodyPosition = document.body.style.position;
-  const prevBodyTop = document.body.style.top;
-  const prevBodyWidth = document.body.style.width;
-
-  document.body.style.position = 'static';
-  document.body.style.top = '';
-  document.body.style.width = 'auto';
+  document.getElementById('nomad-universal-print-area')?.remove();
+  document.getElementById('nomad-universal-print-style')?.remove();
 
   const printContainer = document.createElement('div');
   printContainer.id = 'nomad-universal-print-area';
@@ -117,38 +106,112 @@ export const printInvoice = (placedOrderDetails: any) => {
   styleSheet.id = 'nomad-universal-print-style';
   styleSheet.innerHTML = `
     @media print {
-      @page { margin: 10mm; }
-      html, body { position: static !important; top: auto !important; left: auto !important; width: auto !important; height: auto !important; overflow: visible !important; background: #fff !important; color: #000 !important; margin: 0 !important; padding: 0 !important; }
-      body > *:not(#nomad-universal-print-area):not(#nomad-universal-print-style) { display: none !important; }
-      #nomad-universal-print-area { display: block !important; position: static !important; width: 100% !important; background: #fff !important; color: #000 !important; padding: 20px 24px !important; box-sizing: border-box; font-family: sans-serif; }
-      .header { text-align: center; margin-bottom: 10px; letter-spacing: 6px; font-weight: bold; font-size: 22px; color: #000 !important; }
-      .sub-header { text-align: center; font-size: 10px; letter-spacing: 3px; color: #666 !important; margin-bottom: 40px; text-transform: uppercase; }
-      .info-table { width: 100%; margin-bottom: 35px; font-size: 11px; letter-spacing: 0.5px; border-collapse: collapse; }
-      .items-table { width: 100%; border-collapse: collapse; margin-bottom: 35px; }
-      .summary-table { width: 40%; margin-left: auto; font-size: 11px; line-height: 2; letter-spacing: 0.5px; margin-bottom: 50px; page-break-inside: avoid !important; }
-      .disclaimer { font-size: 9px; color: #777 !important; line-height: 1.6; text-align: center; border-top: 1px solid #eee; padding-top: 20px; letter-spacing: 0.5px; page-break-inside: avoid; }
+      @page { margin: 12mm; }
+      html, body {
+        position: static !important;
+        top: auto !important;
+        left: auto !important;
+        width: auto !important;
+        height: auto !important;
+        overflow: visible !important;
+        background: #fff !important;
+        color: #000 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+      body > *:not(#nomad-universal-print-area):not(#nomad-universal-print-style) {
+        display: none !important;
+      }
+      #nomad-universal-print-area {
+        display: block !important;
+        position: static !important;
+        width: 100% !important;
+        background: #fff !important;
+        color: #000 !important;
+        padding: 28px 24px 24px 24px !important;
+        box-sizing: border-box !important;
+        font-family: sans-serif !important;
+      }
+      .header {
+        text-align: center !important;
+        margin-bottom: 10px !important;
+        letter-spacing: 6px !important;
+        font-weight: bold !important;
+        font-size: 22px !important;
+        color: #000 !important;
+        page-break-after: avoid !important;
+        break-after: avoid !important;
+      }
+      .sub-header {
+        text-align: center !important;
+        font-size: 10px !important;
+        letter-spacing: 3px !important;
+        color: #666 !important;
+        margin-bottom: 40px !important;
+        text-transform: uppercase !important;
+        page-break-after: avoid !important;
+        break-after: avoid !important;
+      }
+      .info-table {
+        width: 100% !important;
+        margin-bottom: 35px !important;
+        font-size: 11px !important;
+        letter-spacing: 0.5px !important;
+        border-collapse: collapse !important;
+        page-break-inside: avoid !important;
+      }
+      .items-table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+        margin-bottom: 35px !important;
+      }
+      .summary-table {
+        width: 40% !important;
+        margin-left: auto !important;
+        font-size: 11px !important;
+        line-height: 2 !important;
+        letter-spacing: 0.5px !important;
+        margin-bottom: 50px !important;
+        page-break-inside: avoid !important;
+      }
+      .disclaimer {
+        font-size: 9px !important;
+        color: #777 !important;
+        line-height: 1.6 !important;
+        text-align: center !important;
+        border-top: 1px solid #eee !important;
+        padding-top: 20px !important;
+        letter-spacing: 0.5px !important;
+        page-break-inside: avoid !important;
+      }
     }
-    @media screen { #nomad-universal-print-area { display: none !important; } }
+    @media screen {
+      #nomad-universal-print-area {
+        display: none !important;
+      }
+    }
   `;
 
   document.body.appendChild(printContainer);
   document.head.appendChild(styleSheet);
 
-  const restoreAndCleanup = () => {
-    window.removeEventListener('afterprint', restoreAndCleanup);
+  let cleanedUp = false;
+  const cleanup = () => {
+    if (cleanedUp) return;
+    cleanedUp = true;
+    window.removeEventListener('afterprint', cleanup);
     document.getElementById('nomad-universal-print-area')?.remove();
     document.getElementById('nomad-universal-print-style')?.remove();
-    document.body.style.position = prevBodyPosition;
-    document.body.style.top = prevBodyTop;
-    document.body.style.width = prevBodyWidth;
   };
 
-  window.addEventListener('afterprint', restoreAndCleanup);
+  window.addEventListener('afterprint', cleanup);
 
-  setTimeout(() => {
-    window.print();
-    setTimeout(restoreAndCleanup, 15000);
-  }, 500);
+  requestAnimationFrame(() => {
+    setTimeout(() => {
+      window.print();
+      setTimeout(cleanup, 20000);
+    }, 500);
+  });
 };
 
 export const handlePrintInvoice = (
