@@ -8,6 +8,8 @@ interface HeaderProps {
   isSearchOpen: boolean;
   isAuthOpen: boolean;
   isProfileActive: boolean;
+  isCheckingOut?: boolean;
+  onCheckoutBack?: () => void;
 }
 
 const Header: React.FC<HeaderProps> = ({
@@ -16,6 +18,8 @@ const Header: React.FC<HeaderProps> = ({
   isSearchOpen,
   isAuthOpen,
   isProfileActive,
+  isCheckingOut = false,
+  onCheckoutBack,
 }) => {
   const [show, setShow] = useState(true);
   const lastScrollY = useRef(0);
@@ -50,11 +54,33 @@ const Header: React.FC<HeaderProps> = ({
       onSearchOpen();
     }
     if (isCartOpen) {
+      if (isCheckingOut && onCheckoutBack) {
+        onCheckoutBack();
+      }
       setIsCartOpen(false);
     }
   };
 
   const renderLeftTitle = () => {
+    if (isCartOpen && isCheckingOut) {
+      return (
+        <span
+          style={{
+            fontSize: '14px',
+            fontWeight: '600',
+            letterSpacing: '0.18em',
+            color: 'white',
+            textTransform: 'uppercase',
+            fontFamily: 'monospace',
+            transition: 'all 0.25s ease',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          CHECKOUT
+        </span>
+      );
+    }
+
     if (isCartOpen) {
       return (
         <span
@@ -64,6 +90,7 @@ const Header: React.FC<HeaderProps> = ({
             letterSpacing: '0.18em',
             color: 'white',
             textTransform: 'uppercase',
+            fontFamily: 'monospace',
             transition: 'all 0.25s ease',
             whiteSpace: 'nowrap',
           }}
@@ -82,6 +109,7 @@ const Header: React.FC<HeaderProps> = ({
             letterSpacing: '0.18em',
             color: 'white',
             textTransform: 'uppercase',
+            fontFamily: 'monospace',
             transition: 'all 0.25s ease',
             whiteSpace: 'nowrap',
           }}
@@ -127,7 +155,9 @@ const Header: React.FC<HeaderProps> = ({
     >
       <div
         onClick={() => {
-          if (isOverlayActive) {
+          if (isCartOpen && isCheckingOut && onCheckoutBack) {
+            onCheckoutBack();
+          } else if (isOverlayActive) {
             handleCloseActiveOverlay();
           } else {
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -152,14 +182,26 @@ const Header: React.FC<HeaderProps> = ({
             background: 'none',
             border: 'none',
             color: 'white',
-            fontSize: '22px',
-            lineHeight: 1,
             cursor: 'pointer',
-            padding: '4px 6px',
-            transition: 'transform 0.2s ease, opacity 0.2s ease',
+            padding: '5px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
           }}
         >
-          ×
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
         </button>
       ) : (
         <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
