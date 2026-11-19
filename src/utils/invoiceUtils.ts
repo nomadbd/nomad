@@ -40,7 +40,7 @@ export const printInvoice = (placedOrderDetails: any) => {
 
   printContainer.innerHTML = `
     <div class="header">NOMAD</div>
-    <div class="sub-header">Order Confirmation &bull; Awaiting Dispatch</div>
+    <div class="sub-header">ORDER SUMMARY</div>
     
     <table class="info-table">
       <tr>
@@ -98,7 +98,7 @@ export const printInvoice = (placedOrderDetails: any) => {
     </table>
 
     <div class="disclaimer">
-      <strong>ORDER NOTICE:</strong> Your order has been received and is awaiting dispatch. This document confirms order placement prior to shipping.
+      This document records your confirmed order details upon placement. Dispatch updates will follow separately.
     </div>
   `;
 
@@ -270,7 +270,7 @@ export const handlePrintInvoice = (
     <body>
       <div class="header">
         <h1>N O M A D</h1>
-        <h2>ORDER CONFIRMATION &bull; AWAITING DISPATCH</h2>
+        <h2>ORDER SUMMARY</h2>
       </div>
       <div class="top-section">
         <div class="shipping-info">
@@ -318,7 +318,7 @@ export const handlePrintInvoice = (
           </div>
         </div>
       </div>
-      <div class="footer"><span class="bold">ORDER NOTICE:</span> Your order has been received and is awaiting dispatch.</div>
+      <div class="footer">This document records your confirmed order details upon placement. Dispatch updates will follow separately.</div>
       <script>
         window.onload = function() {
           setTimeout(function() { window.print(); }, 200);
@@ -365,7 +365,7 @@ export const handlePrintBulkInvoices = (
       <div class="invoice-page">
         <div class="header">
           <h1>N O M A D</h1>
-          <h2>ORDER CONFIRMATION &bull; AWAITING DISPATCH</h2>
+          <h2>ORDER SUMMARY</h2>
         </div>
 
         <div class="top-section">
@@ -418,7 +418,7 @@ export const handlePrintBulkInvoices = (
           </div>
         </div>
 
-        <div class="footer"><span class="bold">ORDER NOTICE:</span> Your order has been received and is awaiting dispatch.</div>
+        <div class="footer">This document records your confirmed order details upon placement. Dispatch updates will follow separately.</div>
       </div>
     `;
   }).join('');
