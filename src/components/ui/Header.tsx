@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useCart } from '@/context/CartContext';
-import { SearchIcon, CartIcon, UserIcon } from '@/components/icons';
+import { SearchIcon, CartIcon, UserIcon, CloseIcon } from '@/components/icons';
 
 interface HeaderProps {
   onSearchOpen: () => void;
-  onSearchClose?: () => void;
-  searchQuery?: string;
-  onSearchQueryChange?: (value: string) => void;
+  onSearchClose: () => void;
+  searchQuery: string;
+  onSearchQueryChange: (value: string) => void;
   onAuthOpen: () => void;
   isSearchOpen: boolean;
   isAuthOpen: boolean;
@@ -28,18 +28,10 @@ const Header: React.FC<HeaderProps> = ({
   onCheckoutBack,
 }) => {
   const [show, setShow] = useState(true);
-  const [localSearch, setLocalSearch] = useState('');
   const lastScrollY = useRef(0);
   const { isCartOpen, setIsCartOpen, cartItems } = useCart();
 
   const isOverlayActive = isSearchOpen || isCartOpen;
-  const currentSearchValue = searchQuery !== undefined ? searchQuery : localSearch;
-
-  useEffect(() => {
-    if (!isSearchOpen && searchQuery === undefined) {
-      setLocalSearch('');
-    }
-  }, [isSearchOpen, searchQuery]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -63,33 +55,9 @@ const Header: React.FC<HeaderProps> = ({
     return () => window.removeEventListener('scroll', handleScroll);
   }, [isOverlayActive]);
 
-  const handleInputChange = (value: string) => {
-    if (onSearchQueryChange) {
-      onSearchQueryChange(value);
-    }
-    if (searchQuery === undefined) {
-      setLocalSearch(value);
-    }
-    window.dispatchEvent(new CustomEvent('nomad-search-change', { detail: value }));
-  };
-
-  const handleCloseActiveOverlay = (e?: React.MouseEvent) => {
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-
-    if (searchQuery === undefined) {
-      setLocalSearch('');
-    }
-    window.dispatchEvent(new CustomEvent('nomad-search-change', { detail: '' }));
-
+  const handleCloseActiveOverlay = () => {
     if (isSearchOpen) {
-      if (onSearchClose) {
-        onSearchClose();
-      } else {
-        onSearchOpen();
-      }
+      onSearchClose();
     }
 
     if (isCartOpen) {
@@ -142,8 +110,8 @@ const Header: React.FC<HeaderProps> = ({
         <input
           type="text"
           placeholder="Search..."
-          value={currentSearchValue}
-          onChange={(e) => handleInputChange(e.target.value)}
+          value={searchQuery}
+          onChange={(e) => onSearchQueryChange(e.target.value)}
           autoFocus
           style={{
             width: '100%',
@@ -232,19 +200,7 @@ const Header: React.FC<HeaderProps> = ({
             flexShrink: 0,
           }}
         >
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.4"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
+          <CloseIcon color="white" size={20} />
         </button>
       ) : (
         <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
