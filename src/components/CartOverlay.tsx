@@ -71,57 +71,45 @@ const CartOverlay = () => {
         zIndex: 9999, 
         overflow: 'hidden', 
         display: 'flex',
-        justifyContent: 'flex-end', // ডেমো বা ড্রয়ারের ক্ষেত্রে ডান দিক থেকে আসার জন্য অথবা ফুল উইথ
-        boxSizing: 'border-box'
+        flexDirection: 'column',
+        boxSizing: 'border-box',
+        padding: '35px 24px 0 24px'
       }}
     >
+      {/* Header Row: Title strictly on absolute/flex left, Close Button on extreme right */}
       <div style={{ 
-        width: '100%', 
-        maxWidth: '500px', 
-        height: '100%', 
-        position: 'relative', 
         display: 'flex', 
-        flexDirection: 'column', 
-        boxSizing: 'border-box', 
-        padding: '35px 24px 0 24px',
-        marginLeft: 'auto', // বড় স্ক্রিনে ডানপাশে রাখতে
-        backgroundColor: '#000',
-        borderLeft: '1px solid rgba(255,255,255,0.08)'
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        width: '100%', 
+        marginBottom: '30px',
+        flexShrink: 0 
       }}>
+        <h2 style={{ fontSize: '15px', fontWeight: '600', letterSpacing: '1.5px', margin: 0, fontFamily: 'monospace', color: 'white', textTransform: 'uppercase' }}>
+          {isCheckingOut ? 'CHECKOUT' : `NOMAD BAG (${cartItems.length})`}
+        </h2>
 
-        {/* Top Header Row: Title on Left, Close Button on Right */}
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center', 
-          width: '100%', 
-          marginBottom: '30px',
-          flexShrink: 0 
-        }}>
-          <h2 style={{ fontSize: '15px', fontWeight: '600', letterSpacing: '1.5px', margin: 0, fontFamily: 'monospace', color: 'white', textTransform: 'uppercase' }}>
-            {isCheckingOut ? 'CHECKOUT' : `NOMAD BAG (${cartItems.length})`}
-          </h2>
+        <button 
+          onClick={() => { setIsCartOpen(false); setIsCheckingOut(false); }} 
+          style={{ 
+            background: 'none', 
+            border: 'none', 
+            color: 'white', 
+            cursor: 'pointer', 
+            padding: '5px', 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center'
+          }}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
 
-          <button 
-            onClick={() => { setIsCartOpen(false); setIsCheckingOut(false); }} 
-            style={{ 
-              background: 'none', 
-              border: 'none', 
-              color: 'white', 
-              cursor: 'pointer', 
-              padding: '5px', 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center'
-            }}
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-          </button>
-        </div>
-
+      <div style={{ width: '100%', maxWidth: '500px', margin: '0 auto', height: 'calc(100% - 70px)', display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
         {isCheckingOut ? (
           <div style={{ flex: 1, overflowY: 'auto', paddingBottom: '40px' }}>
             <Checkout 
