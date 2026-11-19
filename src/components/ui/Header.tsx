@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useCart } from '@/context/CartContext';
-import { SearchIcon, CartIcon, UserIcon, CloseIcon } from '@/components/icons';
+import { SearchIcon, CartIcon, UserIcon, CloseIcon, BackIcon } from '@/components/icons';
 
 interface HeaderProps {
   onSearchOpen: () => void;
@@ -65,6 +65,12 @@ const Header: React.FC<HeaderProps> = ({
         onCheckoutBack();
       }
       setIsCartOpen(false);
+    }
+  };
+
+  const handleBackFromCheckout = () => {
+    if (onCheckoutBack) {
+      onCheckoutBack();
     }
   };
 
@@ -166,9 +172,7 @@ const Header: React.FC<HeaderProps> = ({
       <div
         onClick={() => {
           if (isSearchOpen) return;
-          if (isCartOpen && isCheckingOut && onCheckoutBack) {
-            onCheckoutBack();
-          } else if (!isOverlayActive) {
+          if (!isOverlayActive) {
             window.scrollTo({ top: 0, behavior: 'smooth' });
           }
         }}
@@ -184,24 +188,45 @@ const Header: React.FC<HeaderProps> = ({
       </div>
 
       {isOverlayActive ? (
-        <button
-          type="button"
-          onClick={handleCloseActiveOverlay}
-          aria-label="Close"
-          style={{
-            background: 'none',
-            border: 'none',
-            color: 'white',
-            cursor: 'pointer',
-            padding: '5px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexShrink: 0,
-          }}
-        >
-          <CloseIcon color="white" size={20} />
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexShrink: 0 }}>
+          {isCartOpen && isCheckingOut && (
+            <button
+              type="button"
+              onClick={handleBackFromCheckout}
+              aria-label="Back to bag"
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'white',
+                cursor: 'pointer',
+                padding: '5px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <BackIcon color="white" size={20} />
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={handleCloseActiveOverlay}
+            aria-label="Close"
+            style={{
+              background: 'none',
+              border: 'none',
+              color: 'white',
+              cursor: 'pointer',
+              padding: '5px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <CloseIcon color="white" size={20} />
+          </button>
+        </div>
       ) : (
         <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
           <button
