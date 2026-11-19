@@ -19,6 +19,7 @@ const CartOverlay: React.FC<CartOverlayProps> = ({
   const setIsCheckingOut = externalSetIsCheckingOut ?? setInternalIsCheckingOut;
 
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [checkoutSnapshot, setCheckoutSnapshot] = useState<typeof cartItems>([]);
 
   useEffect(() => {
     if (isCartOpen) {
@@ -35,6 +36,7 @@ const CartOverlay: React.FC<CartOverlayProps> = ({
         window.scrollTo(0, parseInt(scrollY || '0') * -1);
       }
       setIsCheckingOut(false);
+      setCheckoutSnapshot([]);
     }
     return () => {
       const scrollY = document.body.style.top;
@@ -104,7 +106,10 @@ const CartOverlay: React.FC<CartOverlayProps> = ({
             <div style={{ marginBottom: '20px' }}>
               <button
                 type="button"
-                onClick={() => setIsCheckingOut(false)}
+                onClick={() => {
+                  setCheckoutSnapshot([]);
+                  setIsCheckingOut(false);
+                }}
                 style={{
                   background: 'none',
                   border: 'none',
@@ -122,8 +127,9 @@ const CartOverlay: React.FC<CartOverlayProps> = ({
             </div>
 
             <Checkout
-              selectedItems={selectedItemsForCheckout}
+              selectedItems={checkoutSnapshot.length > 0 ? checkoutSnapshot : selectedItemsForCheckout}
               onSuccess={() => {
+                setCheckoutSnapshot([]);
                 setIsCheckingOut(false);
                 setIsCartOpen(false);
               }}
@@ -361,7 +367,10 @@ const CartOverlay: React.FC<CartOverlayProps> = ({
 
                   <button
                     disabled={selectedIds.length === 0}
-                    onClick={() => setIsCheckingOut(true)}
+                    onClick={() => {
+                      setCheckoutSnapshot(selectedItemsForCheckout);
+                      setIsCheckingOut(true);
+                    }}
                     style={{
                       width: '100%',
                       padding: '15px',
