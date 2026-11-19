@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/supabaseClient';
 import { useCart } from '@/context/CartContext'; 
-import { printInvoice } from '@/utils/invoiceUtils'; 
+import { printInvoice } from '@/utils/invoiceUtils';
+import { BackIcon } from '@/components/icons';
 
 interface CartItem {
   id: string;
@@ -76,30 +77,26 @@ const validatePhoneByCountry = (
     return { valid: false, normalizedDigits: '', fullPhone: '', message: 'PLEASE ENTER YOUR PHONE NUMBER.' };
   }
 
-  // বাংলা সংখ্যার ডিজিট থাকলে ইংরেজি ডিজিটে রূপান্তর
   const bnToEnDigits = trimmed.replace(/[০-৯]/g, (d) => String('০১২৩৪৫৬৭৮৯'.indexOf(d)));
   const digitsOnly = bnToEnDigits.replace(/\D/g, '');
 
-  // ইউজার দেশের কোড লিখে ফেললে সেটি বাদ দেওয়া
   const codeDigits = country.code.replace(/\D/g, '');
   let subscriberDigits = digitsOnly;
   if (subscriberDigits.startsWith(codeDigits) && subscriberDigits.length > country.maxDigits) {
     subscriberDigits = subscriberDigits.slice(codeDigits.length);
   }
 
-  // শুরুতে 0 থাকলে বাদ দেওয়া (যেমন 01712345678 -> 1712345678)
   if (subscriberDigits.startsWith('0')) {
     subscriberDigits = subscriberDigits.slice(1);
   }
 
   if (country.bdMobileCheck) {
-    // বাংলাদেশ মোবাইল নম্বর: দেশের কোড (+880) এর পর 1[3-9] দিয়ে শুরু মোট ১০ ডিজিট (স্থানীয়ভাবে 01[3-9] + ৮ ডিজিট)
     if (!/^1[3-9]\d{8}$/.test(subscriberDigits)) {
       return {
         valid: false,
         normalizedDigits: subscriberDigits,
         fullPhone: `${country.code}${subscriberDigits}`,
-        message: `INVALID BANGLADESH MOBILE NUMBER FOR ${country.code}. ENTER A VALID 11-DIGIT NUMBER (E.G. 017XXXXXXXX).`
+        message: `INVALID BANGLADESH MOBILE NUMBER FOR ${country.code}. ENTER A VALID 11-DIGIT NUMBER.`
       };
     }
   } else {
@@ -127,11 +124,15 @@ const validatePhoneByCountry = (
 export default function Checkout({ 
   selectedItems, 
   onSuccess, 
-  onOrderPlaced 
+  onOrderPlaced,
+  onClose,
+  onBack
 }: { 
   selectedItems: CartItem[], 
   onSuccess: () => void,
-  onOrderPlaced?: (placed: boolean) => void
+  onOrderPlaced?: (placed: boolean) => void,
+  onClose?: () => void,
+  onBack?: () => void
 }) {
   const { removeFromCart } = useCart();
 
@@ -192,6 +193,24 @@ export default function Checkout({
     c.name.toLowerCase().includes(countrySearch.toLowerCase()) || 
     c.code.includes(countrySearch)
   );
+
+  const handleBackAction = () => {
+    if (onBack) {
+      onBack();
+    } else if (onClose) {
+      onClose();
+    } else {
+      onSuccess();
+    }
+  };
+
+  const handleCloseAction = () => {
+    if (onClose) {
+      onClose();
+    } else {
+      onSuccess();
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -287,12 +306,37 @@ export default function Checkout({
       width: '100%',
       maxWidth: '1200px',
       margin: '0 auto',
-      padding: isMobile ? '10px 15px 120px 15px' : '50px 20px 80px 20px',
+      padding: isMobile ? '12px 15px 120px 15px' : '24px 20px 80px 20px',
       color: '#fff',
       backgroundColor: '#000',
       fontFamily: baseFontFamily,
       minHeight: isMobile ? '100vh' : 'auto',
       boxSizing: 'border-box' as const,
+    },
+    topHeaderBar: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingBottom: '18px',
+      marginBottom: '24px',
+      borderBottom: '1px solid #1f1f1f',
+    },
+    headerActionGroup: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '14px',
+    },
+    headerIconBtn: {
+      background: 'transparent',
+      border: 'none',
+      color: '#cccccc',
+      cursor: 'pointer',
+      padding: '6px',
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      outline: 'none',
+      transition: 'color 0.2s ease',
     },
     successOverlay: {
       position: 'fixed' as const,
@@ -323,7 +367,7 @@ export default function Checkout({
       flex: '1 1 42%',
       width: '100%',
       position: isMobile ? 'relative' as const : 'sticky' as const,
-      top: '40px',
+      top: '24px',
       background: '#000',
       padding: isMobile ? '10px 0' : '20px',
       boxSizing: 'border-box' as const,
@@ -334,7 +378,7 @@ export default function Checkout({
       color: '#fff',
       textTransform: 'uppercase' as const,
       marginBottom: '20px',
-      marginTop: '30px',
+      marginTop: '0px',
       fontWeight: 600,
     },
     input: {
@@ -342,12 +386,12 @@ export default function Checkout({
       boxSizing: 'border-box' as const,
       background: 'transparent',
       border: 'none',
-      borderBottom: '1px solid #161616',
+      borderBottom: '1px solid #262626',
       padding: '12px 0', 
       color: '#fff',
       fontSize: '12px',
       letterSpacing: '0.3px',
-      marginBottom: '10px', 
+      marginBottom: '12px', 
       outline: 'none',
       borderRadius: 0,
       fontFamily: baseFontFamily,
@@ -355,15 +399,15 @@ export default function Checkout({
     phoneContainer: {
       display: 'flex',
       alignItems: 'center',
-      borderBottom: '1px solid #161616',
-      marginBottom: '10px',
+      borderBottom: '1px solid #262626',
+      marginBottom: '12px',
       gap: '12px',
       position: 'relative' as const,
     },
     countryBtn: {
       background: 'transparent',
       border: 'none',
-      color: '#fff',
+      color: '#cccccc',
       fontSize: '11px',
       letterSpacing: '0.8px',
       padding: '12px 0',
@@ -406,7 +450,7 @@ export default function Checkout({
       width: '100%',
       maxWidth: '380px',
       background: '#0a0a0a',
-      border: '1px solid #222',
+      border: '1px solid #2b2b2b',
       padding: '20px',
       maxHeight: '450px',
       display: 'flex',
@@ -415,7 +459,7 @@ export default function Checkout({
     searchInput: {
       width: '100%',
       background: '#111',
-      border: '1px solid #222',
+      border: '1px solid #2b2b2b',
       padding: '10px 12px',
       color: '#fff',
       fontSize: '11px',
@@ -435,8 +479,8 @@ export default function Checkout({
     countryItem: {
       padding: '10px',
       background: '#050505',
-      border: '1px solid #111',
-      color: '#ddd',
+      border: '1px solid #1b1b1b',
+      color: '#cccccc',
       fontSize: '11px',
       letterSpacing: '0.6px',
       cursor: 'pointer',
@@ -450,12 +494,12 @@ export default function Checkout({
       boxSizing: 'border-box' as const,
       background: 'transparent',
       border: 'none',
-      borderBottom: '1px solid #161616',
+      borderBottom: '1px solid #262626',
       padding: '12px 0', 
       color: '#fff',
       fontSize: '12px',
       letterSpacing: '0.3px',
-      marginBottom: '10px', 
+      marginBottom: '12px', 
       outline: 'none',
       borderRadius: 0,
       resize: 'none' as const,
@@ -467,9 +511,9 @@ export default function Checkout({
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-between',
-      borderBottom: '1px solid #161616',
+      borderBottom: '1px solid #262626',
       padding: '14px 0', 
-      marginTop: '30px',
+      marginTop: '24px',
       marginBottom: '25px',
       cursor: 'default',
       userSelect: 'none' as const,
@@ -503,7 +547,7 @@ export default function Checkout({
       alignItems: 'center',
       paddingBottom: '20px',
       marginBottom: '20px',
-      borderBottom: '1px solid #0d0d0d',
+      borderBottom: '1px solid #1c1c1c',
     },
     productImg: {
       width: '65px',
@@ -522,7 +566,7 @@ export default function Checkout({
       fontSize: '11px',
       fontWeight: 500,
       textTransform: 'uppercase' as const,
-      marginTop: '35px',
+      marginTop: '30px',
       borderRadius: 0,
       outline: 'none',
       display: 'flex',
@@ -544,7 +588,7 @@ export default function Checkout({
     invoiceLink: {
       fontSize: '11px',
       letterSpacing: '2px',
-      color: '#888',
+      color: '#cccccc',
       cursor: 'pointer',
       textDecoration: 'none' as const, 
       textTransform: 'uppercase' as const,
@@ -566,7 +610,7 @@ export default function Checkout({
             ORDER PLACED SUCCESSFULLY
           </h2>
 
-          <p style={{ fontSize: '10px', letterSpacing: '1.5px', color: '#888', lineHeight: '2', marginBottom: '40px', textTransform: 'uppercase' as const, padding: '0 10px' }}>
+          <p style={{ fontSize: '10px', letterSpacing: '1.5px', color: '#bbbbbb', lineHeight: '2', marginBottom: '40px', textTransform: 'uppercase' as const, padding: '0 10px' }}>
             Thank you for your purchase. Your order has been received and is currently being processed. Registered users can also track this in their profile.
           </p>
 
@@ -584,18 +628,49 @@ export default function Checkout({
 
   return (
     <div style={styles.container}>
+      <style>{`
+        .nomad-checkout-field::placeholder {
+          color: #b5b5b5;
+          opacity: 1;
+        }
+      `}</style>
+
+      {/* একদম উপরের হেডার: ক্লোজ বাটনের পাশেই BackIcon */}
+      <div style={styles.topHeaderBar}>
+        <div style={styles.headerActionGroup}>
+          <button
+            type="button"
+            onClick={handleCloseAction}
+            aria-label="Close checkout"
+            style={styles.headerIconBtn}
+          >
+            ✕
+          </button>
+          <button
+            type="button"
+            onClick={handleBackAction}
+            aria-label="Go back"
+            style={styles.headerIconBtn}
+          >
+            <BackIcon />
+          </button>
+        </div>
+      </div>
+
       {isPickerOpen && (
         <div style={styles.pickerModal} onClick={() => setIsPickerOpen(false)}>
           <div style={styles.pickerBox} onClick={(e) => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-              <span style={{ fontSize: '10px', letterSpacing: '2px', color: '#888' }}>SELECT COUNTRY</span>
+              <span style={{ fontSize: '10px', letterSpacing: '2px', color: '#cccccc' }}>SELECT COUNTRY</span>
               <button 
+                type="button"
                 onClick={() => setIsPickerOpen(false)} 
                 style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '14px' }}
               >✕</button>
             </div>
 
             <input 
+              className="nomad-checkout-field"
               style={styles.searchInput} 
               placeholder="SEARCH COUNTRY OR CODE..." 
               value={countrySearch}
@@ -616,11 +691,11 @@ export default function Checkout({
                   }}
                 >
                   <span>{c.flag} {c.name}</span>
-                  <span style={{ color: '#888', fontFamily: 'monospace' }}>{c.code}</span>
+                  <span style={{ color: '#cccccc', fontFamily: 'monospace' }}>{c.code}</span>
                 </div>
               ))}
               {filteredCountries.length === 0 && (
-                <div style={{ padding: '15px', color: '#555', fontSize: '10px', textAlign: 'center' }}>
+                <div style={{ padding: '15px', color: '#b5b5b5', fontSize: '10px', textAlign: 'center' }}>
                   NO COUNTRY FOUND
                 </div>
               )}
@@ -632,8 +707,8 @@ export default function Checkout({
       <form onSubmit={handleSubmit} noValidate style={{ width: '100%' }}>
         <div style={styles.layoutGrid}>
           <div style={styles.leftColumn}>
-            <h2 style={styles.sectionHeading}>SHIPPING ADDRESS</h2>
             <input
+              className="nomad-checkout-field"
               style={styles.input}
               placeholder="FULL NAME"
               required
@@ -644,6 +719,7 @@ export default function Checkout({
               }}
             />
             <input
+              className="nomad-checkout-field"
               style={styles.input}
               placeholder="EMAIL ADDRESS"
               required
@@ -663,12 +739,13 @@ export default function Checkout({
               >
                 <span>{selectedCountry.flag}</span>
                 <span>{selectedCountry.code}</span>
-                <span style={{ fontSize: '8px', color: '#666' }}>▼</span>
+                <span style={{ fontSize: '8px', color: '#bbbbbb' }}>▼</span>
               </button>
 
               <input 
+                className="nomad-checkout-field"
                 style={styles.phoneInput} 
-                placeholder={selectedCountry.bdMobileCheck ? "PHONE NUMBER (E.G. 017XXXXXXXX)" : "PHONE NUMBER"} 
+                placeholder="PHONE NUMBER" 
                 required 
                 type="tel" 
                 value={formData.phone} 
@@ -680,6 +757,7 @@ export default function Checkout({
             </div>
 
             <textarea
+              className="nomad-checkout-field"
               style={styles.textarea}
               placeholder="COMPLETE SHIPPING ADDRESS"
               required
@@ -693,21 +771,21 @@ export default function Checkout({
               <span style={styles.paymentText}>CASH ON DELIVERY</span>
               <div style={styles.customCircleCheckbox}>✓</div>
             </div>
-            {errorMessage && <div style={{ color: '#ff4d4d', fontSize: '10px', letterSpacing: '1.2px', marginTop: '20px', textTransform: 'uppercase', lineHeight: '1.6' }}>{errorMessage}</div>}
+            {errorMessage && <div style={{ color: '#ff6666', fontSize: '10px', letterSpacing: '1.2px', marginTop: '20px', textTransform: 'uppercase', lineHeight: '1.6' }}>{errorMessage}</div>}
             <button type="submit" disabled={loading} style={styles.submitBtn}>{loading ? 'PROCESSING...' : 'PLACE ORDER'}</button>
           </div>
           <div style={styles.rightColumn}>
-            <h2 style={{ ...styles.sectionHeading, marginTop: 0, borderBottom: '1px solid #111', paddingBottom: '15px' }}>ORDER SUMMARY</h2>
+            <h2 style={{ ...styles.sectionHeading, borderBottom: '1px solid #262626', paddingBottom: '15px' }}>ORDER SUMMARY</h2>
             <div>
               {selectedItems.map((item: CartItem) => (
                 <div key={item.id} style={styles.productRow}>
                   <img src={item.image_url || 'https://via.placeholder.com/65x80'} alt={item.name} style={styles.productImg} />
                   <div style={{ flexGrow: 1 }}> 
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
-                      <span style={{ fontSize: '11px', letterSpacing: '0.8px', fontWeight: 500 }}>{item.name}</span>
-                      <span style={{ fontSize: '11px', fontFamily: 'monospace' }}>৳{item.price * item.quantity}</span>
+                      <span style={{ fontSize: '11px', letterSpacing: '0.8px', fontWeight: 500, color: '#fff' }}>{item.name}</span>
+                      <span style={{ fontSize: '11px', fontFamily: 'monospace', color: '#cccccc' }}>৳{item.price * item.quantity}</span>
                     </div>
-                    <div style={{ fontSize: '10px', color: '#666', letterSpacing: '0.6px' }}>
+                    <div style={{ fontSize: '10px', color: '#bbbbbb', letterSpacing: '0.6px' }}>
                       QTY: {item.quantity} {item.color && ` • ${item.color}`} {item.size && ` / ${item.size}`}
                     </div>
                   </div>
@@ -715,10 +793,10 @@ export default function Checkout({
               ))}
             </div>
             <div style={{ marginTop: '30px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', letterSpacing: '1.5px', marginBottom: '15px', color: '#666' }}><span>SUBTOTAL</span><span style={{ fontFamily: 'monospace' }}>৳{subtotal}</span></div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', letterSpacing: '1.5px', marginBottom: '15px', color: '#666' }}><span>SHIPPING</span><span style={{ fontFamily: 'monospace', color: deliveryCharge === 0 ? '#fff' : '#666' }}>{deliveryCharge === 0 ? 'COMPLIMENTARY' : `৳${deliveryCharge}`}</span></div>
-              {vatRate > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', letterSpacing: '1.5px', marginBottom: '15px', color: '#666' }}><span>VAT ({vatRate}%)</span><span style={{ fontFamily: 'monospace' }}>৳{vatAmount}</span></div>}
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', letterSpacing: '2px', paddingTop: '20px', borderTop: '1px dotted #222', color: '#fff', fontWeight: 600, marginTop: '25px' }}><span>TOTAL</span><span style={{ fontFamily: 'monospace', fontSize: '14px' }}>৳{grandTotal}</span></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', letterSpacing: '1.5px', marginBottom: '15px', color: '#bbbbbb' }}><span>SUBTOTAL</span><span style={{ fontFamily: 'monospace', color: '#cccccc' }}>৳{subtotal}</span></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', letterSpacing: '1.5px', marginBottom: '15px', color: '#bbbbbb' }}><span>SHIPPING</span><span style={{ fontFamily: 'monospace', color: deliveryCharge === 0 ? '#fff' : '#cccccc' }}>{deliveryCharge === 0 ? 'COMPLIMENTARY' : `৳${deliveryCharge}`}</span></div>
+              {vatRate > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', letterSpacing: '1.5px', marginBottom: '15px', color: '#bbbbbb' }}><span>VAT ({vatRate}%)</span><span style={{ fontFamily: 'monospace', color: '#cccccc' }}>৳{vatAmount}</span></div>}
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', letterSpacing: '2px', paddingTop: '20px', borderTop: '1px dotted #333333', color: '#fff', fontWeight: 600, marginTop: '25px' }}><span>TOTAL</span><span style={{ fontFamily: 'monospace', fontSize: '14px' }}>৳{grandTotal}</span></div>
             </div>
           </div>
         </div>
