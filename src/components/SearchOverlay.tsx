@@ -487,13 +487,27 @@ const ProductCard = ({ product }: { product: Product }) => {
   );
 };
 
-export default function SearchOverlay({ isOpen, onClose, searchQuery = '' }: Props) {
+export default function SearchOverlay({ isOpen, onClose, searchQuery }: Props) {
+  const [internalQuery, setInternalQuery] = useState('');
   const [results, setResults] = useState<Product[]>([]);
 
+  const activeQuery = searchQuery !== undefined ? searchQuery : internalQuery;
+
   useEffect(() => {
-    if (!isOpen) return;
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+    const handleCustomSearch = (e: Event) => {
+      const customEvent = e as CustomEvent<string>;
+      setInternalQuery(customEvent.detail || '');
+    };
+    window.addEventListener('nomad-search-change', handleCustomSearch);
+    return () => window.removeEventListener('nomad-search-change', handleCustomSearch);
+  }, []);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setInternalQuery('');
+      setResults([]);
+      return;
+    }
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -503,26 +517,25 @@ export default function SearchOverlay({ isOpen, onClose, searchQuery = '' }: Pro
     window.addEventListener('keydown', handleKeyDown);
 
     return () => {
-      document.body.style.overflow = prevOverflow;
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [isOpen, onClose]);
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
-      if (searchQuery.trim().length > 0) {
-        searchProducts();
+      if (activeQuery.trim().length > 0) {
+        searchProducts(activeQuery);
       } else {
         setResults([]);
       }
     }, 300);
 
     return () => clearTimeout(delayDebounceFn);
-  }, [searchQuery]);
+  }, [activeQuery]);
 
-  const searchProducts = async () => {
+  const searchProducts = async (term: string) => {
     try {
-      const query = `%${searchQuery}%`;
+      const query = `%${term}%`;
 
       const { data, error } = await supabase
         .from('products')
@@ -589,7 +602,7 @@ export default function SearchOverlay({ isOpen, onClose, searchQuery = '' }: Pro
           </div>
         )}
 
-        {searchQuery.trim().length > 0 && results.length === 0 && (
+        {activeQuery.trim().length > 0 && results.length === 0 && (
           <p
             style={{
               fontSize: '11px',
@@ -599,7 +612,7 @@ export default function SearchOverlay({ isOpen, onClose, searchQuery = '' }: Pro
               textTransform: 'uppercase',
             }}
           >
-            No products found matching "{searchQuery}"
+            No products found matching "{activeQuery}"
           </p>
         )}
       </div>
