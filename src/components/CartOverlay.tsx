@@ -3,6 +3,7 @@ import { useCart } from '@/context/CartContext';
 import Checkout from './Checkout';
 
 interface CartOverlayProps {
+  session?: any;
   isCheckingOut?: boolean;
   setIsCheckingOut?: React.Dispatch<React.SetStateAction<boolean>>;
 }
@@ -47,22 +48,22 @@ const CartOverlay: React.FC<CartOverlayProps> = ({
   }, [isCartOpen, setIsCheckingOut]);
 
   useEffect(() => {
-    setSelectedIds(cartItems.map(item => `${item.id}-${item.color || ''}-${item.size || ''}`));
+    setSelectedIds(cartItems.map((item) => `${item.id}-${item.color || ''}-${item.size || ''}`));
   }, [cartItems]);
 
   if (!isCartOpen) return null;
 
   const subtotal = cartItems
-    .filter(item => selectedIds.includes(`${item.id}-${item.color || ''}-${item.size || ''}`))
+    .filter((item) => selectedIds.includes(`${item.id}-${item.color || ''}-${item.size || ''}`))
     .reduce((acc, item) => acc + item.price * item.quantity, 0);
 
-  const selectedItemsForCheckout = cartItems.filter(item =>
+  const selectedItemsForCheckout = cartItems.filter((item) =>
     selectedIds.includes(`${item.id}-${item.color || ''}-${item.size || ''}`)
   );
 
   const toggleSelect = (itemKey: string) => {
     if (selectedIds.includes(itemKey)) {
-      setSelectedIds(selectedIds.filter(key => key !== itemKey));
+      setSelectedIds(selectedIds.filter((key) => key !== itemKey));
     } else {
       setSelectedIds([...selectedIds, itemKey]);
     }
