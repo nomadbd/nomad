@@ -752,23 +752,6 @@ export default function SearchOverlay({ isOpen, onClose, searchQuery }: Props) {
       }}
     >
       <div style={{ color: 'white', width: '100%', boxSizing: 'border-box' }}>
-        {!hasQuery && (
-          <div style={{ padding: '24px 24px 0 24px' }}>
-            <p
-              style={{
-                fontSize: '11px',
-                letterSpacing: '2px',
-                color: '#666',
-                textTransform: 'uppercase',
-                fontFamily: 'monospace',
-                margin: 0,
-              }}
-            >
-              Search by name, category, size, color, or price
-            </p>
-          </div>
-        )}
-
         {hasQuery && isLoading && rankedResults.length === 0 && (
           <p
             style={{
