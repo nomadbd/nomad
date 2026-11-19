@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/supabaseClient';
 import { useCart } from '@/context/CartContext'; 
 import { printInvoice } from '@/utils/invoiceUtils';
-import { BackIcon } from '@/components/icons';
 
 interface CartItem {
   id: string;
@@ -124,15 +123,11 @@ const validatePhoneByCountry = (
 export default function Checkout({ 
   selectedItems, 
   onSuccess, 
-  onOrderPlaced,
-  onClose,
-  onBack
+  onOrderPlaced 
 }: { 
   selectedItems: CartItem[], 
   onSuccess: () => void,
-  onOrderPlaced?: (placed: boolean) => void,
-  onClose?: () => void,
-  onBack?: () => void
+  onOrderPlaced?: (placed: boolean) => void
 }) {
   const { removeFromCart } = useCart();
 
@@ -193,24 +188,6 @@ export default function Checkout({
     c.name.toLowerCase().includes(countrySearch.toLowerCase()) || 
     c.code.includes(countrySearch)
   );
-
-  const handleBackAction = () => {
-    if (onBack) {
-      onBack();
-    } else if (onClose) {
-      onClose();
-    } else {
-      onSuccess();
-    }
-  };
-
-  const handleCloseAction = () => {
-    if (onClose) {
-      onClose();
-    } else {
-      onSuccess();
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -312,31 +289,6 @@ export default function Checkout({
       fontFamily: baseFontFamily,
       minHeight: isMobile ? '100vh' : 'auto',
       boxSizing: 'border-box' as const,
-    },
-    topHeaderBar: {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      paddingBottom: '18px',
-      marginBottom: '24px',
-      borderBottom: '1px solid #1f1f1f',
-    },
-    headerActionGroup: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '14px',
-    },
-    headerIconBtn: {
-      background: 'transparent',
-      border: 'none',
-      color: '#cccccc',
-      cursor: 'pointer',
-      padding: '6px',
-      display: 'inline-flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      outline: 'none',
-      transition: 'color 0.2s ease',
     },
     successOverlay: {
       position: 'fixed' as const,
@@ -634,28 +586,6 @@ export default function Checkout({
           opacity: 1;
         }
       `}</style>
-
-      {/* একদম উপরের হেডার: ক্লোজ বাটনের পাশেই BackIcon */}
-      <div style={styles.topHeaderBar}>
-        <div style={styles.headerActionGroup}>
-          <button
-            type="button"
-            onClick={handleCloseAction}
-            aria-label="Close checkout"
-            style={styles.headerIconBtn}
-          >
-            ✕
-          </button>
-          <button
-            type="button"
-            onClick={handleBackAction}
-            aria-label="Go back"
-            style={styles.headerIconBtn}
-          >
-            <BackIcon />
-          </button>
-        </div>
-      </div>
 
       {isPickerOpen && (
         <div style={styles.pickerModal} onClick={() => setIsPickerOpen(false)}>
