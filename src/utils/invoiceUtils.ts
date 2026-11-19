@@ -23,9 +23,9 @@ export const printInvoice = (placedOrderDetails: any) => {
 
     return `
       <tr>
-        <td style="padding: 14px 0; border-bottom: 1px solid #eee; font-size: 11px; letter-spacing: 1px; line-height: 1.6; color: #000 !important;">
+        <td style="padding: 14px 0; border-bottom: 1px solid #eee; font-size: 11px; letter-spacing: 0.5px; line-height: 1.6; color: #000 !important;">
           <strong style="color: #000 !important; display: block; margin-bottom: 4px;">${item.name ? String(item.name).toUpperCase() : ''}</strong>
-          <div style="color: #555; font-size: 10px; letter-spacing: 0.5px; text-transform: uppercase;">
+          <div style="color: #555; font-size: 10px; letter-spacing: 0.4px; text-transform: uppercase;">
             ${detailsArray.join(' &nbsp;|&nbsp; ')} &nbsp;&bull;&nbsp; ৳${item.price}
           </div>
         </td>
@@ -46,44 +46,44 @@ export const printInvoice = (placedOrderDetails: any) => {
     
     <table class="info-table">
       <tr>
-        <td style="width: 50%; padding: 4px 0; vertical-align: top; color: #000 !important; font-size: 11px;">
-          <span style="color: #666; font-size: 9px; letter-spacing: 1.5px; font-weight: bold; display: block;">SHIPPING TO</span>
+        <td style="width: 52%; padding: 4px 0; vertical-align: top; color: #000 !important; font-size: 11px; letter-spacing: 0.4px;">
+          <span style="color: #666; font-size: 9px; letter-spacing: 1.5px; font-weight: bold; display: block; margin-bottom: 4px;">SHIPPING TO</span>
+          <strong style="color: #000 !important; font-weight: 700;">
+            ${placedOrderDetails.customerName ? String(placedOrderDetails.customerName).toUpperCase() : 'GUEST'}
+          </strong>
         </td>
-        <td style="text-align: right; padding: 4px 0; vertical-align: top; color: #000 !important; font-size: 11px; letter-spacing: 0.5px;">
-          <strong style="color: #000 !important;">ORDER ID:</strong> #${placedOrderDetails.orderId}
+        <td style="width: 48%; text-align: right; padding: 4px 0; vertical-align: top; color: #000 !important; font-size: 11px; letter-spacing: 0.5px;">
+          <div style="margin-bottom: 4px;">
+            <strong style="color: #000 !important;">ORDER ID:</strong> #${placedOrderDetails.orderId}
+          </div>
+          <div>
+            <strong style="color: #000 !important;">DATE:</strong> ${formattedDate} &nbsp;&nbsp; <strong style="color: #000 !important;">TIME:</strong> ${formattedTime}
+          </div>
         </td>
       </tr>
       <tr>
-        <td style="padding: 4px 0; vertical-align: top; color: #000 !important; font-size: 11px; font-weight: bold; letter-spacing: 0.5px;">
-          ${placedOrderDetails.customerName ? String(placedOrderDetails.customerName).toUpperCase() : 'GUEST'}
-        </td>
-        <td style="text-align: right; padding: 4px 0; vertical-align: top; color: #000 !important; font-size: 11px; letter-spacing: 0.5px;">
-          <strong style="color: #000 !important;">DATE:</strong> ${formattedDate} &nbsp;&nbsp; <strong style="color: #000 !important;">TIME:</strong> ${formattedTime}
-        </td>
-      </tr>
-      <tr>
-        <td style="padding: 4px 0; vertical-align: top; color: #000 !important; font-size: 11px; letter-spacing: 0.5px;">
+        <td style="padding: 3px 0; vertical-align: top; color: #000 !important; font-size: 11px; letter-spacing: 0.4px;">
           ${placedOrderDetails.customerPhone || ''}
         </td>
-        <td style="text-align: right; padding: 4px 0; vertical-align: top; color: #000 !important; font-size: 11px; letter-spacing: 0.5px;">
+        <td style="text-align: right; padding: 3px 0; vertical-align: top; color: #000 !important; font-size: 11px; letter-spacing: 0.5px;">
           <strong style="color: #000 !important;">PAYMENT:</strong> CASH ON DELIVERY
         </td>
       </tr>
       ${customerEmail ? `
       <tr>
-        <td style="padding: 4px 0; vertical-align: top; color: #000 !important; font-size: 11px; letter-spacing: 0.5px;">
+        <td style="padding: 3px 0; vertical-align: top; color: #000 !important; font-size: 11px; letter-spacing: 0.3px;">
           ${customerEmail}
         </td>
-        <td style="text-align: right; padding: 4px 0; vertical-align: top; color: #000 !important; font-size: 11px; letter-spacing: 0.5px;">
+        <td style="text-align: right; padding: 3px 0; vertical-align: top; color: #000 !important; font-size: 11px; letter-spacing: 0.5px;">
           <strong style="color: #ff0000; letter-spacing: 1px;">STATUS: UNPAID / DUE</strong>
         </td>
       </tr>
       ` : ''}
       <tr>
-        <td style="padding: 4px 0; vertical-align: top; color: #000 !important; font-size: 11px; letter-spacing: 0.5px; line-height: 1.4; max-width: 300px;">
+        <td style="padding: 3px 0; vertical-align: top; color: #000 !important; font-size: 11px; letter-spacing: 0.3px; line-height: 1.45; max-width: 320px;">
           ${placedOrderDetails.shippingAddress ? String(placedOrderDetails.shippingAddress).toUpperCase() : ''}
         </td>
-        <td style="text-align: right; padding: 4px 0; vertical-align: top; color: #000 !important; font-size: 11px; letter-spacing: 0.5px;">
+        <td style="text-align: right; padding: 3px 0; vertical-align: top; color: #000 !important; font-size: 11px; letter-spacing: 0.5px;">
           ${!customerEmail ? `<strong style="color: #ff0000; letter-spacing: 1px;">STATUS: UNPAID / DUE</strong>` : ''}
         </td>
       </tr>
@@ -142,7 +142,7 @@ export const printInvoice = (placedOrderDetails: any) => {
         color: #000 !important;
         padding: 44px 36px 36px 36px !important;
         box-sizing: border-box !important;
-        font-family: sans-serif !important;
+        font-family: 'Noto Sans Bengali', 'Hind Siliguri', sans-serif !important;
       }
       .header {
         text-align: center !important;
@@ -168,7 +168,7 @@ export const printInvoice = (placedOrderDetails: any) => {
         width: 100% !important;
         margin-bottom: 35px !important;
         font-size: 11px !important;
-        letter-spacing: 0.5px !important;
+        letter-spacing: 0.4px !important;
         border-collapse: collapse !important;
         page-break-inside: avoid !important;
       }
@@ -193,7 +193,7 @@ export const printInvoice = (placedOrderDetails: any) => {
         text-align: center !important;
         border-top: 1px solid #eee !important;
         padding-top: 20px !important;
-        letter-spacing: 0.5px !important;
+        letter-spacing: 0.4px !important;
         page-break-inside: avoid !important;
       }
     }
@@ -254,8 +254,8 @@ export const handlePrintInvoice = (
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>Invoice #${order.id.slice(0, 8)}</title>
       <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; color: #000; padding: 30px; max-width: 800px; width: 100%; margin: 0 auto; font-size: 11px; line-height: 1.5; background-color: #fff; box-sizing: border-box; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Noto+Sans+Bengali:wght@400;600;700&display=swap');
+        body { font-family: 'Inter', 'Noto Sans Bengali', sans-serif; color: #000; padding: 30px; max-width: 800px; width: 100%; margin: 0 auto; font-size: 11px; line-height: 1.5; background-color: #fff; box-sizing: border-box; }
         .header { text-align: center; margin-bottom: 40px; }
         .header h1 { font-size: 20px; letter-spacing: 6px; margin: 0 0 5px 0; font-weight: 700; }
         .header h2 { font-size: 9px; letter-spacing: 2px; margin: 10px 0 0 0; color: #555; text-transform: uppercase; font-weight: 600;}
@@ -443,8 +443,8 @@ export const handlePrintBulkInvoices = (
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>Bulk Invoices (${ordersToPrint.length})</title>
       <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; color: #000; margin: 0; padding: 0; font-size: 11px; line-height: 1.5; background-color: #fff; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Noto+Sans+Bengali:wght@400;600;700&display=swap');
+        body { font-family: 'Inter', 'Noto Sans Bengali', sans-serif; color: #000; margin: 0; padding: 0; font-size: 11px; line-height: 1.5; background-color: #fff; }
         .invoice-page { padding: 30px; max-width: 800px; width: 100%; margin: 0 auto; box-sizing: border-box; page-break-after: always; break-after: page; page-break-inside: avoid; }
         .invoice-page:last-child { page-break-after: auto; break-after: auto; }
         .header { text-align: center; margin-bottom: 40px; }
