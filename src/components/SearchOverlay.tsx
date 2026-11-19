@@ -5,7 +5,7 @@ import { useCart } from '@/context/CartContext';
 interface Props {
   isOpen: boolean;
   onClose: () => void;
-  searchQuery?: string;
+  searchQuery: string;
 }
 
 interface Product {
@@ -488,23 +488,10 @@ const ProductCard = ({ product }: { product: Product }) => {
 };
 
 export default function SearchOverlay({ isOpen, onClose, searchQuery }: Props) {
-  const [internalQuery, setInternalQuery] = useState('');
   const [results, setResults] = useState<Product[]>([]);
-
-  const activeQuery = searchQuery !== undefined ? searchQuery : internalQuery;
-
-  useEffect(() => {
-    const handleCustomSearch = (e: Event) => {
-      const customEvent = e as CustomEvent<string>;
-      setInternalQuery(customEvent.detail || '');
-    };
-    window.addEventListener('nomad-search-change', handleCustomSearch);
-    return () => window.removeEventListener('nomad-search-change', handleCustomSearch);
-  }, []);
 
   useEffect(() => {
     if (!isOpen) {
-      setInternalQuery('');
       setResults([]);
       return;
     }
@@ -522,16 +509,18 @@ export default function SearchOverlay({ isOpen, onClose, searchQuery }: Props) {
   }, [isOpen, onClose]);
 
   useEffect(() => {
+    if (!isOpen) return;
+
     const delayDebounceFn = setTimeout(() => {
-      if (activeQuery.trim().length > 0) {
-        searchProducts(activeQuery);
+      if (searchQuery.trim().length > 0) {
+        searchProducts(searchQuery);
       } else {
         setResults([]);
       }
     }, 300);
 
     return () => clearTimeout(delayDebounceFn);
-  }, [activeQuery]);
+  }, [searchQuery, isOpen]);
 
   const searchProducts = async (term: string) => {
     try {
@@ -602,7 +591,7 @@ export default function SearchOverlay({ isOpen, onClose, searchQuery }: Props) {
           </div>
         )}
 
-        {activeQuery.trim().length > 0 && results.length === 0 && (
+        {searchQuery.trim().length > 0 && results.length === 0 && (
           <p
             style={{
               fontSize: '11px',
@@ -612,7 +601,7 @@ export default function SearchOverlay({ isOpen, onClose, searchQuery }: Props) {
               textTransform: 'uppercase',
             }}
           >
-            No products found matching "{activeQuery}"
+            No products found matching "{searchQuery}"
           </p>
         )}
       </div>
