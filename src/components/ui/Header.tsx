@@ -29,6 +29,7 @@ const Header: React.FC<HeaderProps> = ({
 }) => {
   const [show, setShow] = useState(true);
   const lastScrollY = useRef(0);
+  const ignoreNextPopstate = useRef(false);
   const { isCartOpen, setIsCartOpen, cartItems } = useCart();
 
   const isOverlayActive = isSearchOpen || isCartOpen;
@@ -55,7 +56,67 @@ const Header: React.FC<HeaderProps> = ({
     return () => window.removeEventListener('scroll', handleScroll);
   }, [isOverlayActive]);
 
+  // কার্ট ও চেকআউট খোলার সাথে সাথে হিস্ট্রিতে স্টেট পুশ করা
+  useEffect(() => {
+    if (isCartOpen && !isCheckingOut) {
+      window.history.pushState({ nomadOverlay: 'cart' }, '');
+    }
+  }, [isCartOpen, isCheckingOut]);
+
+  useEffect(() => {
+    if (isCartOpen && isCheckingOut) {
+      window.history.pushState({ nomadOverlay: 'checkout' }, '');
+    }
+  }, [isCartOpen, isCheckingOut]);
+
+  useEffect(() => {
+    if (isSearchOpen) {
+      window.history.pushState({ nomadOverlay: 'search' }, '');
+    }
+  }, [isSearchOpen]);
+
+  // ফোনের হার্ডওয়্যার ব্যাক বাটন বা ব্রাউজার ব্যাক চাপলে পর্যায়ক্রমে আগের ধাপে ফেরা
+  useEffect(() => {
+    const handlePopState = () => {
+      if (ignoreNextPopstate.current) {
+        ignoreNextPopstate.current = false;
+        return;
+      }
+
+      if (isCartOpen && isCheckingOut && onCheckoutBack) {
+        onCheckoutBack();
+        return;
+      }
+
+      if (isCartOpen) {
+        setIsCartOpen(false);
+        return;
+      }
+
+      if (isSearchOpen) {
+        onSearchClose();
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [isCartOpen, isCheckingOut, isSearchOpen, onCheckoutBack, setIsCartOpen, onSearchClose]);
+
+  const handleBackFromCheckout = () => {
+    if (onCheckoutBack) {
+      onCheckoutBack();
+    }
+    if (window.history.state?.nomadOverlay === 'checkout') {
+      ignoreNextPopstate.current = true;
+      window.history.back();
+    }
+  };
+
   const handleCloseActiveOverlay = () => {
+    const hadCheckoutState = window.history.state?.nomadOverlay === 'checkout';
+    const hadCartState = window.history.state?.nomadOverlay === 'cart';
+    const hadSearchState = window.history.state?.nomadOverlay === 'search';
+
     if (isSearchOpen) {
       onSearchClose();
     }
@@ -66,11 +127,10 @@ const Header: React.FC<HeaderProps> = ({
       }
       setIsCartOpen(false);
     }
-  };
 
-  const handleBackFromCheckout = () => {
-    if (onCheckoutBack) {
-      onCheckoutBack();
+    if (hadCheckoutState || hadCartState || hadSearchState) {
+      ignoreNextPopstate.current = true;
+      window.history.back();
     }
   };
 
