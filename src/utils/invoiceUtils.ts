@@ -13,6 +13,8 @@ export const printInvoice = (placedOrderDetails: any) => {
   const formattedDate = `${year}-${month}-${date}`;
   const formattedTime = `${hours}:${minutes}`;
 
+  const customerEmail = placedOrderDetails.customerEmail || placedOrderDetails.email || '';
+
   const itemsHtml = (placedOrderDetails.items || []).map((item: any) => {
     const detailsArray = [];
     if (item.size) detailsArray.push(`SIZE: ${String(item.size).toUpperCase()}`);
@@ -67,6 +69,14 @@ export const printInvoice = (placedOrderDetails: any) => {
           <strong style="color: #000 !important;">PAYMENT:</strong> CASH ON DELIVERY
         </td>
       </tr>
+      ${customerEmail ? `
+      <tr>
+        <td style="padding: 4px 0; vertical-align: top; color: #000 !important; font-size: 11px; letter-spacing: 0.5px;">
+          ${customerEmail}
+        </td>
+        <td style="text-align: right; padding: 4px 0; vertical-align: top; color: #000 !important; font-size: 11px; letter-spacing: 0.5px;"></td>
+      </tr>
+      ` : ''}
       <tr>
         <td style="padding: 4px 0; vertical-align: top; color: #000 !important; font-size: 11px; letter-spacing: 0.5px; line-height: 1.4; max-width: 300px;">
           ${placedOrderDetails.shippingAddress ? String(placedOrderDetails.shippingAddress).toUpperCase() : ''}
@@ -98,7 +108,7 @@ export const printInvoice = (placedOrderDetails: any) => {
     </table>
 
     <div class="disclaimer">
-      This document records your confirmed order details upon placement. Dispatch updates will follow separately.
+      This order summary reflects details submitted at checkout and does not constitute a final tax invoice or dispatch commitment. Subject to verification, availability, and correction of any inadvertent errors.
     </div>
   `;
 
@@ -318,7 +328,7 @@ export const handlePrintInvoice = (
           </div>
         </div>
       </div>
-      <div class="footer">This document records your confirmed order details upon placement. Dispatch updates will follow separately.</div>
+      <div class="footer">This order summary reflects details submitted at checkout and does not constitute a final tax invoice or dispatch commitment. Subject to verification, availability, and correction of any inadvertent errors.</div>
       <script>
         window.onload = function() {
           setTimeout(function() { window.print(); }, 200);
@@ -418,7 +428,7 @@ export const handlePrintBulkInvoices = (
           </div>
         </div>
 
-        <div class="footer">This document records your confirmed order details upon placement. Dispatch updates will follow separately.</div>
+        <div class="footer">This order summary reflects details submitted at checkout and does not constitute a final tax invoice or dispatch commitment. Subject to verification, availability, and correction of any inadvertent errors.</div>
       </div>
     `;
   }).join('');
@@ -455,7 +465,7 @@ export const handlePrintBulkInvoices = (
         .totals-border { border-top: 1px solid #000; margin: 10px 0; }
         .grand-total { font-weight: 700; font-size: 12px; }
         .footer { margin-top: 50px; text-align: center; font-size: 9px; color: #333; line-height: 1.5; }
-        @media print { @page { margin: 0; } body { width: 100% !important; max-width: 100% !important; padding: 0 !important; margin: 0 !important; } .invoice-page { padding: 1cm !important; } }
+        @media print { @page { margin: 0; } body { width: 100% !important; max-width: 100% !important; padding: 1cm !important; margin: 0 !important; } .invoice-page { padding: 1cm !important; } }
       </style>
     </head>
     <body>
