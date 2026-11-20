@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { uploadToCloudinary, deleteFromCloudinary } from '../cloudinary';
 import OrderHistory from '../components/OrderHistory';
+import Toast from '../components/ui/Toast';
 import ProfileSkeleton from '../components/profile/ProfileSkeleton';
 import ProfileHeader from '../components/profile/ProfileHeader';
 import ProfileSettings from '../components/profile/ProfileSettings';
@@ -57,11 +58,6 @@ export default function ProfilePage() {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [deleteConfirmPassword, setDeleteConfirmPassword] = useState('');
-  const [deleteAccountError, setDeleteAccountError] = useState<string | null>(null);
-  const [deletingAccount, setDeletingAccount] = useState(false);
-
-  const [currentDisplayName, setCurrentDisplayName] = useState('');
-  const [newDisplayName, setNewDisplayName] = useState('');
 
   const [currentSlug, setCurrentSlug] = useState('');
   const [newSlug, setNewSlug] = useState('');
@@ -72,18 +68,8 @@ export default function ProfilePage() {
 
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
-  const [avatarFeedback, setAvatarFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  const [settingsFeedback, setSettingsFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  const [fieldErrors, setFieldErrors] = useState<{
-    name?: string;
-    email?: string;
-    displayName?: string;
-    slug?: string;
-    payoutNumber?: string;
-    password?: string;
-  }>({});
-
+  const [toast, setToast] = useState<{ message: string; color: string } | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
 
   const [cropModalOpen, setCropModalOpen] = useState(false);
@@ -95,8 +81,6 @@ export default function ProfilePage() {
   const changeView = (newView: 'profile' | 'settings' | 'notifications' | 'communication') => {
     setView(newView);
     localStorage.setItem('currentView', newView);
-    setSettingsFeedback(null);
-    setFieldErrors({});
   };
 
   useEffect(() => {
@@ -187,6 +171,11 @@ export default function ProfilePage() {
     };
   }, [profile?.id, fetchUnreadCounts]);
 
+  const showToast = (message: string, color: string = '#fff') => {
+    setToast({ message, color });
+    setTimeout(() => setToast(null), 4000);
+  };
+
   const getInitials = (name?: string, email?: string) => {
     if (name?.trim()) {
       return name.trim().split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
@@ -256,7 +245,6 @@ export default function ProfilePage() {
         setAmbassadorData(amb);
         if (amb) {
           setCurrentSlug(amb.assigned_slug || '');
-          setCurrentDisplayName(amb.display_name || '');
           setCurrentPayoutDetails(amb.payout_details || '');
 
           if (amb.payout_details && amb.payout_details.includes(':')) {
@@ -270,7 +258,6 @@ export default function ProfilePage() {
 
       setNewName('');
       setNewEmail('');
-      setNewDisplayName('');
       setCurrentPassword('');
       setNewPassword('');
       setDeleteConfirmPassword('');
@@ -284,7 +271,6 @@ export default function ProfilePage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setAvatarFeedback(null);
     const reader = new FileReader();
     reader.onload = () => {
       setSelectedImageSrc(reader.result as string);
@@ -297,14 +283,14 @@ export default function ProfilePage() {
 
   const handleApplyCropAndUpload = async (croppedFile: File) => {
     if (!profile?.id) {
-      setAvatarFeedback({ type: 'error', text: 'User profile ID missing.' });
+      showToast("User profile ID missing.", "#ff4444");
       return;
     }
 
     try {
       setUploadingAvatar(true);
       setCropModalOpen(false);
-      setAvatarFeedback(null);
+      showToast("Uploading cropped image...", "#3498db");
 
       if (avatarUrl) {
         await deleteFromCloudinary(stripQueryParams(avatarUrl));
@@ -326,21 +312,18 @@ export default function ProfilePage() {
         if (error) throw error;
 
         if (!data || data.length === 0) {
-          setAvatarFeedback({ type: 'error', text: 'Database permission denied or row not found.' });
+          showToast("Database permission denied or row not found.", "#ff4444");
           return;
         }
 
         setAvatarUrl(urlWithCacheBust);
         setProfile((prev: any) => ({ ...prev, avatar_url: urlWithCacheBust }));
-        setAvatarFeedback({ type: 'success', text: 'Profile picture updated.' });
+        showToast("Profile picture updated successfully!", "#2ecc71");
       } else {
-        setAvatarFeedback({ type: 'error', text: 'Image upload failed. Please try again.' });
+        showToast("Cloudinary upload failed.", "#ff4444");
       }
     } catch (err: any) {
-      setAvatarFeedback({
-        type: 'error',
-        text: err?.message || 'Failed to upload profile picture.'
-      });
+      showToast("Failed to upload image: " + (err.message || "Unknown error"), "#ff4444");
     } finally {
       setUploadingAvatar(false);
     }
@@ -351,7 +334,7 @@ export default function ProfilePage() {
 
     try {
       setUploadingAvatar(true);
-      setAvatarFeedback(null);
+      showToast("Removing profile picture...", "#3498db");
 
       const currentUrl = avatarUrl || profile?.avatar_url;
       if (currentUrl) {
@@ -367,18 +350,15 @@ export default function ProfilePage() {
       if (error) throw error;
 
       if (!data || data.length === 0) {
-        setAvatarFeedback({ type: 'error', text: 'Could not remove profile picture.' });
+        showToast("Database update failed.", "#ff4444");
         return;
       }
 
       setAvatarUrl(null);
       setProfile((prev: any) => ({ ...prev, avatar_url: null }));
-      setAvatarFeedback({ type: 'success', text: 'Profile picture removed.' });
+      showToast("Profile picture removed successfully!", "#2ecc71");
     } catch (err: any) {
-      setAvatarFeedback({
-        type: 'error',
-        text: err?.message || 'Failed to remove profile picture.'
-      });
+      showToast("Failed to remove image: " + err.message, "#ff4444");
     } finally {
       setUploadingAvatar(false);
     }
@@ -392,51 +372,37 @@ export default function ProfilePage() {
   };
 
   const handleDeleteAccount = async () => {
-    setDeleteAccountError(null);
-
     if (!deleteConfirmPassword) {
-      setDeleteAccountError('Password is required to delete account.');
+      showToast("Password is required to delete account.", "#ff4444");
       return;
     }
 
-    setDeletingAccount(true);
-    try {
-      const { error: authError } = await supabase.auth.signInWithPassword({
-        email: profile.email,
-        password: deleteConfirmPassword
-      });
+    const { error: authError } = await supabase.auth.signInWithPassword({
+      email: profile.email,
+      password: deleteConfirmPassword
+    });
 
-      if (authError) {
-        setDeleteAccountError('Incorrect password. Account deletion failed.');
-        setDeletingAccount(false);
-        return;
-      }
+    if (authError) {
+      showToast("Incorrect password. Account deletion failed.", "#ff4444");
+      return;
+    }
 
-      const { error } = await supabase.rpc('delete_user');
-      if (error) {
-        setDeleteAccountError(error.message || 'Could not delete account.');
-        setDeletingAccount(false);
-      } else {
-        setShowConfirm(false);
-        localStorage.removeItem('currentView');
-        localStorage.removeItem('portalMode');
-        await supabase.auth.signOut();
-        window.location.href = '/';
-      }
-    } catch (err: any) {
-      setDeleteAccountError(err?.message || 'Unexpected error deleting account.');
-      setDeletingAccount(false);
+    setShowConfirm(false);
+    const { error } = await supabase.rpc('delete_user');
+    if (error) {
+      showToast("Error: " + error.message, "#ff4444");
+    } else {
+      localStorage.removeItem('currentView');
+      localStorage.removeItem('portalMode');
+      await supabase.auth.signOut();
+      window.location.href = '/';
     }
   };
 
   const handleUpdate = async () => {
-    setSettingsFeedback(null);
-    setFieldErrors({});
-
     try {
       let emailChanged = false;
       let otherChanges = false;
-      let passwordChanged = false;
 
       if (newName.trim() && newName !== profile?.name) {
         const { error: profileError } = await supabase
@@ -449,27 +415,18 @@ export default function ProfilePage() {
 
       if (newEmail.trim() && newEmail !== profile?.email) {
         const { error: emailError } = await supabase.auth.updateUser({ email: newEmail.trim() });
-        if (emailError) {
-          setFieldErrors((prev) => ({ ...prev, email: emailError.message }));
-          return;
-        }
+        if (emailError) throw emailError;
         emailChanged = true;
       }
 
       if (newPassword) {
         if (!currentPassword) {
-          setFieldErrors((prev) => ({
-            ...prev,
-            password: 'Current password is required to change password.'
-          }));
+          showToast("Current password is required to change password.", "#ff4444");
           return;
         }
 
         if (newPassword.length < 6) {
-          setFieldErrors((prev) => ({
-            ...prev,
-            password: 'New password must be at least 6 characters long.'
-          }));
+          showToast("New password must be at least 6 characters long.", "#ff4444");
           return;
         }
 
@@ -479,31 +436,17 @@ export default function ProfilePage() {
         });
 
         if (authError) {
-          setFieldErrors((prev) => ({
-            ...prev,
-            password: 'Incorrect current password.'
-          }));
+          showToast("Incorrect current password.", "#ff4444");
           return;
         }
 
         const { error: passwordError } = await supabase.auth.updateUser({ password: newPassword });
-        if (passwordError) {
-          setFieldErrors((prev) => ({
-            ...prev,
-            password: passwordError.message
-          }));
-          return;
-        }
-        passwordChanged = true;
+        if (passwordError) throw passwordError;
         otherChanges = true;
       }
 
       if (isAmbassador && profile?.id) {
         const updatesToAmb: any = {};
-
-        if (newDisplayName.trim() && newDisplayName.trim() !== currentDisplayName) {
-          updatesToAmb.display_name = newDisplayName.trim().slice(0, 10);
-        }
 
         const getFallbackSlug = (name?: string) => {
           if (!name?.trim()) return '';
@@ -527,10 +470,7 @@ export default function ProfilePage() {
             .maybeSingle();
 
           if (existing) {
-            setFieldErrors((prev) => ({
-              ...prev,
-              slug: 'This URL slug is already taken.'
-            }));
+            showToast("This URL slug is already taken.", "#ff4444");
             return;
           }
           updatesToAmb.assigned_slug = targetSlug;
@@ -550,10 +490,7 @@ export default function ProfilePage() {
           if (ambErr) throw ambErr;
 
           if (!ambUpdatedData || ambUpdatedData.length === 0) {
-            setSettingsFeedback({
-              type: 'error',
-              text: 'Update failed. Please check database permissions.'
-            });
+            showToast("Update failed! Please check database RLS policy.", "#ff4444");
             return;
           }
 
@@ -561,36 +498,22 @@ export default function ProfilePage() {
         }
       }
 
+      if (emailChanged) {
+        showToast("Check your new email inbox to verify the change.", "#3498db");
+      } else if (otherChanges) {
+        showToast("Settings updated successfully!", "#2ecc71");
+      }
+
       setCurrentPassword('');
       setNewPassword('');
       setDeleteConfirmPassword('');
       setNewSlug('');
-      setNewDisplayName('');
       setNewPayoutNumber('');
 
       await fetchUserData();
-
-      if (emailChanged) {
-        setSettingsFeedback({
-          type: 'success',
-          text: 'Check your new email inbox to verify the change.'
-        });
-      } else if (passwordChanged) {
-        setSettingsFeedback({
-          type: 'success',
-          text: 'Password updated successfully.'
-        });
-      } else if (otherChanges) {
-        setSettingsFeedback({
-          type: 'success',
-          text: 'Settings updated successfully.'
-        });
-      }
+      changeView('profile');
     } catch (error: any) {
-      setSettingsFeedback({
-        type: 'error',
-        text: error?.message || 'Failed to update settings.'
-      });
+      showToast("Update Error: " + error.message, "#ff4444");
     }
   };
 
@@ -613,16 +536,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div style={{
-      backgroundColor: '#000',
-      minHeight: '100vh',
-      color: '#fff',
-      padding: view === 'notifications' || view === 'communication' ? '0' : '40px 20px',
-      fontFamily: "'Inter', sans-serif",
-      width: '100%',
-      boxSizing: 'border-box',
-      overflowX: 'hidden'
-    }}>
+    <div style={{ backgroundColor: '#000', minHeight: '100vh', color: '#fff', padding: view === 'notifications' || view === 'communication' ? '0' : '40px 20px', fontFamily: "'Inter', sans-serif", width: '100%', boxSizing: 'border-box', overflowX: 'hidden' }}>
       <input
         type="file"
         ref={fileInputRef}
@@ -631,100 +545,30 @@ export default function ProfilePage() {
         style={{ display: 'none' }}
       />
 
+      {toast && <Toast message={toast.message} color={toast.color} />}
+
       {showConfirm && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0,0,0,0.85)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1200,
-          padding: '20px'
-        }}>
-          <div style={{
-            background: '#111',
-            border: '1px solid #222',
-            borderRadius: '8px',
-            padding: '25px',
-            maxWidth: '400px',
-            width: '100%'
-          }}>
-            <h3 style={{ margin: '0 0 10px 0', fontSize: '16px', color: '#ff4444', letterSpacing: '1px' }}>
-              DELETE ACCOUNT
-            </h3>
-            <p style={{ fontSize: '13px', color: '#ccc', marginBottom: '20px' }}>
-              This action is permanent. Enter your password to confirm deletion:
-            </p>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
+          <div style={{ background: '#111', border: '1px solid #222', borderRadius: '8px', padding: '25px', maxWidth: '400px', width: '100%' }}>
+            <h3 style={{ margin: '0 0 10px 0', fontSize: '16px', color: '#ff4444', letterSpacing: '1px' }}>DELETE ACCOUNT</h3>
+            <p style={{ fontSize: '13px', color: '#ccc', marginBottom: '20px' }}>This action is permanent. Enter your password to confirm deletion:</p>
             <input
               type="password"
               placeholder="Password"
               value={deleteConfirmPassword}
-              onChange={(e) => {
-                setDeleteConfirmPassword(e.target.value);
-                if (deleteAccountError) setDeleteAccountError(null);
-              }}
-              style={{
-                width: '100%',
-                padding: '10px 0',
-                background: 'transparent',
-                border: 'none',
-                borderBottom: deleteAccountError ? '1px solid #F87171' : '1px solid #333',
-                color: '#fff',
-                marginBottom: deleteAccountError ? '8px' : '20px',
-                outline: 'none',
-                fontSize: '15px',
-                boxSizing: 'border-box'
-              }}
+              onChange={(e) => setDeleteConfirmPassword(e.target.value)}
+              style={{ width: '100%', padding: '10px 0', background: 'transparent', border: 'none', borderBottom: '1px solid #333', color: '#fff', marginBottom: '20px', outline: 'none', fontSize: '15px', boxSizing: 'border-box' }}
             />
-            {deleteAccountError && (
-              <p style={{ color: '#F87171', fontSize: '11px', margin: '0 0 16px 0' }}>
-                {deleteAccountError}
-              </p>
-            )}
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
               <button
-                type="button"
-                disabled={deletingAccount}
-                onClick={() => {
-                  setShowConfirm(false);
-                  setDeleteConfirmPassword('');
-                  setDeleteAccountError(null);
-                }}
-                style={{
-                  background: 'transparent',
-                  border: '1px solid #333',
-                  color: '#aaa',
-                  padding: '8px 16px',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  fontSize: '12px',
-                  letterSpacing: '1px'
-                }}
-              >
+                onClick={() => { setShowConfirm(false); setDeleteConfirmPassword(''); }}
+                style={{ background: 'transparent', border: '1px solid #333', color: '#aaa', padding: '8px 16px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', letterSpacing: '1px' }}>
                 CANCEL
               </button>
               <button
-                type="button"
-                disabled={deletingAccount}
                 onClick={handleDeleteAccount}
-                style={{
-                  background: '#ff4444',
-                  border: 'none',
-                  color: '#fff',
-                  padding: '8px 16px',
-                  borderRadius: '4px',
-                  cursor: deletingAccount ? 'wait' : 'pointer',
-                  fontSize: '12px',
-                  letterSpacing: '1px',
-                  fontWeight: 'bold',
-                  opacity: deletingAccount ? 0.7 : 1
-                }}
-              >
-                {deletingAccount ? 'DELETING...' : 'DELETE'}
+                style={{ background: '#ff4444', border: 'none', color: '#fff', padding: '8px 16px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', letterSpacing: '1px', fontWeight: 'bold' }}>
+                DELETE
               </button>
             </div>
           </div>
@@ -775,17 +619,12 @@ export default function ProfilePage() {
             avatarUrl={avatarUrl}
             isAmbassadorActive={isAmbassadorActive}
             uploadingAvatar={uploadingAvatar}
-            avatarFeedback={avatarFeedback}
-            clearAvatarFeedback={() => setAvatarFeedback(null)}
             fileInputRef={fileInputRef}
             newName={newName}
             newEmail={newEmail}
             currentPassword={currentPassword}
             setCurrentPassword={setCurrentPassword}
             newPassword={newPassword}
-            currentDisplayName={currentDisplayName}
-            newDisplayName={newDisplayName}
-            setNewDisplayName={setNewDisplayName}
             currentSlug={currentSlug}
             newSlug={newSlug}
             setNewSlug={setNewSlug}
@@ -803,12 +642,6 @@ export default function ProfilePage() {
             handleSignOut={handleSignOut}
             setShowConfirm={setShowConfirm}
             onChangeView={changeView}
-            settingsFeedback={settingsFeedback}
-            clearSettingsFeedback={() => setSettingsFeedback(null)}
-            fieldErrors={fieldErrors}
-            clearFieldError={(field) =>
-              setFieldErrors((prev) => ({ ...prev, [field]: undefined }))
-            }
           />
         ) : (
           <>
