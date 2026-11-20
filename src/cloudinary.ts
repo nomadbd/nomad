@@ -38,7 +38,8 @@ export const uploadToCloudinary = async (
 
 export const getPublicIdFromUrl = (url: string): string | null => {
   try {
-    const parts = url.split('/');
+    const cleanUrl = url.split('?')[0];
+    const parts = cleanUrl.split('/');
     const uploadIndex = parts.indexOf('upload');
     if (uploadIndex === -1) return null;
 
@@ -54,8 +55,6 @@ export const getPublicIdFromUrl = (url: string): string | null => {
   }
 };
 
-// ProfilePage.tsx এর জন্য প্রয়োজনীয় deleteFromCloudinary এক্সপোর্ট
-export const deleteFromCloudinary = async (mediaUrl: string): Promise<any> => {
-  console.warn('Unsigned preset দিয়ে ক্লায়েন্ট সাইড থেকে ফাইল ডিলিট করা সম্ভব নয়।');
+export const deleteFromCloudinary = async (_mediaUrl: string): Promise<null> => {
   return null;
 };
