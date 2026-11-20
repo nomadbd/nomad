@@ -296,7 +296,8 @@ export default function ProfilePage() {
         await deleteFromCloudinary(stripQueryParams(avatarUrl));
       }
 
-      const uploadedUrl = await uploadToCloudinary(croppedFile, 'avatars', profile.id);
+      const uniquePublicId = `${profile.id}_${Date.now()}`;
+      const uploadedUrl = await uploadToCloudinary(croppedFile, 'avatars', uniquePublicId);
 
       if (uploadedUrl) {
         const cleanUploadedUrl = stripQueryParams(uploadedUrl);
