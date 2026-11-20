@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef, RefObject } from 'react';
+import React, { useState, useEffect, useRef, RefObject } from 'react';
 import { isUserSubscribed, subscribeUserToPush, unsubscribeUserFromPush } from '@/utils/pushManager';
-import { isReservedSlug } from '@/reservedSlugs'; // <--- ইম্পোর্ট করা হলো
+import { isReservedSlug } from '@/reservedSlugs';
 
 interface ProfileSettingsProps {
   profile: any;
@@ -70,6 +70,7 @@ export default function ProfileSettings({
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushLoading, setPushLoading] = useState(true);
   const [isPasswordSheetOpen, setIsPasswordSheetOpen] = useState(false);
+  const [isAvatarSheetOpen, setIsAvatarSheetOpen] = useState(false);
   const [keyboardOffset, setKeyboardOffset] = useState(0);
 
   const headerRef = useRef<HTMLDivElement>(null);
@@ -84,12 +85,10 @@ export default function ProfileSettings({
     const update = () => {
       cancelAnimationFrame(rafId);
       rafId = requestAnimationFrame(() => {
-        // Header
         if (headerRef.current) {
           headerRef.current.style.transform = `translateY(${vv.offsetTop}px)`;
         }
 
-        // Keyboard height calculation (for Bottom Sheet)
         const offset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
         setKeyboardOffset(offset);
       });
@@ -117,27 +116,71 @@ export default function ProfileSettings({
     };
   }, []);
 
+  // ===== Push Notification Status Check (Timeout + Safe Fallback so '...' never hangs) =====
   useEffect(() => {
+    let isMounted = true;
+
     async function checkPushStatus() {
-      if (isAmbassadorActive) {
-        const status = await isUserSubscribed();
-        setPushEnabled(status);
-        setPushLoading(false);
+      if (!isAmbassadorActive) {
+        if (isMounted) setPushLoading(false);
+        return;
+      }
+
+      if (isMounted) setPushLoading(true);
+
+      const fallbackTimer = setTimeout(() => {
+        if (isMounted) {
+          setPushLoading(false);
+        }
+      }, 3000);
+
+      try {
+        if (typeof isUserSubscribed === 'function') {
+          const status = await Promise.race([
+            isUserSubscribed(),
+            new Promise<boolean>((resolve) => setTimeout(() => resolve(false), 2800))
+          ]);
+          if (isMounted) {
+            setPushEnabled(Boolean(status));
+          }
+        } else if (isMounted) {
+          setPushEnabled(false);
+        }
+      } catch (err) {
+        console.error('Failed to check push subscription status:', err);
+        if (isMounted) {
+          setPushEnabled(false);
+        }
+      } finally {
+        clearTimeout(fallbackTimer);
+        if (isMounted) {
+          setPushLoading(false);
+        }
       }
     }
+
     checkPushStatus();
+
+    return () => {
+      isMounted = false;
+    };
   }, [isAmbassadorActive]);
 
   const handlePushToggle = async () => {
     setPushLoading(true);
-    if (pushEnabled) {
-      const success = await unsubscribeUserFromPush();
-      if (success) setPushEnabled(false);
-    } else {
-      const success = await subscribeUserToPush();
-      if (success) setPushEnabled(true);
+    try {
+      if (pushEnabled) {
+        const success = await unsubscribeUserFromPush();
+        if (success) setPushEnabled(false);
+      } else {
+        const success = await subscribeUserToPush();
+        if (success) setPushEnabled(true);
+      }
+    } catch (err) {
+      console.error('Failed to toggle push subscription:', err);
+    } finally {
+      setPushLoading(false);
     }
-    setPushLoading(false);
   };
 
   const cleanPayoutNumber = (details?: string) => {
@@ -145,19 +188,17 @@ export default function ProfileSettings({
     return details.includes(':') ? details.split(':')[1].trim() : details;
   };
 
-  // ===== Slug Validation Rules =====
   const isSlugValid = !newSlug || (
-    newSlug.length >= 3 && 
-    newSlug.length <= 20 && 
+    newSlug.length >= 3 &&
+    newSlug.length <= 20 &&
     !isReservedSlug(newSlug)
   );
 
-  // ===== Header SAVE-এ পাসওয়ার্ড আর গণনা হবে না =====
   const isDirty = Boolean(
     (newName && newName !== profile?.name) ||
     (newEmail && newEmail !== profile?.email) ||
     (newDisplayName && newDisplayName !== currentDisplayName) ||
-    (newSlug && newSlug !== currentSlug && isSlugValid) || // <--- কেবল ভ্যালিড স্লাগ হলেই সেভ হবে
+    (newSlug && newSlug !== currentSlug && isSlugValid) ||
     (newPayoutNumber && newPayoutNumber !== cleanPayoutNumber(currentPayoutDetails))
   );
 
@@ -195,10 +236,22 @@ export default function ProfileSettings({
     closePasswordSheet();
   };
 
+  const handleSelectPhotoFromSheet = () => {
+    setIsAvatarSheetOpen(false);
+    setTimeout(() => {
+      fileInputRef.current?.click();
+    }, 150);
+  };
+
+  const handleRemovePhotoFromSheet = async () => {
+    setIsAvatarSheetOpen(false);
+    await handleDeleteAvatar();
+  };
+
   return (
-    <div style={{ 
-      position: 'fixed', 
-      inset: 0, 
+    <div style={{
+      position: 'fixed',
+      inset: 0,
       backgroundColor: '#000000',
       zIndex: 999,
       display: 'flex',
@@ -208,17 +261,17 @@ export default function ProfileSettings({
       {/* ===== FIXED HEADER ===== */}
       <div
         ref={headerRef}
-        style={{ 
-          position: 'fixed', 
+        style={{
+          position: 'fixed',
           top: 0,
           left: 0,
           width: '100%',
-          zIndex: 1000, 
+          zIndex: 1000,
           backgroundColor: '#000000',
           padding: '12px 20px',
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center', 
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
           borderBottom: '1px solid #1A1A1A',
           boxSizing: 'border-box',
           transform: 'translateY(0)',
@@ -231,6 +284,7 @@ export default function ProfileSettings({
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
           <button
+            type="button"
             onClick={handleUpdate}
             disabled={!isDirty}
             style={{
@@ -271,68 +325,67 @@ export default function ProfileSettings({
       }}>
 
         {isAmbassadorActive && (
-          <div style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <div style={{ 
-              width: '56px', 
-              height: '56px', 
-              borderRadius: '50%', 
-              backgroundColor: '#111111', 
-              border: '1px solid #333333',
-              overflow: 'hidden', 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center',
-              fontWeight: '600',
-              color: '#FFFFFF',
-              flexShrink: 0
-            }}>
+          <div style={{ marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <button
+              type="button"
+              disabled={uploadingAvatar}
+              onClick={() => setIsAvatarSheetOpen(true)}
+              style={{
+                position: 'relative',
+                width: '64px',
+                height: '64px',
+                borderRadius: '50%',
+                backgroundColor: '#111111',
+                border: '1px solid #2E2E32',
+                overflow: 'hidden',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontWeight: '600',
+                color: '#FFFFFF',
+                flexShrink: 0,
+                padding: 0,
+                cursor: uploadingAvatar ? 'not-allowed' : 'pointer',
+                transition: 'transform 0.2s ease, border-color 0.2s ease'
+              }}
+            >
               {avatarUrl ? (
                 <img src={avatarUrl} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               ) : (
-                <span style={{ fontSize: '18px', fontWeight: '500' }}>{getInitials(profile?.name, profile?.email)}</span>
+                <span style={{ fontSize: '19px', fontWeight: '500' }}>{getInitials(profile?.name, profile?.email)}</span>
               )}
-            </div>
 
-            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-              <button 
-                type="button"
-                disabled={uploadingAvatar}
-                onClick={() => fileInputRef.current?.click()}
+              <span
                 style={{
-                  background: '#161616',
-                  border: '1px solid #2C2C2E',
+                  position: 'absolute',
+                  inset: 0,
+                  backgroundColor: uploadingAvatar ? 'rgba(0,0,0,0.72)' : 'rgba(0,0,0,0.28)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                   color: '#FFFFFF',
-                  padding: '8px 14px',
-                  borderRadius: '4px',
                   fontSize: '11px',
-                  letterSpacing: '1px',
-                  lineHeight: '1.3',
-                  textAlign: 'center',
-                  cursor: uploadingAvatar ? 'not-allowed' : 'pointer'
-                }}>
-                CHANGE<br />PICTURE
-              </button>
+                }}
+              >
+                {uploadingAvatar ? '...' : '✎'}
+              </span>
+            </button>
 
-              {avatarUrl && (
-                <button 
-                  type="button"
-                  disabled={uploadingAvatar}
-                  onClick={handleDeleteAvatar}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    color: '#FFFFFF',
-                    padding: '6px 4px',
-                    fontSize: '11px',
-                    letterSpacing: '1px',
-                    lineHeight: '1.3',
-                    textAlign: 'center',
-                    cursor: uploadingAvatar ? 'not-allowed' : 'pointer',
-                    opacity: uploadingAvatar ? 0.6 : 1
-                  }}>
-                  REMOVE<br />PICTURE
-                </button>
-              )}
+            <div
+              onClick={() => !uploadingAvatar && setIsAvatarSheetOpen(true)}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '3px',
+                cursor: uploadingAvatar ? 'not-allowed' : 'pointer',
+              }}
+            >
+              <span style={{ fontSize: '12px', fontWeight: '500', color: '#FFFFFF', letterSpacing: '0.6px' }}>
+                {uploadingAvatar ? 'Updating photo...' : 'Profile Photo'}
+              </span>
+              <span style={{ fontSize: '11px', color: '#8E8E93', letterSpacing: '0.3px' }}>
+                Tap avatar to change or remove
+              </span>
             </div>
           </div>
         )}
@@ -346,33 +399,33 @@ export default function ProfileSettings({
         {isAmbassadorActive && (
           <>
             <p style={labelStyle}>DISPLAY NAME</p>
-            <input 
+            <input
               type="text"
               maxLength={10}
-              placeholder={dynamicPlaceholder} 
-              value={newDisplayName} 
-              onChange={(e) => setNewDisplayName(e.target.value)} 
-              style={inputStyle} 
+              placeholder={dynamicPlaceholder}
+              value={newDisplayName}
+              onChange={(e) => setNewDisplayName(e.target.value)}
+              style={inputStyle}
             />
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <p style={labelStyle}>STORE SLUG</p>
               <span style={{ fontSize: '10px', color: '#888888', marginBottom: '4px' }}>/{activeSlug}</span>
             </div>
-            <input 
-              placeholder={currentSlug || "slug-name"} 
-              value={newSlug} 
+            <input
+              placeholder={currentSlug || "slug-name"}
+              value={newSlug}
               onChange={(e) => {
                 const formattedSlug = e.target.value
                   .toLowerCase()
                   .replace(/\s+/g, '-')
                   .replace(/[^a-z0-9-]/g, '');
                 setNewSlug(formattedSlug);
-              }} 
+              }}
               style={{
                 ...inputStyle,
                 marginBottom: (newSlug && (!isSlugValid || isReservedSlug(newSlug))) ? '6px' : '16px'
-              }} 
+              }}
             />
 
             {/* ===== SLUG ERROR MESSAGES ===== */}
@@ -436,11 +489,11 @@ export default function ProfileSettings({
             </div>
 
             <p style={labelStyle}>PAYOUT NUMBER</p>
-            <input 
-              placeholder={cleanPayoutNumber(currentPayoutDetails) || "017XXXXXXXX"} 
-              value={newPayoutNumber} 
-              onChange={(e) => setNewPayoutNumber(e.target.value)} 
-              style={inputStyle} 
+            <input
+              placeholder={cleanPayoutNumber(currentPayoutDetails) || "017XXXXXXXX"}
+              value={newPayoutNumber}
+              onChange={(e) => setNewPayoutNumber(e.target.value)}
+              style={inputStyle}
             />
 
             <p style={labelStyle}>REAL-TIME SALES ALERTS</p>
@@ -470,9 +523,9 @@ export default function ProfileSettings({
                   fontSize: '10px',
                   fontWeight: '600',
                   letterSpacing: '1px',
-                  cursor: 'pointer',
+                  cursor: pushLoading ? 'default' : 'pointer',
                   transition: 'all 0.15s ease',
-                  opacity: pushEnabled ? 1 : 0.6,
+                  opacity: pushLoading ? 0.65 : (pushEnabled ? 1 : 0.75),
                   flexShrink: 0
                 }}
               >
@@ -482,15 +535,15 @@ export default function ProfileSettings({
           </>
         )}
 
-        <div style={{ 
-          borderTop: isAmbassadorActive ? '1px solid #1C1C1E' : 'none', 
-          paddingTop: '16px', 
-          display: 'flex', 
-          flexDirection: 'column', 
-          gap: '8px' 
+        <div style={{
+          borderTop: isAmbassadorActive ? '1px solid #1C1C1E' : 'none',
+          paddingTop: '16px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '8px'
         }}>
 
-          <button 
+          <button
             type="button"
             onClick={openPasswordSheet}
             style={navButtonStyle}
@@ -499,15 +552,140 @@ export default function ProfileSettings({
             <span style={{ fontSize: '14px', color: '#888888' }}>›</span>
           </button>
 
-          <button onClick={handleSignOut} style={navButtonStyle}>
+          <button type="button" onClick={handleSignOut} style={navButtonStyle}>
             <span>SIGN OUT</span>
           </button>
-          <button onClick={() => setShowConfirm(true)} style={actionButtonStyle}>DELETE ACCOUNT</button>
+          <button type="button" onClick={() => setShowConfirm(true)} style={actionButtonStyle}>DELETE ACCOUNT</button>
         </div>
       </div>
 
-      {/* ===== BOTTOM SHEET ===== */}
-      {/* Backdrop */}
+      {/* ===== AVATAR ACTION BOTTOM SHEET ===== */}
+      <div
+        onClick={() => setIsAvatarSheetOpen(false)}
+        style={{
+          position: 'fixed',
+          inset: 0,
+          backgroundColor: 'rgba(0,0,0,0.65)',
+          zIndex: 1100,
+          opacity: isAvatarSheetOpen ? 1 : 0,
+          pointerEvents: isAvatarSheetOpen ? 'auto' : 'none',
+          transition: 'opacity 0.25s ease',
+        }}
+      />
+
+      <div
+        style={{
+          position: 'fixed',
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 1101,
+          backgroundColor: '#111111',
+          borderTopLeftRadius: '20px',
+          borderTopRightRadius: '20px',
+          borderTop: '1px solid #222222',
+          display: 'flex',
+          flexDirection: 'column',
+          paddingBottom: 'max(22px, env(safe-area-inset-bottom))',
+          transform: isAvatarSheetOpen ? 'translateY(0)' : 'translateY(110%)',
+          transition: 'transform 0.32s cubic-bezier(0.32, 0.72, 0, 1)',
+          willChange: 'transform',
+          boxShadow: '0 -10px 40px rgba(0,0,0,0.6)',
+        }}
+      >
+        {/* Handle bar */}
+        <div style={{
+          width: '40px',
+          height: '4px',
+          backgroundColor: '#333333',
+          borderRadius: '2px',
+          margin: '12px auto 8px',
+          flexShrink: 0,
+        }} />
+
+        {/* Sheet Header */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: '6px 20px 14px',
+          borderBottom: '1px solid #1B1B1D',
+        }}>
+          <h3 style={{ margin: 0, fontSize: '13px', fontWeight: '600', letterSpacing: '1.5px', color: '#FFFFFF' }}>
+            PROFILE PHOTO
+          </h3>
+          <button
+            type="button"
+            onClick={() => setIsAvatarSheetOpen(false)}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: '#888888',
+              fontSize: '22px',
+              cursor: 'pointer',
+              padding: '2px 6px',
+              lineHeight: 1,
+            }}
+          >
+            ×
+          </button>
+        </div>
+
+        {/* Sheet Actions */}
+        <div style={{ padding: '14px 20px 6px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <button
+            type="button"
+            onClick={handleSelectPhotoFromSheet}
+            style={{
+              width: '100%',
+              padding: '14px 16px',
+              borderRadius: '12px',
+              border: '1px solid #2A2A2E',
+              backgroundColor: '#18181B',
+              color: '#FFFFFF',
+              fontSize: '12px',
+              fontWeight: '600',
+              letterSpacing: '1.2px',
+              textTransform: 'uppercase',
+              cursor: 'pointer',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}
+          >
+            <span>{avatarUrl ? 'Change Picture' : 'Upload Picture'}</span>
+            <span style={{ color: '#A1A1AA', fontSize: '14px' }}>›</span>
+          </button>
+
+          {avatarUrl && (
+            <button
+              type="button"
+              onClick={handleRemovePhotoFromSheet}
+              style={{
+                width: '100%',
+                padding: '14px 16px',
+                borderRadius: '12px',
+                border: '1px solid rgba(255, 77, 77, 0.28)',
+                backgroundColor: 'rgba(255, 77, 77, 0.08)',
+                color: '#FF5C5C',
+                fontSize: '12px',
+                fontWeight: '600',
+                letterSpacing: '1.2px',
+                textTransform: 'uppercase',
+                cursor: 'pointer',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}
+            >
+              <span>Remove Picture</span>
+              <span style={{ fontSize: '13px' }}>×</span>
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* ===== PASSWORD BOTTOM SHEET ===== */}
       <div
         onClick={closePasswordSheet}
         style={{
@@ -521,7 +699,6 @@ export default function ProfileSettings({
         }}
       />
 
-      {/* Sheet */}
       <div
         style={{
           position: 'fixed',
@@ -552,10 +729,10 @@ export default function ProfileSettings({
         }} />
 
         {/* Header */}
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center', 
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
           padding: '8px 20px 16px',
           flexShrink: 0,
         }}>
@@ -563,6 +740,7 @@ export default function ProfileSettings({
             CHANGE PASSWORD
           </h3>
           <button
+            type="button"
             onClick={closePasswordSheet}
             style={{
               background: 'transparent',
@@ -579,38 +757,39 @@ export default function ProfileSettings({
         </div>
 
         {/* Scrollable Fields */}
-        <div style={{ 
-          padding: '0 20px', 
+        <div style={{
+          padding: '0 20px',
           overflowY: 'auto',
           flex: 1,
         }}>
           <p style={labelStyle}>CURRENT PASSWORD</p>
-          <input 
-            type="password" 
-            placeholder="Current Password" 
-            value={currentPassword} 
-            onChange={(e) => setCurrentPassword(e.target.value)} 
-            style={{ ...inputStyle, marginBottom: '20px' }} 
+          <input
+            type="password"
+            placeholder="Current Password"
+            value={currentPassword}
+            onChange={(e) => setCurrentPassword(e.target.value)}
+            style={{ ...inputStyle, marginBottom: '20px' }}
           />
 
           <p style={labelStyle}>NEW PASSWORD</p>
-          <input 
-            type="password" 
-            placeholder="New Password" 
-            value={newPassword} 
-            onChange={(e) => setNewPassword(e.target.value)} 
-            style={{ ...inputStyle, marginBottom: '8px' }} 
+          <input
+            type="password"
+            placeholder="New Password"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            style={{ ...inputStyle, marginBottom: '8px' }}
           />
         </div>
 
         {/* Sticky Footer Button */}
-        <div style={{ 
+        <div style={{
           padding: '16px 20px',
           paddingBottom: 'max(20px, env(safe-area-inset-bottom))',
           flexShrink: 0,
           borderTop: '1px solid #1A1A1A',
         }}>
           <button
+            type="button"
             onClick={handlePasswordUpdate}
             disabled={!isPasswordDirty}
             style={{
