@@ -11,35 +11,51 @@ function urlBase64ToUint8Array(base64String: string) {
   return outputArray;
 }
 
-// ১. নোটিফিকেশন সাবস্ক্রাইব করার ফাংশন
-export async function subscribeUserToPush() {
+export interface PushActionResult {
+  ok: boolean;
+  message?: string;
+}
+
+export async function subscribeUserToPush(): Promise<PushActionResult> {
   try {
-    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-      console.warn('Push notifications are not supported in this browser.');
-      return false;
+    if (!('serviceWorker' in navigator) || !('PushManager' in window) || typeof Notification === 'undefined') {
+      return { ok: false, message: 'This browser does not support push notifications.' };
+    }
+
+    if (Notification.permission === 'denied') {
+      return {
+        ok: false,
+        message: 'Notification permission is blocked in browser site settings.'
+      };
     }
 
     const permission = await Notification.requestPermission();
     if (permission !== 'granted') {
-      console.log('Notification permission was denied.');
-      return false;
+      return {
+        ok: false,
+        message: permission === 'denied'
+          ? 'Notification permission was blocked.'
+          : 'Notification permission was not granted.'
+      };
+    }
+
+    const publicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+    if (!publicKey) {
+      return { ok: false, message: 'VITE_VAPID_PUBLIC_KEY is missing.' };
     }
 
     const registration = await navigator.serviceWorker.register('/sw.js');
-    const publicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
-
-    if (!publicKey) {
-      console.error('VITE_VAPID_PUBLIC_KEY is not defined.');
-      return false;
-    }
+    await navigator.serviceWorker.ready;
 
     const subscription = await registration.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey: urlBase64ToUint8Array(publicKey)
     });
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return false;
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      return { ok: false, message: 'User session not found.' };
+    }
 
     const { error } = await supabase.from('push_subscriptions').upsert(
       {
@@ -51,22 +67,20 @@ export async function subscribeUserToPush() {
     );
 
     if (error) {
-      console.error('Failed to save push subscription to Supabase:', error);
-      return false;
+      return { ok: false, message: `Database error: ${error.message}` };
     }
 
-    console.log('Push subscription successfully saved!');
-    return true;
-  } catch (err) {
-    console.error('Error during push subscription:', err);
-    return false;
+    return { ok: true, message: 'Real-time sales alerts enabled.' };
+  } catch (err: any) {
+    return { ok: false, message: err?.message || 'Failed to enable push notifications.' };
   }
 }
 
-// ২. ইউজার বর্তমানে সাবস্ক্রাইবড কি না চেক করার ফাংশন (getRegistration ব্যবহার করে কখনো hang হবে না)
 export async function isUserSubscribed(): Promise<boolean> {
-  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return false;
-  if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return false;
+  if (!('serviceWorker' in navigator) || !('PushManager' in window) || typeof Notification === 'undefined') {
+    return false;
+  }
+  if (Notification.permission !== 'granted') return false;
 
   try {
     const registration = await navigator.serviceWorker.getRegistration();
@@ -80,13 +94,16 @@ export async function isUserSubscribed(): Promise<boolean> {
   }
 }
 
-// ৩. নোটিফিকেশন আনসাবস্ক্রাইব (বন্ধ) করার ফাংশন
-export async function unsubscribeUserFromPush(): Promise<boolean> {
+export async function unsubscribeUserFromPush(): Promise<PushActionResult> {
   try {
-    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return false;
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+      return { ok: false, message: 'Push notifications are not supported.' };
+    }
 
     const registration = await navigator.serviceWorker.getRegistration();
-    if (!registration) return false;
+    if (!registration) {
+      return { ok: false, message: 'Service worker registration not found.' };
+    }
 
     const subscription = await registration.pushManager.getSubscription();
 
@@ -95,16 +112,20 @@ export async function unsubscribeUserFromPush(): Promise<boolean> {
 
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        await supabase
+        const { error } = await supabase
           .from('push_subscriptions')
           .delete()
           .eq('user_id', user.id);
+
+        if (error) {
+          return { ok: false, message: `Database error: ${error.message}` };
+        }
       }
-      return true;
+      return { ok: true, message: 'Real-time sales alerts disabled.' };
     }
-    return false;
-  } catch (err) {
-    console.error('Error during push unsubscription:', err);
-    return false;
+
+    return { ok: true, message: 'Real-time sales alerts disabled.' };
+  } catch (err: any) {
+    return { ok: false, message: err?.message || 'Failed to disable push notifications.' };
   }
 }
