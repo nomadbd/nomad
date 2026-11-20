@@ -63,13 +63,15 @@ export async function subscribeUserToPush() {
   }
 }
 
-// ২. ইউজার বর্তমানে সাবস্ক্রাইবড কি না চেক করার ফাংশন
+// ২. ইউজার বর্তমানে সাবস্ক্রাইবড কি না চেক করার ফাংশন (getRegistration ব্যবহার করে কখনো hang হবে না)
 export async function isUserSubscribed(): Promise<boolean> {
   if (!('serviceWorker' in navigator) || !('PushManager' in window)) return false;
-  if (Notification.permission !== 'granted') return false;
+  if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return false;
 
   try {
-    const registration = await navigator.serviceWorker.ready;
+    const registration = await navigator.serviceWorker.getRegistration();
+    if (!registration) return false;
+
     const subscription = await registration.pushManager.getSubscription();
     return !!subscription;
   } catch (error) {
@@ -83,14 +85,14 @@ export async function unsubscribeUserFromPush(): Promise<boolean> {
   try {
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) return false;
 
-    const registration = await navigator.serviceWorker.ready;
+    const registration = await navigator.serviceWorker.getRegistration();
+    if (!registration) return false;
+
     const subscription = await registration.pushManager.getSubscription();
 
     if (subscription) {
-      // ব্রাউজার লেভেল থেকে অফ করা
       await subscription.unsubscribe();
 
-      // Supabase ডাটাবেজ থেকেও সাবস্ক্রিপশন মুছে ফেলা
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         await supabase
