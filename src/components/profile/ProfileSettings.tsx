@@ -7,18 +7,20 @@ interface ProfileSettingsProps {
   avatarUrl: string | null;
   isAmbassadorActive: boolean;
   uploadingAvatar: boolean;
+  avatarFeedback?: { type: 'success' | 'error'; text: string } | null;
+  clearAvatarFeedback?: () => void;
   fileInputRef: RefObject<HTMLInputElement | null>;
   newName: string;
   newEmail: string;
   currentPassword: string;
   setCurrentPassword: (val: string) => void;
   newPassword: string;
-  currentSlug?: string;
-  newSlug: string;
-  setNewSlug: (val: string) => void;
   currentDisplayName?: string;
   newDisplayName: string;
   setNewDisplayName: (val: string) => void;
+  currentSlug?: string;
+  newSlug: string;
+  setNewSlug: (val: string) => void;
   payoutMethod: string;
   setPayoutMethod: (val: string) => void;
   currentPayoutDetails?: string;
@@ -33,6 +35,17 @@ interface ProfileSettingsProps {
   handleSignOut: () => void;
   setShowConfirm: (val: boolean) => void;
   onChangeView: (view: 'profile' | 'settings') => void;
+  settingsFeedback?: { type: 'success' | 'error'; text: string } | null;
+  clearSettingsFeedback?: () => void;
+  fieldErrors?: {
+    name?: string;
+    email?: string;
+    displayName?: string;
+    slug?: string;
+    payoutNumber?: string;
+    password?: string;
+  };
+  clearFieldError?: (field: 'name' | 'email' | 'displayName' | 'slug' | 'payoutNumber' | 'password') => void;
 }
 
 const LoadingDots = ({ dotSize = '3.5px', gap = '3px' }: { dotSize?: string; gap?: string }) => (
@@ -84,18 +97,20 @@ export default function ProfileSettings({
   avatarUrl,
   isAmbassadorActive,
   uploadingAvatar,
+  avatarFeedback,
+  clearAvatarFeedback,
   fileInputRef,
   newName,
   newEmail,
   currentPassword,
   setCurrentPassword,
   newPassword,
-  currentSlug = '',
-  newSlug,
-  setNewSlug,
   currentDisplayName = '',
   newDisplayName,
   setNewDisplayName,
+  currentSlug = '',
+  newSlug,
+  setNewSlug,
   payoutMethod,
   setPayoutMethod,
   currentPayoutDetails = '',
@@ -109,29 +124,24 @@ export default function ProfileSettings({
   handleUpdate,
   handleSignOut,
   setShowConfirm,
-  onChangeView
+  onChangeView,
+  settingsFeedback,
+  clearSettingsFeedback,
+  fieldErrors = {},
+  clearFieldError,
 }: ProfileSettingsProps) {
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushLoading, setPushLoading] = useState(true);
   const [pushStatus, setPushStatus] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const [isSaving, setIsSaving] = useState(false);
-  const [saveFeedback, setSaveFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  const [fieldErrors, setFieldErrors] = useState<{
-    name?: string;
-    email?: string;
-    displayName?: string;
-    slug?: string;
-    payoutNumber?: string;
-    password?: string;
-  }>({});
+  const [localError, setLocalError] = useState<string | null>(null);
 
   const [isAvatarSheetOpen, setIsAvatarSheetOpen] = useState(false);
   const [isPasswordSheetOpen, setIsPasswordSheetOpen] = useState(false);
   const [keyboardOffset, setKeyboardOffset] = useState(0);
 
   const headerRef = useRef<HTMLDivElement>(null);
-  const saveTimerRef = useRef<number | null>(null);
 
   // ===== Jitter-free Fixed Header + Keyboard Offset for Sheet =====
   useEffect(() => {
@@ -171,9 +181,6 @@ export default function ProfileSettings({
 
     return () => {
       document.body.style.overflow = originalStyle;
-      if (saveTimerRef.current) {
-        window.clearTimeout(saveTimerRef.current);
-      }
     };
   }, []);
 
@@ -268,89 +275,25 @@ export default function ProfileSettings({
 
   const isPasswordDirty = currentPassword.length > 0 && newPassword.length > 0;
 
-  const validateProfileFields = () => {
-    const nextErrors: {
-      name?: string;
-      email?: string;
-      displayName?: string;
-      slug?: string;
-      payoutNumber?: string;
-    } = {};
+  const triggerSaveAction = async () => {
+    if (isSaving || !isDirty) return;
+    setLocalError(null);
+    clearSettingsFeedback?.();
 
     if (newName && newName.trim().length < 2) {
-      nextErrors.name = 'Name must be at least 2 characters long.';
+      setLocalError('Name must be at least 2 characters long.');
+      return;
     }
 
     if (newEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail.trim())) {
-      nextErrors.email = 'Please enter a valid email address.';
-    }
-
-    if (newDisplayName && newDisplayName.trim().length > 10) {
-      nextErrors.displayName = 'Display name can be up to 10 characters.';
-    }
-
-    if (newSlug) {
-      if (isReservedSlug(newSlug)) {
-        nextErrors.slug = 'This name is reserved by system. Please choose another.';
-      } else if (newSlug.length < 3) {
-        nextErrors.slug = 'Slug must be at least 3 characters long.';
-      } else if (newSlug.length > 20) {
-        nextErrors.slug = 'Slug cannot exceed 20 characters.';
-      }
-    }
-
-    if (newPayoutNumber && newPayoutNumber.trim().length < 6) {
-      nextErrors.payoutNumber = 'Please enter a valid payout number.';
-    }
-
-    setFieldErrors((prev) => ({
-      ...prev,
-      name: nextErrors.name,
-      email: nextErrors.email,
-      displayName: nextErrors.displayName,
-      slug: nextErrors.slug,
-      payoutNumber: nextErrors.payoutNumber,
-    }));
-
-    return Object.keys(nextErrors).length === 0;
-  };
-
-  const triggerSaveAction = async () => {
-    if (isSaving || !isDirty) return;
-    setSaveFeedback(null);
-
-    if (!validateProfileFields()) {
-      setSaveFeedback({
-        type: 'error',
-        text: 'Please fix the highlighted fields above.'
-      });
+      setLocalError('Please enter a valid email address.');
       return;
     }
 
     setIsSaving(true);
-    if (saveTimerRef.current) {
-      window.clearTimeout(saveTimerRef.current);
-    }
-    saveTimerRef.current = window.setTimeout(() => {
-      setIsSaving(false);
-    }, 2000);
-
     try {
       await Promise.resolve(handleUpdate());
-      setSaveFeedback({
-        type: 'success',
-        text: 'Changes saved.'
-      });
-    } catch (err: any) {
-      setSaveFeedback({
-        type: 'error',
-        text: err?.message || 'Could not save changes. Please try again.'
-      });
     } finally {
-      if (saveTimerRef.current) {
-        window.clearTimeout(saveTimerRef.current);
-        saveTimerRef.current = null;
-      }
       setIsSaving(false);
     }
   };
@@ -450,7 +393,7 @@ export default function ProfileSettings({
   };
 
   const openPasswordSheet = () => {
-    setFieldErrors((prev) => ({ ...prev, password: undefined }));
+    clearFieldError?.('password');
     setIsPasswordSheetOpen(true);
   };
 
@@ -458,26 +401,18 @@ export default function ProfileSettings({
     setIsPasswordSheetOpen(false);
     setCurrentPassword('');
     setNewPassword('');
-    setFieldErrors((prev) => ({ ...prev, password: undefined }));
+    clearFieldError?.('password');
   };
 
   const handlePasswordUpdate = async () => {
     if (!isPasswordDirty) return;
-
-    if (newPassword.length < 6) {
-      setFieldErrors((prev) => ({
-        ...prev,
-        password: 'New password must be at least 6 characters long.'
-      }));
-      return;
-    }
-
-    setFieldErrors((prev) => ({ ...prev, password: undefined }));
     await Promise.resolve(handleUpdate());
-    closePasswordSheet();
   };
 
   const showSaveButton = isDirty || isSaving;
+  const combinedFeedback = localError
+    ? { type: 'error' as const, text: localError }
+    : settingsFeedback || null;
 
   return (
     <div style={{
@@ -624,6 +559,18 @@ export default function ProfileSettings({
                 <span style={{ fontSize: '20px', fontWeight: '500' }}>{getInitials(profile?.name, profile?.email)}</span>
               )}
             </button>
+
+            {avatarFeedback && (
+              <p style={{
+                margin: '8px 0 0 0',
+                fontSize: '11px',
+                color: avatarFeedback.type === 'success' ? '#4ADE80' : '#F87171',
+                letterSpacing: '0.4px',
+                textAlign: 'center'
+              }}>
+                {avatarFeedback.text}
+              </p>
+            )}
           </div>
         )}
 
@@ -633,8 +580,9 @@ export default function ProfileSettings({
           value={newName}
           onChange={(e) => {
             setNewName(e.target.value);
-            if (fieldErrors.name) setFieldErrors((prev) => ({ ...prev, name: undefined }));
-            if (saveFeedback) setSaveFeedback(null);
+            clearFieldError?.('name');
+            clearSettingsFeedback?.();
+            setLocalError(null);
           }}
           style={getInputStyle(Boolean(fieldErrors.name))}
         />
@@ -646,8 +594,9 @@ export default function ProfileSettings({
           value={newEmail}
           onChange={(e) => {
             setNewEmail(e.target.value);
-            if (fieldErrors.email) setFieldErrors((prev) => ({ ...prev, email: undefined }));
-            if (saveFeedback) setSaveFeedback(null);
+            clearFieldError?.('email');
+            clearSettingsFeedback?.();
+            setLocalError(null);
           }}
           style={getInputStyle(Boolean(fieldErrors.email))}
         />
@@ -663,8 +612,8 @@ export default function ProfileSettings({
               value={newDisplayName}
               onChange={(e) => {
                 setNewDisplayName(e.target.value);
-                if (fieldErrors.displayName) setFieldErrors((prev) => ({ ...prev, displayName: undefined }));
-                if (saveFeedback) setSaveFeedback(null);
+                clearFieldError?.('displayName');
+                clearSettingsFeedback?.();
               }}
               style={getInputStyle(Boolean(fieldErrors.displayName))}
             />
@@ -683,8 +632,8 @@ export default function ProfileSettings({
                   .replace(/\s+/g, '-')
                   .replace(/[^a-z0-9-]/g, '');
                 setNewSlug(formattedSlug);
-                if (fieldErrors.slug) setFieldErrors((prev) => ({ ...prev, slug: undefined }));
-                if (saveFeedback) setSaveFeedback(null);
+                clearFieldError?.('slug');
+                clearSettingsFeedback?.();
               }}
               style={getInputStyle(
                 Boolean(
@@ -724,7 +673,7 @@ export default function ProfileSettings({
                     type="button"
                     onClick={() => {
                       setPayoutMethod(option);
-                      if (saveFeedback) setSaveFeedback(null);
+                      clearSettingsFeedback?.();
                     }}
                     style={{
                       display: 'flex',
@@ -764,8 +713,8 @@ export default function ProfileSettings({
               value={newPayoutNumber}
               onChange={(e) => {
                 setNewPayoutNumber(e.target.value);
-                if (fieldErrors.payoutNumber) setFieldErrors((prev) => ({ ...prev, payoutNumber: undefined }));
-                if (saveFeedback) setSaveFeedback(null);
+                clearFieldError?.('payoutNumber');
+                clearSettingsFeedback?.();
               }}
               style={getInputStyle(Boolean(fieldErrors.payoutNumber))}
             />
@@ -834,10 +783,10 @@ export default function ProfileSettings({
           </>
         )}
 
-        {saveFeedback && (
+        {combinedFeedback && (
           <div style={{
             background: '#111111',
-            border: `1px solid ${saveFeedback.type === 'success' ? '#1E3A2F' : '#3B1D1D'}`,
+            border: `1px solid ${combinedFeedback.type === 'success' ? '#1E3A2F' : '#3B1D1D'}`,
             padding: '10px 14px',
             borderRadius: '6px',
             marginBottom: '16px'
@@ -845,10 +794,10 @@ export default function ProfileSettings({
             <p style={{
               margin: 0,
               fontSize: '11px',
-              color: saveFeedback.type === 'success' ? '#4ADE80' : '#F87171',
+              color: combinedFeedback.type === 'success' ? '#4ADE80' : '#F87171',
               letterSpacing: '0.4px'
             }}>
-              {saveFeedback.text}
+              {combinedFeedback.text}
             </p>
           </div>
         )}
@@ -1068,7 +1017,7 @@ export default function ProfileSettings({
             value={currentPassword}
             onChange={(e) => {
               setCurrentPassword(e.target.value);
-              if (fieldErrors.password) setFieldErrors((prev) => ({ ...prev, password: undefined }));
+              clearFieldError?.('password');
             }}
             style={{ ...inputStyle, marginBottom: '20px' }}
           />
@@ -1080,7 +1029,7 @@ export default function ProfileSettings({
             value={newPassword}
             onChange={(e) => {
               setNewPassword(e.target.value);
-              if (fieldErrors.password) setFieldErrors((prev) => ({ ...prev, password: undefined }));
+              clearFieldError?.('password');
             }}
             style={getInputStyle(Boolean(fieldErrors.password), '8px')}
           />
