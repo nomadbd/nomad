@@ -70,6 +70,7 @@ export default function ProfileSettings({
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushLoading, setPushLoading] = useState(true);
   const [pushStatus, setPushStatus] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [isAvatarSheetOpen, setIsAvatarSheetOpen] = useState(false);
   const [isPasswordSheetOpen, setIsPasswordSheetOpen] = useState(false);
   const [keyboardOffset, setKeyboardOffset] = useState(0);
 
@@ -223,6 +224,25 @@ export default function ProfileSettings({
   const dynamicPlaceholder = currentDisplayName || getFallbackDisplayName(profile?.name) || "Display Name";
   const activeSlug = newSlug || currentSlug || 'slug';
 
+  const openAvatarSheet = () => {
+    if (uploadingAvatar) return;
+    setIsAvatarSheetOpen(true);
+  };
+
+  const closeAvatarSheet = () => {
+    setIsAvatarSheetOpen(false);
+  };
+
+  const handleChangeAvatarClick = () => {
+    closeAvatarSheet();
+    fileInputRef.current?.click();
+  };
+
+  const handleRemoveAvatarClick = () => {
+    closeAvatarSheet();
+    handleDeleteAvatar();
+  };
+
   const openPasswordSheet = () => {
     setIsPasswordSheetOpen(true);
   };
@@ -333,71 +353,78 @@ export default function ProfileSettings({
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            justifyContent: 'center',
-            gap: '12px'
+            justifyContent: 'center'
           }}>
-            <div style={{ 
-              width: '72px', 
-              height: '72px', 
-              borderRadius: '50%', 
-              backgroundColor: '#111111', 
-              border: '1px solid #333333',
-              overflow: 'hidden', 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center',
-              fontWeight: '600',
-              color: '#FFFFFF',
-              flexShrink: 0
-            }}>
-              {avatarUrl ? (
+            <button
+              type="button"
+              disabled={uploadingAvatar}
+              onClick={openAvatarSheet}
+              aria-label="Profile picture options"
+              style={{
+                width: '76px',
+                height: '76px',
+                borderRadius: '50%',
+                backgroundColor: '#111111',
+                border: '1px solid #333333',
+                overflow: 'hidden',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontWeight: '600',
+                color: '#FFFFFF',
+                padding: 0,
+                cursor: uploadingAvatar ? 'wait' : 'pointer',
+                opacity: uploadingAvatar ? 0.7 : 1,
+                flexShrink: 0
+              }}
+            >
+              {uploadingAvatar ? (
+                <span
+                  aria-label="Uploading"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '3.5px'
+                  }}
+                >
+                  <span
+                    style={{
+                      width: '4px',
+                      height: '4px',
+                      borderRadius: '50%',
+                      backgroundColor: '#FFFFFF',
+                      animation: 'pushDotPulse 1s infinite ease-in-out',
+                      animationDelay: '0s'
+                    }}
+                  />
+                  <span
+                    style={{
+                      width: '4px',
+                      height: '4px',
+                      borderRadius: '50%',
+                      backgroundColor: '#FFFFFF',
+                      animation: 'pushDotPulse 1s infinite ease-in-out',
+                      animationDelay: '0.18s'
+                    }}
+                  />
+                  <span
+                    style={{
+                      width: '4px',
+                      height: '4px',
+                      borderRadius: '50%',
+                      backgroundColor: '#FFFFFF',
+                      animation: 'pushDotPulse 1s infinite ease-in-out',
+                      animationDelay: '0.36s'
+                    }}
+                  />
+                </span>
+              ) : avatarUrl ? (
                 <img src={avatarUrl} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               ) : (
                 <span style={{ fontSize: '20px', fontWeight: '500' }}>{getInitials(profile?.name, profile?.email)}</span>
               )}
-            </div>
-
-            <div style={{ display: 'flex', gap: '12px', alignItems: 'center', justifyContent: 'center' }}>
-              <button 
-                type="button"
-                disabled={uploadingAvatar}
-                onClick={() => fileInputRef.current?.click()}
-                style={{
-                  background: '#161616',
-                  border: '1px solid #2C2C2E',
-                  color: '#FFFFFF',
-                  padding: '8px 14px',
-                  borderRadius: '4px',
-                  fontSize: '11px',
-                  letterSpacing: '1px',
-                  lineHeight: '1.3',
-                  textAlign: 'center',
-                  cursor: uploadingAvatar ? 'not-allowed' : 'pointer'
-                }}>
-                CHANGE<br />PICTURE
-              </button>
-
-              {avatarUrl && (
-                <button 
-                  type="button"
-                  disabled={uploadingAvatar}
-                  onClick={handleDeleteAvatar}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    color: '#FFFFFF',
-                    padding: '6px 4px',
-                    fontSize: '11px',
-                    letterSpacing: '1px',
-                    lineHeight: '1.3',
-                    textAlign: 'center',
-                    cursor: uploadingAvatar ? 'not-allowed' : 'pointer',
-                    opacity: uploadingAvatar ? 0.6 : 1
-                  }}>
-                  REMOVE<br />PICTURE
-                </button>
-              )}
-            </div>
+            </button>
           </div>
         )}
 
@@ -638,7 +665,119 @@ export default function ProfileSettings({
         </div>
       </div>
 
-      {/* ===== BOTTOM SHEET ===== */}
+      {/* ===== AVATAR ACTION BOTTOM SHEET ===== */}
+      <div
+        onClick={closeAvatarSheet}
+        style={{
+          position: 'fixed',
+          inset: 0,
+          backgroundColor: 'rgba(0,0,0,0.6)',
+          zIndex: 1100,
+          opacity: isAvatarSheetOpen ? 1 : 0,
+          pointerEvents: isAvatarSheetOpen ? 'auto' : 'none',
+          transition: 'opacity 0.3s ease',
+        }}
+      />
+
+      <div
+        style={{
+          position: 'fixed',
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 1101,
+          backgroundColor: '#111111',
+          borderTopLeftRadius: '20px',
+          borderTopRightRadius: '20px',
+          display: 'flex',
+          flexDirection: 'column',
+          transform: isAvatarSheetOpen ? 'translateY(0)' : 'translateY(110%)',
+          transition: 'transform 0.35s cubic-bezier(0.32, 0.72, 0, 1)',
+          willChange: 'transform',
+          boxShadow: '0 -10px 40px rgba(0,0,0,0.5)',
+          paddingBottom: 'max(20px, env(safe-area-inset-bottom))',
+        }}
+      >
+        <div style={{
+          width: '40px',
+          height: '4px',
+          backgroundColor: '#333333',
+          borderRadius: '2px',
+          margin: '12px auto 8px',
+          flexShrink: 0,
+        }} />
+
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center', 
+          padding: '8px 20px 16px',
+          flexShrink: 0,
+        }}>
+          <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '600', letterSpacing: '1.5px', color: '#FFFFFF' }}>
+            PROFILE PICTURE
+          </h3>
+          <button
+            type="button"
+            onClick={closeAvatarSheet}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: '#888888',
+              fontSize: '22px',
+              cursor: 'pointer',
+              padding: '4px 8px',
+              lineHeight: 1,
+            }}
+          >
+            ×
+          </button>
+        </div>
+
+        <div style={{ padding: '0 20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <button
+            type="button"
+            onClick={handleChangeAvatarClick}
+            style={{
+              width: '100%',
+              padding: '14px',
+              borderRadius: '12px',
+              border: 'none',
+              background: '#FFFFFF',
+              color: '#000000',
+              fontSize: '12px',
+              fontWeight: '700',
+              letterSpacing: '1.5px',
+              cursor: 'pointer',
+            }}
+          >
+            CHANGE PICTURE
+          </button>
+
+          {avatarUrl && (
+            <button
+              type="button"
+              onClick={handleRemoveAvatarClick}
+              style={{
+                width: '100%',
+                padding: '14px',
+                borderRadius: '12px',
+                border: '1px solid #2A2A2A',
+                background: '#181818',
+                color: '#FF4D4D',
+                fontSize: '12px',
+                fontWeight: '700',
+                letterSpacing: '1.5px',
+                cursor: 'pointer',
+              }}
+            >
+              REMOVE PICTURE
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* ===== PASSWORD BOTTOM SHEET ===== */}
       {/* Backdrop */}
       <div
         onClick={closePasswordSheet}
