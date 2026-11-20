@@ -19,15 +19,17 @@ function AmbassadorDashboardSection({ ambassadorData, profile }: { ambassadorDat
 
   return (
     <div style={{ marginTop: '10px' }}>
-      <AmbassadorDashboard 
-        ambassadorData={ambassadorData} 
-        profile={profile} 
+      <AmbassadorDashboard
+        ambassadorData={ambassadorData}
+        profile={profile}
         isOwner={true}
-        ambassadorState={ambassadorState} 
+        ambassadorState={ambassadorState}
       />
     </div>
   );
 }
+
+const stripQueryParams = (url: string) => url.split('?')[0];
 
 export default function ProfilePage() {
   const navigate = useNavigate();
@@ -81,8 +83,8 @@ export default function ProfilePage() {
     localStorage.setItem('currentView', newView);
   };
 
-  useEffect(() => { 
-    fetchUserData(); 
+  useEffect(() => {
+    fetchUserData();
   }, []);
 
   const fetchUnreadCounts = useCallback(async () => {
@@ -224,7 +226,7 @@ export default function ProfilePage() {
         });
       }
 
-      let { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+      const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single();
 
       const normalizedRole = prof?.role ? String(prof.role).toUpperCase().trim() : '';
       const isStaff = ['SUPER_ADMIN', 'ADMIN', 'STAFF'].includes(normalizedRole);
@@ -234,7 +236,7 @@ export default function ProfilePage() {
         return;
       }
 
-      const fetchedAvatar = prof?.avatar_url || prof?.avatar || null;
+      const fetchedAvatar = prof?.avatar_url || null;
       setProfile({ ...prof, email: user.email, avatar_url: fetchedAvatar });
       setAvatarUrl(fetchedAvatar);
 
@@ -290,10 +292,15 @@ export default function ProfilePage() {
       setCropModalOpen(false);
       showToast("Uploading cropped image...", "#3498db");
 
+      if (avatarUrl) {
+        await deleteFromCloudinary(stripQueryParams(avatarUrl));
+      }
+
       const uploadedUrl = await uploadToCloudinary(croppedFile, 'avatars', profile.id);
 
       if (uploadedUrl) {
-        const urlWithCacheBust = `${uploadedUrl}?v=${Date.now()}`;
+        const cleanUploadedUrl = stripQueryParams(uploadedUrl);
+        const urlWithCacheBust = `${cleanUploadedUrl}?v=${Date.now()}`;
 
         const { data, error } = await supabase
           .from('profiles')
@@ -328,8 +335,9 @@ export default function ProfilePage() {
       setUploadingAvatar(true);
       showToast("Removing profile picture...", "#3498db");
 
-      if (avatarUrl) {
-        await deleteFromCloudinary(avatarUrl);
+      const currentUrl = avatarUrl || profile?.avatar_url;
+      if (currentUrl) {
+        await deleteFromCloudinary(stripQueryParams(currentUrl));
       }
 
       const { data, error } = await supabase
@@ -355,11 +363,11 @@ export default function ProfilePage() {
     }
   };
 
-  const handleSignOut = async () => { 
+  const handleSignOut = async () => {
     localStorage.removeItem('currentView');
     localStorage.removeItem('portalMode');
-    await supabase.auth.signOut(); 
-    window.location.href = '/'; 
+    await supabase.auth.signOut();
+    window.location.href = '/';
   };
 
   const handleDeleteAccount = async () => {
@@ -528,12 +536,12 @@ export default function ProfilePage() {
 
   return (
     <div style={{ backgroundColor: '#000', minHeight: '100vh', color: '#fff', padding: view === 'notifications' || view === 'communication' ? '0' : '40px 20px', fontFamily: "'Inter', sans-serif", width: '100%', boxSizing: 'border-box', overflowX: 'hidden' }}>
-      <input 
-        type="file" 
-        ref={fileInputRef} 
-        onChange={handleFileSelect} 
-        accept="image/*" 
-        style={{ display: 'none' }} 
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileSelect}
+        accept="image/*"
+        style={{ display: 'none' }}
       />
 
       {toast && <Toast message={toast.message} color={toast.color} />}
@@ -543,20 +551,20 @@ export default function ProfilePage() {
           <div style={{ background: '#111', border: '1px solid #222', borderRadius: '8px', padding: '25px', maxWidth: '400px', width: '100%' }}>
             <h3 style={{ margin: '0 0 10px 0', fontSize: '16px', color: '#ff4444', letterSpacing: '1px' }}>DELETE ACCOUNT</h3>
             <p style={{ fontSize: '13px', color: '#ccc', marginBottom: '20px' }}>This action is permanent. Enter your password to confirm deletion:</p>
-            <input 
-              type="password" 
-              placeholder="Password" 
-              value={deleteConfirmPassword} 
+            <input
+              type="password"
+              placeholder="Password"
+              value={deleteConfirmPassword}
               onChange={(e) => setDeleteConfirmPassword(e.target.value)}
               style={{ width: '100%', padding: '10px 0', background: 'transparent', border: 'none', borderBottom: '1px solid #333', color: '#fff', marginBottom: '20px', outline: 'none', fontSize: '15px', boxSizing: 'border-box' }}
             />
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-              <button 
+              <button
                 onClick={() => { setShowConfirm(false); setDeleteConfirmPassword(''); }}
                 style={{ background: 'transparent', border: '1px solid #333', color: '#aaa', padding: '8px 16px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', letterSpacing: '1px' }}>
                 CANCEL
               </button>
-              <button 
+              <button
                 onClick={handleDeleteAccount}
                 style={{ background: '#ff4444', border: 'none', color: '#fff', padding: '8px 16px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', letterSpacing: '1px', fontWeight: 'bold' }}>
                 DELETE
@@ -566,56 +574,56 @@ export default function ProfilePage() {
         </div>
       )}
 
-      <ImageCropModal 
-        isOpen={cropModalOpen} 
-        selectedImageSrc={selectedImageSrc} 
-        isAmbassadorActive={isAmbassadorActive} 
-        onClose={() => setCropModalOpen(false)} 
-        onApply={handleApplyCropAndUpload} 
+      <ImageCropModal
+        isOpen={cropModalOpen}
+        selectedImageSrc={selectedImageSrc}
+        isAmbassadorActive={isAmbassadorActive}
+        onClose={() => setCropModalOpen(false)}
+        onApply={handleApplyCropAndUpload}
       />
 
-      <ProfileDetailsSheet 
-        isOpen={isDetailsSheetOpen} 
-        onClose={() => setIsDetailsSheetOpen(false)} 
-        profile={profile} 
+      <ProfileDetailsSheet
+        isOpen={isDetailsSheetOpen}
+        onClose={() => setIsDetailsSheetOpen(false)}
+        profile={profile}
         ambassadorData={ambassadorData}
-        avatarUrl={avatarUrl} 
-        getInitials={getInitials} 
+        avatarUrl={avatarUrl}
+        getInitials={getInitials}
         portalMode={portalMode}
-        isAmbassador={isAmbassador} 
+        isAmbassador={isAmbassador}
       />
 
       <div style={{ width: '100%' }}>
         {view === 'notifications' ? (
-          <NotificationsView 
-            userId={profile?.id} 
+          <NotificationsView
+            userId={profile?.id}
             targetAudience={['CUSTOMER', 'ALL', 'SPECIFIC']}
             onBack={() => {
               changeView('profile');
               fetchUnreadCounts();
-            }} 
+            }}
           />
         ) : view === 'communication' ? (
-          <CommunicationView 
+          <CommunicationView
             userId={profile?.id}
-            userEmail={profile?.email} 
+            userEmail={profile?.email}
             onBack={() => {
               changeView('profile');
               fetchUnreadCounts();
-            }} 
+            }}
           />
         ) : view === 'settings' ? (
-          <ProfileSettings 
-            profile={profile} 
-            avatarUrl={avatarUrl} 
-            isAmbassadorActive={isAmbassadorActive} 
-            uploadingAvatar={uploadingAvatar} 
-            fileInputRef={fileInputRef} 
-            newName={newName} 
-            newEmail={newEmail} 
+          <ProfileSettings
+            profile={profile}
+            avatarUrl={avatarUrl}
+            isAmbassadorActive={isAmbassadorActive}
+            uploadingAvatar={uploadingAvatar}
+            fileInputRef={fileInputRef}
+            newName={newName}
+            newEmail={newEmail}
             currentPassword={currentPassword}
             setCurrentPassword={setCurrentPassword}
-            newPassword={newPassword} 
+            newPassword={newPassword}
             currentSlug={currentSlug}
             newSlug={newSlug}
             setNewSlug={setNewSlug}
@@ -624,26 +632,26 @@ export default function ProfilePage() {
             currentPayoutDetails={currentPayoutDetails}
             newPayoutNumber={newPayoutNumber}
             setNewPayoutNumber={setNewPayoutNumber}
-            setNewName={setNewName} 
-            setNewEmail={setNewEmail} 
-            setNewPassword={setNewPassword} 
-            getInitials={getInitials} 
-            handleDeleteAvatar={handleDeleteAvatar} 
-            handleUpdate={handleUpdate} 
-            handleSignOut={handleSignOut} 
-            setShowConfirm={setShowConfirm} 
-            onChangeView={changeView} 
+            setNewName={setNewName}
+            setNewEmail={setNewEmail}
+            setNewPassword={setNewPassword}
+            getInitials={getInitials}
+            handleDeleteAvatar={handleDeleteAvatar}
+            handleUpdate={handleUpdate}
+            handleSignOut={handleSignOut}
+            setShowConfirm={setShowConfirm}
+            onChangeView={changeView}
           />
         ) : (
           <>
-            <ProfileHeader 
-              profile={profile} 
-              avatarUrl={avatarUrl} 
-              isAmbassador={isAmbassador} 
-              isAmbassadorActive={isAmbassadorActive} 
-              togglePortalMode={togglePortalMode} 
-              getInitials={getInitials} 
-              onChangeView={changeView} 
+            <ProfileHeader
+              profile={profile}
+              avatarUrl={avatarUrl}
+              isAmbassador={isAmbassador}
+              isAmbassadorActive={isAmbassadorActive}
+              togglePortalMode={togglePortalMode}
+              getInitials={getInitials}
+              onChangeView={changeView}
               onOpenProfileDetails={() => setIsDetailsSheetOpen(true)}
               onOpenNotifications={() => changeView('notifications')}
               onOpenCommunication={() => changeView('communication')}
