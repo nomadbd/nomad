@@ -1,9 +1,8 @@
-import React, { useState, useEffect, lazy, Suspense } from 'react';
+import React, { useState, lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 
 import { CartProvider } from './context/CartContext';
 import { useSession } from './hooks/useSession';
-import { subscribeUserToPush } from './utils/pushManager';
 
 import ProfilePage from './pages/ProfilePage';
 import AdminDashboard from './pages/dashboard/AdminDashboard';
@@ -45,16 +44,6 @@ const AppContent: React.FC<AppContentProps> = ({
 }) => {
   const location = useLocation();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    if (!session) return;
-
-    const isAdminRoute = location.pathname.startsWith('/admin');
-
-    if (isAdminRoute) {
-      subscribeUserToPush();
-    }
-  }, [session, location.pathname]);
 
   const isProfileRoute =
     location.pathname === '/profile' || location.pathname.startsWith('/profile/');
