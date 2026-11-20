@@ -56,7 +56,9 @@ const AppContent: React.FC<AppContentProps> = ({
     }
   }, [session, location.pathname]);
 
-  const showHeader = !location.pathname.startsWith('/admin');
+  const isProfileRoute =
+    location.pathname === '/profile' || location.pathname.startsWith('/profile/');
+  const showHeader = !location.pathname.startsWith('/admin') && !isProfileRoute;
 
   const handleCloseSearch = () => {
     setIsSearchOpen(false);
@@ -80,14 +82,13 @@ const AppContent: React.FC<AppContentProps> = ({
           }}
           isSearchOpen={isSearchOpen}
           isAuthOpen={isAuthOpen}
-          isProfileActive={location.pathname === '/profile'}
+          isProfileActive={isProfileRoute}
           isCheckingOut={isCheckingOut}
           onCheckoutBack={() => setIsCheckingOut(false)}
         />
       )}
 
       <div
-        className="animate-fade-in"
         style={{
           minHeight: '100vh',
           backgroundColor: 'black',
