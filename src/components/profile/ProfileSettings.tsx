@@ -72,17 +72,23 @@ export default function ProfileSettings({
   const [isPasswordSheetOpen, setIsPasswordSheetOpen] = useState(false);
   const [isAvatarSheetOpen, setIsAvatarSheetOpen] = useState(false);
   const [keyboardOffset, setKeyboardOffset] = useState(0);
-  const [avatarCacheBust, setAvatarCacheBust] = useState<number>(() => Date.now());
+  const [avatarVersion, setAvatarVersion] = useState<number>(() => Date.now());
+  const [localDeletedAvatar, setLocalDeletedAvatar] = useState(false);
 
   const headerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setAvatarCacheBust(Date.now());
+    if (avatarUrl) {
+      setLocalDeletedAvatar(false);
+    }
+    setAvatarVersion(Date.now());
   }, [avatarUrl, uploadingAvatar]);
 
+  const effectiveAvatarUrl = localDeletedAvatar ? null : avatarUrl;
+
   const getCacheBustedUrl = (url: string) => {
-    const separator = url.includes('?') ? '&' : '?';
-    return `${url}${separator}cb=${avatarCacheBust}`;
+    const cleanUrl = url.split('?')[0];
+    return `${cleanUrl}?v=${avatarVersion}`;
   };
 
   // ===== Jitter-free Fixed Header + Keyboard Offset for Sheet =====
@@ -239,7 +245,7 @@ export default function ProfileSettings({
 
   const handleSelectPhotoFromSheet = () => {
     setIsAvatarSheetOpen(false);
-    setAvatarCacheBust(Date.now());
+    setAvatarVersion(Date.now());
     setTimeout(() => {
       fileInputRef.current?.click();
     }, 150);
@@ -247,7 +253,8 @@ export default function ProfileSettings({
 
   const handleRemovePhotoFromSheet = async () => {
     setIsAvatarSheetOpen(false);
-    setAvatarCacheBust(Date.now());
+    setLocalDeletedAvatar(true);
+    setAvatarVersion(Date.now());
     await handleDeleteAvatar();
   };
 
@@ -358,10 +365,10 @@ export default function ProfileSettings({
                 transition: 'transform 0.2s ease, border-color 0.2s ease, opacity 0.2s ease'
               }}
             >
-              {avatarUrl ? (
+              {effectiveAvatarUrl ? (
                 <img
-                  key={`${avatarUrl}-${avatarCacheBust}`}
-                  src={getCacheBustedUrl(avatarUrl)}
+                  key={`${effectiveAvatarUrl}-${avatarVersion}`}
+                  src={getCacheBustedUrl(effectiveAvatarUrl)}
                   alt="Avatar"
                   style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
                 />
@@ -637,11 +644,11 @@ export default function ProfileSettings({
               alignItems: 'center',
             }}
           >
-            <span>{avatarUrl ? 'Change Picture' : 'Upload Picture'}</span>
+            <span>{effectiveAvatarUrl ? 'Change Picture' : 'Upload Picture'}</span>
             <span style={{ color: '#A1A1AA', fontSize: '14px' }}>›</span>
           </button>
 
-          {avatarUrl && (
+          {effectiveAvatarUrl && (
             <button
               type="button"
               onClick={handleRemovePhotoFromSheet}
