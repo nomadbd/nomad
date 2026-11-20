@@ -7,6 +7,8 @@ interface ProfileSettingsProps {
   avatarUrl: string | null;
   isAmbassadorActive: boolean;
   uploadingAvatar: boolean;
+  avatarFeedback?: { type: 'success' | 'error'; text: string } | null;
+  clearAvatarFeedback?: () => void;
   fileInputRef: RefObject<HTMLInputElement | null>;
   newName: string;
   newEmail: string;
@@ -16,9 +18,6 @@ interface ProfileSettingsProps {
   currentSlug?: string;
   newSlug: string;
   setNewSlug: (val: string) => void;
-  currentDisplayName?: string;
-  newDisplayName: string;
-  setNewDisplayName: (val: string) => void;
   payoutMethod: string;
   setPayoutMethod: (val: string) => void;
   currentPayoutDetails?: string;
@@ -29,17 +28,73 @@ interface ProfileSettingsProps {
   setNewPassword: (val: string) => void;
   getInitials: (name?: string, email?: string) => string;
   handleDeleteAvatar: () => void;
-  handleUpdate: () => void;
+  handleUpdate: () => void | Promise<void>;
   handleSignOut: () => void;
   setShowConfirm: (val: boolean) => void;
   onChangeView: (view: 'profile' | 'settings') => void;
+  settingsFeedback?: { type: 'success' | 'error'; text: string } | null;
+  clearSettingsFeedback?: () => void;
+  fieldErrors?: {
+    name?: string;
+    email?: string;
+    slug?: string;
+    payoutNumber?: string;
+    password?: string;
+  };
+  clearFieldError?: (field: 'name' | 'email' | 'slug' | 'payoutNumber' | 'password') => void;
 }
+
+const LoadingDots = ({ dotSize = '3.5px', gap = '3px' }: { dotSize?: string; gap?: string }) => (
+  <span
+    aria-label="Loading"
+    style={{
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap,
+      height: '10px',
+    }}
+  >
+    <span
+      style={{
+        width: dotSize,
+        height: dotSize,
+        borderRadius: '50%',
+        backgroundColor: 'currentColor',
+        animation: 'pushDotPulse 1s infinite ease-in-out',
+        animationDelay: '0s',
+      }}
+    />
+    <span
+      style={{
+        width: dotSize,
+        height: dotSize,
+        borderRadius: '50%',
+        backgroundColor: 'currentColor',
+        animation: 'pushDotPulse 1s infinite ease-in-out',
+        animationDelay: '0.18s',
+      }}
+    />
+    <span
+      style={{
+        width: dotSize,
+        height: dotSize,
+        borderRadius: '50%',
+        backgroundColor: 'currentColor',
+        animation: 'pushDotPulse 1s infinite ease-in-out',
+        animationDelay: '0.36s',
+      }}
+    />
+  </span>
+);
 
 export default function ProfileSettings({
   profile,
   avatarUrl,
   isAmbassadorActive,
   uploadingAvatar,
+  avatarFeedback,
+  clearAvatarFeedback,
   fileInputRef,
   newName,
   newEmail,
@@ -49,9 +104,6 @@ export default function ProfileSettings({
   currentSlug = '',
   newSlug,
   setNewSlug,
-  currentDisplayName = '',
-  newDisplayName,
-  setNewDisplayName,
   payoutMethod,
   setPayoutMethod,
   currentPayoutDetails = '',
@@ -65,11 +117,19 @@ export default function ProfileSettings({
   handleUpdate,
   handleSignOut,
   setShowConfirm,
-  onChangeView
+  onChangeView,
+  settingsFeedback,
+  clearSettingsFeedback,
+  fieldErrors = {},
+  clearFieldError,
 }: ProfileSettingsProps) {
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushLoading, setPushLoading] = useState(true);
   const [pushStatus, setPushStatus] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const [isSaving, setIsSaving] = useState(false);
+  const [localError, setLocalError] = useState<string | null>(null);
+
   const [isAvatarSheetOpen, setIsAvatarSheetOpen] = useState(false);
   const [isPasswordSheetOpen, setIsPasswordSheetOpen] = useState(false);
   const [keyboardOffset, setKeyboardOffset] = useState(0);
@@ -86,12 +146,10 @@ export default function ProfileSettings({
     const update = () => {
       cancelAnimationFrame(rafId);
       rafId = requestAnimationFrame(() => {
-        // Header
         if (headerRef.current) {
           headerRef.current.style.transform = `translateY(${vv.offsetTop}px)`;
         }
 
-        // Keyboard height calculation (for Bottom Sheet)
         const offset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
         setKeyboardOffset(offset);
       });
@@ -120,21 +178,25 @@ export default function ProfileSettings({
   }, []);
 
   useEffect(() => {
+    let active = true;
     async function checkPushStatus() {
-      if (isAmbassadorActive) {
-        try {
-          const status = await isUserSubscribed();
-          setPushEnabled(Boolean(status));
-        } catch {
-          setPushEnabled(false);
-        } finally {
-          setPushLoading(false);
-        }
-      } else {
-        setPushLoading(false);
+      if (!isAmbassadorActive) {
+        if (active) setPushLoading(false);
+        return;
+      }
+      try {
+        const status = await isUserSubscribed();
+        if (active) setPushEnabled(Boolean(status));
+      } catch {
+        if (active) setPushEnabled(false);
+      } finally {
+        if (active) setPushLoading(false);
       }
     }
     checkPushStatus();
+    return () => {
+      active = false;
+    };
   }, [isAmbassadorActive]);
 
   const handlePushToggle = async () => {
@@ -197,35 +259,56 @@ export default function ProfileSettings({
     !isReservedSlug(newSlug)
   );
 
-  // ===== Header SAVE-এ পাসওয়ার্ড আর গণনা হবে না =====
+  // ===== Header SAVE dirty check =====
   const isDirty = Boolean(
     (newName && newName !== profile?.name) ||
     (newEmail && newEmail !== profile?.email) ||
-    (newDisplayName && newDisplayName !== currentDisplayName) ||
     (newSlug && newSlug !== currentSlug && isSlugValid) ||
     (newPayoutNumber && newPayoutNumber !== cleanPayoutNumber(currentPayoutDetails))
   );
 
   const isPasswordDirty = currentPassword.length > 0 && newPassword.length > 0;
 
+  const triggerSaveAction = async () => {
+    if (isSaving || !isDirty) return;
+    setLocalError(null);
+    clearSettingsFeedback?.();
+
+    if (newName && newName.trim().length < 2) {
+      setLocalError('Name must be at least 2 characters long.');
+      return;
+    }
+
+    if (newEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail.trim())) {
+      setLocalError('Please enter a valid email address.');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      await Promise.resolve(handleUpdate());
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const labelStyle = { fontSize: '10px', color: '#FFFFFF', letterSpacing: '1.5px', marginBottom: '4px', fontWeight: '500' };
-  const inputStyle = { width: '100%', padding: '8px 0', background: 'transparent', border: 'none', borderBottom: '1px solid #282828', color: '#FFFFFF', marginBottom: '16px', outline: 'none', fontSize: '14px' };
+  const baseInputStyle = { width: '100%', padding: '8px 0', background: 'transparent', border: 'none', borderBottom: '1px solid #282828', color: '#FFFFFF', outline: 'none', fontSize: '14px', transition: 'border-color 0.2s ease' };
+  const getInputStyle = (hasError?: boolean, bottomMargin = '16px') => ({
+    ...baseInputStyle,
+    borderBottom: hasError ? '1px solid #F87171' : '1px solid #282828',
+    marginBottom: hasError ? '6px' : bottomMargin
+  });
+  const inlineErrorStyle = { color: '#F87171', fontSize: '11px', margin: '0 0 16px 0', letterSpacing: '0.4px', lineHeight: '1.4' };
   const navButtonStyle = { background: 'transparent', border: 'none', color: '#FFFFFF', cursor: 'pointer', fontSize: '12px', letterSpacing: '1px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', textAlign: 'left' as const, padding: '12px 0' };
   const actionButtonStyle = { background: 'transparent', border: 'none', color: '#FFFFFF', cursor: 'pointer', fontSize: '11px', letterSpacing: '1.5px', textTransform: 'uppercase' as const, display: 'block', width: '100%', textAlign: 'left' as const, fontWeight: '500', marginTop: '10px' };
 
   const payoutOptions = ['bKash', 'Nagad', 'Rocket', 'Card'];
-
-  const getFallbackDisplayName = (name?: string) => {
-    if (!name?.trim()) return '';
-    const firstWord = name.trim().split(/\s+/)[0];
-    return Array.from(firstWord).slice(0, 10).join('');
-  };
-
-  const dynamicPlaceholder = currentDisplayName || getFallbackDisplayName(profile?.name) || "Display Name";
   const activeSlug = newSlug || currentSlug || 'slug';
 
   const openAvatarSheet = () => {
     if (uploadingAvatar) return;
+    clearAvatarFeedback?.();
     setIsAvatarSheetOpen(true);
   };
 
@@ -244,6 +327,7 @@ export default function ProfileSettings({
   };
 
   const openPasswordSheet = () => {
+    clearFieldError?.('password');
     setIsPasswordSheetOpen(true);
   };
 
@@ -251,13 +335,18 @@ export default function ProfileSettings({
     setIsPasswordSheetOpen(false);
     setCurrentPassword('');
     setNewPassword('');
+    clearFieldError?.('password');
   };
 
-  const handlePasswordUpdate = () => {
+  const handlePasswordUpdate = async () => {
     if (!isPasswordDirty) return;
-    handleUpdate();
-    closePasswordSheet();
+    await Promise.resolve(handleUpdate());
   };
+
+  const showSaveButton = isDirty || isSaving;
+  const combinedFeedback = localError
+    ? { type: 'error' as const, text: localError }
+    : settingsFeedback || null;
 
   return (
     <div style={{ 
@@ -268,7 +357,6 @@ export default function ProfileSettings({
       display: 'flex',
       flexDirection: 'column'
     }}>
-      {/* Keyframes for animated loading dots */}
       <style>{`
         @keyframes pushDotPulse {
           0%, 80%, 100% {
@@ -308,24 +396,32 @@ export default function ProfileSettings({
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
           <button
-            onClick={handleUpdate}
-            disabled={!isDirty}
+            type="button"
+            onClick={triggerSaveAction}
+            disabled={!isDirty || isSaving}
             style={{
-              background: '#FFFFFF',
+              background: isSaving ? '#E5E5E5' : '#FFFFFF',
               color: '#000000',
               border: '1px solid #FFFFFF',
-              padding: '6px 16px',
+              minWidth: '64px',
+              height: '26px',
+              padding: '0 14px',
               borderRadius: '16px',
               fontSize: '10px',
               fontWeight: '700',
               letterSpacing: '1.5px',
-              cursor: isDirty ? 'pointer' : 'default',
-              opacity: isDirty ? 1 : 0,
-              pointerEvents: isDirty ? 'auto' : 'none',
-              transition: 'all 0.25s ease'
+              cursor: isSaving ? 'wait' : isDirty ? 'pointer' : 'default',
+              opacity: showSaveButton ? 1 : 0,
+              pointerEvents: showSaveButton ? 'auto' : 'none',
+              transition: 'opacity 0.25s ease, background 0.15s ease',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxSizing: 'border-box',
+              flexShrink: 0,
             }}
           >
-            SAVE
+            {isSaving ? <LoadingDots dotSize="3px" gap="2.5px" /> : 'SAVE'}
           </button>
 
           <svg onClick={() => onChangeView('profile')} width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2" cursor="pointer">
@@ -379,73 +475,58 @@ export default function ProfileSettings({
               }}
             >
               {uploadingAvatar ? (
-                <span
-                  aria-label="Uploading"
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '3.5px'
-                  }}
-                >
-                  <span
-                    style={{
-                      width: '4px',
-                      height: '4px',
-                      borderRadius: '50%',
-                      backgroundColor: '#FFFFFF',
-                      animation: 'pushDotPulse 1s infinite ease-in-out',
-                      animationDelay: '0s'
-                    }}
-                  />
-                  <span
-                    style={{
-                      width: '4px',
-                      height: '4px',
-                      borderRadius: '50%',
-                      backgroundColor: '#FFFFFF',
-                      animation: 'pushDotPulse 1s infinite ease-in-out',
-                      animationDelay: '0.18s'
-                    }}
-                  />
-                  <span
-                    style={{
-                      width: '4px',
-                      height: '4px',
-                      borderRadius: '50%',
-                      backgroundColor: '#FFFFFF',
-                      animation: 'pushDotPulse 1s infinite ease-in-out',
-                      animationDelay: '0.36s'
-                    }}
-                  />
-                </span>
+                <LoadingDots dotSize="4px" gap="3.5px" />
               ) : avatarUrl ? (
                 <img src={avatarUrl} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               ) : (
                 <span style={{ fontSize: '20px', fontWeight: '500' }}>{getInitials(profile?.name, profile?.email)}</span>
               )}
             </button>
+
+            {avatarFeedback && (
+              <p style={{
+                margin: '8px 0 0 0',
+                fontSize: '11px',
+                color: avatarFeedback.type === 'success' ? '#4ADE80' : '#F87171',
+                letterSpacing: '0.4px',
+                textAlign: 'center'
+              }}>
+                {avatarFeedback.text}
+              </p>
+            )}
           </div>
         )}
 
         <p style={labelStyle}>NAME</p>
-        <input placeholder={profile?.name || "Full Name"} value={newName} onChange={(e) => setNewName(e.target.value)} style={inputStyle} />
+        <input
+          placeholder={profile?.name || "Full Name"}
+          value={newName}
+          onChange={(e) => {
+            setNewName(e.target.value);
+            clearFieldError?.('name');
+            clearSettingsFeedback?.();
+            setLocalError(null);
+          }}
+          style={getInputStyle(Boolean(fieldErrors.name))}
+        />
+        {fieldErrors.name && <p style={inlineErrorStyle}>{fieldErrors.name}</p>}
 
         <p style={labelStyle}>EMAIL ADDRESS</p>
-        <input placeholder={profile?.email || "Email Address"} value={newEmail} onChange={(e) => setNewEmail(e.target.value)} style={inputStyle} />
+        <input
+          placeholder={profile?.email || "Email Address"}
+          value={newEmail}
+          onChange={(e) => {
+            setNewEmail(e.target.value);
+            clearFieldError?.('email');
+            clearSettingsFeedback?.();
+            setLocalError(null);
+          }}
+          style={getInputStyle(Boolean(fieldErrors.email))}
+        />
+        {fieldErrors.email && <p style={inlineErrorStyle}>{fieldErrors.email}</p>}
 
         {isAmbassadorActive && (
           <>
-            <p style={labelStyle}>DISPLAY NAME</p>
-            <input 
-              type="text"
-              maxLength={10}
-              placeholder={dynamicPlaceholder} 
-              value={newDisplayName} 
-              onChange={(e) => setNewDisplayName(e.target.value)} 
-              style={inputStyle} 
-            />
-
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <p style={labelStyle}>STORE SLUG</p>
               <span style={{ fontSize: '10px', color: '#888888', marginBottom: '4px' }}>/{activeSlug}</span>
@@ -459,24 +540,29 @@ export default function ProfileSettings({
                   .replace(/\s+/g, '-')
                   .replace(/[^a-z0-9-]/g, '');
                 setNewSlug(formattedSlug);
+                clearFieldError?.('slug');
+                clearSettingsFeedback?.();
               }} 
-              style={{
-                ...inputStyle,
-                marginBottom: (newSlug && (!isSlugValid || isReservedSlug(newSlug))) ? '6px' : '16px'
-              }} 
+              style={getInputStyle(
+                Boolean(
+                  fieldErrors.slug ||
+                  (newSlug && (isReservedSlug(newSlug) || newSlug.length < 3))
+                )
+              )} 
             />
 
-            {/* ===== SLUG ERROR MESSAGES ===== */}
-            {newSlug && isReservedSlug(newSlug) && (
-              <p style={{ color: '#ff4d4d', fontSize: '11px', margin: '0 0 16px 0', letterSpacing: '0.5px' }}>
+            {/* ===== SLUG INLINE MESSAGES ===== */}
+            {fieldErrors.slug ? (
+              <p style={inlineErrorStyle}>{fieldErrors.slug}</p>
+            ) : newSlug && isReservedSlug(newSlug) ? (
+              <p style={inlineErrorStyle}>
                 This name is reserved by system. Please choose another.
               </p>
-            )}
-            {newSlug && !isReservedSlug(newSlug) && newSlug.length < 3 && (
-              <p style={{ color: '#ff4d4d', fontSize: '11px', margin: '0 0 16px 0', letterSpacing: '0.5px' }}>
+            ) : newSlug && !isReservedSlug(newSlug) && newSlug.length < 3 ? (
+              <p style={inlineErrorStyle}>
                 Slug must be at least 3 characters long.
               </p>
-            )}
+            ) : null}
 
             <p style={labelStyle}>DEFAULT PAYOUT METHOD</p>
             <div style={{
@@ -493,7 +579,10 @@ export default function ProfileSettings({
                   <button
                     key={option}
                     type="button"
-                    onClick={() => setPayoutMethod(option)}
+                    onClick={() => {
+                      setPayoutMethod(option);
+                      clearSettingsFeedback?.();
+                    }}
                     style={{
                       display: 'flex',
                       alignItems: 'center',
@@ -530,9 +619,14 @@ export default function ProfileSettings({
             <input 
               placeholder={cleanPayoutNumber(currentPayoutDetails) || "017XXXXXXXX"} 
               value={newPayoutNumber} 
-              onChange={(e) => setNewPayoutNumber(e.target.value)} 
-              style={inputStyle} 
+              onChange={(e) => {
+                setNewPayoutNumber(e.target.value);
+                clearFieldError?.('payoutNumber');
+                clearSettingsFeedback?.();
+              }} 
+              style={getInputStyle(Boolean(fieldErrors.payoutNumber))} 
             />
+            {fieldErrors.payoutNumber && <p style={inlineErrorStyle}>{fieldErrors.payoutNumber}</p>}
 
             <p style={labelStyle}>REAL-TIME SALES ALERTS</p>
             <div style={{
@@ -540,7 +634,7 @@ export default function ProfileSettings({
               border: '1px solid #222222',
               padding: '12px 14px',
               borderRadius: '6px',
-              marginBottom: '20px'
+              marginBottom: '16px'
             }}>
               <div style={{
                 display: 'flex',
@@ -579,51 +673,7 @@ export default function ProfileSettings({
                     boxSizing: 'border-box'
                   }}
                 >
-                  {pushLoading ? (
-                    <span
-                      aria-label="Loading"
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '3px',
-                        height: '10px'
-                      }}
-                    >
-                      <span
-                        style={{
-                          width: '3.5px',
-                          height: '3.5px',
-                          borderRadius: '50%',
-                          backgroundColor: 'currentColor',
-                          animation: 'pushDotPulse 1s infinite ease-in-out',
-                          animationDelay: '0s'
-                        }}
-                      />
-                      <span
-                        style={{
-                          width: '3.5px',
-                          height: '3.5px',
-                          borderRadius: '50%',
-                          backgroundColor: 'currentColor',
-                          animation: 'pushDotPulse 1s infinite ease-in-out',
-                          animationDelay: '0.18s'
-                        }}
-                      />
-                      <span
-                        style={{
-                          width: '3.5px',
-                          height: '3.5px',
-                          borderRadius: '50%',
-                          backgroundColor: 'currentColor',
-                          animation: 'pushDotPulse 1s infinite ease-in-out',
-                          animationDelay: '0.36s'
-                        }}
-                      />
-                    </span>
-                  ) : (
-                    pushEnabled ? 'DISABLE' : 'ENABLE'
-                  )}
+                  {pushLoading ? <LoadingDots /> : (pushEnabled ? 'DISABLE' : 'ENABLE')}
                 </button>
               </div>
 
@@ -639,6 +689,25 @@ export default function ProfileSettings({
               )}
             </div>
           </>
+        )}
+
+        {combinedFeedback && (
+          <div style={{
+            background: '#111111',
+            border: `1px solid ${combinedFeedback.type === 'success' ? '#1E3A2F' : '#3B1D1D'}`,
+            padding: '10px 14px',
+            borderRadius: '6px',
+            marginBottom: '16px'
+          }}>
+            <p style={{
+              margin: 0,
+              fontSize: '11px',
+              color: combinedFeedback.type === 'success' ? '#4ADE80' : '#F87171',
+              letterSpacing: '0.4px'
+            }}>
+              {combinedFeedback.text}
+            </p>
+          </div>
         )}
 
         <div style={{ 
@@ -778,7 +847,6 @@ export default function ProfileSettings({
       </div>
 
       {/* ===== PASSWORD BOTTOM SHEET ===== */}
-      {/* Backdrop */}
       <div
         onClick={closePasswordSheet}
         style={{
@@ -792,7 +860,6 @@ export default function ProfileSettings({
         }}
       />
 
-      {/* Sheet */}
       <div
         style={{
           position: 'fixed',
@@ -812,7 +879,6 @@ export default function ProfileSettings({
           boxShadow: '0 -10px 40px rgba(0,0,0,0.5)',
         }}
       >
-        {/* Handle bar */}
         <div style={{
           width: '40px',
           height: '4px',
@@ -822,7 +888,6 @@ export default function ProfileSettings({
           flexShrink: 0,
         }} />
 
-        {/* Header */}
         <div style={{ 
           display: 'flex', 
           justifyContent: 'space-between', 
@@ -849,7 +914,6 @@ export default function ProfileSettings({
           </button>
         </div>
 
-        {/* Scrollable Fields */}
         <div style={{ 
           padding: '0 20px', 
           overflowY: 'auto',
@@ -860,7 +924,10 @@ export default function ProfileSettings({
             type="password" 
             placeholder="Current Password" 
             value={currentPassword} 
-            onChange={(e) => setCurrentPassword(e.target.value)} 
+            onChange={(e) => {
+              setCurrentPassword(e.target.value);
+              clearFieldError?.('password');
+            }} 
             style={{ ...inputStyle, marginBottom: '20px' }} 
           />
 
@@ -869,12 +936,15 @@ export default function ProfileSettings({
             type="password" 
             placeholder="New Password" 
             value={newPassword} 
-            onChange={(e) => setNewPassword(e.target.value)} 
-            style={{ ...inputStyle, marginBottom: '8px' }} 
+            onChange={(e) => {
+              setNewPassword(e.target.value);
+              clearFieldError?.('password');
+            }} 
+            style={getInputStyle(Boolean(fieldErrors.password), '8px')} 
           />
+          {fieldErrors.password && <p style={{ ...inlineErrorStyle, marginBottom: '8px' }}>{fieldErrors.password}</p>}
         </div>
 
-        {/* Sticky Footer Button */}
         <div style={{ 
           padding: '16px 20px',
           paddingBottom: 'max(20px, env(safe-area-inset-bottom))',
