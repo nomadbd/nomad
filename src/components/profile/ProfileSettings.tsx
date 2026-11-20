@@ -69,6 +69,7 @@ export default function ProfileSettings({
 }: ProfileSettingsProps) {
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushLoading, setPushLoading] = useState(true);
+  const [pushStatusMsg, setPushStatusMsg] = useState<string | null>(null);
   const [isPasswordSheetOpen, setIsPasswordSheetOpen] = useState(false);
   const [isAvatarSheetOpen, setIsAvatarSheetOpen] = useState(false);
   const [keyboardOffset, setKeyboardOffset] = useState(0);
@@ -91,7 +92,6 @@ export default function ProfileSettings({
     return `${cleanUrl}?v=${avatarVersion}`;
   };
 
-  // ===== Jitter-free Fixed Header + Keyboard Offset for Sheet =====
   useEffect(() => {
     const vv = window.visualViewport;
     if (!vv) return;
@@ -122,7 +122,6 @@ export default function ProfileSettings({
     };
   }, []);
 
-  // ===== Body scroll lock =====
   useEffect(() => {
     const originalStyle = window.getComputedStyle(document.body).overflow;
     document.body.style.overflow = 'hidden';
@@ -132,7 +131,6 @@ export default function ProfileSettings({
     };
   }, []);
 
-  // ===== Push Notification Status Check =====
   useEffect(() => {
     let isMounted = true;
 
@@ -171,20 +169,23 @@ export default function ProfileSettings({
   const handlePushToggle = async () => {
     if (pushLoading) return;
     setPushLoading(true);
+    setPushStatusMsg(null);
     try {
       if (pushEnabled) {
-        const success = await unsubscribeUserFromPush();
-        if (success) {
+        const res = await unsubscribeUserFromPush();
+        if (res.ok) {
           setPushEnabled(false);
         }
+        setPushStatusMsg(res.message || null);
       } else {
-        const success = await subscribeUserToPush();
-        if (success) {
+        const res = await subscribeUserToPush();
+        if (res.ok) {
           setPushEnabled(true);
         }
+        setPushStatusMsg(res.message || null);
       }
-    } catch (err) {
-      console.error('Failed to toggle push subscription:', err);
+    } catch (err: any) {
+      setPushStatusMsg(err?.message || 'Failed to update push setting.');
     } finally {
       setPushLoading(false);
     }
@@ -269,7 +270,6 @@ export default function ProfileSettings({
       flexDirection: 'column'
     }}>
 
-      {/* ===== FIXED HEADER ===== */}
       <div
         ref={headerRef}
         style={{
@@ -323,7 +323,6 @@ export default function ProfileSettings({
         </div>
       </div>
 
-      {/* ===== SCROLLABLE CONTENT ===== */}
       <div style={{
         flex: 1,
         overflowY: 'auto',
@@ -420,7 +419,6 @@ export default function ProfileSettings({
               }}
             />
 
-            {/* ===== SLUG ERROR MESSAGES ===== */}
             {newSlug && isReservedSlug(newSlug) && (
               <p style={{ color: '#ff4d4d', fontSize: '11px', margin: '0 0 16px 0', letterSpacing: '0.5px' }}>
                 This name is reserved by system. Please choose another.
@@ -490,39 +488,53 @@ export default function ProfileSettings({
 
             <p style={labelStyle}>REAL-TIME SALES ALERTS</p>
             <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
               background: '#111111',
               border: '1px solid #222222',
               padding: '10px 14px',
               borderRadius: '6px',
               marginBottom: '20px'
             }}>
-              <span style={{ fontSize: '11px', color: '#FFFFFF', letterSpacing: '0.5px' }}>
-                Sales & admin alerts
-              </span>
-              <button
-                type="button"
-                disabled={pushLoading}
-                onClick={handlePushToggle}
-                style={{
-                  background: pushEnabled ? 'transparent' : '#FFFFFF',
-                  color: pushEnabled ? '#FFFFFF' : '#000000',
-                  border: pushEnabled ? '1px solid #333333' : '1px solid #FFFFFF',
-                  padding: '4px 12px',
-                  borderRadius: '16px',
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }}>
+                <span style={{ fontSize: '11px', color: '#FFFFFF', letterSpacing: '0.5px' }}>
+                  Sales & admin alerts
+                </span>
+                <button
+                  type="button"
+                  disabled={pushLoading}
+                  onClick={handlePushToggle}
+                  style={{
+                    background: pushEnabled ? 'transparent' : '#FFFFFF',
+                    color: pushEnabled ? '#FFFFFF' : '#000000',
+                    border: pushEnabled ? '1px solid #333333' : '1px solid #FFFFFF',
+                    padding: '4px 12px',
+                    borderRadius: '16px',
+                    fontSize: '10px',
+                    fontWeight: '600',
+                    letterSpacing: '1px',
+                    cursor: pushLoading ? 'default' : 'pointer',
+                    transition: 'all 0.15s ease',
+                    opacity: pushLoading ? 0.65 : 1,
+                    flexShrink: 0
+                  }}
+                >
+                  {pushLoading ? '...' : (pushEnabled ? 'DISABLE' : 'ENABLE')}
+                </button>
+              </div>
+              {pushStatusMsg && (
+                <p style={{
+                  margin: '8px 0 0 0',
                   fontSize: '10px',
-                  fontWeight: '600',
-                  letterSpacing: '1px',
-                  cursor: pushLoading ? 'default' : 'pointer',
-                  transition: 'all 0.15s ease',
-                  opacity: pushLoading ? 0.65 : 1,
-                  flexShrink: 0
-                }}
-              >
-                {pushLoading ? '...' : (pushEnabled ? 'DISABLE' : 'ENABLE')}
-              </button>
+                  color: pushEnabled ? '#A1A1AA' : '#FF7A7A',
+                  letterSpacing: '0.3px',
+                  lineHeight: 1.4
+                }}>
+                  {pushStatusMsg}
+                </p>
+              )}
             </div>
           </>
         )}
@@ -551,7 +563,6 @@ export default function ProfileSettings({
         </div>
       </div>
 
-      {/* ===== AVATAR ACTION BOTTOM SHEET ===== */}
       <div
         onClick={() => setIsAvatarSheetOpen(false)}
         style={{
@@ -585,7 +596,6 @@ export default function ProfileSettings({
           boxShadow: '0 -10px 40px rgba(0,0,0,0.6)',
         }}
       >
-        {/* Handle bar */}
         <div style={{
           width: '40px',
           height: '4px',
@@ -595,7 +605,6 @@ export default function ProfileSettings({
           flexShrink: 0,
         }} />
 
-        {/* Sheet Header */}
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
@@ -623,7 +632,6 @@ export default function ProfileSettings({
           </button>
         </div>
 
-        {/* Sheet Actions */}
         <div style={{ padding: '14px 20px 6px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
           <button
             type="button"
@@ -677,7 +685,6 @@ export default function ProfileSettings({
         </div>
       </div>
 
-      {/* ===== PASSWORD BOTTOM SHEET ===== */}
       <div
         onClick={closePasswordSheet}
         style={{
@@ -710,7 +717,6 @@ export default function ProfileSettings({
           boxShadow: '0 -10px 40px rgba(0,0,0,0.5)',
         }}
       >
-        {/* Handle bar */}
         <div style={{
           width: '40px',
           height: '4px',
@@ -720,7 +726,6 @@ export default function ProfileSettings({
           flexShrink: 0,
         }} />
 
-        {/* Header */}
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
@@ -748,7 +753,6 @@ export default function ProfileSettings({
           </button>
         </div>
 
-        {/* Scrollable Fields */}
         <div style={{
           padding: '0 20px',
           overflowY: 'auto',
@@ -773,7 +777,6 @@ export default function ProfileSettings({
           />
         </div>
 
-        {/* Sticky Footer Button */}
         <div style={{
           padding: '16px 20px',
           paddingBottom: 'max(20px, env(safe-area-inset-bottom))',
