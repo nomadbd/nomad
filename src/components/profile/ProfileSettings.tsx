@@ -131,7 +131,7 @@ export default function ProfileSettings({
   const [keyboardOffset, setKeyboardOffset] = useState(0);
 
   const headerRef = useRef<HTMLDivElement>(null);
-  const saveTimeoutRef = useRef<number | null>(null);
+  const saveTimerRef = useRef<number | null>(null);
 
   // ===== Jitter-free Fixed Header + Keyboard Offset for Sheet =====
   useEffect(() => {
@@ -171,28 +171,32 @@ export default function ProfileSettings({
 
     return () => {
       document.body.style.overflow = originalStyle;
-      if (saveTimeoutRef.current) {
-        window.clearTimeout(saveTimeoutRef.current);
+      if (saveTimerRef.current) {
+        window.clearTimeout(saveTimerRef.current);
       }
     };
   }, []);
 
   useEffect(() => {
+    let active = true;
     async function checkPushStatus() {
-      if (isAmbassadorActive) {
-        try {
-          const status = await isUserSubscribed();
-          setPushEnabled(Boolean(status));
-        } catch {
-          setPushEnabled(false);
-        } finally {
-          setPushLoading(false);
-        }
-      } else {
-        setPushLoading(false);
+      if (!isAmbassadorActive) {
+        if (active) setPushLoading(false);
+        return;
+      }
+      try {
+        const status = await isUserSubscribed();
+        if (active) setPushEnabled(Boolean(status));
+      } catch {
+        if (active) setPushEnabled(false);
+      } finally {
+        if (active) setPushLoading(false);
       }
     }
     checkPushStatus();
+    return () => {
+      active = false;
+    };
   }, [isAmbassadorActive]);
 
   const handlePushToggle = async () => {
@@ -248,14 +252,12 @@ export default function ProfileSettings({
     return details.includes(':') ? details.split(':')[1].trim() : details;
   };
 
-  // ===== Slug Validation Rules =====
   const isSlugValid = !newSlug || (
     newSlug.length >= 3 &&
     newSlug.length <= 20 &&
     !isReservedSlug(newSlug)
   );
 
-  // ===== Header SAVE dirty check =====
   const isDirty = Boolean(
     (newName && newName !== profile?.name) ||
     (newEmail && newEmail !== profile?.email) ||
@@ -265,17 +267,6 @@ export default function ProfileSettings({
   );
 
   const isPasswordDirty = currentPassword.length > 0 && newPassword.length > 0;
-
-  // Reset saving state once parent updates profile/slug/payout props after save
-  useEffect(() => {
-    if (isSaving && !isDirty) {
-      setIsSaving(false);
-      if (saveTimeoutRef.current) {
-        window.clearTimeout(saveTimeoutRef.current);
-        saveTimeoutRef.current = null;
-      }
-    }
-  }, [isSaving, isDirty]);
 
   const validateProfileFields = () => {
     const nextErrors: {
@@ -325,7 +316,7 @@ export default function ProfileSettings({
   };
 
   const triggerSaveAction = async () => {
-    if (isSaving) return;
+    if (isSaving || !isDirty) return;
     setSaveFeedback(null);
 
     if (!validateProfileFields()) {
@@ -337,39 +328,30 @@ export default function ProfileSettings({
     }
 
     setIsSaving(true);
-
-    if (saveTimeoutRef.current) {
-      window.clearTimeout(saveTimeoutRef.current);
+    if (saveTimerRef.current) {
+      window.clearTimeout(saveTimerRef.current);
     }
-    saveTimeoutRef.current = window.setTimeout(() => {
+    saveTimerRef.current = window.setTimeout(() => {
       setIsSaving(false);
-      setSaveFeedback({
-        type: 'success',
-        text: 'Changes saved.'
-      });
-    }, 2500);
+    }, 2000);
 
     try {
       await Promise.resolve(handleUpdate());
-      if (saveTimeoutRef.current) {
-        window.clearTimeout(saveTimeoutRef.current);
-        saveTimeoutRef.current = null;
-      }
-      setIsSaving(false);
       setSaveFeedback({
         type: 'success',
         text: 'Changes saved.'
       });
     } catch (err: any) {
-      if (saveTimeoutRef.current) {
-        window.clearTimeout(saveTimeoutRef.current);
-        saveTimeoutRef.current = null;
-      }
-      setIsSaving(false);
       setSaveFeedback({
         type: 'error',
         text: err?.message || 'Could not save changes. Please try again.'
       });
+    } finally {
+      if (saveTimerRef.current) {
+        window.clearTimeout(saveTimerRef.current);
+        saveTimerRef.current = null;
+      }
+      setIsSaving(false);
     }
   };
 
@@ -549,7 +531,7 @@ export default function ProfileSettings({
           <button
             type="button"
             onClick={triggerSaveAction}
-            disabled={(!isDirty && !isSaving) || isSaving}
+            disabled={!isDirty || isSaving}
             style={{
               background: isSaving ? '#E5E5E5' : '#FFFFFF',
               color: '#000000',
