@@ -1,396 +1,768 @@
-import React, { useEffect, useState } from 'react';
-import {
-  isPushSupported,
-  getCurrentPushSubscription,
-  subscribeUserToPush,
-  unsubscribeUserFromPush,
-} from './pushManager';
+import { useState, useEffect, useRef, RefObject } from 'react';
+import { isUserSubscribed, subscribeUserToPush, unsubscribeUserFromPush } from '@/utils/pushManager';
+import { isReservedSlug } from '@/reservedSlugs';
 
 interface ProfileSettingsProps {
-  user: {
-    id: string;
-    email?: string;
-    user_metadata?: {
-      display_name?: string;
-      store_slug?: string;
-      payout_method?: string;
-      payout_number?: string;
-    };
-  };
-  onClose: () => void;
-  onSave?: (updatedData: {
-    displayName: string;
-    storeSlug: string;
-    payoutMethod: string;
-    payoutNumber: string;
-  }) => Promise<void> | void;
-  onChangePassword?: () => void;
-  onSignOut?: () => void;
-  onDeleteAccount?: () => void;
+  profile: any;
+  avatarUrl: string | null;
+  isAmbassadorActive: boolean;
+  uploadingAvatar: boolean;
+  fileInputRef: RefObject<HTMLInputElement | null>;
+  newName: string;
+  newEmail: string;
+  currentPassword: string;
+  setCurrentPassword: (val: string) => void;
+  newPassword: string;
+  currentSlug?: string;
+  newSlug: string;
+  setNewSlug: (val: string) => void;
+  currentDisplayName?: string;
+  newDisplayName: string;
+  setNewDisplayName: (val: string) => void;
+  payoutMethod: string;
+  setPayoutMethod: (val: string) => void;
+  currentPayoutDetails?: string;
+  newPayoutNumber: string;
+  setNewPayoutNumber: (val: string) => void;
+  setNewName: (val: string) => void;
+  setNewEmail: (val: string) => void;
+  setNewPassword: (val: string) => void;
+  getInitials: (name?: string, email?: string) => string;
+  handleDeleteAvatar: () => void;
+  handleUpdate: () => void;
+  handleSignOut: () => void;
+  setShowConfirm: (val: boolean) => void;
+  onChangeView: (view: 'profile' | 'settings') => void;
 }
 
-const AnimatedDots: React.FC = () => {
-  return (
-    <span className="inline-flex items-center justify-center gap-[3px]" aria-label="Loading">
-      <span className="w-[4px] h-[4px] rounded-full bg-current animate-bounce [animation-delay:-0.3s]" />
-      <span className="w-[4px] h-[4px] rounded-full bg-current animate-bounce [animation-delay:-0.15s]" />
-      <span className="w-[4px] h-[4px] rounded-full bg-current animate-bounce" />
-    </span>
-  );
-};
+export default function ProfileSettings({
+  profile,
+  avatarUrl,
+  isAmbassadorActive,
+  uploadingAvatar,
+  fileInputRef,
+  newName,
+  newEmail,
+  currentPassword,
+  setCurrentPassword,
+  newPassword,
+  currentSlug = '',
+  newSlug,
+  setNewSlug,
+  currentDisplayName = '',
+  newDisplayName,
+  setNewDisplayName,
+  payoutMethod,
+  setPayoutMethod,
+  currentPayoutDetails = '',
+  newPayoutNumber,
+  setNewPayoutNumber,
+  setNewName,
+  setNewEmail,
+  setNewPassword,
+  getInitials,
+  handleDeleteAvatar,
+  handleUpdate,
+  handleSignOut,
+  setShowConfirm,
+  onChangeView
+}: ProfileSettingsProps) {
+  const [pushEnabled, setPushEnabled] = useState(false);
+  const [pushLoading, setPushLoading] = useState(true);
+  const [pushStatus, setPushStatus] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [isPasswordSheetOpen, setIsPasswordSheetOpen] = useState(false);
+  const [keyboardOffset, setKeyboardOffset] = useState(0);
 
-export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
-  user,
-  onClose,
-  onSave,
-  onChangePassword,
-  onSignOut,
-  onDeleteAccount,
-}) => {
-  const [displayName, setDisplayName] = useState(
-    user?.user_metadata?.display_name || 'Kawsar'
-  );
-  const [storeSlug, setStoreSlug] = useState(
-    user?.user_metadata?.store_slug || 'kawsarahmed'
-  );
-  const [payoutMethod, setPayoutMethod] = useState(
-    user?.user_metadata?.payout_method || 'bKash'
-  );
-  const [payoutNumber, setPayoutNumber] = useState(
-    user?.user_metadata?.payout_number || '017XXXXXXXX'
-  );
+  const headerRef = useRef<HTMLDivElement>(null);
 
-  const [isSavingProfile, setIsSavingProfile] = useState(false);
-  const [profileMessage, setProfileMessage] = useState<{
-    type: 'success' | 'error';
-    text: string;
-  } | null>(null);
-
-  const [pushSupported, setPushSupported] = useState<boolean>(true);
-  const [isPushEnabled, setIsPushEnabled] = useState<boolean>(false);
-  const [isPushLoading, setIsPushLoading] = useState<boolean>(false);
-  const [pushStatus, setPushStatus] = useState<{
-    type: 'success' | 'error';
-    text: string;
-  } | null>(null);
-
+  // ===== Jitter-free Fixed Header + Keyboard Offset for Sheet =====
   useEffect(() => {
-    let isMounted = true;
+    const vv = window.visualViewport;
+    if (!vv) return;
 
-    const checkPushState = async () => {
-      const supported = isPushSupported();
-      if (!isMounted) return;
-      setPushSupported(supported);
+    let rafId = 0;
 
-      if (!supported) {
-        setIsPushEnabled(false);
-        return;
-      }
+    const update = () => {
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => {
+        // Header
+        if (headerRef.current) {
+          headerRef.current.style.transform = `translateY(${vv.offsetTop}px)`;
+        }
 
-      try {
-        const sub = await getCurrentPushSubscription();
-        if (!isMounted) return;
-        const hasPermission =
-          typeof Notification !== 'undefined' && Notification.permission === 'granted';
-        setIsPushEnabled(Boolean(sub && hasPermission));
-      } catch {
-        if (!isMounted) return;
-        setIsPushEnabled(false);
-      }
+        // Keyboard height calculation (for Bottom Sheet)
+        const offset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+        setKeyboardOffset(offset);
+      });
     };
 
-    checkPushState();
+    update();
+
+    vv.addEventListener('resize', update, { passive: true });
+    vv.addEventListener('scroll', update, { passive: true });
 
     return () => {
-      isMounted = false;
+      cancelAnimationFrame(rafId);
+      vv.removeEventListener('resize', update);
+      vv.removeEventListener('scroll', update);
     };
-  }, [user?.id]);
+  }, []);
 
-  const handleTogglePushAlerts = async () => {
-    if (isPushLoading) return;
+  // ===== Body scroll lock =====
+  useEffect(() => {
+    const originalStyle = window.getComputedStyle(document.body).overflow;
+    document.body.style.overflow = 'hidden';
 
-    setIsPushLoading(true);
+    return () => {
+      document.body.style.overflow = originalStyle;
+    };
+  }, []);
+
+  useEffect(() => {
+    async function checkPushStatus() {
+      if (isAmbassadorActive) {
+        try {
+          const status = await isUserSubscribed();
+          setPushEnabled(Boolean(status));
+        } catch {
+          setPushEnabled(false);
+        } finally {
+          setPushLoading(false);
+        }
+      } else {
+        setPushLoading(false);
+      }
+    }
+    checkPushStatus();
+  }, [isAmbassadorActive]);
+
+  const handlePushToggle = async () => {
+    if (pushLoading) return;
+    setPushLoading(true);
     setPushStatus(null);
 
     try {
-      if (isPushEnabled) {
-        const result = await unsubscribeUserFromPush(user.id);
-        if (result.ok) {
-          setIsPushEnabled(false);
+      if (pushEnabled) {
+        const result: any = await unsubscribeUserFromPush();
+        const isOk = typeof result === 'boolean' ? result : Boolean(result?.ok);
+        if (isOk) {
+          setPushEnabled(false);
           setPushStatus({
             type: 'error',
-            text: result.message || 'Real-time sales alerts disabled.',
+            text: (typeof result === 'object' && result?.message) || 'Real-time sales alerts disabled.'
           });
         } else {
           setPushStatus({
             type: 'error',
-            text: result.message || 'Could not disable sales alerts.',
+            text: (typeof result === 'object' && result?.message) || 'Failed to disable sales alerts.'
           });
         }
       } else {
-        const result = await subscribeUserToPush(user.id);
-        if (result.ok) {
-          setIsPushEnabled(true);
+        const result: any = await subscribeUserToPush();
+        const isOk = typeof result === 'boolean' ? result : Boolean(result?.ok);
+        if (isOk) {
+          setPushEnabled(true);
           setPushStatus({
             type: 'success',
-            text: result.message || 'Real-time sales alerts enabled.',
+            text: (typeof result === 'object' && result?.message) || 'Real-time sales alerts enabled.'
           });
         } else {
-          setIsPushEnabled(false);
+          setPushEnabled(false);
           setPushStatus({
             type: 'error',
-            text: result.message || 'Could not enable sales alerts.',
+            text: (typeof result === 'object' && result?.message) || 'Failed to enable sales alerts.'
           });
         }
       }
-    } catch (error) {
-      const errMsg =
-        error instanceof Error ? error.message : 'Unexpected error while updating alerts.';
+    } catch (err: any) {
       setPushStatus({
         type: 'error',
-        text: errMsg,
+        text: err?.message || 'Unexpected error updating alert preferences.'
       });
     } finally {
-      setIsPushLoading(false);
+      setPushLoading(false);
     }
   };
 
-  const handleSaveProfile = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!onSave || isSavingProfile) return;
-
-    setIsSavingProfile(true);
-    setProfileMessage(null);
-
-    try {
-      await onSave({
-        displayName,
-        storeSlug,
-        payoutMethod,
-        payoutNumber,
-      });
-      setProfileMessage({
-        type: 'success',
-        text: 'Settings saved.',
-      });
-    } catch (error) {
-      setProfileMessage({
-        type: 'error',
-        text: error instanceof Error ? error.message : 'Failed to save settings.',
-      });
-    } finally {
-      setIsSavingProfile(false);
-    }
+  const cleanPayoutNumber = (details?: string) => {
+    if (!details) return '';
+    return details.includes(':') ? details.split(':')[1].trim() : details;
   };
 
-  const payoutMethods = ['bKash', 'Nagad', 'Rocket'];
+  // ===== Slug Validation Rules =====
+  const isSlugValid = !newSlug || (
+    newSlug.length >= 3 && 
+    newSlug.length <= 20 && 
+    !isReservedSlug(newSlug)
+  );
+
+  // ===== Header SAVE-এ পাসওয়ার্ড আর গণনা হবে না =====
+  const isDirty = Boolean(
+    (newName && newName !== profile?.name) ||
+    (newEmail && newEmail !== profile?.email) ||
+    (newDisplayName && newDisplayName !== currentDisplayName) ||
+    (newSlug && newSlug !== currentSlug && isSlugValid) ||
+    (newPayoutNumber && newPayoutNumber !== cleanPayoutNumber(currentPayoutDetails))
+  );
+
+  const isPasswordDirty = currentPassword.length > 0 && newPassword.length > 0;
+
+  const labelStyle = { fontSize: '10px', color: '#FFFFFF', letterSpacing: '1.5px', marginBottom: '4px', fontWeight: '500' };
+  const inputStyle = { width: '100%', padding: '8px 0', background: 'transparent', border: 'none', borderBottom: '1px solid #282828', color: '#FFFFFF', marginBottom: '16px', outline: 'none', fontSize: '14px' };
+  const navButtonStyle = { background: 'transparent', border: 'none', color: '#FFFFFF', cursor: 'pointer', fontSize: '12px', letterSpacing: '1px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', textAlign: 'left' as const, padding: '12px 0' };
+  const actionButtonStyle = { background: 'transparent', border: 'none', color: '#FFFFFF', cursor: 'pointer', fontSize: '11px', letterSpacing: '1.5px', textTransform: 'uppercase' as const, display: 'block', width: '100%', textAlign: 'left' as const, fontWeight: '500', marginTop: '10px' };
+
+  const payoutOptions = ['bKash', 'Nagad', 'Rocket', 'Card'];
+
+  const getFallbackDisplayName = (name?: string) => {
+    if (!name?.trim()) return '';
+    const firstWord = name.trim().split(/\s+/)[0];
+    return Array.from(firstWord).slice(0, 10).join('');
+  };
+
+  const dynamicPlaceholder = currentDisplayName || getFallbackDisplayName(profile?.name) || "Display Name";
+  const activeSlug = newSlug || currentSlug || 'slug';
+
+  const openPasswordSheet = () => {
+    setIsPasswordSheetOpen(true);
+  };
+
+  const closePasswordSheet = () => {
+    setIsPasswordSheetOpen(false);
+    setCurrentPassword('');
+    setNewPassword('');
+  };
+
+  const handlePasswordUpdate = () => {
+    if (!isPasswordDirty) return;
+    handleUpdate();
+    closePasswordSheet();
+  };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black text-white overflow-y-auto px-5 py-6">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-lg font-semibold tracking-[0.2em] uppercase text-white">
-          SETTINGS
-        </h1>
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Close settings"
-          className="text-white/80 hover:text-white text-2xl leading-none px-1 py-0.5 transition-colors cursor-pointer"
-        >
-          ✕
-        </button>
+    <div style={{ 
+      position: 'fixed', 
+      inset: 0, 
+      backgroundColor: '#000000',
+      zIndex: 999,
+      display: 'flex',
+      flexDirection: 'column'
+    }}>
+      {/* Keyframes for animated loading dots */}
+      <style>{`
+        @keyframes pushDotPulse {
+          0%, 80%, 100% {
+            transform: translateY(0);
+            opacity: 0.35;
+          }
+          40% {
+            transform: translateY(-2.5px);
+            opacity: 1;
+          }
+        }
+      `}</style>
+
+      {/* ===== FIXED HEADER ===== */}
+      <div
+        ref={headerRef}
+        style={{ 
+          position: 'fixed', 
+          top: 0,
+          left: 0,
+          width: '100%',
+          zIndex: 1000, 
+          backgroundColor: '#000000',
+          padding: '12px 20px',
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center', 
+          borderBottom: '1px solid #1A1A1A',
+          boxSizing: 'border-box',
+          transform: 'translateY(0)',
+          willChange: 'transform',
+          paddingTop: 'max(12px, env(safe-area-inset-top))',
+          backfaceVisibility: 'hidden',
+        }}
+      >
+        <h2 style={{ fontWeight: '600', letterSpacing: '3px', fontSize: '15px', color: '#FFFFFF', margin: 0 }}>SETTINGS</h2>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <button
+            onClick={handleUpdate}
+            disabled={!isDirty}
+            style={{
+              background: '#FFFFFF',
+              color: '#000000',
+              border: '1px solid #FFFFFF',
+              padding: '6px 16px',
+              borderRadius: '16px',
+              fontSize: '10px',
+              fontWeight: '700',
+              letterSpacing: '1.5px',
+              cursor: isDirty ? 'pointer' : 'default',
+              opacity: isDirty ? 1 : 0,
+              pointerEvents: isDirty ? 'auto' : 'none',
+              transition: 'all 0.25s ease'
+            }}
+          >
+            SAVE
+          </button>
+
+          <svg onClick={() => onChangeView('profile')} width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2" cursor="pointer">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </div>
       </div>
 
-      <form onSubmit={handleSaveProfile} className="space-y-6 max-w-md mx-auto">
-        {/* Email Address */}
-        <div>
-          <label className="block text-[11px] font-medium tracking-[0.16em] uppercase text-neutral-400 mb-2">
-            EMAIL ADDRESS
-          </label>
-          <input
-            type="email"
-            value={user?.email || ''}
-            readOnly
-            className="w-full bg-[#0a0a0a] border border-neutral-800 rounded-md px-3.5 py-3 text-sm text-neutral-300 focus:outline-none"
-          />
-        </div>
+      {/* ===== SCROLLABLE CONTENT ===== */}
+      <div style={{
+        flex: 1,
+        overflowY: 'auto',
+        overflowX: 'hidden',
+        paddingTop: 'calc(80px + env(safe-area-inset-top))',
+        paddingLeft: '20px',
+        paddingRight: '20px',
+        paddingBottom: '40px',
+        WebkitOverflowScrolling: 'touch',
+      }}>
 
-        {/* Display Name */}
-        <div>
-          <label className="block text-[11px] font-medium tracking-[0.16em] uppercase text-neutral-400 mb-2">
-            DISPLAY NAME
-          </label>
-          <input
-            type="text"
-            value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
-            className="w-full bg-[#0a0a0a] border border-neutral-800 rounded-md px-3.5 py-3 text-sm text-white focus:outline-none focus:border-neutral-600"
-          />
-        </div>
-
-        {/* Store Slug */}
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <label className="block text-[11px] font-medium tracking-[0.16em] uppercase text-neutral-400">
-              STORE SLUG
-            </label>
-            <span className="text-xs text-neutral-500">/{storeSlug}</span>
-          </div>
-          <input
-            type="text"
-            value={storeSlug}
-            onChange={(e) => setStoreSlug(e.target.value)}
-            className="w-full bg-[#0a0a0a] border border-neutral-800 rounded-md px-3.5 py-3 text-sm text-white focus:outline-none focus:border-neutral-600"
-          />
-        </div>
-
-        {/* Default Payout Method */}
-        <div>
-          <label className="block text-[11px] font-medium tracking-[0.16em] uppercase text-neutral-400 mb-3">
-            DEFAULT PAYOUT METHOD
-          </label>
-          <div className="flex items-center gap-2.5 overflow-x-auto pb-1">
-            {payoutMethods.map((method) => {
-              const active = payoutMethod === method;
-              return (
-                <button
-                  key={method}
-                  type="button"
-                  onClick={() => setPayoutMethod(method)}
-                  className={`px-4 py-2 rounded-full text-sm border transition-colors whitespace-nowrap cursor-pointer ${
-                    active
-                      ? 'border-white text-white bg-neutral-900'
-                      : 'border-neutral-800 text-neutral-400 hover:border-neutral-700'
-                  }`}
-                >
-                  <span className="mr-1.5">{active ? '●' : '○'}</span>
-                  {method}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Payout Number */}
-        <div>
-          <label className="block text-[11px] font-medium tracking-[0.16em] uppercase text-neutral-400 mb-2">
-            PAYOUT NUMBER
-          </label>
-          <input
-            type="text"
-            value={payoutNumber}
-            onChange={(e) => setPayoutNumber(e.target.value)}
-            className="w-full bg-[#0a0a0a] border border-neutral-800 rounded-md px-3.5 py-3 text-sm text-white focus:outline-none focus:border-neutral-600"
-          />
-        </div>
-
-        {/* Real-Time Sales Alerts */}
-        <div>
-          <label className="block text-[11px] font-medium tracking-[0.16em] uppercase text-neutral-400 mb-2">
-            REAL-TIME SALES ALERTS
-          </label>
-
-          <div className="bg-[#0b0b0b] border border-neutral-800 rounded-xl px-4 py-4">
-            <div className="flex items-center justify-between gap-4">
-              <div className="min-w-0">
-                <p className="text-sm font-medium text-white">Sales &amp; admin alerts</p>
-              </div>
-
-              <button
-                type="button"
-                disabled={isPushLoading || !pushSupported}
-                onClick={handleTogglePushAlerts}
-                className={`min-w-[84px] h-[30px] px-3.5 rounded-md text-[11px] font-semibold tracking-[0.12em] uppercase inline-flex items-center justify-center shrink-0 transition-colors ${
-                  !pushSupported
-                    ? 'bg-neutral-800 text-neutral-500 cursor-not-allowed'
-                    : isPushLoading
-                    ? 'bg-neutral-700 text-neutral-200 cursor-wait'
-                    : isPushEnabled
-                    ? 'bg-neutral-800 text-white border border-neutral-700 hover:bg-neutral-700 cursor-pointer'
-                    : 'bg-white text-black hover:bg-neutral-200 cursor-pointer'
-                }`}
-              >
-                {isPushLoading ? (
-                  <AnimatedDots />
-                ) : !pushSupported ? (
-                  'UNSUPPORTED'
-                ) : isPushEnabled ? (
-                  'DISABLE'
-                ) : (
-                  'ENABLE'
-                )}
-              </button>
+        {isAmbassadorActive && (
+          <div style={{
+            marginBottom: '24px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '12px'
+          }}>
+            <div style={{ 
+              width: '72px', 
+              height: '72px', 
+              borderRadius: '50%', 
+              backgroundColor: '#111111', 
+              border: '1px solid #333333',
+              overflow: 'hidden', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              fontWeight: '600',
+              color: '#FFFFFF',
+              flexShrink: 0
+            }}>
+              {avatarUrl ? (
+                <img src={avatarUrl} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : (
+                <span style={{ fontSize: '20px', fontWeight: '500' }}>{getInitials(profile?.name, profile?.email)}</span>
+              )}
             </div>
 
-            {!pushSupported && (
-              <p className="mt-2.5 text-xs text-red-400">
-                Push notifications are not supported in this browser.
-              </p>
-            )}
+            <div style={{ display: 'flex', gap: '12px', alignItems: 'center', justifyContent: 'center' }}>
+              <button 
+                type="button"
+                disabled={uploadingAvatar}
+                onClick={() => fileInputRef.current?.click()}
+                style={{
+                  background: '#161616',
+                  border: '1px solid #2C2C2E',
+                  color: '#FFFFFF',
+                  padding: '8px 14px',
+                  borderRadius: '4px',
+                  fontSize: '11px',
+                  letterSpacing: '1px',
+                  lineHeight: '1.3',
+                  textAlign: 'center',
+                  cursor: uploadingAvatar ? 'not-allowed' : 'pointer'
+                }}>
+                CHANGE<br />PICTURE
+              </button>
 
-            {pushStatus && (
-              <p
-                className={`mt-2.5 text-xs ${
-                  pushStatus.type === 'success' ? 'text-emerald-400' : 'text-red-400'
-                }`}
-              >
-                {pushStatus.text}
-              </p>
-            )}
+              {avatarUrl && (
+                <button 
+                  type="button"
+                  disabled={uploadingAvatar}
+                  onClick={handleDeleteAvatar}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: '#FFFFFF',
+                    padding: '6px 4px',
+                    fontSize: '11px',
+                    letterSpacing: '1px',
+                    lineHeight: '1.3',
+                    textAlign: 'center',
+                    cursor: uploadingAvatar ? 'not-allowed' : 'pointer',
+                    opacity: uploadingAvatar ? 0.6 : 1
+                  }}>
+                  REMOVE<br />PICTURE
+                </button>
+              )}
+            </div>
           </div>
-        </div>
-
-        {profileMessage && (
-          <p
-            className={`text-xs ${
-              profileMessage.type === 'success' ? 'text-emerald-400' : 'text-red-400'
-            }`}
-          >
-            {profileMessage.text}
-          </p>
         )}
 
-        {onSave && (
-          <button
-            type="submit"
-            disabled={isSavingProfile}
-            className="w-full py-2.5 rounded-md border border-neutral-700 text-xs font-semibold tracking-[0.14em] uppercase text-white hover:bg-neutral-900 transition-colors cursor-pointer"
-          >
-            {isSavingProfile ? <AnimatedDots /> : 'SAVE CHANGES'}
-          </button>
+        <p style={labelStyle}>NAME</p>
+        <input placeholder={profile?.name || "Full Name"} value={newName} onChange={(e) => setNewName(e.target.value)} style={inputStyle} />
+
+        <p style={labelStyle}>EMAIL ADDRESS</p>
+        <input placeholder={profile?.email || "Email Address"} value={newEmail} onChange={(e) => setNewEmail(e.target.value)} style={inputStyle} />
+
+        {isAmbassadorActive && (
+          <>
+            <p style={labelStyle}>DISPLAY NAME</p>
+            <input 
+              type="text"
+              maxLength={10}
+              placeholder={dynamicPlaceholder} 
+              value={newDisplayName} 
+              onChange={(e) => setNewDisplayName(e.target.value)} 
+              style={inputStyle} 
+            />
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <p style={labelStyle}>STORE SLUG</p>
+              <span style={{ fontSize: '10px', color: '#888888', marginBottom: '4px' }}>/{activeSlug}</span>
+            </div>
+            <input 
+              placeholder={currentSlug || "slug-name"} 
+              value={newSlug} 
+              onChange={(e) => {
+                const formattedSlug = e.target.value
+                  .toLowerCase()
+                  .replace(/\s+/g, '-')
+                  .replace(/[^a-z0-9-]/g, '');
+                setNewSlug(formattedSlug);
+              }} 
+              style={{
+                ...inputStyle,
+                marginBottom: (newSlug && (!isSlugValid || isReservedSlug(newSlug))) ? '6px' : '16px'
+              }} 
+            />
+
+            {/* ===== SLUG ERROR MESSAGES ===== */}
+            {newSlug && isReservedSlug(newSlug) && (
+              <p style={{ color: '#ff4d4d', fontSize: '11px', margin: '0 0 16px 0', letterSpacing: '0.5px' }}>
+                This name is reserved by system. Please choose another.
+              </p>
+            )}
+            {newSlug && !isReservedSlug(newSlug) && newSlug.length < 3 && (
+              <p style={{ color: '#ff4d4d', fontSize: '11px', margin: '0 0 16px 0', letterSpacing: '0.5px' }}>
+                Slug must be at least 3 characters long.
+              </p>
+            )}
+
+            <p style={labelStyle}>DEFAULT PAYOUT METHOD</p>
+            <div style={{
+              display: 'flex',
+              gap: '8px',
+              overflowX: 'auto',
+              paddingBottom: '6px',
+              marginBottom: '16px',
+              scrollbarWidth: 'none'
+            }}>
+              {payoutOptions.map((option) => {
+                const isSelected = Boolean(payoutMethod) && (payoutMethod === option || payoutMethod.startsWith(option));
+                return (
+                  <button
+                    key={option}
+                    type="button"
+                    onClick={() => setPayoutMethod(option)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      padding: '6px 14px',
+                      borderRadius: '20px',
+                      background: isSelected ? '#1A1A1A' : 'transparent',
+                      color: '#FFFFFF',
+                      border: isSelected ? '1px solid #FFFFFF' : '1px solid #222222',
+                      fontSize: '11px',
+                      fontWeight: isSelected ? '500' : '400',
+                      letterSpacing: '1px',
+                      whiteSpace: 'nowrap',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease',
+                      opacity: isSelected ? 1 : 0.6,
+                      flexShrink: 0
+                    }}
+                  >
+                    <span style={{
+                      width: '5px',
+                      height: '5px',
+                      borderRadius: '50%',
+                      background: isSelected ? '#FFFFFF' : 'transparent',
+                      border: isSelected ? '1px solid #FFFFFF' : '1px solid #666666'
+                    }} />
+                    {option}
+                  </button>
+                );
+              })}
+            </div>
+
+            <p style={labelStyle}>PAYOUT NUMBER</p>
+            <input 
+              placeholder={cleanPayoutNumber(currentPayoutDetails) || "017XXXXXXXX"} 
+              value={newPayoutNumber} 
+              onChange={(e) => setNewPayoutNumber(e.target.value)} 
+              style={inputStyle} 
+            />
+
+            <p style={labelStyle}>REAL-TIME SALES ALERTS</p>
+            <div style={{
+              background: '#111111',
+              border: '1px solid #222222',
+              padding: '12px 14px',
+              borderRadius: '6px',
+              marginBottom: '20px'
+            }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '12px'
+              }}>
+                <span style={{ fontSize: '12px', color: '#FFFFFF', letterSpacing: '0.3px' }}>
+                  Sales & admin alerts
+                </span>
+                <button
+                  type="button"
+                  disabled={pushLoading}
+                  onClick={handlePushToggle}
+                  style={{
+                    minWidth: '82px',
+                    height: '26px',
+                    padding: '0 14px',
+                    borderRadius: '16px',
+                    background: pushLoading
+                      ? (pushEnabled ? '#262626' : '#E5E5E5')
+                      : (pushEnabled ? 'transparent' : '#FFFFFF'),
+                    color: pushLoading
+                      ? (pushEnabled ? '#FFFFFF' : '#000000')
+                      : (pushEnabled ? '#FFFFFF' : '#000000'),
+                    border: pushEnabled ? '1px solid #3A3A3C' : '1px solid #FFFFFF',
+                    fontSize: '10px',
+                    fontWeight: '700',
+                    letterSpacing: '1px',
+                    cursor: pushLoading ? 'wait' : 'pointer',
+                    transition: 'background 0.15s ease, color 0.15s ease, border-color 0.15s ease',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                    boxSizing: 'border-box'
+                  }}
+                >
+                  {pushLoading ? (
+                    <span
+                      aria-label="Loading"
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '3px',
+                        height: '10px'
+                      }}
+                    >
+                      <span
+                        style={{
+                          width: '3.5px',
+                          height: '3.5px',
+                          borderRadius: '50%',
+                          backgroundColor: 'currentColor',
+                          animation: 'pushDotPulse 1s infinite ease-in-out',
+                          animationDelay: '0s'
+                        }}
+                      />
+                      <span
+                        style={{
+                          width: '3.5px',
+                          height: '3.5px',
+                          borderRadius: '50%',
+                          backgroundColor: 'currentColor',
+                          animation: 'pushDotPulse 1s infinite ease-in-out',
+                          animationDelay: '0.18s'
+                        }}
+                      />
+                      <span
+                        style={{
+                          width: '3.5px',
+                          height: '3.5px',
+                          borderRadius: '50%',
+                          backgroundColor: 'currentColor',
+                          animation: 'pushDotPulse 1s infinite ease-in-out',
+                          animationDelay: '0.36s'
+                        }}
+                      />
+                    </span>
+                  ) : (
+                    pushEnabled ? 'DISABLE' : 'ENABLE'
+                  )}
+                </button>
+              </div>
+
+              {pushStatus && (
+                <p style={{
+                  margin: '8px 0 0 0',
+                  fontSize: '11px',
+                  color: pushStatus.type === 'success' ? '#4ADE80' : '#F87171',
+                  letterSpacing: '0.3px'
+                }}>
+                  {pushStatus.text}
+                </p>
+              )}
+            </div>
+          </>
         )}
 
-        {/* Footer Actions */}
-        <div className="pt-4 space-y-5">
-          <button
+        <div style={{ 
+          borderTop: isAmbassadorActive ? '1px solid #1C1C1E' : 'none', 
+          paddingTop: '16px', 
+          display: 'flex', 
+          flexDirection: 'column', 
+          gap: '8px' 
+        }}>
+
+          <button 
             type="button"
-            onClick={onChangePassword}
-            className="w-full flex items-center justify-between text-left text-xs font-medium tracking-[0.16em] uppercase text-neutral-300 hover:text-white py-1 cursor-pointer"
+            onClick={openPasswordSheet}
+            style={navButtonStyle}
           >
             <span>CHANGE PASSWORD</span>
-            <span className="text-neutral-500 text-base">›</span>
+            <span style={{ fontSize: '14px', color: '#888888' }}>›</span>
           </button>
 
-          <button
-            type="button"
-            onClick={onSignOut}
-            className="block text-left text-xs font-medium tracking-[0.16em] uppercase text-neutral-300 hover:text-white py-1 cursor-pointer"
-          >
-            SIGN OUT
+          <button onClick={handleSignOut} style={navButtonStyle}>
+            <span>SIGN OUT</span>
           </button>
+          <button onClick={() => setShowConfirm(true)} style={actionButtonStyle}>DELETE ACCOUNT</button>
+        </div>
+      </div>
 
+      {/* ===== BOTTOM SHEET ===== */}
+      {/* Backdrop */}
+      <div
+        onClick={closePasswordSheet}
+        style={{
+          position: 'fixed',
+          inset: 0,
+          backgroundColor: 'rgba(0,0,0,0.6)',
+          zIndex: 1100,
+          opacity: isPasswordSheetOpen ? 1 : 0,
+          pointerEvents: isPasswordSheetOpen ? 'auto' : 'none',
+          transition: 'opacity 0.3s ease',
+        }}
+      />
+
+      {/* Sheet */}
+      <div
+        style={{
+          position: 'fixed',
+          left: 0,
+          right: 0,
+          bottom: keyboardOffset,
+          zIndex: 1101,
+          backgroundColor: '#111111',
+          borderTopLeftRadius: '20px',
+          borderTopRightRadius: '20px',
+          display: 'flex',
+          flexDirection: 'column',
+          maxHeight: '85vh',
+          transform: isPasswordSheetOpen ? 'translateY(0)' : 'translateY(110%)',
+          transition: 'transform 0.35s cubic-bezier(0.32, 0.72, 0, 1), bottom 0.25s ease',
+          willChange: 'transform, bottom',
+          boxShadow: '0 -10px 40px rgba(0,0,0,0.5)',
+        }}
+      >
+        {/* Handle bar */}
+        <div style={{
+          width: '40px',
+          height: '4px',
+          backgroundColor: '#333333',
+          borderRadius: '2px',
+          margin: '12px auto 8px',
+          flexShrink: 0,
+        }} />
+
+        {/* Header */}
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center', 
+          padding: '8px 20px 16px',
+          flexShrink: 0,
+        }}>
+          <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '600', letterSpacing: '1.5px', color: '#FFFFFF' }}>
+            CHANGE PASSWORD
+          </h3>
           <button
-            type="button"
-            onClick={onDeleteAccount}
-            className="block text-left text-xs font-medium tracking-[0.16em] uppercase text-red-500 hover:text-red-400 py-1 cursor-pointer"
+            onClick={closePasswordSheet}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: '#888888',
+              fontSize: '22px',
+              cursor: 'pointer',
+              padding: '4px 8px',
+              lineHeight: 1,
+            }}
           >
-            DELETE ACCOUNT
+            ×
           </button>
         </div>
-      </form>
+
+        {/* Scrollable Fields */}
+        <div style={{ 
+          padding: '0 20px', 
+          overflowY: 'auto',
+          flex: 1,
+        }}>
+          <p style={labelStyle}>CURRENT PASSWORD</p>
+          <input 
+            type="password" 
+            placeholder="Current Password" 
+            value={currentPassword} 
+            onChange={(e) => setCurrentPassword(e.target.value)} 
+            style={{ ...inputStyle, marginBottom: '20px' }} 
+          />
+
+          <p style={labelStyle}>NEW PASSWORD</p>
+          <input 
+            type="password" 
+            placeholder="New Password" 
+            value={newPassword} 
+            onChange={(e) => setNewPassword(e.target.value)} 
+            style={{ ...inputStyle, marginBottom: '8px' }} 
+          />
+        </div>
+
+        {/* Sticky Footer Button */}
+        <div style={{ 
+          padding: '16px 20px',
+          paddingBottom: 'max(20px, env(safe-area-inset-bottom))',
+          flexShrink: 0,
+          borderTop: '1px solid #1A1A1A',
+        }}>
+          <button
+            onClick={handlePasswordUpdate}
+            disabled={!isPasswordDirty}
+            style={{
+              width: '100%',
+              padding: '14px',
+              borderRadius: '12px',
+              border: 'none',
+              background: isPasswordDirty ? '#FFFFFF' : '#222222',
+              color: isPasswordDirty ? '#000000' : '#666666',
+              fontSize: '13px',
+              fontWeight: '700',
+              letterSpacing: '1.5px',
+              cursor: isPasswordDirty ? 'pointer' : 'default',
+              transition: 'all 0.2s ease',
+            }}
+          >
+            UPDATE PASSWORD
+          </button>
+        </div>
+      </div>
     </div>
   );
-};
-
-export default ProfileSettings;
+}
