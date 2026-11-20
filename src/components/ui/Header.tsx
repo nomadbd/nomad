@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useCart } from '@/context/CartContext';
 import { SearchIcon, CartIcon, UserIcon, CloseIcon, BackIcon } from '@/components/icons';
 
@@ -10,7 +11,7 @@ interface HeaderProps {
   onAuthOpen: () => void;
   isSearchOpen: boolean;
   isAuthOpen: boolean;
-  isProfileActive: boolean;
+  isProfileActive?: boolean;
   isCheckingOut?: boolean;
   onCheckoutBack?: () => void;
 }
@@ -23,7 +24,7 @@ const Header: React.FC<HeaderProps> = ({
   onAuthOpen,
   isSearchOpen,
   isAuthOpen,
-  isProfileActive,
+  isProfileActive = false,
   isCheckingOut = false,
   onCheckoutBack,
 }) => {
@@ -31,10 +32,18 @@ const Header: React.FC<HeaderProps> = ({
   const lastScrollY = useRef(0);
   const ignoreNextPopstate = useRef(false);
   const { isCartOpen, setIsCartOpen, cartItems } = useCart();
+  const location = useLocation();
+
+  const isOnProfileView =
+    isProfileActive ||
+    location.pathname === '/profile' ||
+    location.pathname.startsWith('/profile/');
 
   const isOverlayActive = isSearchOpen || isCartOpen;
 
   useEffect(() => {
+    if (isOnProfileView) return;
+
     const handleScroll = () => {
       if (isOverlayActive) {
         setShow(true);
@@ -54,29 +63,34 @@ const Header: React.FC<HeaderProps> = ({
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [isOverlayActive]);
+  }, [isOverlayActive, isOnProfileView]);
 
   // কার্ট ও চেকআউট খোলার সাথে সাথে হিস্ট্রিতে স্টেট পুশ করা
   useEffect(() => {
+    if (isOnProfileView) return;
     if (isCartOpen && !isCheckingOut) {
       window.history.pushState({ nomadOverlay: 'cart' }, '');
     }
-  }, [isCartOpen, isCheckingOut]);
+  }, [isCartOpen, isCheckingOut, isOnProfileView]);
 
   useEffect(() => {
+    if (isOnProfileView) return;
     if (isCartOpen && isCheckingOut) {
       window.history.pushState({ nomadOverlay: 'checkout' }, '');
     }
-  }, [isCartOpen, isCheckingOut]);
+  }, [isCartOpen, isCheckingOut, isOnProfileView]);
 
   useEffect(() => {
+    if (isOnProfileView) return;
     if (isSearchOpen) {
       window.history.pushState({ nomadOverlay: 'search' }, '');
     }
-  }, [isSearchOpen]);
+  }, [isSearchOpen, isOnProfileView]);
 
   // ফোনের হার্ডওয়্যার ব্যাক বাটন বা ব্রাউজার ব্যাক চাপলে পর্যায়ক্রমে আগের ধাপে ফেরা
   useEffect(() => {
+    if (isOnProfileView) return;
+
     const handlePopState = () => {
       if (ignoreNextPopstate.current) {
         ignoreNextPopstate.current = false;
@@ -100,7 +114,12 @@ const Header: React.FC<HeaderProps> = ({
 
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, [isCartOpen, isCheckingOut, isSearchOpen, onCheckoutBack, setIsCartOpen, onSearchClose]);
+  }, [isCartOpen, isCheckingOut, isSearchOpen, onCheckoutBack, setIsCartOpen, onSearchClose, isOnProfileView]);
+
+  // প্রোফাইল অংশে প্রবেশ করলে এই হেডার দেখাবে না, সরাসরি ProfileHeader কাজ করবে
+  if (isOnProfileView) {
+    return null;
+  }
 
   const handleBackFromCheckout = () => {
     if (onCheckoutBack) {
@@ -351,7 +370,7 @@ const Header: React.FC<HeaderProps> = ({
             }}
             aria-label="Profile"
           >
-            <UserIcon stroke={isAuthOpen || isProfileActive ? 'white' : '#b3b3b3'} />
+            <UserIcon stroke={isAuthOpen ? 'white' : '#b3b3b3'} />
           </button>
         </div>
       )}
