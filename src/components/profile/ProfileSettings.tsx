@@ -72,8 +72,18 @@ export default function ProfileSettings({
   const [isPasswordSheetOpen, setIsPasswordSheetOpen] = useState(false);
   const [isAvatarSheetOpen, setIsAvatarSheetOpen] = useState(false);
   const [keyboardOffset, setKeyboardOffset] = useState(0);
+  const [avatarCacheBust, setAvatarCacheBust] = useState<number>(() => Date.now());
 
   const headerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setAvatarCacheBust(Date.now());
+  }, [avatarUrl, uploadingAvatar]);
+
+  const getCacheBustedUrl = (url: string) => {
+    const separator = url.includes('?') ? '&' : '?';
+    return `${url}${separator}cb=${avatarCacheBust}`;
+  };
 
   // ===== Jitter-free Fixed Header + Keyboard Offset for Sheet =====
   useEffect(() => {
@@ -116,7 +126,7 @@ export default function ProfileSettings({
     };
   }, []);
 
-  // ===== Push Notification Status Check (Timeout + Safe Fallback so '...' never hangs) =====
+  // ===== Push Notification Status Check =====
   useEffect(() => {
     let isMounted = true;
 
@@ -128,23 +138,10 @@ export default function ProfileSettings({
 
       if (isMounted) setPushLoading(true);
 
-      const fallbackTimer = setTimeout(() => {
-        if (isMounted) {
-          setPushLoading(false);
-        }
-      }, 3000);
-
       try {
-        if (typeof isUserSubscribed === 'function') {
-          const status = await Promise.race([
-            isUserSubscribed(),
-            new Promise<boolean>((resolve) => setTimeout(() => resolve(false), 2800))
-          ]);
-          if (isMounted) {
-            setPushEnabled(Boolean(status));
-          }
-        } else if (isMounted) {
-          setPushEnabled(false);
+        const status = await isUserSubscribed();
+        if (isMounted) {
+          setPushEnabled(Boolean(status));
         }
       } catch (err) {
         console.error('Failed to check push subscription status:', err);
@@ -152,7 +149,6 @@ export default function ProfileSettings({
           setPushEnabled(false);
         }
       } finally {
-        clearTimeout(fallbackTimer);
         if (isMounted) {
           setPushLoading(false);
         }
@@ -167,14 +163,19 @@ export default function ProfileSettings({
   }, [isAmbassadorActive]);
 
   const handlePushToggle = async () => {
+    if (pushLoading) return;
     setPushLoading(true);
     try {
       if (pushEnabled) {
         const success = await unsubscribeUserFromPush();
-        if (success) setPushEnabled(false);
+        if (success) {
+          setPushEnabled(false);
+        }
       } else {
         const success = await subscribeUserToPush();
-        if (success) setPushEnabled(true);
+        if (success) {
+          setPushEnabled(true);
+        }
       }
     } catch (err) {
       console.error('Failed to toggle push subscription:', err);
@@ -238,6 +239,7 @@ export default function ProfileSettings({
 
   const handleSelectPhotoFromSheet = () => {
     setIsAvatarSheetOpen(false);
+    setAvatarCacheBust(Date.now());
     setTimeout(() => {
       fileInputRef.current?.click();
     }, 150);
@@ -245,6 +247,7 @@ export default function ProfileSettings({
 
   const handleRemovePhotoFromSheet = async () => {
     setIsAvatarSheetOpen(false);
+    setAvatarCacheBust(Date.now());
     await handleDeleteAvatar();
   };
 
@@ -325,15 +328,20 @@ export default function ProfileSettings({
       }}>
 
         {isAmbassadorActive && (
-          <div style={{ marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <div style={{
+            marginBottom: '24px',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            width: '100%'
+          }}>
             <button
               type="button"
               disabled={uploadingAvatar}
               onClick={() => setIsAvatarSheetOpen(true)}
               style={{
-                position: 'relative',
-                width: '64px',
-                height: '64px',
+                width: '76px',
+                height: '76px',
                 borderRadius: '50%',
                 backgroundColor: '#111111',
                 border: '1px solid #2E2E32',
@@ -346,47 +354,23 @@ export default function ProfileSettings({
                 flexShrink: 0,
                 padding: 0,
                 cursor: uploadingAvatar ? 'not-allowed' : 'pointer',
-                transition: 'transform 0.2s ease, border-color 0.2s ease'
+                opacity: uploadingAvatar ? 0.65 : 1,
+                transition: 'transform 0.2s ease, border-color 0.2s ease, opacity 0.2s ease'
               }}
             >
               {avatarUrl ? (
-                <img src={avatarUrl} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <img
+                  key={`${avatarUrl}-${avatarCacheBust}`}
+                  src={getCacheBustedUrl(avatarUrl)}
+                  alt="Avatar"
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                />
               ) : (
-                <span style={{ fontSize: '19px', fontWeight: '500' }}>{getInitials(profile?.name, profile?.email)}</span>
+                <span style={{ fontSize: '21px', fontWeight: '500' }}>
+                  {getInitials(profile?.name, profile?.email)}
+                </span>
               )}
-
-              <span
-                style={{
-                  position: 'absolute',
-                  inset: 0,
-                  backgroundColor: uploadingAvatar ? 'rgba(0,0,0,0.72)' : 'rgba(0,0,0,0.28)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#FFFFFF',
-                  fontSize: '11px',
-                }}
-              >
-                {uploadingAvatar ? '...' : '✎'}
-              </span>
             </button>
-
-            <div
-              onClick={() => !uploadingAvatar && setIsAvatarSheetOpen(true)}
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '3px',
-                cursor: uploadingAvatar ? 'not-allowed' : 'pointer',
-              }}
-            >
-              <span style={{ fontSize: '12px', fontWeight: '500', color: '#FFFFFF', letterSpacing: '0.6px' }}>
-                {uploadingAvatar ? 'Updating photo...' : 'Profile Photo'}
-              </span>
-              <span style={{ fontSize: '11px', color: '#8E8E93', letterSpacing: '0.3px' }}>
-                Tap avatar to change or remove
-              </span>
-            </div>
           </div>
         )}
 
