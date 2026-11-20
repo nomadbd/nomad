@@ -136,7 +136,6 @@ export default function ProfileSettings({
 
   const headerRef = useRef<HTMLDivElement>(null);
 
-  // ===== Jitter-free Fixed Header + Keyboard Offset for Sheet =====
   useEffect(() => {
     const vv = window.visualViewport;
     if (!vv) return;
@@ -167,7 +166,6 @@ export default function ProfileSettings({
     };
   }, []);
 
-  // ===== Body scroll lock =====
   useEffect(() => {
     const originalStyle = window.getComputedStyle(document.body).overflow;
     document.body.style.overflow = 'hidden';
@@ -252,14 +250,12 @@ export default function ProfileSettings({
     return details.includes(':') ? details.split(':')[1].trim() : details;
   };
 
-  // ===== Slug Validation Rules =====
   const isSlugValid = !newSlug || (
-    newSlug.length >= 3 && 
-    newSlug.length <= 20 && 
+    newSlug.length >= 3 &&
+    newSlug.length <= 20 &&
     !isReservedSlug(newSlug)
   );
 
-  // ===== Header SAVE dirty check =====
   const isDirty = Boolean(
     (newName && newName !== profile?.name) ||
     (newEmail && newEmail !== profile?.email) ||
@@ -292,16 +288,69 @@ export default function ProfileSettings({
     }
   };
 
-  const labelStyle = { fontSize: '10px', color: '#FFFFFF', letterSpacing: '1.5px', marginBottom: '4px', fontWeight: '500' };
-  const baseInputStyle = { width: '100%', padding: '8px 0', background: 'transparent', border: 'none', borderBottom: '1px solid #282828', color: '#FFFFFF', outline: 'none', fontSize: '14px', transition: 'border-color 0.2s ease' };
+  const labelStyle = {
+    fontSize: '10px',
+    color: '#FFFFFF',
+    letterSpacing: '1.5px',
+    marginBottom: '4px',
+    fontWeight: '500'
+  };
+
+  const baseInputStyle = {
+    width: '100%',
+    padding: '8px 0',
+    background: 'transparent',
+    border: 'none',
+    borderBottom: '1px solid #282828',
+    color: '#FFFFFF',
+    outline: 'none',
+    fontSize: '14px',
+    transition: 'border-color 0.2s ease'
+  };
+
   const getInputStyle = (hasError?: boolean, bottomMargin = '16px') => ({
     ...baseInputStyle,
     borderBottom: hasError ? '1px solid #F87171' : '1px solid #282828',
     marginBottom: hasError ? '6px' : bottomMargin
   });
-  const inlineErrorStyle = { color: '#F87171', fontSize: '11px', margin: '0 0 16px 0', letterSpacing: '0.4px', lineHeight: '1.4' };
-  const navButtonStyle = { background: 'transparent', border: 'none', color: '#FFFFFF', cursor: 'pointer', fontSize: '12px', letterSpacing: '1px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', textAlign: 'left' as const, padding: '12px 0' };
-  const actionButtonStyle = { background: 'transparent', border: 'none', color: '#FFFFFF', cursor: 'pointer', fontSize: '11px', letterSpacing: '1.5px', textTransform: 'uppercase' as const, display: 'block', width: '100%', textAlign: 'left' as const, fontWeight: '500', marginTop: '10px' };
+
+  const inlineErrorStyle = {
+    color: '#F87171',
+    fontSize: '11px',
+    margin: '0 0 16px 0',
+    letterSpacing: '0.4px',
+    lineHeight: '1.4'
+  };
+
+  const navButtonStyle = {
+    background: 'transparent',
+    border: 'none',
+    color: '#FFFFFF',
+    cursor: 'pointer',
+    fontSize: '12px',
+    letterSpacing: '1px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+    textAlign: 'left' as const,
+    padding: '12px 0'
+  };
+
+  const actionButtonStyle = {
+    background: 'transparent',
+    border: 'none',
+    color: '#FFFFFF',
+    cursor: 'pointer',
+    fontSize: '11px',
+    letterSpacing: '1.5px',
+    textTransform: 'uppercase' as const,
+    display: 'block',
+    width: '100%',
+    textAlign: 'left' as const,
+    fontWeight: '500',
+    marginTop: '10px'
+  };
 
   const payoutOptions = ['bKash', 'Nagad', 'Rocket', 'Card'];
   const activeSlug = newSlug || currentSlug || 'slug';
@@ -349,9 +398,9 @@ export default function ProfileSettings({
     : settingsFeedback || null;
 
   return (
-    <div style={{ 
-      position: 'fixed', 
-      inset: 0, 
+    <div style={{
+      position: 'fixed',
+      inset: 0,
       backgroundColor: '#000000',
       zIndex: 999,
       display: 'flex',
@@ -373,17 +422,17 @@ export default function ProfileSettings({
       {/* ===== FIXED HEADER ===== */}
       <div
         ref={headerRef}
-        style={{ 
-          position: 'fixed', 
+        style={{
+          position: 'fixed',
           top: 0,
           left: 0,
           width: '100%',
-          zIndex: 1000, 
+          zIndex: 1000,
           backgroundColor: '#000000',
           padding: '12px 20px',
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center', 
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
           borderBottom: '1px solid #1A1A1A',
           boxSizing: 'border-box',
           transform: 'translateY(0)',
@@ -392,7 +441,9 @@ export default function ProfileSettings({
           backfaceVisibility: 'hidden',
         }}
       >
-        <h2 style={{ fontWeight: '600', letterSpacing: '3px', fontSize: '15px', color: '#FFFFFF', margin: 0 }}>SETTINGS</h2>
+        <h2 style={{ fontWeight: '600', letterSpacing: '3px', fontSize: '15px', color: '#FFFFFF', margin: 0 }}>
+          SETTINGS
+        </h2>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
           <button
@@ -424,7 +475,16 @@ export default function ProfileSettings({
             {isSaving ? <LoadingDots dotSize="3px" gap="2.5px" /> : 'SAVE'}
           </button>
 
-          <svg onClick={() => onChangeView('profile')} width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2" cursor="pointer">
+          <svg
+            onClick={() => onChangeView('profile')}
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#FFFFFF"
+            strokeWidth="2"
+            cursor="pointer"
+          >
             <line x1="18" y1="6" x2="6" y2="18"></line>
             <line x1="6" y1="6" x2="18" y2="18"></line>
           </svg>
@@ -531,9 +591,9 @@ export default function ProfileSettings({
               <p style={labelStyle}>STORE SLUG</p>
               <span style={{ fontSize: '10px', color: '#888888', marginBottom: '4px' }}>/{activeSlug}</span>
             </div>
-            <input 
-              placeholder={currentSlug || "slug-name"} 
-              value={newSlug} 
+            <input
+              placeholder={currentSlug || "slug-name"}
+              value={newSlug}
               onChange={(e) => {
                 const formattedSlug = e.target.value
                   .toLowerCase()
@@ -542,16 +602,15 @@ export default function ProfileSettings({
                 setNewSlug(formattedSlug);
                 clearFieldError?.('slug');
                 clearSettingsFeedback?.();
-              }} 
+              }}
               style={getInputStyle(
                 Boolean(
                   fieldErrors.slug ||
                   (newSlug && (isReservedSlug(newSlug) || newSlug.length < 3))
                 )
-              )} 
+              )}
             />
 
-            {/* ===== SLUG INLINE MESSAGES ===== */}
             {fieldErrors.slug ? (
               <p style={inlineErrorStyle}>{fieldErrors.slug}</p>
             ) : newSlug && isReservedSlug(newSlug) ? (
@@ -616,15 +675,15 @@ export default function ProfileSettings({
             </div>
 
             <p style={labelStyle}>PAYOUT NUMBER</p>
-            <input 
-              placeholder={cleanPayoutNumber(currentPayoutDetails) || "017XXXXXXXX"} 
-              value={newPayoutNumber} 
+            <input
+              placeholder={cleanPayoutNumber(currentPayoutDetails) || "017XXXXXXXX"}
+              value={newPayoutNumber}
               onChange={(e) => {
                 setNewPayoutNumber(e.target.value);
                 clearFieldError?.('payoutNumber');
                 clearSettingsFeedback?.();
-              }} 
-              style={getInputStyle(Boolean(fieldErrors.payoutNumber))} 
+              }}
+              style={getInputStyle(Boolean(fieldErrors.payoutNumber))}
             />
             {fieldErrors.payoutNumber && <p style={inlineErrorStyle}>{fieldErrors.payoutNumber}</p>}
 
@@ -710,15 +769,14 @@ export default function ProfileSettings({
           </div>
         )}
 
-        <div style={{ 
-          borderTop: isAmbassadorActive ? '1px solid #1C1C1E' : 'none', 
-          paddingTop: '16px', 
-          display: 'flex', 
-          flexDirection: 'column', 
-          gap: '8px' 
+        <div style={{
+          borderTop: isAmbassadorActive ? '1px solid #1C1C1E' : 'none',
+          paddingTop: '16px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '8px'
         }}>
-
-          <button 
+          <button
             type="button"
             onClick={openPasswordSheet}
             style={navButtonStyle}
@@ -776,10 +834,10 @@ export default function ProfileSettings({
           flexShrink: 0,
         }} />
 
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center', 
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
           padding: '8px 20px 16px',
           flexShrink: 0,
         }}>
@@ -888,10 +946,10 @@ export default function ProfileSettings({
           flexShrink: 0,
         }} />
 
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center', 
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
           padding: '8px 20px 16px',
           flexShrink: 0,
         }}>
@@ -914,38 +972,38 @@ export default function ProfileSettings({
           </button>
         </div>
 
-        <div style={{ 
-          padding: '0 20px', 
+        <div style={{
+          padding: '0 20px',
           overflowY: 'auto',
           flex: 1,
         }}>
           <p style={labelStyle}>CURRENT PASSWORD</p>
-          <input 
-            type="password" 
-            placeholder="Current Password" 
-            value={currentPassword} 
+          <input
+            type="password"
+            placeholder="Current Password"
+            value={currentPassword}
             onChange={(e) => {
               setCurrentPassword(e.target.value);
               clearFieldError?.('password');
-            }} 
-            style={{ ...inputStyle, marginBottom: '20px' }} 
+            }}
+            style={getInputStyle(Boolean(fieldErrors.password), '20px')}
           />
 
           <p style={labelStyle}>NEW PASSWORD</p>
-          <input 
-            type="password" 
-            placeholder="New Password" 
-            value={newPassword} 
+          <input
+            type="password"
+            placeholder="New Password"
+            value={newPassword}
             onChange={(e) => {
               setNewPassword(e.target.value);
               clearFieldError?.('password');
-            }} 
-            style={getInputStyle(Boolean(fieldErrors.password), '8px')} 
+            }}
+            style={getInputStyle(Boolean(fieldErrors.password), '8px')}
           />
           {fieldErrors.password && <p style={{ ...inlineErrorStyle, marginBottom: '8px' }}>{fieldErrors.password}</p>}
         </div>
 
-        <div style={{ 
+        <div style={{
           padding: '16px 20px',
           paddingBottom: 'max(20px, env(safe-area-inset-bottom))',
           flexShrink: 0,
