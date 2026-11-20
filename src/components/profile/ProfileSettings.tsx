@@ -245,6 +245,7 @@ export default function ProfileSettings({
 
   const handleSelectPhotoFromSheet = () => {
     setIsAvatarSheetOpen(false);
+    setLocalDeletedAvatar(false);
     setAvatarVersion(Date.now());
     setTimeout(() => {
       fileInputRef.current?.click();
@@ -506,9 +507,9 @@ export default function ProfileSettings({
                 disabled={pushLoading}
                 onClick={handlePushToggle}
                 style={{
-                  background: pushEnabled ? '#FFFFFF' : 'transparent',
-                  color: pushEnabled ? '#000000' : '#FFFFFF',
-                  border: pushEnabled ? '1px solid #FFFFFF' : '1px solid #333333',
+                  background: pushEnabled ? 'transparent' : '#FFFFFF',
+                  color: pushEnabled ? '#FFFFFF' : '#000000',
+                  border: pushEnabled ? '1px solid #333333' : '1px solid #FFFFFF',
                   padding: '4px 12px',
                   borderRadius: '16px',
                   fontSize: '10px',
@@ -516,11 +517,11 @@ export default function ProfileSettings({
                   letterSpacing: '1px',
                   cursor: pushLoading ? 'default' : 'pointer',
                   transition: 'all 0.15s ease',
-                  opacity: pushLoading ? 0.65 : (pushEnabled ? 1 : 0.75),
+                  opacity: pushLoading ? 0.65 : 1,
                   flexShrink: 0
                 }}
               >
-                {pushLoading ? '...' : (pushEnabled ? 'ENABLED' : 'DISABLED')}
+                {pushLoading ? '...' : (pushEnabled ? 'DISABLE' : 'ENABLE')}
               </button>
             </div>
           </>
