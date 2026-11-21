@@ -21,32 +21,55 @@ interface NotificationsViewProps {
 }
 
 function NotificationSkeleton() {
+  const shimmer: React.CSSProperties = {
+    backgroundColor: '#3E3E3E',
+    backgroundImage:
+      'linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.14) 50%, rgba(255,255,255,0) 100%)',
+    backgroundSize: '200% 100%',
+    animation: 'fbNotifShimmer 1.35s ease-in-out infinite',
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
       <style>{`
-        @keyframes pulseSkeleton {
-          0%, 100% { opacity: 0.3; }
-          50% { opacity: 0.7; }
+        @keyframes fbNotifShimmer {
+          0% { background-position: 200% 0; }
+          100% { background-position: -200% 0; }
         }
       `}</style>
-      {[1, 2, 3].map((item) => (
+      {[1, 2, 3].map((item, idx) => (
         <div
           key={item}
           style={{
-            background: '#121212',
-            border: '1px solid #27272A',
+            background: idx === 0 ? '#141414' : '#0B0B0D',
+            border: idx === 0 ? '1px solid rgba(255, 255, 255, 0.22)' : '1px solid #27272A',
             borderRadius: '12px',
             padding: '16px',
-            animation: 'pulseSkeleton 1.5s infinite ease-in-out'
           }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-            <div style={{ height: '14px', width: '30%', background: '#333', borderRadius: '4px' }}></div>
-            <div style={{ height: '14px', width: '14px', background: '#333', borderRadius: '4px' }}></div>
+          {/* Badge + time + close icon */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ ...shimmer, height: '18px', width: '52px', borderRadius: '4px' }} />
+              <div style={{ ...shimmer, height: '11px', width: '58px', borderRadius: '4px' }} />
+            </div>
+            <div style={{ ...shimmer, height: '14px', width: '14px', borderRadius: '4px' }} />
           </div>
-          <div style={{ height: '18px', width: '65%', background: '#333', marginBottom: '12px', borderRadius: '4px' }}></div>
-          <div style={{ height: '13px', width: '90%', background: '#333', marginBottom: '8px', borderRadius: '4px' }}></div>
-          <div style={{ height: '13px', width: '55%', background: '#333', borderRadius: '4px' }}></div>
+
+          {/* Title */}
+          <div style={{ ...shimmer, height: '15px', width: '62%', borderRadius: '4px', marginBottom: '10px' }} />
+
+          {/* 3-line message preview */}
+          <div style={{ ...shimmer, height: '12px', width: '96%', borderRadius: '4px', marginBottom: '7px' }} />
+          <div style={{ ...shimmer, height: '12px', width: '84%', borderRadius: '4px', marginBottom: '7px' }} />
+          <div style={{ ...shimmer, height: '12px', width: '48%', borderRadius: '4px' }} />
+
+          {/* Explore button placeholder on first card */}
+          {idx === 0 && (
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '14px' }}>
+              <div style={{ ...shimmer, height: '28px', width: '74px', borderRadius: '6px' }} />
+            </div>
+          )}
         </div>
       ))}
     </div>
