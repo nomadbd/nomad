@@ -20,6 +20,122 @@ interface ProfileHeaderProps {
   unreadMessagesCount?: number;
   unreadNotifCount?: number;
   hasUnreadNotif?: boolean;
+  loading?: boolean;
+}
+
+function ProfileHeaderSkeleton() {
+  const shimmerStyle: React.CSSProperties = {
+    backgroundColor: '#3E3E3E',
+    backgroundImage:
+      'linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.16) 50%, rgba(255,255,255,0) 100%)',
+    backgroundSize: '200% 100%',
+    animation: 'fbHeaderShimmer 1.35s ease-in-out infinite',
+  };
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 999,
+        backgroundColor: 'rgba(0, 0, 0, 0.92)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
+        borderBottom: '1px solid #1F1F22',
+        padding: '10px 16px',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        width: '100%',
+        boxSizing: 'border-box',
+      }}
+    >
+      <style>{`
+        @keyframes fbHeaderShimmer {
+          0% {
+            background-position: 200% 0;
+          }
+          100% {
+            background-position: -200% 0;
+          }
+        }
+      `}</style>
+
+      {/* বামপাশ: অ্যাভাটার ও ইউজার ইনফো স্কেলিটন */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+          flex: 1,
+          minWidth: 0,
+          marginRight: '8px',
+        }}
+      >
+        <div
+          style={{
+            ...shimmerStyle,
+            width: '40px',
+            height: '40px',
+            borderRadius: '50%',
+            flexShrink: 0,
+          }}
+        />
+
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            flex: 1,
+            minWidth: 0,
+            gap: '6px',
+          }}
+        >
+          <div
+            style={{
+              ...shimmerStyle,
+              height: '13px',
+              width: '46%',
+              maxWidth: '150px',
+              borderRadius: '4px',
+            }}
+          />
+          <div
+            style={{
+              ...shimmerStyle,
+              height: '9px',
+              width: '34%',
+              maxWidth: '115px',
+              borderRadius: '4px',
+            }}
+          />
+        </div>
+      </div>
+
+      {/* ডানপাশ: আইকন বাটন স্কেলিটন */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+        <div
+          style={{
+            ...shimmerStyle,
+            width: '35px',
+            height: '35px',
+            borderRadius: '50%',
+          }}
+        />
+        <div
+          style={{
+            ...shimmerStyle,
+            width: '35px',
+            height: '35px',
+            borderRadius: '50%',
+          }}
+        />
+      </div>
+    </div>
+  );
 }
 
 export default function ProfileHeader({
@@ -38,7 +154,8 @@ export default function ProfileHeader({
   hasUnread = false,
   unreadMessagesCount,
   unreadNotifCount,
-  hasUnreadNotif
+  hasUnreadNotif,
+  loading = false
 }: ProfileHeaderProps) {
   const name = profile?.name || "PROFILE";
   const profileKey = profile?.id || profile?.email || "default_user";
@@ -51,6 +168,10 @@ export default function ProfileHeader({
   const [fade, setFade] = useState(true);
 
   useEffect(() => {
+    if (loading || !profile) {
+      return;
+    }
+
     // যদি এই সেশনে ইতোমধ্যে অ্যানিমেশন হয়ে গিয়ে থাকে তবে রিটার্ন করবে
     if (hasAlreadyAnimated) {
       return;
@@ -67,7 +188,11 @@ export default function ProfileHeader({
     }, 2500);
 
     return () => clearTimeout(timer);
-  }, [profileKey, hasAlreadyAnimated]);
+  }, [profileKey, hasAlreadyAnimated, loading, profile]);
+
+  if (loading || !profile) {
+    return <ProfileHeaderSkeleton />;
+  }
 
   const handleIconClick = () => {
     if (isAmbassadorActive) {
