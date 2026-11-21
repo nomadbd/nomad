@@ -249,7 +249,9 @@ export default function ProfileHeader({
               opacity: fade ? 1 : 0,
               transition: 'opacity 0.3s ease-in-out'
             }}>
-              {showGreeting ? 'MEMBER' : (profile?.email || '')}
+              {showGreeting
+                ? (loading ? '' : 'MEMBER')
+                : (profile?.email || '')}
             </span>
           )}
         </div>
