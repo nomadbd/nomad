@@ -22,10 +22,13 @@ export interface LoadingOptions {
   isAmbassador?: boolean;
 }
 
-interface LoadingContextType {
+interface LoadingContextState {
   isPageLoading: boolean;
   skeletonView: SkeletonViewType;
   isAmbassadorSkeleton: boolean;
+}
+
+interface LoadingContextType extends LoadingContextState {
   setIsPageLoading: (
     loading: boolean,
     options?: LoadingOptions,
@@ -33,20 +36,22 @@ interface LoadingContextType {
   ) => number;
 }
 
-const LoadingContext = createContext<LoadingContextType>({
+const initialLoadingState: LoadingContextState = {
   isPageLoading: false,
   skeletonView: null,
   isAmbassadorSkeleton: false,
+};
+
+const LoadingContext = createContext<LoadingContextType>({
+  ...initialLoadingState,
   setIsPageLoading: () => 0,
 });
 
 export const LoadingProvider: React.FC<{
   children: React.ReactNode;
 }> = ({ children }) => {
-  const [isPageLoading, setIsLoadingState] = useState(false);
-  const [skeletonView, setSkeletonView] = useState<SkeletonViewType>(null);
-  const [isAmbassadorSkeleton, setIsAmbassadorSkeleton] =
-    useState(false);
+  const [loadingState, setLoadingState] =
+    useState<LoadingContextState>(initialLoadingState);
 
   const activeTokenRef = useRef(0);
 
@@ -60,15 +65,17 @@ export const LoadingProvider: React.FC<{
         const nextToken = activeTokenRef.current + 1;
         activeTokenRef.current = nextToken;
 
-        setIsLoadingState(true);
-        setSkeletonView(options?.view ?? null);
-        setIsAmbassadorSkeleton(
-          Boolean(options?.isAmbassador)
-        );
+        // Loading ও skeleton mode একই state update-এ বদলায়।
+        setLoadingState({
+          isPageLoading: true,
+          skeletonView: options?.view ?? null,
+          isAmbassadorSkeleton: Boolean(options?.isAmbassador),
+        });
 
         return nextToken;
       }
 
+      // পুরোনো loading request-এর completion নতুন request বন্ধ করতে পারবে না।
       if (
         typeof sourceId === 'number' &&
         sourceId !== activeTokenRef.current
@@ -76,12 +83,12 @@ export const LoadingProvider: React.FC<{
         return activeTokenRef.current;
       }
 
-      activeTokenRef.current += 1;
-      setIsLoadingState(false);
-      setSkeletonView(null);
-      setIsAmbassadorSkeleton(false);
+      const nextToken = activeTokenRef.current + 1;
+      activeTokenRef.current = nextToken;
 
-      return activeTokenRef.current;
+      setLoadingState(initialLoadingState);
+
+      return nextToken;
     },
     []
   );
@@ -89,9 +96,7 @@ export const LoadingProvider: React.FC<{
   return (
     <LoadingContext.Provider
       value={{
-        isPageLoading,
-        skeletonView,
-        isAmbassadorSkeleton,
+        ...loadingState,
         setIsPageLoading,
       }}
     >
