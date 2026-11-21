@@ -37,6 +37,7 @@ export default function NotificationsView({
     : ['CUSTOMER', 'ALL', 'SPECIFIC', 'AMBASSADOR'];
 
   useEffect(() => {
+    setIsPageLoading(true, { view: 'notifications', isAmbassador: false });
     return () => {
       setIsPageLoading(false);
     };
@@ -151,7 +152,11 @@ export default function NotificationsView({
   };
 
   useEffect(() => {
-    if (!userId) return;
+    if (!userId) {
+      setLoading(false);
+      setIsPageLoading(false);
+      return;
+    }
 
     fetchNotifications(false);
 
