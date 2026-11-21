@@ -14,18 +14,26 @@ interface AmbassadorDashboardProps {
 
 function AmbassadorDashboardSkeleton({ isOwner }: { isOwner: boolean }) {
   const shimmerStyle: CSSProperties = {
-    backgroundColor: '#3E3E3E',
+    backgroundColor: '#2A2A2E',
     backgroundImage:
-      'linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.16) 50%, rgba(255,255,255,0) 100%)',
+      'linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.14) 50%, rgba(255,255,255,0) 100%)',
     backgroundSize: '200% 100%',
     animation: 'fbAmbassadorShimmer 1.35s ease-in-out infinite',
   };
 
-  const cardStyle: CSSProperties = {
-    backgroundColor: '#0A0A0C',
-    border: '1px solid #1E1E22',
-    borderRadius: '12px',
+  const sectionCardStyle: CSSProperties = {
+    backgroundColor: '#09090B',
+    border: '1px solid #18181B',
+    borderRadius: '16px',
     padding: '18px',
+    boxSizing: 'border-box',
+  };
+
+  const innerBoxStyle: CSSProperties = {
+    backgroundColor: '#0E0E11',
+    border: '1px solid #1C1C21',
+    borderRadius: '12px',
+    padding: '14px',
     boxSizing: 'border-box',
   };
 
@@ -50,7 +58,7 @@ function AmbassadorDashboardSkeleton({ isOwner }: { isOwner: boolean }) {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', width: '100%', boxSizing: 'border-box' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%', boxSizing: 'border-box' }}>
       <style>{`
         @keyframes fbAmbassadorShimmer {
           0% { background-position: 200% 0; }
@@ -58,70 +66,53 @@ function AmbassadorDashboardSkeleton({ isOwner }: { isOwner: boolean }) {
         }
       `}</style>
 
-      {/* ১. স্টোর লিংক সেকশন স্কেলিটন */}
-      <div style={cardStyle}>
-        <div style={{ ...shimmerStyle, width: '96px', height: '10px', borderRadius: '3px', marginBottom: '12px' }} />
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
-          <div style={{ ...shimmerStyle, flex: 1, height: '38px', borderRadius: '8px' }} />
-          <div style={{ ...shimmerStyle, width: '74px', height: '38px', borderRadius: '8px', flexShrink: 0 }} />
+      {/* ১. YOUR STOREFRONT LINK সেকশন স্কেলিটন */}
+      <div style={{ padding: '4px 2px', boxSizing: 'border-box' }}>
+        <div style={{ ...shimmerStyle, width: '148px', height: '10px', borderRadius: '4px', marginBottom: '12px' }} />
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ ...shimmerStyle, width: '168px', height: '13px', borderRadius: '4px', marginBottom: '6px' }} />
+            <div style={{ ...shimmerStyle, width: '132px', height: '18px', borderRadius: '4px' }} />
+          </div>
+          <div style={{ ...shimmerStyle, width: '40px', height: '40px', borderRadius: '50%', flexShrink: 0 }} />
         </div>
       </div>
 
-      {/* ২. আর্নিং ও উইথড্রল সেকশন স্কেলিটন */}
-      <div style={cardStyle}>
+      {/* ২. WALLET সেকশন স্কেলিটন (Available Balance + Withdraw, নিচে Pending ও Total Earned) */}
+      <div style={sectionCardStyle}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-          <div style={{ ...shimmerStyle, width: '128px', height: '11px', borderRadius: '3px' }} />
-          <div style={{ ...shimmerStyle, width: '82px', height: '28px', borderRadius: '16px' }} />
+          <div style={{ ...shimmerStyle, width: '64px', height: '10px', borderRadius: '4px' }} />
+          <div style={{ ...shimmerStyle, width: '72px', height: '10px', borderRadius: '4px' }} />
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
-          {[1, 2, 3].map((stat) => (
-            <div key={stat} style={{ backgroundColor: '#111114', border: '1px solid #1C1C20', borderRadius: '8px', padding: '12px' }}>
-              <div style={{ ...shimmerStyle, width: '68%', height: '9px', borderRadius: '3px', marginBottom: '8px' }} />
-              <div style={{ ...shimmerStyle, width: '84%', height: '18px', borderRadius: '4px' }} />
-            </div>
-          ))}
-        </div>
-      </div>
 
-      {/* ৩. সেলস ও অর্ডার পারফরম্যান্স স্কেলিটন */}
-      <div style={cardStyle}>
-        <div style={{ ...shimmerStyle, width: '154px', height: '11px', borderRadius: '3px', marginBottom: '14px' }} />
+        <div style={{ ...innerBoxStyle, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '10px' }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ ...shimmerStyle, width: '124px', height: '10px', borderRadius: '4px', marginBottom: '10px' }} />
+            <div style={{ ...shimmerStyle, width: '56px', height: '24px', borderRadius: '6px' }} />
+          </div>
+          <div style={{ ...shimmerStyle, width: '104px', height: '38px', borderRadius: '10px', flexShrink: 0 }} />
+        </div>
+
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
-          {[1, 2].map((box) => (
-            <div key={box} style={{ backgroundColor: '#111114', border: '1px solid #1C1C20', borderRadius: '8px', padding: '12px' }}>
-              <div style={{ ...shimmerStyle, width: '55%', height: '9px', borderRadius: '3px', marginBottom: '8px' }} />
-              <div style={{ ...shimmerStyle, width: '70%', height: '16px', borderRadius: '4px' }} />
-            </div>
-          ))}
+          <div style={innerBoxStyle}>
+            <div style={{ ...shimmerStyle, width: '66px', height: '10px', borderRadius: '4px', marginBottom: '10px' }} />
+            <div style={{ ...shimmerStyle, width: '42px', height: '20px', borderRadius: '5px' }} />
+          </div>
+          <div style={innerBoxStyle}>
+            <div style={{ ...shimmerStyle, width: '96px', height: '10px', borderRadius: '4px', marginBottom: '10px' }} />
+            <div style={{ ...shimmerStyle, width: '42px', height: '20px', borderRadius: '5px' }} />
+          </div>
         </div>
       </div>
 
-      {/* ৪. প্রোডাক্ট ম্যানেজমেন্ট স্কেলিটন */}
-      <div style={cardStyle}>
-        <div style={{ ...shimmerStyle, width: '142px', height: '11px', borderRadius: '3px', marginBottom: '14px' }} />
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {[1, 2].map((row) => (
-            <div
-              key={row}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: '12px',
-                backgroundColor: '#111114',
-                border: '1px solid #1C1C20',
-                borderRadius: '8px',
-                padding: '10px',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 }}>
-                <div style={{ ...shimmerStyle, width: '44px', height: '54px', borderRadius: '6px', flexShrink: 0 }} />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ ...shimmerStyle, width: '72%', height: '12px', borderRadius: '4px', marginBottom: '6px' }} />
-                  <div style={{ ...shimmerStyle, width: '42%', height: '10px', borderRadius: '3px' }} />
-                </div>
-              </div>
-              <div style={{ ...shimmerStyle, width: '42px', height: '22px', borderRadius: '12px', flexShrink: 0 }} />
+      {/* ৩. ORDERS সেকশন স্কেলিটন (২x২ গ্রিড: Total, Success, Pending, Cancelled) */}
+      <div style={sectionCardStyle}>
+        <div style={{ ...shimmerStyle, width: '62px', height: '10px', borderRadius: '4px', marginBottom: '14px' }} />
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
+          {[1, 2, 3, 4].map((box) => (
+            <div key={box} style={innerBoxStyle}>
+              <div style={{ ...shimmerStyle, width: '68px', height: '10px', borderRadius: '4px', marginBottom: '10px' }} />
+              <div style={{ ...shimmerStyle, width: '28px', height: '22px', borderRadius: '5px' }} />
             </div>
           ))}
         </div>
