@@ -68,12 +68,28 @@ const AppContent: React.FC<AppContentProps> = ({
     return <GlobalSkeleton />;
   };
 
-  if (sessionLoading || isPageLoading) {
+  // সেশন চেক করার সময় রুট রেন্ডার না করে সরাসরি লোডার দেখাবে
+  if (sessionLoading) {
     return renderLoader();
   }
 
   return (
     <>
+      {/* API ডেটা লোড হওয়ার সময় পেজ আনমাউন্ট না করে ওপরে ওভারলে হিসেবে স্কেলিটন দেখাবে */}
+      {isPageLoading && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 40, // Header (সাধারণত 50) এর নিচে রাখতে চাইলে 40, আর পুরো স্ক্রিন ঢাকতে চাইলে 9999 দিন
+            backgroundColor: 'black',
+            overflowY: 'auto',
+          }}
+        >
+          {renderLoader()}
+        </div>
+      )}
+
       {showHeader && (
         <Header
           onSearchOpen={() => setIsSearchOpen(true)}
