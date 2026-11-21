@@ -140,11 +140,15 @@ export default function ProfileSettings({
   const headerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setIsPageLoading(loading || !profile);
+    if (loading || !profile) {
+      setIsPageLoading(true, { view: 'settings', isAmbassador: isAmbassadorActive });
+    } else {
+      setIsPageLoading(false);
+    }
     return () => {
       setIsPageLoading(false);
     };
-  }, [loading, profile, setIsPageLoading]);
+  }, [loading, profile, isAmbassadorActive, setIsPageLoading]);
 
   useEffect(() => {
     const vv = window.visualViewport;
