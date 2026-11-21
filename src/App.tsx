@@ -1,4 +1,4 @@
-import React, { useState, lazy, Suspense } from 'react';
+import React, { useEffect, useState, lazy, Suspense } from 'react';
 import {
   BrowserRouter as Router,
   Routes,
@@ -31,6 +31,7 @@ import { GlobalSkeleton } from './components/ui/GlobalSkeleton';
 const AmbassadorJoin = lazy(
   () => import('./components/ambassador/join/AmbassadorJoin')
 );
+
 const AmbassadorPortal = lazy(
   () => import('./components/ambassador/portal/AmbassadorPortal')
 );
@@ -69,8 +70,17 @@ const AppContent: React.FC<AppContentProps> = ({
     location.pathname === '/profile' ||
     location.pathname.startsWith('/profile/');
   const isHomeRoute = location.pathname === '/';
-
   const showHeader = !isAdminRoute && !isProfileRoute;
+
+  useEffect(() => {
+    if (isHomeRoute && isPageLoading) {
+      window.scrollTo({
+        top: 0,
+        left: 0,
+        behavior: 'auto',
+      });
+    }
+  }, [isHomeRoute, isPageLoading]);
 
   const handleCloseSearch = () => {
     setIsSearchOpen(false);
@@ -81,37 +91,45 @@ const AppContent: React.FC<AppContentProps> = ({
     if (isAdminRoute) {
       return <ReminderLoading label="" />;
     }
+
     return <GlobalSkeleton />;
+  };
+
+  const headerProps = {
+    onSearchOpen: () => setIsSearchOpen(true),
+    onSearchClose: handleCloseSearch,
+    searchQuery,
+    onSearchQueryChange: setSearchQuery,
+    onAuthOpen: () => {
+      if (session) {
+        navigate('/profile');
+      } else {
+        setIsAuthOpen(true);
+      }
+    },
+    isSearchOpen,
+    isAuthOpen,
+    isProfileActive: isProfileRoute,
+    isCheckingOut,
+    onCheckoutBack: () => setIsCheckingOut(false),
   };
 
   if (sessionLoading) {
     if (isHomeRoute && showHeader) {
       return (
         <>
-          <Header
-            onSearchOpen={() => setIsSearchOpen(true)}
-            onSearchClose={handleCloseSearch}
-            searchQuery={searchQuery}
-            onSearchQueryChange={setSearchQuery}
-            onAuthOpen={() => {
-              if (session) {
-                navigate('/profile');
-              } else {
-                setIsAuthOpen(true);
-              }
-            }}
-            isSearchOpen={isSearchOpen}
-            isAuthOpen={isAuthOpen}
-            isProfileActive={isProfileRoute}
-            isCheckingOut={isCheckingOut}
-            onCheckoutBack={() => setIsCheckingOut(false)}
-          />
+          <Header {...headerProps} />
 
           <div
             style={{
-              minHeight: 'calc(100vh - 70px)',
-              backgroundColor: 'black',
-              paddingTop: '70px',
+              position: 'fixed',
+              top: '70px',
+              left: 0,
+              right: 0,
+              bottom: 0,
+              zIndex: 999,
+              backgroundColor: '#000',
+              overflowY: 'auto',
             }}
           >
             {renderLoader()}
@@ -122,6 +140,9 @@ const AppContent: React.FC<AppContentProps> = ({
 
     return renderLoader();
   }
+
+  const hideHomeContent =
+    isHomeRoute && isPageLoading;
 
   return (
     <>
@@ -136,14 +157,14 @@ const AppContent: React.FC<AppContentProps> = ({
                   right: 0,
                   bottom: 0,
                   zIndex: 999,
-                  backgroundColor: 'black',
+                  backgroundColor: '#000',
                   overflowY: 'auto',
                 }
               : {
                   position: 'fixed',
                   inset: 0,
                   zIndex: 100000,
-                  backgroundColor: 'black',
+                  backgroundColor: '#000',
                   overflowY: 'auto',
                 }
           }
@@ -152,33 +173,16 @@ const AppContent: React.FC<AppContentProps> = ({
         </div>
       )}
 
-      {showHeader && (
-        <Header
-          onSearchOpen={() => setIsSearchOpen(true)}
-          onSearchClose={handleCloseSearch}
-          searchQuery={searchQuery}
-          onSearchQueryChange={setSearchQuery}
-          onAuthOpen={() => {
-            if (session) {
-              navigate('/profile');
-            } else {
-              setIsAuthOpen(true);
-            }
-          }}
-          isSearchOpen={isSearchOpen}
-          isAuthOpen={isAuthOpen}
-          isProfileActive={isProfileRoute}
-          isCheckingOut={isCheckingOut}
-          onCheckoutBack={() => setIsCheckingOut(false)}
-        />
-      )}
+      {showHeader && <Header {...headerProps} />}
 
       <div
         style={{
           minHeight: '100vh',
-          backgroundColor: 'black',
+          backgroundColor: '#000',
           color: '#fff',
-          paddingTop: showHeader ? '70px' : '0',
+          paddingTop: showHeader ? '70px' : 0,
+          visibility: hideHomeContent ? 'hidden' : 'visible',
+          pointerEvents: hideHomeContent ? 'none' : 'auto',
         }}
       >
         <Suspense fallback={renderLoader()}>
@@ -206,9 +210,15 @@ const AppContent: React.FC<AppContentProps> = ({
               }
             />
 
-            <Route path="/vip/:token" element={<AmbassadorJoin />} />
+            <Route
+              path="/vip/:token"
+              element={<AmbassadorJoin />}
+            />
 
-            <Route path="/:slug" element={<AmbassadorPortal />} />
+            <Route
+              path="/:slug"
+              element={<AmbassadorPortal />}
+            />
 
             <Route
               path="/admin"
@@ -226,7 +236,10 @@ const AppContent: React.FC<AppContentProps> = ({
               element={<AuthForm isRecoveryPage={true} />}
             />
 
-            <Route path="*" element={<Navigate to="/" replace />} />
+            <Route
+              path="*"
+              element={<Navigate to="/" replace />}
+            />
           </Routes>
         </Suspense>
       </div>
