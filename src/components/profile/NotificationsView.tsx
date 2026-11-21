@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../../supabaseClient';
+import { useGlobalLoading } from '../../context/LoadingContext';
 import { BackIcon, NotificationIcon, CloseIcon, CheckIcon } from '../icons';
 
 interface NotificationItem {
@@ -20,74 +21,18 @@ interface NotificationsViewProps {
   targetAudience?: string[];
 }
 
-function NotificationSkeleton() {
-  const shimmer: React.CSSProperties = {
-    backgroundColor: '#3E3E3E',
-    backgroundImage:
-      'linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.14) 50%, rgba(255,255,255,0) 100%)',
-    backgroundSize: '200% 100%',
-    animation: 'fbNotifShimmer 1.35s ease-in-out infinite',
-  };
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-      <style>{`
-        @keyframes fbNotifShimmer {
-          0% { background-position: 200% 0; }
-          100% { background-position: -200% 0; }
-        }
-      `}</style>
-      {[1, 2, 3].map((item, idx) => (
-        <div
-          key={item}
-          style={{
-            background: idx === 0 ? '#141414' : '#0B0B0D',
-            border: idx === 0 ? '1px solid rgba(255, 255, 255, 0.22)' : '1px solid #27272A',
-            borderRadius: '12px',
-            padding: '16px',
-          }}
-        >
-          {/* Badge + time + close icon */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <div style={{ ...shimmer, height: '18px', width: '52px', borderRadius: '4px' }} />
-              <div style={{ ...shimmer, height: '11px', width: '58px', borderRadius: '4px' }} />
-            </div>
-            <div style={{ ...shimmer, height: '14px', width: '14px', borderRadius: '4px' }} />
-          </div>
-
-          {/* Title */}
-          <div style={{ ...shimmer, height: '15px', width: '62%', borderRadius: '4px', marginBottom: '10px' }} />
-
-          {/* 3-line message preview */}
-          <div style={{ ...shimmer, height: '12px', width: '96%', borderRadius: '4px', marginBottom: '7px' }} />
-          <div style={{ ...shimmer, height: '12px', width: '84%', borderRadius: '4px', marginBottom: '7px' }} />
-          <div style={{ ...shimmer, height: '12px', width: '48%', borderRadius: '4px' }} />
-
-          {/* Explore button placeholder on first card */}
-          {idx === 0 && (
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '14px' }}>
-              <div style={{ ...shimmer, height: '28px', width: '74px', borderRadius: '6px' }} />
-            </div>
-          )}
-        </div>
-      ))}
-    </div>
-  );
-}
-
-export default function NotificationsView({ 
-  userId, 
+export default function NotificationsView({
+  userId,
   onBack,
   targetAudience
 }: NotificationsViewProps) {
+  const { setIsPageLoading } = useGlobalLoading();
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  // টার্গেট অডিয়েন্স ফিল্টার আপডেট (DATABASE UPPERCASE STANDARD)
-  const activeAudiences = targetAudience && targetAudience.length > 0 
+  const activeAudiences = targetAudience && targetAudience.length > 0
     ? targetAudience.map(a => a.toUpperCase())
     : ['CUSTOMER', 'ALL', 'SPECIFIC', 'AMBASSADOR'];
 
@@ -123,15 +68,18 @@ export default function NotificationsView({
   };
 
   const fetchNotifications = async (isSilent = false) => {
-    if (!isSilent) setLoading(true);
+    if (!isSilent) {
+      setLoading(true);
+      setIsPageLoading(true);
+    }
 
     try {
       if (!userId) {
         setLoading(false);
+        setIsPageLoading(false);
         return;
       }
 
-      // ১. ইউজার আইডি দিয়ে সরাসরি recipient ডাটা ফেচ
       const { data: recipients, error: recipError } = await supabase
         .from('notification_recipients')
         .select('id, notification_id, is_read')
@@ -150,7 +98,6 @@ export default function NotificationsView({
 
       const notifIds = recipients.map((r) => r.notification_id);
 
-      // ২. মূল নোটিফিকেশন ডাটা ফেচ (অনুমোদিত টার্গেট অডিয়েন্স ফিল্টার করে)
       const { data: notifsData, error: notifError } = await supabase
         .from('notifications')
         .select('*')
@@ -162,7 +109,6 @@ export default function NotificationsView({
         return;
       }
 
-      // ৩. ডাটা মার্জ করা
       const recipMap = recipients.reduce((acc, item) => {
         acc[item.notification_id] = { is_read: item.is_read, recipient_id: item.id };
         return acc;
@@ -191,7 +137,10 @@ export default function NotificationsView({
     } catch (err) {
       console.error('Fetch error:', err);
     } finally {
-      if (!isSilent) setLoading(false);
+      if (!isSilent) {
+        setLoading(false);
+        setIsPageLoading(false);
+      }
     }
   };
 
@@ -273,27 +222,30 @@ export default function NotificationsView({
     return true;
   });
 
+  if (loading) {
+    return null;
+  }
+
   return (
-    <div style={{ 
-      maxWidth: '600px', 
-      margin: '0 auto', 
-      height: '100vh', 
-      display: 'flex', 
-      flexDirection: 'column', 
-      backgroundColor: '#000000', 
+    <div style={{
+      maxWidth: '600px',
+      margin: '0 auto',
+      height: '100vh',
+      display: 'flex',
+      flexDirection: 'column',
+      backgroundColor: '#000000',
       color: '#FFF',
       overflow: 'hidden'
     }}>
-      {/* Header */}
-      <div style={{ 
+      <div style={{
         flexShrink: 0,
         backgroundColor: 'rgba(9, 9, 11, 0.95)',
         backdropFilter: 'blur(16px)',
         WebkitBackdropFilter: 'blur(16px)',
         padding: '16px 14px',
         borderBottom: '1px solid #18181B',
-        display: 'flex', 
-        alignItems: 'center', 
+        display: 'flex',
+        alignItems: 'center',
         justifyContent: 'space-between',
         zIndex: 50
       }}>
@@ -342,10 +294,9 @@ export default function NotificationsView({
         </button>
       </div>
 
-      {/* Notifications List */}
-      <div style={{ 
-        flex: 1, 
-        overflowY: 'auto', 
+      <div style={{
+        flex: 1,
+        overflowY: 'auto',
         padding: '16px 12px 32px 12px',
         WebkitOverflowScrolling: 'touch'
       }}>
@@ -371,16 +322,14 @@ export default function NotificationsView({
           </div>
         )}
 
-        {loading ? (
-          <NotificationSkeleton />
-        ) : filteredNotifications.length === 0 ? (
-          <div style={{ 
+        {filteredNotifications.length === 0 ? (
+          <div style={{
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            padding: '80px 20px', 
-            textAlign: 'center' 
+            padding: '80px 20px',
+            textAlign: 'center'
           }}>
             <div style={{
               width: '52px',
@@ -483,10 +432,10 @@ export default function NotificationsView({
                     {item.title}
                   </h3>
 
-                  <p style={{ 
-                    margin: 0, 
-                    fontSize: '13px', 
-                    color: item.is_read ? '#8E8E93' : '#A1A1AA', 
+                  <p style={{
+                    margin: 0,
+                    fontSize: '13px',
+                    color: item.is_read ? '#8E8E93' : '#A1A1AA',
                     lineHeight: '1.5',
                     overflowWrap: 'break-word',
                     wordBreak: 'break-word',
