@@ -229,7 +229,7 @@ export default function ProfileSettings({
     };
   }, [isAmbassadorActive]);
 
-  if (loading || !profile) {
+  if (!profile && !loading) {
     return null;
   }
 
@@ -441,7 +441,8 @@ export default function ProfileSettings({
     <div style={{
       position: 'fixed',
       inset: 0,
-      backgroundColor: '#000000',
+      // Let the global skeleton show through below the real header while loading.
+      backgroundColor: loading ? 'transparent' : '#000000',
       zIndex: 999,
       display: 'flex',
       flexDirection: 'column'
@@ -539,6 +540,9 @@ export default function ProfileSettings({
         paddingRight: '20px',
         paddingBottom: '40px',
         WebkitOverflowScrolling: 'touch',
+        // Hide the real settings form while its skeleton is displayed.
+        visibility: loading ? 'hidden' : 'visible',
+        pointerEvents: loading ? 'none' : 'auto',
       }}>
         {isAmbassadorActive && (
           <div style={{
