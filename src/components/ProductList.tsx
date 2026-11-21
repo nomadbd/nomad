@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/supabaseClient';
 import { useCart } from '@/context/CartContext';
+import { useGlobalLoading } from '@/context/LoadingContext';
 import ProductGallery from './ProductGallery';
 
 interface Product {
@@ -29,7 +30,8 @@ const ProductActionRow = ({ product }: { product: Product }) => {
   const availableSizes = product.sizes || [];
   const availableColors = product.colors || [];
 
-  const isSoldOut = product.status === 'sold_out' || product.stock_quantity <= 0;
+  const isSoldOut =
+    product.status === 'sold_out' || product.stock_quantity <= 0;
 
   useEffect(() => {
     return () => {
@@ -41,9 +43,11 @@ const ProductActionRow = ({ product }: { product: Product }) => {
 
   const triggerAddedFeedback = () => {
     setIsAdded(true);
+
     if (feedbackTimeoutRef.current !== null) {
       window.clearTimeout(feedbackTimeoutRef.current);
     }
+
     feedbackTimeoutRef.current = window.setTimeout(() => {
       setIsAdded(false);
     }, 1500);
@@ -55,6 +59,7 @@ const ProductActionRow = ({ product }: { product: Product }) => {
       triggerAddedFeedback();
       return;
     }
+
     if (availableSizes.length > 0) {
       setStep('size');
     } else {
@@ -64,6 +69,7 @@ const ProductActionRow = ({ product }: { product: Product }) => {
 
   const handleShare = async () => {
     const shareUrl = `${window.location.origin}/?p=${product.id}`;
+
     if (navigator.share) {
       try {
         await navigator.share({
@@ -88,16 +94,49 @@ const ProductActionRow = ({ product }: { product: Product }) => {
     flexShrink: 0,
     marginRight: '12px',
     display: 'inline-block',
-    lineHeight: '1'
+    lineHeight: '1',
   };
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: '42px', marginTop: '15px', boxSizing: 'border-box', width: '100%' }}>
+    <div
+      style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        height: '42px',
+        marginTop: '15px',
+        boxSizing: 'border-box',
+        width: '100%',
+      }}
+    >
       {step === 'idle' && (
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', animation: 'swapFadeIn 0.25s ease-in-out' }}>
-          <span style={{ fontSize: '15px', color: isSoldOut ? '#555' : '#fff', fontWeight: 500, fontFamily: 'monospace' }}>৳{product.price}</span>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            width: '100%',
+            animation: 'swapFadeIn 0.25s ease-in-out',
+          }}
+        >
+          <span
+            style={{
+              fontSize: '15px',
+              color: isSoldOut ? '#555' : '#fff',
+              fontWeight: 500,
+              fontFamily: 'monospace',
+            }}
+          >
+            ৳{product.price}
+          </span>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+            }}
+          >
             <button
               onClick={handleShare}
               style={{
@@ -112,7 +151,16 @@ const ProductActionRow = ({ product }: { product: Product }) => {
               }}
               title="Share"
             >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ccc" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#ccc"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
                 <circle cx="18" cy="5" r="3" />
                 <circle cx="6" cy="12" r="3" />
                 <circle cx="18" cy="19" r="3" />
@@ -125,8 +173,21 @@ const ProductActionRow = ({ product }: { product: Product }) => {
               <button
                 disabled
                 style={{
-                  height: '36px', width: '130px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box', lineHeight: '1',
-                  background: 'transparent', border: '1px solid #222', color: '#555', fontSize: '11px', letterSpacing: '1.5px', cursor: 'not-allowed', textTransform: 'uppercase', fontWeight: '600'
+                  height: '36px',
+                  width: '130px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxSizing: 'border-box',
+                  lineHeight: '1',
+                  background: 'transparent',
+                  border: '1px solid #222',
+                  color: '#555',
+                  fontSize: '11px',
+                  letterSpacing: '1.5px',
+                  cursor: 'not-allowed',
+                  textTransform: 'uppercase',
+                  fontWeight: '600',
                 }}
               >
                 SOLD OUT
@@ -161,9 +222,29 @@ const ProductActionRow = ({ product }: { product: Product }) => {
       )}
 
       {step === 'size' && (
-        <div style={{ display: 'flex', alignItems: 'center', width: '100%', height: '100%', animation: 'swapFadeIn 0.25s ease-in-out', overflow: 'hidden' }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            width: '100%',
+            height: '100%',
+            animation: 'swapFadeIn 0.25s ease-in-out',
+            overflow: 'hidden',
+          }}
+        >
           <span style={labelStyle}>SIZE:</span>
-          <div className="variant-scroll-container" style={{ display: 'flex', gap: '16px', overflowX: 'auto', flex: 1, scrollBehavior: 'smooth', WebkitOverflowScrolling: 'touch', paddingRight: '5px', alignItems: 'center' }}>
+          <div
+            className="variant-scroll-container"
+            style={{
+              display: 'flex',
+              gap: '16px',
+              overflowX: 'auto',
+              flex: 1,
+              scrollBehavior: 'smooth',
+              WebkitOverflowScrolling: 'touch',
+              paddingRight: '5px',
+            }}
+          >
             {availableSizes.map((size) => (
               <span
                 key={size}
@@ -172,12 +253,25 @@ const ProductActionRow = ({ product }: { product: Product }) => {
                   if (availableColors.length > 0) {
                     setStep('color');
                   } else {
-                    addToCart({ ...product, size: size, color: 'DEFAULT' });
+                    addToCart({
+                      ...product,
+                      size,
+                      color: 'DEFAULT',
+                    });
                     triggerAddedFeedback();
                     setStep('idle');
                   }
                 }}
-                style={{ color: '#fff', cursor: 'pointer', fontSize: '11px', fontWeight: '500', letterSpacing: '1px', flexShrink: 0, padding: '4px 2px', lineHeight: '1' }}
+                style={{
+                  color: '#fff',
+                  cursor: 'pointer',
+                  fontSize: '11px',
+                  fontWeight: '500',
+                  letterSpacing: '1px',
+                  flexShrink: 0,
+                  padding: '4px 2px',
+                  lineHeight: '1',
+                }}
               >
                 {size}
               </span>
@@ -187,9 +281,29 @@ const ProductActionRow = ({ product }: { product: Product }) => {
       )}
 
       {step === 'color' && (
-        <div style={{ display: 'flex', alignItems: 'center', width: '100%', height: '100%', animation: 'swapFadeIn 0.25s ease-in-out', overflow: 'hidden' }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            width: '100%',
+            height: '100%',
+            animation: 'swapFadeIn 0.25s ease-in-out',
+            overflow: 'hidden',
+          }}
+        >
           <span style={labelStyle}>COLOR:</span>
-          <div className="variant-scroll-container" style={{ display: 'flex', gap: '14px', overflowX: 'auto', flex: 1, scrollBehavior: 'smooth', WebkitOverflowScrolling: 'touch', paddingRight: '5px', alignItems: 'center' }}>
+          <div
+            className="variant-scroll-container"
+            style={{
+              display: 'flex',
+              gap: '14px',
+              overflowX: 'auto',
+              flex: 1,
+              scrollBehavior: 'smooth',
+              WebkitOverflowScrolling: 'touch',
+              paddingRight: '5px',
+            }}
+          >
             {availableColors.map((color) => (
               <span
                 key={color}
@@ -197,12 +311,22 @@ const ProductActionRow = ({ product }: { product: Product }) => {
                   addToCart({
                     ...product,
                     size: selectedSize || 'FREE',
-                    color: color
+                    color,
                   });
                   triggerAddedFeedback();
                   setStep('idle');
                 }}
-                style={{ color: '#fff', cursor: 'pointer', fontSize: '11px', fontWeight: '500', letterSpacing: '1px', flexShrink: 0, padding: '4px 2px', textTransform: 'uppercase', lineHeight: '1' }}
+                style={{
+                  color: '#fff',
+                  cursor: 'pointer',
+                  fontSize: '11px',
+                  fontWeight: '500',
+                  letterSpacing: '1px',
+                  flexShrink: 0,
+                  padding: '4px 2px',
+                  textTransform: 'uppercase',
+                  lineHeight: '1',
+                }}
               >
                 {color}
               </span>
@@ -218,14 +342,39 @@ const ProductCard = ({ product }: { product: Product }) => {
   const [isDescExpanded, setIsDescExpanded] = useState(false);
 
   return (
-    <div id={`product-${product.id}`} className="showroom-card-item" style={{ scrollSnapAlign: 'start', boxSizing: 'border-box', display: 'flex', flexDirection: 'column' }}>
+    <div
+      id={`product-${product.id}`}
+      className="showroom-card-item"
+      style={{
+        scrollSnapAlign: 'start',
+        boxSizing: 'border-box',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
       <ProductGallery
         media={product.product_media || []}
         productName={product.name}
       />
 
-      <div style={{ marginTop: '15px', padding: '0 5px', display: 'flex', flexDirection: 'column' }}>
-        <h3 style={{ fontSize: '14px', color: '#fff', margin: '0 0 6px 0', fontWeight: '600' }}>{product.name}</h3>
+      <div
+        style={{
+          marginTop: '15px',
+          padding: '0 5px',
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
+        <h3
+          style={{
+            fontSize: '14px',
+            color: '#fff',
+            margin: '0 0 6px 0',
+            fontWeight: '600',
+          }}
+        >
+          {product.name}
+        </h3>
 
         <div style={{ margin: '0' }}>
           {(() => {
@@ -236,78 +385,173 @@ const ProductCard = ({ product }: { product: Product }) => {
               : product.description;
 
             return !isDescExpanded ? (
-              <p style={{ fontSize: '13px', color: '#fff', margin: 0, lineHeight: '1.4' }}>
+              <p
+                style={{
+                  fontSize: '13px',
+                  color: '#fff',
+                  margin: 0,
+                  lineHeight: '1.4',
+                }}
+              >
                 {displayedText}
                 <span
                   onClick={() => setIsDescExpanded(true)}
-                  style={{ fontSize: '12px', color: '#aaa', cursor: 'pointer', marginLeft: '6px', fontWeight: '500', display: 'inline' }}
+                  style={{
+                    fontSize: '12px',
+                    color: '#aaa',
+                    cursor: 'pointer',
+                    marginLeft: '6px',
+                    fontWeight: '500',
+                    display: 'inline',
+                  }}
                 >
                   see more
                 </span>
               </p>
             ) : (
-              <div style={{ animation: 'swapFadeIn 0.3s ease-in-out' }}>
-                <p style={{ fontSize: '13px', color: '#fff', margin: 0, lineHeight: '1.4' }}>
+              <div
+                style={{
+                  animation: 'swapFadeIn 0.3s ease-in-out',
+                }}
+              >
+                <p
+                  style={{
+                    fontSize: '13px',
+                    color: '#fff',
+                    margin: 0,
+                    lineHeight: '1.4',
+                  }}
+                >
                   {product.description}
                 </p>
 
-                {product.details && Object.keys(product.details).length > 0 && (
-                  <div style={{ borderTop: '1px solid #1a1a1a', marginTop: '12px', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px', fontFamily: 'monospace', fontSize: '12px' }}>
-                    {(() => {
-                      const specKeys = [
-                        'FIT',
-                        'GSM',
-                        'MATERIAL',
-                        'COLOR',
-                        'SLEEVE',
-                        'PATTERN',
-                        'OCCASION',
-                        'CARE',
-                        'MADE IN'
-                      ];
+                {product.details &&
+                  Object.keys(product.details).length > 0 && (
+                    <div
+                      style={{
+                        borderTop: '1px solid #1a1a1a',
+                        marginTop: '12px',
+                        paddingTop: '12px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '8px',
+                        fontFamily: 'monospace',
+                        fontSize: '12px',
+                      }}
+                    >
+                      {(() => {
+                        const specKeys = [
+                          'FIT',
+                          'GSM',
+                          'MATERIAL',
+                          'COLOR',
+                          'SLEEVE',
+                          'PATTERN',
+                          'OCCASION',
+                          'CARE',
+                          'MADE IN',
+                        ];
 
-                      const detailsObj = product.details || {};
-                      const detailKeys = Object.keys(detailsObj);
+                        const detailsObj = product.details || {};
+                        const detailKeys = Object.keys(detailsObj);
 
-                      const getVal = (targetKey: string) => {
-                        const foundKey = detailKeys.find(
-                          (k) =>
-                            k.trim().toUpperCase() === targetKey ||
-                            k.trim().toUpperCase().replace(/\s+/g, '') === targetKey.replace(/\s+/g, '')
-                        );
-                        return foundKey ? detailsObj[foundKey] : null;
-                      };
+                        const getVal = (targetKey: string) => {
+                          const foundKey = detailKeys.find(
+                            (key) =>
+                              key.trim().toUpperCase() === targetKey ||
+                              key
+                                .trim()
+                                .toUpperCase()
+                                .replace(/\s+/g, '') ===
+                                targetKey.replace(/\s+/g, '')
+                          );
 
-                      const detailsVal = getVal('DETAILS');
+                          return foundKey ? detailsObj[foundKey] : null;
+                        };
 
-                      return (
-                        <>
-                          {specKeys.map((key) => {
-                            const val = getVal(key);
-                            if (!val) return null;
-                            return (
-                              <div key={key} style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'flex-start' }}>
-                                <span style={{ color: '#fff', width: '95px', flexShrink: 0, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{key}</span>
-                                <span style={{ color: '#555', marginRight: '10px', flexShrink: 0 }}>:</span>
-                                <span style={{ color: '#fff', fontWeight: '400', flex: 1, overflowWrap: 'break-word', wordBreak: 'break-word', lineHeight: '1.4' }}>{String(val)}</span>
+                        const detailsVal = getVal('DETAILS');
+
+                        return (
+                          <>
+                            {specKeys.map((key) => {
+                              const val = getVal(key);
+                              if (!val) return null;
+
+                              return (
+                                <div
+                                  key={key}
+                                  style={{
+                                    display: 'flex',
+                                    justifyContent: 'flex-start',
+                                    alignItems: 'flex-start',
+                                  }}
+                                >
+                                  <span
+                                    style={{
+                                      color: '#fff',
+                                      width: '95px',
+                                      flexShrink: 0,
+                                      textTransform: 'uppercase',
+                                      letterSpacing: '0.5px',
+                                    }}
+                                  >
+                                    {key}
+                                  </span>
+                                  <span
+                                    style={{
+                                      color: '#555',
+                                      marginRight: '10px',
+                                      flexShrink: 0,
+                                    }}
+                                  >
+                                    :
+                                  </span>
+                                  <span
+                                    style={{
+                                      color: '#fff',
+                                      fontWeight: '400',
+                                      flex: 1,
+                                      overflowWrap: 'break-word',
+                                      wordBreak: 'break-word',
+                                      lineHeight: '1.4',
+                                    }}
+                                  >
+                                    {String(val)}
+                                  </span>
+                                </div>
+                              );
+                            })}
+
+                            {detailsVal && (
+                              <div
+                                style={{
+                                  marginTop: '4px',
+                                  color: '#fff',
+                                  fontWeight: '400',
+                                  overflowWrap: 'break-word',
+                                  wordBreak: 'break-word',
+                                  lineHeight: '1.4',
+                                }}
+                              >
+                                {String(detailsVal)}
                               </div>
-                            );
-                          })}
-
-                          {detailsVal && (
-                            <div style={{ marginTop: '4px', color: '#fff', fontWeight: '400', overflowWrap: 'break-word', wordBreak: 'break-word', lineHeight: '1.4' }}>
-                              {String(detailsVal)}
-                            </div>
-                          )}
-                        </>
-                      );
-                    })()}
-                  </div>
-                )}
+                            )}
+                          </>
+                        );
+                      })()}
+                    </div>
+                  )}
 
                 <span
                   onClick={() => setIsDescExpanded(false)}
-                  style={{ fontSize: '11px', color: '#aaa', cursor: 'pointer', marginTop: '12px', display: 'inline-block', letterSpacing: '0.5px' }}
+                  style={{
+                    fontSize: '11px',
+                    color: '#aaa',
+                    cursor: 'pointer',
+                    marginTop: '12px',
+                    display: 'inline-block',
+                    letterSpacing: '0.5px',
+                  }}
                 >
                   see less
                 </span>
@@ -326,13 +570,36 @@ export default function ProductList() {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
+  const [expandedCategories, setExpandedCategories] = useState<
+    Record<string, boolean>
+  >({});
+  const loadingTokenRef = useRef<number | null>(null);
+
+  const { setIsPageLoading } = useGlobalLoading();
+
+  const startPageLoading = () => {
+    const token = setIsPageLoading(true, { view: 'home' });
+    loadingTokenRef.current = token;
+  };
+
+  const stopPageLoading = () => {
+    if (loadingTokenRef.current === null) return;
+
+    setIsPageLoading(
+      false,
+      undefined,
+      loadingTokenRef.current
+    );
+    loadingTokenRef.current = null;
+  };
 
   useEffect(() => {
     let isMounted = true;
 
     const fetchProducts = async () => {
       setLoading(true);
+      startPageLoading();
+
       try {
         const { data, error } = await supabase
           .from('products')
@@ -349,9 +616,13 @@ export default function ProductList() {
         if (error) throw error;
 
         if (data && isMounted) {
-          const shuffledProducts = [...data].sort(() => Math.random() - 0.5);
-          const uniqueCategories = Array.from(new Set(shuffledProducts.map(p => p.category)))
-            .sort(() => Math.random() - 0.5);
+          const shuffledProducts = [...data].sort(
+            () => Math.random() - 0.5
+          );
+
+          const uniqueCategories = Array.from(
+            new Set(shuffledProducts.map((item) => item.category))
+          ).sort(() => Math.random() - 0.5);
 
           setProducts(shuffledProducts as Product[]);
           setCategories(uniqueCategories);
@@ -361,6 +632,7 @@ export default function ProductList() {
       } finally {
         if (isMounted) {
           setLoading(false);
+          stopPageLoading();
         }
       }
     };
@@ -369,6 +641,7 @@ export default function ProductList() {
 
     return () => {
       isMounted = false;
+      stopPageLoading();
     };
   }, []);
 
@@ -376,15 +649,29 @@ export default function ProductList() {
     if (!loading && products.length > 0) {
       const params = new URLSearchParams(window.location.search);
       const targetId = params.get('p') || params.get('product');
+
       if (targetId) {
-        const targetProduct = products.find(p => String(p.id) === String(targetId));
+        const targetProduct = products.find(
+          (item) => String(item.id) === String(targetId)
+        );
+
         if (targetProduct && targetProduct.category) {
-          setExpandedCategories(prev => ({ ...prev, [targetProduct.category]: true }));
+          setExpandedCategories((previous) => ({
+            ...previous,
+            [targetProduct.category]: true,
+          }));
         }
+
         const scrollTimer = window.setTimeout(() => {
-          const el = document.getElementById(`product-${targetId}`);
-          if (el) {
-            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          const element = document.getElementById(
+            `product-${targetId}`
+          );
+
+          if (element) {
+            element.scrollIntoView({
+              behavior: 'smooth',
+              block: 'center',
+            });
           }
         }, 300);
 
@@ -394,54 +681,102 @@ export default function ProductList() {
   }, [loading, products]);
 
   if (loading) {
-    return (
-      <div style={{ backgroundColor: '#000', width: '100%', padding: '20px 15px', boxSizing: 'border-box' }}>
-        <div style={{ display: 'flex', gap: '16px', overflow: 'hidden' }}>
-          {[1, 2, 3].map((skeleton) => (
-            <div
-              key={skeleton}
-              style={{
-                width: '300px',
-                minWidth: '300px',
-                height: '360px',
-                backgroundColor: '#090909',
-                border: '1px solid #181818',
-              }}
-            />
-          ))}
-        </div>
-      </div>
-    );
+    return null;
   }
 
   return (
-    <div style={{ backgroundColor: '#000', width: '100%', boxSizing: 'border-box' }}>
+    <div
+      style={{
+        backgroundColor: '#000',
+        width: '100%',
+        boxSizing: 'border-box',
+      }}
+    >
       {categories.map((category) => {
-        const categoryProducts = products.filter(p => p.category === category);
+        const categoryProducts = products.filter(
+          (item) => item.category === category
+        );
         const isExpanded = !!expandedCategories[category];
 
         return (
-          <div key={category} className="showroom-section" style={{ marginBottom: '25px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 15px 12px 15px', borderBottom: '1px solid #141414' }}>
-              <h3 style={{ margin: 0, fontSize: '13px', letterSpacing: '3px', color: '#b3b3b3', textTransform: 'uppercase' }}>{category}</h3>
+          <div
+            key={category}
+            className="showroom-section"
+            style={{ marginBottom: '25px' }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '0 15px 12px 15px',
+                borderBottom: '1px solid #141414',
+              }}
+            >
+              <h3
+                style={{
+                  margin: 0,
+                  fontSize: '13px',
+                  letterSpacing: '3px',
+                  color: '#b3b3b3',
+                  textTransform: 'uppercase',
+                }}
+              >
+                {category}
+              </h3>
 
               <button
-                onClick={() => setExpandedCategories(prev => ({ ...prev, [category]: !isExpanded }))}
+                onClick={() =>
+                  setExpandedCategories((previous) => ({
+                    ...previous,
+                    [category]: !isExpanded,
+                  }))
+                }
                 style={{
-                  background: 'none', border: 'none', color: '#fff', fontSize: '11px', letterSpacing: '2px', cursor: 'pointer', opacity: 0.7,
-                  display: 'flex', padding: 0, alignItems: 'center', width: '85px', justifyContent: 'flex-end'
+                  background: 'none',
+                  border: 'none',
+                  color: '#fff',
+                  fontSize: '11px',
+                  letterSpacing: '2px',
+                  cursor: 'pointer',
+                  opacity: 0.7,
+                  display: 'flex',
+                  padding: 0,
+                  alignItems: 'center',
+                  width: '85px',
+                  justifyContent: 'flex-end',
                 }}
               >
                 <span>SEE&nbsp;</span>
-                <span style={{ display: 'inline-block', width: '35px', textAlign: 'left' }}>
+                <span
+                  style={{
+                    display: 'inline-block',
+                    width: '35px',
+                    textAlign: 'left',
+                  }}
+                >
                   {isExpanded ? 'LESS' : 'MORE'}
                 </span>
               </button>
             </div>
 
-            <div className="showroom-row-container" style={{ display: 'flex', alignItems: 'flex-start', flexWrap: isExpanded ? 'wrap' : 'nowrap', width: '100%', scrollSnapType: 'x mandatory', overflowX: 'auto', scrollBehavior: 'smooth' }}>
+            <div
+              className="showroom-row-container"
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                flexWrap: isExpanded ? 'wrap' : 'nowrap',
+                width: '100%',
+                scrollSnapType: 'x mandatory',
+                overflowX: 'auto',
+                scrollBehavior: 'smooth',
+              }}
+            >
               {categoryProducts.map((product) => (
-                <ProductCard key={product.id} product={product} />
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                />
               ))}
             </div>
           </div>
@@ -453,22 +788,46 @@ export default function ProductList() {
           from { opacity: 0; transform: translateY(1px); }
           to { opacity: 1; transform: translateY(0); }
         }
+
         .variant-scroll-container::-webkit-scrollbar {
           display: none;
         }
+
         .variant-scroll-container {
           -ms-overflow-style: none;
           scrollbar-width: none;
         }
+
         @media (max-width: 767px) {
-          .showroom-section { margin-left: calc(-50vw + 50%); margin-right: calc(-50vw + 50%); width: 100vw; }
-          .showroom-card-item { width: 100vw !important; min-width: 100vw !important; padding: 0 15px !important; }
+          .showroom-section {
+            margin-left: calc(-50vw + 50%);
+            margin-right: calc(-50vw + 50%);
+            width: 100vw;
+          }
+
+          .showroom-card-item {
+            width: 100vw !important;
+            min-width: 100vw !important;
+            padding: 0 15px !important;
+          }
         }
+
         @media (min-width: 768px) {
-          .showroom-section { padding: 0 15px; }
-          .showroom-card-item { width: 300px; min-width: 300px; padding: 0 10px; margin-bottom: 25px; }
+          .showroom-section {
+            padding: 0 15px;
+          }
+
+          .showroom-card-item {
+            width: 300px;
+            min-width: 300px;
+            padding: 0 10px;
+            margin-bottom: 25px;
+          }
         }
-        .showroom-row-container::-webkit-scrollbar { display: none; }
+
+        .showroom-row-container::-webkit-scrollbar {
+          display: none;
+        }
       `}</style>
     </div>
   );
