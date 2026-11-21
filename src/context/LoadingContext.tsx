@@ -45,7 +45,8 @@ export const LoadingProvider: React.FC<{
 }> = ({ children }) => {
   const [isPageLoading, setIsLoadingState] = useState(false);
   const [skeletonView, setSkeletonView] = useState<SkeletonViewType>(null);
-  const [isAmbassadorSkeleton, setIsAmbassadorSkeleton] = useState(false);
+  const [isAmbassadorSkeleton, setIsAmbassadorSkeleton] =
+    useState(false);
 
   const activeTokenRef = useRef(0);
 
@@ -61,7 +62,9 @@ export const LoadingProvider: React.FC<{
 
         setIsLoadingState(true);
         setSkeletonView(options?.view ?? null);
-        setIsAmbassadorSkeleton(Boolean(options?.isAmbassador));
+        setIsAmbassadorSkeleton(
+          Boolean(options?.isAmbassador)
+        );
 
         return nextToken;
       }
@@ -74,7 +77,6 @@ export const LoadingProvider: React.FC<{
       }
 
       activeTokenRef.current += 1;
-
       setIsLoadingState(false);
       setSkeletonView(null);
       setIsAmbassadorSkeleton(false);
@@ -98,4 +100,5 @@ export const LoadingProvider: React.FC<{
   );
 };
 
-export const useGlobalLoading = () => useContext(LoadingContext);
+export const useGlobalLoading = () =>
+  useContext(LoadingContext);
