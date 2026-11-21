@@ -80,13 +80,44 @@ export const GlobalSkeleton: React.FC = () => {
       )}
 
       {(pathname === '/profile' || pathname.startsWith('/profile/')) && (
-        <div style={{ maxWidth: '900px', margin: '24px auto' }}>
+        <div style={{ maxWidth: '900px', margin: '0 auto', paddingTop: '56px' }}>
+          <div
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              zIndex: 998,
+              backgroundColor: 'rgba(0, 0, 0, 0.92)',
+              borderBottom: '1px solid #1F1F22',
+              padding: '10px 16px',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              boxSizing: 'border-box',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 }}>
+              <div style={{ ...shimmerStyle, width: '40px', height: '40px', borderRadius: '50%', flexShrink: 0 }} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1, minWidth: 0 }}>
+                <div style={{ ...shimmerStyle, height: '13px', width: '46%', maxWidth: '150px', borderRadius: '4px' }} />
+                <div style={{ ...shimmerStyle, height: '9px', width: '34%', maxWidth: '115px', borderRadius: '4px' }} />
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+              <div style={{ ...shimmerStyle, width: '35px', height: '35px', borderRadius: '50%' }} />
+              <div style={{ ...shimmerStyle, width: '35px', height: '35px', borderRadius: '50%' }} />
+            </div>
+          </div>
+
           <div
             style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
               gap: '20px',
+              marginTop: '24px',
               marginBottom: '28px',
               paddingBottom: '20px',
               borderBottom: '1px solid #111',
