@@ -118,7 +118,6 @@ export default function ProfileSettings({
   handleSignOut,
   setShowConfirm,
   onChangeView,
-  settingsFeedback,
   clearSettingsFeedback,
   fieldErrors = {},
   clearFieldError,
@@ -128,7 +127,7 @@ export default function ProfileSettings({
   const [pushStatus, setPushStatus] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const [isSaving, setIsSaving] = useState(false);
-  const [localError, setLocalError] = useState<string | null>(null);
+  const [localFieldErrors, setLocalFieldErrors] = useState<{ name?: string; email?: string }>({});
 
   const [isAvatarSheetOpen, setIsAvatarSheetOpen] = useState(false);
   const [isPasswordSheetOpen, setIsPasswordSheetOpen] = useState(false);
@@ -174,6 +173,34 @@ export default function ProfileSettings({
       document.body.style.overflow = originalStyle;
     };
   }, []);
+
+  // ===== Auto-dismiss inline notifications after 3.5s =====
+  useEffect(() => {
+    if (!avatarFeedback || !clearAvatarFeedback) return;
+    const timer = window.setTimeout(() => clearAvatarFeedback(), 3500);
+    return () => window.clearTimeout(timer);
+  }, [avatarFeedback, clearAvatarFeedback]);
+
+  useEffect(() => {
+    if (!pushStatus) return;
+    const timer = window.setTimeout(() => setPushStatus(null), 3500);
+    return () => window.clearTimeout(timer);
+  }, [pushStatus]);
+
+  useEffect(() => {
+    if (!localFieldErrors.name && !localFieldErrors.email) return;
+    const timer = window.setTimeout(() => setLocalFieldErrors({}), 3500);
+    return () => window.clearTimeout(timer);
+  }, [localFieldErrors]);
+
+  useEffect(() => {
+    const activeField = (['name', 'email', 'slug', 'payoutNumber', 'password'] as const).find(
+      (key) => Boolean(fieldErrors[key])
+    );
+    if (!activeField || !clearFieldError) return;
+    const timer = window.setTimeout(() => clearFieldError(activeField), 3500);
+    return () => window.clearTimeout(timer);
+  }, [fieldErrors, clearFieldError]);
 
   useEffect(() => {
     let active = true;
@@ -267,16 +294,21 @@ export default function ProfileSettings({
 
   const triggerSaveAction = async () => {
     if (isSaving || !isDirty) return;
-    setLocalError(null);
+    setLocalFieldErrors({});
     clearSettingsFeedback?.();
 
+    const nextLocalErrors: { name?: string; email?: string } = {};
+
     if (newName && newName.trim().length < 2) {
-      setLocalError('Name must be at least 2 characters long.');
-      return;
+      nextLocalErrors.name = 'Name must be at least 2 characters long.';
     }
 
     if (newEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail.trim())) {
-      setLocalError('Please enter a valid email address.');
+      nextLocalErrors.email = 'Please enter a valid email address.';
+    }
+
+    if (Object.keys(nextLocalErrors).length > 0) {
+      setLocalFieldErrors(nextLocalErrors);
       return;
     }
 
@@ -393,9 +425,8 @@ export default function ProfileSettings({
   };
 
   const showSaveButton = isDirty || isSaving;
-  const combinedFeedback = localError
-    ? { type: 'error' as const, text: localError }
-    : settingsFeedback || null;
+  const nameError = localFieldErrors.name || fieldErrors.name;
+  const emailError = localFieldErrors.email || fieldErrors.email;
 
   return (
     <div style={{
@@ -565,11 +596,11 @@ export default function ProfileSettings({
             setNewName(e.target.value);
             clearFieldError?.('name');
             clearSettingsFeedback?.();
-            setLocalError(null);
+            setLocalFieldErrors((prev) => ({ ...prev, name: undefined }));
           }}
-          style={getInputStyle(Boolean(fieldErrors.name))}
+          style={getInputStyle(Boolean(nameError))}
         />
-        {fieldErrors.name && <p style={inlineErrorStyle}>{fieldErrors.name}</p>}
+        {nameError && <p style={inlineErrorStyle}>{nameError}</p>}
 
         <p style={labelStyle}>EMAIL ADDRESS</p>
         <input
@@ -579,11 +610,11 @@ export default function ProfileSettings({
             setNewEmail(e.target.value);
             clearFieldError?.('email');
             clearSettingsFeedback?.();
-            setLocalError(null);
+            setLocalFieldErrors((prev) => ({ ...prev, email: undefined }));
           }}
-          style={getInputStyle(Boolean(fieldErrors.email))}
+          style={getInputStyle(Boolean(emailError))}
         />
-        {fieldErrors.email && <p style={inlineErrorStyle}>{fieldErrors.email}</p>}
+        {emailError && <p style={inlineErrorStyle}>{emailError}</p>}
 
         {isAmbassadorActive && (
           <>
@@ -693,7 +724,7 @@ export default function ProfileSettings({
               border: '1px solid #222222',
               padding: '12px 14px',
               borderRadius: '6px',
-              marginBottom: '16px'
+              marginBottom: '20px'
             }}>
               <div style={{
                 display: 'flex',
@@ -748,25 +779,6 @@ export default function ProfileSettings({
               )}
             </div>
           </>
-        )}
-
-        {combinedFeedback && (
-          <div style={{
-            background: '#111111',
-            border: `1px solid ${combinedFeedback.type === 'success' ? '#1E3A2F' : '#3B1D1D'}`,
-            padding: '10px 14px',
-            borderRadius: '6px',
-            marginBottom: '16px'
-          }}>
-            <p style={{
-              margin: 0,
-              fontSize: '11px',
-              color: combinedFeedback.type === 'success' ? '#4ADE80' : '#F87171',
-              letterSpacing: '0.4px'
-            }}>
-              {combinedFeedback.text}
-            </p>
-          </div>
         )}
 
         <div style={{
