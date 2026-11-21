@@ -41,6 +41,12 @@ export default function CommunicationView({ userId, userEmail, onBack }: Communi
   };
 
   useEffect(() => {
+    return () => {
+      setIsPageLoading(false);
+    };
+  }, [setIsPageLoading]);
+
+  useEffect(() => {
     const originalOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
 
@@ -95,7 +101,8 @@ export default function CommunicationView({ userId, userEmail, onBack }: Communi
     if (!userId) return;
 
     try {
-      setIsPageLoading(true);
+      setLoading(true);
+      setIsPageLoading(true, { view: 'communication', isAmbassador: true });
       const { data, error } = await supabase
         .from('communications')
         .select('*')
