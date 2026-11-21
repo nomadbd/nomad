@@ -47,52 +47,99 @@ export default function ProfileHeader({
   const name = profile?.name || 'PROFILE';
   const profileKey =
     profile?.id || profile?.email || 'default_user';
-
   const hasAlreadyAnimated =
     animatedProfiles.has(profileKey);
+  const isProfileReady = Boolean(profile) && !loading;
 
   const [showGreeting, setShowGreeting] =
-    useState(!hasAlreadyAnimated);
-  const [fade, setFade] = useState(true);
-  const fadeTimeoutRef = useRef<number | null>(null);
+    useState(false);
+  const [titleVisible, setTitleVisible] =
+    useState(false);
+  const [subtitleVisible, setSubtitleVisible] =
+    useState(false);
+
+  const timersRef = useRef<number[]>([]);
+  const animationFrameRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (loading || !profile) return;
+    return () => {
+      timersRef.current.forEach((timer) =>
+        window.clearTimeout(timer)
+      );
+      timersRef.current = [];
+
+      if (animationFrameRef.current !== null) {
+        window.cancelAnimationFrame(
+          animationFrameRef.current
+        );
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isProfileReady) {
+      setTitleVisible(false);
+      setSubtitleVisible(false);
+      return;
+    }
 
     if (hasAlreadyAnimated) {
       setShowGreeting(false);
-      setFade(true);
+      setTitleVisible(true);
+      setSubtitleVisible(true);
       return;
     }
 
     setShowGreeting(true);
-    setFade(true);
+    setTitleVisible(false);
+    setSubtitleVisible(false);
 
-    const timer = window.setTimeout(() => {
-      setFade(false);
+    animationFrameRef.current =
+      window.requestAnimationFrame(() => {
+        setTitleVisible(true);
 
-      fadeTimeoutRef.current = window.setTimeout(() => {
+        const subtitleTimer = window.setTimeout(
+          () => setSubtitleVisible(true),
+          180
+        );
+
+        timersRef.current.push(subtitleTimer);
+      });
+
+    const greetingTimer = window.setTimeout(() => {
+      setTitleVisible(false);
+      setSubtitleVisible(false);
+
+      const finishTimer = window.setTimeout(() => {
         setShowGreeting(false);
 
-        requestAnimationFrame(() => {
-          setFade(true);
-          animatedProfiles.add(profileKey);
-        });
+        animationFrameRef.current =
+          window.requestAnimationFrame(() => {
+            setTitleVisible(true);
+            setSubtitleVisible(true);
+            animatedProfiles.add(profileKey);
+          });
       }, 450);
-    }, 2500);
+
+      timersRef.current.push(finishTimer);
+    }, 3000);
+
+    timersRef.current.push(greetingTimer);
 
     return () => {
-      window.clearTimeout(timer);
-      if (fadeTimeoutRef.current !== null) {
-        window.clearTimeout(fadeTimeoutRef.current);
+      timersRef.current.forEach((timer) =>
+        window.clearTimeout(timer)
+      );
+      timersRef.current = [];
+
+      if (animationFrameRef.current !== null) {
+        window.cancelAnimationFrame(
+          animationFrameRef.current
+        );
+        animationFrameRef.current = null;
       }
     };
-  }, [
-    profileKey,
-    hasAlreadyAnimated,
-    loading,
-    profile,
-  ]);
+  }, [profileKey, isProfileReady]);
 
   if (!profile && !loading) {
     return null;
@@ -131,14 +178,26 @@ export default function ProfileHeader({
       ? hasUnreadNotif
       : notifCount > 0 || hasUnread;
 
-  const smoothTextStyle: React.CSSProperties = {
-    opacity: fade ? 1 : 0,
-    filter: fade ? 'blur(0px)' : 'blur(3px)',
-    transform: fade
+  const titleTransitionStyle: React.CSSProperties = {
+    opacity: titleVisible ? 1 : 0,
+    filter: titleVisible ? 'blur(0px)' : 'blur(3px)',
+    transform: titleVisible
       ? 'translateY(0)'
       : 'translateY(-2px)',
     transition:
       'opacity 450ms ease-in-out, filter 450ms ease-in-out, transform 450ms ease-in-out',
+    willChange: 'opacity, transform, filter',
+  };
+
+  const subtitleTransitionStyle: React.CSSProperties = {
+    opacity: subtitleVisible ? 1 : 0,
+    filter: subtitleVisible ? 'blur(0px)' : 'blur(3px)',
+    transform: subtitleVisible
+      ? 'translateY(0)'
+      : 'translateY(-2px)',
+    transition:
+      'opacity 450ms ease-in-out, filter 450ms ease-in-out, transform 450ms ease-in-out',
+    willChange: 'opacity, transform, filter',
   };
 
   return (
@@ -239,7 +298,6 @@ export default function ProfileHeader({
           }}
         >
           <h2
-            key={showGreeting ? 'welcome' : 'name'}
             style={{
               margin: 0,
               fontSize: '15px',
@@ -254,8 +312,7 @@ export default function ProfileHeader({
               lineHeight: '1.2',
               width: '100%',
               height: '18px',
-              willChange: 'opacity, transform, filter',
-              ...smoothTextStyle,
+              ...titleTransitionStyle,
             }}
           >
             {showGreeting ? 'WELCOME' : name}
@@ -263,11 +320,6 @@ export default function ProfileHeader({
 
           {isAmbassadorActive ? (
             <div
-              key={
-                showGreeting
-                  ? 'ambassador-greeting'
-                  : 'ambassador-name'
-              }
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -276,9 +328,7 @@ export default function ProfileHeader({
                 height: '14px',
                 minWidth: 0,
                 overflow: 'hidden',
-                willChange:
-                  'opacity, transform, filter',
-                ...smoothTextStyle,
+                ...subtitleTransitionStyle,
               }}
             >
               {!showGreeting && (
@@ -287,8 +337,7 @@ export default function ProfileHeader({
                     width: '5px',
                     height: '5px',
                     borderRadius: '50%',
-                    backgroundColor:
-                      '#10B981',
+                    backgroundColor: '#10B981',
                     flexShrink: 0,
                   }}
                 />
@@ -308,18 +357,11 @@ export default function ProfileHeader({
                   maxWidth: '100%',
                 }}
               >
-                {showGreeting
-                  ? 'AMBASSADOR'
-                  : 'AMBASSADOR'}
+                AMBASSADOR
               </span>
             </div>
           ) : (
             <span
-              key={
-                showGreeting
-                  ? 'member-greeting'
-                  : 'member-email'
-              }
               style={{
                 fontSize: '10px',
                 color: '#A1A1AA',
@@ -339,9 +381,7 @@ export default function ProfileHeader({
                 textOverflow: 'ellipsis',
                 display: 'block',
                 maxWidth: '100%',
-                willChange:
-                  'opacity, transform, filter',
-                ...smoothTextStyle,
+                ...subtitleTransitionStyle,
               }}
             >
               {showGreeting
@@ -406,88 +446,58 @@ export default function ProfileHeader({
                   position: 'absolute',
                   top: '-3px',
                   right: '-3px',
-                  backgroundColor:
-                    '#EF4444',
+                  backgroundColor: '#EF4444',
                   color: '#FFFFFF',
                   fontSize: '9px',
                   fontWeight: 'bold',
-                  borderRadius:
-                    '10px',
+                  borderRadius: '10px',
                   minWidth: '15px',
                   height: '15px',
-                  padding:
-                    '0 3px',
-                  display:
-                    'flex',
-                  alignItems:
-                    'center',
-                  justifyContent:
-                    'center',
-                  border:
-                    '1.5px solid #000000',
-                  lineHeight:
-                    1,
+                  padding: '0 3px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  border: '1.5px solid #000000',
+                  lineHeight: 1,
                 }}
               >
-                {msgCount > 99
-                  ? '99+'
-                  : msgCount}
+                {msgCount > 99 ? '99+' : msgCount}
               </span>
             )
           ) : notifCount > 0 ? (
             <span
               style={{
-                position:
-                  'absolute',
+                position: 'absolute',
                 top: '-3px',
                 right: '-3px',
-                backgroundColor:
-                  '#EF4444',
-                color:
-                  '#FFFFFF',
-                fontSize:
-                  '9px',
-                fontWeight:
-                  'bold',
-                borderRadius:
-                  '10px',
-                minWidth:
-                  '15px',
-                height:
-                  '15px',
-                padding:
-                  '0 3px',
-                display:
-                  'flex',
-                alignItems:
-                  'center',
-                justifyContent:
-                  'center',
-                border:
-                  '1.5px solid #000000',
-                lineHeight:
-                  1,
+                backgroundColor: '#EF4444',
+                color: '#FFFFFF',
+                fontSize: '9px',
+                fontWeight: 'bold',
+                borderRadius: '10px',
+                minWidth: '15px',
+                height: '15px',
+                padding: '0 3px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                border: '1.5px solid #000000',
+                lineHeight: 1,
               }}
             >
-              {notifCount > 99
-                ? '99+'
-                : notifCount}
+              {notifCount > 99 ? '99+' : notifCount}
             </span>
           ) : isNotifUnread ? (
             <span
               style={{
-                position:
-                  'absolute',
+                position: 'absolute',
                 top: '2px',
                 right: '2px',
                 width: '8px',
                 height: '8px',
-                backgroundColor:
-                  '#EF4444',
-                borderRadius:
-                  '50%',
-                border:
-                  '1.5px solid #000000',
+                backgroundColor: '#EF4444',
+                borderRadius: '50%',
+                border: '1.5px solid #000000',
               }}
             />
           ) : null}
@@ -495,27 +505,19 @@ export default function ProfileHeader({
 
         <button
           type="button"
-          onClick={() =>
-            onChangeView('settings')
-          }
+          onClick={() => onChangeView('settings')}
           style={{
             display: 'flex',
             alignItems: 'center',
-            justifyContent:
-              'center',
+            justifyContent: 'center',
             cursor: 'pointer',
-            background:
-              '#121212',
-            border:
-              '1px solid #27272A',
-            borderRadius:
-              '50%',
+            background: '#121212',
+            border: '1px solid #27272A',
+            borderRadius: '50%',
             width: '35px',
             height: '35px',
-            color:
-              '#FFFFFF',
-            outline:
-              'none',
+            color: '#FFFFFF',
+            outline: 'none',
           }}
           title="Settings"
         >
