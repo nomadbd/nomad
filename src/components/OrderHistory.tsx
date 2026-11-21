@@ -40,6 +40,12 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
   const [singleOrderToHide, setSingleOrderToHide] = useState<string | null>(null);
   const [isHiding, setIsHiding] = useState<boolean>(false);
 
+  useEffect(() => {
+    return () => {
+      setIsPageLoading(false);
+    };
+  }, [setIsPageLoading]);
+
   const getUnifiedStatus = (rawStatus: string) => {
     if (!rawStatus) return 'PENDING';
     const s = rawStatus.trim().toLowerCase();
@@ -222,7 +228,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      setIsPageLoading(true);
+      setIsPageLoading(true, { view: 'orders', isAmbassador: false });
       const { data, error } = await supabase
         .from('orders')
         .select(`
