@@ -78,7 +78,7 @@ const AppContent: React.FC<AppContentProps> = ({
           style={{
             position: 'fixed',
             inset: 0,
-            zIndex: 40,
+            zIndex: 100000,
             backgroundColor: 'black',
             overflowY: 'auto',
           }}
