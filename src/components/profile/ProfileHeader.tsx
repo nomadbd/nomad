@@ -42,8 +42,8 @@ export default function ProfileHeader({
   hasUnreadNotif,
   loading = false
 }: ProfileHeaderProps) {
-  const name = profile?.name || "PROFILE";
-  const profileKey = profile?.id || profile?.email || "default_user";
+  const name = profile?.name || 'PROFILE';
+  const profileKey = profile?.id || profile?.email || 'default_user';
 
   const hasAlreadyAnimated = animatedProfiles.has(profileKey);
 
@@ -77,7 +77,8 @@ export default function ProfileHeader({
     };
   }, [profileKey, hasAlreadyAnimated, loading, profile]);
 
-  if (loading || !profile) {
+  // Keep the header visible while profile data is loading.
+  if (!profile && !loading) {
     return null;
   }
 
@@ -115,7 +116,8 @@ export default function ProfileHeader({
       top: 0,
       left: 0,
       right: 0,
-      zIndex: 999,
+      // Keep the real profile header above the loading overlay.
+      zIndex: 1000,
       backgroundColor: 'rgba(0, 0, 0, 0.92)',
       backdropFilter: 'blur(12px)',
       WebkitBackdropFilter: 'blur(12px)',
