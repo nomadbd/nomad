@@ -2,6 +2,7 @@ import React, { useState, lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 
 import { CartProvider } from './context/CartContext';
+import { LoadingProvider, useGlobalLoading } from './context/LoadingContext';
 import { useSession } from './hooks/useSession';
 
 import ProfilePage from './pages/ProfilePage';
@@ -14,13 +15,14 @@ import ProductList from './components/ProductList';
 import CartOverlay from './components/CartOverlay';
 import AuthOverlay from './components/auth/AuthOverlay';
 import AuthForm from './components/auth/AuthForm';
-import ReminderLoading from './components/ui/ReminderLoading';
+import { GlobalSkeleton } from './components/ui/GlobalSkeleton';
 
 const AmbassadorJoin = lazy(() => import('./components/ambassador/join/AmbassadorJoin'));
 const AmbassadorPortal = lazy(() => import('./components/ambassador/portal/AmbassadorPortal'));
 
 interface AppContentProps {
   session: any;
+  sessionLoading: boolean;
   isSearchOpen: boolean;
   setIsSearchOpen: React.Dispatch<React.SetStateAction<boolean>>;
   searchQuery: string;
@@ -33,6 +35,7 @@ interface AppContentProps {
 
 const AppContent: React.FC<AppContentProps> = ({
   session,
+  sessionLoading,
   isSearchOpen,
   setIsSearchOpen,
   searchQuery,
@@ -44,6 +47,7 @@ const AppContent: React.FC<AppContentProps> = ({
 }) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { isPageLoading } = useGlobalLoading();
 
   const isProfileRoute =
     location.pathname === '/profile' || location.pathname.startsWith('/profile/');
@@ -53,6 +57,11 @@ const AppContent: React.FC<AppContentProps> = ({
     setIsSearchOpen(false);
     setSearchQuery('');
   };
+
+  // সেশন লোড হলে বা যেকোনো পেজে গ্লোবাল লোডিং চালু থাকলে রাউট অনুযায়ী স্কেলিটন দেখাবে
+  if (sessionLoading || isPageLoading) {
+    return <GlobalSkeleton />;
+  }
 
   return (
     <>
@@ -85,45 +94,33 @@ const AppContent: React.FC<AppContentProps> = ({
           paddingTop: showHeader ? '70px' : '0',
         }}
       >
-        <Routes>
-          <Route
-            path="/"
-            element={
-              <>
-                <Hero />
-                <main style={{ padding: '32px' }}>
-                  <ProductList />
-                </main>
-              </>
-            }
-          />
+        <Suspense fallback={<GlobalSkeleton />}>
+          <Routes>
+            <Route
+              path="/"
+              element={
+                <>
+                  <Hero />
+                  <main style={{ padding: '32px' }}>
+                    <ProductList />
+                  </main>
+                </>
+              }
+            />
 
-          <Route path="/profile" element={session ? <ProfilePage /> : <Navigate to="/" replace />} />
+            <Route path="/profile" element={session ? <ProfilePage /> : <Navigate to="/" replace />} />
 
-          <Route
-            path="/vip/:token"
-            element={
-              <Suspense fallback={<ReminderLoading label="" />}>
-                <AmbassadorJoin />
-              </Suspense>
-            }
-          />
+            <Route path="/vip/:token" element={<AmbassadorJoin />} />
 
-          <Route
-            path="/:slug"
-            element={
-              <Suspense fallback={<ReminderLoading label="" />}>
-                <AmbassadorPortal />
-              </Suspense>
-            }
-          />
+            <Route path="/:slug" element={<AmbassadorPortal />} />
 
-          <Route path="/admin" element={session ? <AdminDashboard /> : <Navigate to="/" replace />} />
+            <Route path="/admin" element={session ? <AdminDashboard /> : <Navigate to="/" replace />} />
 
-          <Route path="/update-password" element={<AuthForm isRecoveryPage={true} />} />
+            <Route path="/update-password" element={<AuthForm isRecoveryPage={true} />} />
 
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Suspense>
       </div>
     </>
   );
@@ -136,43 +133,44 @@ const App: React.FC = () => {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
 
-  if (loading) return <ReminderLoading label="" />;
-
   const handleCloseSearch = () => {
     setIsSearchOpen(false);
     setSearchQuery('');
   };
 
   return (
-    <CartProvider>
-      <Router>
-        <AppContent
-          session={session}
-          isSearchOpen={isSearchOpen}
-          setIsSearchOpen={setIsSearchOpen}
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          isAuthOpen={isAuthOpen}
-          setIsAuthOpen={setIsAuthOpen}
-          isCheckingOut={isCheckingOut}
-          setIsCheckingOut={setIsCheckingOut}
-        />
+    <LoadingProvider>
+      <CartProvider>
+        <Router>
+          <AppContent
+            session={session}
+            sessionLoading={loading}
+            isSearchOpen={isSearchOpen}
+            setIsSearchOpen={setIsSearchOpen}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            isAuthOpen={isAuthOpen}
+            setIsAuthOpen={setIsAuthOpen}
+            isCheckingOut={isCheckingOut}
+            setIsCheckingOut={setIsCheckingOut}
+          />
 
-        <CartOverlay
-          session={session}
-          isCheckingOut={isCheckingOut}
-          setIsCheckingOut={setIsCheckingOut}
-        />
+          <CartOverlay
+            session={session}
+            isCheckingOut={isCheckingOut}
+            setIsCheckingOut={setIsCheckingOut}
+          />
 
-        <SearchOverlay
-          isOpen={isSearchOpen}
-          onClose={handleCloseSearch}
-          searchQuery={searchQuery}
-        />
+          <SearchOverlay
+            isOpen={isSearchOpen}
+            onClose={handleCloseSearch}
+            searchQuery={searchQuery}
+          />
 
-        <AuthOverlay isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
-      </Router>
-    </CartProvider>
+          <AuthOverlay isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
+        </Router>
+      </CartProvider>
+    </LoadingProvider>
   );
 };
 
