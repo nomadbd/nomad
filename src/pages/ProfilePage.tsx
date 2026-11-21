@@ -49,6 +49,7 @@ export default function ProfilePage() {
   const [ambassadorData, setAmbassadorData] = useState<any>(null);
   const [, setSession] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [viewSwitching, setViewSwitching] = useState(false);
 
   const [unreadNotifCount, setUnreadNotifCount] = useState<number>(0);
   const [unreadMessagesCount, setUnreadMessagesCount] = useState<number>(0);
@@ -88,16 +89,24 @@ export default function ProfilePage() {
 
   const isAmbassador = String(profile?.role).toUpperCase().trim() === 'AMBASSADOR';
   const isAmbassadorActive = isAmbassador && portalMode === 'ambassador';
+  const isAnyLoading = loading || viewSwitching;
+
+  const resolveSkeletonView = useCallback(
+    (targetView: 'profile' | 'settings' | 'notifications' | 'communication', targetAmbassadorActive: boolean): SkeletonViewType => {
+      if (targetView === 'settings') return 'settings';
+      if (targetView === 'notifications') return 'notifications';
+      if (targetView === 'communication') return 'communication';
+      return targetAmbassadorActive ? 'ambassador' : 'orders';
+    },
+    []
+  );
 
   const getActiveSkeletonView = useCallback((): SkeletonViewType => {
-    if (view === 'settings') return 'settings';
-    if (view === 'notifications') return 'notifications';
-    if (view === 'communication') return 'communication';
-    return isAmbassadorActive ? 'ambassador' : 'orders';
-  }, [view, isAmbassadorActive]);
+    return resolveSkeletonView(view, isAmbassadorActive);
+  }, [view, isAmbassadorActive, resolveSkeletonView]);
 
   useEffect(() => {
-    if (loading) {
+    if (isAnyLoading) {
       setIsPageLoading(true, {
         view: getActiveSkeletonView(),
         isAmbassador: isAmbassadorActive,
@@ -105,7 +114,7 @@ export default function ProfilePage() {
     } else {
       setIsPageLoading(false);
     }
-  }, [loading, getActiveSkeletonView, isAmbassadorActive, setIsPageLoading]);
+  }, [isAnyLoading, getActiveSkeletonView, isAmbassadorActive, setIsPageLoading]);
 
   useEffect(() => {
     return () => {
@@ -113,7 +122,21 @@ export default function ProfilePage() {
     };
   }, [setIsPageLoading]);
 
+  useEffect(() => {
+    if (!viewSwitching) return;
+    const timer = setTimeout(() => {
+      setViewSwitching(false);
+    }, 180);
+    return () => clearTimeout(timer);
+  }, [viewSwitching, view, portalMode]);
+
   const changeView = (newView: 'profile' | 'settings' | 'notifications' | 'communication') => {
+    const nextSkeletonView = resolveSkeletonView(newView, isAmbassadorActive);
+    setViewSwitching(true);
+    setIsPageLoading(true, {
+      view: nextSkeletonView,
+      isAmbassador: isAmbassadorActive,
+    });
     setView(newView);
     localStorage.setItem('currentView', newView);
     setSettingsFeedback(null);
@@ -618,11 +641,17 @@ export default function ProfilePage() {
 
   const togglePortalMode = () => {
     if (isAmbassador) {
-      setPortalMode(prev => {
-        const nextMode = prev === 'customer' ? 'ambassador' : 'customer';
-        localStorage.setItem('portalMode', nextMode);
-        return nextMode;
+      const nextMode = portalMode === 'customer' ? 'ambassador' : 'customer';
+      const nextAmbassadorActive = nextMode === 'ambassador';
+      const nextSkeletonView = resolveSkeletonView(view, nextAmbassadorActive);
+
+      setViewSwitching(true);
+      setIsPageLoading(true, {
+        view: nextSkeletonView,
+        isAmbassador: nextAmbassadorActive,
       });
+      setPortalMode(nextMode);
+      localStorage.setItem('portalMode', nextMode);
     }
   };
 
@@ -766,7 +795,7 @@ export default function ProfilePage() {
             clearFieldError={(field) =>
               setFieldErrors((prev) => ({ ...prev, [field]: undefined }))
             }
-            loading={loading}
+            loading={isAnyLoading}
           />
         ) : (
           <>
@@ -784,15 +813,17 @@ export default function ProfilePage() {
               unreadMessagesCount={unreadMessagesCount}
               unreadNotifCount={unreadNotifCount}
               hasUnreadNotif={unreadNotifCount > 0}
-              loading={loading}
+              loading={isAnyLoading}
             />
 
-            {portalMode === 'ambassador' && isAmbassador ? (
-              <AmbassadorDashboardSection ambassadorData={ambassadorData} profile={profile} />
-            ) : (
-              <div style={{ marginTop: '20px', borderTop: '1px solid #111', paddingTop: '10px' }}>
-                <OrderHistory userId={profile?.id} />
-              </div>
+            {!isAnyLoading && (
+              portalMode === 'ambassador' && isAmbassador ? (
+                <AmbassadorDashboardSection ambassadorData={ambassadorData} profile={profile} />
+              ) : (
+                <div style={{ marginTop: '20px', borderTop: '1px solid #111', paddingTop: '10px' }}>
+                  <OrderHistory userId={profile?.id} />
+                </div>
+              )
             )}
           </>
         )}
