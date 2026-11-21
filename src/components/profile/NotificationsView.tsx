@@ -36,6 +36,12 @@ export default function NotificationsView({
     ? targetAudience.map(a => a.toUpperCase())
     : ['CUSTOMER', 'ALL', 'SPECIFIC', 'AMBASSADOR'];
 
+  useEffect(() => {
+    return () => {
+      setIsPageLoading(false);
+    };
+  }, [setIsPageLoading]);
+
   const getRelativeTime = (dateString: string) => {
     if (!dateString) return 'Recently';
     const now = new Date();
@@ -70,7 +76,7 @@ export default function NotificationsView({
   const fetchNotifications = async (isSilent = false) => {
     if (!isSilent) {
       setLoading(true);
-      setIsPageLoading(true);
+      setIsPageLoading(true, { view: 'notifications', isAmbassador: false });
     }
 
     try {
