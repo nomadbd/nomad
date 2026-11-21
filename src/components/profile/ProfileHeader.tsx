@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { useGlobalLoading } from '../../context/LoadingContext';
+import React, { useState, useEffect, useRef } from 'react';
 import { MessageIcon, NotificationIcon, SettingsIcon } from '../icons';
 
 const animatedProfiles = new Set<string>();
@@ -43,7 +42,6 @@ export default function ProfileHeader({
   hasUnreadNotif,
   loading = false
 }: ProfileHeaderProps) {
-  const { setIsPageLoading } = useGlobalLoading();
   const name = profile?.name || "PROFILE";
   const profileKey = profile?.id || profile?.email || "default_user";
 
@@ -51,20 +49,7 @@ export default function ProfileHeader({
 
   const [showGreeting, setShowGreeting] = useState(!hasAlreadyAnimated);
   const [fade, setFade] = useState(true);
-
-  useEffect(() => {
-    if (loading) {
-      setIsPageLoading(true, {
-        view: isAmbassadorActive ? 'ambassador' : 'orders',
-        isAmbassador: isAmbassadorActive,
-      });
-    } else {
-      setIsPageLoading(false);
-    }
-    return () => {
-      setIsPageLoading(false);
-    };
-  }, [loading, isAmbassadorActive, setIsPageLoading]);
+  const fadeTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (loading || !profile) {
@@ -75,16 +60,21 @@ export default function ProfileHeader({
       return;
     }
 
-    const timer = setTimeout(() => {
+    const timer = window.setTimeout(() => {
       setFade(false);
-      setTimeout(() => {
+      fadeTimeoutRef.current = window.setTimeout(() => {
         setShowGreeting(false);
         setFade(true);
         animatedProfiles.add(profileKey);
       }, 300);
     }, 2500);
 
-    return () => clearTimeout(timer);
+    return () => {
+      window.clearTimeout(timer);
+      if (fadeTimeoutRef.current !== null) {
+        window.clearTimeout(fadeTimeoutRef.current);
+      }
+    };
   }, [profileKey, hasAlreadyAnimated, loading, profile]);
 
   if (loading || !profile) {
