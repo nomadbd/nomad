@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, CSSProperties } from 'react';
 import { supabase } from '@/supabaseClient';
 
 interface OrderItem {
@@ -25,6 +25,130 @@ interface Order {
 
 interface OrderHistoryProps {
   userId: string;
+}
+
+function OrderHistorySkeleton() {
+  const shimmerStyle: CSSProperties = {
+    backgroundColor: '#3E3E3E',
+    backgroundImage:
+      'linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.16) 50%, rgba(255,255,255,0) 100%)',
+    backgroundSize: '200% 100%',
+    animation: 'fbOrderShimmer 1.35s ease-in-out infinite',
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginTop: '20px' }}>
+      <style>{`
+        @keyframes fbOrderShimmer {
+          0% {
+            background-position: 200% 0;
+          }
+          100% {
+            background-position: -200% 0;
+          }
+        }
+      `}</style>
+
+      {/* Header bar */}
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          borderBottom: '1px solid rgba(255,255,255,0.1)',
+          paddingBottom: '12px',
+        }}
+      >
+        <div style={{ ...shimmerStyle, width: '124px', height: '11px', borderRadius: '3px' }} />
+        <div style={{ ...shimmerStyle, width: '58px', height: '11px', borderRadius: '3px' }} />
+      </div>
+
+      {/* Order cards */}
+      {[1, 2].map((i) => (
+        <div
+          key={i}
+          style={{
+            backgroundColor: '#050505',
+            border: '1px solid #222',
+            padding: '25px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '22px',
+          }}
+        >
+          {/* Top action row */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ ...shimmerStyle, width: '132px', height: '11px', borderRadius: '3px' }} />
+            <div style={{ ...shimmerStyle, width: '14px', height: '14px', borderRadius: '3px' }} />
+          </div>
+
+          {/* Product item row */}
+          <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
+            <div
+              style={{
+                ...shimmerStyle,
+                width: '60px',
+                height: '75px',
+                borderRadius: '2px',
+                flexShrink: 0,
+              }}
+            />
+            <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ ...shimmerStyle, width: '78%', height: '13px', borderRadius: '4px' }} />
+              <div style={{ ...shimmerStyle, width: '52%', height: '11px', borderRadius: '4px' }} />
+              <div style={{ ...shimmerStyle, width: '64%', height: '10px', borderRadius: '3px', marginTop: '2px' }} />
+            </div>
+          </div>
+
+          {/* Total & Issued date row */}
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              borderTop: '1px solid rgba(255,255,255,0.06)',
+              paddingTop: '18px',
+            }}
+          >
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <div style={{ ...shimmerStyle, width: '78px', height: '9px', borderRadius: '3px' }} />
+              <div style={{ ...shimmerStyle, width: '86px', height: '18px', borderRadius: '4px' }} />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'flex-end' }}>
+              <div style={{ ...shimmerStyle, width: '72px', height: '9px', borderRadius: '3px' }} />
+              <div style={{ ...shimmerStyle, width: '82px', height: '12px', borderRadius: '3px' }} />
+            </div>
+          </div>
+
+          {/* 4-step status row */}
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              borderTop: '1px solid rgba(255,255,255,0.04)',
+              paddingTop: '20px',
+            }}
+          >
+            {[1, 2, 3, 4].map((step) => (
+              <div
+                key={step}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  flex: 1,
+                  gap: '10px',
+                }}
+              >
+                <div style={{ ...shimmerStyle, width: '16px', height: '16px', borderRadius: '50%' }} />
+                <div style={{ ...shimmerStyle, width: '46px', height: '9px', borderRadius: '3px' }} />
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
@@ -329,26 +453,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
   };
 
   if (loading) {
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginTop: '20px' }}>
-        {[1, 2].map((i) => (
-          <div key={i} style={{ backgroundColor: '#050505', border: '1px solid #222', padding: '25px', display: 'flex', flexDirection: 'column', gap: '22px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <div className="skeleton-pulse" style={{ width: '60%', height: '16px', backgroundColor: '#222' }} />
-              <div className="skeleton-pulse" style={{ width: '12px', height: '12px', backgroundColor: '#222' }} />
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div className="skeleton-pulse" style={{ width: '70px', height: '15px', backgroundColor: '#222' }} />
-              <div className="skeleton-pulse" style={{ width: '90px', height: '12px', backgroundColor: '#222' }} />
-            </div>
-          </div>
-        ))}
-        <style>{`
-          @keyframes pulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 0.7; } }
-          .skeleton-pulse { animation: pulse 1.5s infinite ease-in-out; }
-        `}</style>
-      </div>
-    );
+    return <OrderHistorySkeleton />;
   }
 
   if (orders.length === 0) {
@@ -562,15 +667,15 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
                     <h4 style={{ margin: 0, fontSize: '13px', fontWeight: '700', color: '#fff', letterSpacing: '0.5px', lineHeight: '1.4', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', textTransform: 'uppercase' }}>
                       {item.product_name}
                     </h4>
-                    
+
                     {/* Responsive Attributes Container */}
                     <div className="order-item-attrs">
                       <span className="attr-text">
                         SIZE: <span className="attr-val">{item.size}</span>
                       </span>
-                      
+
                       <span className="attr-dot"></span>
-                      
+
                       <span className="attr-text">
                         QTY: <span className="attr-val">{item.quantity}</span>
                       </span>
