@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
 
 export type SkeletonViewType =
   | 'home'
@@ -20,31 +20,45 @@ interface LoadingContextType {
   isPageLoading: boolean;
   skeletonView: SkeletonViewType;
   isAmbassadorSkeleton: boolean;
-  setIsPageLoading: (loading: boolean, options?: LoadingOptions) => void;
+  setIsPageLoading: (loading: boolean, options?: LoadingOptions, sourceId?: number) => number;
 }
 
 const LoadingContext = createContext<LoadingContextType>({
   isPageLoading: false,
   skeletonView: null,
   isAmbassadorSkeleton: false,
-  setIsPageLoading: () => {},
+  setIsPageLoading: () => 0,
 });
 
 export const LoadingProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isPageLoading, setIsLoadingState] = useState(false);
   const [skeletonView, setSkeletonView] = useState<SkeletonViewType>(null);
   const [isAmbassadorSkeleton, setIsAmbassadorSkeleton] = useState(false);
+  const activeTokenRef = useRef<number>(0);
 
-  const setIsPageLoading = useCallback((loading: boolean, options?: LoadingOptions) => {
-    setIsLoadingState(loading);
-    if (loading) {
-      setSkeletonView(options?.view ?? null);
-      setIsAmbassadorSkeleton(options?.isAmbassador ?? false);
-    } else {
+  const setIsPageLoading = useCallback(
+    (loading: boolean, options?: LoadingOptions, sourceId?: number): number => {
+      if (loading) {
+        const nextToken = activeTokenRef.current + 1;
+        activeTokenRef.current = nextToken;
+        setIsLoadingState(true);
+        setSkeletonView(options?.view ?? null);
+        setIsAmbassadorSkeleton(options?.isAmbassador ?? false);
+        return nextToken;
+      }
+
+      if (typeof sourceId === 'number' && sourceId !== activeTokenRef.current) {
+        return activeTokenRef.current;
+      }
+
+      activeTokenRef.current += 1;
+      setIsLoadingState(false);
       setSkeletonView(null);
       setIsAmbassadorSkeleton(false);
-    }
-  }, []);
+      return activeTokenRef.current;
+    },
+    []
+  );
 
   return (
     <LoadingContext.Provider
