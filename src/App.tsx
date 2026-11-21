@@ -72,6 +72,10 @@ const AppContent: React.FC<AppContentProps> = ({
   const isHomeRoute = location.pathname === '/';
   const showHeader = !isAdminRoute && !isProfileRoute;
 
+  // Home uses the App Header. Profile has its own view-specific headers.
+  const hasHeaderBelowWhichLoaderShouldStart =
+    isHomeRoute || isProfileRoute;
+
   useEffect(() => {
     if (isHomeRoute && isPageLoading) {
       window.scrollTo({
@@ -141,21 +145,21 @@ const AppContent: React.FC<AppContentProps> = ({
     return renderLoader();
   }
 
-  const hideHomeContent =
-    isHomeRoute && isPageLoading;
+  const hideHomeContent = isHomeRoute && isPageLoading;
 
   return (
     <>
       {isPageLoading && (
         <div
           style={
-            isHomeRoute
+            hasHeaderBelowWhichLoaderShouldStart
               ? {
                   position: 'fixed',
                   top: '70px',
                   left: 0,
                   right: 0,
                   bottom: 0,
+                  // Header uses z-index 1000; keep this overlay underneath it.
                   zIndex: 999,
                   backgroundColor: '#000',
                   overflowY: 'auto',
