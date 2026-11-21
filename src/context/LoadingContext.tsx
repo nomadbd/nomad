@@ -1,4 +1,11 @@
-import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useRef,
+  useState,
+} from 'react';
+import { flushSync } from 'react-dom';
 
 export type SkeletonViewType =
   | 'home'
@@ -11,7 +18,7 @@ export type SkeletonViewType =
   | 'password'
   | null;
 
-interface LoadingOptions {
+export interface LoadingOptions {
   view?: SkeletonViewType;
   isAmbassador?: boolean;
 }
@@ -20,7 +27,11 @@ interface LoadingContextType {
   isPageLoading: boolean;
   skeletonView: SkeletonViewType;
   isAmbassadorSkeleton: boolean;
-  setIsPageLoading: (loading: boolean, options?: LoadingOptions, sourceId?: number) => number;
+  setIsPageLoading: (
+    loading: boolean,
+    options?: LoadingOptions,
+    sourceId?: number
+  ) => number;
 }
 
 const LoadingContext = createContext<LoadingContextType>({
@@ -30,31 +41,53 @@ const LoadingContext = createContext<LoadingContextType>({
   setIsPageLoading: () => 0,
 });
 
-export const LoadingProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const LoadingProvider: React.FC<{
+  children: React.ReactNode;
+}> = ({ children }) => {
   const [isPageLoading, setIsLoadingState] = useState(false);
-  const [skeletonView, setSkeletonView] = useState<SkeletonViewType>(null);
-  const [isAmbassadorSkeleton, setIsAmbassadorSkeleton] = useState(false);
-  const activeTokenRef = useRef<number>(0);
+  const [skeletonView, setSkeletonView] =
+    useState<SkeletonViewType>(null);
+  const [isAmbassadorSkeleton, setIsAmbassadorSkeleton] =
+    useState(false);
+
+  const activeTokenRef = useRef(0);
 
   const setIsPageLoading = useCallback(
-    (loading: boolean, options?: LoadingOptions, sourceId?: number): number => {
+    (
+      loading: boolean,
+      options?: LoadingOptions,
+      sourceId?: number
+    ): number => {
       if (loading) {
         const nextToken = activeTokenRef.current + 1;
         activeTokenRef.current = nextToken;
-        setIsLoadingState(true);
-        setSkeletonView(options?.view ?? null);
-        setIsAmbassadorSkeleton(options?.isAmbassador ?? false);
+
+        flushSync(() => {
+          setIsLoadingState(true);
+          setSkeletonView(options?.view ?? null);
+          setIsAmbassadorSkeleton(
+            options?.isAmbassador ?? false
+          );
+        });
+
         return nextToken;
       }
 
-      if (typeof sourceId === 'number' && sourceId !== activeTokenRef.current) {
+      if (
+        typeof sourceId === 'number' &&
+        sourceId !== activeTokenRef.current
+      ) {
         return activeTokenRef.current;
       }
 
       activeTokenRef.current += 1;
-      setIsLoadingState(false);
-      setSkeletonView(null);
-      setIsAmbassadorSkeleton(false);
+
+      flushSync(() => {
+        setIsLoadingState(false);
+        setSkeletonView(null);
+        setIsAmbassadorSkeleton(false);
+      });
+
       return activeTokenRef.current;
     },
     []
@@ -74,4 +107,5 @@ export const LoadingProvider: React.FC<{ children: React.ReactNode }> = ({ child
   );
 };
 
-export const useGlobalLoading = () => useContext(LoadingContext);
+export const useGlobalLoading = () =>
+  useContext(LoadingContext);
