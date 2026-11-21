@@ -107,9 +107,7 @@ export default function ProfilePage() {
   const [selectedImageSrc, setSelectedImageSrc] = useState<string | null>(null);
 
   const isAmbassador = String(profile?.role).toUpperCase().trim() === 'AMBASSADOR';
-  const isAmbassadorActive = profile
-    ? isAmbassador && portalMode === 'ambassador'
-    : initialPortalMode === 'ambassador';
+  const isAmbassadorActive = Boolean(profile && isAmbassador && portalMode === 'ambassador');
 
   useEffect(() => {
     if (loading) {
@@ -133,6 +131,12 @@ export default function ProfilePage() {
     localStorage.setItem('currentView', newView);
     setSettingsFeedback(null);
     setFieldErrors({});
+    if (loading) {
+      setIsPageLoading(true, {
+        view: resolveSkeletonViewForState(newView, isAmbassadorActive),
+        isAmbassador: isAmbassadorActive,
+      });
+    }
   };
 
   const fetchUnreadCounts = useCallback(async () => {
