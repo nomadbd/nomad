@@ -255,6 +255,7 @@ export default function ProfileHeader({
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
         <button
+          type="button"
           onClick={handleIconClick}
           style={{
             display: 'flex',
@@ -339,6 +340,7 @@ export default function ProfileHeader({
         </button>
 
         <button
+          type="button"
           onClick={() => onChangeView('settings')}
           style={{
             display: 'flex',
