@@ -2,7 +2,10 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { uploadToCloudinary, deleteFromCloudinary } from '../cloudinary';
-import { useGlobalLoading, SkeletonViewType } from '../context/LoadingContext';
+import {
+  useGlobalLoading,
+  SkeletonViewType,
+} from '../context/LoadingContext';
 import OrderHistory from '../components/OrderHistory';
 import ProfileHeader from '../components/profile/ProfileHeader';
 import ProfileSettings from '../components/profile/ProfileSettings';
@@ -13,9 +16,19 @@ import ImageCropModal from '../components/ui/ImageCropModal';
 import AmbassadorDashboard from '../components/ambassador/dashboard/AmbassadorDashboard';
 import { useAmbassador } from '../hooks/useAmbassador';
 
-type ProfileViewType = 'profile' | 'settings' | 'notifications' | 'communication';
+type ProfileViewType =
+  | 'profile'
+  | 'settings'
+  | 'notifications'
+  | 'communication';
 
-function AmbassadorDashboardSection({ ambassadorData, profile }: { ambassadorData: any; profile: any }) {
+function AmbassadorDashboardSection({
+  ambassadorData,
+  profile,
+}: {
+  ambassadorData: any;
+  profile: any;
+}) {
   const ambassadorState = useAmbassador(ambassadorData);
 
   return (
@@ -23,7 +36,7 @@ function AmbassadorDashboardSection({ ambassadorData, profile }: { ambassadorDat
       <AmbassadorDashboard
         ambassadorData={ambassadorData}
         profile={profile}
-        isOwner={true}
+        isOwner
         ambassadorState={ambassadorState}
       />
     </div>
@@ -39,6 +52,7 @@ const resolveSkeletonViewForState = (
   if (targetView === 'settings') return 'settings';
   if (targetView === 'notifications') return 'notifications';
   if (targetView === 'communication') return 'communication';
+
   return targetAmbassadorActive ? 'ambassador' : 'orders';
 };
 
@@ -48,10 +62,19 @@ export default function ProfilePage() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const initialView: ProfileViewType = (() => {
-    const saved = localStorage.getItem('currentView') as ProfileViewType | null;
-    if (saved === 'settings' || saved === 'notifications' || saved === 'communication' || saved === 'profile') {
+    const saved = localStorage.getItem(
+      'currentView'
+    ) as ProfileViewType | null;
+
+    if (
+      saved === 'settings' ||
+      saved === 'notifications' ||
+      saved === 'communication' ||
+      saved === 'profile'
+    ) {
       return saved;
     }
+
     return 'profile';
   })();
 
@@ -60,39 +83,67 @@ export default function ProfilePage() {
     return saved === 'ambassador' ? 'ambassador' : 'customer';
   })();
 
-  const [view, setView] = useState<ProfileViewType>(initialView);
-  const [portalMode, setPortalMode] = useState<'customer' | 'ambassador'>(initialPortalMode);
+  const [view, setView] =
+    useState<ProfileViewType>(initialView);
 
-  const [isDetailsSheetOpen, setIsDetailsSheetOpen] = useState(false);
+  const [portalMode, setPortalMode] =
+    useState<'customer' | 'ambassador'>(
+      initialPortalMode
+    );
+
+  const [isDetailsSheetOpen, setIsDetailsSheetOpen] =
+    useState(false);
 
   const [profile, setProfile] = useState<any>(null);
-  const [ambassadorData, setAmbassadorData] = useState<any>(null);
+  const [ambassadorData, setAmbassadorData] =
+    useState<any>(null);
   const [, setSession] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  const [unreadNotifCount, setUnreadNotifCount] = useState<number>(0);
-  const [unreadMessagesCount, setUnreadMessagesCount] = useState<number>(0);
+  const [unreadNotifCount, setUnreadNotifCount] =
+    useState(0);
+  const [unreadMessagesCount, setUnreadMessagesCount] =
+    useState(0);
 
   const [newName, setNewName] = useState('');
   const [newEmail, setNewEmail] = useState('');
-  const [currentPassword, setCurrentPassword] = useState('');
+  const [currentPassword, setCurrentPassword] =
+    useState('');
   const [newPassword, setNewPassword] = useState('');
-  const [deleteConfirmPassword, setDeleteConfirmPassword] = useState('');
-  const [deleteAccountError, setDeleteAccountError] = useState<string | null>(null);
-  const [deletingAccount, setDeletingAccount] = useState(false);
+  const [deleteConfirmPassword, setDeleteConfirmPassword] =
+    useState('');
+  const [deleteAccountError, setDeleteAccountError] =
+    useState<string | null>(null);
+  const [deletingAccount, setDeletingAccount] =
+    useState(false);
 
   const [currentSlug, setCurrentSlug] = useState('');
   const [newSlug, setNewSlug] = useState('');
 
-  const [payoutMethod, setPayoutMethod] = useState('bKash');
-  const [currentPayoutDetails, setCurrentPayoutDetails] = useState('');
-  const [newPayoutNumber, setNewPayoutNumber] = useState('');
+  const [payoutMethod, setPayoutMethod] =
+    useState('bKash');
+  const [currentPayoutDetails, setCurrentPayoutDetails] =
+    useState('');
+  const [newPayoutNumber, setNewPayoutNumber] =
+    useState('');
 
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [uploadingAvatar, setUploadingAvatar] = useState(false);
-  const [avatarFeedback, setAvatarFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [avatarUrl, setAvatarUrl] =
+    useState<string | null>(null);
+  const [uploadingAvatar, setUploadingAvatar] =
+    useState(false);
 
-  const [settingsFeedback, setSettingsFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [avatarFeedback, setAvatarFeedback] =
+    useState<{
+      type: 'success' | 'error';
+      text: string;
+    } | null>(null);
+
+  const [settingsFeedback, setSettingsFeedback] =
+    useState<{
+      type: 'success' | 'error';
+      text: string;
+    } | null>(null);
+
   const [fieldErrors, setFieldErrors] = useState<{
     name?: string;
     email?: string;
@@ -102,23 +153,45 @@ export default function ProfilePage() {
   }>({});
 
   const [showConfirm, setShowConfirm] = useState(false);
+  const [cropModalOpen, setCropModalOpen] =
+    useState(false);
+  const [selectedImageSrc, setSelectedImageSrc] =
+    useState<string | null>(null);
 
-  const [cropModalOpen, setCropModalOpen] = useState(false);
-  const [selectedImageSrc, setSelectedImageSrc] = useState<string | null>(null);
+  const isAmbassador =
+    String(profile?.role).toUpperCase().trim() ===
+    'AMBASSADOR';
 
-  const isAmbassador = String(profile?.role).toUpperCase().trim() === 'AMBASSADOR';
-  const isAmbassadorActive = Boolean(profile && isAmbassador && portalMode === 'ambassador');
+  const isAmbassadorActive =
+    Boolean(
+      profile &&
+        isAmbassador &&
+        portalMode === 'ambassador'
+    );
+
+  const resolvedAmbassadorMode =
+    profile
+      ? isAmbassadorActive
+      : initialPortalMode === 'ambassador';
 
   useEffect(() => {
     if (loading) {
       setIsPageLoading(true, {
-        view: resolveSkeletonViewForState(view, isAmbassadorActive),
-        isAmbassador: isAmbassadorActive,
+        view: resolveSkeletonViewForState(
+          view,
+          resolvedAmbassadorMode
+        ),
+        isAmbassador: resolvedAmbassadorMode,
       });
     } else {
       setIsPageLoading(false);
     }
-  }, [loading, view, isAmbassadorActive, setIsPageLoading]);
+  }, [
+    loading,
+    view,
+    resolvedAmbassadorMode,
+    setIsPageLoading,
+  ]);
 
   useEffect(() => {
     return () => {
@@ -131,10 +204,14 @@ export default function ProfilePage() {
     localStorage.setItem('currentView', newView);
     setSettingsFeedback(null);
     setFieldErrors({});
+
     if (loading) {
       setIsPageLoading(true, {
-        view: resolveSkeletonViewForState(newView, isAmbassadorActive),
-        isAmbassador: isAmbassadorActive,
+        view: resolveSkeletonViewForState(
+          newView,
+          resolvedAmbassadorMode
+        ),
+        isAmbassador: resolvedAmbassadorMode,
       });
     }
   };
@@ -151,20 +228,32 @@ export default function ProfilePage() {
           .eq('is_read', false);
 
         if (recipients && recipients.length > 0) {
-          const notifIds = recipients.map(r => r.notification_id);
+          const notifIds = recipients.map(
+            (recipient) => recipient.notification_id
+          );
 
           const { count } = await supabase
             .from('notifications')
-            .select('id', { count: 'exact', head: true })
+            .select('id', {
+              count: 'exact',
+              head: true,
+            })
             .in('id', notifIds)
-            .in('target_audience', ['CUSTOMER', 'ALL', 'SPECIFIC']);
+            .in('target_audience', [
+              'CUSTOMER',
+              'ALL',
+              'SPECIFIC',
+            ]);
 
           setUnreadNotifCount(count || 0);
         } else {
           setUnreadNotifCount(0);
         }
       } catch (err) {
-        console.error('Error fetching unread notification count:', err);
+        console.error(
+          'Error fetching unread notification count:',
+          err
+        );
       }
     }
 
@@ -172,14 +261,20 @@ export default function ProfilePage() {
       try {
         const { count } = await supabase
           .from('communications')
-          .select('id', { count: 'exact', head: true })
+          .select('id', {
+            count: 'exact',
+            head: true,
+          })
           .eq('channel_id', profile.id)
           .eq('is_read', false)
           .neq('sender_role', 'ambassador');
 
         setUnreadMessagesCount(count || 0);
       } catch (err) {
-        console.error('Error fetching unread messages count:', err);
+        console.error(
+          'Error fetching unread messages count:',
+          err
+        );
       }
     }
   }, [profile?.id, isAmbassadorActive]);
@@ -197,7 +292,7 @@ export default function ProfilePage() {
           event: '*',
           schema: 'public',
           table: 'notification_recipients',
-          filter: `user_id=eq.${profile.id}`
+          filter: `user_id=eq.${profile.id}`,
         },
         () => fetchUnreadCounts()
       )
@@ -211,7 +306,7 @@ export default function ProfilePage() {
           event: '*',
           schema: 'public',
           table: 'communications',
-          filter: `channel_id=eq.${profile.id}`
+          filter: `channel_id=eq.${profile.id}`,
         },
         () => fetchUnreadCounts()
       )
@@ -223,95 +318,157 @@ export default function ProfilePage() {
     };
   }, [profile?.id, fetchUnreadCounts]);
 
-  const getInitials = (name?: string, email?: string) => {
+  const getInitials = (
+    name?: string,
+    email?: string
+  ) => {
     if (name?.trim()) {
-      return name.trim().split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+      return name
+        .trim()
+        .split(' ')
+        .map((item) => item[0])
+        .join('')
+        .slice(0, 2)
+        .toUpperCase();
     }
+
     if (email?.trim()) {
       return email.trim()[0].toUpperCase();
     }
+
     return 'U';
   };
 
   const fetchUserData = useCallback(async () => {
     setLoading(true);
+
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        setSession({ user });
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
-        const cleanEmail = (user.email || '').toLowerCase();
-        const userInviteToken = user.user_metadata?.invite_token;
+      if (!user) return;
 
-        let pendingInvite: any = null;
+      setSession({ user });
 
-        if (userInviteToken) {
-          const { data: inviteByToken } = await supabase
+      const cleanEmail = (user.email || '').toLowerCase();
+      const userInviteToken =
+        user.user_metadata?.invite_token;
+
+      let pendingInvite: any = null;
+
+      if (userInviteToken) {
+        const { data: inviteByToken } =
+          await supabase
             .from('ambassador')
             .select('*')
             .eq('token', userInviteToken)
             .eq('is_registered', false)
             .maybeSingle();
-          pendingInvite = inviteByToken;
-        }
 
-        if (!pendingInvite && cleanEmail) {
-          const { data: inviteByEmail } = await supabase
+        pendingInvite = inviteByToken;
+      }
+
+      if (!pendingInvite && cleanEmail) {
+        const { data: inviteByEmail } =
+          await supabase
             .from('ambassador')
             .select('*')
-            .or(`email.eq.${cleanEmail},recipient_identifier.eq.${cleanEmail}`)
+            .or(
+              `email.eq.${cleanEmail},recipient_identifier.eq.${cleanEmail}`
+            )
             .eq('is_registered', false)
             .maybeSingle();
-          pendingInvite = inviteByEmail;
-        }
 
-        if (pendingInvite) {
-          await supabase.rpc('complete_ambassador_registration', {
+        pendingInvite = inviteByEmail;
+      }
+
+      if (pendingInvite) {
+        await supabase.rpc(
+          'complete_ambassador_registration',
+          {
             invite_token: pendingInvite.token,
             new_user_id: user.id,
             user_email: cleanEmail,
-            user_name: user.user_metadata?.full_name || pendingInvite.display_name || ''
-          });
-        }
+            user_name:
+              user.user_metadata?.full_name ||
+              pendingInvite.display_name ||
+              '',
+          }
+        );
+      }
 
-        const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+      const { data: prof } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
 
-        const normalizedRole = prof?.role ? String(prof.role).toUpperCase().trim() : '';
-        const isStaff = ['SUPER_ADMIN', 'ADMIN', 'STAFF'].includes(normalizedRole);
+      const normalizedRole =
+        prof?.role
+          ? String(prof.role).toUpperCase().trim()
+          : '';
 
-        if (isStaff) {
-          navigate('/admin', { replace: true });
-          return;
-        }
+      const isStaff = [
+        'SUPER_ADMIN',
+        'ADMIN',
+        'STAFF',
+      ].includes(normalizedRole);
 
-        const fetchedAvatar = prof?.avatar_url || null;
-        setProfile({ ...prof, email: user.email, avatar_url: fetchedAvatar });
-        setAvatarUrl(fetchedAvatar);
+      if (isStaff) {
+        navigate('/admin', { replace: true });
+        return;
+      }
 
-        if (normalizedRole === 'AMBASSADOR') {
-          const { data: amb } = await supabase.from('ambassador').select('*').eq('user_id', user.id).maybeSingle();
-          setAmbassadorData(amb);
-          if (amb) {
-            setCurrentSlug(amb.assigned_slug || '');
-            setCurrentPayoutDetails(amb.payout_details || '');
+      const fetchedAvatar =
+        prof?.avatar_url || null;
 
-            if (amb.payout_details && amb.payout_details.includes(':')) {
-              const [method] = amb.payout_details.split(':');
-              if (method?.trim()) {
-                setPayoutMethod(method.trim());
-              }
+      setProfile({
+        ...prof,
+        email: user.email,
+        avatar_url: fetchedAvatar,
+      });
+
+      setAvatarUrl(fetchedAvatar);
+
+      if (normalizedRole === 'AMBASSADOR') {
+        const { data: amb } = await supabase
+          .from('ambassador')
+          .select('*')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        setAmbassadorData(amb);
+
+        if (amb) {
+          setCurrentSlug(
+            amb.assigned_slug || ''
+          );
+          setCurrentPayoutDetails(
+            amb.payout_details || ''
+          );
+
+          if (
+            amb.payout_details &&
+            amb.payout_details.includes(':')
+          ) {
+            const [method] =
+              amb.payout_details.split(':');
+
+            if (method?.trim()) {
+              setPayoutMethod(method.trim());
             }
           }
         }
-
-        setNewName('');
-        setNewEmail('');
-        setCurrentPassword('');
-        setNewPassword('');
-        setDeleteConfirmPassword('');
-        setNewSlug('');
-        setNewPayoutNumber('');
       }
+
+      setNewName('');
+      setNewEmail('');
+      setCurrentPassword('');
+      setNewPassword('');
+      setDeleteConfirmPassword('');
+      setNewSlug('');
+      setNewPayoutNumber('');
     } finally {
       setLoading(false);
     }
@@ -321,71 +478,116 @@ export default function ProfilePage() {
     fetchUserData();
   }, [fetchUserData]);
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const handleFileSelect = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
     if (!file) return;
 
     setAvatarFeedback(null);
+
     const reader = new FileReader();
+
     reader.onload = () => {
-      setSelectedImageSrc(reader.result as string);
+      setSelectedImageSrc(
+        reader.result as string
+      );
       setCropModalOpen(true);
     };
+
     reader.readAsDataURL(file);
 
-    if (e.target) e.target.value = '';
+    event.target.value = '';
   };
 
-  const handleApplyCropAndUpload = async (croppedFile: File) => {
-    if (!profile?.id) {
-      setAvatarFeedback({ type: 'error', text: 'User profile ID missing.' });
-      return;
-    }
-
-    try {
-      setUploadingAvatar(true);
-      setCropModalOpen(false);
-      setAvatarFeedback(null);
-
-      if (avatarUrl) {
-        await deleteFromCloudinary(stripQueryParams(avatarUrl));
+  const handleApplyCropAndUpload =
+    async (croppedFile: File) => {
+      if (!profile?.id) {
+        setAvatarFeedback({
+          type: 'error',
+          text: 'User profile ID missing.',
+        });
+        return;
       }
 
-      const uniquePublicId = `${profile.id}_${Date.now()}`;
-      const uploadedUrl = await uploadToCloudinary(croppedFile, 'avatars', uniquePublicId);
+      try {
+        setUploadingAvatar(true);
+        setCropModalOpen(false);
+        setAvatarFeedback(null);
 
-      if (uploadedUrl) {
-        const cleanUploadedUrl = stripQueryParams(uploadedUrl);
-        const urlWithCacheBust = `${cleanUploadedUrl}?v=${Date.now()}`;
+        if (avatarUrl) {
+          await deleteFromCloudinary(
+            stripQueryParams(avatarUrl)
+          );
+        }
 
-        const { data, error } = await supabase
-          .from('profiles')
-          .update({ avatar_url: urlWithCacheBust })
-          .eq('id', profile.id)
-          .select();
+        const uniquePublicId =
+          `${profile.id}_${Date.now()}`;
+
+        const uploadedUrl =
+          await uploadToCloudinary(
+            croppedFile,
+            'avatars',
+            uniquePublicId
+          );
+
+        if (!uploadedUrl) {
+          setAvatarFeedback({
+            type: 'error',
+            text:
+              'Image upload failed. Please try again.',
+          });
+          return;
+        }
+
+        const cleanUploadedUrl =
+          stripQueryParams(uploadedUrl);
+
+        const urlWithCacheBust =
+          `${cleanUploadedUrl}?v=${Date.now()}`;
+
+        const { data, error } =
+          await supabase
+            .from('profiles')
+            .update({
+              avatar_url: urlWithCacheBust,
+            })
+            .eq('id', profile.id)
+            .select();
 
         if (error) throw error;
 
         if (!data || data.length === 0) {
-          setAvatarFeedback({ type: 'error', text: 'Database permission denied or row not found.' });
+          setAvatarFeedback({
+            type: 'error',
+            text:
+              'Database permission denied or row not found.',
+          });
           return;
         }
 
         setAvatarUrl(urlWithCacheBust);
-        setProfile((prev: any) => ({ ...prev, avatar_url: urlWithCacheBust }));
-        setAvatarFeedback({ type: 'success', text: 'Profile picture updated.' });
-      } else {
-        setAvatarFeedback({ type: 'error', text: 'Image upload failed. Please try again.' });
+
+        setProfile((previous: any) => ({
+          ...previous,
+          avatar_url: urlWithCacheBust,
+        }));
+
+        setAvatarFeedback({
+          type: 'success',
+          text: 'Profile picture updated.',
+        });
+      } catch (err: any) {
+        setAvatarFeedback({
+          type: 'error',
+          text:
+            err?.message ||
+            'Failed to upload profile picture.',
+        });
+      } finally {
+        setUploadingAvatar(false);
       }
-    } catch (err: any) {
-      setAvatarFeedback({
-        type: 'error',
-        text: err?.message || 'Failed to upload profile picture.'
-      });
-    } finally {
-      setUploadingAvatar(false);
-    }
-  };
+    };
 
   const handleDeleteAvatar = async () => {
     if (!profile?.id) return;
@@ -394,31 +596,53 @@ export default function ProfilePage() {
       setUploadingAvatar(true);
       setAvatarFeedback(null);
 
-      const currentUrl = avatarUrl || profile?.avatar_url;
+      const currentUrl =
+        avatarUrl || profile?.avatar_url;
+
       if (currentUrl) {
-        await deleteFromCloudinary(stripQueryParams(currentUrl));
+        await deleteFromCloudinary(
+          stripQueryParams(currentUrl)
+        );
       }
 
-      const { data, error } = await supabase
-        .from('profiles')
-        .update({ avatar_url: null })
-        .eq('id', profile.id)
-        .select();
+      const { data, error } =
+        await supabase
+          .from('profiles')
+          .update({
+            avatar_url: null,
+          })
+          .eq('id', profile.id)
+          .select();
 
       if (error) throw error;
 
       if (!data || data.length === 0) {
-        setAvatarFeedback({ type: 'error', text: 'Could not remove profile picture.' });
+        setAvatarFeedback({
+          type: 'error',
+          text:
+            'Could not remove profile picture.',
+        });
         return;
       }
 
       setAvatarUrl(null);
-      setProfile((prev: any) => ({ ...prev, avatar_url: null }));
-      setAvatarFeedback({ type: 'success', text: 'Profile picture removed.' });
+
+      setProfile((previous: any) => ({
+        ...previous,
+        avatar_url: null,
+      }));
+
+      setAvatarFeedback({
+        type: 'success',
+        text:
+          'Profile picture removed.',
+      });
     } catch (err: any) {
       setAvatarFeedback({
         type: 'error',
-        text: err?.message || 'Failed to remove profile picture.'
+        text:
+          err?.message ||
+          'Failed to remove profile picture.',
       });
     } finally {
       setUploadingAvatar(false);
@@ -428,7 +652,9 @@ export default function ProfilePage() {
   const handleSignOut = async () => {
     localStorage.removeItem('currentView');
     localStorage.removeItem('portalMode');
+
     await supabase.auth.signOut();
+
     window.location.href = '/';
   };
 
@@ -436,36 +662,59 @@ export default function ProfilePage() {
     setDeleteAccountError(null);
 
     if (!deleteConfirmPassword) {
-      setDeleteAccountError('Password is required to delete account.');
+      setDeleteAccountError(
+        'Password is required to delete account.'
+      );
       return;
     }
 
     setDeletingAccount(true);
+
     try {
-      const { error: authError } = await supabase.auth.signInWithPassword({
-        email: profile.email,
-        password: deleteConfirmPassword
-      });
+      const { error: authError } =
+        await supabase.auth.signInWithPassword({
+          email: profile.email,
+          password:
+            deleteConfirmPassword,
+        });
 
       if (authError) {
-        setDeleteAccountError('Incorrect password. Account deletion failed.');
+        setDeleteAccountError(
+          'Incorrect password. Account deletion failed.'
+        );
         setDeletingAccount(false);
         return;
       }
 
-      const { error } = await supabase.rpc('delete_user');
+      const { error } =
+        await supabase.rpc('delete_user');
+
       if (error) {
-        setDeleteAccountError(error.message || 'Could not delete account.');
+        setDeleteAccountError(
+          error.message ||
+            'Could not delete account.'
+        );
         setDeletingAccount(false);
       } else {
         setShowConfirm(false);
-        localStorage.removeItem('currentView');
-        localStorage.removeItem('portalMode');
+
+        localStorage.removeItem(
+          'currentView'
+        );
+        localStorage.removeItem(
+          'portalMode'
+        );
+
         await supabase.auth.signOut();
-        window.location.href = '/';
+
+        window.location.href =
+          '/';
       }
     } catch (err: any) {
-      setDeleteAccountError(err?.message || 'Unexpected error deleting account.');
+      setDeleteAccountError(
+        err?.message ||
+          'Unexpected error deleting account.'
+      );
       setDeletingAccount(false);
     }
   };
@@ -479,224 +728,577 @@ export default function ProfilePage() {
       let otherChanges = false;
       let passwordChanged = false;
 
-      if (newName.trim() && newName !== profile?.name) {
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .update({ name: newName.trim() })
-          .eq('id', profile.id);
-        if (profileError) throw profileError;
+      if (
+        newName.trim() &&
+        newName !== profile?.name
+      ) {
+        const { error } =
+          await supabase
+            .from('profiles')
+            .update({
+              name: newName.trim(),
+            })
+            .eq('id', profile.id);
+
+        if (error) throw error;
         otherChanges = true;
       }
 
-      if (newEmail.trim() && newEmail !== profile?.email) {
-        const { error: emailError } = await supabase.auth.updateUser({ email: newEmail.trim() });
-        if (emailError) {
-          setFieldErrors((prev) => ({ ...prev, email: emailError.message }));
+      if (
+        newEmail.trim() &&
+        newEmail !== profile?.email
+      ) {
+        const { error } =
+          await supabase.auth.updateUser({
+            email:
+              newEmail.trim(),
+          });
+
+        if (error) {
+          setFieldErrors({
+            email:
+              error.message,
+          });
           return;
         }
+
         emailChanged = true;
       }
 
       if (newPassword) {
         if (!currentPassword) {
-          setFieldErrors((prev) => ({
-            ...prev,
-            password: 'Current password is required to change password.'
-          }));
+          setFieldErrors({
+            password:
+              'Current password is required to change password.',
+          });
           return;
         }
 
-        if (newPassword.length < 6) {
-          setFieldErrors((prev) => ({
-            ...prev,
-            password: 'New password must be at least 6 characters long.'
-          }));
+        if (
+          newPassword.length < 6
+        ) {
+          setFieldErrors({
+            password:
+              'New password must be at least 6 characters long.',
+          });
           return;
         }
 
-        const { error: authError } = await supabase.auth.signInWithPassword({
-          email: profile.email,
-          password: currentPassword
-        });
+        const { error: authError } =
+          await supabase.auth.signInWithPassword({
+            email:
+              profile.email,
+            password:
+              currentPassword,
+          });
 
         if (authError) {
-          setFieldErrors((prev) => ({
-            ...prev,
-            password: 'Incorrect current password.'
-          }));
+          setFieldErrors({
+            password:
+              'Incorrect current password.',
+          });
           return;
         }
 
-        const { error: passwordError } = await supabase.auth.updateUser({ password: newPassword });
+        const { error: passwordError } =
+          await supabase.auth.updateUser({
+            password:
+              newPassword,
+          });
+
         if (passwordError) {
-          setFieldErrors((prev) => ({
-            ...prev,
-            password: passwordError.message
-          }));
+          setFieldErrors({
+            password:
+              passwordError.message,
+          });
           return;
         }
+
         passwordChanged = true;
         otherChanges = true;
       }
 
-      if (isAmbassador && profile?.id) {
-        const updatesToAmb: any = {};
+      if (
+        isAmbassador &&
+        profile?.id
+      ) {
+        const updatesToAmb: any =
+          {};
 
-        const getFallbackSlug = (name?: string) => {
-          if (!name?.trim()) return '';
+        const getFallbackSlug = (
+          name?: string
+        ) => {
+          if (!name?.trim()) {
+            return '';
+          }
+
           return name
             .trim()
             .toLowerCase()
-            .replace(/\s+/g, '-')
-            .replace(/[^a-z0-9-]/g, '');
+            .replace(
+              /\s+/g,
+              '-'
+            )
+            .replace(
+              /[^a-z0-9-]/g,
+              ''
+            );
         };
 
-        const targetSlug = newSlug.trim()
-          ? newSlug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-')
-          : (!currentSlug ? getFallbackSlug(profile?.name) : '');
+        const targetSlug =
+          newSlug.trim()
+            ? newSlug
+                .trim()
+                .toLowerCase()
+                .replace(
+                  /[^a-z0-9-]/g,
+                  '-'
+                )
+            : !currentSlug
+              ? getFallbackSlug(
+                  profile?.name
+                )
+              : '';
 
-        if (targetSlug && targetSlug !== currentSlug) {
-          const { data: existing } = await supabase
-            .from('ambassador')
-            .select('id, user_id')
-            .eq('assigned_slug', targetSlug)
-            .neq('user_id', profile.id)
-            .maybeSingle();
+        if (
+          targetSlug &&
+          targetSlug !== currentSlug
+        ) {
+          const { data: existing } =
+            await supabase
+              .from('ambassador')
+              .select(
+                'id, user_id'
+              )
+              .eq(
+                'assigned_slug',
+                targetSlug
+              )
+              .neq(
+                'user_id',
+                profile.id
+              )
+              .maybeSingle();
 
           if (existing) {
-            setFieldErrors((prev) => ({
-              ...prev,
-              slug: 'This URL slug is already taken.'
-            }));
-            return;
-          }
-          updatesToAmb.assigned_slug = targetSlug;
-        }
-
-        if (newPayoutNumber.trim()) {
-          updatesToAmb.payout_details = `${payoutMethod}: ${newPayoutNumber.trim()}`;
-        }
-
-        if (Object.keys(updatesToAmb).length > 0) {
-          const { data: ambUpdatedData, error: ambErr } = await supabase
-            .from('ambassador')
-            .update(updatesToAmb)
-            .eq('user_id', profile.id)
-            .select();
-
-          if (ambErr) throw ambErr;
-
-          if (!ambUpdatedData || ambUpdatedData.length === 0) {
-            setSettingsFeedback({
-              type: 'error',
-              text: 'Update failed. Please check database permissions.'
+            setFieldErrors({
+              slug:
+                'This URL slug is already taken.',
             });
             return;
           }
 
-          otherChanges = true;
+          updatesToAmb.assigned_slug =
+            targetSlug;
+        }
+
+        if (
+          newPayoutNumber.trim()
+        ) {
+          updatesToAmb.payout_details =
+            `${payoutMethod}: ${newPayoutNumber.trim()}`;
+        }
+
+        if (
+          Object.keys(
+            updatesToAmb
+          ).length > 0
+        ) {
+          const {
+            data: ambassadorUpdate,
+            error:
+              ambassadorError,
+          } =
+            await supabase
+              .from('ambassador')
+              .update(
+                updatesToAmb
+              )
+              .eq(
+                'user_id',
+                profile.id
+              )
+              .select();
+
+          if (
+            ambassadorError
+          ) {
+            throw ambassadorError;
+          }
+
+          if (
+            !ambassadorUpdate ||
+            ambassadorUpdate.length ===
+              0
+          ) {
+            setSettingsFeedback({
+              type: 'error',
+              text:
+                'Update failed. Please check database permissions.',
+            });
+            return;
+          }
+
+          otherChanges =
+            true;
         }
       }
 
-      setCurrentPassword('');
-      setNewPassword('');
-      setDeleteConfirmPassword('');
-      setNewSlug('');
-      setNewPayoutNumber('');
+      setCurrentPassword(
+        ''
+      );
+      setNewPassword(
+        ''
+      );
+      setDeleteConfirmPassword(
+        ''
+      );
+      setNewSlug(
+        ''
+      );
+      setNewPayoutNumber(
+        ''
+      );
 
       await fetchUserData();
 
-      if (emailChanged) {
+      if (
+        emailChanged
+      ) {
         setSettingsFeedback({
           type: 'success',
-          text: 'Check your new email inbox to verify the change.'
+          text:
+            'Check your new email inbox to verify the change.',
         });
-      } else if (passwordChanged) {
+      } else if (
+        passwordChanged
+      ) {
         setSettingsFeedback({
           type: 'success',
-          text: 'Password updated successfully.'
+          text:
+            'Password updated successfully.',
         });
-      } else if (otherChanges) {
+      } else if (
+        otherChanges
+      ) {
         setSettingsFeedback({
           type: 'success',
-          text: 'Settings updated successfully.'
+          text:
+            'Settings updated successfully.',
         });
       }
     } catch (error: any) {
       setSettingsFeedback({
         type: 'error',
-        text: error?.message || 'Failed to update settings.'
+        text:
+          error?.message ||
+          'Failed to update settings.',
       });
     }
   };
 
-  const togglePortalMode = () => {
-    if (isAmbassador) {
-      const nextMode = portalMode === 'customer' ? 'ambassador' : 'customer';
-      setPortalMode(nextMode);
-      localStorage.setItem('portalMode', nextMode);
-    }
-  };
+  const togglePortalMode =
+    () => {
+      if (!isAmbassador) {
+        return;
+      }
+
+      const nextMode =
+        portalMode ===
+        'customer'
+          ? 'ambassador'
+          : 'customer';
+
+      setPortalMode(
+        nextMode
+      );
+      localStorage.setItem(
+        'portalMode',
+        nextMode
+      );
+
+      setIsPageLoading(
+        true,
+        {
+          view:
+            resolveSkeletonViewForState(
+              view,
+              nextMode ===
+                'ambassador'
+            ),
+          isAmbassador:
+            nextMode ===
+            'ambassador',
+        }
+      );
+
+      window.requestAnimationFrame(
+        () => {
+          setIsPageLoading(
+            false
+          );
+        }
+      );
+    };
 
   return (
-    <div style={{ backgroundColor: '#000', minHeight: '100vh', color: '#fff', padding: view === 'notifications' || view === 'communication' ? '0' : '40px 20px', fontFamily: "'Inter', sans-serif", width: '100%', boxSizing: 'border-box', overflowX: 'hidden' }}>
+    <div
+      style={{
+        backgroundColor:
+          '#000',
+        minHeight:
+          '100vh',
+        color:
+          '#fff',
+        padding:
+          view ===
+            'notifications' ||
+          view ===
+            'communication'
+            ? '0'
+            : '40px 20px',
+        fontFamily:
+          "'Inter', sans-serif",
+        width:
+          '100%',
+        boxSizing:
+          'border-box',
+      }}
+    >
       <input
         type="file"
-        ref={fileInputRef}
-        onChange={handleFileSelect}
+        ref={
+          fileInputRef
+        }
+        onChange={
+          handleFileSelect
+        }
         accept="image/*"
-        style={{ display: 'none' }}
+        style={{
+          display:
+            'none',
+        }}
       />
 
       {showConfirm && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1200, padding: '20px' }}>
-          <div style={{ background: '#111', border: '1px solid #222', borderRadius: '8px', padding: '25px', maxWidth: '400px', width: '100%' }}>
-            <h3 style={{ margin: '0 0 10px 0', fontSize: '16px', color: '#ff4444', letterSpacing: '1px' }}>DELETE ACCOUNT</h3>
-            <p style={{ fontSize: '13px', color: '#ccc', marginBottom: '20px' }}>This action is permanent. Enter your password to confirm deletion:</p>
+        <div
+          style={{
+            position:
+              'fixed',
+            top:
+              0,
+            left:
+              0,
+            right:
+              0,
+            bottom:
+              0,
+            background:
+              'rgba(0,0,0,0.85)',
+            display:
+              'flex',
+            alignItems:
+              'center',
+            justifyContent:
+              'center',
+            zIndex:
+              1200,
+            padding:
+              '20px',
+          }}
+        >
+          <div
+            style={{
+              background:
+                '#111',
+              border:
+                '1px solid #222',
+              borderRadius:
+                '8px',
+              padding:
+                '25px',
+              maxWidth:
+                '400px',
+              width:
+                '100%',
+            }}
+          >
+            <h3
+              style={{
+                margin:
+                  '0 0 10px 0',
+                fontSize:
+                  '16px',
+                color:
+                  '#ff4444',
+                letterSpacing:
+                  '1px',
+              }}
+            >
+              DELETE ACCOUNT
+            </h3>
+
+            <p
+              style={{
+                fontSize:
+                  '13px',
+                color:
+                  '#ccc',
+                marginBottom:
+                  '20px',
+              }}
+            >
+              This action is permanent.
+              Enter your password
+              to confirm deletion:
+            </p>
+
             <input
               type="password"
               placeholder="Password"
-              value={deleteConfirmPassword}
-              onChange={(e) => {
-                setDeleteConfirmPassword(e.target.value);
-                if (deleteAccountError) setDeleteAccountError(null);
+              value={
+                deleteConfirmPassword
+              }
+              onChange={(
+                event
+              ) => {
+                setDeleteConfirmPassword(
+                  event.target.value
+                );
+
+                if (
+                  deleteAccountError
+                ) {
+                  setDeleteAccountError(
+                    null
+                  );
+                }
               }}
               style={{
-                width: '100%',
-                padding: '10px 0',
-                background: 'transparent',
-                border: 'none',
-                borderBottom: deleteAccountError ? '1px solid #F87171' : '1px solid #333',
-                color: '#fff',
-                marginBottom: deleteAccountError ? '8px' : '20px',
-                outline: 'none',
-                fontSize: '15px',
-                boxSizing: 'border-box'
+                width:
+                  '100%',
+                padding:
+                  '10px 0',
+                background:
+                  'transparent',
+                border:
+                  'none',
+                borderBottom:
+                  deleteAccountError
+                    ? '1px solid #F87171'
+                    : '1px solid #333',
+                color:
+                  '#fff',
+                marginBottom:
+                  deleteAccountError
+                    ? '8px'
+                    : '20px',
+                outline:
+                  'none',
+                fontSize:
+                  '15px',
+                boxSizing:
+                  'border-box',
               }}
             />
+
             {deleteAccountError && (
-              <p style={{ color: '#F87171', fontSize: '11px', margin: '0 0 16px 0' }}>
-                {deleteAccountError}
+              <p
+                style={{
+                  color:
+                    '#F87171',
+                  fontSize:
+                    '11px',
+                  margin:
+                    '0 0 16px 0',
+                }}
+              >
+                {
+                  deleteAccountError
+                }
               </p>
             )}
-            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+
+            <div
+              style={{
+                display:
+                  'flex',
+                gap:
+                  '10px',
+                justifyContent:
+                  'flex-end',
+              }}
+            >
               <button
                 type="button"
-                disabled={deletingAccount}
+                disabled={
+                  deletingAccount
+                }
                 onClick={() => {
-                  setShowConfirm(false);
-                  setDeleteConfirmPassword('');
-                  setDeleteAccountError(null);
+                  setShowConfirm(
+                    false
+                  );
+                  setDeleteConfirmPassword(
+                    ''
+                  );
+                  setDeleteAccountError(
+                    null
+                  );
                 }}
-                style={{ background: 'transparent', border: '1px solid #333', color: '#aaa', padding: '8px 16px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', letterSpacing: '1px' }}>
+                style={{
+                  background:
+                    'transparent',
+                  border:
+                    '1px solid #333',
+                  color:
+                    '#aaa',
+                  padding:
+                    '8px 16px',
+                  borderRadius:
+                    '4px',
+                  cursor:
+                    'pointer',
+                  fontSize:
+                    '12px',
+                  letterSpacing:
+                    '1px',
+                }}
+              >
                 CANCEL
               </button>
+
               <button
                 type="button"
-                disabled={deletingAccount}
-                onClick={handleDeleteAccount}
-                style={{ background: '#ff4444', border: 'none', color: '#fff', padding: '8px 16px', borderRadius: '4px', cursor: deletingAccount ? 'wait' : 'pointer', fontSize: '12px', letterSpacing: '1px', fontWeight: 'bold', opacity: deletingAccount ? 0.7 : 1 }}>
-                {deletingAccount ? 'DELETING...' : 'DELETE'}
+                disabled={
+                  deletingAccount
+                }
+                onClick={
+                  handleDeleteAccount
+                }
+                style={{
+                  background:
+                    '#ff4444',
+                  border:
+                    'none',
+                  color:
+                    '#fff',
+                  padding:
+                    '8px 16px',
+                  borderRadius:
+                    '4px',
+                  cursor:
+                    deletingAccount
+                      ? 'wait'
+                      : 'pointer',
+                  fontSize:
+                    '12px',
+                  letterSpacing:
+                    '1px',
+                }}
+              >
+                {deletingAccount
+                  ? 'DELETING...'
+                  : 'DELETE'}
               </button>
             </div>
           </div>
@@ -704,110 +1306,302 @@ export default function ProfilePage() {
       )}
 
       <ImageCropModal
-        isOpen={cropModalOpen}
-        selectedImageSrc={selectedImageSrc}
-        isAmbassadorActive={isAmbassadorActive}
-        onClose={() => setCropModalOpen(false)}
-        onApply={handleApplyCropAndUpload}
+        isOpen={
+          cropModalOpen
+        }
+        selectedImageSrc={
+          selectedImageSrc
+        }
+        isAmbassadorActive={
+          isAmbassadorActive
+        }
+        onClose={() =>
+          setCropModalOpen(
+            false
+          )
+        }
+        onApply={
+          handleApplyCropAndUpload
+        }
       />
 
       <ProfileDetailsSheet
-        isOpen={isDetailsSheetOpen}
-        onClose={() => setIsDetailsSheetOpen(false)}
-        profile={profile}
-        ambassadorData={ambassadorData}
-        avatarUrl={avatarUrl}
-        getInitials={getInitials}
-        portalMode={portalMode}
-        isAmbassador={isAmbassador}
+        isOpen={
+          isDetailsSheetOpen
+        }
+        onClose={() =>
+          setIsDetailsSheetOpen(
+            false
+          )
+        }
+        profile={
+          profile
+        }
+        ambassadorData={
+          ambassadorData
+        }
+        avatarUrl={
+          avatarUrl
+        }
+        getInitials={
+          getInitials
+        }
+        portalMode={
+          portalMode
+        }
+        isAmbassador={
+          isAmbassador
+        }
       />
 
-      <div style={{ width: '100%' }}>
-        {view === 'notifications' ? (
+      <div
+        style={{
+          width:
+            '100%',
+        }}
+      >
+        {view ===
+        'notifications' ? (
           <NotificationsView
-            userId={profile?.id}
-            targetAudience={['CUSTOMER', 'ALL', 'SPECIFIC']}
-            onBack={() => {
-              changeView('profile');
-              fetchUnreadCounts();
-            }}
-          />
-        ) : view === 'communication' ? (
-          <CommunicationView
-            userId={profile?.id}
-            userEmail={profile?.email}
-            onBack={() => {
-              changeView('profile');
-              fetchUnreadCounts();
-            }}
-          />
-        ) : view === 'settings' ? (
-          <ProfileSettings
-            profile={profile}
-            avatarUrl={avatarUrl}
-            isAmbassadorActive={isAmbassadorActive}
-            uploadingAvatar={uploadingAvatar}
-            avatarFeedback={avatarFeedback}
-            clearAvatarFeedback={() => setAvatarFeedback(null)}
-            fileInputRef={fileInputRef}
-            newName={newName}
-            newEmail={newEmail}
-            currentPassword={currentPassword}
-            setCurrentPassword={setCurrentPassword}
-            newPassword={newPassword}
-            currentSlug={currentSlug}
-            newSlug={newSlug}
-            setNewSlug={setNewSlug}
-            payoutMethod={payoutMethod}
-            setPayoutMethod={setPayoutMethod}
-            currentPayoutDetails={currentPayoutDetails}
-            newPayoutNumber={newPayoutNumber}
-            setNewPayoutNumber={setNewPayoutNumber}
-            setNewName={setNewName}
-            setNewEmail={setNewEmail}
-            setNewPassword={setNewPassword}
-            getInitials={getInitials}
-            handleDeleteAvatar={handleDeleteAvatar}
-            handleUpdate={handleUpdate}
-            handleSignOut={handleSignOut}
-            setShowConfirm={setShowConfirm}
-            onChangeView={changeView}
-            settingsFeedback={settingsFeedback}
-            clearSettingsFeedback={() => setSettingsFeedback(null)}
-            fieldErrors={fieldErrors}
-            clearFieldError={(field) =>
-              setFieldErrors((prev) => ({ ...prev, [field]: undefined }))
+            userId={
+              profile?.id
             }
-            loading={loading}
+            targetAudience={[
+              'CUSTOMER',
+              'ALL',
+              'SPECIFIC',
+            ]}
+            onBack={() => {
+              changeView(
+                'profile'
+              );
+              fetchUnreadCounts();
+            }}
+          />
+        ) : view ===
+          'communication' ? (
+          <CommunicationView
+            userId={
+              profile?.id
+            }
+            userEmail={
+              profile?.email
+            }
+            onBack={() => {
+              changeView(
+                'profile'
+              );
+              fetchUnreadCounts();
+            }}
+          />
+        ) : view ===
+          'settings' ? (
+          <ProfileSettings
+            profile={
+              profile
+            }
+            avatarUrl={
+              avatarUrl
+            }
+            isAmbassadorActive={
+              isAmbassadorActive
+            }
+            uploadingAvatar={
+              uploadingAvatar
+            }
+            avatarFeedback={
+              avatarFeedback
+            }
+            clearAvatarFeedback={() =>
+              setAvatarFeedback(
+                null
+              )
+            }
+            fileInputRef={
+              fileInputRef
+            }
+            newName={
+              newName
+            }
+            newEmail={
+              newEmail
+            }
+            currentPassword={
+              currentPassword
+            }
+            setCurrentPassword={
+              setCurrentPassword
+            }
+            newPassword={
+              newPassword
+            }
+            currentSlug={
+              currentSlug
+            }
+            newSlug={
+              newSlug
+            }
+            setNewSlug={
+              setNewSlug
+            }
+            payoutMethod={
+              payoutMethod
+            }
+            setPayoutMethod={
+              setPayoutMethod
+            }
+            currentPayoutDetails={
+              currentPayoutDetails
+            }
+            newPayoutNumber={
+              newPayoutNumber
+            }
+            setNewPayoutNumber={
+              setNewPayoutNumber
+            }
+            setNewName={
+              setNewName
+            }
+            setNewEmail={
+              setNewEmail
+            }
+            setNewPassword={
+              setNewPassword
+            }
+            getInitials={
+              getInitials
+            }
+            handleDeleteAvatar={
+              handleDeleteAvatar
+            }
+            handleUpdate={
+              handleUpdate
+            }
+            handleSignOut={
+              handleSignOut
+            }
+            setShowConfirm={
+              setShowConfirm
+            }
+            onChangeView={
+              changeView
+            }
+            settingsFeedback={
+              settingsFeedback
+            }
+            clearSettingsFeedback={() =>
+              setSettingsFeedback(
+                null
+              )
+            }
+            fieldErrors={
+              fieldErrors
+            }
+            clearFieldError={(
+              field
+            ) =>
+              setFieldErrors(
+                (
+                  previous
+                ) => ({
+                  ...previous,
+                  [field]:
+                    undefined,
+                })
+              )
+            }
+            loading={
+              loading
+            }
           />
         ) : (
           <>
             <ProfileHeader
-              profile={profile}
-              avatarUrl={avatarUrl}
-              isAmbassador={isAmbassador}
-              isAmbassadorActive={isAmbassadorActive}
-              togglePortalMode={togglePortalMode}
-              getInitials={getInitials}
-              onChangeView={changeView}
-              onOpenProfileDetails={() => setIsDetailsSheetOpen(true)}
-              onOpenNotifications={() => changeView('notifications')}
-              onOpenCommunication={() => changeView('communication')}
-              unreadMessagesCount={unreadMessagesCount}
-              unreadNotifCount={unreadNotifCount}
-              hasUnreadNotif={unreadNotifCount > 0}
-              loading={loading}
+              profile={
+                profile
+              }
+              avatarUrl={
+                avatarUrl
+              }
+              isAmbassador={
+                isAmbassador
+              }
+              isAmbassadorActive={
+                isAmbassadorActive
+              }
+              togglePortalMode={
+                togglePortalMode
+              }
+              getInitials={
+                getInitials
+              }
+              onChangeView={
+                changeView
+              }
+              onOpenProfileDetails={() =>
+                setIsDetailsSheetOpen(
+                  true
+                )
+              }
+              onOpenNotifications={() =>
+                changeView(
+                  'notifications'
+                )
+              }
+              onOpenCommunication={() =>
+                changeView(
+                  'communication'
+                )
+              }
+              unreadMessagesCount={
+                unreadMessagesCount
+              }
+              unreadNotifCount={
+                unreadNotifCount
+              }
+              hasUnreadNotif={
+                unreadNotifCount >
+                0
+              }
+              loading={
+                loading
+              }
             />
 
-            {!loading && (
-              portalMode === 'ambassador' && isAmbassador ? (
-                <AmbassadorDashboardSection ambassadorData={ambassadorData} profile={profile} />
-              ) : (
-                <div style={{ marginTop: '20px', borderTop: '1px solid #111', paddingTop: '10px' }}>
-                  <OrderHistory userId={profile?.id} />
-                </div>
-              )
-            )}
+            {!loading &&
+              (
+                portalMode ===
+                  'ambassador' &&
+                isAmbassador
+                  ? (
+                      <AmbassadorDashboardSection
+                        ambassadorData={
+                          ambassadorData
+                        }
+                        profile={
+                          profile
+                        }
+                      />
+                    )
+                  : (
+                      <div
+                        style={{
+                          marginTop:
+                            '20px',
+                          borderTop:
+                            '1px solid #111',
+                          paddingTop:
+                            '10px',
+                        }}
+                      >
+                        <OrderHistory
+                          userId={
+                            profile?.id
+                          }
+                        />
+                      </div>
+                    )
+              )}
           </>
         )}
       </div>
