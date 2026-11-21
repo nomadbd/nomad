@@ -1,7 +1,6 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/supabaseClient';
 import { useCart } from '@/context/CartContext';
-import { useGlobalLoading } from '@/context/LoadingContext';
 import ProductGallery from './ProductGallery';
 
 interface Product {
@@ -25,15 +24,27 @@ const ProductActionRow = ({ product }: { product: Product }) => {
   const [step, setStep] = useState<'idle' | 'size' | 'color'>('idle');
   const [selectedSize, setSelectedSize] = useState('');
   const [isAdded, setIsAdded] = useState(false);
+  const feedbackTimeoutRef = useRef<number | null>(null);
 
   const availableSizes = product.sizes || [];
   const availableColors = product.colors || [];
 
   const isSoldOut = product.status === 'sold_out' || product.stock_quantity <= 0;
 
+  useEffect(() => {
+    return () => {
+      if (feedbackTimeoutRef.current !== null) {
+        window.clearTimeout(feedbackTimeoutRef.current);
+      }
+    };
+  }, []);
+
   const triggerAddedFeedback = () => {
     setIsAdded(true);
-    setTimeout(() => {
+    if (feedbackTimeoutRef.current !== null) {
+      window.clearTimeout(feedbackTimeoutRef.current);
+    }
+    feedbackTimeoutRef.current = window.setTimeout(() => {
       setIsAdded(false);
     }, 1500);
   };
@@ -61,8 +72,10 @@ const ProductActionRow = ({ product }: { product: Product }) => {
           url: shareUrl,
         });
       } catch (err) {}
-    } else {
-      navigator.clipboard.writeText(shareUrl);
+    } else if (navigator.clipboard && navigator.clipboard.writeText) {
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+      } catch (err) {}
     }
   };
 
@@ -310,49 +323,54 @@ const ProductCard = ({ product }: { product: Product }) => {
 };
 
 export default function ProductList() {
-  const { setIsPageLoading } = useGlobalLoading();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
-    return () => {
-      setIsPageLoading(false);
-    };
-  }, [setIsPageLoading]);
+    let isMounted = true;
 
-  const fetchProducts = async () => {
-    setLoading(true);
-    setIsPageLoading(true, { view: 'orders', isAmbassador: false });
-    try {
-      const { data } = await supabase
-        .from('products')
-        .select(`
-          *,
-          product_media (
-            media_url,
-            media_type
-          )
-        `)
-        .in('status', ['active', 'sold_out'])
-        .order('created_at', { ascending: false });
+    const fetchProducts = async () => {
+      setLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('products')
+          .select(`
+            *,
+            product_media (
+              media_url,
+              media_type
+            )
+          `)
+          .in('status', ['active', 'sold_out'])
+          .order('created_at', { ascending: false });
 
-      if (data) {
-        const shuffledProducts = [...data].sort(() => Math.random() - 0.5);
-        const uniqueCategories = Array.from(new Set(shuffledProducts.map(p => p.category)))
-          .sort(() => Math.random() - 0.5);
+        if (error) throw error;
 
-        setProducts(shuffledProducts as Product[]);
-        setCategories(uniqueCategories);
+        if (data && isMounted) {
+          const shuffledProducts = [...data].sort(() => Math.random() - 0.5);
+          const uniqueCategories = Array.from(new Set(shuffledProducts.map(p => p.category)))
+            .sort(() => Math.random() - 0.5);
+
+          setProducts(shuffledProducts as Product[]);
+          setCategories(uniqueCategories);
+        }
+      } catch (err) {
+        console.error('Error fetching products:', err);
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
       }
-    } finally {
-      setLoading(false);
-      setIsPageLoading(false);
-    }
-  };
+    };
 
-  useEffect(() => { fetchProducts(); }, []);
+    fetchProducts();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (!loading && products.length > 0) {
@@ -363,17 +381,38 @@ export default function ProductList() {
         if (targetProduct && targetProduct.category) {
           setExpandedCategories(prev => ({ ...prev, [targetProduct.category]: true }));
         }
-        setTimeout(() => {
+        const scrollTimer = window.setTimeout(() => {
           const el = document.getElementById(`product-${targetId}`);
           if (el) {
             el.scrollIntoView({ behavior: 'smooth', block: 'center' });
           }
         }, 300);
+
+        return () => window.clearTimeout(scrollTimer);
       }
     }
   }, [loading, products]);
 
-  if (loading) return null;
+  if (loading) {
+    return (
+      <div style={{ backgroundColor: '#000', width: '100%', padding: '20px 15px', boxSizing: 'border-box' }}>
+        <div style={{ display: 'flex', gap: '16px', overflow: 'hidden' }}>
+          {[1, 2, 3].map((skeleton) => (
+            <div
+              key={skeleton}
+              style={{
+                width: '300px',
+                minWidth: '300px',
+                height: '360px',
+                backgroundColor: '#090909',
+                border: '1px solid #181818',
+              }}
+            />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ backgroundColor: '#000', width: '100%', boxSizing: 'border-box' }}>
