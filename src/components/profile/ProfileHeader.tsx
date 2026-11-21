@@ -53,11 +53,18 @@ export default function ProfileHeader({
   const [fade, setFade] = useState(true);
 
   useEffect(() => {
-    setIsPageLoading(loading);
+    if (loading) {
+      setIsPageLoading(true, {
+        view: isAmbassadorActive ? 'ambassador' : 'orders',
+        isAmbassador: isAmbassadorActive,
+      });
+    } else {
+      setIsPageLoading(false);
+    }
     return () => {
       setIsPageLoading(false);
     };
-  }, [loading, setIsPageLoading]);
+  }, [loading, isAmbassadorActive, setIsPageLoading]);
 
   useEffect(() => {
     if (loading || !profile) {
