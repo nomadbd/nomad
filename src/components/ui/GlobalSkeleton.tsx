@@ -4,13 +4,7 @@ import { useGlobalLoading } from '@/context/LoadingContext';
 
 export const GlobalSkeleton: React.FC = () => {
   const { pathname } = useLocation();
-  const { skeletonView, isAmbassadorSkeleton } =
-    useGlobalLoading();
-
-  const isProfilePath = pathname.startsWith('/profile');
-
-  const isAmbassadorMode =
-    isAmbassadorSkeleton || skeletonView === 'ambassador';
+  const { skeletonView, isAmbassadorSkeleton } = useGlobalLoading();
 
   const shimmerStyle: React.CSSProperties = {
     backgroundColor: '#1C1C1F',
@@ -21,9 +15,7 @@ export const GlobalSkeleton: React.FC = () => {
     borderRadius: '8px',
   };
 
-  const renderProfileHeaderSkeleton = (
-    withBadge = false
-  ) => (
+  const renderProfileHeaderSkeleton = (withBadge = false) => (
     <div
       style={{
         position: 'fixed',
@@ -40,63 +32,14 @@ export const GlobalSkeleton: React.FC = () => {
         boxSizing: 'border-box',
       }}
     >
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '10px',
-          flex: 1,
-          minWidth: 0,
-        }}
-      >
-        <div
-          style={{
-            ...shimmerStyle,
-            width: '40px',
-            height: '40px',
-            borderRadius: '50%',
-            flexShrink: 0,
-          }}
-        />
-
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '6px',
-            flex: 1,
-            minWidth: 0,
-          }}
-        >
-          <div
-            style={{
-              ...shimmerStyle,
-              height: '13px',
-              width: '46%',
-              maxWidth: '150px',
-              borderRadius: '4px',
-            }}
-          />
-
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-            }}
-          >
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 }}>
+        <div style={{ ...shimmerStyle, width: '40px', height: '40px', borderRadius: '50%', flexShrink: 0 }} />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1, minWidth: 0 }}>
+          <div style={{ ...shimmerStyle, height: '13px', width: '46%', maxWidth: '150px', borderRadius: '4px' }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             {withBadge && (
-              <div
-                style={{
-                  ...shimmerStyle,
-                  width: '6px',
-                  height: '6px',
-                  borderRadius: '50%',
-                  flexShrink: 0,
-                }}
-              />
+              <div style={{ ...shimmerStyle, width: '6px', height: '6px', borderRadius: '50%', flexShrink: 0 }} />
             )}
-
             <div
               style={{
                 ...shimmerStyle,
@@ -110,32 +53,14 @@ export const GlobalSkeleton: React.FC = () => {
         </div>
       </div>
 
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '6px',
-          flexShrink: 0,
-        }}
-      >
-        {[1, 2].map((item) => (
-          <div
-            key={item}
-            style={{
-              ...shimmerStyle,
-              width: '35px',
-              height: '35px',
-              borderRadius: '50%',
-            }}
-          />
-        ))}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+        <div style={{ ...shimmerStyle, width: '35px', height: '35px', borderRadius: '50%' }} />
+        <div style={{ ...shimmerStyle, width: '35px', height: '35px', borderRadius: '50%' }} />
       </div>
     </div>
   );
 
-  const renderSubViewTopBarSkeleton = (
-    withRightPill = false
-  ) => (
+  const renderSubViewTopBarSkeleton = (withRightPill = false) => (
     <div
       style={{
         position: 'fixed',
@@ -152,90 +77,48 @@ export const GlobalSkeleton: React.FC = () => {
         boxSizing: 'border-box',
       }}
     >
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '14px',
-        }}
-      >
-        <div
-          style={{
-            ...shimmerStyle,
-            width: '36px',
-            height: '36px',
-            borderRadius: '50%',
-          }}
-        />
-
-        <div
-          style={{
-            ...shimmerStyle,
-            width: '112px',
-            height: '16px',
-            borderRadius: '4px',
-          }}
-        />
+      <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+        <div style={{ ...shimmerStyle, width: '36px', height: '36px', borderRadius: '50%' }} />
+        <div style={{ ...shimmerStyle, width: '112px', height: '16px', borderRadius: '4px' }} />
       </div>
 
       {withRightPill && (
-        <div
-          style={{
-            ...shimmerStyle,
-            width: '74px',
-            height: '30px',
-            borderRadius: '16px',
-          }}
-        />
+        <div style={{ ...shimmerStyle, width: '74px', height: '30px', borderRadius: '16px' }} />
       )}
     </div>
   );
 
   const isUpdatePassword =
-    skeletonView === 'password' ||
-    (!skeletonView && pathname === '/update-password');
-
+    skeletonView === 'password' || (!skeletonView && pathname === '/update-password');
   const isSettings =
     !isUpdatePassword &&
-    (skeletonView === 'settings' ||
-      (!skeletonView &&
-        !isProfilePath &&
-        pathname.startsWith('/settings')));
-
+    (skeletonView === 'settings' || (!skeletonView && pathname.startsWith('/settings')));
   const isCommunication =
     !isUpdatePassword &&
     !isSettings &&
     (skeletonView === 'communication' ||
       skeletonView === 'chat' ||
-      (!skeletonView &&
-        !isProfilePath &&
-        (pathname.startsWith('/vip/') ||
-          pathname.startsWith('/messages'))));
-
+      (!skeletonView && (pathname.startsWith('/vip/') || pathname.startsWith('/messages'))));
   const isNotifications =
     !isUpdatePassword &&
     !isSettings &&
     !isCommunication &&
-    (skeletonView === 'notifications' ||
-      (!skeletonView &&
-        !isProfilePath &&
-        pathname.startsWith('/notifications')));
-
+    (skeletonView === 'notifications' || (!skeletonView && pathname.startsWith('/notifications')));
   const isAmbassadorView =
     !isUpdatePassword &&
     !isSettings &&
     !isCommunication &&
     !isNotifications &&
-    skeletonView === 'ambassador';
-
+    (skeletonView === 'ambassador' ||
+      (!skeletonView && pathname.startsWith('/profile') && isAmbassadorSkeleton));
   const isOrdersView =
     !isUpdatePassword &&
     !isSettings &&
     !isCommunication &&
     !isNotifications &&
     !isAmbassadorView &&
-    skeletonView === 'orders';
-
+    (skeletonView === 'orders' ||
+      (!skeletonView && pathname.startsWith('/profile') && !isAmbassadorSkeleton));
   const isHome =
     !isUpdatePassword &&
     !isSettings &&
@@ -243,10 +126,7 @@ export const GlobalSkeleton: React.FC = () => {
     !isNotifications &&
     !isAmbassadorView &&
     !isOrdersView &&
-    (skeletonView === 'home' ||
-      (!skeletonView &&
-        !isProfilePath &&
-        pathname === '/'));
+    (skeletonView === 'home' || (!skeletonView && pathname === '/'));
 
   return (
     <div
@@ -254,206 +134,53 @@ export const GlobalSkeleton: React.FC = () => {
         minHeight: '100vh',
         backgroundColor: '#000000',
         color: '#FFFFFF',
+        padding: '20px 16px',
         boxSizing: 'border-box',
       }}
     >
       <style>{`
         @keyframes skeletonShimmer {
-          0% {
-            background-position: 200% 0;
-          }
-          100% {
-            background-position: -200% 0;
-          }
-        }
-
-        @media (max-width: 767px) {
-          .home-skeleton-card {
-            width: 100vw !important;
-            min-width: 100vw !important;
-            padding: 0 15px !important;
-          }
-        }
-
-        @media (min-width: 768px) {
-          .home-skeleton-card {
-            width: 300px;
-            min-width: 300px;
-            padding: 0 10px;
-          }
+          0% { background-position: 200% 0; }
+          100% { background-position: -200% 0; }
         }
       `}</style>
 
       {isHome && (
-        <div
-          style={{
-            width: '100%',
-            backgroundColor: '#000',
-            boxSizing: 'border-box',
-          }}
-        >
+        <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
+          <div style={{ ...shimmerStyle, height: '360px', width: '100%', marginBottom: '32px' }} />
           <div
             style={{
-              ...shimmerStyle,
-              height: '100vh',
-              width: '100%',
-              borderRadius: 0,
-            }}
-          />
-
-          <main
-            style={{
-              padding: '32px 15px',
-              boxSizing: 'border-box',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              paddingBottom: '12px',
+              marginBottom: '20px',
+              borderBottom: '1px solid #141414',
             }}
           >
-            {[1, 2].map((section) => (
-              <section
-                key={section}
-                style={{
-                  marginBottom: '25px',
-                }}
-              >
-                <div
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    padding: '0 15px 12px',
-                    borderBottom: '1px solid #141414',
-                    boxSizing: 'border-box',
-                  }}
-                >
-                  <div
-                    style={{
-                      ...shimmerStyle,
-                      width: '130px',
-                      height: '14px',
-                      borderRadius: '4px',
-                    }}
-                  />
-
-                  <div
-                    style={{
-                      ...shimmerStyle,
-                      width: '72px',
-                      height: '14px',
-                      borderRadius: '4px',
-                    }}
-                  />
-                </div>
-
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    overflow: 'hidden',
-                    width: '100%',
-                    boxSizing: 'border-box',
-                  }}
-                >
-                  {[1, 2, 3].map((card) => (
-                    <div
-                      key={card}
-                      className="home-skeleton-card"
-                      style={{
-                        boxSizing: 'border-box',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        flexShrink: 0,
-                      }}
-                    >
-                      <div
-                        style={{
-                          ...shimmerStyle,
-                          width: '100%',
-                          height: '270px',
-                          borderRadius: 0,
-                        }}
-                      />
-
-                      <div
-                        style={{
-                          marginTop: '15px',
-                          padding: '0 5px',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: '12px',
-                        }}
-                      >
-                        <div
-                          style={{
-                            ...shimmerStyle,
-                            width: '70%',
-                            height: '15px',
-                            borderRadius: '4px',
-                          }}
-                        />
-
-                        <div
-                          style={{
-                            ...shimmerStyle,
-                            width: '92%',
-                            height: '12px',
-                            borderRadius: '4px',
-                          }}
-                        />
-
-                        <div
-                          style={{
-                            ...shimmerStyle,
-                            width: '82%',
-                            height: '12px',
-                            borderRadius: '4px',
-                          }}
-                        />
-
-                        <div
-                          style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            height: '42px',
-                            marginTop: '15px',
-                          }}
-                        >
-                          <div
-                            style={{
-                              ...shimmerStyle,
-                              width: '50px',
-                              height: '15px',
-                              borderRadius: '4px',
-                            }}
-                          />
-
-                          <div
-                            style={{
-                              ...shimmerStyle,
-                              width: '130px',
-                              height: '36px',
-                              borderRadius: 0,
-                            }}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </section>
+            <div style={{ ...shimmerStyle, width: '130px', height: '14px', borderRadius: '4px' }} />
+            <div style={{ ...shimmerStyle, width: '72px', height: '14px', borderRadius: '4px' }} />
+          </div>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
+              gap: '24px',
+            }}
+          >
+            {[1, 2, 3, 4].map((item) => (
+              <div key={item} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ ...shimmerStyle, height: '270px', width: '100%' }} />
+                <div style={{ ...shimmerStyle, height: '15px', width: '70%' }} />
+                <div style={{ ...shimmerStyle, height: '12px', width: '90%' }} />
+              </div>
             ))}
-          </main>
+          </div>
         </div>
       )}
 
       {isSettings && (
-        <div
-          style={{
-            maxWidth: '640px',
-            margin: '0 auto',
-            paddingTop: '52px',
-            padding: '52px 16px 20px',
-          }}
-        >
+        <div style={{ maxWidth: '640px', margin: '0 auto', paddingTop: '52px' }}>
           <div
             style={{
               position: 'fixed',
@@ -470,97 +197,84 @@ export const GlobalSkeleton: React.FC = () => {
               boxSizing: 'border-box',
             }}
           >
-            <div
-              style={{
-                ...shimmerStyle,
-                width: '96px',
-                height: '15px',
-                borderRadius: '4px',
-              }}
-            />
-
-            <div
-              style={{
-                ...shimmerStyle,
-                width: '20px',
-                height: '20px',
-                borderRadius: '4px',
-              }}
-            />
+            <div style={{ ...shimmerStyle, width: '96px', height: '15px', borderRadius: '4px' }} />
+            <div style={{ ...shimmerStyle, width: '20px', height: '20px', borderRadius: '4px' }} />
           </div>
 
-          {isAmbassadorMode && (
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'center',
-                marginBottom: '26px',
-              }}
-            >
-              <div
-                style={{
-                  ...shimmerStyle,
-                  width: '76px',
-                  height: '76px',
-                  borderRadius: '50%',
-                }}
-              />
+          {isAmbassadorSkeleton && (
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px', marginBottom: '26px' }}>
+              <div style={{ ...shimmerStyle, width: '76px', height: '76px', borderRadius: '50%' }} />
             </div>
           )}
 
-          {[1, 2, 3].map((item) => (
-            <div key={item}>
-              <div
-                style={{
-                  ...shimmerStyle,
-                  width: item === 1 ? '54px' : '104px',
-                  height: '9px',
-                  borderRadius: '3px',
-                  marginBottom: '10px',
-                }}
-              />
+          <div style={{ marginTop: isAmbassadorSkeleton ? '0' : '16px' }}>
+            <div style={{ ...shimmerStyle, width: '54px', height: '9px', borderRadius: '3px', marginBottom: '10px' }} />
+            <div style={{ ...shimmerStyle, width: '62%', height: '15px', borderRadius: '4px', marginBottom: '12px' }} />
+            <div style={{ height: '1px', backgroundColor: '#1E1E1E', marginBottom: '22px' }} />
 
-              <div
-                style={{
-                  ...shimmerStyle,
-                  width: item === 1 ? '62%' : '74%',
-                  height: '15px',
-                  borderRadius: '4px',
-                  marginBottom: '12px',
-                }}
-              />
+            <div style={{ ...shimmerStyle, width: '104px', height: '9px', borderRadius: '3px', marginBottom: '10px' }} />
+            <div style={{ ...shimmerStyle, width: '74%', height: '15px', borderRadius: '4px', marginBottom: '12px' }} />
+            <div style={{ height: '1px', backgroundColor: '#1E1E1E', marginBottom: '22px' }} />
 
-              <div
-                style={{
-                  height: '1px',
-                  backgroundColor: '#1E1E1E',
-                  marginBottom: '22px',
-                }}
-              />
-            </div>
-          ))}
+            {isAmbassadorSkeleton && (
+              <>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                  <div style={{ ...shimmerStyle, width: '82px', height: '9px', borderRadius: '3px' }} />
+                  <div style={{ ...shimmerStyle, width: '92px', height: '10px', borderRadius: '3px' }} />
+                </div>
+                <div style={{ ...shimmerStyle, width: '54%', height: '15px', borderRadius: '4px', marginBottom: '12px' }} />
+                <div style={{ height: '1px', backgroundColor: '#1E1E1E', marginBottom: '22px' }} />
 
-          {isAmbassadorMode && (
+                <div style={{ ...shimmerStyle, width: '142px', height: '9px', borderRadius: '3px', marginBottom: '12px' }} />
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '22px' }}>
+                  {[82, 82, 84, 72].map((w, idx) => (
+                    <div
+                      key={idx}
+                      style={{ ...shimmerStyle, width: `${w}px`, height: '30px', borderRadius: '20px', flexShrink: 0 }}
+                    />
+                  ))}
+                </div>
+
+                <div style={{ ...shimmerStyle, width: '106px', height: '9px', borderRadius: '3px', marginBottom: '10px' }} />
+                <div style={{ ...shimmerStyle, width: '56%', height: '15px', borderRadius: '4px', marginBottom: '12px' }} />
+                <div style={{ height: '1px', backgroundColor: '#1E1E1E', marginBottom: '22px' }} />
+
+                <div style={{ ...shimmerStyle, width: '138px', height: '9px', borderRadius: '3px', marginBottom: '10px' }} />
+                <div
+                  style={{
+                    backgroundColor: '#0B0B0C',
+                    border: '1px solid #1C1C1E',
+                    borderRadius: '8px',
+                    padding: '12px 14px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '24px',
+                  }}
+                >
+                  <div style={{ ...shimmerStyle, width: '124px', height: '12px', borderRadius: '4px' }} />
+                  <div style={{ ...shimmerStyle, width: '82px', height: '28px', borderRadius: '16px' }} />
+                </div>
+              </>
+            )}
+
             <div
               style={{
+                borderTop: isAmbassadorSkeleton ? '1px solid #1A1A1C' : 'none',
+                paddingTop: '14px',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '18px',
               }}
             >
-              {[1, 2, 3].map((item) => (
-                <div
-                  key={item}
-                  style={{
-                    ...shimmerStyle,
-                    width: `${120 + item * 18}px`,
-                    height: '14px',
-                    borderRadius: '4px',
-                  }}
-                />
-              ))}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ ...shimmerStyle, width: '136px', height: '11px', borderRadius: '4px' }} />
+                <div style={{ ...shimmerStyle, width: '10px', height: '14px', borderRadius: '3px' }} />
+              </div>
+              <div style={{ ...shimmerStyle, width: '74px', height: '11px', borderRadius: '4px' }} />
+              <div style={{ ...shimmerStyle, width: '112px', height: '11px', borderRadius: '4px' }} />
             </div>
-          )}
+          </div>
         </div>
       )}
 
@@ -580,30 +294,52 @@ export const GlobalSkeleton: React.FC = () => {
         >
           {renderSubViewTopBarSkeleton(false)}
 
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '16px',
-              marginTop: '12px',
-              padding: '0 16px',
-            }}
-          >
-            {[1, 2, 3].map((item) => (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '12px' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '4px' }}>
+              <div style={{ ...shimmerStyle, width: '56px', height: '22px', borderRadius: '12px' }} />
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '5px' }}>
+              <div style={{ ...shimmerStyle, width: '68px', height: '10px', borderRadius: '3px' }} />
               <div
-                key={item}
                 style={{
                   ...shimmerStyle,
-                  width: item === 2 ? '62%' : '68%',
-                  height: item === 1 ? '46px' : '38px',
+                  width: '68%',
+                  height: '46px',
                   borderRadius: '14px',
-                  alignSelf:
-                    item === 2
-                      ? 'flex-end'
-                      : 'flex-start',
+                  borderTopLeftRadius: '4px',
                 }}
               />
-            ))}
+              <div style={{ ...shimmerStyle, width: '54px', height: '9px', borderRadius: '3px' }} />
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '5px' }}>
+              <div style={{ ...shimmerStyle, width: '28px', height: '10px', borderRadius: '3px' }} />
+              <div
+                style={{
+                  ...shimmerStyle,
+                  width: '62%',
+                  height: '44px',
+                  borderRadius: '14px',
+                  borderTopRightRadius: '4px',
+                }}
+              />
+              <div style={{ ...shimmerStyle, width: '54px', height: '9px', borderRadius: '3px' }} />
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '5px' }}>
+              <div style={{ ...shimmerStyle, width: '68px', height: '10px', borderRadius: '3px' }} />
+              <div
+                style={{
+                  ...shimmerStyle,
+                  width: '56%',
+                  height: '38px',
+                  borderRadius: '14px',
+                  borderTopLeftRadius: '4px',
+                }}
+              />
+              <div style={{ ...shimmerStyle, width: '54px', height: '9px', borderRadius: '3px' }} />
+            </div>
           </div>
 
           <div
@@ -621,48 +357,17 @@ export const GlobalSkeleton: React.FC = () => {
               boxSizing: 'border-box',
             }}
           >
-            <div
-              style={{
-                ...shimmerStyle,
-                flex: 1,
-                height: '42px',
-                borderRadius: '22px',
-              }}
-            />
-
-            <div
-              style={{
-                ...shimmerStyle,
-                width: '42px',
-                height: '42px',
-                borderRadius: '50%',
-                flexShrink: 0,
-              }}
-            />
+            <div style={{ ...shimmerStyle, flex: 1, height: '42px', borderRadius: '22px' }} />
+            <div style={{ ...shimmerStyle, width: '42px', height: '42px', borderRadius: '50%', flexShrink: 0 }} />
           </div>
         </div>
       )}
 
       {isNotifications && (
-        <div
-          style={{
-            maxWidth: '640px',
-            margin: '0 auto',
-            paddingTop: '62px',
-            paddingLeft: '16px',
-            paddingRight: '16px',
-          }}
-        >
+        <div style={{ maxWidth: '640px', margin: '0 auto', paddingTop: '62px' }}>
           {renderSubViewTopBarSkeleton(true)}
 
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '12px',
-              marginTop: '10px',
-            }}
-          >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '10px' }}>
             {[1, 2, 3, 4].map((item) => (
               <div
                 key={item}
@@ -676,50 +381,14 @@ export const GlobalSkeleton: React.FC = () => {
                   gap: '12px',
                 }}
               >
-                <div
-                  style={{
-                    ...shimmerStyle,
-                    width: '36px',
-                    height: '36px',
-                    borderRadius: '50%',
-                    flexShrink: 0,
-                  }}
-                />
-
-                <div
-                  style={{
-                    flex: 1,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '7px',
-                  }}
-                >
-                  <div
-                    style={{
-                      ...shimmerStyle,
-                      width: '54%',
-                      height: '13px',
-                      borderRadius: '4px',
-                    }}
-                  />
-
-                  <div
-                    style={{
-                      ...shimmerStyle,
-                      width: '88%',
-                      height: '11px',
-                      borderRadius: '4px',
-                    }}
-                  />
-
-                  <div
-                    style={{
-                      ...shimmerStyle,
-                      width: '64%',
-                      height: '11px',
-                      borderRadius: '4px',
-                    }}
-                  />
+                <div style={{ ...shimmerStyle, width: '36px', height: '36px', borderRadius: '50%', flexShrink: 0 }} />
+                <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '7px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ ...shimmerStyle, width: '54%', height: '13px', borderRadius: '4px' }} />
+                    <div style={{ ...shimmerStyle, width: '46px', height: '10px', borderRadius: '3px', flexShrink: 0 }} />
+                  </div>
+                  <div style={{ ...shimmerStyle, width: '88%', height: '11px', borderRadius: '4px' }} />
+                  <div style={{ ...shimmerStyle, width: '64%', height: '11px', borderRadius: '4px' }} />
                 </div>
               </div>
             ))}
@@ -728,69 +397,113 @@ export const GlobalSkeleton: React.FC = () => {
       )}
 
       {isAmbassadorView && (
-        <div
-          style={{
-            maxWidth: '640px',
-            margin: '0 auto',
-            paddingTop: '54px',
-          }}
-        >
+        <div style={{ maxWidth: '640px', margin: '0 auto', paddingTop: '54px' }}>
           {renderProfileHeaderSkeleton(true)}
 
-          {[1, 2].map((item) => (
+          <div style={{ marginTop: '18px', marginBottom: '22px' }}>
+            <div style={{ ...shimmerStyle, width: '156px', height: '9px', borderRadius: '3px', marginBottom: '10px' }} />
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1, minWidth: 0 }}>
+                <div style={{ ...shimmerStyle, width: '72%', height: '12px', borderRadius: '4px' }} />
+                <div style={{ ...shimmerStyle, width: '48%', height: '18px', borderRadius: '4px' }} />
+              </div>
+              <div style={{ ...shimmerStyle, width: '38px', height: '38px', borderRadius: '50%', flexShrink: 0 }} />
+            </div>
+          </div>
+
+          <div
+            style={{
+              backgroundColor: '#0A0A0B',
+              border: '1px solid #1A1A1D',
+              borderRadius: '14px',
+              padding: '16px',
+              marginBottom: '18px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '14px',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ ...shimmerStyle, width: '64px', height: '11px', borderRadius: '4px' }} />
+              <div style={{ ...shimmerStyle, width: '68px', height: '11px', borderRadius: '4px' }} />
+            </div>
+
             <div
-              key={item}
               style={{
-                margin: '18px 16px',
-                backgroundColor: '#0A0A0B',
-                border: '1px solid #1A1A1D',
-                borderRadius: '14px',
-                padding: '16px',
+                backgroundColor: '#101012',
+                border: '1px solid #1C1C20',
+                borderRadius: '10px',
+                padding: '14px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
               }}
             >
-              <div
-                style={{
-                  ...shimmerStyle,
-                  width: '62%',
-                  height: '12px',
-                  borderRadius: '4px',
-                  marginBottom: '14px',
-                }}
-              />
-
-              <div
-                style={{
-                  ...shimmerStyle,
-                  width: '88%',
-                  height: '10px',
-                  borderRadius: '4px',
-                  marginBottom: '10px',
-                }}
-              />
-
-              <div
-                style={{
-                  ...shimmerStyle,
-                  width: '48%',
-                  height: '10px',
-                  borderRadius: '4px',
-                }}
-              />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ ...shimmerStyle, width: '116px', height: '9px', borderRadius: '3px' }} />
+                <div style={{ ...shimmerStyle, width: '56px', height: '24px', borderRadius: '5px' }} />
+              </div>
+              <div style={{ ...shimmerStyle, width: '88px', height: '32px', borderRadius: '8px' }} />
             </div>
-          ))}
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              {[1, 2].map((box) => (
+                <div
+                  key={box}
+                  style={{
+                    backgroundColor: '#101012',
+                    border: '1px solid #1C1C20',
+                    borderRadius: '10px',
+                    padding: '14px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '8px',
+                  }}
+                >
+                  <div style={{ ...shimmerStyle, width: '78px', height: '9px', borderRadius: '3px' }} />
+                  <div style={{ ...shimmerStyle, width: '44px', height: '20px', borderRadius: '4px' }} />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div
+            style={{
+              backgroundColor: '#0A0A0B',
+              border: '1px solid #1A1A1D',
+              borderRadius: '14px',
+              padding: '16px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px',
+            }}
+          >
+            <div style={{ ...shimmerStyle, width: '62px', height: '11px', borderRadius: '4px' }} />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              {[1, 2, 3, 4].map((stat) => (
+                <div
+                  key={stat}
+                  style={{
+                    backgroundColor: '#101012',
+                    border: '1px solid #1C1C20',
+                    borderRadius: '10px',
+                    padding: '14px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '8px',
+                  }}
+                >
+                  <div style={{ ...shimmerStyle, width: '68px', height: '9px', borderRadius: '3px' }} />
+                  <div style={{ ...shimmerStyle, width: '38px', height: '20px', borderRadius: '4px' }} />
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       )}
 
       {isOrdersView && (
-        <div
-          style={{
-            maxWidth: '720px',
-            margin: '0 auto',
-            paddingTop: '54px',
-            paddingLeft: '16px',
-            paddingRight: '16px',
-          }}
-        >
+        <div style={{ maxWidth: '720px', margin: '0 auto', paddingTop: '54px' }}>
           {renderProfileHeaderSkeleton(false)}
 
           <div
@@ -804,75 +517,90 @@ export const GlobalSkeleton: React.FC = () => {
               marginBottom: '18px',
             }}
           >
-            <div
-              style={{
-                ...shimmerStyle,
-                width: '122px',
-                height: '11px',
-                borderRadius: '4px',
-              }}
-            />
-
-            <div
-              style={{
-                ...shimmerStyle,
-                width: '60px',
-                height: '11px',
-                borderRadius: '4px',
-              }}
-            />
+            <div style={{ ...shimmerStyle, width: '122px', height: '11px', borderRadius: '4px' }} />
+            <div style={{ ...shimmerStyle, width: '60px', height: '11px', borderRadius: '4px' }} />
           </div>
 
-          {[1, 2].map((orderCard) => (
-            <div
-              key={orderCard}
-              style={{
-                backgroundColor: '#070708',
-                border: '1px solid #1D1D20',
-                borderRadius: '10px',
-                padding: '18px',
-                marginBottom: '18px',
-              }}
-            >
-              {[1, 2, 3].map((line) => (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+            {[1, 2].map((orderCard) => (
+              <div
+                key={orderCard}
+                style={{
+                  backgroundColor: '#070708',
+                  border: '1px solid #1D1D20',
+                  borderRadius: '10px',
+                  padding: '18px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '16px',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ ...shimmerStyle, width: '126px', height: '10px', borderRadius: '3px' }} />
+                  <div style={{ ...shimmerStyle, width: '14px', height: '14px', borderRadius: '3px' }} />
+                </div>
+
+                <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
+                  <div style={{ ...shimmerStyle, width: '64px', height: '82px', borderRadius: '6px', flexShrink: 0 }} />
+                  <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '7px' }}>
+                    <div style={{ ...shimmerStyle, width: '68%', height: '13px', borderRadius: '4px' }} />
+                    <div style={{ ...shimmerStyle, width: '56%', height: '10px', borderRadius: '3px' }} />
+                    <div style={{ ...shimmerStyle, width: '48%', height: '10px', borderRadius: '3px' }} />
+                  </div>
+                </div>
+
                 <div
-                  key={line}
                   style={{
-                    ...shimmerStyle,
-                    width:
-                      line === 1
-                        ? '126px'
-                        : line === 2
-                          ? '68%'
-                          : '48%',
-                    height:
-                      line === 1
-                        ? '10px'
-                        : '12px',
-                    borderRadius: '4px',
-                    marginBottom: '14px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    borderTop: '1px solid #151518',
+                    paddingTop: '12px',
                   }}
-                />
-              ))}
-            </div>
-          ))}
+                >
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div style={{ ...shimmerStyle, width: '82px', height: '9px', borderRadius: '3px' }} />
+                    <div style={{ ...shimmerStyle, width: '78px', height: '18px', borderRadius: '4px' }} />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'flex-end' }}>
+                    <div style={{ ...shimmerStyle, width: '74px', height: '9px', borderRadius: '3px' }} />
+                    <div style={{ ...shimmerStyle, width: '84px', height: '12px', borderRadius: '4px' }} />
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    borderTop: '1px solid #131316',
+                    paddingTop: '14px',
+                  }}
+                >
+                  {[1, 2, 3, 4].map((step) => (
+                    <div
+                      key={step}
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        flex: 1,
+                        gap: '8px',
+                      }}
+                    >
+                      <div style={{ ...shimmerStyle, width: '16px', height: '16px', borderRadius: '50%' }} />
+                      <div style={{ ...shimmerStyle, width: '46px', height: '9px', borderRadius: '3px' }} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
       {isUpdatePassword && (
-        <div
-          style={{
-            maxWidth: '400px',
-            margin: '100px auto',
-          }}
-        >
-          <div
-            style={{
-              ...shimmerStyle,
-              height: '300px',
-              width: '100%',
-            }}
-          />
+        <div style={{ maxWidth: '400px', margin: '100px auto' }}>
+          <div style={{ ...shimmerStyle, height: '300px', width: '100%' }} />
         </div>
       )}
     </div>
