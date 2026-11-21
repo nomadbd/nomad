@@ -316,9 +316,15 @@ export default function ProductList() {
   const [loading, setLoading] = useState<boolean>(true);
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
 
+  useEffect(() => {
+    return () => {
+      setIsPageLoading(false);
+    };
+  }, [setIsPageLoading]);
+
   const fetchProducts = async () => {
     setLoading(true);
-    setIsPageLoading(true);
+    setIsPageLoading(true, { view: 'orders', isAmbassador: false });
     try {
       const { data } = await supabase
         .from('products')
