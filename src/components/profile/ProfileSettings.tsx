@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, RefObject } from 'react';
 import { isUserSubscribed, subscribeUserToPush, unsubscribeUserFromPush } from '@/utils/pushManager';
 import { isReservedSlug } from '@/reservedSlugs';
-import { useGlobalLoading } from '@/context/LoadingContext';
 
 interface ProfileSettingsProps {
   profile: any;
@@ -125,7 +124,6 @@ export default function ProfileSettings({
   clearFieldError,
   loading = false,
 }: ProfileSettingsProps) {
-  const { setIsPageLoading } = useGlobalLoading();
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushLoading, setPushLoading] = useState(true);
   const [pushStatus, setPushStatus] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -140,24 +138,15 @@ export default function ProfileSettings({
   const headerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (loading || !profile) {
-      setIsPageLoading(true, { view: 'settings', isAmbassador: isAmbassadorActive });
-    } else {
-      setIsPageLoading(false);
-    }
-    return () => {
-      setIsPageLoading(false);
-    };
-  }, [loading, profile, isAmbassadorActive, setIsPageLoading]);
-
-  useEffect(() => {
     const vv = window.visualViewport;
     if (!vv) return;
 
     let rafId = 0;
 
     const update = () => {
-      cancelAnimationFrame(rafId);
+      if (rafId) {
+        cancelAnimationFrame(rafId);
+      }
       rafId = requestAnimationFrame(() => {
         if (headerRef.current) {
           headerRef.current.style.transform = `translateY(${vv.offsetTop}px)`;
@@ -174,7 +163,9 @@ export default function ProfileSettings({
     vv.addEventListener('scroll', update, { passive: true });
 
     return () => {
-      cancelAnimationFrame(rafId);
+      if (rafId) {
+        cancelAnimationFrame(rafId);
+      }
       vv.removeEventListener('resize', update);
       vv.removeEventListener('scroll', update);
     };
