@@ -1,6 +1,5 @@
-import React, { useEffect, useState, useRef, useMemo, useLayoutEffect } from 'react';
+import React, { useEffect, useState, useRef, useMemo, useLayoutEffect, useCallback } from 'react';
 import { supabase } from '../../supabaseClient';
-import { useGlobalLoading } from '../../context/LoadingContext';
 import { BackIcon } from '../icons';
 
 interface CommunicationViewProps {
@@ -22,7 +21,6 @@ interface CommunicationMessage {
 }
 
 export default function CommunicationView({ userId, userEmail, onBack }: CommunicationViewProps) {
-  const { setIsPageLoading } = useGlobalLoading();
   const [messages, setMessages] = useState<CommunicationMessage[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [inputText, setInputText] = useState<string>('');
@@ -31,6 +29,23 @@ export default function CommunicationView({ userId, userEmail, onBack }: Communi
 
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const timeoutsRef = useRef<number[]>([]);
+
+  const registerTimeout = (fn: () => void, delay: number) => {
+    const timerId = window.setTimeout(() => {
+      timeoutsRef.current = timeoutsRef.current.filter((id) => id !== timerId);
+      fn();
+    }, delay);
+    timeoutsRef.current.push(timerId);
+    return timerId;
+  };
+
+  useEffect(() => {
+    return () => {
+      timeoutsRef.current.forEach((id) => window.clearTimeout(id));
+      timeoutsRef.current = [];
+    };
+  }, []);
 
   const jumpToBottom = () => {
     if (chatContainerRef.current) {
@@ -39,13 +54,6 @@ export default function CommunicationView({ userId, userEmail, onBack }: Communi
       chatEndRef.current?.scrollIntoView({ behavior: 'auto' });
     }
   };
-
-  useEffect(() => {
-    setIsPageLoading(true, { view: 'communication', isAmbassador: true });
-    return () => {
-      setIsPageLoading(false);
-    };
-  }, [setIsPageLoading]);
 
   useEffect(() => {
     const originalOverflow = document.body.style.overflow;
@@ -77,7 +85,7 @@ export default function CommunicationView({ userId, userEmail, onBack }: Communi
     return messages.filter((m) => m.sender_role !== 'ambassador' && !m.is_read).length;
   }, [messages]);
 
-  const markUnreadAsRead = async (msgList: CommunicationMessage[]) => {
+  const markUnreadAsRead = useCallback(async (msgList: CommunicationMessage[]) => {
     const unreadIds = msgList
       .filter((m) => m.sender_role !== 'ambassador' && !m.is_read)
       .map((m) => m.id);
@@ -96,18 +104,17 @@ export default function CommunicationView({ userId, userEmail, onBack }: Communi
     } catch (err) {
       console.error('Failed to mark messages as read:', err);
     }
-  };
+  }, []);
 
-  const fetchMessages = async () => {
+  const fetchMessages = useCallback(async () => {
     if (!userId) {
+      setMessages([]);
       setLoading(false);
-      setIsPageLoading(false);
       return;
     }
 
     try {
       setLoading(true);
-      setIsPageLoading(true, { view: 'communication', isAmbassador: true });
       const { data, error } = await supabase
         .from('communications')
         .select('*')
@@ -119,19 +126,20 @@ export default function CommunicationView({ userId, userEmail, onBack }: Communi
       const fetchedMessages = data || [];
       setMessages(fetchedMessages);
 
-      setTimeout(() => markUnreadAsRead(fetchedMessages), 1000);
+      registerTimeout(() => {
+        markUnreadAsRead(fetchedMessages);
+      }, 1000);
     } catch (err) {
       console.error('Error fetching communication messages:', err);
     } finally {
       setLoading(false);
-      setIsPageLoading(false);
     }
-  };
+  }, [userId, userEmail, markUnreadAsRead]);
 
   useEffect(() => {
     if (!userId) {
+      setMessages([]);
       setLoading(false);
-      setIsPageLoading(false);
       return;
     }
 
@@ -155,12 +163,19 @@ export default function CommunicationView({ userId, userEmail, onBack }: Communi
           });
 
           if (newMsg.sender_role !== 'ambassador') {
-            setTimeout(() => {
-              supabase
-                .from('communications')
-                .update({ is_read: true })
-                .eq('id', newMsg.id)
-                .then();
+            registerTimeout(async () => {
+              try {
+                await supabase
+                  .from('communications')
+                  .update({ is_read: true })
+                  .eq('id', newMsg.id);
+
+                setMessages((prev) =>
+                  prev.map((m) => (m.id === newMsg.id ? { ...m, is_read: true } : m))
+                );
+              } catch (err) {
+                console.error('Failed to mark incoming message as read:', err);
+              }
             }, 1200);
           }
         }
@@ -170,7 +185,7 @@ export default function CommunicationView({ userId, userEmail, onBack }: Communi
     return () => {
       supabase.removeChannel(chatChannel);
     };
-  }, [userId]);
+  }, [userId, fetchMessages]);
 
   useLayoutEffect(() => {
     if (!loading) {
@@ -220,7 +235,7 @@ export default function CommunicationView({ userId, userEmail, onBack }: Communi
   };
 
   const handleInputFocus = () => {
-    setTimeout(() => {
+    registerTimeout(() => {
       window.scrollTo(0, 0);
       jumpToBottom();
     }, 100);
@@ -247,7 +262,40 @@ export default function CommunicationView({ userId, userEmail, onBack }: Communi
   };
 
   if (loading) {
-    return null;
+    return (
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: viewportHeight,
+        width: '100vw',
+        maxWidth: '600px',
+        margin: '0 auto',
+        display: 'flex',
+        flexDirection: 'column',
+        backgroundColor: '#000000',
+        color: '#FFFFFF',
+        overflow: 'hidden',
+        zIndex: 99999,
+        padding: '20px 16px',
+        gap: '14px'
+      }}>
+        {[1, 2, 3].map((bubble) => (
+          <div
+            key={bubble}
+            style={{
+              width: bubble % 2 === 0 ? '70%' : '55%',
+              alignSelf: bubble % 2 === 0 ? 'flex-end' : 'flex-start',
+              height: '54px',
+              borderRadius: '14px',
+              backgroundColor: '#0C0C0E',
+              border: '1px solid #1E1E22'
+            }}
+          />
+        ))}
+      </div>
+    );
   }
 
   let lastRenderedDate: string | null = null;
