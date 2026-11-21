@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/supabaseClient';
-import { useGlobalLoading } from '@/context/LoadingContext';
 
 interface OrderItem {
   product_name: string;
@@ -25,11 +24,10 @@ interface Order {
 }
 
 interface OrderHistoryProps {
-  userId: string;
+  userId?: string | null;
 }
 
 const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
-  const { setIsPageLoading } = useGlobalLoading();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
@@ -39,13 +37,6 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
   const [modalType, setModalType] = useState<'single' | 'bulk' | null>(null);
   const [singleOrderToHide, setSingleOrderToHide] = useState<string | null>(null);
   const [isHiding, setIsHiding] = useState<boolean>(false);
-
-  useEffect(() => {
-    setIsPageLoading(true, { view: 'orders', isAmbassador: false });
-    return () => {
-      setIsPageLoading(false);
-    };
-  }, [setIsPageLoading]);
 
   const getUnifiedStatus = (rawStatus: string) => {
     if (!rawStatus) return 'PENDING';
@@ -178,6 +169,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
     `;
 
     const styleSheet = document.createElement('style');
+    styleSheet.id = 'nomad-universal-print-style';
     styleSheet.innerHTML = `
       @media print {
         @page { margin: 0mm; }
@@ -217,19 +209,37 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
     document.body.appendChild(printContainer);
     document.head.appendChild(styleSheet);
 
+    let cleanedUp = false;
+    const cleanup = () => {
+      if (cleanedUp) return;
+      cleanedUp = true;
+      window.removeEventListener('afterprint', cleanup);
+      const containerEl = document.getElementById('nomad-universal-print-area');
+      const styleEl = document.getElementById('nomad-universal-print-style');
+      if (containerEl && containerEl.parentNode) {
+        containerEl.parentNode.removeChild(containerEl);
+      }
+      if (styleEl && styleEl.parentNode) {
+        styleEl.parentNode.removeChild(styleEl);
+      }
+    };
+
+    window.addEventListener('afterprint', cleanup);
     setTimeout(() => {
       window.print();
-      if (document.getElementById('nomad-universal-print-area')) {
-        document.body.removeChild(printContainer);
-      }
-      document.head.removeChild(styleSheet);
-    }, 150);
+      setTimeout(cleanup, 1000);
+    }, 100);
   };
 
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
+    if (!userId) {
+      setOrders([]);
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
-      setIsPageLoading(true, { view: 'orders', isAmbassador: false });
       const { data, error } = await supabase
         .from('orders')
         .select(`
@@ -295,20 +305,16 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
       console.error('Error fetching orders:', err);
     } finally {
       setLoading(false);
-      setIsPageLoading(false);
     }
-  };
-
-  useEffect(() => {
-    if (!userId) {
-      setLoading(false);
-      setIsPageLoading(false);
-      return;
-    }
-    fetchOrders();
   }, [userId]);
 
+  useEffect(() => {
+    fetchOrders();
+  }, [fetchOrders]);
+
   const executeHideOrders = async (idsToHide: string[]) => {
+    if (idsToHide.length === 0) return;
+
     try {
       setIsHiding(true);
       const { error } = await supabase
@@ -317,7 +323,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
         .in('id', idsToHide);
 
       if (!error) {
-        setOrders(orders.filter(order => !idsToHide.includes(order.id)));
+        setOrders((prev) => prev.filter((order) => !idsToHide.includes(order.id)));
         setSelectedOrderIds([]);
         setIsManageMode(false);
         setModalType(null);
@@ -331,15 +337,28 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
   };
 
   const toggleSelectOrder = (id: string) => {
-    if (selectedOrderIds.includes(id)) {
-      setSelectedOrderIds(selectedOrderIds.filter(item => item !== id));
-    } else {
-      setSelectedOrderIds([...selectedOrderIds, id]);
-    }
+    setSelectedOrderIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
   };
 
   if (loading) {
-    return null;
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '20px' }}>
+        {[1, 2].map((skeletonCard) => (
+          <div
+            key={skeletonCard}
+            style={{
+              backgroundColor: '#070708',
+              border: '1px solid #1D1D20',
+              borderRadius: '10px',
+              padding: '20px',
+              height: '170px',
+            }}
+          />
+        ))}
+      </div>
+    );
   }
 
   if (orders.length === 0) {
