@@ -69,7 +69,6 @@ export default function ProfilePage() {
   const [ambassadorData, setAmbassadorData] = useState<any>(null);
   const [, setSession] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [viewSwitching, setViewSwitching] = useState(false);
 
   const [unreadNotifCount, setUnreadNotifCount] = useState<number>(0);
   const [unreadMessagesCount, setUnreadMessagesCount] = useState<number>(0);
@@ -111,29 +110,17 @@ export default function ProfilePage() {
   const isAmbassadorActive = profile
     ? isAmbassador && portalMode === 'ambassador'
     : initialPortalMode === 'ambassador';
-  const isAnyLoading = loading || viewSwitching;
-
-  const syncGlobalSkeleton = useCallback(
-    (
-      active: boolean,
-      targetView: ProfileViewType,
-      targetAmbassadorActive: boolean
-    ) => {
-      if (active) {
-        setIsPageLoading(true, {
-          view: resolveSkeletonViewForState(targetView, targetAmbassadorActive),
-          isAmbassador: targetAmbassadorActive,
-        });
-      } else {
-        setIsPageLoading(false);
-      }
-    },
-    [setIsPageLoading]
-  );
 
   useEffect(() => {
-    syncGlobalSkeleton(isAnyLoading, view, isAmbassadorActive);
-  }, [isAnyLoading, view, isAmbassadorActive, syncGlobalSkeleton]);
+    if (loading) {
+      setIsPageLoading(true, {
+        view: resolveSkeletonViewForState(view, isAmbassadorActive),
+        isAmbassador: isAmbassadorActive,
+      });
+    } else {
+      setIsPageLoading(false);
+    }
+  }, [loading, view, isAmbassadorActive, setIsPageLoading]);
 
   useEffect(() => {
     return () => {
@@ -141,21 +128,11 @@ export default function ProfilePage() {
     };
   }, [setIsPageLoading]);
 
-  useEffect(() => {
-    if (!viewSwitching) return;
-    const timer = setTimeout(() => {
-      setViewSwitching(false);
-    }, 180);
-    return () => clearTimeout(timer);
-  }, [viewSwitching, view, portalMode]);
-
   const changeView = (newView: ProfileViewType) => {
-    setViewSwitching(true);
     setView(newView);
     localStorage.setItem('currentView', newView);
     setSettingsFeedback(null);
     setFieldErrors({});
-    syncGlobalSkeleton(true, newView, isAmbassadorActive);
   };
 
   const fetchUnreadCounts = useCallback(async () => {
@@ -254,7 +231,6 @@ export default function ProfilePage() {
 
   const fetchUserData = useCallback(async () => {
     setLoading(true);
-    syncGlobalSkeleton(true, view, isAmbassadorActive);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
@@ -335,7 +311,7 @@ export default function ProfilePage() {
     } finally {
       setLoading(false);
     }
-  }, [navigate, syncGlobalSkeleton, view, isAmbassadorActive]);
+  }, [navigate]);
 
   useEffect(() => {
     fetchUserData();
@@ -653,12 +629,8 @@ export default function ProfilePage() {
   const togglePortalMode = () => {
     if (isAmbassador) {
       const nextMode = portalMode === 'customer' ? 'ambassador' : 'customer';
-      const nextAmbassadorActive = nextMode === 'ambassador';
-
-      setViewSwitching(true);
       setPortalMode(nextMode);
       localStorage.setItem('portalMode', nextMode);
-      syncGlobalSkeleton(true, view, nextAmbassadorActive);
     }
   };
 
@@ -802,7 +774,7 @@ export default function ProfilePage() {
             clearFieldError={(field) =>
               setFieldErrors((prev) => ({ ...prev, [field]: undefined }))
             }
-            loading={isAnyLoading}
+            loading={loading}
           />
         ) : (
           <>
@@ -820,10 +792,10 @@ export default function ProfilePage() {
               unreadMessagesCount={unreadMessagesCount}
               unreadNotifCount={unreadNotifCount}
               hasUnreadNotif={unreadNotifCount > 0}
-              loading={isAnyLoading}
+              loading={loading}
             />
 
-            {!isAnyLoading && (
+            {!loading && (
               portalMode === 'ambassador' && isAmbassador ? (
                 <AmbassadorDashboardSection ambassadorData={ambassadorData} profile={profile} />
               ) : (
