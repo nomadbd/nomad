@@ -1,6 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { supabase } from '../../supabaseClient';
-import { useGlobalLoading } from '../../context/LoadingContext';
 import { BackIcon, NotificationIcon, CloseIcon, CheckIcon } from '../icons';
 
 interface NotificationItem {
@@ -26,22 +25,16 @@ export default function NotificationsView({
   onBack,
   targetAudience
 }: NotificationsViewProps) {
-  const { setIsPageLoading } = useGlobalLoading();
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  const activeAudiences = targetAudience && targetAudience.length > 0
-    ? targetAudience.map(a => a.toUpperCase())
-    : ['CUSTOMER', 'ALL', 'SPECIFIC', 'AMBASSADOR'];
-
-  useEffect(() => {
-    setIsPageLoading(true, { view: 'notifications', isAmbassador: false });
-    return () => {
-      setIsPageLoading(false);
-    };
-  }, [setIsPageLoading]);
+  const activeAudiences = useMemo(() => {
+    return targetAudience && targetAudience.length > 0
+      ? targetAudience.map((a) => a.toUpperCase())
+      : ['CUSTOMER', 'ALL', 'SPECIFIC', 'AMBASSADOR'];
+  }, [targetAudience]);
 
   const getRelativeTime = (dateString: string) => {
     if (!dateString) return 'Recently';
@@ -74,87 +67,87 @@ export default function NotificationsView({
     }
   };
 
-  const fetchNotifications = async (isSilent = false) => {
-    if (!isSilent) {
-      setLoading(true);
-      setIsPageLoading(true, { view: 'notifications', isAmbassador: false });
-    }
-
-    try {
-      if (!userId) {
-        setLoading(false);
-        setIsPageLoading(false);
-        return;
-      }
-
-      const { data: recipients, error: recipError } = await supabase
-        .from('notification_recipients')
-        .select('id, notification_id, is_read')
-        .eq('user_id', userId);
-
-      if (recipError) {
-        console.error('Fetch recipient error:', recipError.message);
-        setNotifications([]);
-        return;
-      }
-
-      if (!recipients || recipients.length === 0) {
-        setNotifications([]);
-        return;
-      }
-
-      const notifIds = recipients.map((r) => r.notification_id);
-
-      const { data: notifsData, error: notifError } = await supabase
-        .from('notifications')
-        .select('*')
-        .in('id', notifIds)
-        .in('target_audience', activeAudiences);
-
-      if (notifError) {
-        console.error('Fetch notification error:', notifError.message);
-        return;
-      }
-
-      const recipMap = recipients.reduce((acc, item) => {
-        acc[item.notification_id] = { is_read: item.is_read, recipient_id: item.id };
-        return acc;
-      }, {} as Record<string, { is_read: boolean; recipient_id: string }>);
-
-      const formatted: NotificationItem[] = (notifsData || [])
-        .map((notif) => {
-          const userRecip = recipMap[notif.id];
-          if (!userRecip) return null;
-          return {
-            recipient_id: userRecip.recipient_id,
-            notification_id: notif.id,
-            title: notif.title,
-            message: notif.message,
-            type: notif.type,
-            link: notif.link,
-            target_audience: notif.target_audience,
-            is_read: userRecip.is_read,
-            created_at: notif.created_at || new Date().toISOString(),
-          };
-        })
-        .filter((item): item is NotificationItem => item !== null)
-        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-
-      setNotifications(formatted);
-    } catch (err) {
-      console.error('Fetch error:', err);
-    } finally {
+  const fetchNotifications = useCallback(
+    async (isSilent = false) => {
       if (!isSilent) {
-        setLoading(false);
-        setIsPageLoading(false);
+        setLoading(true);
       }
-    }
-  };
+
+      try {
+        if (!userId) {
+          setNotifications([]);
+          return;
+        }
+
+        const { data: recipients, error: recipError } = await supabase
+          .from('notification_recipients')
+          .select('id, notification_id, is_read')
+          .eq('user_id', userId);
+
+        if (recipError) {
+          console.error('Fetch recipient error:', recipError.message);
+          setNotifications([]);
+          return;
+        }
+
+        if (!recipients || recipients.length === 0) {
+          setNotifications([]);
+          return;
+        }
+
+        const notifIds = recipients.map((r) => r.notification_id);
+
+        const { data: notifsData, error: notifError } = await supabase
+          .from('notifications')
+          .select('*')
+          .in('id', notifIds)
+          .in('target_audience', activeAudiences);
+
+        if (notifError) {
+          console.error('Fetch notification error:', notifError.message);
+          return;
+        }
+
+        const recipMap = recipients.reduce((acc, item) => {
+          acc[item.notification_id] = { is_read: item.is_read, recipient_id: item.id };
+          return acc;
+        }, {} as Record<string, { is_read: boolean; recipient_id: string }>);
+
+        const formatted: NotificationItem[] = (notifsData || [])
+          .map((notif) => {
+            const userRecip = recipMap[notif.id];
+            if (!userRecip) return null;
+            return {
+              recipient_id: userRecip.recipient_id,
+              notification_id: notif.id,
+              title: notif.title,
+              message: notif.message,
+              type: notif.type,
+              link: notif.link,
+              target_audience: notif.target_audience,
+              is_read: userRecip.is_read,
+              created_at: notif.created_at || new Date().toISOString(),
+            };
+          })
+          .filter((item): item is NotificationItem => item !== null)
+          .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+        setNotifications(formatted);
+      } catch (err) {
+        console.error('Fetch error:', err);
+      } finally {
+        if (!isSilent) {
+          setLoading(false);
+        }
+      }
+    },
+    [userId, activeAudiences]
+  );
 
   useEffect(() => {
     if (!userId) {
+      setNotifications([]);
       setLoading(false);
-      setIsPageLoading(false);
       return;
     }
 
@@ -179,7 +172,7 @@ export default function NotificationsView({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [userId, JSON.stringify(activeAudiences)]);
+  }, [userId, fetchNotifications]);
 
   const markAsRead = async (recipientId: string, currentStatus: boolean) => {
     if (currentStatus) return;
@@ -204,10 +197,14 @@ export default function NotificationsView({
 
     setNotifications((prev) => prev.map((item) => ({ ...item, is_read: true })));
 
-    await supabase
+    const { error } = await supabase
       .from('notification_recipients')
       .update({ is_read: true })
       .in('id', unreadRecipientIds);
+
+    if (error) {
+      console.error('Failed to mark all notifications as read:', error.message);
+    }
   };
 
   const deleteNotification = async (e: React.MouseEvent, recipientId: string) => {
@@ -215,10 +212,14 @@ export default function NotificationsView({
     setNotifications((prev) => prev.filter((item) => item.recipient_id !== recipientId));
     if (expandedId === recipientId) setExpandedId(null);
 
-    await supabase
+    const { error } = await supabase
       .from('notification_recipients')
       .delete()
       .eq('id', recipientId);
+
+    if (error) {
+      console.error('Failed to delete notification:', error.message);
+    }
   };
 
   const handleCardClick = (item: NotificationItem) => {
@@ -234,7 +235,32 @@ export default function NotificationsView({
   });
 
   if (loading) {
-    return null;
+    return (
+      <div style={{
+        maxWidth: '600px',
+        margin: '0 auto',
+        height: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        backgroundColor: '#000000',
+        color: '#FFF',
+        overflow: 'hidden',
+        padding: '20px 14px',
+        gap: '12px'
+      }}>
+        {[1, 2, 3].map((card) => (
+          <div
+            key={card}
+            style={{
+              height: '96px',
+              borderRadius: '12px',
+              backgroundColor: '#0C0C0E',
+              border: '1px solid #1E1E22'
+            }}
+          />
+        ))}
+      </div>
+    );
   }
 
   return (
