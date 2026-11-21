@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { uploadToCloudinary, deleteFromCloudinary } from '../cloudinary';
-import { useGlobalLoading } from '../context/LoadingContext';
+import { useGlobalLoading, SkeletonViewType } from '../context/LoadingContext';
 import OrderHistory from '../components/OrderHistory';
 import ProfileHeader from '../components/profile/ProfileHeader';
 import ProfileSettings from '../components/profile/ProfileSettings';
@@ -88,6 +88,30 @@ export default function ProfilePage() {
 
   const isAmbassador = String(profile?.role).toUpperCase().trim() === 'AMBASSADOR';
   const isAmbassadorActive = isAmbassador && portalMode === 'ambassador';
+
+  const getActiveSkeletonView = useCallback((): SkeletonViewType => {
+    if (view === 'settings') return 'settings';
+    if (view === 'notifications') return 'notifications';
+    if (view === 'communication') return 'communication';
+    return isAmbassadorActive ? 'ambassador' : 'orders';
+  }, [view, isAmbassadorActive]);
+
+  useEffect(() => {
+    if (loading) {
+      setIsPageLoading(true, {
+        view: getActiveSkeletonView(),
+        isAmbassador: isAmbassadorActive,
+      });
+    } else {
+      setIsPageLoading(false);
+    }
+  }, [loading, getActiveSkeletonView, isAmbassadorActive, setIsPageLoading]);
+
+  useEffect(() => {
+    return () => {
+      setIsPageLoading(false);
+    };
+  }, [setIsPageLoading]);
 
   const changeView = (newView: 'profile' | 'settings' | 'notifications' | 'communication') => {
     setView(newView);
@@ -196,7 +220,10 @@ export default function ProfilePage() {
 
   const fetchUserData = async () => {
     setLoading(true);
-    setIsPageLoading(true);
+    setIsPageLoading(true, {
+      view: getActiveSkeletonView(),
+      isAmbassador: isAmbassadorActive,
+    });
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
