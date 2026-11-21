@@ -144,12 +144,21 @@ const scoreProduct = (product: Product, rawQuery: string): number => {
 
     if (colors.some((c) => tokenAliases.includes(c))) {
       score += 70;
-    } else if (colors.some((c) => tokenAliases.some((alias) => alias.length >= 3 && c.includes(alias)))) {
+    } else if (
+      colors.some((c) =>
+        tokenAliases.some(
+          (alias) => alias.length >= 3 && c.includes(alias)
+        )
+      )
+    ) {
       score += 45;
     }
   });
 
-  const numericMatches = rawQuery.replace(/,/g, '').match(/\d+(\.\d+)?/g);
+  const numericMatches = rawQuery
+    .replace(/,/g, '')
+    .match(/\d+(\.\d+)?/g);
+
   if (numericMatches && numericMatches.length > 0) {
     const targetPrice = parseFloat(numericMatches[0]);
     if (!Number.isNaN(targetPrice) && targetPrice > 0) {
@@ -160,7 +169,11 @@ const scoreProduct = (product: Product, rawQuery: string): number => {
         score += 50;
       } else if (diff <= targetPrice * 0.25) {
         score += 25;
-      } else if (String(product.price).startsWith(String(Math.floor(targetPrice)))) {
+      } else if (
+        String(product.price).startsWith(
+          String(Math.floor(targetPrice))
+        )
+      ) {
         score += 30;
       }
     }
@@ -180,24 +193,38 @@ const scoreProduct = (product: Product, rawQuery: string): number => {
     score += 20;
   }
 
-  if (score > 0 && product.status === 'active' && product.stock_quantity > 0) {
+  if (
+    score > 0 &&
+    product.status === 'active' &&
+    product.stock_quantity > 0
+  ) {
     score += 5;
   }
 
   return score;
 };
 
-const ProductGallery = ({ images, productName }: { images: string[]; productName: string }) => {
+const ProductGallery = ({
+  images,
+  productName,
+}: {
+  images: string[];
+  productName: string;
+}) => {
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const handlePrev = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setCurrentIndex((prev) => (prev > 0 ? prev - 1 : images.length - 1));
+    setCurrentIndex((prev) =>
+      prev > 0 ? prev - 1 : images.length - 1
+    );
   };
 
   const handleNext = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setCurrentIndex((prev) => (prev < images.length - 1 ? prev + 1 : 0));
+    setCurrentIndex((prev) =>
+      prev < images.length - 1 ? prev + 1 : 0
+    );
   };
 
   return (
@@ -214,7 +241,12 @@ const ProductGallery = ({ images, productName }: { images: string[]; productName
         <img
           src={images[currentIndex]}
           alt={productName}
-          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            display: 'block',
+          }}
         />
       ) : (
         <div
@@ -234,11 +266,26 @@ const ProductGallery = ({ images, productName }: { images: string[]; productName
       {images.length > 1 && (
         <>
           <div
-            style={{ position: 'absolute', top: 0, left: 0, width: '50%', height: '100%', cursor: 'pointer' }}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '50%',
+              height: '100%',
+              cursor: 'pointer',
+            }}
             onClick={handlePrev}
           />
+
           <div
-            style={{ position: 'absolute', top: 0, right: 0, width: '50%', height: '100%', cursor: 'pointer' }}
+            style={{
+              position: 'absolute',
+              top: 0,
+              right: 0,
+              width: '50%',
+              height: '100%',
+              cursor: 'pointer',
+            }}
             onClick={handleNext}
           />
 
@@ -260,7 +307,10 @@ const ProductGallery = ({ images, productName }: { images: string[]; productName
                   width: '6px',
                   height: '6px',
                   borderRadius: '50%',
-                  background: currentIndex === idx ? '#fff' : 'rgba(255,255,255,0.4)',
+                  background:
+                    currentIndex === idx
+                      ? '#fff'
+                      : 'rgba(255,255,255,0.4)',
                 }}
               />
             ))}
@@ -282,7 +332,9 @@ const ProductActionRow = ({ product }: { product: Product }) => {
   const availableSizes = product.sizes || [];
   const availableColors = product.colors || [];
 
-  const isSoldOut = product.status === 'sold_out' || product.stock_quantity <= 0;
+  const isSoldOut =
+    product.status === 'sold_out' ||
+    product.stock_quantity <= 0;
 
   useEffect(() => {
     return () => {
@@ -294,20 +346,30 @@ const ProductActionRow = ({ product }: { product: Product }) => {
 
   const triggerAddedFeedback = () => {
     setIsAdded(true);
+
     if (feedbackTimeoutRef.current !== null) {
       window.clearTimeout(feedbackTimeoutRef.current);
     }
+
     feedbackTimeoutRef.current = window.setTimeout(() => {
       setIsAdded(false);
     }, 1500);
   };
 
   const handleActionClick = () => {
-    if (availableSizes.length === 0 && availableColors.length === 0) {
-      addToCart({ ...product, size: 'FREE', color: 'DEFAULT' });
+    if (
+      availableSizes.length === 0 &&
+      availableColors.length === 0
+    ) {
+      addToCart({
+        ...product,
+        size: 'FREE',
+        color: 'DEFAULT',
+      });
       triggerAddedFeedback();
       return;
     }
+
     if (availableSizes.length > 0) {
       setStep('size');
     } else {
@@ -446,7 +508,11 @@ const ProductActionRow = ({ product }: { product: Product }) => {
                   if (availableColors.length > 0) {
                     setStep('color');
                   } else {
-                    addToCart({ ...product, size: size, color: 'DEFAULT' });
+                    addToCart({
+                      ...product,
+                      size,
+                      color: 'DEFAULT',
+                    });
                     triggerAddedFeedback();
                     setStep('idle');
                   }
@@ -501,7 +567,7 @@ const ProductActionRow = ({ product }: { product: Product }) => {
                   addToCart({
                     ...product,
                     size: selectedSize || 'FREE',
-                    color: color,
+                    color,
                   });
                   triggerAddedFeedback();
                   setStep('idle');
@@ -528,15 +594,29 @@ const ProductActionRow = ({ product }: { product: Product }) => {
   );
 };
 
-const ProductCard = ({ product }: { product: Product }) => {
-  const [isDescExpanded, setIsDescExpanded] = useState(false);
-  const mediaUrls = product.product_media?.map((m) => m.media_url) || [];
+const ProductCard = ({
+  product,
+}: {
+  product: Product;
+}) => {
+  const [isDescExpanded, setIsDescExpanded] =
+    useState(false);
+
+  const mediaUrls =
+    product.product_media?.map(
+      (m) => m.media_url
+    ) || [];
+
   const description = product.description || '';
 
   return (
     <div
       className="showroom-card-item search-card-item"
-      style={{ boxSizing: 'border-box', display: 'flex', flexDirection: 'column' }}
+      style={{
+        boxSizing: 'border-box',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
     >
       <div
         style={{
@@ -560,23 +640,63 @@ const ProductCard = ({ product }: { product: Product }) => {
         </span>
       </div>
 
-      <ProductGallery images={mediaUrls} productName={product.name} />
+      <ProductGallery
+        images={mediaUrls}
+        productName={product.name}
+      />
 
-      <div style={{ marginTop: '15px', padding: '0 5px', display: 'flex', flexDirection: 'column', flex: 1 }}>
-        <h3 style={{ fontSize: '14px', color: '#fff', margin: '0 0 6px 0', fontWeight: '600' }}>{product.name}</h3>
+      <div
+        style={{
+          marginTop: '15px',
+          padding: '0 5px',
+          display: 'flex',
+          flexDirection: 'column',
+          flex: 1,
+        }}
+      >
+        <h3
+          style={{
+            fontSize: '14px',
+            color: '#fff',
+            margin: '0 0 6px 0',
+            fontWeight: '600',
+          }}
+        >
+          {product.name}
+        </h3>
 
         <div style={{ margin: '0 0 15px 0' }}>
           {(() => {
             const characterLimit = 75;
-            const isLongText = description.length > characterLimit;
-            const displayedText = isLongText ? description.slice(0, characterLimit) + '...' : description;
+            const isLongText =
+              description.length >
+              characterLimit;
+
+            const displayedText = isLongText
+              ? description.slice(
+                  0,
+                  characterLimit
+                ) + '...'
+              : description;
 
             return !isDescExpanded ? (
-              <p style={{ fontSize: '13px', color: '#fff', margin: 0, lineHeight: '1.4' }}>
+              <p
+                style={{
+                  fontSize: '13px',
+                  color: '#fff',
+                  margin: 0,
+                  lineHeight: '1.4',
+                }}
+              >
                 {displayedText}
+
                 {isLongText && (
                   <span
-                    onClick={() => setIsDescExpanded(true)}
+                    onClick={() =>
+                      setIsDescExpanded(
+                        true
+                      )
+                    }
                     style={{
                       fontSize: '12px',
                       color: '#aaa',
@@ -591,62 +711,124 @@ const ProductCard = ({ product }: { product: Product }) => {
                 )}
               </p>
             ) : (
-              <div style={{ animation: 'swapFadeIn 0.3s ease-in-out' }}>
-                <p style={{ fontSize: '13px', color: '#fff', margin: 0, lineHeight: '1.4' }}>{description}</p>
+              <div
+                style={{
+                  animation:
+                    'swapFadeIn 0.3s ease-in-out',
+                }}
+              >
+                <p
+                  style={{
+                    fontSize: '13px',
+                    color: '#fff',
+                    margin: 0,
+                    lineHeight: '1.4',
+                  }}
+                >
+                  {description}
+                </p>
 
-                {product.details && Object.keys(product.details).length > 0 && (
-                  <div
-                    style={{
-                      borderTop: '1px solid #1a1a1a',
-                      marginTop: '12px',
-                      paddingTop: '12px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '8px',
-                      fontFamily: 'monospace',
-                      fontSize: '12px',
-                    }}
-                  >
-                    {Object.entries(product.details).map(([key, value]) => (
-                      <div key={key} style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'flex-start' }}>
-                        <span
-                          style={{
-                            color: '#fff',
-                            width: '95px',
-                            flexShrink: 0,
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.5px',
-                          }}
-                        >
-                          {key}
-                        </span>
-                        <span style={{ color: '#555', marginRight: '10px', flexShrink: 0 }}>:</span>
-                        <span
-                          style={{
-                            color: '#fff',
-                            fontWeight: '400',
-                            flex: 1,
-                            overflowWrap: 'break-word',
-                            wordBreak: 'break-word',
-                            lineHeight: '1.4',
-                          }}
-                        >
-                          {value}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                {product.details &&
+                  Object.keys(
+                    product.details
+                  ).length > 0 && (
+                    <div
+                      style={{
+                        borderTop:
+                          '1px solid #1a1a1a',
+                        marginTop: '12px',
+                        paddingTop: '12px',
+                        display: 'flex',
+                        flexDirection:
+                          'column',
+                        gap: '8px',
+                        fontFamily:
+                          'monospace',
+                        fontSize: '12px',
+                      }}
+                    >
+                      {Object.entries(
+                        product.details
+                      ).map(
+                        ([key, value]) => (
+                          <div
+                            key={key}
+                            style={{
+                              display:
+                                'flex',
+                              justifyContent:
+                                'flex-start',
+                              alignItems:
+                                'flex-start',
+                            }}
+                          >
+                            <span
+                              style={{
+                                color:
+                                  '#fff',
+                                width:
+                                  '95px',
+                                flexShrink:
+                                  0,
+                                textTransform:
+                                  'uppercase',
+                                letterSpacing:
+                                  '0.5px',
+                              }}
+                            >
+                              {key}
+                            </span>
+                            <span
+                              style={{
+                                color:
+                                  '#555',
+                                marginRight:
+                                  '10px',
+                                flexShrink:
+                                  0,
+                              }}
+                            >
+                              :
+                            </span>
+                            <span
+                              style={{
+                                color:
+                                  '#fff',
+                                fontWeight:
+                                  '400',
+                                flex:
+                                  1,
+                                overflowWrap:
+                                  'break-word',
+                                wordBreak:
+                                  'break-word',
+                                lineHeight:
+                                  '1.4',
+                              }}
+                            >
+                              {value}
+                            </span>
+                          </div>
+                        )
+                      )}
+                    </div>
+                  )}
 
                 <span
-                  onClick={() => setIsDescExpanded(false)}
+                  onClick={() =>
+                    setIsDescExpanded(
+                      false
+                    )
+                  }
                   style={{
                     fontSize: '11px',
                     color: '#aaa',
                     cursor: 'pointer',
                     marginTop: '12px',
-                    display: 'inline-block',
-                    letterSpacing: '0.5px',
+                    display:
+                      'inline-block',
+                    letterSpacing:
+                      '0.5px',
                   }}
                 >
                   see less
@@ -662,10 +844,19 @@ const ProductCard = ({ product }: { product: Product }) => {
   );
 };
 
-export default function SearchOverlay({ isOpen, onClose, searchQuery }: Props) {
-  const [allProducts, setAllProducts] = useState<Product[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const onCloseRef = useRef(onClose);
+export default function SearchOverlay({
+  isOpen,
+  onClose,
+  searchQuery,
+}: Props) {
+  const [allProducts, setAllProducts] =
+    useState<Product[]>([]);
+
+  const [isLoading, setIsLoading] =
+    useState(false);
+
+  const onCloseRef =
+    useRef(onClose);
 
   useEffect(() => {
     onCloseRef.current = onClose;
@@ -674,15 +865,24 @@ export default function SearchOverlay({ isOpen, onClose, searchQuery }: Props) {
   useEffect(() => {
     if (!isOpen) return;
 
-    const handleKeyDown = (e: KeyboardEvent) => {
+    const handleKeyDown = (
+      e: KeyboardEvent
+    ) => {
       if (e.key === 'Escape') {
         onCloseRef.current();
       }
     };
-    window.addEventListener('keydown', handleKeyDown);
+
+    window.addEventListener(
+      'keydown',
+      handleKeyDown
+    );
 
     return () => {
-      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener(
+        'keydown',
+        handleKeyDown
+      );
     };
   }, [isOpen]);
 
@@ -694,136 +894,260 @@ export default function SearchOverlay({ isOpen, onClose, searchQuery }: Props) {
     const fetchCatalog = async () => {
       try {
         setIsLoading(true);
-        const { data, error } = await supabase
-          .from('products')
-          .select(`
-            *,
-            product_media (
-              media_url,
-              media_type
-            )
-          `)
-          .order('created_at', { ascending: false });
+
+        const { data, error } =
+          await supabase
+            .from('products')
+            .select(`
+              *,
+              product_media (
+                media_url,
+                media_type
+              )
+            `)
+            .order(
+              'created_at',
+              {
+                ascending:
+                  false,
+              }
+            );
 
         if (error) throw error;
-        if (isMounted && data) {
-          setAllProducts(data as Product[]);
+
+        if (
+          isMounted &&
+          data
+        ) {
+          setAllProducts(
+            data as Product[]
+          );
         }
       } catch (err) {
-        console.error('Error loading search catalog:', err);
+        console.error(
+          'Error loading search catalog:',
+          err
+        );
       } finally {
-        if (isMounted) setIsLoading(false);
+        if (
+          isMounted
+        ) {
+          setIsLoading(
+            false
+          );
+        }
       }
     };
 
     fetchCatalog();
 
     return () => {
-      isMounted = false;
+      isMounted =
+        false;
     };
   }, [isOpen]);
 
-  const rankedResults = useMemo(() => {
-    const trimmed = searchQuery.trim();
-    if (!trimmed) return [];
+  const rankedResults =
+    useMemo(() => {
+      const trimmed =
+        searchQuery.trim();
 
-    return allProducts
-      .map((product) => ({
-        product,
-        score: scoreProduct(product, trimmed),
-      }))
-      .filter((entry) => entry.score > 0)
-      .sort((a, b) => {
-        if (b.score !== a.score) return b.score - a.score;
-        return new Date(b.product.created_at).getTime() - new Date(a.product.created_at).getTime();
-      })
-      .map((entry) => entry.product);
-  }, [allProducts, searchQuery]);
+      if (!trimmed)
+        return [];
 
-  if (!isOpen) return null;
+      return allProducts
+        .map(
+          (product) => ({
+            product,
+            score:
+              scoreProduct(
+                product,
+                trimmed
+              ),
+          })
+        )
+        .filter(
+          (entry) =>
+            entry.score >
+            0
+        )
+        .sort(
+          (
+            a,
+            b
+          ) => {
+            if (
+              b.score !==
+              a.score
+            ) {
+              return (
+                b.score -
+                a.score
+              );
+            }
 
-  const hasQuery = searchQuery.trim().length > 0;
+            return (
+              new Date(
+                b.product
+                  .created_at
+              ).getTime() -
+              new Date(
+                a.product
+                  .created_at
+              ).getTime()
+            );
+          }
+        )
+        .map(
+          (entry) =>
+            entry.product
+        );
+    }, [
+      allProducts,
+      searchQuery,
+    ]);
+
+  if (!isOpen)
+    return null;
+
+  const hasQuery =
+    searchQuery
+      .trim()
+      .length > 0;
 
   return (
     <div
       style={{
-        position: 'fixed',
+        position:
+          'fixed',
         top: 0,
         left: 0,
         width: '100%',
-        height: '100dvh',
-        backgroundColor: 'black',
-        zIndex: 900,
-        boxSizing: 'border-box',
-        overflowY: 'auto',
-        fontFamily: 'sans-serif',
-        paddingTop: '84px',
-        paddingBottom: '40px',
+        height:
+          '100dvh',
+        backgroundColor:
+          'black',
+        zIndex:
+          900,
+        boxSizing:
+          'border-box',
+        overflowY:
+          'auto',
+        fontFamily:
+          'sans-serif',
+        paddingTop:
+          '84px',
+        paddingBottom:
+          '40px',
       }}
     >
-      <div style={{ color: 'white', width: '100%', boxSizing: 'border-box' }}>
-        {hasQuery && isLoading && (
-          <div className="search-results-container">
-            {[1, 2, 3].map((skeleton) => (
+      <div
+        style={{
+          color:
+            'white',
+          width:
+            '100%',
+          boxSizing:
+            'border-box',
+        }}
+      >
+        {hasQuery &&
+          rankedResults
+            .length >
+            0 && (
+            <>
               <div
-                key={skeleton}
-                className="search-card-item"
                 style={{
-                  height: '360px',
-                  backgroundColor: '#090909',
-                  border: '1px solid #181818',
+                  padding:
+                    '0 24px 18px 24px',
+                  fontSize:
+                    '10px',
+                  letterSpacing:
+                    '2px',
+                  color:
+                    '#666',
+                  textTransform:
+                    'uppercase',
+                  fontFamily:
+                    'monospace',
                 }}
-              />
-            ))}
-          </div>
-        )}
+              >
+                {
+                  rankedResults
+                    .length
+                }{' '}
+                {
+                  rankedResults
+                    .length ===
+                  1
+                    ? 'Result'
+                    : 'Results'
+                }
+              </div>
 
-        {hasQuery && rankedResults.length > 0 && (
-          <>
-            <div
+              <div className="search-results-container">
+                {rankedResults.map(
+                  (
+                    product
+                  ) => (
+                    <ProductCard
+                      key={
+                        product.id
+                      }
+                      product={
+                        product
+                      }
+                    />
+                  )
+                )}
+              </div>
+            </>
+          )}
+
+        {hasQuery &&
+          !isLoading &&
+          rankedResults
+            .length ===
+            0 && (
+            <p
               style={{
-                padding: '0 24px 18px 24px',
-                fontSize: '10px',
-                letterSpacing: '2px',
-                color: '#666',
-                textTransform: 'uppercase',
-                fontFamily: 'monospace',
+                fontSize:
+                  '11px',
+                letterSpacing:
+                  '2px',
+                opacity:
+                  0.5,
+                padding:
+                  '0 24px',
+                textTransform:
+                  'uppercase',
               }}
             >
-              {rankedResults.length} {rankedResults.length === 1 ? 'Result' : 'Results'}
-            </div>
-
-            <div className="search-results-container">
-              {rankedResults.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
-          </>
-        )}
-
-        {hasQuery && !isLoading && rankedResults.length === 0 && (
-          <p
-            style={{
-              fontSize: '11px',
-              letterSpacing: '2px',
-              opacity: 0.5,
-              padding: '0 24px',
-              textTransform: 'uppercase',
-            }}
-          >
-            No products found matching "{searchQuery}"
-          </p>
-        )}
+              No products found matching "
+              {
+                searchQuery
+              }
+              "
+            </p>
+          )}
       </div>
 
       <style>{`
         @keyframes swapFadeIn {
-          from { opacity: 0; transform: translateY(1px); }
-          to { opacity: 1; transform: translateY(0); }
+          from {
+            opacity: 0;
+            transform: translateY(1px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
         }
+
         .variant-scroll-container::-webkit-scrollbar {
           display: none;
         }
+
         .variant-scroll-container {
           -ms-overflow-style: none;
           scrollbar-width: none;
@@ -836,6 +1160,7 @@ export default function SearchOverlay({ isOpen, onClose, searchQuery }: Props) {
             flex-direction: column;
             gap: 40px;
           }
+
           .search-card-item {
             width: 100vw !important;
             min-width: 100vw !important;
@@ -850,6 +1175,7 @@ export default function SearchOverlay({ isOpen, onClose, searchQuery }: Props) {
             gap: 30px;
             padding: 0 24px;
           }
+
           .search-card-item {
             width: 300px;
             min-width: 300px;
