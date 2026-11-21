@@ -61,6 +61,8 @@ export default function ProfilePage() {
   const { setIsPageLoading } = useGlobalLoading();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
+  const pageLoadingTokenRef = useRef<number | null>(null);
+
   const initialView: ProfileViewType = (() => {
     const saved = localStorage.getItem(
       'currentView'
@@ -174,30 +176,57 @@ export default function ProfilePage() {
       ? isAmbassadorActive
       : initialPortalMode === 'ambassador';
 
+  const startPageLoading = useCallback(
+    (
+      targetView: ProfileViewType,
+      targetAmbassadorActive: boolean
+    ) => {
+      const token = setIsPageLoading(true, {
+        view: resolveSkeletonViewForState(
+          targetView,
+          targetAmbassadorActive
+        ),
+        isAmbassador: targetAmbassadorActive,
+      });
+
+      pageLoadingTokenRef.current = token;
+      return token;
+    },
+    [setIsPageLoading]
+  );
+
+  const stopPageLoading = useCallback(
+    (token = pageLoadingTokenRef.current) => {
+      if (token === null) return;
+
+      setIsPageLoading(false, undefined, token);
+
+      if (pageLoadingTokenRef.current === token) {
+        pageLoadingTokenRef.current = null;
+      }
+    },
+    [setIsPageLoading]
+  );
+
   useEffect(() => {
     if (loading) {
-      setIsPageLoading(true, {
-        view: resolveSkeletonViewForState(
-          view,
-          resolvedAmbassadorMode
-        ),
-        isAmbassador: resolvedAmbassadorMode,
-      });
+      startPageLoading(view, resolvedAmbassadorMode);
     } else {
-      setIsPageLoading(false);
+      stopPageLoading();
     }
   }, [
     loading,
     view,
     resolvedAmbassadorMode,
-    setIsPageLoading,
+    startPageLoading,
+    stopPageLoading,
   ]);
 
   useEffect(() => {
     return () => {
-      setIsPageLoading(false);
+      stopPageLoading();
     };
-  }, [setIsPageLoading]);
+  }, [stopPageLoading]);
 
   const changeView = (newView: ProfileViewType) => {
     setView(newView);
@@ -206,13 +235,7 @@ export default function ProfilePage() {
     setFieldErrors({});
 
     if (loading) {
-      setIsPageLoading(true, {
-        view: resolveSkeletonViewForState(
-          newView,
-          resolvedAmbassadorMode
-        ),
-        isAmbassador: resolvedAmbassadorMode,
-      });
+      startPageLoading(newView, resolvedAmbassadorMode);
     }
   };
 
@@ -1017,26 +1040,14 @@ export default function ProfilePage() {
         nextMode
       );
 
-      setIsPageLoading(
-        true,
-        {
-          view:
-            resolveSkeletonViewForState(
-              view,
-              nextMode ===
-                'ambassador'
-            ),
-          isAmbassador:
-            nextMode ===
-            'ambassador',
-        }
+      const token = startPageLoading(
+        view,
+        nextMode === 'ambassador'
       );
 
       window.requestAnimationFrame(
         () => {
-          setIsPageLoading(
-            false
-          );
+          stopPageLoading(token);
         }
       );
     };
