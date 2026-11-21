@@ -237,36 +237,39 @@ export const GlobalSkeleton: React.FC = () => {
         <div
           style={{
             maxWidth: '600px',
-            margin: '80px auto',
-            textAlign: 'center',
+            margin: '32px auto',
           }}
         >
           <div
             style={{
-              ...shimmerStyle,
-              width: '100px',
-              height: '100px',
-              borderRadius: '50%',
-              margin: '0 auto 24px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '14px',
+              paddingBottom: '16px',
+              marginBottom: '24px',
+              borderBottom: '1px solid #18181B',
             }}
-          />
+          >
+            <div style={{ ...shimmerStyle, width: '38px', height: '38px', borderRadius: '50%' }} />
+            <div style={{ ...shimmerStyle, width: '120px', height: '18px', borderRadius: '4px' }} />
+          </div>
 
-          <div
-            style={{
-              ...shimmerStyle,
-              height: '32px',
-              width: '60%',
-              margin: '0 auto 16px',
-            }}
-          />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '6px' }}>
+              <div style={{ ...shimmerStyle, width: '84px', height: '10px', borderRadius: '3px' }} />
+              <div style={{ ...shimmerStyle, width: '68%', height: '54px', borderRadius: '16px' }} />
+            </div>
 
-          <div
-            style={{
-              ...shimmerStyle,
-              height: '180px',
-              width: '100%',
-            }}
-          />
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
+              <div style={{ ...shimmerStyle, width: '36px', height: '10px', borderRadius: '3px' }} />
+              <div style={{ ...shimmerStyle, width: '60%', height: '42px', borderRadius: '16px' }} />
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '6px' }}>
+              <div style={{ ...shimmerStyle, width: '84px', height: '10px', borderRadius: '3px' }} />
+              <div style={{ ...shimmerStyle, width: '74%', height: '58px', borderRadius: '16px' }} />
+            </div>
+          </div>
         </div>
       )}
 
