@@ -41,6 +41,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
   const [isHiding, setIsHiding] = useState<boolean>(false);
 
   useEffect(() => {
+    setIsPageLoading(true, { view: 'orders', isAmbassador: false });
     return () => {
       setIsPageLoading(false);
     };
@@ -299,9 +300,12 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
   };
 
   useEffect(() => {
-    if (userId) {
-      fetchOrders();
+    if (!userId) {
+      setLoading(false);
+      setIsPageLoading(false);
+      return;
     }
+    fetchOrders();
   }, [userId]);
 
   const executeHideOrders = async (idsToHide: string[]) => {
