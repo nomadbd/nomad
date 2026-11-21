@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef, useMemo, useLayoutEffect } from 'react';
 import { supabase } from '../../supabaseClient';
+import { useGlobalLoading } from '../../context/LoadingContext';
 import { BackIcon } from '../icons';
 
 interface CommunicationViewProps {
@@ -20,86 +21,8 @@ interface CommunicationMessage {
   created_at: string;
 }
 
-function MessagesSkeleton() {
-  const shimmer: React.CSSProperties = {
-    backgroundColor: '#3E3E3E',
-    backgroundImage:
-      'linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.14) 50%, rgba(255,255,255,0) 100%)',
-    backgroundSize: '200% 100%',
-    animation: 'fbChatShimmer 1.35s ease-in-out infinite',
-  };
-
-  const rows = [
-    { isAmbassador: false, width: '68%', lines: 2 },
-    { isAmbassador: true, width: '62%', lines: 1 },
-    { isAmbassador: false, width: '76%', lines: 2 },
-    { isAmbassador: true, width: '54%', lines: 1 },
-  ];
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-      <style>{`
-        @keyframes fbChatShimmer {
-          0% { background-position: 200% 0; }
-          100% { background-position: -200% 0; }
-        }
-      `}</style>
-      {rows.map((row, idx) => (
-        <div
-          key={idx}
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: row.isAmbassador ? 'flex-end' : 'flex-start',
-            width: '100%',
-          }}
-        >
-          {/* Sender label */}
-          <div
-            style={{
-              ...shimmer,
-              height: '9px',
-              width: row.isAmbassador ? '26px' : '84px',
-              borderRadius: '3px',
-              marginBottom: '5px',
-            }}
-          />
-
-          {/* Chat bubble */}
-          <div
-            style={{
-              width: row.width,
-              maxWidth: '82%',
-              padding: '12px 16px',
-              borderRadius: row.isAmbassador ? '16px 16px 2px 16px' : '16px 16px 16px 2px',
-              backgroundColor: row.isAmbassador ? '#121212' : '#09090B',
-              border: '1px solid',
-              borderColor: row.isAmbassador ? 'rgba(255, 255, 255, 0.18)' : '#27272A',
-            }}
-          >
-            <div style={{ ...shimmer, height: '12px', width: '100%', borderRadius: '4px', marginBottom: row.lines > 1 ? '7px' : '0' }} />
-            {row.lines > 1 && (
-              <div style={{ ...shimmer, height: '12px', width: '72%', borderRadius: '4px' }} />
-            )}
-          </div>
-
-          {/* Timestamp */}
-          <div
-            style={{
-              ...shimmer,
-              height: '8px',
-              width: '44px',
-              borderRadius: '3px',
-              marginTop: '5px',
-            }}
-          />
-        </div>
-      ))}
-    </div>
-  );
-}
-
 export default function CommunicationView({ userId, userEmail, onBack }: CommunicationViewProps) {
+  const { setIsPageLoading } = useGlobalLoading();
   const [messages, setMessages] = useState<CommunicationMessage[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [inputText, setInputText] = useState<string>('');
@@ -109,7 +32,6 @@ export default function CommunicationView({ userId, userEmail, onBack }: Communi
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
-  // কোনো স্ক্রলিং অ্যানিমেশন ছাড়া তাত্ক্ষণিকভাবে একদম নিচে পজিশন করানোর ফাংশন
   const jumpToBottom = () => {
     if (chatContainerRef.current) {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
@@ -118,7 +40,6 @@ export default function CommunicationView({ userId, userEmail, onBack }: Communi
     }
   };
 
-  // ১. কিবোর্ড ও ভিজ্যুয়াল ভিউপোর্ট সামঞ্জস্যকরণ
   useEffect(() => {
     const originalOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
@@ -174,6 +95,7 @@ export default function CommunicationView({ userId, userEmail, onBack }: Communi
     if (!userId) return;
 
     try {
+      setIsPageLoading(true);
       const { data, error } = await supabase
         .from('communications')
         .select('*')
@@ -190,6 +112,7 @@ export default function CommunicationView({ userId, userEmail, onBack }: Communi
       console.error('Error fetching communication messages:', err);
     } finally {
       setLoading(false);
+      setIsPageLoading(false);
     }
   };
 
@@ -233,7 +156,6 @@ export default function CommunicationView({ userId, userEmail, onBack }: Communi
     };
   }, [userId]);
 
-  // মেসেজ লোড হওয়া বা মেসেজ পরিবর্তন হওয়ার সাথে সাথে (স্ক্রিন রেন্ডারের আগেই) নিচে আটকে রাখবে
   useLayoutEffect(() => {
     if (!loading) {
       jumpToBottom();
@@ -308,35 +230,38 @@ export default function CommunicationView({ userId, userEmail, onBack }: Communi
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
+  if (loading) {
+    return null;
+  }
+
   let lastRenderedDate: string | null = null;
 
   return (
-    <div style={{ 
+    <div style={{
       position: 'fixed',
       top: 0,
       left: 0,
       right: 0,
       height: viewportHeight,
       width: '100vw',
-      maxWidth: '600px', 
-      margin: '0 auto', 
-      display: 'flex', 
-      flexDirection: 'column', 
-      backgroundColor: '#000000', 
+      maxWidth: '600px',
+      margin: '0 auto',
+      display: 'flex',
+      flexDirection: 'column',
+      backgroundColor: '#000000',
       color: '#FFFFFF',
       overflow: 'hidden',
       zIndex: 99999
     }}>
-      {/* ১. ফিক্সড হেডার */}
-      <div style={{ 
+      <div style={{
         flexShrink: 0,
         backgroundColor: 'rgba(9, 9, 11, 0.98)',
         backdropFilter: 'blur(16px)',
         WebkitBackdropFilter: 'blur(16px)',
         padding: '14px 16px',
         borderBottom: '1px solid #18181B',
-        display: 'flex', 
-        alignItems: 'center', 
+        display: 'flex',
+        alignItems: 'center',
         justifyContent: 'space-between',
         zIndex: 10
       }}>
@@ -383,12 +308,11 @@ export default function CommunicationView({ userId, userEmail, onBack }: Communi
         </div>
       </div>
 
-      {/* ২. চ্যাট কন্টেইনার (স্কেলেটন এবং সরাসরি সর্বশেষ মেসেজ) */}
-      <div 
+      <div
         ref={chatContainerRef}
-        style={{ 
-          flex: 1, 
-          overflowY: 'auto', 
+        style={{
+          flex: 1,
+          overflowY: 'auto',
           padding: '16px 12px',
           display: 'flex',
           flexDirection: 'column',
@@ -396,15 +320,13 @@ export default function CommunicationView({ userId, userEmail, onBack }: Communi
           WebkitOverflowScrolling: 'touch'
         }}
       >
-        {loading ? (
-          <MessagesSkeleton />
-        ) : messages.length === 0 ? (
-          <div style={{ 
+        {messages.length === 0 ? (
+          <div style={{
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            padding: '80px 20px', 
+            padding: '80px 20px',
             textAlign: 'center',
             margin: 'auto 0'
           }}>
@@ -513,7 +435,6 @@ export default function CommunicationView({ userId, userEmail, onBack }: Communi
         <div ref={chatEndRef} />
       </div>
 
-      {/* ৩. ফিক্সড ইনপুট ফর্ম */}
       <form
         onSubmit={handleSendMessage}
         style={{
