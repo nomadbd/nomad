@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { uploadToCloudinary, deleteFromCloudinary } from '../cloudinary';
 import OrderHistory from '../components/OrderHistory';
-import ProfileSkeleton from '../components/profile/ProfileSkeleton';
 import ProfileHeader from '../components/profile/ProfileHeader';
 import ProfileSettings from '../components/profile/ProfileSettings';
 import ProfileDetailsSheet from '../components/profile/ProfileDetailsSheet';
@@ -593,14 +592,6 @@ export default function ProfilePage() {
     }
   };
 
-  if (loading && view !== 'notifications' && view !== 'communication') {
-    return (
-      <div style={{ backgroundColor: '#000', minHeight: '100vh', color: '#fff', padding: '40px 20px' }}>
-        <ProfileSkeleton />
-      </div>
-    );
-  }
-
   return (
     <div style={{ backgroundColor: '#000', minHeight: '100vh', color: '#fff', padding: view === 'notifications' || view === 'communication' ? '0' : '40px 20px', fontFamily: "'Inter', sans-serif", width: '100%', boxSizing: 'border-box', overflowX: 'hidden' }}>
       <input
@@ -741,6 +732,7 @@ export default function ProfilePage() {
             clearFieldError={(field) =>
               setFieldErrors((prev) => ({ ...prev, [field]: undefined }))
             }
+            loading={loading}
           />
         ) : (
           <>
@@ -758,6 +750,7 @@ export default function ProfilePage() {
               unreadMessagesCount={unreadMessagesCount}
               unreadNotifCount={unreadNotifCount}
               hasUnreadNotif={unreadNotifCount > 0}
+              loading={loading}
             />
 
             {portalMode === 'ambassador' && isAmbassador ? (
