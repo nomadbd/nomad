@@ -88,17 +88,42 @@ export const GlobalSkeleton: React.FC = () => {
     </div>
   );
 
-  const isSettings = skeletonView === 'settings' || pathname.startsWith('/settings');
-  const isCommunication =
-    skeletonView === 'communication' ||
-    skeletonView === 'chat' ||
-    pathname.startsWith('/vip/') ||
-    pathname.startsWith('/messages');
-  const isNotifications = skeletonView === 'notifications' || pathname.startsWith('/notifications');
-  const isAmbassadorView =
-    skeletonView === 'ambassador' || (pathname.startsWith('/profile') && isAmbassadorSkeleton);
   const isUpdatePassword = skeletonView === 'password' || pathname === '/update-password';
-  const isHome = !isSettings && !isCommunication && !isNotifications && !isAmbassadorView && !isUpdatePassword && pathname === '/';
+  const isSettings =
+    !isUpdatePassword &&
+    (skeletonView === 'settings' || (!skeletonView && pathname.startsWith('/settings')));
+  const isCommunication =
+    !isUpdatePassword &&
+    !isSettings &&
+    (skeletonView === 'communication' ||
+      skeletonView === 'chat' ||
+      (!skeletonView && (pathname.startsWith('/vip/') || pathname.startsWith('/messages'))));
+  const isNotifications =
+    !isUpdatePassword &&
+    !isSettings &&
+    !isCommunication &&
+    (skeletonView === 'notifications' || (!skeletonView && pathname.startsWith('/notifications')));
+  const isAmbassadorView =
+    !isUpdatePassword &&
+    !isSettings &&
+    !isCommunication &&
+    !isNotifications &&
+    (skeletonView === 'ambassador' || (!skeletonView && pathname.startsWith('/profile') && isAmbassadorSkeleton));
+  const isOrdersView =
+    !isUpdatePassword &&
+    !isSettings &&
+    !isCommunication &&
+    !isNotifications &&
+    !isAmbassadorView &&
+    (skeletonView === 'orders' || (!skeletonView && pathname.startsWith('/profile') && !isAmbassadorSkeleton));
+  const isHome =
+    !isUpdatePassword &&
+    !isSettings &&
+    !isCommunication &&
+    !isNotifications &&
+    !isAmbassadorView &&
+    !isOrdersView &&
+    (skeletonView === 'home' || pathname === '/');
 
   return (
     <div
@@ -474,7 +499,7 @@ export const GlobalSkeleton: React.FC = () => {
         </div>
       )}
 
-      {!isHome && !isSettings && !isCommunication && !isNotifications && !isAmbassadorView && !isUpdatePassword && (
+      {isOrdersView && (
         <div style={{ maxWidth: '720px', margin: '0 auto', paddingTop: '54px' }}>
           {renderProfileHeaderSkeleton(false)}
 
