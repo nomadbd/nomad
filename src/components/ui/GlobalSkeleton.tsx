@@ -1,6 +1,6 @@
 import React from 'react';
 import { useLocation } from 'react-router-dom';
-import { useGlobalLoading } from '../context/LoadingContext';
+import { useGlobalLoading } from '@/context/LoadingContext';
 
 export const GlobalSkeleton: React.FC = () => {
   const { pathname } = useLocation();
