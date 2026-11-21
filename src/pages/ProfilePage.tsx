@@ -593,28 +593,10 @@ export default function ProfilePage() {
     }
   };
 
-  if (loading) {
-    const resolvedAmbassadorMode = isAmbassadorActive || portalMode === 'ambassador';
-    const skeletonVariant =
-      view === 'notifications'
-        ? 'notifications'
-        : view === 'communication'
-          ? 'communication'
-          : view === 'settings'
-            ? (resolvedAmbassadorMode ? 'ambassador-settings' : 'customer-settings')
-            : (resolvedAmbassadorMode ? 'ambassador' : 'customer');
-
+  if (loading && view !== 'notifications' && view !== 'communication') {
     return (
-      <div
-        style={{
-          backgroundColor: '#000',
-          minHeight: '100vh',
-          color: '#fff',
-          padding: view === 'notifications' || view === 'communication' ? '0' : '40px 20px',
-          boxSizing: 'border-box',
-        }}
-      >
-        <ProfileSkeleton variant={skeletonVariant} />
+      <div style={{ backgroundColor: '#000', minHeight: '100vh', color: '#fff', padding: '40px 20px' }}>
+        <ProfileSkeleton />
       </div>
     );
   }
