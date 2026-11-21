@@ -88,7 +88,7 @@ export const GlobalSkeleton: React.FC = () => {
     </div>
   );
 
-  const isUpdatePassword = skeletonView === 'password' || pathname === '/update-password';
+  const isUpdatePassword = skeletonView === 'password' || (!skeletonView && pathname === '/update-password');
   const isSettings =
     !isUpdatePassword &&
     (skeletonView === 'settings' || (!skeletonView && pathname.startsWith('/settings')));
@@ -115,7 +115,7 @@ export const GlobalSkeleton: React.FC = () => {
     !isCommunication &&
     !isNotifications &&
     !isAmbassadorView &&
-    (skeletonView === 'orders' || (!skeletonView && pathname.startsWith('/profile') && !isAmbassadorSkeleton));
+    (skeletonView === 'orders' || (skeletonView === null && pathname.startsWith('/profile') && !isAmbassadorSkeleton));
   const isHome =
     !isUpdatePassword &&
     !isSettings &&
@@ -123,7 +123,7 @@ export const GlobalSkeleton: React.FC = () => {
     !isNotifications &&
     !isAmbassadorView &&
     !isOrdersView &&
-    (skeletonView === 'home' || pathname === '/');
+    (skeletonView === 'home' || (skeletonView === null && pathname === '/'));
 
   return (
     <div
