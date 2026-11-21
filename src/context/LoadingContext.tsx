@@ -38,12 +38,8 @@ export const LoadingProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const setIsPageLoading = useCallback((loading: boolean, options?: LoadingOptions) => {
     setIsLoadingState(loading);
     if (loading) {
-      if (options?.view !== undefined) {
-        setSkeletonView(options.view);
-      }
-      if (options?.isAmbassador !== undefined) {
-        setIsAmbassadorSkeleton(options.isAmbassador);
-      }
+      setSkeletonView(options?.view ?? null);
+      setIsAmbassadorSkeleton(options?.isAmbassador ?? false);
     } else {
       setSkeletonView(null);
       setIsAmbassadorSkeleton(false);
