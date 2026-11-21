@@ -1,7 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { supabase } from '@/supabaseClient';
 import { useCart } from '@/context/CartContext';
-import { useGlobalLoading } from '@/context/LoadingContext';
 
 interface Props {
   isOpen: boolean;
@@ -278,15 +277,27 @@ const ProductActionRow = ({ product }: { product: Product }) => {
   const [step, setStep] = useState<'idle' | 'size' | 'color'>('idle');
   const [selectedSize, setSelectedSize] = useState('');
   const [isAdded, setIsAdded] = useState(false);
+  const feedbackTimeoutRef = useRef<number | null>(null);
 
   const availableSizes = product.sizes || [];
   const availableColors = product.colors || [];
 
   const isSoldOut = product.status === 'sold_out' || product.stock_quantity <= 0;
 
+  useEffect(() => {
+    return () => {
+      if (feedbackTimeoutRef.current !== null) {
+        window.clearTimeout(feedbackTimeoutRef.current);
+      }
+    };
+  }, []);
+
   const triggerAddedFeedback = () => {
     setIsAdded(true);
-    setTimeout(() => {
+    if (feedbackTimeoutRef.current !== null) {
+      window.clearTimeout(feedbackTimeoutRef.current);
+    }
+    feedbackTimeoutRef.current = window.setTimeout(() => {
       setIsAdded(false);
     }, 1500);
   };
@@ -652,16 +663,20 @@ const ProductCard = ({ product }: { product: Product }) => {
 };
 
 export default function SearchOverlay({ isOpen, onClose, searchQuery }: Props) {
-  const { setIsPageLoading } = useGlobalLoading();
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const onCloseRef = useRef(onClose);
+
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
   useEffect(() => {
     if (!isOpen) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        onClose();
+        onCloseRef.current();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -669,7 +684,7 @@ export default function SearchOverlay({ isOpen, onClose, searchQuery }: Props) {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isOpen, onClose]);
+  }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -679,7 +694,6 @@ export default function SearchOverlay({ isOpen, onClose, searchQuery }: Props) {
     const fetchCatalog = async () => {
       try {
         setIsLoading(true);
-        setIsPageLoading(true, { view: 'orders', isAmbassador: false });
         const { data, error } = await supabase
           .from('products')
           .select(`
@@ -699,7 +713,6 @@ export default function SearchOverlay({ isOpen, onClose, searchQuery }: Props) {
         console.error('Error loading search catalog:', err);
       } finally {
         if (isMounted) setIsLoading(false);
-        setIsPageLoading(false);
       }
     };
 
@@ -707,9 +720,8 @@ export default function SearchOverlay({ isOpen, onClose, searchQuery }: Props) {
 
     return () => {
       isMounted = false;
-      setIsPageLoading(false);
     };
-  }, [isOpen, setIsPageLoading]);
+  }, [isOpen]);
 
   const rankedResults = useMemo(() => {
     const trimmed = searchQuery.trim();
@@ -750,6 +762,22 @@ export default function SearchOverlay({ isOpen, onClose, searchQuery }: Props) {
       }}
     >
       <div style={{ color: 'white', width: '100%', boxSizing: 'border-box' }}>
+        {hasQuery && isLoading && (
+          <div className="search-results-container">
+            {[1, 2, 3].map((skeleton) => (
+              <div
+                key={skeleton}
+                className="search-card-item"
+                style={{
+                  height: '360px',
+                  backgroundColor: '#090909',
+                  border: '1px solid #181818',
+                }}
+              />
+            ))}
+          </div>
+        )}
+
         {hasQuery && rankedResults.length > 0 && (
           <>
             <div
