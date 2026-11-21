@@ -15,6 +15,7 @@ import ProductList from './components/ProductList';
 import CartOverlay from './components/CartOverlay';
 import AuthOverlay from './components/auth/AuthOverlay';
 import AuthForm from './components/auth/AuthForm';
+import ReminderLoading from './components/ui/ReminderLoading';
 import { GlobalSkeleton } from './components/ui/GlobalSkeleton';
 
 const AmbassadorJoin = lazy(() => import('./components/ambassador/join/AmbassadorJoin'));
@@ -49,18 +50,26 @@ const AppContent: React.FC<AppContentProps> = ({
   const navigate = useNavigate();
   const { isPageLoading } = useGlobalLoading();
 
+  const isAdminRoute = location.pathname.startsWith('/admin');
   const isProfileRoute =
     location.pathname === '/profile' || location.pathname.startsWith('/profile/');
-  const showHeader = !location.pathname.startsWith('/admin') && !isProfileRoute;
+  const showHeader = !isAdminRoute && !isProfileRoute;
 
   const handleCloseSearch = () => {
     setIsSearchOpen(false);
     setSearchQuery('');
   };
 
-  // সেশন লোড হলে বা যেকোনো পেজে গ্লোবাল লোডিং চালু থাকলে রাউট অনুযায়ী স্কেলিটন দেখাবে
-  if (sessionLoading || isPageLoading) {
+  // অ্যাডমিন রাউটের জন্য ReminderLoading, বাকি সব রাউটের জন্য GlobalSkeleton
+  const renderLoader = () => {
+    if (isAdminRoute) {
+      return <ReminderLoading label="" />;
+    }
     return <GlobalSkeleton />;
+  };
+
+  if (sessionLoading || isPageLoading) {
+    return renderLoader();
   }
 
   return (
@@ -94,7 +103,7 @@ const AppContent: React.FC<AppContentProps> = ({
           paddingTop: showHeader ? '70px' : '0',
         }}
       >
-        <Suspense fallback={<GlobalSkeleton />}>
+        <Suspense fallback={renderLoader()}>
           <Routes>
             <Route
               path="/"
