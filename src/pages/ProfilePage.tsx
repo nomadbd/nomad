@@ -2,6 +2,7 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { uploadToCloudinary, deleteFromCloudinary } from '../cloudinary';
+import { useGlobalLoading } from '../context/LoadingContext';
 import OrderHistory from '../components/OrderHistory';
 import ProfileHeader from '../components/profile/ProfileHeader';
 import ProfileSettings from '../components/profile/ProfileSettings';
@@ -31,6 +32,7 @@ const stripQueryParams = (url: string) => url.split('?')[0];
 
 export default function ProfilePage() {
   const navigate = useNavigate();
+  const { setIsPageLoading } = useGlobalLoading();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const [view, setView] = useState<'profile' | 'settings' | 'notifications' | 'communication'>(() => {
@@ -194,83 +196,88 @@ export default function ProfilePage() {
 
   const fetchUserData = async () => {
     setLoading(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      setSession({ user });
+    setIsPageLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setSession({ user });
 
-      const cleanEmail = (user.email || '').toLowerCase();
-      const userInviteToken = user.user_metadata?.invite_token;
+        const cleanEmail = (user.email || '').toLowerCase();
+        const userInviteToken = user.user_metadata?.invite_token;
 
-      let pendingInvite: any = null;
+        let pendingInvite: any = null;
 
-      if (userInviteToken) {
-        const { data: inviteByToken } = await supabase
-          .from('ambassador')
-          .select('*')
-          .eq('token', userInviteToken)
-          .eq('is_registered', false)
-          .maybeSingle();
-        pendingInvite = inviteByToken;
-      }
+        if (userInviteToken) {
+          const { data: inviteByToken } = await supabase
+            .from('ambassador')
+            .select('*')
+            .eq('token', userInviteToken)
+            .eq('is_registered', false)
+            .maybeSingle();
+          pendingInvite = inviteByToken;
+        }
 
-      if (!pendingInvite && cleanEmail) {
-        const { data: inviteByEmail } = await supabase
-          .from('ambassador')
-          .select('*')
-          .or(`email.eq.${cleanEmail},recipient_identifier.eq.${cleanEmail}`)
-          .eq('is_registered', false)
-          .maybeSingle();
-        pendingInvite = inviteByEmail;
-      }
+        if (!pendingInvite && cleanEmail) {
+          const { data: inviteByEmail } = await supabase
+            .from('ambassador')
+            .select('*')
+            .or(`email.eq.${cleanEmail},recipient_identifier.eq.${cleanEmail}`)
+            .eq('is_registered', false)
+            .maybeSingle();
+          pendingInvite = inviteByEmail;
+        }
 
-      if (pendingInvite) {
-        await supabase.rpc('complete_ambassador_registration', {
-          invite_token: pendingInvite.token,
-          new_user_id: user.id,
-          user_email: cleanEmail,
-          user_name: user.user_metadata?.full_name || pendingInvite.display_name || ''
-        });
-      }
+        if (pendingInvite) {
+          await supabase.rpc('complete_ambassador_registration', {
+            invite_token: pendingInvite.token,
+            new_user_id: user.id,
+            user_email: cleanEmail,
+            user_name: user.user_metadata?.full_name || pendingInvite.display_name || ''
+          });
+        }
 
-      const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+        const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single();
 
-      const normalizedRole = prof?.role ? String(prof.role).toUpperCase().trim() : '';
-      const isStaff = ['SUPER_ADMIN', 'ADMIN', 'STAFF'].includes(normalizedRole);
+        const normalizedRole = prof?.role ? String(prof.role).toUpperCase().trim() : '';
+        const isStaff = ['SUPER_ADMIN', 'ADMIN', 'STAFF'].includes(normalizedRole);
 
-      if (isStaff) {
-        navigate('/admin', { replace: true });
-        return;
-      }
+        if (isStaff) {
+          navigate('/admin', { replace: true });
+          return;
+        }
 
-      const fetchedAvatar = prof?.avatar_url || null;
-      setProfile({ ...prof, email: user.email, avatar_url: fetchedAvatar });
-      setAvatarUrl(fetchedAvatar);
+        const fetchedAvatar = prof?.avatar_url || null;
+        setProfile({ ...prof, email: user.email, avatar_url: fetchedAvatar });
+        setAvatarUrl(fetchedAvatar);
 
-      if (normalizedRole === 'AMBASSADOR') {
-        const { data: amb } = await supabase.from('ambassador').select('*').eq('user_id', user.id).maybeSingle();
-        setAmbassadorData(amb);
-        if (amb) {
-          setCurrentSlug(amb.assigned_slug || '');
-          setCurrentPayoutDetails(amb.payout_details || '');
+        if (normalizedRole === 'AMBASSADOR') {
+          const { data: amb } = await supabase.from('ambassador').select('*').eq('user_id', user.id).maybeSingle();
+          setAmbassadorData(amb);
+          if (amb) {
+            setCurrentSlug(amb.assigned_slug || '');
+            setCurrentPayoutDetails(amb.payout_details || '');
 
-          if (amb.payout_details && amb.payout_details.includes(':')) {
-            const [method] = amb.payout_details.split(':');
-            if (method?.trim()) {
-              setPayoutMethod(method.trim());
+            if (amb.payout_details && amb.payout_details.includes(':')) {
+              const [method] = amb.payout_details.split(':');
+              if (method?.trim()) {
+                setPayoutMethod(method.trim());
+              }
             }
           }
         }
-      }
 
-      setNewName('');
-      setNewEmail('');
-      setCurrentPassword('');
-      setNewPassword('');
-      setDeleteConfirmPassword('');
-      setNewSlug('');
-      setNewPayoutNumber('');
+        setNewName('');
+        setNewEmail('');
+        setCurrentPassword('');
+        setNewPassword('');
+        setDeleteConfirmPassword('');
+        setNewSlug('');
+        setNewPayoutNumber('');
+      }
+    } finally {
+      setLoading(false);
+      setIsPageLoading(false);
     }
-    setLoading(false);
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
