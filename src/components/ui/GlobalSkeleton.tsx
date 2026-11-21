@@ -27,13 +27,11 @@ export const GlobalSkeleton: React.FC = () => {
         }
       `}</style>
 
-      {/* ১. হোম পেজ (/) - Hero + Product Grid */}
       {pathname === '/' && (
         <div
           style={{
             maxWidth: '1280px',
             margin: '0 auto',
-            paddingTop: '70px',
           }}
         >
           <div
@@ -62,56 +60,70 @@ export const GlobalSkeleton: React.FC = () => {
         </div>
       )}
 
-      {/* ২. প্রোফাইল পেজ (/profile) */}
       {(pathname === '/profile' || pathname.startsWith('/profile/')) && (
-        <div style={{ maxWidth: '900px', margin: '40px auto' }}>
+        <div style={{ maxWidth: '900px', margin: '24px auto' }}>
           <div
             style={{
               display: 'flex',
               alignItems: 'center',
+              justifyContent: 'space-between',
               gap: '20px',
-              marginBottom: '32px',
+              marginBottom: '28px',
+              paddingBottom: '20px',
+              borderBottom: '1px solid #111',
             }}
           >
-            <div
-              style={{
-                ...shimmerStyle,
-                width: '80px',
-                height: '80px',
-                borderRadius: '50%',
-              }}
-            />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '18px' }}>
+              <div
+                style={{
+                  ...shimmerStyle,
+                  width: '76px',
+                  height: '76px',
+                  borderRadius: '50%',
+                }}
+              />
 
-            <div style={{ flex: 1 }}>
-              <div
-                style={{
-                  ...shimmerStyle,
-                  height: '24px',
-                  width: '200px',
-                  marginBottom: '10px',
-                }}
-              />
-              <div
-                style={{
-                  ...shimmerStyle,
-                  height: '16px',
-                  width: '140px',
-                }}
-              />
+              <div>
+                <div
+                  style={{
+                    ...shimmerStyle,
+                    height: '22px',
+                    width: '190px',
+                    marginBottom: '10px',
+                  }}
+                />
+                <div
+                  style={{
+                    ...shimmerStyle,
+                    height: '15px',
+                    width: '140px',
+                  }}
+                />
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <div style={{ ...shimmerStyle, width: '38px', height: '38px', borderRadius: '50%' }} />
+              <div style={{ ...shimmerStyle, width: '38px', height: '38px', borderRadius: '50%' }} />
+              <div style={{ ...shimmerStyle, width: '38px', height: '38px', borderRadius: '50%' }} />
             </div>
           </div>
 
-          <div
-            style={{
-              ...shimmerStyle,
-              height: '250px',
-              width: '100%',
-            }}
-          />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            {[1, 2, 3].map((item) => (
+              <div
+                key={item}
+                style={{
+                  ...shimmerStyle,
+                  height: '92px',
+                  width: '100%',
+                }}
+              />
+            ))}
+          </div>
         </div>
       )}
 
-      {/* ৩. অ্যাম্বাসেডর জয়েন (/vip/:token) বা পোর্টাল (/:slug) */}
       {(
         pathname.startsWith('/vip/') ||
         (
@@ -157,7 +169,6 @@ export const GlobalSkeleton: React.FC = () => {
         </div>
       )}
 
-      {/* ৪. পাসওয়ার্ড আপডেট (/update-password) */}
       {pathname === '/update-password' && (
         <div style={{ maxWidth: '400px', margin: '100px auto' }}>
           <div
