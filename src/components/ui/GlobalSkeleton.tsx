@@ -1,1018 +1,880 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { supabase } from '@/supabaseClient';
-import { useCart } from '@/context/CartContext';
+import React from 'react';
+import { useLocation } from 'react-router-dom';
 import { useGlobalLoading } from '@/context/LoadingContext';
-import ProductGallery from './ProductGallery';
 
-interface Product {
-  id: string | number;
-  name: string;
-  description: string;
-  price: number;
-  category: string;
-  stock_quantity: number;
-  status: 'active' | 'sold_out' | string;
-  sizes: string[];
-  colors: string[];
-  created_at: string;
-  product_media: { media_url: string; media_type: string }[];
-  details?: Record<string, string> | null;
-}
+export const GlobalSkeleton: React.FC = () => {
+  const { pathname } = useLocation();
+  const { skeletonView, isAmbassadorSkeleton } =
+    useGlobalLoading();
 
-const ProductActionRow = ({ product }: { product: Product }) => {
-  const { addToCart } = useCart();
+  const isProfilePath = pathname.startsWith('/profile');
 
-  const [step, setStep] = useState<'idle' | 'size' | 'color'>('idle');
-  const [selectedSize, setSelectedSize] = useState('');
-  const [isAdded, setIsAdded] = useState(false);
-  const feedbackTimeoutRef = useRef<number | null>(null);
+  const isAmbassadorMode =
+    isAmbassadorSkeleton || skeletonView === 'ambassador';
 
-  const availableSizes = product.sizes || [];
-  const availableColors = product.colors || [];
-
-  const isSoldOut =
-    product.status === 'sold_out' || product.stock_quantity <= 0;
-
-  useEffect(() => {
-    return () => {
-      if (feedbackTimeoutRef.current !== null) {
-        window.clearTimeout(feedbackTimeoutRef.current);
-      }
-    };
-  }, []);
-
-  const triggerAddedFeedback = () => {
-    setIsAdded(true);
-
-    if (feedbackTimeoutRef.current !== null) {
-      window.clearTimeout(feedbackTimeoutRef.current);
-    }
-
-    feedbackTimeoutRef.current = window.setTimeout(() => {
-      setIsAdded(false);
-    }, 1500);
+  const shimmerStyle: React.CSSProperties = {
+    backgroundColor: '#1C1C1F',
+    backgroundImage:
+      'linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0) 100%)',
+    backgroundSize: '200% 100%',
+    animation: 'skeletonShimmer 1.4s ease-in-out infinite',
+    borderRadius: '8px',
   };
 
-  const handleActionClick = () => {
-    if (availableSizes.length === 0 && availableColors.length === 0) {
-      addToCart({ ...product, size: 'FREE', color: 'DEFAULT' });
-      triggerAddedFeedback();
-      return;
-    }
-
-    if (availableSizes.length > 0) {
-      setStep('size');
-    } else {
-      setStep('color');
-    }
-  };
-
-  const handleShare = async () => {
-    const shareUrl = `${window.location.origin}/?p=${product.id}`;
-
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: product.name,
-          text: product.description,
-          url: shareUrl,
-        });
-      } catch (err) {}
-    } else if (navigator.clipboard && navigator.clipboard.writeText) {
-      try {
-        await navigator.clipboard.writeText(shareUrl);
-      } catch (err) {}
-    }
-  };
-
-  const labelStyle: React.CSSProperties = {
-    fontSize: '11px',
-    fontWeight: '500',
-    letterSpacing: '1px',
-    color: '#888',
-    textTransform: 'uppercase',
-    flexShrink: 0,
-    marginRight: '12px',
-    display: 'inline-block',
-    lineHeight: '1',
-  };
-
-  return (
+  const renderProfileHeaderSkeleton = (
+    withBadge = false
+  ) => (
     <div
       style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 998,
+        backgroundColor: 'rgba(0, 0, 0, 0.92)',
+        borderBottom: '1px solid #1F1F22',
+        padding: '10px 16px',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        height: '42px',
-        marginTop: '15px',
         boxSizing: 'border-box',
-        width: '100%',
       }}
     >
-      {step === 'idle' && (
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+          flex: 1,
+          minWidth: 0,
+        }}
+      >
+        <div
+          style={{
+            ...shimmerStyle,
+            width: '40px',
+            height: '40px',
+            borderRadius: '50%',
+            flexShrink: 0,
+          }}
+        />
+
         <div
           style={{
             display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            width: '100%',
-            animation: 'swapFadeIn 0.25s ease-in-out',
+            flexDirection: 'column',
+            gap: '6px',
+            flex: 1,
+            minWidth: 0,
           }}
         >
-          <span
+          <div
             style={{
-              fontSize: '15px',
-              color: isSoldOut ? '#555' : '#fff',
-              fontWeight: 500,
-              fontFamily: 'monospace',
+              ...shimmerStyle,
+              height: '13px',
+              width: '46%',
+              maxWidth: '150px',
+              borderRadius: '4px',
             }}
-          >
-            ৳{product.price}
-          </span>
+          />
 
           <div
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '10px',
+              gap: '6px',
             }}
           >
-            <button
-              onClick={handleShare}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                cursor: 'pointer',
-                padding: '4px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                outline: 'none',
-              }}
-              title="Share"
-            >
-              <svg
-                width="15"
-                height="15"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="#ccc"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <circle cx="18" cy="5" r="3" />
-                <circle cx="6" cy="12" r="3" />
-                <circle cx="18" cy="19" r="3" />
-                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
-                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
-              </svg>
-            </button>
-
-            {isSoldOut ? (
-              <button
-                disabled
+            {withBadge && (
+              <div
                 style={{
-                  height: '36px',
-                  width: '130px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  boxSizing: 'border-box',
-                  lineHeight: '1',
-                  background: 'transparent',
-                  border: '1px solid #222',
-                  color: '#555',
-                  fontSize: '11px',
-                  letterSpacing: '1.5px',
-                  cursor: 'not-allowed',
-                  textTransform: 'uppercase',
-                  fontWeight: '600',
+                  ...shimmerStyle,
+                  width: '6px',
+                  height: '6px',
+                  borderRadius: '50%',
+                  flexShrink: 0,
                 }}
-              >
-                SOLD OUT
-              </button>
-            ) : (
-              <button
-                onClick={handleActionClick}
-                style={{
-                  height: '36px',
-                  width: '130px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  boxSizing: 'border-box',
-                  lineHeight: '1',
-                  background: 'transparent',
-                  border: `1px solid ${isAdded ? '#fff' : '#333'}`,
-                  color: '#fff',
-                  fontSize: '11px',
-                  letterSpacing: '1.5px',
-                  cursor: 'pointer',
-                  textTransform: 'uppercase',
-                  fontWeight: '600',
-                  transition: 'all 0.2s ease',
-                }}
-              >
-                {isAdded ? 'ADDED' : 'ADD TO CART'}
-              </button>
+              />
             )}
+
+            <div
+              style={{
+                ...shimmerStyle,
+                height: '9px',
+                width: withBadge ? '28%' : '36%',
+                maxWidth: '120px',
+                borderRadius: '4px',
+              }}
+            />
           </div>
         </div>
-      )}
-
-      {step === 'size' && (
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            width: '100%',
-            height: '100%',
-            animation: 'swapFadeIn 0.25s ease-in-out',
-            overflow: 'hidden',
-          }}
-        >
-          <span style={labelStyle}>SIZE:</span>
-
-          <div
-            className="variant-scroll-container"
-            style={{
-              display: 'flex',
-              gap: '16px',
-              overflowX: 'auto',
-              flex: 1,
-              scrollBehavior: 'smooth',
-              WebkitOverflowScrolling: 'touch',
-              paddingRight: '5px',
-            }}
-          >
-            {availableSizes.map((size) => (
-              <span
-                key={size}
-                onClick={() => {
-                  setSelectedSize(size);
-
-                  if (availableColors.length > 0) {
-                    setStep('color');
-                  } else {
-                    addToCart({
-                      ...product,
-                      size,
-                      color: 'DEFAULT',
-                    });
-                    triggerAddedFeedback();
-                    setStep('idle');
-                  }
-                }}
-                style={{
-                  color: '#fff',
-                  cursor: 'pointer',
-                  fontSize: '11px',
-                  fontWeight: '500',
-                  letterSpacing: '1px',
-                  flexShrink: 0,
-                  padding: '4px 2px',
-                  lineHeight: '1',
-                }}
-              >
-                {size}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {step === 'color' && (
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            width: '100%',
-            height: '100%',
-            animation: 'swapFadeIn 0.25s ease-in-out',
-            overflow: 'hidden',
-          }}
-        >
-          <span style={labelStyle}>COLOR:</span>
-
-          <div
-            className="variant-scroll-container"
-            style={{
-              display: 'flex',
-              gap: '14px',
-              overflowX: 'auto',
-              flex: 1,
-              scrollBehavior: 'smooth',
-              WebkitOverflowScrolling: 'touch',
-              paddingRight: '5px',
-            }}
-          >
-            {availableColors.map((color) => (
-              <span
-                key={color}
-                onClick={() => {
-                  addToCart({
-                    ...product,
-                    size: selectedSize || 'FREE',
-                    color,
-                  });
-                  triggerAddedFeedback();
-                  setStep('idle');
-                }}
-                style={{
-                  color: '#fff',
-                  cursor: 'pointer',
-                  fontSize: '11px',
-                  fontWeight: '500',
-                  letterSpacing: '1px',
-                  flexShrink: 0,
-                  padding: '4px 2px',
-                  textTransform: 'uppercase',
-                  lineHeight: '1',
-                }}
-              >
-                {color}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
-const ProductCard = ({ product }: { product: Product }) => {
-  const [isDescExpanded, setIsDescExpanded] = useState(false);
-
-  return (
-    <div
-      id={`product-${product.id}`}
-      className="showroom-card-item"
-      style={{
-        scrollSnapAlign: 'start',
-        boxSizing: 'border-box',
-        display: 'flex',
-        flexDirection: 'column',
-      }}
-    >
-      <ProductGallery
-        media={product.product_media || []}
-        productName={product.name}
-      />
+      </div>
 
       <div
         style={{
-          marginTop: '15px',
-          padding: '0 5px',
           display: 'flex',
-          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '6px',
+          flexShrink: 0,
         }}
       >
-        <h3
-          style={{
-            fontSize: '14px',
-            color: '#fff',
-            margin: '0 0 6px 0',
-            fontWeight: '600',
-          }}
-        >
-          {product.name}
-        </h3>
-
-        <div style={{ margin: '0' }}>
-          {(() => {
-            const characterLimit = 75;
-            const isLongText =
-              product.description.length > characterLimit;
-
-            const displayedText = isLongText
-              ? product.description.slice(0, characterLimit) + '...'
-              : product.description;
-
-            return !isDescExpanded ? (
-              <p
-                style={{
-                  fontSize: '13px',
-                  color: '#fff',
-                  margin: 0,
-                  lineHeight: '1.4',
-                }}
-              >
-                {displayedText}
-                <span
-                  onClick={() => setIsDescExpanded(true)}
-                  style={{
-                    fontSize: '12px',
-                    color: '#aaa',
-                    cursor: 'pointer',
-                    marginLeft: '6px',
-                    fontWeight: '500',
-                    display: 'inline',
-                  }}
-                >
-                  see more
-                </span>
-              </p>
-            ) : (
-              <div
-                style={{
-                  animation: 'swapFadeIn 0.3s ease-in-out',
-                }}
-              >
-                <p
-                  style={{
-                    fontSize: '13px',
-                    color: '#fff',
-                    margin: 0,
-                    lineHeight: '1.4',
-                  }}
-                >
-                  {product.description}
-                </p>
-
-                {product.details &&
-                  Object.keys(product.details).length > 0 && (
-                    <div
-                      style={{
-                        borderTop: '1px solid #1a1a1a',
-                        marginTop: '12px',
-                        paddingTop: '12px',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '8px',
-                        fontFamily: 'monospace',
-                        fontSize: '12px',
-                      }}
-                    >
-                      {(() => {
-                        const specKeys = [
-                          'FIT',
-                          'GSM',
-                          'MATERIAL',
-                          'COLOR',
-                          'SLEEVE',
-                          'PATTERN',
-                          'OCCASION',
-                          'CARE',
-                          'MADE IN',
-                        ];
-
-                        const detailsObj =
-                          product.details || {};
-                        const detailKeys =
-                          Object.keys(detailsObj);
-
-                        const getVal = (
-                          targetKey: string
-                        ) => {
-                          const foundKey =
-                            detailKeys.find(
-                              (key) =>
-                                key.trim().toUpperCase() ===
-                                  targetKey ||
-                                key
-                                  .trim()
-                                  .toUpperCase()
-                                  .replace(/\s+/g, '') ===
-                                  targetKey.replace(
-                                    /\s+/g,
-                                    ''
-                                  )
-                            );
-
-                          return foundKey
-                            ? detailsObj[foundKey]
-                            : null;
-                        };
-
-                        const detailsVal =
-                          getVal('DETAILS');
-
-                        return (
-                          <>
-                            {specKeys.map((key) => {
-                              const val =
-                                getVal(key);
-
-                              if (!val) {
-                                return null;
-                              }
-
-                              return (
-                                <div
-                                  key={key}
-                                  style={{
-                                    display: 'flex',
-                                    justifyContent:
-                                      'flex-start',
-                                    alignItems:
-                                      'flex-start',
-                                  }}
-                                >
-                                  <span
-                                    style={{
-                                      color: '#fff',
-                                      width: '95px',
-                                      flexShrink: 0,
-                                      textTransform:
-                                        'uppercase',
-                                      letterSpacing:
-                                        '0.5px',
-                                    }}
-                                  >
-                                    {key}
-                                  </span>
-
-                                  <span
-                                    style={{
-                                      color: '#555',
-                                      marginRight:
-                                        '10px',
-                                      flexShrink: 0,
-                                    }}
-                                  >
-                                    :
-                                  </span>
-
-                                  <span
-                                    style={{
-                                      color: '#fff',
-                                      fontWeight:
-                                        '400',
-                                      flex: 1,
-                                      overflowWrap:
-                                        'break-word',
-                                      wordBreak:
-                                        'break-word',
-                                      lineHeight:
-                                        '1.4',
-                                    }}
-                                  >
-                                    {String(val)}
-                                  </span>
-                                </div>
-                              );
-                            })}
-
-                            {detailsVal && (
-                              <div
-                                style={{
-                                  marginTop:
-                                    '4px',
-                                  color: '#fff',
-                                  fontWeight:
-                                    '400',
-                                  overflowWrap:
-                                    'break-word',
-                                  wordBreak:
-                                    'break-word',
-                                  lineHeight:
-                                    '1.4',
-                                }}
-                              >
-                                {String(detailsVal)}
-                              </div>
-                            )}
-                          </>
-                        );
-                      })()}
-                    </div>
-                  )}
-
-                <span
-                  onClick={() =>
-                    setIsDescExpanded(false)
-                  }
-                  style={{
-                    fontSize: '11px',
-                    color: '#aaa',
-                    cursor: 'pointer',
-                    marginTop: '12px',
-                    display:
-                      'inline-block',
-                    letterSpacing:
-                      '0.5px',
-                  }}
-                >
-                  see less
-                </span>
-              </div>
-            );
-          })()}
-        </div>
-
-        <ProductActionRow product={product} />
+        {[1, 2].map((item) => (
+          <div
+            key={item}
+            style={{
+              ...shimmerStyle,
+              width: '35px',
+              height: '35px',
+              borderRadius: '50%',
+            }}
+          />
+        ))}
       </div>
     </div>
   );
-};
 
-export default function ProductList() {
-  const [products, setProducts] =
-    useState<Product[]>([]);
-  const [categories, setCategories] =
-    useState<string[]>([]);
-  const [loading, setLoading] =
-    useState<boolean>(true);
-  const [expandedCategories, setExpandedCategories] =
-    useState<Record<string, boolean>>({});
+  const renderSubViewTopBarSkeleton = (
+    withRightPill = false
+  ) => (
+    <div
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 998,
+        backgroundColor: '#000000',
+        borderBottom: '1px solid #1A1A1A',
+        padding: '12px 16px',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        boxSizing: 'border-box',
+      }}
+    >
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '14px',
+        }}
+      >
+        <div
+          style={{
+            ...shimmerStyle,
+            width: '36px',
+            height: '36px',
+            borderRadius: '50%',
+          }}
+        />
 
-  const loadingTokenRef =
-    useRef<number | null>(null);
+        <div
+          style={{
+            ...shimmerStyle,
+            width: '112px',
+            height: '16px',
+            borderRadius: '4px',
+          }}
+        />
+      </div>
 
-  const { setIsPageLoading } =
-    useGlobalLoading();
+      {withRightPill && (
+        <div
+          style={{
+            ...shimmerStyle,
+            width: '74px',
+            height: '30px',
+            borderRadius: '16px',
+          }}
+        />
+      )}
+    </div>
+  );
 
-  const startPageLoading = () => {
-    const token = setIsPageLoading(true, {
-      view: 'home',
-    });
+  const isUpdatePassword =
+    skeletonView === 'password' ||
+    (!skeletonView && pathname === '/update-password');
 
-    loadingTokenRef.current = token;
-  };
+  const isSettings =
+    !isUpdatePassword &&
+    (skeletonView === 'settings' ||
+      (!skeletonView &&
+        !isProfilePath &&
+        pathname.startsWith('/settings')));
 
-  const stopPageLoading = () => {
-    if (loadingTokenRef.current === null) {
-      return;
-    }
+  const isCommunication =
+    !isUpdatePassword &&
+    !isSettings &&
+    (skeletonView === 'communication' ||
+      skeletonView === 'chat' ||
+      (!skeletonView &&
+        !isProfilePath &&
+        (pathname.startsWith('/vip/') ||
+          pathname.startsWith('/messages'))));
 
-    setIsPageLoading(
-      false,
-      undefined,
-      loadingTokenRef.current
-    );
+  const isNotifications =
+    !isUpdatePassword &&
+    !isSettings &&
+    !isCommunication &&
+    (skeletonView === 'notifications' ||
+      (!skeletonView &&
+        !isProfilePath &&
+        pathname.startsWith('/notifications')));
 
-    loadingTokenRef.current = null;
-  };
+  const isAmbassadorView =
+    !isUpdatePassword &&
+    !isSettings &&
+    !isCommunication &&
+    !isNotifications &&
+    skeletonView === 'ambassador';
 
-  useEffect(() => {
-    let isMounted = true;
+  const isOrdersView =
+    !isUpdatePassword &&
+    !isSettings &&
+    !isCommunication &&
+    !isNotifications &&
+    !isAmbassadorView &&
+    skeletonView === 'orders';
 
-    const fetchProducts = async () => {
-      setLoading(true);
-      startPageLoading();
-
-      try {
-        const { data, error } =
-          await supabase
-            .from('products')
-            .select(`
-              *,
-              product_media (
-                media_url,
-                media_type
-              )
-            `)
-            .in('status', [
-              'active',
-              'sold_out',
-            ])
-            .order('created_at', {
-              ascending: false,
-            });
-
-        if (error) {
-          throw error;
-        }
-
-        if (data && isMounted) {
-          const shuffledProducts =
-            [...data].sort(
-              () =>
-                Math.random() - 0.5
-            );
-
-          const uniqueCategories =
-            Array.from(
-              new Set(
-                shuffledProducts.map(
-                  (item) => item.category
-                )
-              )
-            ).sort(
-              () =>
-                Math.random() - 0.5
-            );
-
-          setProducts(
-            shuffledProducts as Product[]
-          );
-          setCategories(
-            uniqueCategories
-          );
-        }
-      } catch (err) {
-        console.error(
-          'Error fetching products:',
-          err
-        );
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-          stopPageLoading();
-        }
-      }
-    };
-
-    fetchProducts();
-
-    return () => {
-      isMounted = false;
-      stopPageLoading();
-    };
-  }, []);
-
-  useEffect(() => {
-    if (
-      !loading &&
-      products.length > 0
-    ) {
-      const params =
-        new URLSearchParams(
-          window.location.search
-        );
-
-      const targetId =
-        params.get('p') ||
-        params.get('product');
-
-      if (targetId) {
-        const targetProduct =
-          products.find(
-            (item) =>
-              String(item.id) ===
-              String(targetId)
-          );
-
-        if (
-          targetProduct &&
-          targetProduct.category
-        ) {
-          setExpandedCategories(
-            (previous) => ({
-              ...previous,
-              [targetProduct.category]:
-                true,
-            })
-          );
-        }
-
-        const scrollTimer =
-          window.setTimeout(() => {
-            const element =
-              document.getElementById(
-                `product-${targetId}`
-              );
-
-            if (element) {
-              element.scrollIntoView({
-                behavior: 'smooth',
-                block: 'center',
-              });
-            }
-          }, 300);
-
-        return () =>
-          window.clearTimeout(
-            scrollTimer
-          );
-      }
-    }
-  }, [loading, products]);
-
-  if (loading) {
-    return null;
-  }
+  const isHome =
+    !isUpdatePassword &&
+    !isSettings &&
+    !isCommunication &&
+    !isNotifications &&
+    !isAmbassadorView &&
+    !isOrdersView &&
+    (skeletonView === 'home' ||
+      (!skeletonView &&
+        !isProfilePath &&
+        pathname === '/'));
 
   return (
     <div
       style={{
-        backgroundColor: '#000',
-        width: '100%',
+        minHeight: '100vh',
+        backgroundColor: '#000000',
+        color: '#FFFFFF',
         boxSizing: 'border-box',
       }}
     >
-      {categories.map((category) => {
-        const categoryProducts =
-          products.filter(
-            (item) =>
-              item.category ===
-              category
-          );
+      <style>{`
+        @keyframes skeletonShimmer {
+          0% {
+            background-position: 200% 0;
+          }
+          100% {
+            background-position: -200% 0;
+          }
+        }
 
-        const isExpanded =
-          !!expandedCategories[
-            category
-          ];
+        @media (max-width: 767px) {
+          .home-skeleton-card {
+            width: 100vw !important;
+            min-width: 100vw !important;
+            padding: 0 15px !important;
+          }
+        }
 
-        return (
+        @media (min-width: 768px) {
+          .home-skeleton-card {
+            width: 300px;
+            min-width: 300px;
+            padding: 0 10px;
+          }
+        }
+      `}</style>
+
+      {isHome && (
+        <div
+          style={{
+            width: '100%',
+            backgroundColor: '#000',
+            boxSizing: 'border-box',
+          }}
+        >
           <div
-            key={category}
-            className="showroom-section"
             style={{
-              marginBottom:
-                '25px',
+              ...shimmerStyle,
+              height: '100vh',
+              width: '100%',
+              borderRadius: 0,
+            }}
+          />
+
+          <main
+            style={{
+              padding: '32px 15px',
+              boxSizing: 'border-box',
+            }}
+          >
+            {[1, 2].map((section) => (
+              <section
+                key={section}
+                style={{
+                  marginBottom: '25px',
+                }}
+              >
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: '0 15px 12px',
+                    borderBottom: '1px solid #141414',
+                    boxSizing: 'border-box',
+                  }}
+                >
+                  <div
+                    style={{
+                      ...shimmerStyle,
+                      width: '130px',
+                      height: '14px',
+                      borderRadius: '4px',
+                    }}
+                  />
+
+                  <div
+                    style={{
+                      ...shimmerStyle,
+                      width: '72px',
+                      height: '14px',
+                      borderRadius: '4px',
+                    }}
+                  />
+                </div>
+
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    overflow: 'hidden',
+                    width: '100%',
+                    boxSizing: 'border-box',
+                  }}
+                >
+                  {[1, 2, 3].map((card) => (
+                    <div
+                      key={card}
+                      className="home-skeleton-card"
+                      style={{
+                        boxSizing: 'border-box',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        flexShrink: 0,
+                      }}
+                    >
+                      <div
+                        style={{
+                          ...shimmerStyle,
+                          width: '100%',
+                          height: '270px',
+                          borderRadius: 0,
+                        }}
+                      />
+
+                      <div
+                        style={{
+                          marginTop: '15px',
+                          padding: '0 5px',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '12px',
+                        }}
+                      >
+                        <div
+                          style={{
+                            ...shimmerStyle,
+                            width: '70%',
+                            height: '15px',
+                            borderRadius: '4px',
+                          }}
+                        />
+
+                        <div
+                          style={{
+                            ...shimmerStyle,
+                            width: '92%',
+                            height: '12px',
+                            borderRadius: '4px',
+                          }}
+                        />
+
+                        <div
+                          style={{
+                            ...shimmerStyle,
+                            width: '82%',
+                            height: '12px',
+                            borderRadius: '4px',
+                          }}
+                        />
+
+                        <div
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            height: '42px',
+                            marginTop: '15px',
+                          }}
+                        >
+                          <div
+                            style={{
+                              ...shimmerStyle,
+                              width: '50px',
+                              height: '15px',
+                              borderRadius: '4px',
+                            }}
+                          />
+
+                          <div
+                            style={{
+                              ...shimmerStyle,
+                              width: '130px',
+                              height: '36px',
+                              borderRadius: 0,
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            ))}
+          </main>
+        </div>
+      )}
+
+      {isSettings && (
+        <div
+          style={{
+            maxWidth: '640px',
+            margin: '0 auto',
+            paddingTop: '52px',
+            padding: '52px 16px 20px',
+          }}
+        >
+          <div
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              zIndex: 998,
+              backgroundColor: '#000000',
+              borderBottom: '1px solid #1A1A1A',
+              padding: '14px 20px',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              boxSizing: 'border-box',
             }}
           >
             <div
               style={{
-                display: 'flex',
-                justifyContent:
-                  'space-between',
-                alignItems:
-                  'center',
-                padding:
-                  '0 15px 12px 15px',
-                borderBottom:
-                  '1px solid #141414',
+                ...shimmerStyle,
+                width: '96px',
+                height: '15px',
+                borderRadius: '4px',
               }}
-            >
-              <h3
-                style={{
-                  margin: 0,
-                  fontSize:
-                    '13px',
-                  letterSpacing:
-                    '3px',
-                  color:
-                    '#b3b3b3',
-                  textTransform:
-                    'uppercase',
-                }}
-              >
-                {category}
-              </h3>
-
-              <button
-                onClick={() =>
-                  setExpandedCategories(
-                    (
-                      previous
-                    ) => ({
-                      ...previous,
-                      [category]:
-                        !isExpanded,
-                    })
-                  )
-                }
-                style={{
-                  background:
-                    'none',
-                  border:
-                    'none',
-                  color:
-                    '#fff',
-                  fontSize:
-                    '11px',
-                  letterSpacing:
-                    '2px',
-                  cursor:
-                    'pointer',
-                  opacity:
-                    0.7,
-                  display:
-                    'flex',
-                  padding:
-                    0,
-                  alignItems:
-                    'center',
-                  width:
-                    '85px',
-                  justifyContent:
-                    'flex-end',
-                }}
-              >
-                <span>
-                  SEE&nbsp;
-                </span>
-                <span
-                  style={{
-                    display:
-                      'inline-block',
-                    width:
-                      '35px',
-                    textAlign:
-                      'left',
-                  }}
-                >
-                  {isExpanded
-                    ? 'LESS'
-                    : 'MORE'}
-                </span>
-              </button>
-            </div>
+            />
 
             <div
-              className="showroom-row-container"
               style={{
-                display:
-                  'flex',
-                alignItems:
-                  'flex-start',
-                flexWrap:
-                  isExpanded
-                    ? 'wrap'
-                    : 'nowrap',
-                width:
-                  '100%',
-                scrollSnapType:
-                  'x mandatory',
-                overflowX:
-                  'auto',
-                scrollBehavior:
-                  'smooth',
+                ...shimmerStyle,
+                width: '20px',
+                height: '20px',
+                borderRadius: '4px',
+              }}
+            />
+          </div>
+
+          {isAmbassadorMode && (
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'center',
+                marginBottom: '26px',
               }}
             >
-              {categoryProducts.map(
-                (
-                  product
-                ) => (
-                  <ProductCard
-                    key={
-                      product.id
-                    }
-                    product={
-                      product
-                    }
-                  />
-                )
-              )}
+              <div
+                style={{
+                  ...shimmerStyle,
+                  width: '76px',
+                  height: '76px',
+                  borderRadius: '50%',
+                }}
+              />
             </div>
+          )}
+
+          {[1, 2, 3].map((item) => (
+            <div key={item}>
+              <div
+                style={{
+                  ...shimmerStyle,
+                  width: item === 1 ? '54px' : '104px',
+                  height: '9px',
+                  borderRadius: '3px',
+                  marginBottom: '10px',
+                }}
+              />
+
+              <div
+                style={{
+                  ...shimmerStyle,
+                  width: item === 1 ? '62%' : '74%',
+                  height: '15px',
+                  borderRadius: '4px',
+                  marginBottom: '12px',
+                }}
+              />
+
+              <div
+                style={{
+                  height: '1px',
+                  backgroundColor: '#1E1E1E',
+                  marginBottom: '22px',
+                }}
+              />
+            </div>
+          ))}
+
+          {isAmbassadorMode && (
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '18px',
+              }}
+            >
+              {[1, 2, 3].map((item) => (
+                <div
+                  key={item}
+                  style={{
+                    ...shimmerStyle,
+                    width: `${120 + item * 18}px`,
+                    height: '14px',
+                    borderRadius: '4px',
+                  }}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {isCommunication && (
+        <div
+          style={{
+            maxWidth: '640px',
+            margin: '0 auto',
+            paddingTop: '58px',
+            paddingBottom: '76px',
+            minHeight: '100vh',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            boxSizing: 'border-box',
+          }}
+        >
+          {renderSubViewTopBarSkeleton(false)}
+
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px',
+              marginTop: '12px',
+              padding: '0 16px',
+            }}
+          >
+            {[1, 2, 3].map((item) => (
+              <div
+                key={item}
+                style={{
+                  ...shimmerStyle,
+                  width: item === 2 ? '62%' : '68%',
+                  height: item === 1 ? '46px' : '38px',
+                  borderRadius: '14px',
+                  alignSelf:
+                    item === 2
+                      ? 'flex-end'
+                      : 'flex-start',
+                }}
+              />
+            ))}
           </div>
-        );
-      })}
 
-      <style>{`
-        @keyframes swapFadeIn {
-          from {
-            opacity: 0;
-            transform:
-              translateY(1px);
-          }
-          to {
-            opacity: 1;
-            transform:
-              translateY(0);
-          }
-        }
+          <div
+            style={{
+              position: 'fixed',
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: '#000000',
+              borderTop: '1px solid #18181B',
+              padding: '10px 14px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              boxSizing: 'border-box',
+            }}
+          >
+            <div
+              style={{
+                ...shimmerStyle,
+                flex: 1,
+                height: '42px',
+                borderRadius: '22px',
+              }}
+            />
 
-        .variant-scroll-container::-webkit-scrollbar {
-          display:
-            none;
-        }
+            <div
+              style={{
+                ...shimmerStyle,
+                width: '42px',
+                height: '42px',
+                borderRadius: '50%',
+                flexShrink: 0,
+              }}
+            />
+          </div>
+        </div>
+      )}
 
-        .variant-scroll-container {
-          -ms-overflow-style:
-            none;
-          scrollbar-width:
-            none;
-        }
+      {isNotifications && (
+        <div
+          style={{
+            maxWidth: '640px',
+            margin: '0 auto',
+            paddingTop: '62px',
+            paddingLeft: '16px',
+            paddingRight: '16px',
+          }}
+        >
+          {renderSubViewTopBarSkeleton(true)}
 
-        @media
-          (max-width: 767px) {
-          .showroom-section {
-            margin-left:
-              calc(-50vw + 50%);
-            margin-right:
-              calc(-50vw + 50%);
-            width:
-              100vw;
-          }
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px',
+              marginTop: '10px',
+            }}
+          >
+            {[1, 2, 3, 4].map((item) => (
+              <div
+                key={item}
+                style={{
+                  backgroundColor: '#0A0A0B',
+                  border: '1px solid #18181B',
+                  borderRadius: '12px',
+                  padding: '14px',
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '12px',
+                }}
+              >
+                <div
+                  style={{
+                    ...shimmerStyle,
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '50%',
+                    flexShrink: 0,
+                  }}
+                />
 
-          .showroom-card-item {
-            width:
-              100vw !important;
-            min-width:
-              100vw !important;
-            padding:
-              0 15px !important;
-          }
-        }
+                <div
+                  style={{
+                    flex: 1,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '7px',
+                  }}
+                >
+                  <div
+                    style={{
+                      ...shimmerStyle,
+                      width: '54%',
+                      height: '13px',
+                      borderRadius: '4px',
+                    }}
+                  />
 
-        @media
-          (min-width: 768px) {
-          .showroom-section {
-            padding:
-              0 15px;
-          }
+                  <div
+                    style={{
+                      ...shimmerStyle,
+                      width: '88%',
+                      height: '11px',
+                      borderRadius: '4px',
+                    }}
+                  />
 
-          .showroom-card-item {
-            width:
-              300px;
-            min-width:
-              300px;
-            padding:
-              0 10px;
-            margin-bottom:
-              25px;
-          }
-        }
+                  <div
+                    style={{
+                      ...shimmerStyle,
+                      width: '64%',
+                      height: '11px',
+                      borderRadius: '4px',
+                    }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
-        .showroom-row-container::-webkit-scrollbar {
-          display:
-            none;
-        }
-      `}</style>
+      {isAmbassadorView && (
+        <div
+          style={{
+            maxWidth: '640px',
+            margin: '0 auto',
+            paddingTop: '54px',
+          }}
+        >
+          {renderProfileHeaderSkeleton(true)}
+
+          {[1, 2].map((item) => (
+            <div
+              key={item}
+              style={{
+                margin: '18px 16px',
+                backgroundColor: '#0A0A0B',
+                border: '1px solid #1A1A1D',
+                borderRadius: '14px',
+                padding: '16px',
+              }}
+            >
+              <div
+                style={{
+                  ...shimmerStyle,
+                  width: '62%',
+                  height: '12px',
+                  borderRadius: '4px',
+                  marginBottom: '14px',
+                }}
+              />
+
+              <div
+                style={{
+                  ...shimmerStyle,
+                  width: '88%',
+                  height: '10px',
+                  borderRadius: '4px',
+                  marginBottom: '10px',
+                }}
+              />
+
+              <div
+                style={{
+                  ...shimmerStyle,
+                  width: '48%',
+                  height: '10px',
+                  borderRadius: '4px',
+                }}
+              />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {isOrdersView && (
+        <div
+          style={{
+            maxWidth: '720px',
+            margin: '0 auto',
+            paddingTop: '54px',
+            paddingLeft: '16px',
+            paddingRight: '16px',
+          }}
+        >
+          {renderProfileHeaderSkeleton(false)}
+
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              borderBottom: '1px solid #17171A',
+              paddingBottom: '12px',
+              marginTop: '18px',
+              marginBottom: '18px',
+            }}
+          >
+            <div
+              style={{
+                ...shimmerStyle,
+                width: '122px',
+                height: '11px',
+                borderRadius: '4px',
+              }}
+            />
+
+            <div
+              style={{
+                ...shimmerStyle,
+                width: '60px',
+                height: '11px',
+                borderRadius: '4px',
+              }}
+            />
+          </div>
+
+          {[1, 2].map((orderCard) => (
+            <div
+              key={orderCard}
+              style={{
+                backgroundColor: '#070708',
+                border: '1px solid #1D1D20',
+                borderRadius: '10px',
+                padding: '18px',
+                marginBottom: '18px',
+              }}
+            >
+              {[1, 2, 3].map((line) => (
+                <div
+                  key={line}
+                  style={{
+                    ...shimmerStyle,
+                    width:
+                      line === 1
+                        ? '126px'
+                        : line === 2
+                          ? '68%'
+                          : '48%',
+                    height:
+                      line === 1
+                        ? '10px'
+                        : '12px',
+                    borderRadius: '4px',
+                    marginBottom: '14px',
+                  }}
+                />
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {isUpdatePassword && (
+        <div
+          style={{
+            maxWidth: '400px',
+            margin: '100px auto',
+          }}
+        >
+          <div
+            style={{
+              ...shimmerStyle,
+              height: '300px',
+              width: '100%',
+            }}
+          />
+        </div>
+      )}
     </div>
   );
-}
+};
