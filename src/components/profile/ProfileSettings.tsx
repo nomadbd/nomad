@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, RefObject } from 'react';
+import { useState, useEffect, useRef, RefObject, CSSProperties } from 'react';
 import { isUserSubscribed, subscribeUserToPush, unsubscribeUserFromPush } from '@/utils/pushManager';
 import { isReservedSlug } from '@/reservedSlugs';
 
@@ -42,6 +42,7 @@ interface ProfileSettingsProps {
     password?: string;
   };
   clearFieldError?: (field: 'name' | 'email' | 'slug' | 'payoutNumber' | 'password') => void;
+  loading?: boolean;
 }
 
 const LoadingDots = ({ dotSize = '3.5px', gap = '3px' }: { dotSize?: string; gap?: string }) => (
@@ -88,6 +89,127 @@ const LoadingDots = ({ dotSize = '3.5px', gap = '3px' }: { dotSize?: string; gap
   </span>
 );
 
+function ProfileSettingsSkeleton({ isAmbassadorActive }: { isAmbassadorActive: boolean }) {
+  const shimmerStyle: CSSProperties = {
+    backgroundColor: '#3E3E3E',
+    backgroundImage:
+      'linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.16) 50%, rgba(255,255,255,0) 100%)',
+    backgroundSize: '200% 100%',
+    animation: 'fbSettingsShimmer 1.35s ease-in-out infinite',
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+      <style>{`
+        @keyframes fbSettingsShimmer {
+          0% {
+            background-position: 200% 0;
+          }
+          100% {
+            background-position: -200% 0;
+          }
+        }
+      `}</style>
+
+      {isAmbassadorActive && (
+        <div
+          style={{
+            marginBottom: '24px',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+        >
+          <div
+            style={{
+              ...shimmerStyle,
+              width: '76px',
+              height: '76px',
+              borderRadius: '50%',
+            }}
+          />
+        </div>
+      )}
+
+      {/* NAME field */}
+      <div style={{ ...shimmerStyle, height: '9px', width: '54px', borderRadius: '3px', marginBottom: '8px' }} />
+      <div style={{ ...shimmerStyle, height: '14px', width: '68%', borderRadius: '4px', marginBottom: '22px' }} />
+
+      {/* EMAIL ADDRESS field */}
+      <div style={{ ...shimmerStyle, height: '9px', width: '98px', borderRadius: '3px', marginBottom: '8px' }} />
+      <div style={{ ...shimmerStyle, height: '14px', width: '78%', borderRadius: '4px', marginBottom: '22px' }} />
+
+      {isAmbassadorActive && (
+        <>
+          {/* STORE SLUG */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+            <div style={{ ...shimmerStyle, height: '9px', width: '84px', borderRadius: '3px' }} />
+            <div style={{ ...shimmerStyle, height: '9px', width: '64px', borderRadius: '3px' }} />
+          </div>
+          <div style={{ ...shimmerStyle, height: '14px', width: '56%', borderRadius: '4px', marginBottom: '22px' }} />
+
+          {/* PAYOUT METHOD pills */}
+          <div style={{ ...shimmerStyle, height: '9px', width: '136px', borderRadius: '3px', marginBottom: '10px' }} />
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '22px' }}>
+            {[74, 72, 76, 68].map((w, idx) => (
+              <div
+                key={idx}
+                style={{
+                  ...shimmerStyle,
+                  height: '28px',
+                  width: `${w}px`,
+                  borderRadius: '20px',
+                  flexShrink: 0,
+                }}
+              />
+            ))}
+          </div>
+
+          {/* PAYOUT NUMBER */}
+          <div style={{ ...shimmerStyle, height: '9px', width: '104px', borderRadius: '3px', marginBottom: '8px' }} />
+          <div style={{ ...shimmerStyle, height: '14px', width: '60%', borderRadius: '4px', marginBottom: '22px' }} />
+
+          {/* REAL-TIME SALES ALERTS card */}
+          <div style={{ ...shimmerStyle, height: '9px', width: '132px', borderRadius: '3px', marginBottom: '8px' }} />
+          <div
+            style={{
+              background: '#111111',
+              border: '1px solid #222222',
+              padding: '12px 14px',
+              borderRadius: '6px',
+              marginBottom: '20px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
+            <div style={{ ...shimmerStyle, height: '12px', width: '128px', borderRadius: '4px' }} />
+            <div style={{ ...shimmerStyle, height: '26px', width: '82px', borderRadius: '16px' }} />
+          </div>
+        </>
+      )}
+
+      {/* Action rows */}
+      <div
+        style={{
+          borderTop: isAmbassadorActive ? '1px solid #1C1C1E' : 'none',
+          paddingTop: '16px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '14px',
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0' }}>
+          <div style={{ ...shimmerStyle, height: '11px', width: '132px', borderRadius: '4px' }} />
+          <div style={{ ...shimmerStyle, height: '12px', width: '10px', borderRadius: '3px' }} />
+        </div>
+        <div style={{ ...shimmerStyle, height: '11px', width: '72px', borderRadius: '4px', marginTop: '4px' }} />
+        <div style={{ ...shimmerStyle, height: '10px', width: '104px', borderRadius: '4px', marginTop: '6px' }} />
+      </div>
+    </div>
+  );
+}
+
 export default function ProfileSettings({
   profile,
   avatarUrl,
@@ -121,6 +243,7 @@ export default function ProfileSettings({
   clearSettingsFeedback,
   fieldErrors = {},
   clearFieldError,
+  loading = false,
 }: ProfileSettingsProps) {
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushLoading, setPushLoading] = useState(true);
@@ -424,7 +547,7 @@ export default function ProfileSettings({
     await Promise.resolve(handleUpdate());
   };
 
-  const showSaveButton = isDirty || isSaving;
+  const showSaveButton = !loading && Boolean(profile) && (isDirty || isSaving);
   const nameError = localFieldErrors.name || fieldErrors.name;
   const emailError = localFieldErrors.email || fieldErrors.email;
 
@@ -533,275 +656,280 @@ export default function ProfileSettings({
         paddingBottom: '40px',
         WebkitOverflowScrolling: 'touch',
       }}>
-
-        {isAmbassadorActive && (
-          <div style={{
-            marginBottom: '24px',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}>
-            <button
-              type="button"
-              disabled={uploadingAvatar}
-              onClick={openAvatarSheet}
-              aria-label="Profile picture options"
-              style={{
-                width: '76px',
-                height: '76px',
-                borderRadius: '50%',
-                backgroundColor: '#111111',
-                border: '1px solid #333333',
-                overflow: 'hidden',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontWeight: '600',
-                color: '#FFFFFF',
-                padding: 0,
-                cursor: uploadingAvatar ? 'wait' : 'pointer',
-                opacity: uploadingAvatar ? 0.7 : 1,
-                flexShrink: 0
-              }}
-            >
-              {uploadingAvatar ? (
-                <LoadingDots dotSize="4px" gap="3.5px" />
-              ) : avatarUrl ? (
-                <img src={avatarUrl} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              ) : (
-                <span style={{ fontSize: '20px', fontWeight: '500' }}>{getInitials(profile?.name, profile?.email)}</span>
-              )}
-            </button>
-
-            {avatarFeedback && (
-              <p style={{
-                margin: '8px 0 0 0',
-                fontSize: '11px',
-                color: avatarFeedback.type === 'success' ? '#4ADE80' : '#F87171',
-                letterSpacing: '0.4px',
-                textAlign: 'center'
-              }}>
-                {avatarFeedback.text}
-              </p>
-            )}
-          </div>
-        )}
-
-        <p style={labelStyle}>NAME</p>
-        <input
-          placeholder={profile?.name || "Full Name"}
-          value={newName}
-          onChange={(e) => {
-            setNewName(e.target.value);
-            clearFieldError?.('name');
-            clearSettingsFeedback?.();
-            setLocalFieldErrors((prev) => ({ ...prev, name: undefined }));
-          }}
-          style={getInputStyle(Boolean(nameError))}
-        />
-        {nameError && <p style={inlineErrorStyle}>{nameError}</p>}
-
-        <p style={labelStyle}>EMAIL ADDRESS</p>
-        <input
-          placeholder={profile?.email || "Email Address"}
-          value={newEmail}
-          onChange={(e) => {
-            setNewEmail(e.target.value);
-            clearFieldError?.('email');
-            clearSettingsFeedback?.();
-            setLocalFieldErrors((prev) => ({ ...prev, email: undefined }));
-          }}
-          style={getInputStyle(Boolean(emailError))}
-        />
-        {emailError && <p style={inlineErrorStyle}>{emailError}</p>}
-
-        {isAmbassadorActive && (
+        {loading || !profile ? (
+          <ProfileSettingsSkeleton isAmbassadorActive={isAmbassadorActive} />
+        ) : (
           <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <p style={labelStyle}>STORE SLUG</p>
-              <span style={{ fontSize: '10px', color: '#888888', marginBottom: '4px' }}>/{activeSlug}</span>
-            </div>
-            <input
-              placeholder={currentSlug || "slug-name"}
-              value={newSlug}
-              onChange={(e) => {
-                const formattedSlug = e.target.value
-                  .toLowerCase()
-                  .replace(/\s+/g, '-')
-                  .replace(/[^a-z0-9-]/g, '');
-                setNewSlug(formattedSlug);
-                clearFieldError?.('slug');
-                clearSettingsFeedback?.();
-              }}
-              style={getInputStyle(
-                Boolean(
-                  fieldErrors.slug ||
-                  (newSlug && (isReservedSlug(newSlug) || newSlug.length < 3))
-                )
-              )}
-            />
-
-            {fieldErrors.slug ? (
-              <p style={inlineErrorStyle}>{fieldErrors.slug}</p>
-            ) : newSlug && isReservedSlug(newSlug) ? (
-              <p style={inlineErrorStyle}>
-                This name is reserved by system. Please choose another.
-              </p>
-            ) : newSlug && !isReservedSlug(newSlug) && newSlug.length < 3 ? (
-              <p style={inlineErrorStyle}>
-                Slug must be at least 3 characters long.
-              </p>
-            ) : null}
-
-            <p style={labelStyle}>DEFAULT PAYOUT METHOD</p>
-            <div style={{
-              display: 'flex',
-              gap: '8px',
-              overflowX: 'auto',
-              paddingBottom: '6px',
-              marginBottom: '16px',
-              scrollbarWidth: 'none'
-            }}>
-              {payoutOptions.map((option) => {
-                const isSelected = Boolean(payoutMethod) && (payoutMethod === option || payoutMethod.startsWith(option));
-                return (
-                  <button
-                    key={option}
-                    type="button"
-                    onClick={() => {
-                      setPayoutMethod(option);
-                      clearSettingsFeedback?.();
-                    }}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      padding: '6px 14px',
-                      borderRadius: '20px',
-                      background: isSelected ? '#1A1A1A' : 'transparent',
-                      color: '#FFFFFF',
-                      border: isSelected ? '1px solid #FFFFFF' : '1px solid #222222',
-                      fontSize: '11px',
-                      fontWeight: isSelected ? '500' : '400',
-                      letterSpacing: '1px',
-                      whiteSpace: 'nowrap',
-                      cursor: 'pointer',
-                      transition: 'all 0.15s ease',
-                      opacity: isSelected ? 1 : 0.6,
-                      flexShrink: 0
-                    }}
-                  >
-                    <span style={{
-                      width: '5px',
-                      height: '5px',
-                      borderRadius: '50%',
-                      background: isSelected ? '#FFFFFF' : 'transparent',
-                      border: isSelected ? '1px solid #FFFFFF' : '1px solid #666666'
-                    }} />
-                    {option}
-                  </button>
-                );
-              })}
-            </div>
-
-            <p style={labelStyle}>PAYOUT NUMBER</p>
-            <input
-              placeholder={cleanPayoutNumber(currentPayoutDetails) || "017XXXXXXXX"}
-              value={newPayoutNumber}
-              onChange={(e) => {
-                setNewPayoutNumber(e.target.value);
-                clearFieldError?.('payoutNumber');
-                clearSettingsFeedback?.();
-              }}
-              style={getInputStyle(Boolean(fieldErrors.payoutNumber))}
-            />
-            {fieldErrors.payoutNumber && <p style={inlineErrorStyle}>{fieldErrors.payoutNumber}</p>}
-
-            <p style={labelStyle}>REAL-TIME SALES ALERTS</p>
-            <div style={{
-              background: '#111111',
-              border: '1px solid #222222',
-              padding: '12px 14px',
-              borderRadius: '6px',
-              marginBottom: '20px'
-            }}>
+            {isAmbassadorActive && (
               <div style={{
+                marginBottom: '24px',
                 display: 'flex',
+                flexDirection: 'column',
                 alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: '12px'
+                justifyContent: 'center'
               }}>
-                <span style={{ fontSize: '12px', color: '#FFFFFF', letterSpacing: '0.3px' }}>
-                  Sales & admin alerts
-                </span>
                 <button
                   type="button"
-                  disabled={pushLoading}
-                  onClick={handlePushToggle}
+                  disabled={uploadingAvatar}
+                  onClick={openAvatarSheet}
+                  aria-label="Profile picture options"
                   style={{
-                    minWidth: '82px',
-                    height: '26px',
-                    padding: '0 14px',
-                    borderRadius: '16px',
-                    background: pushLoading
-                      ? (pushEnabled ? '#262626' : '#E5E5E5')
-                      : (pushEnabled ? 'transparent' : '#FFFFFF'),
-                    color: pushLoading
-                      ? (pushEnabled ? '#FFFFFF' : '#000000')
-                      : (pushEnabled ? '#FFFFFF' : '#000000'),
-                    border: pushEnabled ? '1px solid #3A3A3C' : '1px solid #FFFFFF',
-                    fontSize: '10px',
-                    fontWeight: '700',
-                    letterSpacing: '1px',
-                    cursor: pushLoading ? 'wait' : 'pointer',
-                    transition: 'background 0.15s ease, color 0.15s ease, border-color 0.15s ease',
-                    display: 'inline-flex',
+                    width: '76px',
+                    height: '76px',
+                    borderRadius: '50%',
+                    backgroundColor: '#111111',
+                    border: '1px solid #333333',
+                    overflow: 'hidden',
+                    display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    flexShrink: 0,
-                    boxSizing: 'border-box'
+                    fontWeight: '600',
+                    color: '#FFFFFF',
+                    padding: 0,
+                    cursor: uploadingAvatar ? 'wait' : 'pointer',
+                    opacity: uploadingAvatar ? 0.7 : 1,
+                    flexShrink: 0
                   }}
                 >
-                  {pushLoading ? <LoadingDots /> : (pushEnabled ? 'DISABLE' : 'ENABLE')}
+                  {uploadingAvatar ? (
+                    <LoadingDots dotSize="4px" gap="3.5px" />
+                  ) : avatarUrl ? (
+                    <img src={avatarUrl} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <span style={{ fontSize: '20px', fontWeight: '500' }}>{getInitials(profile?.name, profile?.email)}</span>
+                  )}
                 </button>
-              </div>
 
-              {pushStatus && (
-                <p style={{
-                  margin: '8px 0 0 0',
-                  fontSize: '11px',
-                  color: pushStatus.type === 'success' ? '#4ADE80' : '#F87171',
-                  letterSpacing: '0.3px'
+                {avatarFeedback && (
+                  <p style={{
+                    margin: '8px 0 0 0',
+                    fontSize: '11px',
+                    color: avatarFeedback.type === 'success' ? '#4ADE80' : '#F87171',
+                    letterSpacing: '0.4px',
+                    textAlign: 'center'
+                  }}>
+                    {avatarFeedback.text}
+                  </p>
+                )}
+              </div>
+            )}
+
+            <p style={labelStyle}>NAME</p>
+            <input
+              placeholder={profile?.name || "Full Name"}
+              value={newName}
+              onChange={(e) => {
+                setNewName(e.target.value);
+                clearFieldError?.('name');
+                clearSettingsFeedback?.();
+                setLocalFieldErrors((prev) => ({ ...prev, name: undefined }));
+              }}
+              style={getInputStyle(Boolean(nameError))}
+            />
+            {nameError && <p style={inlineErrorStyle}>{nameError}</p>}
+
+            <p style={labelStyle}>EMAIL ADDRESS</p>
+            <input
+              placeholder={profile?.email || "Email Address"}
+              value={newEmail}
+              onChange={(e) => {
+                setNewEmail(e.target.value);
+                clearFieldError?.('email');
+                clearSettingsFeedback?.();
+                setLocalFieldErrors((prev) => ({ ...prev, email: undefined }));
+              }}
+              style={getInputStyle(Boolean(emailError))}
+            />
+            {emailError && <p style={inlineErrorStyle}>{emailError}</p>}
+
+            {isAmbassadorActive && (
+              <>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <p style={labelStyle}>STORE SLUG</p>
+                  <span style={{ fontSize: '10px', color: '#888888', marginBottom: '4px' }}>/{activeSlug}</span>
+                </div>
+                <input
+                  placeholder={currentSlug || "slug-name"}
+                  value={newSlug}
+                  onChange={(e) => {
+                    const formattedSlug = e.target.value
+                      .toLowerCase()
+                      .replace(/\s+/g, '-')
+                      .replace(/[^a-z0-9-]/g, '');
+                    setNewSlug(formattedSlug);
+                    clearFieldError?.('slug');
+                    clearSettingsFeedback?.();
+                  }}
+                  style={getInputStyle(
+                    Boolean(
+                      fieldErrors.slug ||
+                      (newSlug && (isReservedSlug(newSlug) || newSlug.length < 3))
+                    )
+                  )}
+                />
+
+                {fieldErrors.slug ? (
+                  <p style={inlineErrorStyle}>{fieldErrors.slug}</p>
+                ) : newSlug && isReservedSlug(newSlug) ? (
+                  <p style={inlineErrorStyle}>
+                    This name is reserved by system. Please choose another.
+                  </p>
+                ) : newSlug && !isReservedSlug(newSlug) && newSlug.length < 3 ? (
+                  <p style={inlineErrorStyle}>
+                    Slug must be at least 3 characters long.
+                  </p>
+                ) : null}
+
+                <p style={labelStyle}>DEFAULT PAYOUT METHOD</p>
+                <div style={{
+                  display: 'flex',
+                  gap: '8px',
+                  overflowX: 'auto',
+                  paddingBottom: '6px',
+                  marginBottom: '16px',
+                  scrollbarWidth: 'none'
                 }}>
-                  {pushStatus.text}
-                </p>
-              )}
+                  {payoutOptions.map((option) => {
+                    const isSelected = Boolean(payoutMethod) && (payoutMethod === option || payoutMethod.startsWith(option));
+                    return (
+                      <button
+                        key={option}
+                        type="button"
+                        onClick={() => {
+                          setPayoutMethod(option);
+                          clearSettingsFeedback?.();
+                        }}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          padding: '6px 14px',
+                          borderRadius: '20px',
+                          background: isSelected ? '#1A1A1A' : 'transparent',
+                          color: '#FFFFFF',
+                          border: isSelected ? '1px solid #FFFFFF' : '1px solid #222222',
+                          fontSize: '11px',
+                          fontWeight: isSelected ? '500' : '400',
+                          letterSpacing: '1px',
+                          whiteSpace: 'nowrap',
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease',
+                          opacity: isSelected ? 1 : 0.6,
+                          flexShrink: 0
+                        }}
+                      >
+                        <span style={{
+                          width: '5px',
+                          height: '5px',
+                          borderRadius: '50%',
+                          background: isSelected ? '#FFFFFF' : 'transparent',
+                          border: isSelected ? '1px solid #FFFFFF' : '1px solid #666666'
+                        }} />
+                        {option}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <p style={labelStyle}>PAYOUT NUMBER</p>
+                <input
+                  placeholder={cleanPayoutNumber(currentPayoutDetails) || "017XXXXXXXX"}
+                  value={newPayoutNumber}
+                  onChange={(e) => {
+                    setNewPayoutNumber(e.target.value);
+                    clearFieldError?.('payoutNumber');
+                    clearSettingsFeedback?.();
+                  }}
+                  style={getInputStyle(Boolean(fieldErrors.payoutNumber))}
+                />
+                {fieldErrors.payoutNumber && <p style={inlineErrorStyle}>{fieldErrors.payoutNumber}</p>}
+
+                <p style={labelStyle}>REAL-TIME SALES ALERTS</p>
+                <div style={{
+                  background: '#111111',
+                  border: '1px solid #222222',
+                  padding: '12px 14px',
+                  borderRadius: '6px',
+                  marginBottom: '20px'
+                }}>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '12px'
+                  }}>
+                    <span style={{ fontSize: '12px', color: '#FFFFFF', letterSpacing: '0.3px' }}>
+                      Sales & admin alerts
+                    </span>
+                    <button
+                      type="button"
+                      disabled={pushLoading}
+                      onClick={handlePushToggle}
+                      style={{
+                        minWidth: '82px',
+                        height: '26px',
+                        padding: '0 14px',
+                        borderRadius: '16px',
+                        background: pushLoading
+                          ? (pushEnabled ? '#262626' : '#E5E5E5')
+                          : (pushEnabled ? 'transparent' : '#FFFFFF'),
+                        color: pushLoading
+                          ? (pushEnabled ? '#FFFFFF' : '#000000')
+                          : (pushEnabled ? '#FFFFFF' : '#000000'),
+                        border: pushEnabled ? '1px solid #3A3A3C' : '1px solid #FFFFFF',
+                        fontSize: '10px',
+                        fontWeight: '700',
+                        letterSpacing: '1px',
+                        cursor: pushLoading ? 'wait' : 'pointer',
+                        transition: 'background 0.15s ease, color 0.15s ease, border-color 0.15s ease',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                        boxSizing: 'border-box'
+                      }}
+                    >
+                      {pushLoading ? <LoadingDots /> : (pushEnabled ? 'DISABLE' : 'ENABLE')}
+                    </button>
+                  </div>
+
+                  {pushStatus && (
+                    <p style={{
+                      margin: '8px 0 0 0',
+                      fontSize: '11px',
+                      color: pushStatus.type === 'success' ? '#4ADE80' : '#F87171',
+                      letterSpacing: '0.3px'
+                    }}>
+                      {pushStatus.text}
+                    </p>
+                  )}
+                </div>
+              </>
+            )}
+
+            <div style={{
+              borderTop: isAmbassadorActive ? '1px solid #1C1C1E' : 'none',
+              paddingTop: '16px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '8px'
+            }}>
+              <button
+                type="button"
+                onClick={openPasswordSheet}
+                style={navButtonStyle}
+              >
+                <span>CHANGE PASSWORD</span>
+                <span style={{ fontSize: '14px', color: '#888888' }}>›</span>
+              </button>
+
+              <button onClick={handleSignOut} style={navButtonStyle}>
+                <span>SIGN OUT</span>
+              </button>
+              <button onClick={() => setShowConfirm(true)} style={actionButtonStyle}>DELETE ACCOUNT</button>
             </div>
           </>
         )}
-
-        <div style={{
-          borderTop: isAmbassadorActive ? '1px solid #1C1C1E' : 'none',
-          paddingTop: '16px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '8px'
-        }}>
-          <button
-            type="button"
-            onClick={openPasswordSheet}
-            style={navButtonStyle}
-          >
-            <span>CHANGE PASSWORD</span>
-            <span style={{ fontSize: '14px', color: '#888888' }}>›</span>
-          </button>
-
-          <button onClick={handleSignOut} style={navButtonStyle}>
-            <span>SIGN OUT</span>
-          </button>
-          <button onClick={() => setShowConfirm(true)} style={actionButtonStyle}>DELETE ACCOUNT</button>
-        </div>
       </div>
 
       {/* ===== AVATAR ACTION BOTTOM SHEET ===== */}
