@@ -41,6 +41,7 @@ export default function CommunicationView({ userId, userEmail, onBack }: Communi
   };
 
   useEffect(() => {
+    setIsPageLoading(true, { view: 'communication', isAmbassador: true });
     return () => {
       setIsPageLoading(false);
     };
@@ -98,7 +99,11 @@ export default function CommunicationView({ userId, userEmail, onBack }: Communi
   };
 
   const fetchMessages = async () => {
-    if (!userId) return;
+    if (!userId) {
+      setLoading(false);
+      setIsPageLoading(false);
+      return;
+    }
 
     try {
       setLoading(true);
@@ -124,7 +129,11 @@ export default function CommunicationView({ userId, userEmail, onBack }: Communi
   };
 
   useEffect(() => {
-    if (!userId) return;
+    if (!userId) {
+      setLoading(false);
+      setIsPageLoading(false);
+      return;
+    }
 
     fetchMessages();
 
