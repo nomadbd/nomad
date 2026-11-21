@@ -13,6 +13,8 @@ import ImageCropModal from '../components/ui/ImageCropModal';
 import AmbassadorDashboard from '../components/ambassador/dashboard/AmbassadorDashboard';
 import { useAmbassador } from '../hooks/useAmbassador';
 
+type ProfileViewType = 'profile' | 'settings' | 'notifications' | 'communication';
+
 function AmbassadorDashboardSection({ ambassadorData, profile }: { ambassadorData: any; profile: any }) {
   const ambassadorState = useAmbassador(ambassadorData);
 
@@ -30,18 +32,36 @@ function AmbassadorDashboardSection({ ambassadorData, profile }: { ambassadorDat
 
 const stripQueryParams = (url: string) => url.split('?')[0];
 
+const resolveSkeletonViewForState = (
+  targetView: ProfileViewType,
+  targetAmbassadorActive: boolean
+): SkeletonViewType => {
+  if (targetView === 'settings') return 'settings';
+  if (targetView === 'notifications') return 'notifications';
+  if (targetView === 'communication') return 'communication';
+  return targetAmbassadorActive ? 'ambassador' : 'orders';
+};
+
 export default function ProfilePage() {
   const navigate = useNavigate();
   const { setIsPageLoading } = useGlobalLoading();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const [view, setView] = useState<'profile' | 'settings' | 'notifications' | 'communication'>(() => {
-    return (localStorage.getItem('currentView') as any) || 'profile';
-  });
+  const initialView: ProfileViewType = (() => {
+    const saved = localStorage.getItem('currentView') as ProfileViewType | null;
+    if (saved === 'settings' || saved === 'notifications' || saved === 'communication' || saved === 'profile') {
+      return saved;
+    }
+    return 'profile';
+  })();
 
-  const [portalMode, setPortalMode] = useState<'customer' | 'ambassador'>(() => {
-    return (localStorage.getItem('portalMode') as 'customer' | 'ambassador') || 'customer';
-  });
+  const initialPortalMode: 'customer' | 'ambassador' = (() => {
+    const saved = localStorage.getItem('portalMode');
+    return saved === 'ambassador' ? 'ambassador' : 'customer';
+  })();
+
+  const [view, setView] = useState<ProfileViewType>(initialView);
+  const [portalMode, setPortalMode] = useState<'customer' | 'ambassador'>(initialPortalMode);
 
   const [isDetailsSheetOpen, setIsDetailsSheetOpen] = useState(false);
 
@@ -88,33 +108,32 @@ export default function ProfilePage() {
   const [selectedImageSrc, setSelectedImageSrc] = useState<string | null>(null);
 
   const isAmbassador = String(profile?.role).toUpperCase().trim() === 'AMBASSADOR';
-  const isAmbassadorActive = isAmbassador && portalMode === 'ambassador';
+  const isAmbassadorActive = profile
+    ? isAmbassador && portalMode === 'ambassador'
+    : initialPortalMode === 'ambassador';
   const isAnyLoading = loading || viewSwitching;
 
-  const resolveSkeletonView = useCallback(
-    (targetView: 'profile' | 'settings' | 'notifications' | 'communication', targetAmbassadorActive: boolean): SkeletonViewType => {
-      if (targetView === 'settings') return 'settings';
-      if (targetView === 'notifications') return 'notifications';
-      if (targetView === 'communication') return 'communication';
-      return targetAmbassadorActive ? 'ambassador' : 'orders';
+  const syncGlobalSkeleton = useCallback(
+    (
+      active: boolean,
+      targetView: ProfileViewType,
+      targetAmbassadorActive: boolean
+    ) => {
+      if (active) {
+        setIsPageLoading(true, {
+          view: resolveSkeletonViewForState(targetView, targetAmbassadorActive),
+          isAmbassador: targetAmbassadorActive,
+        });
+      } else {
+        setIsPageLoading(false);
+      }
     },
-    []
+    [setIsPageLoading]
   );
 
-  const getActiveSkeletonView = useCallback((): SkeletonViewType => {
-    return resolveSkeletonView(view, isAmbassadorActive);
-  }, [view, isAmbassadorActive, resolveSkeletonView]);
-
   useEffect(() => {
-    if (isAnyLoading) {
-      setIsPageLoading(true, {
-        view: getActiveSkeletonView(),
-        isAmbassador: isAmbassadorActive,
-      });
-    } else {
-      setIsPageLoading(false);
-    }
-  }, [isAnyLoading, getActiveSkeletonView, isAmbassadorActive, setIsPageLoading]);
+    syncGlobalSkeleton(isAnyLoading, view, isAmbassadorActive);
+  }, [isAnyLoading, view, isAmbassadorActive, syncGlobalSkeleton]);
 
   useEffect(() => {
     return () => {
@@ -130,22 +149,14 @@ export default function ProfilePage() {
     return () => clearTimeout(timer);
   }, [viewSwitching, view, portalMode]);
 
-  const changeView = (newView: 'profile' | 'settings' | 'notifications' | 'communication') => {
-    const nextSkeletonView = resolveSkeletonView(newView, isAmbassadorActive);
+  const changeView = (newView: ProfileViewType) => {
     setViewSwitching(true);
-    setIsPageLoading(true, {
-      view: nextSkeletonView,
-      isAmbassador: isAmbassadorActive,
-    });
     setView(newView);
     localStorage.setItem('currentView', newView);
     setSettingsFeedback(null);
     setFieldErrors({});
+    syncGlobalSkeleton(true, newView, isAmbassadorActive);
   };
-
-  useEffect(() => {
-    fetchUserData();
-  }, []);
 
   const fetchUnreadCounts = useCallback(async () => {
     if (!profile?.id) return;
@@ -241,12 +252,9 @@ export default function ProfilePage() {
     return 'U';
   };
 
-  const fetchUserData = async () => {
+  const fetchUserData = useCallback(async () => {
     setLoading(true);
-    setIsPageLoading(true, {
-      view: getActiveSkeletonView(),
-      isAmbassador: isAmbassadorActive,
-    });
+    syncGlobalSkeleton(true, view, isAmbassadorActive);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
@@ -326,9 +334,12 @@ export default function ProfilePage() {
       }
     } finally {
       setLoading(false);
-      setIsPageLoading(false);
     }
-  };
+  }, [navigate, syncGlobalSkeleton, view, isAmbassadorActive]);
+
+  useEffect(() => {
+    fetchUserData();
+  }, [fetchUserData]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -643,15 +654,11 @@ export default function ProfilePage() {
     if (isAmbassador) {
       const nextMode = portalMode === 'customer' ? 'ambassador' : 'customer';
       const nextAmbassadorActive = nextMode === 'ambassador';
-      const nextSkeletonView = resolveSkeletonView(view, nextAmbassadorActive);
 
       setViewSwitching(true);
-      setIsPageLoading(true, {
-        view: nextSkeletonView,
-        isAmbassador: nextAmbassadorActive,
-      });
       setPortalMode(nextMode);
       localStorage.setItem('portalMode', nextMode);
+      syncGlobalSkeleton(true, view, nextAmbassadorActive);
     }
   };
 
