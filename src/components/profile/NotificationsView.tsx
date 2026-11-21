@@ -234,35 +234,6 @@ export default function NotificationsView({
     return true;
   });
 
-  if (loading) {
-    return (
-      <div style={{
-        maxWidth: '600px',
-        margin: '0 auto',
-        height: '100vh',
-        display: 'flex',
-        flexDirection: 'column',
-        backgroundColor: '#000000',
-        color: '#FFF',
-        overflow: 'hidden',
-        padding: '20px 14px',
-        gap: '12px'
-      }}>
-        {[1, 2, 3].map((card) => (
-          <div
-            key={card}
-            style={{
-              height: '96px',
-              borderRadius: '12px',
-              backgroundColor: '#0C0C0E',
-              border: '1px solid #1E1E22'
-            }}
-          />
-        ))}
-      </div>
-    );
-  }
-
   return (
     <div style={{
       maxWidth: '600px',
@@ -270,7 +241,7 @@ export default function NotificationsView({
       height: '100vh',
       display: 'flex',
       flexDirection: 'column',
-      backgroundColor: '#000000',
+      backgroundColor: loading ? 'transparent' : '#000000',
       color: '#FFF',
       overflow: 'hidden'
     }}>
@@ -335,7 +306,9 @@ export default function NotificationsView({
         flex: 1,
         overflowY: 'auto',
         padding: '16px 12px 32px 12px',
-        WebkitOverflowScrolling: 'touch'
+        WebkitOverflowScrolling: 'touch',
+        visibility: loading ? 'hidden' : 'visible',
+        pointerEvents: loading ? 'none' : 'auto',
       }}>
         {unreadCount > 0 && filter === 'all' && (
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '12px', paddingRight: '4px' }}>
