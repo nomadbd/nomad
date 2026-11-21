@@ -5,7 +5,6 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { flushSync } from 'react-dom';
 
 export type SkeletonViewType =
   | 'home'
@@ -45,10 +44,8 @@ export const LoadingProvider: React.FC<{
   children: React.ReactNode;
 }> = ({ children }) => {
   const [isPageLoading, setIsLoadingState] = useState(false);
-  const [skeletonView, setSkeletonView] =
-    useState<SkeletonViewType>(null);
-  const [isAmbassadorSkeleton, setIsAmbassadorSkeleton] =
-    useState(false);
+  const [skeletonView, setSkeletonView] = useState<SkeletonViewType>(null);
+  const [isAmbassadorSkeleton, setIsAmbassadorSkeleton] = useState(false);
 
   const activeTokenRef = useRef(0);
 
@@ -62,13 +59,9 @@ export const LoadingProvider: React.FC<{
         const nextToken = activeTokenRef.current + 1;
         activeTokenRef.current = nextToken;
 
-        flushSync(() => {
-          setIsLoadingState(true);
-          setSkeletonView(options?.view ?? null);
-          setIsAmbassadorSkeleton(
-            options?.isAmbassador ?? false
-          );
-        });
+        setIsLoadingState(true);
+        setSkeletonView(options?.view ?? null);
+        setIsAmbassadorSkeleton(Boolean(options?.isAmbassador));
 
         return nextToken;
       }
@@ -82,11 +75,9 @@ export const LoadingProvider: React.FC<{
 
       activeTokenRef.current += 1;
 
-      flushSync(() => {
-        setIsLoadingState(false);
-        setSkeletonView(null);
-        setIsAmbassadorSkeleton(false);
-      });
+      setIsLoadingState(false);
+      setSkeletonView(null);
+      setIsAmbassadorSkeleton(false);
 
       return activeTokenRef.current;
     },
@@ -107,5 +98,4 @@ export const LoadingProvider: React.FC<{
   );
 };
 
-export const useGlobalLoading = () =>
-  useContext(LoadingContext);
+export const useGlobalLoading = () => useContext(LoadingContext);
