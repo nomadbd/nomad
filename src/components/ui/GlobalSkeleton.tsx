@@ -19,176 +19,6 @@ export const GlobalSkeleton: React.FC = () => {
     borderRadius: '8px',
   };
 
-  const renderProfileHeaderSkeleton = (withBadge = false) => (
-    <div
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        zIndex: 998,
-        backgroundColor: 'rgba(0, 0, 0, 0.92)',
-        borderBottom: '1px solid #1F1F22',
-        padding: '10px 16px',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        boxSizing: 'border-box',
-      }}
-    >
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '10px',
-          flex: 1,
-          minWidth: 0,
-        }}
-      >
-        <div
-          style={{
-            ...shimmerStyle,
-            width: '40px',
-            height: '40px',
-            borderRadius: '50%',
-            flexShrink: 0,
-          }}
-        />
-
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '6px',
-            flex: 1,
-            minWidth: 0,
-          }}
-        >
-          <div
-            style={{
-              ...shimmerStyle,
-              height: '13px',
-              width: '46%',
-              maxWidth: '150px',
-              borderRadius: '4px',
-            }}
-          />
-
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-            }}
-          >
-            {withBadge && (
-              <div
-                style={{
-                  ...shimmerStyle,
-                  width: '6px',
-                  height: '6px',
-                  borderRadius: '50%',
-                  flexShrink: 0,
-                }}
-              />
-            )}
-
-            <div
-              style={{
-                ...shimmerStyle,
-                height: '9px',
-                width: withBadge ? '28%' : '36%',
-                maxWidth: '120px',
-                borderRadius: '4px',
-              }}
-            />
-          </div>
-        </div>
-      </div>
-
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '6px',
-          flexShrink: 0,
-        }}
-      >
-        <div
-          style={{
-            ...shimmerStyle,
-            width: '35px',
-            height: '35px',
-            borderRadius: '50%',
-          }}
-        />
-        <div
-          style={{
-            ...shimmerStyle,
-            width: '35px',
-            height: '35px',
-            borderRadius: '50%',
-          }}
-        />
-      </div>
-    </div>
-  );
-
-  const renderSubViewTopBarSkeleton = (withRightPill = false) => (
-    <div
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        zIndex: 998,
-        backgroundColor: '#000000',
-        borderBottom: '1px solid #1A1A1A',
-        padding: '12px 16px',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        boxSizing: 'border-box',
-      }}
-    >
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '14px',
-        }}
-      >
-        <div
-          style={{
-            ...shimmerStyle,
-            width: '36px',
-            height: '36px',
-            borderRadius: '50%',
-          }}
-        />
-        <div
-          style={{
-            ...shimmerStyle,
-            width: '112px',
-            height: '16px',
-            borderRadius: '4px',
-          }}
-        />
-      </div>
-
-      {withRightPill && (
-        <div
-          style={{
-            ...shimmerStyle,
-            width: '74px',
-            height: '30px',
-            borderRadius: '16px',
-          }}
-        />
-      )}
-    </div>
-  );
-
   const isUpdatePassword =
     skeletonView === 'password' ||
     (!skeletonView && pathname === '/update-password');
@@ -356,43 +186,9 @@ export const GlobalSkeleton: React.FC = () => {
           style={{
             maxWidth: '640px',
             margin: '0 auto',
-            paddingTop: '52px',
+            paddingTop: '16px',
           }}
         >
-          <div
-            style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              zIndex: 998,
-              backgroundColor: '#000000',
-              borderBottom: '1px solid #1A1A1A',
-              padding: '14px 20px',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              boxSizing: 'border-box',
-            }}
-          >
-            <div
-              style={{
-                ...shimmerStyle,
-                width: '96px',
-                height: '15px',
-                borderRadius: '4px',
-              }}
-            />
-            <div
-              style={{
-                ...shimmerStyle,
-                width: '20px',
-                height: '20px',
-                borderRadius: '4px',
-              }}
-            />
-          </div>
-
           {isAmbassadorMode && (
             <div
               style={{
@@ -675,7 +471,7 @@ export const GlobalSkeleton: React.FC = () => {
           style={{
             maxWidth: '640px',
             margin: '0 auto',
-            paddingTop: '58px',
+            paddingTop: '20px',
             paddingBottom: '76px',
             minHeight: '100vh',
             display: 'flex',
@@ -684,8 +480,6 @@ export const GlobalSkeleton: React.FC = () => {
             boxSizing: 'border-box',
           }}
         >
-          {renderSubViewTopBarSkeleton(false)}
-
           <div
             style={{
               display: 'flex',
@@ -858,11 +652,9 @@ export const GlobalSkeleton: React.FC = () => {
           style={{
             maxWidth: '640px',
             margin: '0 auto',
-            paddingTop: '62px',
+            paddingTop: '20px',
           }}
         >
-          {renderSubViewTopBarSkeleton(true)}
-
           <div
             style={{
               display: 'flex',
@@ -958,11 +750,9 @@ export const GlobalSkeleton: React.FC = () => {
           style={{
             maxWidth: '640px',
             margin: '0 auto',
-            paddingTop: '54px',
+            paddingTop: '20px',
           }}
         >
-          {renderProfileHeaderSkeleton(true)}
-
           <div
             style={{
               marginTop: '18px',
@@ -1218,11 +1008,9 @@ export const GlobalSkeleton: React.FC = () => {
           style={{
             maxWidth: '720px',
             margin: '0 auto',
-            paddingTop: '54px',
+            paddingTop: '20px',
           }}
         >
-          {renderProfileHeaderSkeleton(false)}
-
           <div
             style={{
               display: 'flex',
