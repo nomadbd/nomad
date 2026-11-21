@@ -21,29 +21,78 @@ interface CommunicationMessage {
 }
 
 function MessagesSkeleton() {
+  const shimmer: React.CSSProperties = {
+    backgroundColor: '#3E3E3E',
+    backgroundImage:
+      'linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.14) 50%, rgba(255,255,255,0) 100%)',
+    backgroundSize: '200% 100%',
+    animation: 'fbChatShimmer 1.35s ease-in-out infinite',
+  };
+
+  const rows = [
+    { isAmbassador: false, width: '68%', lines: 2 },
+    { isAmbassador: true, width: '62%', lines: 1 },
+    { isAmbassador: false, width: '76%', lines: 2 },
+    { isAmbassador: true, width: '54%', lines: 1 },
+  ];
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
       <style>{`
-        @keyframes pulseSkeleton {
-          0%, 100% { opacity: 0.3; }
-          50% { opacity: 0.7; }
+        @keyframes fbChatShimmer {
+          0% { background-position: 200% 0; }
+          100% { background-position: -200% 0; }
         }
       `}</style>
-      {[1, 2, 3, 4].map((item) => (
+      {rows.map((row, idx) => (
         <div
-          key={item}
+          key={idx}
           style={{
-            background: '#121212',
-            border: '1px solid #27272A',
-            borderRadius: '12px',
-            padding: '14px 16px',
-            width: item % 2 === 0 ? '75%' : '60%',
-            alignSelf: item % 2 === 0 ? 'flex-end' : 'flex-start',
-            animation: 'pulseSkeleton 1.5s infinite ease-in-out'
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: row.isAmbassador ? 'flex-end' : 'flex-start',
+            width: '100%',
           }}
         >
-          <div style={{ height: '14px', background: '#333', borderRadius: '4px', marginBottom: '8px' }}></div>
-          <div style={{ height: '10px', width: '40%', background: '#333', borderRadius: '4px' }}></div>
+          {/* Sender label */}
+          <div
+            style={{
+              ...shimmer,
+              height: '9px',
+              width: row.isAmbassador ? '26px' : '84px',
+              borderRadius: '3px',
+              marginBottom: '5px',
+            }}
+          />
+
+          {/* Chat bubble */}
+          <div
+            style={{
+              width: row.width,
+              maxWidth: '82%',
+              padding: '12px 16px',
+              borderRadius: row.isAmbassador ? '16px 16px 2px 16px' : '16px 16px 16px 2px',
+              backgroundColor: row.isAmbassador ? '#121212' : '#09090B',
+              border: '1px solid',
+              borderColor: row.isAmbassador ? 'rgba(255, 255, 255, 0.18)' : '#27272A',
+            }}
+          >
+            <div style={{ ...shimmer, height: '12px', width: '100%', borderRadius: '4px', marginBottom: row.lines > 1 ? '7px' : '0' }} />
+            {row.lines > 1 && (
+              <div style={{ ...shimmer, height: '12px', width: '72%', borderRadius: '4px' }} />
+            )}
+          </div>
+
+          {/* Timestamp */}
+          <div
+            style={{
+              ...shimmer,
+              height: '8px',
+              width: '44px',
+              borderRadius: '3px',
+              marginTop: '5px',
+            }}
+          />
         </div>
       ))}
     </div>
@@ -56,7 +105,7 @@ export default function CommunicationView({ userId, userEmail, onBack }: Communi
   const [inputText, setInputText] = useState<string>('');
   const [sending, setSending] = useState<boolean>(false);
   const [viewportHeight, setViewportHeight] = useState<string>('100vh');
-  
+
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
