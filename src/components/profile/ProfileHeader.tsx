@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useGlobalLoading } from '../../context/LoadingContext';
 import { MessageIcon, NotificationIcon, SettingsIcon } from '../icons';
 
 const animatedProfiles = new Set<string>();
@@ -23,121 +24,6 @@ interface ProfileHeaderProps {
   loading?: boolean;
 }
 
-function ProfileHeaderSkeleton() {
-  const shimmerStyle: React.CSSProperties = {
-    backgroundColor: '#3E3E3E',
-    backgroundImage:
-      'linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.16) 50%, rgba(255,255,255,0) 100%)',
-    backgroundSize: '200% 100%',
-    animation: 'fbHeaderShimmer 1.35s ease-in-out infinite',
-  };
-
-  return (
-    <div
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        zIndex: 999,
-        backgroundColor: 'rgba(0, 0, 0, 0.92)',
-        backdropFilter: 'blur(12px)',
-        WebkitBackdropFilter: 'blur(12px)',
-        borderBottom: '1px solid #1F1F22',
-        padding: '10px 16px',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        width: '100%',
-        boxSizing: 'border-box',
-      }}
-    >
-      <style>{`
-        @keyframes fbHeaderShimmer {
-          0% {
-            background-position: 200% 0;
-          }
-          100% {
-            background-position: -200% 0;
-          }
-        }
-      `}</style>
-
-      {/* বামপাশ: অ্যাভাটার ও ইউজার ইনফো স্কেলিটন */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '10px',
-          flex: 1,
-          minWidth: 0,
-          marginRight: '8px',
-        }}
-      >
-        <div
-          style={{
-            ...shimmerStyle,
-            width: '40px',
-            height: '40px',
-            borderRadius: '50%',
-            flexShrink: 0,
-          }}
-        />
-
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            flex: 1,
-            minWidth: 0,
-            gap: '6px',
-          }}
-        >
-          <div
-            style={{
-              ...shimmerStyle,
-              height: '13px',
-              width: '46%',
-              maxWidth: '150px',
-              borderRadius: '4px',
-            }}
-          />
-          <div
-            style={{
-              ...shimmerStyle,
-              height: '9px',
-              width: '34%',
-              maxWidth: '115px',
-              borderRadius: '4px',
-            }}
-          />
-        </div>
-      </div>
-
-      {/* ডানপাশ: আইকন বাটন স্কেলিটন */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
-        <div
-          style={{
-            ...shimmerStyle,
-            width: '35px',
-            height: '35px',
-            borderRadius: '50%',
-          }}
-        />
-        <div
-          style={{
-            ...shimmerStyle,
-            width: '35px',
-            height: '35px',
-            borderRadius: '50%',
-          }}
-        />
-      </div>
-    </div>
-  );
-}
-
 export default function ProfileHeader({
   profile,
   avatarUrl,
@@ -157,33 +43,37 @@ export default function ProfileHeader({
   hasUnreadNotif,
   loading = false
 }: ProfileHeaderProps) {
+  const { setIsPageLoading } = useGlobalLoading();
   const name = profile?.name || "PROFILE";
   const profileKey = profile?.id || profile?.email || "default_user";
 
-  // চেক করা হচ্ছে এই প্রোফাইলে ইতোমধ্যে WELCOME অ্যানিমেশন চলেছে কিনা
   const hasAlreadyAnimated = animatedProfiles.has(profileKey);
 
-  // যদি আগে অ্যানিমেশন হয়ে থাকে, তবে প্রাথমিক স্টেটেই showGreeting = false হবে (কোনো ফ্ল্যাশ হবে না)
   const [showGreeting, setShowGreeting] = useState(!hasAlreadyAnimated);
   const [fade, setFade] = useState(true);
+
+  useEffect(() => {
+    setIsPageLoading(loading);
+    return () => {
+      setIsPageLoading(false);
+    };
+  }, [loading, setIsPageLoading]);
 
   useEffect(() => {
     if (loading || !profile) {
       return;
     }
 
-    // যদি এই সেশনে ইতোমধ্যে অ্যানিমেশন হয়ে গিয়ে থাকে তবে রিটার্ন করবে
     if (hasAlreadyAnimated) {
       return;
     }
 
-    // প্রথমবার ২.৫ সেকেন্ডের জন্য WELCOME দেখাবে, তারপর স্মুথলি নাম ও ইমেইল আসবে
     const timer = setTimeout(() => {
-      setFade(false); // ফেইড আউট
+      setFade(false);
       setTimeout(() => {
-        setShowGreeting(false); // নাম ও ইমেইল প্রদর্শিত হবে
-        setFade(true); // ফেইড ইন
-        animatedProfiles.add(profileKey); // ট্র্যাকিং সেটে যুক্ত করা হলো
+        setShowGreeting(false);
+        setFade(true);
+        animatedProfiles.add(profileKey);
       }, 300);
     }, 2500);
 
@@ -191,7 +81,7 @@ export default function ProfileHeader({
   }, [profileKey, hasAlreadyAnimated, loading, profile]);
 
   if (loading || !profile) {
-    return <ProfileHeaderSkeleton />;
+    return null;
   }
 
   const handleIconClick = () => {
@@ -210,20 +100,20 @@ export default function ProfileHeader({
     }
   };
 
-  const msgCount = unreadMessagesCount !== undefined 
-    ? unreadMessagesCount 
+  const msgCount = unreadMessagesCount !== undefined
+    ? unreadMessagesCount
     : (isAmbassadorActive ? unreadCount : 0);
 
-  const notifCount = unreadNotifCount !== undefined 
-    ? unreadNotifCount 
+  const notifCount = unreadNotifCount !== undefined
+    ? unreadNotifCount
     : (!isAmbassadorActive ? unreadCount : 0);
 
-  const isNotifUnread = hasUnreadNotif !== undefined 
-    ? hasUnreadNotif 
+  const isNotifUnread = hasUnreadNotif !== undefined
+    ? hasUnreadNotif
     : (notifCount > 0 || hasUnread);
 
   return (
-    <div style={{ 
+    <div style={{
       position: 'fixed',
       top: 0,
       left: 0,
@@ -234,38 +124,36 @@ export default function ProfileHeader({
       WebkitBackdropFilter: 'blur(12px)',
       borderBottom: '1px solid #1F1F22',
       padding: '10px 16px',
-      display: 'flex', 
-      justifyContent: 'space-between', 
-      alignItems: 'center', 
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
       width: '100%',
       boxSizing: 'border-box'
     }}>
-      {/* বামপাশ: অ্যাভাটার ও ইউজার ইনফো */}
-      <div style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        gap: '10px', 
-        flex: 1, 
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '10px',
+        flex: 1,
         minWidth: 0,
         marginRight: '8px'
       }}>
-        {/* ১. প্রোফাইল ছবি/অ্যাভাটার */}
-        <div 
+        <div
           onClick={isAmbassador ? togglePortalMode : undefined}
           title={isAmbassador ? "Click to switch profile mode" : "Profile Picture"}
-          style={{ 
-            width: '40px', 
-            height: '40px', 
-            borderRadius: '50%', 
-            backgroundColor: '#121212', 
-            border: isAmbassadorActive ? '1.5px solid #FFFFFF' : '1px solid #27272A', 
+          style={{
+            width: '40px',
+            height: '40px',
+            borderRadius: '50%',
+            backgroundColor: '#121212',
+            border: isAmbassadorActive ? '1.5px solid #FFFFFF' : '1px solid #27272A',
             boxShadow: isAmbassadorActive ? '0 0 8px rgba(255, 255, 255, 0.2)' : 'none',
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center', 
-            fontWeight: '600', 
-            fontSize: '13px', 
-            color: '#FFFFFF', 
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontWeight: '600',
+            fontSize: '13px',
+            color: '#FFFFFF',
             flexShrink: 0,
             cursor: isAmbassador ? 'pointer' : 'default',
             userSelect: 'none',
@@ -279,26 +167,25 @@ export default function ProfileHeader({
           )}
         </div>
 
-        {/* ২. নাম এবং সাবটাইটেল */}
-        <div 
+        <div
           onClick={onOpenProfileDetails}
           title="Click to view full details"
-          style={{ 
-            display: 'flex', 
-            flexDirection: 'column', 
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
             justifyContent: 'center',
-            flex: 1, 
+            flex: 1,
             minWidth: 0,
             overflow: 'hidden',
             cursor: 'pointer',
             userSelect: 'none'
           }}>
-          <h2 
-            style={{ 
-              margin: 0, 
-              fontSize: '15px', 
-              fontWeight: '600', 
-              color: '#FFFFFF', 
+          <h2
+            style={{
+              margin: 0,
+              fontSize: '15px',
+              fontWeight: '600',
+              color: '#FFFFFF',
               letterSpacing: showGreeting ? '0.8px' : '0.2px',
               whiteSpace: 'nowrap',
               overflow: 'hidden',
@@ -313,10 +200,10 @@ export default function ProfileHeader({
           </h2>
 
           {isAmbassadorActive ? (
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '5px', 
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '5px',
               marginTop: '2px',
               opacity: fade ? 1 : 0,
               transition: 'opacity 0.3s ease-in-out',
@@ -332,9 +219,9 @@ export default function ProfileHeader({
                   flexShrink: 0
                 }} />
               )}
-              <span style={{ 
-                fontSize: '10px', 
-                color: '#A1A1AA', 
+              <span style={{
+                fontSize: '10px',
+                color: '#A1A1AA',
                 fontWeight: '500',
                 letterSpacing: '0.6px',
                 textTransform: 'uppercase',
@@ -348,9 +235,9 @@ export default function ProfileHeader({
               </span>
             </div>
           ) : (
-            <span style={{ 
-              fontSize: '10px', 
-              color: '#A1A1AA', 
+            <span style={{
+              fontSize: '10px',
+              color: '#A1A1AA',
               marginTop: '2px',
               letterSpacing: showGreeting ? '0.6px' : '0.2px',
               textTransform: showGreeting ? 'uppercase' : 'none',
@@ -369,16 +256,15 @@ export default function ProfileHeader({
         </div>
       </div>
 
-      {/* ডানপাশ: আইকন বাটনসমূহ */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
         <button
           onClick={handleIconClick}
-          style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center', 
-            cursor: 'pointer', 
-            background: '#121212', 
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            background: '#121212',
             border: '1px solid #27272A',
             borderRadius: '50%',
             width: '35px',
@@ -457,12 +343,12 @@ export default function ProfileHeader({
 
         <button
           onClick={() => onChangeView('settings')}
-          style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center', 
-            cursor: 'pointer', 
-            background: '#121212', 
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            background: '#121212',
             border: '1px solid #27272A',
             borderRadius: '50%',
             width: '35px',
