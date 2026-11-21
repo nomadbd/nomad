@@ -1,8 +1,18 @@
 import React, { useState, lazy, Suspense } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+  useNavigate,
+} from 'react-router-dom';
 
 import { CartProvider } from './context/CartContext';
-import { LoadingProvider, useGlobalLoading } from './context/LoadingContext';
+import {
+  LoadingProvider,
+  useGlobalLoading,
+} from './context/LoadingContext';
 import { useSession } from './hooks/useSession';
 
 import ProfilePage from './pages/ProfilePage';
@@ -18,8 +28,12 @@ import AuthForm from './components/auth/AuthForm';
 import ReminderLoading from './components/ui/ReminderLoading';
 import { GlobalSkeleton } from './components/ui/GlobalSkeleton';
 
-const AmbassadorJoin = lazy(() => import('./components/ambassador/join/AmbassadorJoin'));
-const AmbassadorPortal = lazy(() => import('./components/ambassador/portal/AmbassadorPortal'));
+const AmbassadorJoin = lazy(
+  () => import('./components/ambassador/join/AmbassadorJoin')
+);
+const AmbassadorPortal = lazy(
+  () => import('./components/ambassador/portal/AmbassadorPortal')
+);
 
 interface AppContentProps {
   session: any;
@@ -52,7 +66,10 @@ const AppContent: React.FC<AppContentProps> = ({
 
   const isAdminRoute = location.pathname.startsWith('/admin');
   const isProfileRoute =
-    location.pathname === '/profile' || location.pathname.startsWith('/profile/');
+    location.pathname === '/profile' ||
+    location.pathname.startsWith('/profile/');
+  const isHomeRoute = location.pathname === '/';
+
   const showHeader = !isAdminRoute && !isProfileRoute;
 
   const handleCloseSearch = () => {
@@ -68,6 +85,41 @@ const AppContent: React.FC<AppContentProps> = ({
   };
 
   if (sessionLoading) {
+    if (isHomeRoute && showHeader) {
+      return (
+        <>
+          <Header
+            onSearchOpen={() => setIsSearchOpen(true)}
+            onSearchClose={handleCloseSearch}
+            searchQuery={searchQuery}
+            onSearchQueryChange={setSearchQuery}
+            onAuthOpen={() => {
+              if (session) {
+                navigate('/profile');
+              } else {
+                setIsAuthOpen(true);
+              }
+            }}
+            isSearchOpen={isSearchOpen}
+            isAuthOpen={isAuthOpen}
+            isProfileActive={isProfileRoute}
+            isCheckingOut={isCheckingOut}
+            onCheckoutBack={() => setIsCheckingOut(false)}
+          />
+
+          <div
+            style={{
+              minHeight: 'calc(100vh - 70px)',
+              backgroundColor: 'black',
+              paddingTop: '70px',
+            }}
+          >
+            {renderLoader()}
+          </div>
+        </>
+      );
+    }
+
     return renderLoader();
   }
 
@@ -75,13 +127,26 @@ const AppContent: React.FC<AppContentProps> = ({
     <>
       {isPageLoading && (
         <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 100000,
-            backgroundColor: 'black',
-            overflowY: 'auto',
-          }}
+          style={
+            isHomeRoute
+              ? {
+                  position: 'fixed',
+                  top: '70px',
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  zIndex: 999,
+                  backgroundColor: 'black',
+                  overflowY: 'auto',
+                }
+              : {
+                  position: 'fixed',
+                  inset: 0,
+                  zIndex: 100000,
+                  backgroundColor: 'black',
+                  overflowY: 'auto',
+                }
+          }
         >
           {renderLoader()}
         </div>
@@ -130,15 +195,36 @@ const AppContent: React.FC<AppContentProps> = ({
               }
             />
 
-            <Route path="/profile" element={session ? <ProfilePage /> : <Navigate to="/" replace />} />
+            <Route
+              path="/profile"
+              element={
+                session ? (
+                  <ProfilePage />
+                ) : (
+                  <Navigate to="/" replace />
+                )
+              }
+            />
 
             <Route path="/vip/:token" element={<AmbassadorJoin />} />
 
             <Route path="/:slug" element={<AmbassadorPortal />} />
 
-            <Route path="/admin" element={session ? <AdminDashboard /> : <Navigate to="/" replace />} />
+            <Route
+              path="/admin"
+              element={
+                session ? (
+                  <AdminDashboard />
+                ) : (
+                  <Navigate to="/" replace />
+                )
+              }
+            />
 
-            <Route path="/update-password" element={<AuthForm isRecoveryPage={true} />} />
+            <Route
+              path="/update-password"
+              element={<AuthForm isRecoveryPage={true} />}
+            />
 
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
@@ -150,6 +236,7 @@ const AppContent: React.FC<AppContentProps> = ({
 
 const App: React.FC = () => {
   const { session, loading } = useSession();
+
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isAuthOpen, setIsAuthOpen] = useState(false);
@@ -189,7 +276,10 @@ const App: React.FC = () => {
             searchQuery={searchQuery}
           />
 
-          <AuthOverlay isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
+          <AuthOverlay
+            isOpen={isAuthOpen}
+            onClose={() => setIsAuthOpen(false)}
+          />
         </Router>
       </CartProvider>
     </LoadingProvider>
