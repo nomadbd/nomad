@@ -45,16 +45,35 @@ export const GlobalSkeleton: React.FC = () => {
 
           <div
             style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              paddingBottom: '12px',
+              marginBottom: '20px',
+              borderBottom: '1px solid #141414',
+            }}
+          >
+            <div style={{ ...shimmerStyle, width: '130px', height: '14px', borderRadius: '4px' }} />
+            <div style={{ ...shimmerStyle, width: '72px', height: '14px', borderRadius: '4px' }} />
+          </div>
+
+          <div
+            style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
               gap: '24px',
             }}
           >
             {[1, 2, 3, 4].map((item) => (
-              <div
-                key={item}
-                style={{ ...shimmerStyle, height: '320px' }}
-              />
+              <div key={item} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ ...shimmerStyle, height: '280px', width: '100%' }} />
+                <div style={{ ...shimmerStyle, height: '16px', width: '70%' }} />
+                <div style={{ ...shimmerStyle, height: '13px', width: '90%' }} />
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
+                  <div style={{ ...shimmerStyle, height: '18px', width: '64px' }} />
+                  <div style={{ ...shimmerStyle, height: '36px', width: '120px' }} />
+                </div>
+              </div>
             ))}
           </div>
         </div>
