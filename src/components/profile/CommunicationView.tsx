@@ -261,43 +261,6 @@ export default function CommunicationView({ userId, userEmail, onBack }: Communi
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
-  if (loading) {
-    return (
-      <div style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        height: viewportHeight,
-        width: '100vw',
-        maxWidth: '600px',
-        margin: '0 auto',
-        display: 'flex',
-        flexDirection: 'column',
-        backgroundColor: '#000000',
-        color: '#FFFFFF',
-        overflow: 'hidden',
-        zIndex: 99999,
-        padding: '20px 16px',
-        gap: '14px'
-      }}>
-        {[1, 2, 3].map((bubble) => (
-          <div
-            key={bubble}
-            style={{
-              width: bubble % 2 === 0 ? '70%' : '55%',
-              alignSelf: bubble % 2 === 0 ? 'flex-end' : 'flex-start',
-              height: '54px',
-              borderRadius: '14px',
-              backgroundColor: '#0C0C0E',
-              border: '1px solid #1E1E22'
-            }}
-          />
-        ))}
-      </div>
-    );
-  }
-
   let lastRenderedDate: string | null = null;
 
   return (
@@ -312,10 +275,12 @@ export default function CommunicationView({ userId, userEmail, onBack }: Communi
       margin: '0 auto',
       display: 'flex',
       flexDirection: 'column',
-      backgroundColor: '#000000',
+      backgroundColor: loading ? 'transparent' : '#000000',
       color: '#FFFFFF',
       overflow: 'hidden',
-      zIndex: 99999
+      // Keep this view below the App-level skeleton overlay; its header remains
+      // visible because that overlay starts below the header.
+      zIndex: 998
     }}>
       <div style={{
         flexShrink: 0,
@@ -384,7 +349,23 @@ export default function CommunicationView({ userId, userEmail, onBack }: Communi
           WebkitOverflowScrolling: 'touch'
         }}
       >
-        {messages.length === 0 ? (
+        {loading ? (
+          <>
+            {[1, 2, 3].map((bubble) => (
+              <div
+                key={bubble}
+                style={{
+                  width: bubble % 2 === 0 ? '70%' : '55%',
+                  alignSelf: bubble % 2 === 0 ? 'flex-end' : 'flex-start',
+                  height: '54px',
+                  borderRadius: '14px',
+                  backgroundColor: '#0C0C0E',
+                  border: '1px solid #1E1E22'
+                }}
+              />
+            ))}
+          </>
+        ) : messages.length === 0 ? (
           <div style={{
             display: 'flex',
             flexDirection: 'column',
@@ -499,67 +480,102 @@ export default function CommunicationView({ userId, userEmail, onBack }: Communi
         <div ref={chatEndRef} />
       </div>
 
-      <form
-        onSubmit={handleSendMessage}
-        style={{
-          flexShrink: 0,
-          padding: '12px 14px',
-          borderTop: '1px solid #18181B',
-          backgroundColor: 'rgba(9, 9, 11, 0.98)',
-          backdropFilter: 'blur(16px)',
-          WebkitBackdropFilter: 'blur(16px)',
-          display: 'flex',
-          gap: '10px',
-          alignItems: 'center'
-        }}
-      >
-        <input
-          type="text"
-          value={inputText}
-          onChange={(e) => setInputText(e.target.value)}
-          onFocus={handleInputFocus}
-          placeholder="Message Authority..."
+      {loading ? (
+        <div
+          aria-hidden="true"
           style={{
-            flex: 1,
-            backgroundColor: '#121212',
-            border: '1px solid #27272A',
-            borderRadius: '24px',
-            padding: '12px 18px',
-            color: '#FFFFFF',
-            fontSize: '13px',
-            outline: 'none',
-            transition: 'border-color 0.2s ease'
-          }}
-        />
-        <button
-          type="submit"
-          disabled={!inputText.trim() || sending}
-          style={{
-            width: '42px',
-            height: '42px',
-            borderRadius: '50%',
-            backgroundColor: inputText.trim() && !sending ? '#FFFFFF' : '#121212',
-            color: inputText.trim() && !sending ? '#000000' : '#52525B',
-            border: '1px solid #27272A',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: inputText.trim() && !sending ? 'pointer' : 'default',
-            transition: 'all 0.2s ease',
             flexShrink: 0,
-            outline: 'none'
+            padding: '12px 14px',
+            borderTop: '1px solid #18181B',
+            backgroundColor: '#09090B',
+            display: 'flex',
+            gap: '10px',
+            alignItems: 'center'
           }}
         >
-          {sending ? (
-            <span style={{ fontSize: '11px', fontWeight: '600' }}>...</span>
-          ) : (
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="22" y1="2" x2="11" y2="13"></line>
-              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-            </svg>
-          )}
-        </button>
-      </form>
+          <div
+            style={{
+              flex: 1,
+              height: '42px',
+              borderRadius: '24px',
+              backgroundColor: '#0C0C0E',
+              border: '1px solid #1E1E22'
+            }}
+          />
+          <div
+            style={{
+              width: '42px',
+              height: '42px',
+              borderRadius: '50%',
+              backgroundColor: '#0C0C0E',
+              border: '1px solid #1E1E22',
+              flexShrink: 0
+            }}
+          />
+        </div>
+      ) : (
+        <form
+          onSubmit={handleSendMessage}
+          style={{
+            flexShrink: 0,
+            padding: '12px 14px',
+            borderTop: '1px solid #18181B',
+            backgroundColor: 'rgba(9, 9, 11, 0.98)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+            display: 'flex',
+            gap: '10px',
+            alignItems: 'center'
+          }}
+        >
+          <input
+            type="text"
+            value={inputText}
+            onChange={(e) => setInputText(e.target.value)}
+            onFocus={handleInputFocus}
+            placeholder="Message Authority..."
+            style={{
+              flex: 1,
+              backgroundColor: '#121212',
+              border: '1px solid #27272A',
+              borderRadius: '24px',
+              padding: '12px 18px',
+              color: '#FFFFFF',
+              fontSize: '13px',
+              outline: 'none',
+              transition: 'border-color 0.2s ease'
+            }}
+          />
+          <button
+            type="submit"
+            disabled={!inputText.trim() || sending}
+            style={{
+              width: '42px',
+              height: '42px',
+              borderRadius: '50%',
+              backgroundColor: inputText.trim() && !sending ? '#FFFFFF' : '#121212',
+              color: inputText.trim() && !sending ? '#000000' : '#52525B',
+              border: '1px solid #27272A',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: inputText.trim() && !sending ? 'pointer' : 'default',
+              transition: 'all 0.2s ease',
+              flexShrink: 0,
+              outline: 'none'
+            }}
+          >
+            {sending ? (
+              <span style={{ fontSize: '11px', fontWeight: '600' }}>...</span>
+            ) : (
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="22" y1="2" x2="11" y2="13"></line>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+              </svg>
+            )}
+          </button>
+        </form>
+      )}
     </div>
   );
 }
