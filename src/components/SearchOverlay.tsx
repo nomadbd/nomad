@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/supabaseClient';
 import { useCart } from '@/context/CartContext';
+import { useGlobalLoading } from '@/context/LoadingContext';
 
 interface Props {
   isOpen: boolean;
@@ -95,7 +96,6 @@ const scoreProduct = (product: Product, rawQuery: string): number => {
   const expandedTerms = expandQueryTokens(rawQuery);
   const queryTokens = query.split(' ').filter(Boolean);
 
-  // ১. প্রোডাক্টের নাম (সর্বোচ্চ অগ্রাধিকার)
   if (name === query) {
     score += 140;
   } else if (name.startsWith(query)) {
@@ -104,7 +104,6 @@ const scoreProduct = (product: Product, rawQuery: string): number => {
     score += 85;
   }
 
-  // ২. ক্যাটাগরি ম্যাচ (বাংলা ও ইংরেজি সমার্থকসহ)
   expandedTerms.forEach((term) => {
     if (!term) return;
     if (category === term) {
@@ -116,7 +115,6 @@ const scoreProduct = (product: Product, rawQuery: string): number => {
     }
   });
 
-  // ৩. মাল্টি-ওয়ার্ড টোকেন ম্যাচ (নাম ও ক্যাটাগরিতে)
   let matchedNameTokens = 0;
   queryTokens.forEach((token) => {
     const tokenAliases = expandQueryTokens(token);
@@ -136,7 +134,6 @@ const scoreProduct = (product: Product, rawQuery: string): number => {
     score += 40;
   }
 
-  // ৪. সাইজ এবং কালার ম্যাচ
   queryTokens.forEach((token) => {
     const tokenAliases = expandQueryTokens(token);
 
@@ -153,7 +150,6 @@ const scoreProduct = (product: Product, rawQuery: string): number => {
     }
   });
 
-  // ৫. দাম (Price) ম্যাচ
   const numericMatches = rawQuery.replace(/,/g, '').match(/\d+(\.\d+)?/g);
   if (numericMatches && numericMatches.length > 0) {
     const targetPrice = parseFloat(numericMatches[0]);
@@ -171,7 +167,6 @@ const scoreProduct = (product: Product, rawQuery: string): number => {
     }
   }
 
-  // ৬. ডেসক্রিপশন এবং অতিরিক্ত ডিটেইলস
   if (description.includes(query)) {
     score += 25;
   } else {
@@ -186,7 +181,6 @@ const scoreProduct = (product: Product, rawQuery: string): number => {
     score += 20;
   }
 
-  // ইন-স্টক প্রোডাক্টকে সামান্য অগ্রাধিকার
   if (score > 0 && product.status === 'active' && product.stock_quantity > 0) {
     score += 5;
   }
@@ -658,6 +652,7 @@ const ProductCard = ({ product }: { product: Product }) => {
 };
 
 export default function SearchOverlay({ isOpen, onClose, searchQuery }: Props) {
+  const { setIsPageLoading } = useGlobalLoading();
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -684,6 +679,7 @@ export default function SearchOverlay({ isOpen, onClose, searchQuery }: Props) {
     const fetchCatalog = async () => {
       try {
         setIsLoading(true);
+        setIsPageLoading(true);
         const { data, error } = await supabase
           .from('products')
           .select(`
@@ -703,6 +699,7 @@ export default function SearchOverlay({ isOpen, onClose, searchQuery }: Props) {
         console.error('Error loading search catalog:', err);
       } finally {
         if (isMounted) setIsLoading(false);
+        setIsPageLoading(false);
       }
     };
 
@@ -710,8 +707,9 @@ export default function SearchOverlay({ isOpen, onClose, searchQuery }: Props) {
 
     return () => {
       isMounted = false;
+      setIsPageLoading(false);
     };
-  }, [isOpen]);
+  }, [isOpen, setIsPageLoading]);
 
   const rankedResults = useMemo(() => {
     const trimmed = searchQuery.trim();
@@ -752,21 +750,6 @@ export default function SearchOverlay({ isOpen, onClose, searchQuery }: Props) {
       }}
     >
       <div style={{ color: 'white', width: '100%', boxSizing: 'border-box' }}>
-        {hasQuery && isLoading && rankedResults.length === 0 && (
-          <p
-            style={{
-              fontSize: '11px',
-              letterSpacing: '2px',
-              color: '#777',
-              padding: '0 24px',
-              textTransform: 'uppercase',
-              fontFamily: 'monospace',
-            }}
-          >
-            Searching...
-          </p>
-        )}
-
         {hasQuery && rankedResults.length > 0 && (
           <>
             <div
