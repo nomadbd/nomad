@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useLayoutEffect, useState, useRef } from 'react';
 import { supabase } from '@/supabaseClient';
 import { useCart } from '@/context/CartContext';
 import { useGlobalLoading } from '@/context/LoadingContext';
@@ -593,7 +593,7 @@ export default function ProductList() {
     loadingTokenRef.current = null;
   };
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     let isMounted = true;
 
     const fetchProducts = async () => {
