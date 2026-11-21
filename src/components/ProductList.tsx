@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/supabaseClient';
 import { useCart } from '@/context/CartContext';
+import { useGlobalLoading } from '@/context/LoadingContext';
 import ProductGallery from './ProductGallery';
 
 interface Product {
@@ -11,8 +12,8 @@ interface Product {
   category: string;
   stock_quantity: number;
   status: 'active' | 'sold_out' | string;
-  sizes: string[];  
-  colors: string[]; 
+  sizes: string[];
+  colors: string[];
   created_at: string;
   product_media: { media_url: string; media_type: string }[];
   details?: Record<string, string> | null;
@@ -108,11 +109,11 @@ const ProductActionRow = ({ product }: { product: Product }) => {
             </button>
 
             {isSoldOut ? (
-              <button 
-                disabled 
-                style={{ 
+              <button
+                disabled
+                style={{
                   height: '36px', width: '130px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box', lineHeight: '1',
-                  background: 'transparent', border: '1px solid #222', color: '#555', fontSize: '11px', letterSpacing: '1.5px', cursor: 'not-allowed', textTransform: 'uppercase', fontWeight: '600' 
+                  background: 'transparent', border: '1px solid #222', color: '#555', fontSize: '11px', letterSpacing: '1.5px', cursor: 'not-allowed', textTransform: 'uppercase', fontWeight: '600'
                 }}
               >
                 SOLD OUT
@@ -205,9 +206,9 @@ const ProductCard = ({ product }: { product: Product }) => {
 
   return (
     <div id={`product-${product.id}`} className="showroom-card-item" style={{ scrollSnapAlign: 'start', boxSizing: 'border-box', display: 'flex', flexDirection: 'column' }}>
-      <ProductGallery 
-        media={product.product_media || []} 
-        productName={product.name} 
+      <ProductGallery
+        media={product.product_media || []}
+        productName={product.name}
       />
 
       <div style={{ marginTop: '15px', padding: '0 5px', display: 'flex', flexDirection: 'column' }}>
@@ -215,16 +216,16 @@ const ProductCard = ({ product }: { product: Product }) => {
 
         <div style={{ margin: '0' }}>
           {(() => {
-            const characterLimit = 75; 
+            const characterLimit = 75;
             const isLongText = product.description.length > characterLimit;
-            const displayedText = isLongText 
-              ? product.description.slice(0, characterLimit) + '...' 
+            const displayedText = isLongText
+              ? product.description.slice(0, characterLimit) + '...'
               : product.description;
 
             return !isDescExpanded ? (
               <p style={{ fontSize: '13px', color: '#fff', margin: 0, lineHeight: '1.4' }}>
                 {displayedText}
-                <span 
+                <span
                   onClick={() => setIsDescExpanded(true)}
                   style={{ fontSize: '12px', color: '#aaa', cursor: 'pointer', marginLeft: '6px', fontWeight: '500', display: 'inline' }}
                 >
@@ -291,7 +292,7 @@ const ProductCard = ({ product }: { product: Product }) => {
                   </div>
                 )}
 
-                <span 
+                <span
                   onClick={() => setIsDescExpanded(false)}
                   style={{ fontSize: '11px', color: '#aaa', cursor: 'pointer', marginTop: '12px', display: 'inline-block', letterSpacing: '0.5px' }}
                 >
@@ -309,6 +310,7 @@ const ProductCard = ({ product }: { product: Product }) => {
 };
 
 export default function ProductList() {
+  const { setIsPageLoading } = useGlobalLoading();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -316,27 +318,32 @@ export default function ProductList() {
 
   const fetchProducts = async () => {
     setLoading(true);
-    const { data } = await supabase
-      .from('products')
-      .select(`
-        *,
-        product_media (
-          media_url,
-          media_type
-        )
-      `)
-      .in('status', ['active', 'sold_out'])
-      .order('created_at', { ascending: false });
+    setIsPageLoading(true);
+    try {
+      const { data } = await supabase
+        .from('products')
+        .select(`
+          *,
+          product_media (
+            media_url,
+            media_type
+          )
+        `)
+        .in('status', ['active', 'sold_out'])
+        .order('created_at', { ascending: false });
 
-    if (data) {
-      const shuffledProducts = [...data].sort(() => Math.random() - 0.5);
-      const uniqueCategories = Array.from(new Set(shuffledProducts.map(p => p.category)))
-        .sort(() => Math.random() - 0.5);
+      if (data) {
+        const shuffledProducts = [...data].sort(() => Math.random() - 0.5);
+        const uniqueCategories = Array.from(new Set(shuffledProducts.map(p => p.category)))
+          .sort(() => Math.random() - 0.5);
 
-      setProducts(shuffledProducts as Product[]);
-      setCategories(uniqueCategories);
+        setProducts(shuffledProducts as Product[]);
+        setCategories(uniqueCategories);
+      }
+    } finally {
+      setLoading(false);
+      setIsPageLoading(false);
     }
-    setLoading(false);
   };
 
   useEffect(() => { fetchProducts(); }, []);
@@ -360,7 +367,7 @@ export default function ProductList() {
     }
   }, [loading, products]);
 
-  if (loading) return <p style={{ color: '#555', padding: '40px', letterSpacing: '2px', fontSize: '11px' }}>LOADING PRODUCTS...</p>;
+  if (loading) return null;
 
   return (
     <div style={{ backgroundColor: '#000', width: '100%', boxSizing: 'border-box' }}>
@@ -373,9 +380,9 @@ export default function ProductList() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 15px 12px 15px', borderBottom: '1px solid #141414' }}>
               <h3 style={{ margin: 0, fontSize: '13px', letterSpacing: '3px', color: '#b3b3b3', textTransform: 'uppercase' }}>{category}</h3>
 
-              <button 
-                onClick={() => setExpandedCategories(prev => ({ ...prev, [category]: !isExpanded }))} 
-                style={{ 
+              <button
+                onClick={() => setExpandedCategories(prev => ({ ...prev, [category]: !isExpanded }))}
+                style={{
                   background: 'none', border: 'none', color: '#fff', fontSize: '11px', letterSpacing: '2px', cursor: 'pointer', opacity: 0.7,
                   display: 'flex', padding: 0, alignItems: 'center', width: '85px', justifyContent: 'flex-end'
                 }}
