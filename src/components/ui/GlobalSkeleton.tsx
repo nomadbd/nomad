@@ -6,6 +6,14 @@ export const GlobalSkeleton: React.FC = () => {
   const { pathname } = useLocation();
   const { skeletonView, isAmbassadorSkeleton } = useGlobalLoading();
 
+  const savedView =
+    typeof window !== 'undefined' ? localStorage.getItem('currentView') : null;
+  const savedPortalMode =
+    typeof window !== 'undefined' ? localStorage.getItem('portalMode') : null;
+
+  const effectiveAmbassador =
+    isAmbassadorSkeleton || (skeletonView === null && savedPortalMode === 'ambassador');
+
   const shimmerStyle: React.CSSProperties = {
     backgroundColor: '#1C1C1F',
     backgroundImage:
@@ -88,34 +96,43 @@ export const GlobalSkeleton: React.FC = () => {
     </div>
   );
 
-  const isUpdatePassword = skeletonView === 'password' || (!skeletonView && pathname === '/update-password');
+  const isUpdatePassword =
+    skeletonView === 'password' || (!skeletonView && pathname === '/update-password');
   const isSettings =
     !isUpdatePassword &&
-    (skeletonView === 'settings' || (!skeletonView && pathname.startsWith('/settings')));
+    (skeletonView === 'settings' ||
+      (!skeletonView && (pathname.startsWith('/settings') || savedView === 'settings')));
   const isCommunication =
     !isUpdatePassword &&
     !isSettings &&
     (skeletonView === 'communication' ||
       skeletonView === 'chat' ||
-      (!skeletonView && (pathname.startsWith('/vip/') || pathname.startsWith('/messages'))));
+      (!skeletonView &&
+        (pathname.startsWith('/vip/') ||
+          pathname.startsWith('/messages') ||
+          savedView === 'communication')));
   const isNotifications =
     !isUpdatePassword &&
     !isSettings &&
     !isCommunication &&
-    (skeletonView === 'notifications' || (!skeletonView && pathname.startsWith('/notifications')));
+    (skeletonView === 'notifications' ||
+      (!skeletonView &&
+        (pathname.startsWith('/notifications') || savedView === 'notifications')));
   const isAmbassadorView =
     !isUpdatePassword &&
     !isSettings &&
     !isCommunication &&
     !isNotifications &&
-    (skeletonView === 'ambassador' || (!skeletonView && pathname.startsWith('/profile') && isAmbassadorSkeleton));
+    (skeletonView === 'ambassador' ||
+      (!skeletonView && pathname.startsWith('/profile') && effectiveAmbassador));
   const isOrdersView =
     !isUpdatePassword &&
     !isSettings &&
     !isCommunication &&
     !isNotifications &&
     !isAmbassadorView &&
-    (skeletonView === 'orders' || (skeletonView === null && pathname.startsWith('/profile') && !isAmbassadorSkeleton));
+    (skeletonView === 'orders' ||
+      (skeletonView === null && pathname.startsWith('/profile') && !effectiveAmbassador));
   const isHome =
     !isUpdatePassword &&
     !isSettings &&
@@ -198,13 +215,13 @@ export const GlobalSkeleton: React.FC = () => {
             <div style={{ ...shimmerStyle, width: '20px', height: '20px', borderRadius: '4px' }} />
           </div>
 
-          {isAmbassadorSkeleton && (
+          {effectiveAmbassador && (
             <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px', marginBottom: '26px' }}>
               <div style={{ ...shimmerStyle, width: '76px', height: '76px', borderRadius: '50%' }} />
             </div>
           )}
 
-          <div style={{ marginTop: isAmbassadorSkeleton ? '0' : '16px' }}>
+          <div style={{ marginTop: effectiveAmbassador ? '0' : '16px' }}>
             <div style={{ ...shimmerStyle, width: '54px', height: '9px', borderRadius: '3px', marginBottom: '10px' }} />
             <div style={{ ...shimmerStyle, width: '62%', height: '15px', borderRadius: '4px', marginBottom: '12px' }} />
             <div style={{ height: '1px', backgroundColor: '#1E1E1E', marginBottom: '22px' }} />
@@ -213,7 +230,7 @@ export const GlobalSkeleton: React.FC = () => {
             <div style={{ ...shimmerStyle, width: '74%', height: '15px', borderRadius: '4px', marginBottom: '12px' }} />
             <div style={{ height: '1px', backgroundColor: '#1E1E1E', marginBottom: '22px' }} />
 
-            {isAmbassadorSkeleton && (
+            {effectiveAmbassador && (
               <>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
                   <div style={{ ...shimmerStyle, width: '82px', height: '9px', borderRadius: '3px' }} />
@@ -257,7 +274,7 @@ export const GlobalSkeleton: React.FC = () => {
 
             <div
               style={{
-                borderTop: isAmbassadorSkeleton ? '1px solid #1A1A1C' : 'none',
+                borderTop: effectiveAmbassador ? '1px solid #1A1A1C' : 'none',
                 paddingTop: '14px',
                 display: 'flex',
                 flexDirection: 'column',
