@@ -679,7 +679,7 @@ export default function SearchOverlay({ isOpen, onClose, searchQuery }: Props) {
     const fetchCatalog = async () => {
       try {
         setIsLoading(true);
-        setIsPageLoading(true);
+        setIsPageLoading(true, { view: 'orders', isAmbassador: false });
         const { data, error } = await supabase
           .from('products')
           .select(`
