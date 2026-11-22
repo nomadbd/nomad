@@ -19,9 +19,9 @@ import ProfilePage from './pages/ProfilePage';
 import AdminDashboard from './pages/dashboard/AdminDashboard';
 
 import Header from './components/ui/Header';
-import SearchOverlay from './components/shop/search/SearchOverlay';
+import SearchOverlay from './components/SearchOverlay';
 import Hero from './components/Hero/Hero';
-import ProductList from './components/shop/products/ProductList';
+import ProductList from './components/ProductList';
 import CartOverlay from './components/shop/cart/CartOverlay';
 import AuthOverlay from './components/auth/AuthOverlay';
 import AuthForm from './components/auth/AuthForm';
