@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useCart } from '@/context/CartContext';
-import Checkout from '@/components/shop/checkout/Checkout';
+import Checkout from '../../Checkout';
+
 import EmptyCart from './EmptyCart';
 import CartItemRow from './CartItemRow';
 import CartFooter from './CartFooter';
