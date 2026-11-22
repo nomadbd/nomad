@@ -6,7 +6,7 @@ import {
   useGlobalLoading,
   SkeletonViewType,
 } from '../context/LoadingContext';
-import OrderHistory from '../components/OrderHistory';
+import OrderHistory from '../components/shop/orders/OrderHistory';
 import ProfileHeader from '../components/profile/ProfileHeader';
 import ProfileSettings from '../components/profile/ProfileSettings';
 import ProfileDetailsSheet from '../components/profile/ProfileDetailsSheet';
