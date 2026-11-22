@@ -3,43 +3,17 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../supabaseClient';
 import { uploadToCloudinary, deleteFromCloudinary } from '../../cloudinary';
 import { useGlobalLoading } from '../../context/LoadingContext';
-import OrderHistory from '../../components/shop/orders/OrderHistory';
-import ProfileHeader from '../../components/profile/ProfileHeader';
-import ProfileSettings from '../../components/profile/ProfileSettings';
 import ProfileDetailsSheet from '../../components/profile/ProfileDetailsSheet';
-import NotificationsView from '../../components/profile/NotificationsView';
-import CommunicationView from '../../components/profile/CommunicationView';
 import ImageCropModal from '../../components/ui/ImageCropModal';
-import AmbassadorDashboard from '../../components/ambassador/dashboard/AmbassadorDashboard';
-import { useAmbassador } from '../../hooks/useAmbassador';
 import DeleteAccountModal from './DeleteAccountModal';
+import ProfileActiveView from './ProfileActiveView';
+import { useProfileUnreadCounts } from './useProfileUnreadCounts';
 import {
   ProfileViewType,
   stripQueryParams,
   resolveSkeletonViewForState,
   getInitials,
 } from './profileTypes';
-
-function AmbassadorDashboardSection({
-  ambassadorData,
-  profile,
-}: {
-  ambassadorData: any;
-  profile: any;
-}) {
-  const ambassadorState = useAmbassador(ambassadorData);
-
-  return (
-    <div style={{ marginTop: '10px' }}>
-      <AmbassadorDashboard
-        ambassadorData={ambassadorData}
-        profile={profile}
-        isOwner
-        ambassadorState={ambassadorState}
-      />
-    </div>
-  );
-}
 
 export default function ProfilePage() {
   const navigate = useNavigate();
@@ -86,11 +60,6 @@ export default function ProfilePage() {
     useState<any>(null);
   const [, setSession] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-
-  const [unreadNotifCount, setUnreadNotifCount] =
-    useState(0);
-  const [unreadMessagesCount, setUnreadMessagesCount] =
-    useState(0);
 
   const [newName, setNewName] = useState('');
   const [newEmail, setNewEmail] = useState('');
@@ -161,6 +130,12 @@ export default function ProfilePage() {
       ? isAmbassadorActive
       : initialPortalMode === 'ambassador';
 
+  const {
+    unreadNotifCount,
+    unreadMessagesCount,
+    fetchUnreadCounts,
+  } = useProfileUnreadCounts(profile?.id, isAmbassadorActive);
+
   const startPageLoading = useCallback(
     (
       targetView: ProfileViewType,
@@ -223,108 +198,6 @@ export default function ProfilePage() {
       startPageLoading(newView, resolvedAmbassadorMode);
     }
   };
-
-  const fetchUnreadCounts = useCallback(async () => {
-    if (!profile?.id) return;
-
-    if (!isAmbassadorActive) {
-      try {
-        const { data: recipients } = await supabase
-          .from('notification_recipients')
-          .select('notification_id')
-          .eq('user_id', profile.id)
-          .eq('is_read', false);
-
-        if (recipients && recipients.length > 0) {
-          const notifIds = recipients.map(
-            (recipient) => recipient.notification_id
-          );
-
-          const { count } = await supabase
-            .from('notifications')
-            .select('id', {
-              count: 'exact',
-              head: true,
-            })
-            .in('id', notifIds)
-            .in('target_audience', [
-              'CUSTOMER',
-              'ALL',
-              'SPECIFIC',
-            ]);
-
-          setUnreadNotifCount(count || 0);
-        } else {
-          setUnreadNotifCount(0);
-        }
-      } catch (err) {
-        console.error(
-          'Error fetching unread notification count:',
-          err
-        );
-      }
-    }
-
-    if (isAmbassadorActive) {
-      try {
-        const { count } = await supabase
-          .from('communications')
-          .select('id', {
-            count: 'exact',
-            head: true,
-          })
-          .eq('channel_id', profile.id)
-          .eq('is_read', false)
-          .neq('sender_role', 'ambassador');
-
-        setUnreadMessagesCount(count || 0);
-      } catch (err) {
-        console.error(
-          'Error fetching unread messages count:',
-          err
-        );
-      }
-    }
-  }, [profile?.id, isAmbassadorActive]);
-
-  useEffect(() => {
-    if (!profile?.id) return;
-
-    fetchUnreadCounts();
-
-    const notifChannel = supabase
-      .channel(`profile_notif_${profile.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'notification_recipients',
-          filter: `user_id=eq.${profile.id}`,
-        },
-        () => fetchUnreadCounts()
-      )
-      .subscribe();
-
-    const chatChannel = supabase
-      .channel(`profile_chat_${profile.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'communications',
-          filter: `channel_id=eq.${profile.id}`,
-        },
-        () => fetchUnreadCounts()
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(notifChannel);
-      supabase.removeChannel(chatChannel);
-    };
-  }, [profile?.id, fetchUnreadCounts]);
 
   const fetchUserData = useCallback(async () => {
     setLoading(true);
@@ -1129,250 +1002,55 @@ export default function ProfilePage() {
             '100%',
         }}
       >
-        {view ===
-        'notifications' ? (
-          <NotificationsView
-            userId={
-              profile?.id
-            }
-            targetAudience={[
-              'CUSTOMER',
-              'ALL',
-              'SPECIFIC',
-            ]}
-            onBack={() => {
-              changeView(
-                'profile'
-              );
-              fetchUnreadCounts();
-            }}
-          />
-        ) : view ===
-          'communication' ? (
-          <CommunicationView
-            userId={
-              profile?.id
-            }
-            userEmail={
-              profile?.email
-            }
-            onBack={() => {
-              changeView(
-                'profile'
-              );
-              fetchUnreadCounts();
-            }}
-          />
-        ) : view ===
-          'settings' ? (
-          <ProfileSettings
-            profile={
-              profile
-            }
-            avatarUrl={
-              avatarUrl
-            }
-            isAmbassadorActive={
-              isAmbassadorActive
-            }
-            uploadingAvatar={
-              uploadingAvatar
-            }
-            avatarFeedback={
-              avatarFeedback
-            }
-            clearAvatarFeedback={() =>
-              setAvatarFeedback(
-                null
-              )
-            }
-            fileInputRef={
-              fileInputRef
-            }
-            newName={
-              newName
-            }
-            newEmail={
-              newEmail
-            }
-            currentPassword={
-              currentPassword
-            }
-            setCurrentPassword={
-              setCurrentPassword
-            }
-            newPassword={
-              newPassword
-            }
-            currentSlug={
-              currentSlug
-            }
-            newSlug={
-              newSlug
-            }
-            setNewSlug={
-              setNewSlug
-            }
-            payoutMethod={
-              payoutMethod
-            }
-            setPayoutMethod={
-              setPayoutMethod
-            }
-            currentPayoutDetails={
-              currentPayoutDetails
-            }
-            newPayoutNumber={
-              newPayoutNumber
-            }
-            setNewPayoutNumber={
-              setNewPayoutNumber
-            }
-            setNewName={
-              setNewName
-            }
-            setNewEmail={
-              setNewEmail
-            }
-            setNewPassword={
-              setNewPassword
-            }
-            getInitials={
-              getInitials
-            }
-            handleDeleteAvatar={
-              handleDeleteAvatar
-            }
-            handleUpdate={
-              handleUpdate
-            }
-            handleSignOut={
-              handleSignOut
-            }
-            setShowConfirm={
-              setShowConfirm
-            }
-            onChangeView={
-              changeView
-            }
-            settingsFeedback={
-              settingsFeedback
-            }
-            clearSettingsFeedback={() =>
-              setSettingsFeedback(
-                null
-              )
-            }
-            fieldErrors={
-              fieldErrors
-            }
-            clearFieldError={(
-              field
-            ) =>
-              setFieldErrors(
-                (
-                  previous
-                ) => ({
-                  ...previous,
-                  [field]:
-                    undefined,
-                })
-              )
-            }
-            loading={
-              loading
-            }
-          />
-        ) : (
-          <>
-            <ProfileHeader
-              profile={
-                profile
-              }
-              avatarUrl={
-                avatarUrl
-              }
-              isAmbassador={
-                isAmbassador
-              }
-              isAmbassadorActive={
-                isAmbassadorActive
-              }
-              togglePortalMode={
-                togglePortalMode
-              }
-              getInitials={
-                getInitials
-              }
-              onChangeView={
-                changeView
-              }
-              onOpenProfileDetails={() =>
-                setIsDetailsSheetOpen(
-                  true
-                )
-              }
-              onOpenNotifications={() =>
-                changeView(
-                  'notifications'
-                )
-              }
-              onOpenCommunication={() =>
-                changeView(
-                  'communication'
-                )
-              }
-              unreadMessagesCount={
-                unreadMessagesCount
-              }
-              unreadNotifCount={
-                unreadNotifCount
-              }
-              hasUnreadNotif={
-                unreadNotifCount >
-                0
-              }
-              loading={
-                loading
-              }
-            />
-
-            {!loading &&
-              (
-                portalMode ===
-                  'ambassador' &&
-                isAmbassador
-                  ? (
-                      <AmbassadorDashboardSection
-                        ambassadorData={
-                          ambassadorData
-                        }
-                        profile={
-                          profile
-                        }
-                      />
-                    )
-                  : (
-                      <div
-                        style={{
-                          marginTop:
-                            '20px',
-                          borderTop:
-                            '1px solid #111',
-                          paddingTop:
-                            '10px',
-                        }}
-                      >
-                        <OrderHistory
-                          userId={
-                            profile?.id
-                          }
-                        />
-                      </div>
-                    )
-              )}
-          </>
-        )}
+        <ProfileActiveView
+          view={view}
+          profile={profile}
+          ambassadorData={ambassadorData}
+          avatarUrl={avatarUrl}
+          portalMode={portalMode}
+          isAmbassador={isAmbassador}
+          isAmbassadorActive={isAmbassadorActive}
+          loading={loading}
+          unreadNotifCount={unreadNotifCount}
+          unreadMessagesCount={unreadMessagesCount}
+          uploadingAvatar={uploadingAvatar}
+          avatarFeedback={avatarFeedback}
+          clearAvatarFeedback={() => setAvatarFeedback(null)}
+          fileInputRef={fileInputRef}
+          newName={newName}
+          setNewName={setNewName}
+          newEmail={newEmail}
+          setNewEmail={setNewEmail}
+          currentPassword={currentPassword}
+          setCurrentPassword={setCurrentPassword}
+          newPassword={newPassword}
+          setNewPassword={setNewPassword}
+          currentSlug={currentSlug}
+          newSlug={newSlug}
+          setNewSlug={setNewSlug}
+          payoutMethod={payoutMethod}
+          setPayoutMethod={setPayoutMethod}
+          currentPayoutDetails={currentPayoutDetails}
+          newPayoutNumber={newPayoutNumber}
+          setNewPayoutNumber={setNewPayoutNumber}
+          settingsFeedback={settingsFeedback}
+          clearSettingsFeedback={() => setSettingsFeedback(null)}
+          fieldErrors={fieldErrors}
+          clearFieldError={(field) =>
+            setFieldErrors((previous) => ({
+              ...previous,
+              [field]: undefined,
+            }))
+          }
+          onChangeView={changeView}
+          onFetchUnreadCounts={fetchUnreadCounts}
+          onTogglePortalMode={togglePortalMode}
+          onOpenProfileDetails={() => setIsDetailsSheetOpen(true)}
+          onDeleteAvatar={handleDeleteAvatar}
+          onUpdate={handleUpdate}
+          onSignOut={handleSignOut}
+          onOpenDeleteConfirm={() => setShowConfirm(true)}
+        />
       </div>
     </div>
   );
