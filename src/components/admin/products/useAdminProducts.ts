@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/supabaseClient';
 import { uploadToCloudinary, deleteFromCloudinary } from '@/cloudinary';
-import { Product } from '@/components/admin/products/products.types';
+import { Product } from './products.types';
 
 export function useAdminProducts(searchQuery: string = '', onCloseAdd?: () => void, externalShowAddModal?: boolean, setShowAddModalExternal?: (val: boolean) => void) {
   const [products, setProducts] = useState<Product[]>([]);
