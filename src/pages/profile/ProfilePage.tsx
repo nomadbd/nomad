@@ -1,17 +1,17 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../supabaseClient';
-import { uploadToCloudinary, deleteFromCloudinary } from '../cloudinary';
-import { useGlobalLoading } from '../context/LoadingContext';
-import OrderHistory from '../components/shop/orders/OrderHistory';
-import ProfileHeader from '../components/profile/ProfileHeader';
-import ProfileSettings from '../components/profile/ProfileSettings';
-import ProfileDetailsSheet from '../components/profile/ProfileDetailsSheet';
-import NotificationsView from '../components/profile/NotificationsView';
-import CommunicationView from '../components/profile/CommunicationView';
-import ImageCropModal from '../components/ui/ImageCropModal';
-import AmbassadorDashboardSection from './profile/AmbassadorDashboardSection';
-import DeleteAccountModal from './profile/DeleteAccountModal';
+import { supabase } from '../../supabaseClient';
+import { uploadToCloudinary, deleteFromCloudinary } from '../../cloudinary';
+import { useGlobalLoading } from '../../context/LoadingContext';
+import OrderHistory from '../../components/shop/orders/OrderHistory';
+import ProfileHeader from '../../components/profile/ProfileHeader';
+import ProfileSettings from '../../components/profile/ProfileSettings';
+import ProfileDetailsSheet from '../../components/profile/ProfileDetailsSheet';
+import NotificationsView from '../../components/profile/NotificationsView';
+import CommunicationView from '../../components/profile/CommunicationView';
+import ImageCropModal from '../../components/ui/ImageCropModal';
+import AmbassadorDashboardSection from './AmbassadorDashboardSection';
+import DeleteAccountModal from './DeleteAccountModal';
 import {
   ProfileViewType,
   PortalModeType,
@@ -20,7 +20,7 @@ import {
   stripQueryParams,
   resolveSkeletonViewForState,
   getInitials,
-} from './profile/profileTypes';
+} from './profileTypes';
 
 export default function ProfilePage() {
   const navigate = useNavigate();
