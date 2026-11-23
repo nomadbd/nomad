@@ -15,7 +15,7 @@ import {
 } from './context/LoadingContext';
 import { useSession } from './hooks/useSession';
 
-import ProfilePage from './pages/ProfilePage';
+import ProfilePage from './pages/profile/ProfilePage';
 import AdminDashboard from './pages/dashboard/AdminDashboard';
 
 import Header from './components/ui/Header';
