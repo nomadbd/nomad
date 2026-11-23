@@ -1,5 +1,5 @@
 import AmbassadorDashboard from '../../components/ambassador/dashboard/AmbassadorDashboard';
-import { useAmbassador } from '../../hooks/useAmbassador';
+import { useAmbassador } from '../../components/ambassador/dashboard/useAmbassador';
 
 interface AmbassadorDashboardSectionProps {
   ambassadorData: any;
