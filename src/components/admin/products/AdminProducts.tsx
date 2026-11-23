@@ -6,7 +6,7 @@ import { ProductCreateView } from './ProductCreateView';
 import { ProductEditView } from './ProductEditView';
 import { ProductDeleteModal } from './ProductDeleteModal';
 import { ProductFilterPanel } from './ProductFilterPanel';
-import { useAdminProducts } from '@/hooks/useAdminProducts';
+import { useAdminProducts } from './useAdminProducts';
 
 const AdminProducts: React.FC<AdminProductsProps> = ({
   showAddModal: externalShowAddModal,
