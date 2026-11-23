@@ -1,5 +1,5 @@
 import React from 'react';
-import { useAdminLogistics } from '@/hooks/useAdminLogistics';
+import { useAdminLogistics } from './useAdminLogistics';
 import LogisticSettings from './LogisticSettings';
 import LogisticsOrderCard from './LogisticsOrderCard';
 import LogisticsSkeleton from './LogisticsSkeleton';
