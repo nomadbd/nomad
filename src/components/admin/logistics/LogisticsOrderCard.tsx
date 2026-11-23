@@ -1,5 +1,5 @@
 import React from 'react';
-import { OrderItem } from '@/hooks/useAdminLogistics';
+import { OrderItem } from './useAdminLogistics';
 
 interface LogisticsOrderCardProps {
   item: OrderItem;
