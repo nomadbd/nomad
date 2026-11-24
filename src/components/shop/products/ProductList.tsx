@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useState, useRef } from 'react';
 import { supabase } from '@/supabaseClient';
 import { useGlobalLoading } from '@/context/LoadingContext';
+import { BannerSlot } from '@/components/banners';
 import { Product } from './productTypes';
 import ProductCard from './ProductCard';
 
@@ -130,6 +131,8 @@ export default function ProductList() {
         boxSizing: 'border-box',
       }}
     >
+      <BannerSlot slotKey="products_top" />
+
       {categories.map((category) => {
         const categoryProducts = products.filter(
           (item) => item.category === category
@@ -211,15 +214,33 @@ export default function ProductList() {
               }}
             >
               {categoryProducts.map((product) => (
-                <ProductCard
+                <div
                   key={product.id}
-                  product={product}
-                />
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    flexShrink: 0,
+                  }}
+                >
+                  <BannerSlot
+                    slotKey="product_above"
+                    productId={String(product.id)}
+                  />
+                  <ProductCard product={product} />
+                  <BannerSlot
+                    slotKey="product_below"
+                    productId={String(product.id)}
+                  />
+                </div>
               ))}
             </div>
+
+            <BannerSlot slotKey={`category_below_${category}`} />
           </div>
         );
       })}
+
+      <BannerSlot slotKey="products_bottom" />
 
       <style>{`
         @keyframes swapFadeIn {
