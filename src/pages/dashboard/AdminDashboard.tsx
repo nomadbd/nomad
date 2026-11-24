@@ -9,6 +9,7 @@ import {
   AdminStaff,
   AdminCustomers,
   AdminLogistics,
+  BannerManager,
   StaffProfile,
   AdminMessages,
   AdminNotifications
@@ -21,10 +22,11 @@ import { AdminHeader } from './AdminHeader';
 import { AdminSidebar } from './AdminSidebar';
 import ReminderLoading from '../../components/ui/ReminderLoading';
 
-export type TabType = 
+export type TabType =
   | 'overview'
   | 'orders'
   | 'products'
+  | 'banners'
   | 'logistics'
   | 'messages'
   | 'notifications'
@@ -40,7 +42,7 @@ const AdminDashboard: React.FC = () => {
     const params = new URLSearchParams(window.location.search);
     const tab = params.get('tab') as TabType;
     const validTabs: TabType[] = [
-      'overview', 'orders', 'products', 'logistics', 'messages', 
+      'overview', 'orders', 'products', 'banners', 'logistics', 'messages',
       'notifications', 'customers', 'ambassadors', 'staff', 'reminders', 'history'
     ];
     return validTabs.includes(tab) ? tab : 'overview';
@@ -183,7 +185,6 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
-  // পেজ রিফ্রেশ বা প্রথম এন্ট্রির সময় ১০ সেকেন্ড (১০০০০ মি.সে.) রিমাইন্ডার/লোডিং দেখানোর লজিক
   useEffect(() => {
     let isMounted = true;
 
@@ -192,7 +193,7 @@ const AdminDashboard: React.FC = () => {
       await fetchCurrentUserAndRole();
 
       const elapsedTime = Date.now() - startTime;
-      const minLoadingTime = 10000; // ১০ সেকেন্ড সময় নির্ধারণ করা হলো
+      const minLoadingTime = 10000;
       const remainingTime = Math.max(0, minLoadingTime - elapsedTime);
 
       setTimeout(() => {
@@ -218,7 +219,6 @@ const AdminDashboard: React.FC = () => {
     }
   }, [loading, hasAdminAccess]);
 
-  // পেজ রিফ্রেশ বা ইনিশিয়াল লোডিংয়ের সময় রিমাইন্ডার স্ক্রিন দেখাবে
   if (loading) {
     return <ReminderLoading />;
   }
@@ -230,7 +230,7 @@ const AdminDashboard: React.FC = () => {
   const isChatOpen = activeTab === 'messages' && !!activeChat;
 
   return (
-    <div 
+    <div
       className="animate-fade-in"
       style={{
         backgroundColor: '#030303',
@@ -317,6 +317,9 @@ const AdminDashboard: React.FC = () => {
               onCloseAdd={() => setIsAddOpen(false)}
             />
           )}
+          {activeTab === 'banners' && (
+            <BannerManager key="banners" />
+          )}
           {activeTab === 'logistics' && (
             <AdminLogistics
               key="logistics"
@@ -395,17 +398,17 @@ const AdminDashboard: React.FC = () => {
             />
           )}
           {activeTab === 'reminders' && (
-            <AdminReminders 
-              key="reminders" 
+            <AdminReminders
+              key="reminders"
               searchQuery={searchQuery}
               isAddOpen={isAddOpen}
               onCloseAdd={() => setIsAddOpen(false)}
             />
           )}
           {activeTab === 'history' && (
-            <AdminActivityLog 
-              key="history" 
-              onBack={() => handleTabChange('overview')} 
+            <AdminActivityLog
+              key="history"
+              onBack={() => handleTabChange('overview')}
             />
           )}
         </main>
