@@ -20,7 +20,6 @@ import AdminDashboard from './pages/dashboard/AdminDashboard';
 
 import Header from './components/ui/Header';
 import SearchOverlay from './components/shop/search/SearchOverlay';
-import Hero from './components/Hero/Hero';
 import ProductList from './components/shop/products/ProductList';
 import CartOverlay from './components/shop/cart/CartOverlay';
 import AuthOverlay from './components/auth/AuthOverlay';
@@ -72,7 +71,6 @@ const AppContent: React.FC<AppContentProps> = ({
   const isHomeRoute = location.pathname === '/';
   const showHeader = !isAdminRoute && !isProfileRoute;
 
-  // Home uses the App Header. Profile has its own view-specific headers.
   const hasHeaderBelowWhichLoaderShouldStart =
     isHomeRoute || isProfileRoute;
 
@@ -159,7 +157,6 @@ const AppContent: React.FC<AppContentProps> = ({
                   left: 0,
                   right: 0,
                   bottom: 0,
-                  // Header uses z-index 1000; keep this overlay underneath it.
                   zIndex: 999,
                   backgroundColor: '#000',
                   overflowY: 'auto',
@@ -195,7 +192,6 @@ const AppContent: React.FC<AppContentProps> = ({
               path="/"
               element={
                 <>
-                  <Hero />
                   <main style={{ padding: '32px' }}>
                     <ProductList />
                   </main>
