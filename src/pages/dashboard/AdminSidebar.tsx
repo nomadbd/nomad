@@ -26,6 +26,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
     { id: 'overview', label: 'OVERVIEW' },
     { id: 'orders', label: 'ORDERS' },
     { id: 'products', label: 'PRODUCTS' },
+    { id: 'banners', label: 'BANNERS' },
     { id: 'logistics', label: 'LOGISTICS' },
     { id: 'messages', label: 'MESSAGES' },
     { id: 'notifications', label: 'NOTIFICATIONS' },
@@ -33,7 +34,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
     { id: 'ambassadors', label: 'AMBASSADORS' },
     { id: 'staff', label: 'STAFF' },
     { id: 'customers', label: 'CUSTOMERS' },
-    { id: 'history', label: 'ACTIVITY LOGS' }, // ← অ্যাক্টিভিটি লগ ট্যাবটিকে সবার নিচে স্থানান্তর করা হলো
+    { id: 'history', label: 'ACTIVITY LOGS' },
   ];
 
   return (
