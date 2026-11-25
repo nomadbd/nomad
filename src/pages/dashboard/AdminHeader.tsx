@@ -48,6 +48,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
       case 'overview': return 'OVERVIEW';
       case 'orders': return 'ORDERS';
       case 'products': return 'PRODUCTS';
+      case 'banners': return 'BANNERS';
       case 'logistics': return 'LOGISTICS';
       case 'messages': return 'MESSAGES';
       case 'notifications': return 'NOTIFICATIONS';
@@ -126,7 +127,6 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
           <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
             {!menuOpen && (
               <>
-                {/* Plus / Add Icon */}
                 {(activeTab === 'products' || activeTab === 'ambassadors' || activeTab === 'messages' || activeTab === 'staff' || activeTab === 'reminders') && (
                   <button
                     className={`${styles.nomadActionBtn} ${isAddOpen ? styles.nomadActionBtnActive : ''}`}
@@ -137,7 +137,6 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
                   </button>
                 )}
 
-                {/* Search Icon */}
                 {activeTab !== 'overview' && (
                   <button
                     className={`${styles.nomadActionBtn} ${isSearchOpen ? styles.nomadActionBtnActive : ''}`}
@@ -148,7 +147,6 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
                   </button>
                 )}
 
-                {/* Filter Icon */}
                 {activeTab !== 'reminders' && (
                   <button
                     className={`${styles.nomadActionBtn} ${isFilterOpen ? styles.nomadActionBtnActive : ''}`}
@@ -159,7 +157,6 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
                   </button>
                 )}
 
-                {/* Settings Icon */}
                 {activeTab === 'logistics' && (
                   <button
                     className={`${styles.nomadActionBtn} ${isLogisticsSettingsOpen ? styles.nomadActionBtnActive : ''}`}
@@ -172,7 +169,6 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
               </>
             )}
 
-            {/* Menu / Close Toggle Icon */}
             <button
               className={`${styles.nomadMenuToggle} ${styles.nomadMenuToggleBtn} ${menuOpen ? styles.nomadMenuToggleBtnActive : ''}`}
               onClick={onToggleMenu}
