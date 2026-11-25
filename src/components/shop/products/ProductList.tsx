@@ -222,25 +222,13 @@ export default function ProductList() {
                     flexShrink: 0,
                   }}
                 >
-                  <BannerSlot
-                    slotKey="product_above"
-                    productId={String(product.id)}
-                  />
                   <ProductCard product={product} />
-                  <BannerSlot
-                    slotKey="product_below"
-                    productId={String(product.id)}
-                  />
                 </div>
               ))}
             </div>
-
-            <BannerSlot slotKey={`category_below_${category}`} />
           </div>
         );
       })}
-
-      <BannerSlot slotKey="products_bottom" />
 
       <style>{`
         @keyframes swapFadeIn {
