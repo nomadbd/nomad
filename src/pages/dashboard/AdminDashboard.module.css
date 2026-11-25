@@ -24,7 +24,7 @@
 }
 
 .nomadHeader {
-  position: sticky;
+  position: fixed;
   top: 0;
   left: 0;
   right: 0;
@@ -161,15 +161,13 @@
     right: 0;
     bottom: 0;
     z-index: 999;
-    background-color: #060606; /* সলিড ব্যাকগ্রাউন্ড */
+    background-color: #060606;
     padding: 16px 16px 80px 16px !important;
     box-sizing: border-box;
     display: flex !important;
     flex-direction: column !important;
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch;
-
-    /* স্লাইড + ফেড-ইন/আউট কম্বিনেশন */
     opacity: 0;
     visibility: hidden;
     transform: translate3d(-100%, 0, 0);
@@ -217,6 +215,7 @@
   .nomadHeader {
     padding: 0 20px;
     height: 60px;
+    position: fixed;
   }
 
   .nomadLayout {
@@ -272,7 +271,7 @@
     width: calc(100% - 220px) !important;
     flex: 1 1 auto !important;
     max-width: none !important;
-    padding: 24px 28px !important;
+    padding: 84px 28px 24px 28px !important;
     min-height: calc(100vh - 60px);
     overflow-x: hidden !important;
     box-sizing: border-box;
