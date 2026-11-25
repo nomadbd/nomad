@@ -16,11 +16,9 @@
 :global(body) {
   width: 100% !important;
   max-width: 100% !important;
-  overflow-x: hidden !important;
   overscroll-behavior-x: none;
   touch-action: pan-y;
   background-color: #030303;
-  position: relative;
 }
 
 .nomadHeader {
