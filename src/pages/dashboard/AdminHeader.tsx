@@ -1,10 +1,10 @@
 import React from 'react';
-import { PlusIcon, SearchIcon, FilterIcon, MenuIcon, CloseIcon, SettingsIcon } from '@/components/icons';
+import { PlusIcon, SearchIcon, FilterIcon, MenuIcon, CloseIcon, SettingsIcon } from '../../components/icons';
 import type { TabType } from '../AdminDashboard';
 
 interface AdminHeaderProps {
   styles: { [key: string]: string };
-  isHeaderVisible: boolean;
+  isHeaderVisible?: boolean;
   isSearchOpen: boolean;
   searchQuery: string;
   onSearchChange: (query: string) => void;
@@ -19,12 +19,11 @@ interface AdminHeaderProps {
   onToggleLogisticsSettings: () => void;
   menuOpen: boolean;
   onToggleMenu: () => void;
-  subPage?: string | null; 
+  subPage?: string | null;
 }
 
 export const AdminHeader: React.FC<AdminHeaderProps> = ({
   styles,
-  isHeaderVisible,
   isSearchOpen,
   searchQuery,
   onSearchChange,
@@ -62,7 +61,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
   };
 
   return (
-    <header className={`${styles.nomadHeader} ${!isHeaderVisible ? styles.headerHidden : ''}`}>
+    <header className={styles.nomadHeader}>
       {isSearchOpen ? (
         <div style={{ display: 'flex', alignItems: 'center', width: '100%', gap: '10px' }}>
           <div
