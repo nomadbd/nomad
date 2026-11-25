@@ -216,8 +216,7 @@ const AdminDashboard: React.FC = () => {
         fontFamily: 'monospace, sans-serif',
         width: '100%',
         maxWidth: '100%',
-        overflowX: 'hidden',
-        position: 'relative'
+        overflowX: 'clip'
       }}
     >
       {!isChatOpen && (
