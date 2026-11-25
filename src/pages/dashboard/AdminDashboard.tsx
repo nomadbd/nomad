@@ -72,9 +72,6 @@ const AdminDashboard: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [isProfileOpen, setIsProfileOpen] = useState<boolean>(false);
 
-  const [isHeaderVisible, setIsHeaderVisible] = useState<boolean>(true);
-  const [lastScrollY, setLastScrollY] = useState<number>(0);
-
   const handleTabChange = (tab: TabType) => {
     setActiveTab(tab);
     setMenuOpen(false);
@@ -97,7 +94,6 @@ const AdminDashboard: React.FC = () => {
       if (next) {
         setIsSearchOpen(false);
         setIsFilterOpen(false);
-        setIsHeaderVisible(true);
       }
       return next;
     });
@@ -111,25 +107,6 @@ const AdminDashboard: React.FC = () => {
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-
-      if (menuOpen) return;
-
-      if (currentScrollY > lastScrollY && currentScrollY > 40) {
-        setIsHeaderVisible(false);
-      } else {
-        setIsHeaderVisible(true);
-      }
-
-      setLastScrollY(currentScrollY);
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [lastScrollY, menuOpen]);
 
   useEffect(() => {
     const { body } = document;
@@ -246,7 +223,7 @@ const AdminDashboard: React.FC = () => {
       {!isChatOpen && (
         <AdminHeader
           styles={styles}
-          isHeaderVisible={isHeaderVisible}
+          isHeaderVisible={true}
           isSearchOpen={isSearchOpen}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
