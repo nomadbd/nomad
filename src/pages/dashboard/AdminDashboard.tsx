@@ -208,7 +208,6 @@ const AdminDashboard: React.FC = () => {
 
   return (
     <div
-      className="animate-fade-in"
       style={{
         backgroundColor: '#030303',
         color: '#fff',
@@ -216,7 +215,6 @@ const AdminDashboard: React.FC = () => {
         fontFamily: 'monospace, sans-serif',
         width: '100%',
         maxWidth: '100%',
-        overflowX: 'clip'
       }}
     >
       {!isChatOpen && (
