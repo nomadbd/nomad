@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { supabase } from '../../../supabaseClient';
+import { supabase } from '@/supabaseClient';
 import { BannerPostModal } from './BannerPostModal';
 import { BannerListItem, BannerRecord } from './BannerListItem';
 
