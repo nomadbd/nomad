@@ -136,7 +136,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
                   </button>
                 )}
 
-                {activeTab !== 'overview' && (
+                {activeTab !== 'overview' && activeTab !== 'banners' && (
                   <button
                     className={`${styles.nomadActionBtn} ${isSearchOpen ? styles.nomadActionBtnActive : ''}`}
                     onClick={onToggleSearch}
@@ -146,7 +146,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
                   </button>
                 )}
 
-                {activeTab !== 'reminders' && (
+                {activeTab !== 'reminders' && activeTab !== 'banners' && (
                   <button
                     className={`${styles.nomadActionBtn} ${isFilterOpen ? styles.nomadActionBtnActive : ''}`}
                     onClick={onToggleFilter}
