@@ -126,7 +126,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
           <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
             {!menuOpen && (
               <>
-                {(activeTab === 'products' || activeTab === 'ambassadors' || activeTab === 'messages' || activeTab === 'staff' || activeTab === 'reminders') && (
+                {(activeTab === 'products' || activeTab === 'banners' || activeTab === 'ambassadors' || activeTab === 'messages' || activeTab === 'staff' || activeTab === 'reminders') && (
                   <button
                     className={`${styles.nomadActionBtn} ${isAddOpen ? styles.nomadActionBtnActive : ''}`}
                     onClick={onToggleAdd}
