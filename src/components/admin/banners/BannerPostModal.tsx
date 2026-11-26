@@ -19,12 +19,13 @@ const INITIAL_STYLES: BannerStyles = {
 
 const fieldStyle: React.CSSProperties = {
   width: '100%',
-  padding: '9px 12px',
-  borderRadius: '9px',
-  border: '1px solid #242429',
+  minWidth: 0,
+  padding: '8px 10px',
+  borderRadius: '8px',
+  border: '1px solid #232328',
   backgroundColor: '#101013',
   color: '#f4f4f5',
-  fontSize: '13px',
+  fontSize: '12px',
   boxSizing: 'border-box',
   outline: 'none',
 };
@@ -68,7 +69,9 @@ export const BannerPostModal: React.FC<BannerPostModalProps> = ({
   const [mediaFileUrl, setMediaFileUrl] = useState<string>('');
   const [mediaKind, setMediaKind] = useState<'image' | 'video' | ''>('');
   const [externalVideoUrl, setExternalVideoUrl] = useState<string>('');
-  const [showVideoInput, setShowVideoInput] = useState<boolean>(false);
+  const [showVideoLink, setShowVideoLink] = useState<boolean>(false);
+  const [showSchedule, setShowSchedule] = useState<boolean>(false);
+  const [showStyle, setShowStyle] = useState<boolean>(false);
   const [publicId, setPublicId] = useState<string>('');
   const [linkUrl, setLinkUrl] = useState<string>('');
   const [ctaText, setCtaText] = useState<string>('');
@@ -119,7 +122,7 @@ export const BannerPostModal: React.FC<BannerPostModalProps> = ({
       setMediaFileUrl(result.secure_url);
       setPublicId(result.public_id || '');
       setExternalVideoUrl('');
-      setShowVideoInput(false);
+      setShowVideoLink(false);
     } catch (err: any) {
       setErrorMsg(err.message || 'আপলোড সমস্যা হয়েছে।');
     } finally {
@@ -133,7 +136,9 @@ export const BannerPostModal: React.FC<BannerPostModalProps> = ({
     setMediaFileUrl('');
     setMediaKind('');
     setExternalVideoUrl('');
-    setShowVideoInput(false);
+    setShowVideoLink(false);
+    setShowSchedule(false);
+    setShowStyle(false);
     setPublicId('');
     setLinkUrl('');
     setCtaText('');
@@ -192,6 +197,17 @@ export const BannerPostModal: React.FC<BannerPostModalProps> = ({
     onClose();
   };
 
+  const chipBtnStyle = (active: boolean): React.CSSProperties => ({
+    padding: '5px 9px',
+    borderRadius: '7px',
+    border: '1px solid #25252b',
+    backgroundColor: active ? '#1e1e24' : '#111114',
+    color: active ? '#fafafa' : '#a1a1aa',
+    fontSize: '11px',
+    cursor: 'pointer',
+    whiteSpace: 'nowrap',
+  });
+
   return (
     <div
       style={{
@@ -203,48 +219,22 @@ export const BannerPostModal: React.FC<BannerPostModalProps> = ({
         zIndex: 90,
         backgroundColor: '#09090b',
         overflowY: 'auto',
-        padding: '14px 12px 24px',
+        overflowX: 'hidden',
+        padding: '10px',
+        boxSizing: 'border-box',
       }}
     >
-      <div style={{ maxWidth: '560px', margin: '0 auto' }}>
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: '10px',
-          }}
-        >
-          <span style={{ fontSize: '12px', fontWeight: 600, color: '#a1a1aa' }}>
-            Share a brand update
-          </span>
-          <button
-            type="button"
-            onClick={onClose}
-            style={{
-              background: '#141417',
-              border: '1px solid #27272a',
-              color: '#f4f4f5',
-              borderRadius: '7px',
-              padding: '4px 10px',
-              fontSize: '11px',
-              cursor: 'pointer',
-            }}
-          >
-            Close
-          </button>
-        </div>
-
+      <div style={{ width: '100%', maxWidth: '540px', margin: '0 auto', minWidth: 0 }}>
         {errorMsg && (
           <div
             style={{
-              padding: '8px 11px',
+              padding: '7px 10px',
               borderRadius: '8px',
               backgroundColor: '#1a0e0e',
               border: '1px solid #3f1d1d',
               color: '#f87171',
-              fontSize: '12px',
-              marginBottom: '10px',
+              fontSize: '11px',
+              marginBottom: '8px',
             }}
           >
             {errorMsg}
@@ -254,21 +244,18 @@ export const BannerPostModal: React.FC<BannerPostModalProps> = ({
         <form
           onSubmit={handleSubmit}
           style={{
-            backgroundColor: '#0d0d10',
-            border: '1px solid #222226',
-            borderRadius: '12px',
-            padding: '12px',
             display: 'grid',
-            gap: '9px',
+            gap: '8px',
+            width: '100%',
+            minWidth: 0,
           }}
         >
           <textarea
             rows={4}
-            placeholder="Share a brand update..."
+            placeholder="Share a brand update"
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            autoFocus
-            style={{ ...fieldStyle, resize: 'vertical', minHeight: '92px' }}
+            style={{ ...fieldStyle, resize: 'vertical', minHeight: '88px' }}
           />
 
           <input
@@ -279,24 +266,9 @@ export const BannerPostModal: React.FC<BannerPostModalProps> = ({
             style={fieldStyle}
           />
 
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            <label
-              style={{
-                flex: 1,
-                minWidth: '130px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: '7px 10px',
-                borderRadius: '8px',
-                border: '1px dashed #2b2b30',
-                backgroundColor: '#111114',
-                color: '#d4d4d8',
-                fontSize: '12px',
-                cursor: 'pointer',
-              }}
-            >
-              Photo / Video File
+          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
+            <label style={chipBtnStyle(false)}>
+              Media
               <input
                 type="file"
                 accept="image/*,video/*"
@@ -307,28 +279,51 @@ export const BannerPostModal: React.FC<BannerPostModalProps> = ({
                 style={{ display: 'none' }}
               />
             </label>
-
             <button
               type="button"
-              onClick={() => setShowVideoInput((v) => !v)}
+              onClick={() => setShowVideoLink((v) => !v)}
+              style={chipBtnStyle(showVideoLink)}
+            >
+              Video URL
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowSchedule((v) => !v)}
+              style={chipBtnStyle(showSchedule)}
+            >
+              Time
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowStyle((v) => !v)}
+              style={chipBtnStyle(showStyle)}
+            >
+              Style
+            </button>
+            <label
               style={{
-                padding: '7px 12px',
-                borderRadius: '8px',
-                border: '1px solid #27272a',
-                backgroundColor: showVideoInput ? '#1d1d22' : '#111114',
-                color: '#e4e4e7',
-                fontSize: '12px',
+                marginLeft: 'auto',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                fontSize: '11px',
+                color: isActive ? '#fafafa' : '#71717a',
                 cursor: 'pointer',
               }}
             >
-              Video Link
-            </button>
+              <input
+                type="checkbox"
+                checked={isActive}
+                onChange={(e) => setIsActive(e.target.checked)}
+              />
+              Live
+            </label>
           </div>
 
-          {showVideoInput && (
+          {showVideoLink && (
             <input
               type="url"
-              placeholder="YouTube, Facebook or Vimeo link..."
+              placeholder="YouTube, Facebook, Vimeo URL"
               value={externalVideoUrl}
               onChange={(e) => {
                 setExternalVideoUrl(e.target.value);
@@ -350,11 +345,10 @@ export const BannerPostModal: React.FC<BannerPostModalProps> = ({
                 alt="Preview"
                 style={{
                   width: '100%',
-                  maxHeight: '190px',
+                  maxHeight: '170px',
                   objectFit: 'cover',
                   borderRadius: '8px',
                   display: 'block',
-                  border: '1px solid #222226',
                 }}
               />
               <button
@@ -367,12 +361,12 @@ export const BannerPostModal: React.FC<BannerPostModalProps> = ({
                   position: 'absolute',
                   top: '6px',
                   right: '6px',
-                  background: 'rgba(0,0,0,0.7)',
+                  background: 'rgba(0,0,0,0.75)',
                   color: '#fff',
                   border: 'none',
                   borderRadius: '6px',
-                  padding: '2px 7px',
-                  fontSize: '11px',
+                  padding: '2px 6px',
+                  fontSize: '10px',
                   cursor: 'pointer',
                 }}
               >
@@ -387,10 +381,9 @@ export const BannerPostModal: React.FC<BannerPostModalProps> = ({
               controls
               style={{
                 width: '100%',
-                maxHeight: '200px',
+                maxHeight: '180px',
                 borderRadius: '8px',
                 display: 'block',
-                border: '1px solid #222226',
               }}
             />
           )}
@@ -402,8 +395,8 @@ export const BannerPostModal: React.FC<BannerPostModalProps> = ({
               allowFullScreen
               style={{
                 width: '100%',
-                height: '190px',
-                border: '1px solid #222226',
+                height: '175px',
+                border: '1px solid #232328',
                 borderRadius: '8px',
                 backgroundColor: '#000',
               }}
@@ -413,20 +406,21 @@ export const BannerPostModal: React.FC<BannerPostModalProps> = ({
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: '1fr 1fr 0.65fr',
-              gap: '8px',
+              gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr) 64px',
+              gap: '6px',
+              width: '100%',
             }}
           >
             <input
               type="text"
-              placeholder="Link (optional)"
+              placeholder="Link (opt)"
               value={linkUrl}
               onChange={(e) => setLinkUrl(e.target.value)}
               style={fieldStyle}
             />
             <input
               type="text"
-              placeholder="Button (optional)"
+              placeholder="Button (opt)"
               value={ctaText}
               onChange={(e) => setCtaText(e.target.value)}
               style={fieldStyle}
@@ -440,24 +434,21 @@ export const BannerPostModal: React.FC<BannerPostModalProps> = ({
             />
           </div>
 
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: '8px',
-            }}
-          >
-            <div style={{ display: 'grid', gap: '3px' }}>
-              <span style={{ fontSize: '10px', color: '#71717a' }}>Start</span>
+          {showSchedule && (
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)',
+                gap: '6px',
+                width: '100%',
+              }}
+            >
               <input
                 type="datetime-local"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
                 style={{ ...fieldStyle, fontSize: '11px', padding: '6px 8px' }}
               />
-            </div>
-            <div style={{ display: 'grid', gap: '3px' }}>
-              <span style={{ fontSize: '10px', color: '#71717a' }}>End</span>
               <input
                 type="datetime-local"
                 value={endDate}
@@ -465,18 +456,23 @@ export const BannerPostModal: React.FC<BannerPostModalProps> = ({
                 style={{ ...fieldStyle, fontSize: '11px', padding: '6px 8px' }}
               />
             </div>
-          </div>
+          )}
 
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              paddingTop: '6px',
-              borderTop: '1px solid #1a1a1e',
-            }}
-          >
-            <div style={{ display: 'flex', gap: '10px', alignItems: 'center', fontSize: '11px', color: '#a1a1aa' }}>
+          {showStyle && (
+            <div
+              style={{
+                display: 'flex',
+                gap: '12px',
+                flexWrap: 'wrap',
+                alignItems: 'center',
+                fontSize: '11px',
+                color: '#a1a1aa',
+                padding: '6px 8px',
+                borderRadius: '8px',
+                backgroundColor: '#101013',
+                border: '1px solid #232328',
+              }}
+            >
               <label style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}>
                 BG
                 <input
@@ -511,43 +507,43 @@ export const BannerPostModal: React.FC<BannerPostModalProps> = ({
                 />
               </label>
             </div>
+          )}
 
-            <label
+          <div style={{ display: 'flex', gap: '8px', marginTop: '2px' }}>
+            <button
+              type="button"
+              onClick={onClose}
               style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '5px',
+                padding: '8px 12px',
+                borderRadius: '8px',
+                border: '1px solid #27272a',
+                backgroundColor: '#111114',
+                color: '#a1a1aa',
                 fontSize: '12px',
-                color: isActive ? '#fafafa' : '#71717a',
                 cursor: 'pointer',
               }}
             >
-              <input
-                type="checkbox"
-                checked={isActive}
-                onChange={(e) => setIsActive(e.target.checked)}
-              />
-              Active
-            </label>
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={uploading || saving}
+              style={{
+                flex: 1,
+                padding: '8px 14px',
+                borderRadius: '8px',
+                border: 'none',
+                backgroundColor: '#fafafa',
+                color: '#09090b',
+                fontWeight: 600,
+                fontSize: '12px',
+                cursor: uploading || saving ? 'not-allowed' : 'pointer',
+                opacity: uploading || saving ? 0.6 : 1,
+              }}
+            >
+              {saving ? 'Posting...' : 'Post'}
+            </button>
           </div>
-
-          <button
-            type="submit"
-            disabled={uploading || saving}
-            style={{
-              padding: '9px 14px',
-              borderRadius: '8px',
-              border: 'none',
-              backgroundColor: '#fafafa',
-              color: '#09090b',
-              fontWeight: 600,
-              fontSize: '13px',
-              cursor: uploading || saving ? 'not-allowed' : 'pointer',
-              opacity: uploading || saving ? 0.6 : 1,
-            }}
-          >
-            {saving ? 'Posting...' : 'Post'}
-          </button>
         </form>
       </div>
     </div>
