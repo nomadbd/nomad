@@ -44,8 +44,6 @@ export const BannerManager: React.FC = () => {
   const [publicId, setPublicId] = useState<string>('');
   const [linkUrl, setLinkUrl] = useState<string>('');
   const [ctaText, setCtaText] = useState<string>('');
-  const [slotKey, setSlotKey] = useState<string>('products_top');
-  const [targetProductId, setTargetProductId] = useState<string>('');
   const [sortOrder, setSortOrder] = useState<number>(0);
   const [isActive, setIsActive] = useState<boolean>(true);
   const [stylesForm, setStylesForm] = useState<BannerStyles>(INITIAL_STYLES);
@@ -118,8 +116,7 @@ export const BannerManager: React.FC = () => {
       public_id: publicId.trim() || null,
       link_url: linkUrl.trim() || null,
       cta_text: ctaText.trim() || null,
-      slot_key: slotKey.trim() || 'products_top',
-      target_product_id: targetProductId.trim() || null,
+      slot_key: 'top_below_header',
       sort_order: Number(sortOrder) || 0,
       is_active: isActive,
       styles: stylesForm,
@@ -139,7 +136,6 @@ export const BannerManager: React.FC = () => {
     setPublicId('');
     setLinkUrl('');
     setCtaText('');
-    setTargetProductId('');
     setStatusMsg('সংরক্ষিত হয়েছে।');
     fetchBanners();
   };
@@ -336,38 +332,7 @@ export const BannerManager: React.FC = () => {
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: '1.2fr 1.2fr 0.7fr',
-              gap: '8px',
-            }}
-          >
-            <input
-              type="text"
-              placeholder="Slot Key"
-              value={slotKey}
-              onChange={(e) => setSlotKey(e.target.value)}
-              required
-              style={inputStyle}
-            />
-            <input
-              type="text"
-              placeholder="Product ID (opt)"
-              value={targetProductId}
-              onChange={(e) => setTargetProductId(e.target.value)}
-              style={inputStyle}
-            />
-            <input
-              type="number"
-              placeholder="Order"
-              value={sortOrder}
-              onChange={(e) => setSortOrder(Number(e.target.value))}
-              style={inputStyle}
-            />
-          </div>
-
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
+              gridTemplateColumns: '1fr 1fr 0.7fr',
               gap: '8px',
             }}
           >
@@ -383,6 +348,13 @@ export const BannerManager: React.FC = () => {
               placeholder="CTA Text"
               value={ctaText}
               onChange={(e) => setCtaText(e.target.value)}
+              style={inputStyle}
+            />
+            <input
+              type="number"
+              placeholder="Order"
+              value={sortOrder}
+              onChange={(e) => setSortOrder(Number(e.target.value))}
               style={inputStyle}
             />
           </div>
@@ -500,29 +472,11 @@ export const BannerManager: React.FC = () => {
                     <span
                       style={{
                         fontSize: '11px',
-                        fontWeight: 500,
-                        padding: '2px 7px',
-                        borderRadius: '6px',
-                        backgroundColor: '#16161a',
-                        color: '#e4e4e7',
-                        border: '1px solid #27272a',
-                      }}
-                    >
-                      {b.slot_key}
-                    </span>
-                    <span
-                      style={{
-                        fontSize: '11px',
                         color: b.is_active ? '#4ade80' : '#71717a',
                       }}
                     >
                       {b.is_active ? '● Live' : '○ Draft'}
                     </span>
-                    {b.target_product_id && (
-                      <span style={{ fontSize: '11px', color: '#71717a' }}>
-                        #{b.target_product_id}
-                      </span>
-                    )}
                   </div>
                   <span style={{ fontSize: '11px', color: '#71717a' }}>
                     #{b.sort_order ?? 0}
