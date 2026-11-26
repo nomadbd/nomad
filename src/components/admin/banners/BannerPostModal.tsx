@@ -17,16 +17,39 @@ const INITIAL_STYLES: BannerStyles = {
   padding: '32px',
 };
 
-const inputStyle: React.CSSProperties = {
+const fieldStyle: React.CSSProperties = {
   width: '100%',
-  padding: '8px 11px',
-  borderRadius: '8px',
-  border: '1px solid #27272a',
-  backgroundColor: '#111113',
+  padding: '9px 12px',
+  borderRadius: '9px',
+  border: '1px solid #242429',
+  backgroundColor: '#101013',
   color: '#f4f4f5',
   fontSize: '13px',
   boxSizing: 'border-box',
   outline: 'none',
+};
+
+const getEmbedUrl = (url: string): string | null => {
+  const trimmed = url.trim();
+  if (!trimmed) return null;
+
+  const ytMatch = trimmed.match(
+    /(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{6,})/
+  );
+  if (ytMatch?.[1]) {
+    return `https://www.youtube.com/embed/${ytMatch[1]}`;
+  }
+
+  const vimeoMatch = trimmed.match(/vimeo\.com\/(?:video\/)?(\d+)/);
+  if (vimeoMatch?.[1]) {
+    return `https://player.vimeo.com/video/${vimeoMatch[1]}`;
+  }
+
+  if (trimmed.includes('facebook.com') || trimmed.includes('fb.watch')) {
+    return `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(trimmed)}&show_text=false`;
+  }
+
+  return null;
 };
 
 interface BannerPostModalProps {
@@ -40,11 +63,12 @@ export const BannerPostModal: React.FC<BannerPostModalProps> = ({
   onClose,
   onSaved,
 }) => {
-  const [postKind, setPostKind] = useState<'text' | 'image' | 'video'>('text');
+  const [content, setContent] = useState<string>('');
   const [title, setTitle] = useState<string>('');
-  const [subtitle, setSubtitle] = useState<string>('');
-  const [bodyText, setBodyText] = useState<string>('');
-  const [mediaUrl, setMediaUrl] = useState<string>('');
+  const [mediaFileUrl, setMediaFileUrl] = useState<string>('');
+  const [mediaKind, setMediaKind] = useState<'image' | 'video' | ''>('');
+  const [externalVideoUrl, setExternalVideoUrl] = useState<string>('');
+  const [showVideoInput, setShowVideoInput] = useState<boolean>(false);
   const [publicId, setPublicId] = useState<string>('');
   const [linkUrl, setLinkUrl] = useState<string>('');
   const [ctaText, setCtaText] = useState<string>('');
@@ -59,11 +83,16 @@ export const BannerPostModal: React.FC<BannerPostModalProps> = ({
 
   if (!isOpen) return null;
 
-  const handleMediaUpload = async (file: File, kind: 'image' | 'video') => {
+  const embedSrc = getEmbedUrl(externalVideoUrl);
+
+  const handleFileUpload = async (file: File) => {
     if (!CLOUD_NAME) {
       setErrorMsg('VITE_CLOUDINARY_CLOUD_NAME সেট করা নেই।');
       return;
     }
+
+    const isVideo = file.type.startsWith('video/');
+    const kind: 'image' | 'video' = isVideo ? 'video' : 'image';
 
     setUploading(true);
     setErrorMsg('');
@@ -73,9 +102,8 @@ export const BannerPostModal: React.FC<BannerPostModalProps> = ({
       formData.append('file', file);
       formData.append('upload_preset', UPLOAD_PRESET);
 
-      const endpoint = kind === 'video' ? 'video/upload' : 'image/upload';
       const res = await fetch(
-        `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${endpoint}`,
+        `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${kind}/upload`,
         {
           method: 'POST',
           body: formData,
@@ -87,8 +115,11 @@ export const BannerPostModal: React.FC<BannerPostModalProps> = ({
         throw new Error(result?.error?.message || 'আপলোড ব্যর্থ হয়েছে।');
       }
 
-      setMediaUrl(result.secure_url);
+      setMediaKind(kind);
+      setMediaFileUrl(result.secure_url);
       setPublicId(result.public_id || '');
+      setExternalVideoUrl('');
+      setShowVideoInput(false);
     } catch (err: any) {
       setErrorMsg(err.message || 'আপলোড সমস্যা হয়েছে।');
     } finally {
@@ -97,10 +128,12 @@ export const BannerPostModal: React.FC<BannerPostModalProps> = ({
   };
 
   const resetForm = () => {
+    setContent('');
     setTitle('');
-    setSubtitle('');
-    setBodyText('');
-    setMediaUrl('');
+    setMediaFileUrl('');
+    setMediaKind('');
+    setExternalVideoUrl('');
+    setShowVideoInput(false);
     setPublicId('');
     setLinkUrl('');
     setCtaText('');
@@ -116,15 +149,25 @@ export const BannerPostModal: React.FC<BannerPostModalProps> = ({
     setErrorMsg('');
     setSaving(true);
 
-    const dbType = postKind === 'text' ? 'article' : 'image';
+    const trimmedVideoLink = externalVideoUrl.trim();
+    const resolvedVideoUrl =
+      mediaKind === 'video' ? mediaFileUrl || null : trimmedVideoLink || null;
+    const resolvedImageUrl = mediaKind === 'image' ? mediaFileUrl || null : null;
+    const resolvedType = resolvedImageUrl ? 'image' : 'article';
+    const resolvedMediaType = resolvedImageUrl
+      ? 'image'
+      : resolvedVideoUrl
+      ? 'video'
+      : 'text';
+
     const payload: Record<string, any> = {
-      type: dbType,
-      media_type: postKind,
-      title: title.trim() || 'Post',
-      subtitle: subtitle.trim() || null,
-      article_body: bodyText.trim() || null,
-      image_url: postKind === 'image' ? mediaUrl.trim() || null : null,
-      video_url: postKind === 'video' ? mediaUrl.trim() || null : null,
+      type: resolvedType,
+      media_type: resolvedMediaType,
+      title: title.trim() || content.trim().slice(0, 50) || 'Update',
+      subtitle: null,
+      article_body: content.trim() || null,
+      image_url: resolvedImageUrl,
+      video_url: resolvedVideoUrl,
       public_id: publicId.trim() || null,
       link_url: linkUrl.trim() || null,
       cta_text: ctaText.trim() || null,
@@ -153,31 +196,17 @@ export const BannerPostModal: React.FC<BannerPostModalProps> = ({
     <div
       style={{
         position: 'fixed',
-        inset: 0,
-        zIndex: 999,
-        backgroundColor: 'rgba(0, 0, 0, 0.78)',
-        backdropFilter: 'blur(4px)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '12px',
+        top: '56px',
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 90,
+        backgroundColor: '#09090b',
         overflowY: 'auto',
+        padding: '14px 12px 24px',
       }}
     >
-      <div
-        style={{
-          width: '100%',
-          maxWidth: '540px',
-          maxHeight: '90vh',
-          overflowY: 'auto',
-          backgroundColor: '#0d0d10',
-          border: '1px solid #222226',
-          borderRadius: '12px',
-          padding: '14px',
-          color: '#f4f4f5',
-          boxShadow: '0 16px 40px rgba(0,0,0,0.6)',
-        }}
-      >
+      <div style={{ maxWidth: '560px', margin: '0 auto' }}>
         <div
           style={{
             display: 'flex',
@@ -186,66 +215,30 @@ export const BannerPostModal: React.FC<BannerPostModalProps> = ({
             marginBottom: '10px',
           }}
         >
-          <span style={{ fontSize: '13px', fontWeight: 600 }}>New Post</span>
+          <span style={{ fontSize: '12px', fontWeight: 600, color: '#a1a1aa' }}>
+            Share a brand update
+          </span>
           <button
             type="button"
             onClick={onClose}
             style={{
-              background: '#16161a',
+              background: '#141417',
               border: '1px solid #27272a',
-              color: '#a1a1aa',
-              borderRadius: '6px',
-              padding: '3px 8px',
+              color: '#f4f4f5',
+              borderRadius: '7px',
+              padding: '4px 10px',
               fontSize: '11px',
               cursor: 'pointer',
             }}
           >
-            ✕
+            Close
           </button>
-        </div>
-
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr 1fr',
-            gap: '4px',
-            padding: '3px',
-            borderRadius: '9px',
-            backgroundColor: '#141417',
-            border: '1px solid #222226',
-            marginBottom: '10px',
-          }}
-        >
-          {(['text', 'image', 'video'] as const).map((k) => (
-            <button
-              key={k}
-              type="button"
-              onClick={() => {
-                setPostKind(k);
-                setMediaUrl('');
-                setPublicId('');
-              }}
-              style={{
-                padding: '6px 8px',
-                borderRadius: '7px',
-                border: 'none',
-                backgroundColor: postKind === k ? '#fafafa' : 'transparent',
-                color: postKind === k ? '#09090b' : '#a1a1aa',
-                fontWeight: 600,
-                fontSize: '12px',
-                cursor: 'pointer',
-                textTransform: 'capitalize',
-              }}
-            >
-              {k}
-            </button>
-          ))}
         </div>
 
         {errorMsg && (
           <div
             style={{
-              padding: '7px 10px',
+              padding: '8px 11px',
               borderRadius: '8px',
               backgroundColor: '#1a0e0e',
               border: '1px solid #3f1d1d',
@@ -258,111 +251,192 @@ export const BannerPostModal: React.FC<BannerPostModalProps> = ({
           </div>
         )}
 
-        <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '8px' }}>
+        <form
+          onSubmit={handleSubmit}
+          style={{
+            backgroundColor: '#0d0d10',
+            border: '1px solid #222226',
+            borderRadius: '12px',
+            padding: '12px',
+            display: 'grid',
+            gap: '9px',
+          }}
+        >
+          <textarea
+            rows={4}
+            placeholder="Share a brand update..."
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            autoFocus
+            style={{ ...fieldStyle, resize: 'vertical', minHeight: '92px' }}
+          />
+
           <input
             type="text"
-            placeholder="Title / Headline"
+            placeholder="Headline (optional)"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            style={inputStyle}
+            style={fieldStyle}
           />
 
-          <input
-            type="text"
-            placeholder="Subtitle / Caption"
-            value={subtitle}
-            onChange={(e) => setSubtitle(e.target.value)}
-            style={inputStyle}
-          />
-
-          <textarea
-            rows={3}
-            placeholder="Write post text..."
-            value={bodyText}
-            onChange={(e) => setBodyText(e.target.value)}
-            style={{ ...inputStyle, resize: 'vertical' }}
-          />
-
-          {(postKind === 'image' || postKind === 'video') && (
-            <div
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <label
               style={{
-                border: '1px dashed #2a2a2f',
+                flex: 1,
+                minWidth: '130px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '7px 10px',
                 borderRadius: '8px',
-                padding: '8px 10px',
+                border: '1px dashed #2b2b30',
                 backgroundColor: '#111114',
+                color: '#d4d4d8',
+                fontSize: '12px',
+                cursor: 'pointer',
               }}
             >
+              Photo / Video File
               <input
                 type="file"
-                accept={postKind === 'video' ? 'video/*' : 'image/*'}
+                accept="image/*,video/*"
                 onChange={(e) => {
                   const file = e.target.files?.[0];
-                  if (file) handleMediaUpload(file, postKind);
+                  if (file) handleFileUpload(file);
                 }}
-                style={{ fontSize: '12px', color: '#d4d4d8', width: '100%' }}
+                style={{ display: 'none' }}
               />
-              {uploading && (
-                <div style={{ fontSize: '11px', color: '#a1a1aa', marginTop: '5px' }}>
-                  Uploading...
-                </div>
-              )}
-              {mediaUrl && postKind === 'image' && (
-                <img
-                  src={mediaUrl}
-                  alt="Preview"
-                  style={{
-                    width: '100%',
-                    maxHeight: '160px',
-                    objectFit: 'cover',
-                    borderRadius: '8px',
-                    marginTop: '8px',
-                    display: 'block',
-                  }}
-                />
-              )}
-              {mediaUrl && postKind === 'video' && (
-                <video
-                  src={mediaUrl}
-                  controls
-                  style={{
-                    width: '100%',
-                    maxHeight: '180px',
-                    borderRadius: '8px',
-                    marginTop: '8px',
-                    display: 'block',
-                  }}
-                />
-              )}
+            </label>
+
+            <button
+              type="button"
+              onClick={() => setShowVideoInput((v) => !v)}
+              style={{
+                padding: '7px 12px',
+                borderRadius: '8px',
+                border: '1px solid #27272a',
+                backgroundColor: showVideoInput ? '#1d1d22' : '#111114',
+                color: '#e4e4e7',
+                fontSize: '12px',
+                cursor: 'pointer',
+              }}
+            >
+              Video Link
+            </button>
+          </div>
+
+          {showVideoInput && (
+            <input
+              type="url"
+              placeholder="YouTube, Facebook or Vimeo link..."
+              value={externalVideoUrl}
+              onChange={(e) => {
+                setExternalVideoUrl(e.target.value);
+                setMediaFileUrl('');
+                setMediaKind('');
+              }}
+              style={fieldStyle}
+            />
+          )}
+
+          {uploading && (
+            <div style={{ fontSize: '11px', color: '#a1a1aa' }}>Uploading...</div>
+          )}
+
+          {mediaKind === 'image' && mediaFileUrl && (
+            <div style={{ position: 'relative' }}>
+              <img
+                src={mediaFileUrl}
+                alt="Preview"
+                style={{
+                  width: '100%',
+                  maxHeight: '190px',
+                  objectFit: 'cover',
+                  borderRadius: '8px',
+                  display: 'block',
+                  border: '1px solid #222226',
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  setMediaFileUrl('');
+                  setMediaKind('');
+                }}
+                style={{
+                  position: 'absolute',
+                  top: '6px',
+                  right: '6px',
+                  background: 'rgba(0,0,0,0.7)',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '6px',
+                  padding: '2px 7px',
+                  fontSize: '11px',
+                  cursor: 'pointer',
+                }}
+              >
+                ✕
+              </button>
             </div>
+          )}
+
+          {mediaKind === 'video' && mediaFileUrl && (
+            <video
+              src={mediaFileUrl}
+              controls
+              style={{
+                width: '100%',
+                maxHeight: '200px',
+                borderRadius: '8px',
+                display: 'block',
+                border: '1px solid #222226',
+              }}
+            />
+          )}
+
+          {!mediaFileUrl && embedSrc && (
+            <iframe
+              src={embedSrc}
+              title="Video preview"
+              allowFullScreen
+              style={{
+                width: '100%',
+                height: '190px',
+                border: '1px solid #222226',
+                borderRadius: '8px',
+                backgroundColor: '#000',
+              }}
+            />
           )}
 
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: '1fr 1fr 0.7fr',
+              gridTemplateColumns: '1fr 1fr 0.65fr',
               gap: '8px',
             }}
           >
             <input
               type="text"
-              placeholder="Link (opt)"
+              placeholder="Link (optional)"
               value={linkUrl}
               onChange={(e) => setLinkUrl(e.target.value)}
-              style={inputStyle}
+              style={fieldStyle}
             />
             <input
               type="text"
-              placeholder="CTA Text"
+              placeholder="Button (optional)"
               value={ctaText}
               onChange={(e) => setCtaText(e.target.value)}
-              style={inputStyle}
+              style={fieldStyle}
             />
             <input
               type="number"
               placeholder="Order"
               value={sortOrder}
               onChange={(e) => setSortOrder(Number(e.target.value))}
-              style={inputStyle}
+              style={fieldStyle}
             />
           </div>
 
@@ -374,21 +448,21 @@ export const BannerPostModal: React.FC<BannerPostModalProps> = ({
             }}
           >
             <div style={{ display: 'grid', gap: '3px' }}>
-              <span style={{ fontSize: '10px', color: '#71717a' }}>Start Time</span>
+              <span style={{ fontSize: '10px', color: '#71717a' }}>Start</span>
               <input
                 type="datetime-local"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                style={{ ...inputStyle, fontSize: '11px', padding: '6px 8px' }}
+                style={{ ...fieldStyle, fontSize: '11px', padding: '6px 8px' }}
               />
             </div>
             <div style={{ display: 'grid', gap: '3px' }}>
-              <span style={{ fontSize: '10px', color: '#71717a' }}>End Time</span>
+              <span style={{ fontSize: '10px', color: '#71717a' }}>End</span>
               <input
                 type="datetime-local"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                style={{ ...inputStyle, fontSize: '11px', padding: '6px 8px' }}
+                style={{ ...fieldStyle, fontSize: '11px', padding: '6px 8px' }}
               />
             </div>
           </div>
@@ -399,7 +473,7 @@ export const BannerPostModal: React.FC<BannerPostModalProps> = ({
               justifyContent: 'space-between',
               alignItems: 'center',
               paddingTop: '6px',
-              borderTop: '1px solid #1b1b1f',
+              borderTop: '1px solid #1a1a1e',
             }}
           >
             <div style={{ display: 'flex', gap: '10px', alignItems: 'center', fontSize: '11px', color: '#a1a1aa' }}>
@@ -461,7 +535,6 @@ export const BannerPostModal: React.FC<BannerPostModalProps> = ({
             type="submit"
             disabled={uploading || saving}
             style={{
-              marginTop: '4px',
               padding: '9px 14px',
               borderRadius: '8px',
               border: 'none',
@@ -473,7 +546,7 @@ export const BannerPostModal: React.FC<BannerPostModalProps> = ({
               opacity: uploading || saving ? 0.6 : 1,
             }}
           >
-            {saving ? 'Saving...' : 'Publish'}
+            {saving ? 'Posting...' : 'Post'}
           </button>
         </form>
       </div>
