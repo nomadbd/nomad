@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useState, useRef } from 'react';
 import { supabase } from '@/supabaseClient';
 import { useGlobalLoading } from '@/context/LoadingContext';
-import { BannerSlot } from '@/components/banners/BannerSlot';
+import { BannerSlot } from '@/components/admin/banners/BannerSlot';
 import { Product } from './productTypes';
 import ProductCard from './ProductCard';
 
