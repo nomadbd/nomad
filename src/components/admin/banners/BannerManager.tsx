@@ -7,26 +7,27 @@ const UPLOAD_PRESET =
   (import.meta.env.VITE_CLOUDINARY_BANNER_PRESET as string) || 'banners_preset';
 
 const INITIAL_STYLES: BannerStyles = {
-  backgroundColor: '#1a1a1a',
-  titleColor: '#ffffff',
-  textColor: '#cccccc',
+  backgroundColor: '#18181b',
+  titleColor: '#fafafa',
+  textColor: '#a1a1aa',
   titleFontSize: '2.5rem',
   textFontSize: '1.1rem',
-  buttonBg: '#ffffff',
-  buttonColor: '#000000',
+  buttonBg: '#fafafa',
+  buttonColor: '#09090b',
   padding: '32px',
 };
 
-const fieldStyle: React.CSSProperties = {
+const inputStyle: React.CSSProperties = {
   width: '100%',
-  padding: '10px 12px',
+  padding: '8px 11px',
   borderRadius: '8px',
-  border: '1px solid #262626',
-  backgroundColor: '#141414',
-  color: '#f5f5f5',
-  fontSize: '14px',
+  border: '1px solid #27272a',
+  backgroundColor: '#111113',
+  color: '#f4f4f5',
+  fontSize: '13px',
   boxSizing: 'border-box',
   outline: 'none',
+  transition: 'border-color 0.15s ease',
 };
 
 export const BannerManager: React.FC = () => {
@@ -96,7 +97,7 @@ export const BannerManager: React.FC = () => {
 
       setImageUrl(result.secure_url);
       setPublicId(result.public_id || '');
-      setStatusMsg('ছবি Cloudinary-তে আপলোড হয়েছে।');
+      setStatusMsg('ছবি আপলোড হয়েছে।');
     } catch (err: any) {
       setStatusMsg(err.message || 'আপলোড সমস্যা হয়েছে।');
     } finally {
@@ -139,7 +140,7 @@ export const BannerManager: React.FC = () => {
     setLinkUrl('');
     setCtaText('');
     setTargetProductId('');
-    setStatusMsg('ব্যানার/অফার সংরক্ষিত হয়েছে।');
+    setStatusMsg('সংরক্ষিত হয়েছে।');
     fetchBanners();
   };
 
@@ -160,41 +161,47 @@ export const BannerManager: React.FC = () => {
   return (
     <div
       style={{
-        padding: '24px 16px',
-        color: '#f5f5f5',
-        backgroundColor: '#000000',
+        padding: '16px 12px',
+        color: '#f4f4f5',
+        backgroundColor: '#09090b',
         minHeight: '100vh',
+        fontFamily: 'inherit',
       }}
     >
-      <div style={{ maxWidth: '620px', margin: '0 auto' }}>
+      <div style={{ maxWidth: '580px', margin: '0 auto' }}>
         <div
           style={{
             display: 'flex',
-            justifyContent: 'space-between',
+            justifyContent: 'flex-end',
             alignItems: 'center',
-            paddingBottom: '14px',
-            marginBottom: '18px',
-            borderBottom: '1px solid #1f1f1f',
+            marginBottom: '10px',
           }}
         >
-          <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 600 }}>
-            Banner & Offer Feed
-          </h2>
-          <span style={{ fontSize: '12px', color: '#888' }}>
-            {banners.length} posts
+          <span
+            style={{
+              fontSize: '11px',
+              letterSpacing: '0.04em',
+              color: '#a1a1aa',
+              backgroundColor: '#111113',
+              border: '1px solid #27272a',
+              padding: '3px 9px',
+              borderRadius: '999px',
+            }}
+          >
+            {banners.length} items
           </span>
         </div>
 
         {statusMsg && (
           <div
             style={{
-              padding: '10px 14px',
-              borderRadius: '10px',
+              padding: '8px 12px',
+              borderRadius: '8px',
               backgroundColor: '#111814',
               border: '1px solid #1f3a29',
               color: '#4ade80',
-              fontSize: '13px',
-              marginBottom: '16px',
+              fontSize: '12px',
+              marginBottom: '12px',
             }}
           >
             {statusMsg}
@@ -204,28 +211,38 @@ export const BannerManager: React.FC = () => {
         <form
           onSubmit={handleSaveBanner}
           style={{
-            backgroundColor: '#0b0b0b',
-            border: '1px solid #1f1f1f',
-            borderRadius: '14px',
-            padding: '16px',
+            backgroundColor: '#0d0d10',
+            border: '1px solid #222226',
+            borderRadius: '12px',
+            padding: '12px',
             display: 'grid',
-            gap: '12px',
-            marginBottom: '24px',
+            gap: '9px',
+            marginBottom: '16px',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.35)',
           }}
         >
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              gap: '4px',
+              padding: '3px',
+              borderRadius: '9px',
+              backgroundColor: '#141417',
+              border: '1px solid #222226',
+            }}
+          >
             <button
               type="button"
               onClick={() => setType('image')}
               style={{
-                flex: 1,
-                padding: '8px 12px',
-                borderRadius: '999px',
-                border: '1px solid #262626',
-                backgroundColor: type === 'image' ? '#ffffff' : '#141414',
-                color: type === 'image' ? '#000000' : '#a3a3a3',
+                padding: '6px 10px',
+                borderRadius: '7px',
+                border: 'none',
+                backgroundColor: type === 'image' ? '#fafafa' : 'transparent',
+                color: type === 'image' ? '#09090b' : '#a1a1aa',
                 fontWeight: 600,
-                fontSize: '13px',
+                fontSize: '12px',
                 cursor: 'pointer',
               }}
             >
@@ -235,14 +252,13 @@ export const BannerManager: React.FC = () => {
               type="button"
               onClick={() => setType('article')}
               style={{
-                flex: 1,
-                padding: '8px 12px',
-                borderRadius: '999px',
-                border: '1px solid #262626',
-                backgroundColor: type === 'article' ? '#ffffff' : '#141414',
-                color: type === 'article' ? '#000000' : '#a3a3a3',
+                padding: '6px 10px',
+                borderRadius: '7px',
+                border: 'none',
+                backgroundColor: type === 'article' ? '#fafafa' : 'transparent',
+                color: type === 'article' ? '#09090b' : '#a1a1aa',
                 fontWeight: 600,
-                fontSize: '13px',
+                fontSize: '12px',
                 cursor: 'pointer',
               }}
             >
@@ -255,7 +271,7 @@ export const BannerManager: React.FC = () => {
             placeholder="Headline / Title"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            style={fieldStyle}
+            style={inputStyle}
           />
 
           <input
@@ -263,26 +279,26 @@ export const BannerManager: React.FC = () => {
             placeholder="Short caption / subtitle"
             value={subtitle}
             onChange={(e) => setSubtitle(e.target.value)}
-            style={fieldStyle}
+            style={inputStyle}
           />
 
           {type === 'article' && (
             <textarea
-              rows={4}
-              placeholder="Write your announcement or offer details..."
+              rows={3}
+              placeholder="Announcement or offer details..."
               value={articleBody}
               onChange={(e) => setArticleBody(e.target.value)}
-              style={{ ...fieldStyle, resize: 'vertical' }}
+              style={{ ...inputStyle, resize: 'vertical' }}
             />
           )}
 
           {type === 'image' && (
             <div
               style={{
-                border: '1px dashed #2b2b2b',
-                borderRadius: '10px',
-                padding: '12px',
-                backgroundColor: '#101010',
+                border: '1px dashed #2a2a2f',
+                borderRadius: '8px',
+                padding: '9px 10px',
+                backgroundColor: '#111114',
               }}
             >
               <input
@@ -292,27 +308,27 @@ export const BannerManager: React.FC = () => {
                   const file = e.target.files?.[0];
                   if (file) handleImageUpload(file);
                 }}
-                style={{ fontSize: '13px', color: '#ccc' }}
+                style={{ fontSize: '12px', color: '#d4d4d8', width: '100%' }}
               />
               {uploading && (
-                <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '6px' }}>
-                  Uploading media...
+                <div style={{ fontSize: '11px', color: '#a1a1aa', marginTop: '5px' }}>
+                  Uploading...
                 </div>
               )}
               {imageUrl && (
-                <div style={{ marginTop: '10px' }}>
-                  <img
-                    src={imageUrl}
-                    alt="Preview"
-                    style={{
-                      width: '100%',
-                      maxHeight: '260px',
-                      objectFit: 'cover',
-                      borderRadius: '10px',
-                      display: 'block',
-                    }}
-                  />
-                </div>
+                <img
+                  src={imageUrl}
+                  alt="Preview"
+                  style={{
+                    width: '100%',
+                    maxHeight: '180px',
+                    objectFit: 'cover',
+                    borderRadius: '8px',
+                    marginTop: '8px',
+                    display: 'block',
+                    border: '1px solid #222226',
+                  }}
+                />
               )}
             </div>
           )}
@@ -320,54 +336,54 @@ export const BannerManager: React.FC = () => {
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))',
-              gap: '10px',
+              gridTemplateColumns: '1.2fr 1.2fr 0.7fr',
+              gap: '8px',
             }}
           >
             <input
               type="text"
-              placeholder="Slot Key (e.g. products_top)"
+              placeholder="Slot Key"
               value={slotKey}
               onChange={(e) => setSlotKey(e.target.value)}
               required
-              style={fieldStyle}
+              style={inputStyle}
             />
             <input
               type="text"
-              placeholder="Target Product ID (optional)"
+              placeholder="Product ID (opt)"
               value={targetProductId}
               onChange={(e) => setTargetProductId(e.target.value)}
-              style={fieldStyle}
+              style={inputStyle}
             />
             <input
               type="number"
               placeholder="Order"
               value={sortOrder}
               onChange={(e) => setSortOrder(Number(e.target.value))}
-              style={fieldStyle}
+              style={inputStyle}
             />
           </div>
 
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))',
-              gap: '10px',
+              gridTemplateColumns: '1fr 1fr',
+              gap: '8px',
             }}
           >
             <input
               type="text"
-              placeholder="Destination Link (optional)"
+              placeholder="Destination Link (opt)"
               value={linkUrl}
               onChange={(e) => setLinkUrl(e.target.value)}
-              style={fieldStyle}
+              style={inputStyle}
             />
             <input
               type="text"
-              placeholder="CTA Button Text"
+              placeholder="CTA Text"
               value={ctaText}
               onChange={(e) => setCtaText(e.target.value)}
-              style={fieldStyle}
+              style={inputStyle}
             />
           </div>
 
@@ -376,41 +392,43 @@ export const BannerManager: React.FC = () => {
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
-              flexWrap: 'wrap',
-              gap: '12px',
+              gap: '8px',
               paddingTop: '6px',
-              borderTop: '1px solid #1a1a1a',
+              borderTop: '1px solid #1b1b1f',
             }}
           >
-            <div style={{ display: 'flex', gap: '14px', alignItems: 'center', fontSize: '12px', color: '#aaa' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer' }}>
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'center', fontSize: '11px', color: '#a1a1aa' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}>
                 BG
                 <input
                   type="color"
-                  value={stylesForm.backgroundColor || '#1a1a1a'}
+                  value={stylesForm.backgroundColor || '#18181b'}
                   onChange={(e) =>
                     setStylesForm({ ...stylesForm, backgroundColor: e.target.value })
                   }
+                  style={{ width: '20px', height: '20px', padding: 0, border: 'none', background: 'transparent', cursor: 'pointer' }}
                 />
               </label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}>
                 Title
                 <input
                   type="color"
-                  value={stylesForm.titleColor || '#ffffff'}
+                  value={stylesForm.titleColor || '#fafafa'}
                   onChange={(e) =>
                     setStylesForm({ ...stylesForm, titleColor: e.target.value })
                   }
+                  style={{ width: '20px', height: '20px', padding: 0, border: 'none', background: 'transparent', cursor: 'pointer' }}
                 />
               </label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}>
                 Text
                 <input
                   type="color"
-                  value={stylesForm.textColor || '#cccccc'}
+                  value={stylesForm.textColor || '#a1a1aa'}
                   onChange={(e) =>
                     setStylesForm({ ...stylesForm, textColor: e.target.value })
                   }
+                  style={{ width: '20px', height: '20px', padding: 0, border: 'none', background: 'transparent', cursor: 'pointer' }}
                 />
               </label>
             </div>
@@ -419,9 +437,9 @@ export const BannerManager: React.FC = () => {
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '6px',
-                fontSize: '13px',
-                color: isActive ? '#ffffff' : '#777',
+                gap: '5px',
+                fontSize: '12px',
+                color: isActive ? '#fafafa' : '#71717a',
                 cursor: 'pointer',
               }}
             >
@@ -430,7 +448,7 @@ export const BannerManager: React.FC = () => {
                 checked={isActive}
                 onChange={(e) => setIsActive(e.target.checked)}
               />
-              Publish live
+              Live
             </label>
           </div>
 
@@ -438,35 +456,35 @@ export const BannerManager: React.FC = () => {
             type="submit"
             disabled={uploading}
             style={{
-              padding: '11px 16px',
-              borderRadius: '999px',
+              padding: '9px 14px',
+              borderRadius: '8px',
               border: 'none',
-              backgroundColor: '#ffffff',
-              color: '#000000',
+              backgroundColor: '#fafafa',
+              color: '#09090b',
               fontWeight: 600,
-              fontSize: '14px',
+              fontSize: '13px',
               cursor: uploading ? 'not-allowed' : 'pointer',
               opacity: uploading ? 0.6 : 1,
             }}
           >
-            Post Banner
+            Publish Item
           </button>
         </form>
 
         {loading ? (
-          <p style={{ color: '#888', fontSize: '14px', textAlign: 'center' }}>
-            Loading posts...
+          <p style={{ color: '#71717a', fontSize: '13px', textAlign: 'center', margin: '16px 0' }}>
+            Loading...
           </p>
         ) : (
-          <div style={{ display: 'grid', gap: '14px' }}>
+          <div style={{ display: 'grid', gap: '10px' }}>
             {banners.map((b: any) => (
               <article
                 key={b.id}
                 style={{
-                  backgroundColor: '#0b0b0b',
-                  border: '1px solid #1f1f1f',
-                  borderRadius: '14px',
-                  padding: '16px',
+                  backgroundColor: '#0d0d10',
+                  border: '1px solid #222226',
+                  borderRadius: '11px',
+                  padding: '11px 12px',
                 }}
               >
                 <div
@@ -474,55 +492,55 @@ export const BannerManager: React.FC = () => {
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    gap: '10px',
-                    marginBottom: '10px',
+                    gap: '8px',
+                    marginBottom: '6px',
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                     <span
                       style={{
-                        fontSize: '12px',
-                        fontWeight: 600,
-                        padding: '3px 9px',
-                        borderRadius: '999px',
-                        backgroundColor: '#171717',
-                        color: '#e5e5e5',
-                        border: '1px solid #262626',
+                        fontSize: '11px',
+                        fontWeight: 500,
+                        padding: '2px 7px',
+                        borderRadius: '6px',
+                        backgroundColor: '#16161a',
+                        color: '#e4e4e7',
+                        border: '1px solid #27272a',
                       }}
                     >
                       {b.slot_key}
                     </span>
                     <span
                       style={{
-                        fontSize: '12px',
-                        color: b.is_active ? '#4ade80' : '#9ca3af',
+                        fontSize: '11px',
+                        color: b.is_active ? '#4ade80' : '#71717a',
                       }}
                     >
                       {b.is_active ? '● Live' : '○ Draft'}
                     </span>
                     {b.target_product_id && (
-                      <span style={{ fontSize: '12px', color: '#888' }}>
+                      <span style={{ fontSize: '11px', color: '#71717a' }}>
                         #{b.target_product_id}
                       </span>
                     )}
                   </div>
-                  <span style={{ fontSize: '12px', color: '#666' }}>
+                  <span style={{ fontSize: '11px', color: '#71717a' }}>
                     #{b.sort_order ?? 0}
                   </span>
                 </div>
 
-                <div style={{ fontSize: '16px', fontWeight: 600, color: '#fff', marginBottom: '4px' }}>
+                <div style={{ fontSize: '14px', fontWeight: 600, color: '#fafafa', marginBottom: '2px' }}>
                   {b.title}
                 </div>
 
                 {b.subtitle && (
-                  <p style={{ margin: '0 0 8px 0', fontSize: '14px', color: '#b3b3b3', lineHeight: 1.5 }}>
+                  <p style={{ margin: '0 0 6px 0', fontSize: '12px', color: '#a1a1aa', lineHeight: 1.45 }}>
                     {b.subtitle}
                   </p>
                 )}
 
                 {b.article_body && (
-                  <p style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#d4d4d4', lineHeight: 1.55, whiteSpace: 'pre-line' }}>
+                  <p style={{ margin: '0 0 8px 0', fontSize: '12px', color: '#d4d4d8', lineHeight: 1.5, whiteSpace: 'pre-line' }}>
                     {b.article_body}
                   </p>
                 )}
@@ -533,20 +551,20 @@ export const BannerManager: React.FC = () => {
                     alt={b.title}
                     style={{
                       width: '100%',
-                      maxHeight: '300px',
+                      maxHeight: '190px',
                       objectFit: 'cover',
-                      borderRadius: '10px',
-                      border: '1px solid #1e1e1e',
-                      marginTop: '6px',
-                      marginBottom: '10px',
+                      borderRadius: '8px',
+                      border: '1px solid #222226',
+                      marginTop: '4px',
+                      marginBottom: '8px',
                       display: 'block',
                     }}
                   />
                 )}
 
                 {(b.cta_text || b.link_url) && (
-                  <div style={{ fontSize: '12px', color: '#888', marginBottom: '12px' }}>
-                    {b.cta_text && <span>CTA: {b.cta_text}</span>}
+                  <div style={{ fontSize: '11px', color: '#71717a', marginBottom: '8px' }}>
+                    {b.cta_text && <span>{b.cta_text}</span>}
                     {b.cta_text && b.link_url && <span> · </span>}
                     {b.link_url && <span>{b.link_url}</span>}
                   </div>
@@ -556,21 +574,21 @@ export const BannerManager: React.FC = () => {
                   style={{
                     display: 'flex',
                     justifyContent: 'flex-end',
-                    gap: '10px',
-                    paddingTop: '10px',
-                    borderTop: '1px solid #181818',
+                    gap: '6px',
+                    paddingTop: '8px',
+                    borderTop: '1px solid #1a1a1e',
                   }}
                 >
                   <button
                     type="button"
                     onClick={() => toggleActive(b)}
                     style={{
-                      padding: '6px 14px',
-                      borderRadius: '999px',
-                      border: '1px solid #2a2a2a',
-                      backgroundColor: '#141414',
-                      color: '#fff',
-                      fontSize: '12px',
+                      padding: '4px 10px',
+                      borderRadius: '6px',
+                      border: '1px solid #27272a',
+                      backgroundColor: '#141417',
+                      color: '#f4f4f5',
+                      fontSize: '11px',
                       cursor: 'pointer',
                     }}
                   >
@@ -580,12 +598,12 @@ export const BannerManager: React.FC = () => {
                     type="button"
                     onClick={() => deleteBanner(b.id)}
                     style={{
-                      padding: '6px 14px',
-                      borderRadius: '999px',
-                      border: '1px solid #3a1d1d',
-                      backgroundColor: '#190d0d',
+                      padding: '4px 10px',
+                      borderRadius: '6px',
+                      border: '1px solid #3f1d1d',
+                      backgroundColor: '#1a0e0e',
                       color: '#f87171',
-                      fontSize: '12px',
+                      fontSize: '11px',
                       cursor: 'pointer',
                     }}
                   >
