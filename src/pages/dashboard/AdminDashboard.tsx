@@ -292,7 +292,11 @@ const AdminDashboard: React.FC = () => {
             />
           )}
           {activeTab === 'banners' && (
-            <BannerManager key="banners" />
+            <BannerManager
+              key="banners"
+              isAddOpen={isAddOpen}
+              onCloseAdd={() => setIsAddOpen(false)}
+            />
           )}
           {activeTab === 'logistics' && (
             <AdminLogistics
