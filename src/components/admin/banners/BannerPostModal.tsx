@@ -32,20 +32,6 @@ const underlineFieldStyle: React.CSSProperties = {
   transition: 'border-color 0.2s ease',
 };
 
-const compactFieldStyle: React.CSSProperties = {
-  width: '100%',
-  minWidth: 0,
-  padding: '8px 10px',
-  borderRadius: '9px',
-  border: '1px solid #232329',
-  backgroundColor: '#101014',
-  color: '#f4f4f5',
-  fontSize: '12px',
-  boxSizing: 'border-box',
-  outline: 'none',
-  transition: 'border-color 0.2s ease, background-color 0.2s ease',
-};
-
 const getEmbedUrl = (url: string): string | null => {
   const trimmed = url.trim();
   if (!trimmed) return null;
@@ -88,7 +74,8 @@ export const BannerPostModal: React.FC<BannerPostModalProps> = ({
   const [showVideoLink, setShowVideoLink] = useState<boolean>(false);
   const [showSchedule, setShowSchedule] = useState<boolean>(false);
   const [showStyle, setShowStyle] = useState<boolean>(false);
-  const [showCta, setShowCta] = useState<boolean>(false);
+  const [showLink, setShowLink] = useState<boolean>(false);
+  const [showButton, setShowButton] = useState<boolean>(false);
   const [publicId, setPublicId] = useState<string>('');
   const [linkUrl, setLinkUrl] = useState<string>('');
   const [ctaText, setCtaText] = useState<string>('');
@@ -154,7 +141,8 @@ export const BannerPostModal: React.FC<BannerPostModalProps> = ({
     setShowVideoLink(false);
     setShowSchedule(false);
     setShowStyle(false);
-    setShowCta(false);
+    setShowLink(false);
+    setShowButton(false);
     setPublicId('');
     setLinkUrl('');
     setCtaText('');
@@ -257,10 +245,6 @@ export const BannerPostModal: React.FC<BannerPostModalProps> = ({
         }
         .underline-input:focus {
           border-bottom-color: #71717a !important;
-        }
-        .compact-input:focus {
-          border-color: #3f3f46 !important;
-          background-color: #131318 !important;
         }
         .action-strip::-webkit-scrollbar {
           display: none;
@@ -395,10 +379,18 @@ export const BannerPostModal: React.FC<BannerPostModalProps> = ({
 
             <button
               type="button"
-              onClick={() => setShowCta((v) => !v)}
-              style={chipBtnStyle(showCta || Boolean(linkUrl || ctaText))}
+              onClick={() => setShowLink((v) => !v)}
+              style={chipBtnStyle(showLink || Boolean(linkUrl))}
             >
-              Link & Button
+              Link
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setShowButton((v) => !v)}
+              style={chipBtnStyle(showButton || Boolean(ctaText))}
+            >
+              Button
             </button>
           </div>
 
@@ -413,8 +405,8 @@ export const BannerPostModal: React.FC<BannerPostModalProps> = ({
                   setMediaFileUrl('');
                   setMediaKind('');
                 }}
-                className="compact-input"
-                style={compactFieldStyle}
+                className="underline-input"
+                style={underlineFieldStyle}
               />
             </div>
           </div>
@@ -424,7 +416,7 @@ export const BannerPostModal: React.FC<BannerPostModalProps> = ({
               style={{
                 display: 'grid',
                 gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)',
-                gap: '7px',
+                gap: '10px',
                 width: '100%',
                 paddingTop: '2px',
               }}
@@ -433,15 +425,15 @@ export const BannerPostModal: React.FC<BannerPostModalProps> = ({
                 type="datetime-local"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="compact-input"
-                style={{ ...compactFieldStyle, fontSize: '11px', padding: '7px 8px' }}
+                className="underline-input"
+                style={{ ...underlineFieldStyle, fontSize: '11.5px' }}
               />
               <input
                 type="datetime-local"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="compact-input"
-                style={{ ...compactFieldStyle, fontSize: '11px', padding: '7px 8px' }}
+                className="underline-input"
+                style={{ ...underlineFieldStyle, fontSize: '11.5px' }}
               />
             </div>
           </div>
@@ -455,11 +447,9 @@ export const BannerPostModal: React.FC<BannerPostModalProps> = ({
                 alignItems: 'center',
                 fontSize: '11.5px',
                 color: '#a1a1aa',
-                padding: '8px 10px',
+                padding: '6px 2px',
                 marginTop: '2px',
-                borderRadius: '10px',
-                backgroundColor: '#101014',
-                border: '1px solid #222228',
+                borderBottom: '1px solid #26262c',
               }}
             >
               <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
@@ -498,31 +488,28 @@ export const BannerPostModal: React.FC<BannerPostModalProps> = ({
             </div>
           </div>
 
-          <div style={drawerStyle(showCta, 68)}>
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)',
-                gap: '7px',
-                width: '100%',
-                paddingTop: '2px',
-              }}
-            >
+          <div style={drawerStyle(showLink, 64)}>
+            <div style={{ paddingTop: '2px' }}>
               <input
                 type="text"
-                placeholder="Link (optional)"
+                placeholder="Link"
                 value={linkUrl}
                 onChange={(e) => setLinkUrl(e.target.value)}
-                className="compact-input"
-                style={compactFieldStyle}
+                className="underline-input"
+                style={underlineFieldStyle}
               />
+            </div>
+          </div>
+
+          <div style={drawerStyle(showButton, 64)}>
+            <div style={{ paddingTop: '2px' }}>
               <input
                 type="text"
-                placeholder="Button (optional)"
+                placeholder="Button"
                 value={ctaText}
                 onChange={(e) => setCtaText(e.target.value)}
-                className="compact-input"
-                style={compactFieldStyle}
+                className="underline-input"
+                style={underlineFieldStyle}
               />
             </div>
           </div>
@@ -598,7 +585,7 @@ export const BannerPostModal: React.FC<BannerPostModalProps> = ({
             />
           )}
 
-          <div style={{ display: 'flex', gap: '8px', paddingTop: '2px' }}>
+          <div style={{ display: 'flex', gap: '8px', paddingTop: '4px' }}>
             <button
               type="button"
               onClick={onClose}
