@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { supabase } from '@/supabaseClient';
-import { BannerStyles } from '../../banners/BannerSlot';
+import { BannerStyles } from './BannerSlot';
 
 const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as string;
 const UPLOAD_PRESET =
