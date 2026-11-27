@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { supabase } from '@/supabaseClient';
-import { BannerStyles } from './BannerSlot';
+import { BannerStyles } from '../../banners/BannerSlot';
 
 const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as string;
 const UPLOAD_PRESET =
@@ -88,13 +88,12 @@ export const BannerPostModal: React.FC<BannerPostModalProps> = ({
   const [showVideoLink, setShowVideoLink] = useState<boolean>(false);
   const [showSchedule, setShowSchedule] = useState<boolean>(false);
   const [showStyle, setShowStyle] = useState<boolean>(false);
+  const [showCta, setShowCta] = useState<boolean>(false);
   const [publicId, setPublicId] = useState<string>('');
   const [linkUrl, setLinkUrl] = useState<string>('');
   const [ctaText, setCtaText] = useState<string>('');
-  const [sortOrder, setSortOrder] = useState<number>(0);
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
-  const [isActive, setIsActive] = useState<boolean>(true);
   const [stylesForm, setStylesForm] = useState<BannerStyles>(INITIAL_STYLES);
   const [uploading, setUploading] = useState<boolean>(false);
   const [saving, setSaving] = useState<boolean>(false);
@@ -155,13 +154,12 @@ export const BannerPostModal: React.FC<BannerPostModalProps> = ({
     setShowVideoLink(false);
     setShowSchedule(false);
     setShowStyle(false);
+    setShowCta(false);
     setPublicId('');
     setLinkUrl('');
     setCtaText('');
-    setSortOrder(0);
     setStartDate('');
     setEndDate('');
-    setIsActive(true);
     setErrorMsg('');
   };
 
@@ -193,10 +191,10 @@ export const BannerPostModal: React.FC<BannerPostModalProps> = ({
       link_url: linkUrl.trim() || null,
       cta_text: ctaText.trim() || null,
       slot_key: 'top_below_header',
-      sort_order: Number(sortOrder) || 0,
+      sort_order: null,
       start_date: startDate ? new Date(startDate).toISOString() : null,
       end_date: endDate ? new Date(endDate).toISOString() : null,
-      is_active: isActive,
+      is_active: true,
       styles: stylesForm,
     };
 
@@ -397,43 +395,10 @@ export const BannerPostModal: React.FC<BannerPostModalProps> = ({
 
             <button
               type="button"
-              onClick={() => setIsActive((v) => !v)}
-              style={{
-                flexShrink: 0,
-                marginLeft: 'auto',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '5px',
-                padding: '5px 9px',
-                borderRadius: '8px',
-                border: isActive ? '1px solid rgba(74, 222, 128, 0.28)' : '1px solid #222228',
-                backgroundColor: isActive ? 'rgba(74, 222, 128, 0.08)' : '#101014',
-                color: isActive ? '#4ade80' : '#71717a',
-                fontSize: '11.5px',
-                fontWeight: 500,
-                cursor: 'pointer',
-                whiteSpace: 'nowrap',
-                transition: 'all 0.18s ease',
-              }}
+              onClick={() => setShowCta((v) => !v)}
+              style={chipBtnStyle(showCta || Boolean(linkUrl || ctaText))}
             >
-              <span
-                style={{
-                  width: '13px',
-                  height: '13px',
-                  borderRadius: '4px',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  backgroundColor: isActive ? '#22c55e' : 'transparent',
-                  border: isActive ? 'none' : '1px solid #52525b',
-                  color: '#09090b',
-                  fontSize: '9.5px',
-                  fontWeight: 700,
-                }}
-              >
-                {isActive ? '✓' : ''}
-              </span>
-              Live
+              Link & Button
             </button>
           </div>
 
@@ -533,6 +498,35 @@ export const BannerPostModal: React.FC<BannerPostModalProps> = ({
             </div>
           </div>
 
+          <div style={drawerStyle(showCta, 68)}>
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)',
+                gap: '7px',
+                width: '100%',
+                paddingTop: '2px',
+              }}
+            >
+              <input
+                type="text"
+                placeholder="Link (optional)"
+                value={linkUrl}
+                onChange={(e) => setLinkUrl(e.target.value)}
+                className="compact-input"
+                style={compactFieldStyle}
+              />
+              <input
+                type="text"
+                placeholder="Button (optional)"
+                value={ctaText}
+                onChange={(e) => setCtaText(e.target.value)}
+                className="compact-input"
+                style={compactFieldStyle}
+              />
+            </div>
+          </div>
+
           {uploading && (
             <div style={{ fontSize: '11px', color: '#a1a1aa' }}>Uploading media...</div>
           )}
@@ -603,40 +597,6 @@ export const BannerPostModal: React.FC<BannerPostModalProps> = ({
               }}
             />
           )}
-
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr) 58px',
-              gap: '7px',
-              width: '100%',
-            }}
-          >
-            <input
-              type="text"
-              placeholder="Link (opt)"
-              value={linkUrl}
-              onChange={(e) => setLinkUrl(e.target.value)}
-              className="compact-input"
-              style={compactFieldStyle}
-            />
-            <input
-              type="text"
-              placeholder="Button (opt)"
-              value={ctaText}
-              onChange={(e) => setCtaText(e.target.value)}
-              className="compact-input"
-              style={compactFieldStyle}
-            />
-            <input
-              type="number"
-              placeholder="0"
-              value={sortOrder}
-              onChange={(e) => setSortOrder(Number(e.target.value))}
-              className="compact-input"
-              style={{ ...compactFieldStyle, textAlign: 'center', padding: '8px 6px' }}
-            />
-          </div>
 
           <div style={{ display: 'flex', gap: '8px', paddingTop: '2px' }}>
             <button
