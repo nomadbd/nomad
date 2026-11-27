@@ -17,15 +17,30 @@ const INITIAL_STYLES: BannerStyles = {
   padding: '24px',
 };
 
-const fieldStyle: React.CSSProperties = {
+const underlineFieldStyle: React.CSSProperties = {
   width: '100%',
   minWidth: 0,
-  padding: '9px 12px',
-  borderRadius: '10px',
+  padding: '8px 2px',
+  border: 'none',
+  borderBottom: '1px solid #26262c',
+  borderRadius: 0,
+  backgroundColor: 'transparent',
+  color: '#f4f4f5',
+  fontSize: '13px',
+  boxSizing: 'border-box',
+  outline: 'none',
+  transition: 'border-color 0.2s ease',
+};
+
+const compactFieldStyle: React.CSSProperties = {
+  width: '100%',
+  minWidth: 0,
+  padding: '8px 10px',
+  borderRadius: '9px',
   border: '1px solid #232329',
   backgroundColor: '#101014',
   color: '#f4f4f5',
-  fontSize: '12.5px',
+  fontSize: '12px',
   boxSizing: 'border-box',
   outline: 'none',
   transition: 'border-color 0.2s ease, background-color 0.2s ease',
@@ -65,8 +80,8 @@ export const BannerPostModal: React.FC<BannerPostModalProps> = ({
   onClose,
   onSaved,
 }) => {
-  const [content, setContent] = useState<string>('');
   const [title, setTitle] = useState<string>('');
+  const [content, setContent] = useState<string>('');
   const [mediaFileUrl, setMediaFileUrl] = useState<string>('');
   const [mediaKind, setMediaKind] = useState<'image' | 'video' | ''>('');
   const [externalVideoUrl, setExternalVideoUrl] = useState<string>('');
@@ -132,8 +147,8 @@ export const BannerPostModal: React.FC<BannerPostModalProps> = ({
   };
 
   const resetForm = () => {
-    setContent('');
     setTitle('');
+    setContent('');
     setMediaFileUrl('');
     setMediaKind('');
     setExternalVideoUrl('');
@@ -199,6 +214,7 @@ export const BannerPostModal: React.FC<BannerPostModalProps> = ({
   };
 
   const chipBtnStyle = (active: boolean): React.CSSProperties => ({
+    flexShrink: 0,
     padding: '6px 11px',
     borderRadius: '8px',
     border: active ? '1px solid #3f3f46' : '1px solid #222228',
@@ -241,9 +257,15 @@ export const BannerPostModal: React.FC<BannerPostModalProps> = ({
           from { opacity: 0; transform: translateY(4px); }
           to { opacity: 1; transform: translateY(0); }
         }
-        .composer-field:focus {
+        .underline-input:focus {
+          border-bottom-color: #71717a !important;
+        }
+        .compact-input:focus {
           border-color: #3f3f46 !important;
           background-color: #131318 !important;
+        }
+        .action-strip::-webkit-scrollbar {
+          display: none;
         }
         .composer-color {
           -webkit-appearance: none;
@@ -288,44 +310,52 @@ export const BannerPostModal: React.FC<BannerPostModalProps> = ({
             backgroundColor: '#0c0c0f',
             border: '1px solid #1e1e24',
             borderRadius: '14px',
-            padding: '12px',
+            padding: '14px 12px',
             display: 'grid',
-            gap: '9px',
+            gap: '10px',
             width: '100%',
             minWidth: 0,
             boxSizing: 'border-box',
           }}
         >
+          <input
+            type="text"
+            placeholder="Headline"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className="underline-input"
+            style={{
+              ...underlineFieldStyle,
+              fontSize: '14px',
+              fontWeight: 500,
+            }}
+          />
+
           <textarea
-            rows={4}
+            rows={3}
             placeholder="Share a brand update"
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            className="composer-field"
+            className="underline-input"
             style={{
-              ...fieldStyle,
-              resize: 'vertical',
-              minHeight: '94px',
+              ...underlineFieldStyle,
+              resize: 'none',
+              minHeight: '76px',
               lineHeight: 1.5,
             }}
           />
 
-          <input
-            type="text"
-            placeholder="Headline (optional)"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="composer-field"
-            style={fieldStyle}
-          />
-
           <div
+            className="action-strip"
             style={{
               display: 'flex',
               gap: '6px',
-              flexWrap: 'wrap',
               alignItems: 'center',
-              paddingTop: '2px',
+              overflowX: 'auto',
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none',
+              padding: '2px 0',
+              width: '100%',
             }}
           >
             <label style={chipBtnStyle(Boolean(mediaFileUrl))}>
@@ -369,10 +399,11 @@ export const BannerPostModal: React.FC<BannerPostModalProps> = ({
               type="button"
               onClick={() => setIsActive((v) => !v)}
               style={{
+                flexShrink: 0,
                 marginLeft: 'auto',
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: '6px',
+                gap: '5px',
                 padding: '5px 9px',
                 borderRadius: '8px',
                 border: isActive ? '1px solid rgba(74, 222, 128, 0.28)' : '1px solid #222228',
@@ -381,13 +412,14 @@ export const BannerPostModal: React.FC<BannerPostModalProps> = ({
                 fontSize: '11.5px',
                 fontWeight: 500,
                 cursor: 'pointer',
+                whiteSpace: 'nowrap',
                 transition: 'all 0.18s ease',
               }}
             >
               <span
                 style={{
-                  width: '14px',
-                  height: '14px',
+                  width: '13px',
+                  height: '13px',
                   borderRadius: '4px',
                   display: 'inline-flex',
                   alignItems: 'center',
@@ -395,7 +427,7 @@ export const BannerPostModal: React.FC<BannerPostModalProps> = ({
                   backgroundColor: isActive ? '#22c55e' : 'transparent',
                   border: isActive ? 'none' : '1px solid #52525b',
                   color: '#09090b',
-                  fontSize: '10px',
+                  fontSize: '9.5px',
                   fontWeight: 700,
                 }}
               >
@@ -405,19 +437,100 @@ export const BannerPostModal: React.FC<BannerPostModalProps> = ({
             </button>
           </div>
 
-          <div style={drawerStyle(showVideoLink, 60)}>
-            <input
-              type="url"
-              placeholder="YouTube, Facebook, Vimeo URL"
-              value={externalVideoUrl}
-              onChange={(e) => {
-                setExternalVideoUrl(e.target.value);
-                setMediaFileUrl('');
-                setMediaKind('');
+          <div style={drawerStyle(showVideoLink, 64)}>
+            <div style={{ paddingTop: '2px' }}>
+              <input
+                type="url"
+                placeholder="YouTube, Facebook, Vimeo URL"
+                value={externalVideoUrl}
+                onChange={(e) => {
+                  setExternalVideoUrl(e.target.value);
+                  setMediaFileUrl('');
+                  setMediaKind('');
+                }}
+                className="compact-input"
+                style={compactFieldStyle}
+              />
+            </div>
+          </div>
+
+          <div style={drawerStyle(showSchedule, 72)}>
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)',
+                gap: '7px',
+                width: '100%',
+                paddingTop: '2px',
               }}
-              className="composer-field"
-              style={fieldStyle}
-            />
+            >
+              <input
+                type="datetime-local"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="compact-input"
+                style={{ ...compactFieldStyle, fontSize: '11px', padding: '7px 8px' }}
+              />
+              <input
+                type="datetime-local"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="compact-input"
+                style={{ ...compactFieldStyle, fontSize: '11px', padding: '7px 8px' }}
+              />
+            </div>
+          </div>
+
+          <div style={drawerStyle(showStyle, 68)}>
+            <div
+              style={{
+                display: 'flex',
+                gap: '14px',
+                flexWrap: 'wrap',
+                alignItems: 'center',
+                fontSize: '11.5px',
+                color: '#a1a1aa',
+                padding: '8px 10px',
+                marginTop: '2px',
+                borderRadius: '10px',
+                backgroundColor: '#101014',
+                border: '1px solid #222228',
+              }}
+            >
+              <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                BG
+                <input
+                  type="color"
+                  value={stylesForm.backgroundColor || '#18181b'}
+                  onChange={(e) =>
+                    setStylesForm({ ...stylesForm, backgroundColor: e.target.value })
+                  }
+                  className="composer-color"
+                />
+              </label>
+              <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                Title
+                <input
+                  type="color"
+                  value={stylesForm.titleColor || '#fafafa'}
+                  onChange={(e) =>
+                    setStylesForm({ ...stylesForm, titleColor: e.target.value })
+                  }
+                  className="composer-color"
+                />
+              </label>
+              <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                Text
+                <input
+                  type="color"
+                  value={stylesForm.textColor || '#a1a1aa'}
+                  onChange={(e) =>
+                    setStylesForm({ ...stylesForm, textColor: e.target.value })
+                  }
+                  className="composer-color"
+                />
+              </label>
+            </div>
           </div>
 
           {uploading && (
@@ -494,7 +607,7 @@ export const BannerPostModal: React.FC<BannerPostModalProps> = ({
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr) 62px',
+              gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr) 58px',
               gap: '7px',
               width: '100%',
             }}
@@ -504,107 +617,28 @@ export const BannerPostModal: React.FC<BannerPostModalProps> = ({
               placeholder="Link (opt)"
               value={linkUrl}
               onChange={(e) => setLinkUrl(e.target.value)}
-              className="composer-field"
-              style={fieldStyle}
+              className="compact-input"
+              style={compactFieldStyle}
             />
             <input
               type="text"
               placeholder="Button (opt)"
               value={ctaText}
               onChange={(e) => setCtaText(e.target.value)}
-              className="composer-field"
-              style={fieldStyle}
+              className="compact-input"
+              style={compactFieldStyle}
             />
             <input
               type="number"
               placeholder="0"
               value={sortOrder}
               onChange={(e) => setSortOrder(Number(e.target.value))}
-              className="composer-field"
-              style={{ ...fieldStyle, textAlign: 'center', padding: '9px 6px' }}
+              className="compact-input"
+              style={{ ...compactFieldStyle, textAlign: 'center', padding: '8px 6px' }}
             />
           </div>
 
-          <div style={drawerStyle(showSchedule, 80)}>
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)',
-                gap: '7px',
-                width: '100%',
-                paddingTop: '2px',
-              }}
-            >
-              <input
-                type="datetime-local"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="composer-field"
-                style={{ ...fieldStyle, fontSize: '11px', padding: '7px 8px' }}
-              />
-              <input
-                type="datetime-local"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="composer-field"
-                style={{ ...fieldStyle, fontSize: '11px', padding: '7px 8px' }}
-              />
-            </div>
-          </div>
-
-          <div style={drawerStyle(showStyle, 70)}>
-            <div
-              style={{
-                display: 'flex',
-                gap: '14px',
-                flexWrap: 'wrap',
-                alignItems: 'center',
-                fontSize: '11.5px',
-                color: '#a1a1aa',
-                padding: '8px 10px',
-                marginTop: '2px',
-                borderRadius: '10px',
-                backgroundColor: '#101014',
-                border: '1px solid #222228',
-              }}
-            >
-              <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
-                BG
-                <input
-                  type="color"
-                  value={stylesForm.backgroundColor || '#18181b'}
-                  onChange={(e) =>
-                    setStylesForm({ ...stylesForm, backgroundColor: e.target.value })
-                  }
-                  className="composer-color"
-                />
-              </label>
-              <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
-                Title
-                <input
-                  type="color"
-                  value={stylesForm.titleColor || '#fafafa'}
-                  onChange={(e) =>
-                    setStylesForm({ ...stylesForm, titleColor: e.target.value })
-                  }
-                  className="composer-color"
-                />
-              </label>
-              <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
-                Text
-                <input
-                  type="color"
-                  value={stylesForm.textColor || '#a1a1aa'}
-                  onChange={(e) =>
-                    setStylesForm({ ...stylesForm, textColor: e.target.value })
-                  }
-                  className="composer-color"
-                />
-              </label>
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', gap: '8px', paddingTop: '3px' }}>
+          <div style={{ display: 'flex', gap: '8px', paddingTop: '2px' }}>
             <button
               type="button"
               onClick={onClose}
