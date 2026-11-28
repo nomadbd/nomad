@@ -131,7 +131,7 @@ export default function ProductList() {
         boxSizing: 'border-box',
       }}
     >
-      <BannerSlot slotKey="products_top" />
+      <BannerSlot slotKey="top_below_header" />
 
       {categories.map((category) => {
         const categoryProducts = products.filter(
